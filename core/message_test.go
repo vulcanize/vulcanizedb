@@ -1,4 +1,4 @@
-package main_test
+package core_test
 
 import (
 	vulcanizedb "github.com/8thlight/vulcanizedb/core"

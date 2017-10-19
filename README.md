@@ -10,4 +10,4 @@ By default, `go get` does not work for private GitHub repos. This will fix that.
 
 ## Running the Tests
 
-`go test`
+`go test ./...`

@@ -1,4 +1,4 @@
-package main_test
+package core_test
 
 import (
 	. "github.com/onsi/ginkgo"
