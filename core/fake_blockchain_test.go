@@ -12,6 +12,11 @@ import (
 
 var _ = Describe("The fake blockchain", func() {
 
+	It("conforms to the Blockchain interface", func() {
+		var blockchain core.Blockchain = &fakes.Blockchain{}
+		Expect(blockchain).ShouldNot(BeNil())
+	})
+
 	It("lets the only observer know when a block was added", func() {
 		blockchain := fakes.Blockchain{}
 		blockchainObserver := &fakes.BlockchainObserver{}

@@ -17,3 +17,6 @@ func (blockchain *Blockchain) AddBlock(block core.Block) {
 		observer.NotifyBlockAdded(block)
 	}
 }
+
+func (_ *Blockchain) SubscribeToEvents() {
+}
