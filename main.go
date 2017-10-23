@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/8thlight/vulcanizedb/core"
+)
 
 func main() {
-	fmt.Println("Hello world")
+	fmt.Println("Starting connection")
+	var blockchain core.Blockchain = core.NewGethBlockchain()
+	blockchain.RegisterObserver(core.BlockchainLoggingObserver{})
 }
