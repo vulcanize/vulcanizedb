@@ -13,10 +13,10 @@ type GethBlockchain struct {
 	observers []BlockchainObserver
 }
 
-func NewGethBlockchain() *GethBlockchain {
-	fmt.Println("Creating Geth Blockchain")
+func NewGethBlockchain(ipcPath string) *GethBlockchain {
+	fmt.Printf("Creating Geth Blockchain to: %s\n", ipcPath)
 	blockchain := GethBlockchain{}
-	client, _ := ethclient.Dial("/var/folders/b3/z7fhy7cs06q8d7y3_pwwt4x40000gn/T/ethereum_dev_mode/geth.ipc")
+	client, _ := ethclient.Dial(ipcPath)
 	// TODO: handle error gracefully
 	blockchain.client = client
 	return &blockchain
