@@ -18,5 +18,4 @@ func (blockchain *Blockchain) AddBlock(block core.Block) {
 	}
 }
 
-func (_ *Blockchain) SubscribeToEvents() {
-}
+func (_ *Blockchain) SubscribeToEvents() {}

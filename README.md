@@ -10,4 +10,15 @@ By default, `go get` does not work for private GitHub repos. This will fix that.
 
 ## Running the Tests
 
-`go test ./...`
+### Integration Test
+
+In order to run the integration tests, you will need to run them against a real blockchain. Here are steps to create a local, private blockchain.
+
+1. Run `./scripts/setup` to create a private blockchain with a new account.
+    * This will result in a warning.
+2. Run `./scripts/start_private_blockchain` as a separate process.
+3. `go test ./...`
+
+### Unit Tests
+
+`go test ./core`

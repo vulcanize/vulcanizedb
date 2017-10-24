@@ -6,7 +6,7 @@ import (
 
 type BlockchainObserver struct {
 	wasToldBlockAdded bool
-	LastAddedBlock    core.Block
+	blocks            []core.Block
 }
 
 func (blockchainObserver *BlockchainObserver) WasToldBlockAdded() bool {
@@ -14,6 +14,10 @@ func (blockchainObserver *BlockchainObserver) WasToldBlockAdded() bool {
 }
 
 func (blockchainObserver *BlockchainObserver) NotifyBlockAdded(block core.Block) {
-	blockchainObserver.LastAddedBlock = block
+	blockchainObserver.blocks = append(blockchainObserver.blocks, block)
 	blockchainObserver.wasToldBlockAdded = true
+}
+
+func (observer *BlockchainObserver) LastAddedBlock() core.Block {
+	return observer.blocks[len(observer.blocks)-1]
 }
