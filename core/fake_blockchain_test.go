@@ -46,8 +46,8 @@ var _ = Describe("The fake blockchain", func() {
 
 		blockchain.AddBlock(core.Block{Number: big.NewInt(123)})
 
-		Expect(blockchainObserver.LastAddedBlock.Number).ShouldNot(BeNil())
-		Expect(blockchainObserver.LastAddedBlock.Number).Should(Equal(big.NewInt(123)))
+		Expect(blockchainObserver.LastAddedBlock().Number).ShouldNot(BeNil())
+		Expect(blockchainObserver.LastAddedBlock().Number).Should(Equal(big.NewInt(123)))
 	})
 
 })

@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/net/context"
@@ -9,8 +10,9 @@ import (
 )
 
 type GethBlockchain struct {
-	client    *ethclient.Client
-	observers []BlockchainObserver
+	client       *ethclient.Client
+	observers    []BlockchainObserver
+	subscription ethereum.Subscription
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
@@ -21,12 +23,14 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	blockchain.client = client
 	return &blockchain
 }
+
 func (blockchain GethBlockchain) notifyObservers(getBlock *types.Block) {
 	block := convertBlock(getBlock)
 	for _, observer := range blockchain.observers {
 		observer.NotifyBlockAdded(block)
 	}
 }
+
 func convertBlock(gethBlock *types.Block) Block {
 	return Block{
 		Number:               gethBlock.Number(),
@@ -42,7 +46,8 @@ func (blockchain *GethBlockchain) RegisterObserver(observer BlockchainObserver) 
 func (blockchain *GethBlockchain) SubscribeToEvents() {
 	headers := make(chan *types.Header, 10)
 	myContext := context.Background()
-	blockchain.client.SubscribeNewHead(myContext, headers)
+	sub, _ := blockchain.client.SubscribeNewHead(myContext, headers)
+	blockchain.subscription = sub
 	for header := range headers {
 		gethBlock, _ := blockchain.client.BlockByNumber(myContext, header.Number)
 		blockchain.notifyObservers(gethBlock)
