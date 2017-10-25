@@ -8,17 +8,19 @@
 
  - Go 1.9+
  - https://github.com/golang/dep
+    - `brew install dep` works for Homebrew users
  - Postgres 10
 
 ### Cloning the Repository
 
 1. `git config --global url."git@github.com:".insteadOf "https://github.com/"`
     - By default, `go get` does not work for private GitHub repos. This will fix that.
-
 2. `go get github.com/8thlight/vulcanizedb`
 3. `go get github.com/ethereum/go-ethereum`
     - This will take a while and gives poor indication of progress.
 4. `go install github.com/ethereum/go-ethereum/cmd/geth`
+5. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+6. `dep ensure`
 
 ### Setting up the Development Database
 
@@ -27,7 +29,8 @@
 3. `go get -u -d github.com/mattes/migrate/cli github.com/lib/pq`
 4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
 5. `createdb vulcanize`
-6. `migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations up`
+6. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+7.  `migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations up`
 
 Adding a new migration: `migrate -database postgresql://localhost:5432/postgres create -dir ./migrations -ext sql <migration-name>`
 
@@ -44,18 +47,20 @@ Here are some instructions for creating a private blockchain that does not depen
 
 `./scripts/start_blockchain`
 
+### IPC File Paths
+
+The default location for Ethereum is:
+ - `$HOME/Library/Ethereum` for Mac
+ - `$HOME/.ethereum` for Ubuntu
+ - `$GOPATH/src/gihub.com/8thlight/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
+
+**Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to start the listener below**
+
 ## Running Listener
 
 1. Start a blockchain.
 2. In a separate terminal start listener (ipcDir location)
     - `go run main.go --ipcPath /path/to/file.ipc`
-
-### IPC File Paths
-
-The default location for the Ethereum blockchain to be stored is:
- - `$HOME/Library/Ethereum` for Mac
- - `$HOME/.ethereum` for Ubuntu
- - `$GOPATH/src/gihub.com/8thlight/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
 
 ## Running the Tests
 
@@ -68,4 +73,4 @@ In order to run the integration tests, you will need to run them against a real 
 
 ### Unit Tests
 
-`go test ./core`
+1. `go test ./core`
