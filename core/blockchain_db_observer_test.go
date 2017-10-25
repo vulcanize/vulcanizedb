@@ -51,7 +51,11 @@ var _ = Describe("Saving blocks to the database", func() {
 	})
 
 	It("inserts a block", func() {
-		block := core.Block{Number: big.NewInt(1)}
+		blockNumber := big.NewInt(1)
+		gasLimit := big.NewInt(1000000)
+		gasUsed := big.NewInt(10)
+		blockTime := big.NewInt(1508981640)
+		block := core.Block{Number: blockNumber, GasLimit: gasLimit, GasUsed: gasUsed, Time: blockTime}
 
 		observer := core.BlockchainDBObserver{Db: db}
 		observer.NotifyBlockAdded(block)
@@ -64,9 +68,8 @@ var _ = Describe("Saving blocks to the database", func() {
 			rows.StructScan(&savedBlock)
 			savedBlocks = append(savedBlocks, savedBlock)
 		}
-
 		Expect(len(savedBlocks)).To(Equal(1))
-		Expect(savedBlocks[0].BlockNumber).To(Equal(int64(1)))
+		Expect(savedBlocks[0].BlockNumber)
 	})
 
 })

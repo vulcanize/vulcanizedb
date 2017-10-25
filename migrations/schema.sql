@@ -39,7 +39,10 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE blocks (
-    block_number bigint
+    block_number bigint,
+    block_gaslimit double precision,
+    block_gasused double precision,
+    block_time double precision
 );
 
 

@@ -1,0 +1,4 @@
+ALTER TABLE blocks
+  ADD COLUMN block_gaslimit DOUBLE PRECISION,
+  ADD COLUMN block_gasused DOUBLE PRECISION,
+  ADD COLUMN block_time DOUBLE PRECISION;

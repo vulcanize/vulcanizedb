@@ -2,11 +2,12 @@ package core
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/net/context"
-	"reflect"
 )
 
 type GethBlockchain struct {
@@ -24,17 +25,10 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	return &blockchain
 }
 
-func (blockchain GethBlockchain) notifyObservers(getBlock *types.Block) {
-	block := convertBlock(getBlock)
+func (blockchain GethBlockchain) notifyObservers(gethBlock *types.Block) {
+	block := GethBlockToCoreBlock(gethBlock)
 	for _, observer := range blockchain.observers {
 		observer.NotifyBlockAdded(block)
-	}
-}
-
-func convertBlock(gethBlock *types.Block) Block {
-	return Block{
-		Number:               gethBlock.Number(),
-		NumberOfTransactions: len(gethBlock.Transactions()),
 	}
 }
 
