@@ -46,6 +46,6 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		Expect(firstBlock.Number.Add(firstBlock.Number, big.NewInt(1))).Should(Equal(secondBlock.Number))
 
 		close(done)
-	}, 30)
+	}, 10)
 
 })
