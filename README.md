@@ -7,6 +7,8 @@
 ### Dependencies
 
  - Go 1.9+
+ - https://github.com/golang/dep
+ - Postgres 10
 
 ### Cloning the Repository
 
@@ -17,6 +19,17 @@
 3. `go get github.com/ethereum/go-ethereum`
     - This will take a while and gives poor indication of progress.
 4. `go install github.com/ethereum/go-ethereum/cmd/geth`
+
+### Setting up the Development Database
+
+1. Install Postgres
+2. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
+3. `go get -u -d github.com/mattes/migrate/cli github.com/lib/pq`
+4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
+5. `createdb vulcanize`
+6. `migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations up`
+
+Adding a new migration: `migrate -database postgresql://localhost:5432/postgres create -dir ./migrations -ext sql <migration-name>`
 
 ### Creating/Using a Private Blockchain
 
