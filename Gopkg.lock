@@ -20,6 +20,18 @@
   version = "v1.6.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/jmoiron/sqlx"
+  packages = [".","reflectx"]
+  revision = "3379e5993990b1f927fc8db926485e6f6becf2d2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [".","oid"]
+  revision = "b609790bd85edf8e9ab7e0f8912750a786177bcf"
+
+[[projects]]
   name = "github.com/onsi/ginkgo"
   packages = [".","config","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
   revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
@@ -88,6 +100,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1f89d2d001b1d5929ecd9f83d34d67edc4c1ae8baea497f4b5b76d9f6cc7f8d5"
+  inputs-digest = "28c66c62724453afdc526c6cf9de955240b487fb81b027fefbe7ed4e1545caec"
   solver-name = "gps-cdcl"
   solver-version = 1

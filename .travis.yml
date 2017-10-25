@@ -1,5 +1,16 @@
+dist: trusty
+sudo: required
 language: go
 go:
   - 1.9
+services:
+  - postgresql
+before_script:
+  - go get -u -d github.com/mattes/migrate/cli github.com/lib/pq
+  - go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli
+  - psql -c 'create database vulcanize;' -U postgres
+  - migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations up
 script:
   - go test -v ./core/...
+notifications:
+  email: false
