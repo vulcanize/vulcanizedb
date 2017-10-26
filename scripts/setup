@@ -3,4 +3,4 @@ echo "Deleting test blockchain"
 rm -rf test_data_dir
 echo "Creating test blockchain with a new account"
 mkdir test_data_dir
-geth --datadir test_data_dir --password .private_blockchain_password account new
+geth --dev --datadir test_data_dir --password .private_blockchain_password account new
