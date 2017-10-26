@@ -8,7 +8,7 @@
 
  - Go 1.9+
  - https://github.com/golang/dep
-    - `brew install dep` works for Homebrew users
+    - `go get -u github.com/golang/dep/cmd/dep`
  - Postgres 10
 
 ### Cloning the Repository
