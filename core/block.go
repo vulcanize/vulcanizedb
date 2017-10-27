@@ -22,6 +22,6 @@ func GethBlockToCoreBlock(gethBlock *types.Block) Block {
 		GasLimit:             gethBlock.GasLimit(),
 		GasUsed:              gethBlock.GasUsed(),
 		Time:                 gethBlock.Time(),
-		NumberOfTransactions: len(gethBlock.Transactions()),
+		NumberOfTransactions: gethBlock.Transactions().Len(),
 	}
 }
