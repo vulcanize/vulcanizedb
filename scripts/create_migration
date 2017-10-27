@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ $# -eq 1 ]
+then
+  migrate -database postgresql://localhost:5432/postgres create -dir ./migrations -ext sql $1
+else
+  echo "**An Error Occurred**"
+  echo "Usage: ./scripts/create_migration <migration-name>"
+fi
