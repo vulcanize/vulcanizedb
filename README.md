@@ -30,9 +30,9 @@
 4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
 5. `createdb vulcanize`
 6. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
-7.  `migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations up`
+7.  `./scripts/migrate`
 
-Adding a new migration: `migrate -database postgresql://localhost:5432/postgres create -dir ./migrations -ext sql <migration-name>`
+Adding a new migration: `./scripts/create_migration <migration-name>`
 
 ### Creating/Using a Private Blockchain
 
