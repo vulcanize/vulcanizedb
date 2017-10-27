@@ -15,24 +15,6 @@ type Block struct {
 	NumberOfTransactions int
 }
 
-//Our Block to DB
-func BlockToBlockRecord(block Block) *BlockRecord {
-	return &BlockRecord{
-		BlockNumber: block.Number.Int64(),
-		GasLimit:    block.GasLimit.Int64(),
-		GasUsed:     block.GasUsed.Int64(),
-		Time:        block.Time.Int64(),
-	}
-}
-
-//DB block representation
-type BlockRecord struct {
-	BlockNumber int64 `db:"block_number"`
-	GasLimit    int64 `db:"block_gaslimit"`
-	GasUsed     int64 `db:"block_gasused"`
-	Time        int64 `db:"block_time"`
-}
-
 //Geth Block to Ours
 func GethBlockToCoreBlock(gethBlock *types.Block) Block {
 	return Block{
