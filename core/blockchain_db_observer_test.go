@@ -86,10 +86,10 @@ var _ = Describe("Saving blocks to the database", func() {
 			var gasUsed float64
 			rows.Scan(&blockNumber, &gasLimit, &gasUsed, &blockTime)
 			savedBlock := core.Block{
-				GasUsed: big.NewInt(int64(gasUsed)),
+				GasUsed:  big.NewInt(int64(gasUsed)),
 				GasLimit: big.NewInt(int64(gasLimit)),
 				Number:   big.NewInt(blockNumber),
-				Time:   big.NewInt(int64(blockTime)),
+				Time:     big.NewInt(int64(blockTime)),
 			}
 			savedBlocks = append(savedBlocks, savedBlock)
 		}
