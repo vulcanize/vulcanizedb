@@ -42,8 +42,29 @@ CREATE TABLE blocks (
     block_number bigint,
     block_gaslimit double precision,
     block_gasused double precision,
-    block_time double precision
+    block_time double precision,
+    id integer NOT NULL
 );
+
+
+--
+-- Name: blocks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE blocks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blocks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
 
 
 --
@@ -54,6 +75,21 @@ CREATE TABLE schema_migrations (
     version bigint NOT NULL,
     dirty boolean NOT NULL
 );
+
+
+--
+-- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::regclass);
+
+
+--
+-- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY blocks
+    ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
 
 
 --
