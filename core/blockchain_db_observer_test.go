@@ -30,8 +30,8 @@ var _ = Describe("Saving blocks to the database", func() {
 
 	BeforeEach(func() {
 		db, err = sqlx.Connect("postgres", pgConfig)
-		db.MustExec("DELETE FROM blocks")
 		db.MustExec("DELETE FROM transactions")
+		db.MustExec("DELETE FROM blocks")
 	})
 
 	It("implements the observer interface", func() {
@@ -145,6 +145,49 @@ var _ = Describe("Saving blocks to the database", func() {
 			Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
 			Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
 			Expect(savedTransaction.Value).To(Equal(value))
+		})
+
+		It("associates the transaction with the block", func() {
+			gasLimit := int64(5000)
+
+			txRecord := core.Transaction{}
+			blockNumber := big.NewInt(1)
+			gasUsed := big.NewInt(10)
+			blockTime := big.NewInt(1508981640)
+			block := core.Block{
+				Number:       blockNumber,
+				GasLimit:     big.NewInt(gasLimit),
+				GasUsed:      gasUsed,
+				Time:         blockTime,
+				Transactions: []core.Transaction{txRecord},
+			}
+
+			observer := core.BlockchainDBObserver{Db: db}
+			observer.NotifyBlockAdded(block)
+
+			blockRows, err := db.Query("SELECT id FROM blocks")
+			Expect(err).To(BeNil())
+
+			var actualBlockIds []int64
+			for blockRows.Next() {
+				var actualBlockId int64
+				blockRows.Scan(&actualBlockId)
+				actualBlockIds = append(actualBlockIds, actualBlockId)
+			}
+
+			transactionRows, err := db.Query("SELECT block_id FROM transactions")
+			Expect(err).To(BeNil())
+
+			var transactionBlockIds []int64
+			for transactionRows.Next() {
+				var transactionBlockId int64
+				transactionRows.Scan(&transactionBlockId)
+				transactionBlockIds = append(transactionBlockIds, transactionBlockId)
+			}
+
+			Expect(len(actualBlockIds)).To(Equal(1))
+			Expect(len(transactionBlockIds)).To(Equal(1))
+			Expect(transactionBlockIds[0]).To(Equal(actualBlockIds[0]))
 		})
 	})
 
