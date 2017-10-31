@@ -87,7 +87,8 @@ CREATE TABLE transactions (
     tx_to character varying(66),
     tx_gaslimit numeric,
     tx_gasprice numeric,
-    tx_value numeric
+    tx_value numeric,
+    block_id integer NOT NULL
 );
 
 
@@ -149,5 +150,14 @@ ALTER TABLE ONLY transactions
 
 
 --
+-- Name: transactions fk_test; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY transactions
+    ADD CONSTRAINT fk_test FOREIGN KEY (block_id) REFERENCES blocks(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
+
