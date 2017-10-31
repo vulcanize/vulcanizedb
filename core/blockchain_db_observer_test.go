@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"github.com/8thlight/vulcanizedb/core"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -26,24 +24,14 @@ var _ = Describe("Saving blocks to the database", func() {
 
 	var db *sqlx.DB
 	var err error
-	var gethTransaction *types.Transaction
+	pgConfig := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 
 	BeforeEach(func() {
-
-		blockName := []byte("0x28f9a8d33109c87bda4a9ea890792421c710fe1c")
-		addr := common.BytesToAddress(blockName)
-		nonce := uint64(18848)
-		amt := big.NewInt(0)
-		gasLimit := big.NewInt(0)
-		gasPrice := big.NewInt(0)
-		data := []byte{}
-		gethTransaction = types.NewTransaction(nonce, addr, amt, gasLimit, gasPrice, data)
-
-		pgConfig := fmt.Sprintf(
-			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-			host, port, user, password, dbname)
 		db, err = sqlx.Connect("postgres", pgConfig)
 		db.MustExec("DELETE FROM blocks")
+		db.MustExec("DELETE FROM transactions")
 	})
 
 	It("implements the observer interface", func() {
@@ -99,6 +87,65 @@ var _ = Describe("Saving blocks to the database", func() {
 		Expect(savedBlocks[0].GasLimit.Int64()).To(Equal(gasLimit.Int64()))
 		Expect(savedBlocks[0].GasUsed.Int64()).To(Equal(gasUsed.Int64()))
 		Expect(savedBlocks[0].Time).To(Equal(blockTime))
+	})
+
+	var _ = Describe("Saving transactions to the database", func() {
+
+		It("inserts a transaction", func() {
+			gasLimit := int64(5000)
+			gasPrice := int64(3)
+			nonce := uint64(10000)
+			to := "1234567890"
+			value := int64(10)
+
+			txRecord := core.Transaction{
+				Hash:     "x1234",
+				GasPrice: gasPrice,
+				GasLimit: gasLimit,
+				Nonce:    nonce,
+				To:       to,
+				Value:    value,
+			}
+			blockNumber := big.NewInt(1)
+			gasUsed := big.NewInt(10)
+			blockTime := big.NewInt(1508981640)
+			block := core.Block{Number: blockNumber, GasLimit: big.NewInt(gasLimit), GasUsed: gasUsed, Time: blockTime, Transactions: []core.Transaction{txRecord}}
+
+			observer := core.BlockchainDBObserver{Db: db}
+			observer.NotifyBlockAdded(block)
+
+			rows, err := db.Query("SELECT tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value FROM transactions")
+			Expect(err).To(BeNil())
+
+			var savedTransactions []core.Transaction
+			for rows.Next() {
+				var dbHash string
+				var dbNonce uint64
+				var dbTo string
+				var dbGasLimit int64
+				var dbGasPrice int64
+				var dbValue int64
+				rows.Scan(&dbHash, &dbNonce, &dbTo, &dbGasLimit, &dbGasPrice, &dbValue)
+				savedTransaction := core.Transaction{
+					Hash:     dbHash,
+					Nonce:    dbNonce,
+					To:       dbTo,
+					GasLimit: dbGasLimit,
+					GasPrice: dbGasPrice,
+					Value:    dbValue,
+				}
+				savedTransactions = append(savedTransactions, savedTransaction)
+			}
+
+			Expect(len(savedTransactions)).To(Equal(1))
+			savedTransaction := savedTransactions[0]
+			Expect(savedTransaction.Hash).To(Equal(txRecord.Hash))
+			Expect(savedTransaction.To).To(Equal(to))
+			Expect(savedTransaction.Nonce).To(Equal(nonce))
+			Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
+			Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
+			Expect(savedTransaction.Value).To(Equal(value))
+		})
 	})
 
 })
