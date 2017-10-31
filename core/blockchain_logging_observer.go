@@ -12,5 +12,5 @@ func (blockchainObserver BlockchainLoggingObserver) NotifyBlockAdded(block Block
 		"\tTime: %v\n"+
 		"\tGas Limit: %d\n"+
 		"\tGas Used: %d\n"+
-		"\tNumber of Transactions %d\n", block.Number, time.Unix(block.Time.Int64(), 0), block.GasLimit, block.GasUsed, block.NumberOfTransactions)
+		"\tNumber of Transactions %d\n", block.Number, time.Unix(block.Time.Int64(), 0), block.GasLimit, block.GasUsed, len(block.Transactions))
 }

@@ -20,7 +20,6 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	fmt.Printf("Creating Geth Blockchain to: %s\n", ipcPath)
 	blockchain := GethBlockchain{}
 	client, _ := ethclient.Dial(ipcPath)
-	// TODO: handle error gracefully
 	blockchain.client = client
 	return &blockchain
 }
