@@ -1,8 +1,6 @@
 package core_test
 
 import (
-	"math/big"
-
 	"fmt"
 
 	"github.com/8thlight/vulcanizedb/core"
@@ -53,10 +51,10 @@ var _ = Describe("Saving blocks to the database", func() {
 
 	It("inserts a block", func() {
 		// setup a block in memory
-		blockNumber := big.NewInt(1)
-		gasLimit := big.NewInt(1000000)
-		gasUsed := big.NewInt(10)
-		blockTime := big.NewInt(1508981640)
+		blockNumber := int64(123)
+		gasLimit := int64(1000000)
+		gasUsed := int64(10)
+		blockTime := int64(1508981640)
 		block := core.Block{Number: blockNumber, GasLimit: gasLimit, GasUsed: gasUsed, Time: blockTime}
 
 		// save the block to the database
@@ -74,18 +72,18 @@ var _ = Describe("Saving blocks to the database", func() {
 			var gasUsed float64
 			rows.Scan(&blockNumber, &gasLimit, &gasUsed, &blockTime)
 			savedBlock := core.Block{
-				GasUsed:  big.NewInt(int64(gasUsed)),
-				GasLimit: big.NewInt(int64(gasLimit)),
-				Number:   big.NewInt(blockNumber),
-				Time:     big.NewInt(int64(blockTime)),
+				GasLimit: int64(gasLimit),
+				GasUsed:  int64(gasUsed),
+				Number:   blockNumber,
+				Time:     int64(blockTime),
 			}
 			savedBlocks = append(savedBlocks, savedBlock)
 		}
 		// assert against the attributes
 		Expect(len(savedBlocks)).To(Equal(1))
-		Expect(savedBlocks[0].Number.Int64()).To(Equal(blockNumber.Int64()))
-		Expect(savedBlocks[0].GasLimit.Int64()).To(Equal(gasLimit.Int64()))
-		Expect(savedBlocks[0].GasUsed.Int64()).To(Equal(gasUsed.Int64()))
+		Expect(savedBlocks[0].Number).To(Equal(blockNumber))
+		Expect(savedBlocks[0].GasLimit).To(Equal(gasLimit))
+		Expect(savedBlocks[0].GasUsed).To(Equal(gasUsed))
 		Expect(savedBlocks[0].Time).To(Equal(blockTime))
 	})
 
@@ -106,10 +104,7 @@ var _ = Describe("Saving blocks to the database", func() {
 				To:       to,
 				Value:    value,
 			}
-			blockNumber := big.NewInt(1)
-			gasUsed := big.NewInt(10)
-			blockTime := big.NewInt(1508981640)
-			block := core.Block{Number: blockNumber, GasLimit: big.NewInt(gasLimit), GasUsed: gasUsed, Time: blockTime, Transactions: []core.Transaction{txRecord}}
+			block := core.Block{Transactions: []core.Transaction{txRecord}}
 
 			observer := core.BlockchainDBObserver{Db: db}
 			observer.NotifyBlockAdded(block)
@@ -148,17 +143,8 @@ var _ = Describe("Saving blocks to the database", func() {
 		})
 
 		It("associates the transaction with the block", func() {
-			gasLimit := int64(5000)
-
 			txRecord := core.Transaction{}
-			blockNumber := big.NewInt(1)
-			gasUsed := big.NewInt(10)
-			blockTime := big.NewInt(1508981640)
 			block := core.Block{
-				Number:       blockNumber,
-				GasLimit:     big.NewInt(gasLimit),
-				GasUsed:      gasUsed,
-				Time:         blockTime,
 				Transactions: []core.Transaction{txRecord},
 			}
 

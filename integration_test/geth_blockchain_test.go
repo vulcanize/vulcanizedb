@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"math/big"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -44,7 +43,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		firstBlock := <-addedBlock
 		Expect(firstBlock).ShouldNot(BeNil())
 		secondBlock := <-addedBlock
-		Expect(firstBlock.Number.Add(firstBlock.Number, big.NewInt(1))).Should(Equal(secondBlock.Number))
+		Expect(firstBlock.Number + 1).Should(Equal(secondBlock.Number))
 
 		close(done)
 	}, 10)

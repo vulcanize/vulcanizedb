@@ -1,16 +1,14 @@
 package core
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type Block struct {
-	Number       *big.Int
-	GasLimit     *big.Int
-	GasUsed      *big.Int
-	Time         *big.Int
+	Number       int64
+	GasLimit     int64
+	GasUsed      int64
+	Time         int64
 	Transactions []Transaction
 }
 
@@ -20,10 +18,10 @@ func GethBlockToCoreBlock(gethBlock *types.Block) Block {
 		transactions = append(transactions, gethTransToCoreTrans(gethTransaction))
 	}
 	return Block{
-		Number:       gethBlock.Number(),
-		GasLimit:     gethBlock.GasLimit(),
-		GasUsed:      gethBlock.GasUsed(),
-		Time:         gethBlock.Time(),
+		Number:       gethBlock.Number().Int64(),
+		GasLimit:     gethBlock.GasLimit().Int64(),
+		GasUsed:      gethBlock.GasUsed().Int64(),
+		Time:         gethBlock.Time().Int64(),
 		Transactions: transactions,
 	}
 }
