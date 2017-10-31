@@ -13,12 +13,17 @@ import (
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 	It("converts basic Block metada", func() {
-		blockNumber := big.NewInt(1)
-		gasUsed := big.NewInt(100000)
-		gasLimit := big.NewInt(100000)
-		time := big.NewInt(140000000)
+		blockNumber := int64(1)
+		gasUsed := int64(100000)
+		gasLimit := int64(100000)
+		time := int64(140000000)
 
-		header := types.Header{Number: blockNumber, GasUsed: gasUsed, Time: time, GasLimit: gasLimit}
+		header := types.Header{
+			GasUsed: big.NewInt(gasUsed),
+			Number:  big.NewInt(blockNumber),
+			Time:    big.NewInt(time),
+			GasLimit: big.NewInt(gasLimit),
+		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 		gethBlock := core.GethBlockToCoreBlock(block)
 

@@ -18,7 +18,7 @@ func saveBlock(observer BlockchainDBObserver, block Block) int64 {
 	insertedBlock := observer.Db.QueryRow("Insert INTO blocks "+
 		"(block_number, block_gaslimit, block_gasused, block_time) "+
 		"VALUES ($1, $2, $3, $4) RETURNING id",
-		block.Number.Int64(), block.GasLimit.Int64(), block.GasUsed.Int64(), block.Time.Int64())
+		block.Number, block.GasLimit, block.GasUsed, block.Time)
 	var blockId int64
 	insertedBlock.Scan(&blockId)
 	return blockId

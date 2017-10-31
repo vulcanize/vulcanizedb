@@ -1,8 +1,6 @@
 package core_test
 
 import (
-	"math/big"
-
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/8thlight/vulcanizedb/fakes"
 
@@ -44,10 +42,10 @@ var _ = Describe("The fake blockchain", func() {
 		blockchainObserver := &fakes.BlockchainObserver{}
 		blockchain.RegisterObserver(blockchainObserver)
 
-		blockchain.AddBlock(core.Block{Number: big.NewInt(123)})
+		blockchain.AddBlock(core.Block{Number: int64(123)})
 
 		Expect(blockchainObserver.LastAddedBlock().Number).ShouldNot(BeNil())
-		Expect(blockchainObserver.LastAddedBlock().Number).Should(Equal(big.NewInt(123)))
+		Expect(blockchainObserver.LastAddedBlock().Number).Should(Equal(int64(123)))
 	})
 
 })
