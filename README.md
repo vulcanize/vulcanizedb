@@ -1,5 +1,7 @@
 # Vulcanize DB
 
+[![Build Status](https://travis-ci.com/8thlight/vulcanizedb.svg?token=GKv2Y33qsFnfYgejjvYx&branch=master)](https://travis-ci.com/8thlight/vulcanizedb)
+
 ## Development Setup
 
 ### Dependencies
