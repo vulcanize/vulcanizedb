@@ -6,40 +6,24 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-//Our block representation
 type Block struct {
-	Number               *big.Int
-	GasLimit             *big.Int
-	GasUsed              *big.Int
-	Time                 *big.Int
-	NumberOfTransactions int
+	Number       *big.Int
+	GasLimit     *big.Int
+	GasUsed      *big.Int
+	Time         *big.Int
+	Transactions []Transaction
 }
 
-//Our Block to DB
-func BlockToBlockRecord(block Block) *BlockRecord {
-	return &BlockRecord{
-		BlockNumber: block.Number.Int64(),
-		GasLimit:    block.GasLimit.Int64(),
-		GasUsed:     block.GasUsed.Int64(),
-		Time:        block.Time.Int64(),
-	}
-}
-
-//DB block representation
-type BlockRecord struct {
-	BlockNumber int64 `db:"block_number"`
-	GasLimit    int64 `db:"block_gaslimit"`
-	GasUsed     int64 `db:"block_gasused"`
-	Time        int64 `db:"block_time"`
-}
-
-//Geth Block to Ours
 func GethBlockToCoreBlock(gethBlock *types.Block) Block {
+	transactions := []Transaction{}
+	for _, gethTransaction := range gethBlock.Transactions() {
+		transactions = append(transactions, gethTransToCoreTrans(gethTransaction))
+	}
 	return Block{
-		Number:               gethBlock.Number(),
-		GasLimit:             gethBlock.GasLimit(),
-		GasUsed:              gethBlock.GasUsed(),
-		Time:                 gethBlock.Time(),
-		NumberOfTransactions: len(gethBlock.Transactions()),
+		Number:       gethBlock.Number(),
+		GasLimit:     gethBlock.GasLimit(),
+		GasUsed:      gethBlock.GasUsed(),
+		Time:         gethBlock.Time(),
+		Transactions: transactions,
 	}
 }
