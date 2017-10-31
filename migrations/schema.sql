@@ -52,7 +52,6 @@ CREATE TABLE blocks (
 --
 
 CREATE SEQUENCE blocks_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -103,4 +102,3 @@ ALTER TABLE ONLY schema_migrations
 --
 -- PostgreSQL database dump complete
 --
-
