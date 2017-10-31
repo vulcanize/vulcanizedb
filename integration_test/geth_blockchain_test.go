@@ -2,13 +2,14 @@ package integration_test
 
 import (
 	"fmt"
-	"github.com/8thlight/vulcanizedb/core"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"math/big"
 	"path"
 	"path/filepath"
 	"runtime"
+
+	"github.com/8thlight/vulcanizedb/core"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var (
