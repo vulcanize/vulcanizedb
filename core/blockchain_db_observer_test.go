@@ -1,8 +1,7 @@
 package core_test
 
 import (
-	"fmt"
-
+	"github.com/8thlight/vulcanizedb/config"
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -10,26 +9,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "vulcanize"
-)
-
 var _ = Describe("Saving blocks to the database", func() {
 
 	var db *sqlx.DB
 	var err error
-	pgConfig := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
 
 	BeforeEach(func() {
+		pgConfig := config.DbConnectionString(config.Private().Database)
 		db, err = sqlx.Connect("postgres", pgConfig)
 		db.MustExec("DELETE FROM transactions")
 		db.MustExec("DELETE FROM blocks")
+	})
+
+	AfterEach(func() {
+		db.Close()
 	})
 
 	It("implements the observer interface", func() {
