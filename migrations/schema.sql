@@ -150,6 +150,13 @@ ALTER TABLE ONLY transactions
 
 
 --
+-- Name: block_number_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX block_number_index ON blocks USING btree (block_number);
+
+
+--
 -- Name: transactions fk_test; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
