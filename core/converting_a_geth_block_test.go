@@ -19,9 +19,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		time := int64(140000000)
 
 		header := types.Header{
-			GasUsed: big.NewInt(gasUsed),
-			Number:  big.NewInt(blockNumber),
-			Time:    big.NewInt(time),
+			GasUsed:  big.NewInt(gasUsed),
+			Number:   big.NewInt(blockNumber),
+			Time:     big.NewInt(time),
 			GasLimit: big.NewInt(gasLimit),
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
