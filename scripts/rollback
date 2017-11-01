@@ -1,3 +1,0 @@
-#!/bin/bash
-migrate -database 'postgresql://localhost:5432/vulcanize?sslmode=disable' -path ./migrations down 1
-./scripts/dump_schema

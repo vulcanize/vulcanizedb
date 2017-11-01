@@ -9,6 +9,8 @@
  - Go 1.9+
  - https://github.com/golang/dep
     - `go get -u github.com/golang/dep/cmd/dep`
+ - https://github.com/go-godo/godo
+    - `go get -u gopkg.in/godo.v2/cmd/godo`
  - Postgres 10
 
 ### Cloning the Repository
@@ -22,15 +24,17 @@
 5. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
 6. `dep ensure`
 
-### Setting up the Development Database
+### Setting up the Databases
 
 1. Install Postgres
 2. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 3. `go get -u -d github.com/mattes/migrate/cli github.com/lib/pq`
 4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
-5. `createdb vulcanize`
-6. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
-7.  `./scripts/migrate`
+5. `createdb vulcanize_public`
+6. `createdb vulcanize_private`
+7. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+8. `godo migratePublic`
+9. `godo migratePrivate`
 
 Adding a new migration: `./scripts/create_migration <migration-name>`
 
@@ -60,7 +64,7 @@ The default location for Ethereum is:
 
 1. Start a blockchain.
 2. In a separate terminal start listener (ipcDir location)
-    - `go run main.go --ipcPath /path/to/file.ipc`
+    - `godo runPublic -- --ipc-path /path/to/file.ipc`
 
 ## Running the Tests
 
