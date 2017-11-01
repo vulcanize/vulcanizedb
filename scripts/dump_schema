@@ -1,2 +1,0 @@
-#!/bin/bash
-pg_dump -O -s vulcanize > migrations/schema.sql
