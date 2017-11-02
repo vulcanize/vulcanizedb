@@ -16,10 +16,11 @@ func (observer BlockchainDBObserver) NotifyBlockAdded(block core.Block) {
 }
 
 func saveBlock(observer BlockchainDBObserver, block core.Block) int64 {
-	insertedBlock := observer.Db.QueryRow("Insert INTO blocks "+
-		"(block_number, block_gaslimit, block_gasused, block_time) "+
-		"VALUES ($1, $2, $3, $4) RETURNING id",
-		block.Number, block.GasLimit, block.GasUsed, block.Time)
+	insertedBlock := observer.Db.QueryRow(
+		"Insert INTO blocks "+
+		"(block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash) "+
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash)
 	var blockId int64
 	insertedBlock.Scan(&blockId)
 	return blockId
