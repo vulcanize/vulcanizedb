@@ -1,9 +1,9 @@
-package core_test
+package geth_test
 
 import (
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/geth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
@@ -25,7 +25,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			GasLimit: big.NewInt(gasLimit),
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
-		gethBlock := core.GethBlockToCoreBlock(block)
+		gethBlock := geth.GethBlockToCoreBlock(block)
 
 		Expect(gethBlock.Number).To(Equal(blockNumber))
 		Expect(gethBlock.GasUsed).To(Equal(gasUsed))
@@ -38,7 +38,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 
-			coreBlock := core.GethBlockToCoreBlock(block)
+			coreBlock := geth.GethBlockToCoreBlock(block)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(0))
 		})
@@ -54,7 +54,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			gethTransaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
 			gethBlock := types.NewBlock(&header, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
-			coreBlock := core.GethBlockToCoreBlock(gethBlock)
+			coreBlock := geth.GethBlockToCoreBlock(gethBlock)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
@@ -70,7 +70,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			gethTransaction := types.NewContractCreation(uint64(10000), big.NewInt(10), big.NewInt(5000), big.NewInt(3), []byte("1234"))
 			gethBlock := types.NewBlock(&types.Header{}, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
 
-			coreBlock := core.GethBlockToCoreBlock(gethBlock)
+			coreBlock := geth.GethBlockToCoreBlock(gethBlock)
 
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.To).To(Equal(""))

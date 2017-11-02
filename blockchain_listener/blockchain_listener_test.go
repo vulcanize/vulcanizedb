@@ -1,6 +1,7 @@
-package core_test
+package blockchain_listener_test
 
 import (
+	"github.com/8thlight/vulcanizedb/blockchain_listener"
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/8thlight/vulcanizedb/fakes"
 	. "github.com/onsi/ginkgo"
@@ -13,7 +14,7 @@ var _ = Describe("Blockchain listeners", func() {
 		observer := fakes.NewFakeBlockchainObserverTwo()
 		blockchain := &fakes.Blockchain{}
 
-		core.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
+		blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 
 		Expect(len(observer.CurrentBlocks)).To(Equal(0))
 		close(done)
@@ -22,7 +23,7 @@ var _ = Describe("Blockchain listeners", func() {
 	It("sees when one block was added", func(done Done) {
 		observer := fakes.NewFakeBlockchainObserverTwo()
 		blockchain := &fakes.Blockchain{}
-		listener := core.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
+		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 		go listener.Start()
 
 		go blockchain.AddBlock(core.Block{Number: 123})
@@ -38,7 +39,7 @@ var _ = Describe("Blockchain listeners", func() {
 	It("sees a second block", func(done Done) {
 		observer := fakes.NewFakeBlockchainObserverTwo()
 		blockchain := &fakes.Blockchain{}
-		listener := core.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
+		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 		go listener.Start()
 
 		go blockchain.AddBlock(core.Block{Number: 123})
