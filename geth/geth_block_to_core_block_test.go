@@ -5,10 +5,10 @@ import (
 
 	"github.com/8thlight/vulcanizedb/geth"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strconv"
 )
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
@@ -38,7 +38,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
 		Expect(gethBlock.GasUsed).To(Equal(gasUsed))
 		Expect(gethBlock.Hash).To(Equal(block.Hash().Hex()))
-		Expect(gethBlock.Nonce).To(Equal((strconv.FormatUint(block.Nonce(), 10))))
+		Expect(gethBlock.Nonce).To(Equal(hexutil.Encode(header.Nonce[:])))
 		Expect(gethBlock.Number).To(Equal(number))
 		Expect(gethBlock.ParentHash).To(Equal(block.ParentHash().Hex()))
 		Expect(gethBlock.Size).To(Equal(block.Size().Int64()))

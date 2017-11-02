@@ -3,8 +3,8 @@ package geth
 import (
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"strconv"
 )
 
 func gethTransToCoreTrans(transaction *types.Transaction) core.Transaction {
@@ -31,7 +31,7 @@ func GethBlockToCoreBlock(gethBlock *types.Block) core.Block {
 		GasLimit:     gethBlock.GasLimit().Int64(),
 		GasUsed:      gethBlock.GasUsed().Int64(),
 		Hash:         gethBlock.Hash().Hex(),
-		Nonce:        strconv.FormatUint(gethBlock.Nonce(), 10),
+		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
 		Number:       gethBlock.Number().Int64(),
 		ParentHash:   gethBlock.ParentHash().Hex(),
 		Size:         gethBlock.Size().Int64(),
