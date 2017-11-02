@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/8thlight/vulcanizedb/blockchain_listener"
-	cfg "github.com/8thlight/vulcanizedb/config"
+	"github.com/8thlight/vulcanizedb/config"
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/8thlight/vulcanizedb/geth"
 	"github.com/8thlight/vulcanizedb/observers"
@@ -14,18 +14,19 @@ import (
 	do "gopkg.in/godo.v2"
 )
 
-func parseIpcPath(context *do.Context) string {
-	ipcPath := context.Args.MayString("", "ipc-path", "i")
-	if ipcPath == "" {
-		log.Fatalln("--ipc-path required")
+func parseEnvironment(context *do.Context) string {
+	environment := context.Args.MayString("", "environment", "env", "e")
+	if environment == "" {
+		log.Fatalln("--environment required")
 	}
-	return ipcPath
+	return environment
 }
 
-func startBlockchainListener(config cfg.Config, ipcPath string) {
-	blockchain := geth.NewGethBlockchain(ipcPath)
+func startBlockchainListener(cfg config.Config) {
+	fmt.Println("Client Path ", cfg.Client.IPCPath)
+	blockchain := geth.NewGethBlockchain(cfg.Client.IPCPath)
 	loggingObserver := observers.BlockchainLoggingObserver{}
-	connectString := cfg.DbConnectionString(cfg.Public().Database)
+	connectString := config.DbConnectionString(cfg.Database)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %v\n", err)
@@ -40,36 +41,30 @@ func startBlockchainListener(config cfg.Config, ipcPath string) {
 
 func tasks(p *do.Project) {
 
-	p.Task("runPublic", nil, func(context *do.Context) {
-		startBlockchainListener(cfg.Public(), parseIpcPath(context))
+	p.Task("run", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		cfg := config.NewConfig(environment)
+		startBlockchainListener(cfg)
 	})
 
-	p.Task("runPrivate", nil, func(context *do.Context) {
-		startBlockchainListener(cfg.Private(), parseIpcPath(context))
+	p.Task("migrate", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		cfg := config.NewConfig(environment)
+		connectString := config.DbConnectionString(cfg.Database)
+		migrate := fmt.Sprintf("migrate -database '%s' -path ./migrations up", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > migrations/schema.sql", cfg.Database.Name)
+		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
-	p.Task("migratePublic", nil, func(context *do.Context) {
-		connectString := cfg.DbConnectionString(cfg.Public().Database)
-		context.Bash(fmt.Sprintf("migrate -database '%s' -path ./migrations up", connectString))
-		context.Bash(fmt.Sprintf("pg_dump -O -s %s > migrations/schema.sql", cfg.Public().Database.Name))
-	})
-
-	p.Task("migratePrivate", nil, func(context *do.Context) {
-		connectString := cfg.DbConnectionString(cfg.Private().Database)
-		context.Bash(fmt.Sprintf("migrate -database '%s' -path ./migrations up", connectString))
-		context.Bash(fmt.Sprintf("pg_dump -O -s %s > migrations/schema.sql", cfg.Private().Database.Name))
-	})
-
-	p.Task("rollbackPublic", nil, func(context *do.Context) {
-		connectString := cfg.DbConnectionString(cfg.Public().Database)
-		context.Bash(fmt.Sprintf("migrate -database '%s' -path ./migrations down 1", connectString))
-		context.Bash("pg_dump -O -s vulcanize_public > migrations/schema.sql")
-	})
-
-	p.Task("rollbackPrivate", nil, func(context *do.Context) {
-		connectString := cfg.DbConnectionString(cfg.Private().Database)
-		context.Bash(fmt.Sprintf("migrate -database '%s' -path ./migrations down 1", connectString))
-		context.Bash("pg_dump -O -s vulcanize_private > migrations/schema.sql")
+	p.Task("rollback", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		cfg := config.NewConfig(environment)
+		connectString := config.DbConnectionString(cfg.Database)
+		migrate := fmt.Sprintf("migrate -database '%s' -path ./migrations down 1", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > migrations/schema.sql", cfg.Database.Name)
+		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
 }

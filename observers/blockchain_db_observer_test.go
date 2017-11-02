@@ -1,6 +1,8 @@
 package observers_test
 
 import (
+	"runtime"
+
 	"github.com/8thlight/vulcanizedb/config"
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/8thlight/vulcanizedb/observers"
@@ -10,13 +12,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	_, filename, _, _ = runtime.Caller(0)
+)
+
 var _ = Describe("Saving blocks to the database", func() {
 
 	var db *sqlx.DB
 	var err error
 
 	BeforeEach(func() {
-		pgConfig := config.DbConnectionString(config.Private().Database)
+		cfg := config.NewConfig("private")
+		pgConfig := config.DbConnectionString(cfg.Database)
 		db, err = sqlx.Connect("postgres", pgConfig)
 		db.MustExec("DELETE FROM transactions")
 		db.MustExec("DELETE FROM blocks")
