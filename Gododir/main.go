@@ -5,8 +5,11 @@ import (
 
 	"fmt"
 
+	"github.com/8thlight/vulcanizedb/blockchain_listener"
 	cfg "github.com/8thlight/vulcanizedb/config"
 	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/geth"
+	"github.com/8thlight/vulcanizedb/observers"
 	"github.com/jmoiron/sqlx"
 	do "gopkg.in/godo.v2"
 )
@@ -20,15 +23,15 @@ func parseIpcPath(context *do.Context) string {
 }
 
 func startBlockchainListener(config cfg.Config, ipcPath string) {
-	blockchain := core.NewGethBlockchain(ipcPath)
-	loggingObserver := core.BlockchainLoggingObserver{}
+	blockchain := geth.NewGethBlockchain(ipcPath)
+	loggingObserver := observers.BlockchainLoggingObserver{}
 	connectString := cfg.DbConnectionString(cfg.Public().Database)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %v\n", err)
 	}
-	dbObserver := (core.BlockchainDBObserver{Db: db})
-	listener := core.NewBlockchainListener(blockchain, []core.BlockchainObserver{
+	dbObserver := (observers.BlockchainDBObserver{Db: db})
+	listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{
 		loggingObserver,
 		dbObserver,
 	})
