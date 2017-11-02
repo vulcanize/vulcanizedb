@@ -1,13 +1,15 @@
-package core
+package observers
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/8thlight/vulcanizedb/core"
 )
 
 type BlockchainLoggingObserver struct{}
 
-func (blockchainObserver BlockchainLoggingObserver) NotifyBlockAdded(block Block) {
+func (blockchainObserver BlockchainLoggingObserver) NotifyBlockAdded(block core.Block) {
 	fmt.Printf("New block was added: %d\n"+
 		"\tTime: %v\n"+
 		"\tGas Limit: %d\n"+

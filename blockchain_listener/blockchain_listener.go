@@ -1,13 +1,15 @@
-package core
+package blockchain_listener
+
+import "github.com/8thlight/vulcanizedb/core"
 
 type BlockchainListener struct {
-	inputBlocks chan Block
-	blockchain  Blockchain
-	observers   []BlockchainObserver
+	inputBlocks chan core.Block
+	blockchain  core.Blockchain
+	observers   []core.BlockchainObserver
 }
 
-func NewBlockchainListener(blockchain Blockchain, observers []BlockchainObserver) BlockchainListener {
-	inputBlocks := make(chan Block, 10)
+func NewBlockchainListener(blockchain core.Blockchain, observers []core.BlockchainObserver) BlockchainListener {
+	inputBlocks := make(chan core.Block, 10)
 	blockchain.SubscribeToBlocks(inputBlocks)
 	listener := BlockchainListener{
 		inputBlocks: inputBlocks,
@@ -24,7 +26,7 @@ func (listener BlockchainListener) Start() {
 	}
 }
 
-func (listener BlockchainListener) notifyObservers(block Block) {
+func (listener BlockchainListener) notifyObservers(block core.Block) {
 	for _, observer := range listener.observers {
 		observer.NotifyBlockAdded(block)
 	}

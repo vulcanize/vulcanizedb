@@ -1,8 +1,9 @@
-package core_test
+package observers_test
 
 import (
 	"github.com/8thlight/vulcanizedb/config"
 	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/observers"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -26,7 +27,7 @@ var _ = Describe("Saving blocks to the database", func() {
 	})
 
 	It("implements the observer interface", func() {
-		var observer core.BlockchainObserver = core.BlockchainDBObserver{Db: db}
+		var observer core.BlockchainObserver = observers.BlockchainDBObserver{Db: db}
 		Expect(observer).NotTo(BeNil())
 	})
 
@@ -51,7 +52,7 @@ var _ = Describe("Saving blocks to the database", func() {
 		block := core.Block{Number: blockNumber, GasLimit: gasLimit, GasUsed: gasUsed, Time: blockTime}
 
 		// save the block to the database
-		observer := core.BlockchainDBObserver{Db: db}
+		observer := observers.BlockchainDBObserver{Db: db}
 		observer.NotifyBlockAdded(block)
 
 		// find the saved block
@@ -99,7 +100,7 @@ var _ = Describe("Saving blocks to the database", func() {
 			}
 			block := core.Block{Transactions: []core.Transaction{txRecord}}
 
-			observer := core.BlockchainDBObserver{Db: db}
+			observer := observers.BlockchainDBObserver{Db: db}
 			observer.NotifyBlockAdded(block)
 
 			rows, err := db.Query("SELECT tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value FROM transactions")
@@ -141,7 +142,7 @@ var _ = Describe("Saving blocks to the database", func() {
 				Transactions: []core.Transaction{txRecord},
 			}
 
-			observer := core.BlockchainDBObserver{Db: db}
+			observer := observers.BlockchainDBObserver{Db: db}
 			observer.NotifyBlockAdded(block)
 
 			blockRows, err := db.Query("SELECT id FROM blocks")
