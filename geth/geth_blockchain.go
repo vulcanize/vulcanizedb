@@ -1,8 +1,9 @@
-package core
+package geth
 
 import (
 	"fmt"
 
+	"github.com/8thlight/vulcanizedb/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/net/context"
@@ -11,7 +12,7 @@ import (
 type GethBlockchain struct {
 	client          *ethclient.Client
 	readGethHeaders chan *types.Header
-	outputBlocks    chan Block
+	outputBlocks    chan core.Block
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
@@ -22,7 +23,7 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	return &blockchain
 }
 
-func (blockchain *GethBlockchain) SubscribeToBlocks(blocks chan Block) {
+func (blockchain *GethBlockchain) SubscribeToBlocks(blocks chan core.Block) {
 	blockchain.outputBlocks = blocks
 	fmt.Println("SubscribeToBlocks")
 	inputHeaders := make(chan *types.Header, 10)
