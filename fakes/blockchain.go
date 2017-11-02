@@ -1,21 +1,17 @@
 package fakes
 
-import (
-	"github.com/8thlight/vulcanizedb/core"
-)
+import "github.com/8thlight/vulcanizedb/core"
 
 type Blockchain struct {
-	observers []core.BlockchainObserver
+	outputBlocks chan core.Block
 }
 
-func (blockchain *Blockchain) RegisterObserver(observer core.BlockchainObserver) {
-	blockchain.observers = append(blockchain.observers, observer)
+func (blockchain *Blockchain) SubscribeToBlocks(outputBlocks chan core.Block) {
+	blockchain.outputBlocks = outputBlocks
 }
 
-func (blockchain *Blockchain) AddBlock(block core.Block) {
-	for _, observer := range blockchain.observers {
-		observer.NotifyBlockAdded(block)
-	}
+func (blockchain Blockchain) AddBlock(block core.Block) {
+	blockchain.outputBlocks <- block
 }
 
-func (_ *Blockchain) SubscribeToEvents() {}
+func (*Blockchain) StartListening() {}

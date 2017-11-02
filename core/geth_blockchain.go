@@ -2,18 +2,16 @@ package core
 
 import (
 	"fmt"
-	"reflect"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/net/context"
 )
 
 type GethBlockchain struct {
-	client       *ethclient.Client
-	observers    []BlockchainObserver
-	subscription ethereum.Subscription
+	client          *ethclient.Client
+	readGethHeaders chan *types.Header
+	outputBlocks    chan Block
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
@@ -24,25 +22,20 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	return &blockchain
 }
 
-func (blockchain GethBlockchain) notifyObservers(gethBlock *types.Block) {
-	block := GethBlockToCoreBlock(gethBlock)
-	for _, observer := range blockchain.observers {
-		observer.NotifyBlockAdded(block)
-	}
-}
-
-func (blockchain *GethBlockchain) RegisterObserver(observer BlockchainObserver) {
-	fmt.Printf("Registering observer: %v\n", reflect.TypeOf(observer))
-	blockchain.observers = append(blockchain.observers, observer)
-}
-
-func (blockchain *GethBlockchain) SubscribeToEvents() {
-	headers := make(chan *types.Header, 10)
+func (blockchain *GethBlockchain) SubscribeToBlocks(blocks chan Block) {
+	blockchain.outputBlocks = blocks
+	fmt.Println("SubscribeToBlocks")
+	inputHeaders := make(chan *types.Header, 10)
 	myContext := context.Background()
-	sub, _ := blockchain.client.SubscribeNewHead(myContext, headers)
-	blockchain.subscription = sub
-	for header := range headers {
+	blockchain.readGethHeaders = inputHeaders
+	blockchain.client.SubscribeNewHead(myContext, inputHeaders)
+}
+
+func (blockchain *GethBlockchain) StartListening() {
+	myContext := context.Background()
+	for header := range blockchain.readGethHeaders {
 		gethBlock, _ := blockchain.client.BlockByNumber(myContext, header.Number)
-		blockchain.notifyObservers(gethBlock)
+		block := GethBlockToCoreBlock(gethBlock)
+		blockchain.outputBlocks <- block
 	}
 }

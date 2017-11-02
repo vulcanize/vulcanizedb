@@ -1,23 +1,23 @@
 package fakes
 
-import (
-	"github.com/8thlight/vulcanizedb/core"
-)
+import "github.com/8thlight/vulcanizedb/core"
 
 type BlockchainObserver struct {
-	wasToldBlockAdded bool
-	blocks            []core.Block
+	CurrentBlocks []core.Block
+	WasNotified   chan bool
 }
 
-func (blockchainObserver *BlockchainObserver) WasToldBlockAdded() bool {
-	return blockchainObserver.wasToldBlockAdded
+func (observer *BlockchainObserver) LastBlock() core.Block {
+	return observer.CurrentBlocks[len(observer.CurrentBlocks)-1]
 }
 
-func (blockchainObserver *BlockchainObserver) NotifyBlockAdded(block core.Block) {
-	blockchainObserver.blocks = append(blockchainObserver.blocks, block)
-	blockchainObserver.wasToldBlockAdded = true
+func NewFakeBlockchainObserverTwo() *BlockchainObserver {
+	return &BlockchainObserver{
+		WasNotified: make(chan bool),
+	}
 }
 
-func (observer *BlockchainObserver) LastAddedBlock() core.Block {
-	return observer.blocks[len(observer.blocks)-1]
+func (observer *BlockchainObserver) NotifyBlockAdded(block core.Block) {
+	observer.CurrentBlocks = append(observer.CurrentBlocks, block)
+	observer.WasNotified <- true
 }
