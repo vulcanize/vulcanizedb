@@ -20,19 +20,19 @@ func parseIpcPath(context *do.Context) string {
 }
 
 func startBlockchainListener(config cfg.Config, ipcPath string) {
-	port := config.Database.Port
-	host := config.Database.Hostname
-	databaseName := config.Database.Name
-
-	var blockchain core.Blockchain = core.NewGethBlockchain(ipcPath)
-	blockchain.RegisterObserver(core.BlockchainLoggingObserver{})
-	pgConfig := fmt.Sprintf("host=%s port=%d dbname=%s sslmode=disable", host, port, databaseName)
-	db, err := sqlx.Connect("postgres", pgConfig)
+	blockchain := core.NewGethBlockchain(ipcPath)
+	loggingObserver := core.BlockchainLoggingObserver{}
+	connectString := cfg.DbConnectionString(cfg.Public().Database)
+	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %v\n", err)
 	}
-	blockchain.RegisterObserver(core.BlockchainDBObserver{Db: db})
-	blockchain.SubscribeToEvents()
+	dbObserver := (core.BlockchainDBObserver{Db: db})
+	listener := core.NewBlockchainListener(blockchain, []core.BlockchainObserver{
+		loggingObserver,
+		dbObserver,
+	})
+	listener.Start()
 }
 
 func tasks(p *do.Project) {
