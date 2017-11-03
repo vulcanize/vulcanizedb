@@ -1,0 +1,7 @@
+[database]
+name = "vulcanize_private"
+hostname = "localhost"
+port = 5432
+
+[client]
+ipcPath = "test_data_dir/geth.ipc"
