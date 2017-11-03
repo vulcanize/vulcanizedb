@@ -31,3 +31,7 @@ func (listener BlockchainListener) notifyObservers(block core.Block) {
 		observer.NotifyBlockAdded(block)
 	}
 }
+
+func (listener BlockchainListener) Stop() {
+	listener.blockchain.StopListening()
+}

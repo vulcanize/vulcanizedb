@@ -54,4 +54,16 @@ var _ = Describe("Blockchain listeners", func() {
 		close(done)
 	}, 1)
 
+	It("stops listening", func(done Done) {
+		observer := fakes.NewFakeBlockchainObserverTwo()
+		blockchain := &fakes.Blockchain{}
+		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
+		go listener.Start()
+
+		listener.Stop()
+
+		Expect(blockchain.WasToldToStop).To(BeTrue())
+		close(done)
+	}, 1)
+
 })

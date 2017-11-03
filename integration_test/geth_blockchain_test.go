@@ -22,11 +22,21 @@ func RunTimePath() string {
 
 var _ = Describe("Reading from the Geth blockchain", func() {
 
-	It("reads two blocks", func(done Done) {
-		observer := fakes.NewFakeBlockchainObserverTwo()
+	var listener blockchain_listener.BlockchainListener
+	var observer *fakes.BlockchainObserver
+
+	BeforeEach(func() {
+		observer = fakes.NewFakeBlockchainObserverTwo()
 		blockchain := geth.NewGethBlockchain(RunTimePath() + "/test_data_dir/geth.ipc")
 		observers := []core.BlockchainObserver{observer}
-		listener := blockchain_listener.NewBlockchainListener(blockchain, observers)
+		listener = blockchain_listener.NewBlockchainListener(blockchain, observers)
+	})
+
+	AfterEach(func() {
+		listener.Stop()
+	})
+
+	It("reads two blocks", func(done Done) {
 		go listener.Start()
 
 		<-observer.WasNotified
