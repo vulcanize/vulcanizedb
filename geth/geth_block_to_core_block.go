@@ -3,6 +3,7 @@ package geth
 import (
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -26,11 +27,17 @@ func GethBlockToCoreBlock(gethBlock *types.Block) core.Block {
 		transactions = append(transactions, gethTransToCoreTrans(gethTransaction))
 	}
 	return core.Block{
-		Number:       gethBlock.Number().Int64(),
+		Difficulty:   gethBlock.Difficulty().Int64(),
 		GasLimit:     gethBlock.GasLimit().Int64(),
 		GasUsed:      gethBlock.GasUsed().Int64(),
+		Hash:         gethBlock.Hash().Hex(),
+		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
+		Number:       gethBlock.Number().Int64(),
+		ParentHash:   gethBlock.ParentHash().Hex(),
+		Size:         gethBlock.Size().Int64(),
 		Time:         gethBlock.Time().Int64(),
 		Transactions: transactions,
+		UncleHash:    gethBlock.UncleHash().Hex(),
 	}
 }
 

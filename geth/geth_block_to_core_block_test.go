@@ -5,6 +5,7 @@ import (
 
 	"github.com/8thlight/vulcanizedb/geth"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,24 +14,36 @@ import (
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 	It("converts basic Block metada", func() {
-		blockNumber := int64(1)
-		gasUsed := int64(100000)
+		difficulty := big.NewInt(1)
 		gasLimit := int64(100000)
+		gasUsed := int64(100000)
+		nonce := types.BlockNonce{10}
+		number := int64(1)
 		time := int64(140000000)
 
 		header := types.Header{
-			GasUsed:  big.NewInt(gasUsed),
-			Number:   big.NewInt(blockNumber),
-			Time:     big.NewInt(time),
-			GasLimit: big.NewInt(gasLimit),
+			Difficulty: difficulty,
+			GasLimit:   big.NewInt(gasLimit),
+			GasUsed:    big.NewInt(gasUsed),
+			Nonce:      nonce,
+			Number:     big.NewInt(number),
+			ParentHash: common.Hash{64},
+			Time:       big.NewInt(time),
+			UncleHash:  common.Hash{128},
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 		gethBlock := geth.GethBlockToCoreBlock(block)
 
-		Expect(gethBlock.Number).To(Equal(blockNumber))
-		Expect(gethBlock.GasUsed).To(Equal(gasUsed))
+		Expect(gethBlock.Difficulty).To(Equal(difficulty.Int64()))
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
+		Expect(gethBlock.GasUsed).To(Equal(gasUsed))
+		Expect(gethBlock.Hash).To(Equal(block.Hash().Hex()))
+		Expect(gethBlock.Nonce).To(Equal(hexutil.Encode(header.Nonce[:])))
+		Expect(gethBlock.Number).To(Equal(number))
+		Expect(gethBlock.ParentHash).To(Equal(block.ParentHash().Hex()))
+		Expect(gethBlock.Size).To(Equal(block.Size().Int64()))
 		Expect(gethBlock.Time).To(Equal(time))
+		Expect(gethBlock.UncleHash).To(Equal(block.UncleHash().Hex()))
 	})
 
 	Describe("the converted transations", func() {
