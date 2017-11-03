@@ -30,11 +30,10 @@
 2. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 3. `go get -u -d github.com/mattes/migrate/cli github.com/lib/pq`
 4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
-5. `createdb vulcanize_public`
-6. `createdb vulcanize_private`
-7. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
-8. `godo migratePublic`
-9. `godo migratePrivate`
+5. `createdb vulcanize_private`
+6. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+7. `godo migrate -- --environment=<some-environment>`
+    * See below for configuring additional environments
 
 Adding a new migration: `./scripts/create_migration <migration-name>`
 
@@ -46,6 +45,7 @@ Here are some instructions for creating a private blockchain that does not depen
 1. Run `./scripts/setup` to create a private blockchain with a new account.
     * This will result in a warning.
 2. Run `./scripts/start_private_blockchain`.
+3. Run `godo run -- --environment=private` to start listener.
 
 ### Connecting to the Public Blockchain
 
@@ -58,13 +58,21 @@ The default location for Ethereum is:
  - `$HOME/.ethereum` for Ubuntu
  - `$GOPATH/src/gihub.com/8thlight/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
 
-**Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to start the listener below**
+**Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to for configuration**
 
 ## Running Listener
 
 1. Start a blockchain.
 2. In a separate terminal start listener (ipcDir location)
-    - `godo runPublic -- --ipc-path /path/to/file.ipc`
+    - `godo run -- --environment=<some-environment>`
+
+### Configuring Additional Environments
+
+You can create configuration files for additional environments.
+
+ * Among other things, it will require the IPC file path
+ * See `config/environments/private.toml` for an example
+ * You will need to do this if you want to run a node connecting to the public blockchain
 
 ## Running the Tests
 
