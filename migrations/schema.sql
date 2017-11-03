@@ -43,7 +43,13 @@ CREATE TABLE blocks (
     block_gaslimit double precision,
     block_gasused double precision,
     block_time double precision,
-    id integer NOT NULL
+    id integer NOT NULL,
+    block_difficulty bigint,
+    block_hash character varying(66),
+    block_nonce character varying(20),
+    block_parenthash character varying(66),
+    block_size bigint,
+    uncle_hash character varying(66)
 );
 
 
