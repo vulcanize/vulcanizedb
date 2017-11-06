@@ -6,12 +6,12 @@ import (
 
 	"flag"
 
-	"github.com/8thlight/vulcanizedb/blockchain_listener"
-	"github.com/8thlight/vulcanizedb/config"
-	"github.com/8thlight/vulcanizedb/core"
-	"github.com/8thlight/vulcanizedb/geth"
-	"github.com/8thlight/vulcanizedb/observers"
-	"github.com/8thlight/vulcanizedb/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/blockchain_listener"
+	"github.com/8thlight/vulcanizedb/pkg/config"
+	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/8thlight/vulcanizedb/pkg/observers"
+	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	"github.com/jmoiron/sqlx"
 )
 

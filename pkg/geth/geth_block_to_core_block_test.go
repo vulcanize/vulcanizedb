@@ -3,7 +3,7 @@ package geth_test
 import (
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/geth"
+	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"

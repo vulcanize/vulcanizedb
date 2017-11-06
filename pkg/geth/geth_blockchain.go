@@ -3,7 +3,7 @@ package geth
 import (
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"

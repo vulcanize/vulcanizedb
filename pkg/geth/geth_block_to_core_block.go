@@ -1,7 +1,7 @@
 package geth
 
 import (
-	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"

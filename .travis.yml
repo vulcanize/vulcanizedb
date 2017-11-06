@@ -8,6 +8,6 @@ before_script:
   - createdb vulcanize_private
   - psql vulcanize_private < migrations/schema.sql
 script:
-  - go test -v ./blockchain_listener ./core ./geth ./observers
+  - go test -v ./pkg/...
 notifications:
   email: false

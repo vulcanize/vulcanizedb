@@ -1,6 +1,6 @@
 package blockchain_listener
 
-import "github.com/8thlight/vulcanizedb/core"
+import "github.com/8thlight/vulcanizedb/pkg/core"
 
 type BlockchainListener struct {
 	inputBlocks chan core.Block
