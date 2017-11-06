@@ -3,7 +3,7 @@ package repositories
 import (
 	"database/sql"
 
-	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )

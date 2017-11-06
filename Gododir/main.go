@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/config"
+	"github.com/8thlight/vulcanizedb/pkg/config"
 	do "gopkg.in/godo.v2"
 )
 
