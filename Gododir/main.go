@@ -25,6 +25,16 @@ func tasks(p *do.Project) {
 			do.M{"environment": environment, "$in": "cmd/run"})
 	})
 
+	p.Task("populateBlocks", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		startingNumber := context.Args.MayInt(-1, "starting-number")
+		if startingNumber < 0 {
+			log.Fatalln("--starting-number required")
+		}
+		context.Start(`go run main.go --environment={{.environment}} --starting-number={{.startingNumber}}`,
+			do.M{"environment": environment, "startingNumber": startingNumber, "$in": "cmd/populate_blocks"})
+	})
+
 	p.Task("migrate", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		cfg := config.NewConfig(environment)

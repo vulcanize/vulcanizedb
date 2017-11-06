@@ -14,11 +14,12 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	var listener blockchain_listener.BlockchainListener
 	var observer *fakes.BlockchainObserver
+	var blockchain *geth.GethBlockchain
 
 	BeforeEach(func() {
 		observer = fakes.NewFakeBlockchainObserver()
 		cfg := config.NewConfig("private")
-		blockchain := geth.NewGethBlockchain(cfg.Client.IPCPath)
+		blockchain = geth.NewGethBlockchain(cfg.Client.IPCPath)
 		observers := []core.BlockchainObserver{observer}
 		listener = blockchain_listener.NewBlockchainListener(blockchain, observers)
 	})
@@ -39,6 +40,16 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		Expect(secondBlock).NotTo(BeNil())
 
 		Expect(firstBlock.Number + 1).Should(Equal(secondBlock.Number))
+
+		close(done)
+	}, 10)
+
+	It("retrieves the genesis block and first block", func(done Done) {
+		genesisBlock := blockchain.GetBlockByNumber(int64(0))
+		firstBlock := blockchain.GetBlockByNumber(int64(1))
+
+		Expect(genesisBlock.Number).To(Equal(int64(0)))
+		Expect(firstBlock.Number).To(Equal(int64(1)))
 
 		close(done)
 	}, 10)

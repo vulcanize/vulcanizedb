@@ -12,12 +12,33 @@ type Postgres struct {
 	Db *sqlx.DB
 }
 
+func (repository Postgres) MaxBlockNumber() int64 {
+	var highestBlockNumber int64
+	repository.Db.Get(&highestBlockNumber, `SELECT MAX(block_number) FROM blocks`)
+	return highestBlockNumber
+}
+
+func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
+	numbers := []int64{}
+	repository.Db.Select(&numbers,
+		`SELECT all_block_numbers
+			FROM (
+				SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
+				LEFT JOIN blocks
+					ON block_number = all_block_numbers
+			WHERE block_number ISNULL`,
+		startingBlockNumber,
+		highestBlockNumber)
+	return numbers
+}
+
 func NewPostgres(db *sqlx.DB) Postgres {
 	return Postgres{Db: db}
 }
 
 func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
-	blockRows, _ := repository.Db.Query("SELECT id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash FROM blocks")
+	blockRows, _ := repository.Db.Query(
+		`SELECT id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash FROM blocks`)
 	var savedBlocks []core.Block
 	for blockRows.Next() {
 		savedBlock := repository.loadBlock(blockRows)
@@ -38,9 +59,9 @@ func (repository Postgres) BlockCount() int {
 
 func (repository Postgres) CreateBlock(block core.Block) {
 	insertedBlock := repository.Db.QueryRow(
-		"Insert INTO blocks "+
-			"(block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash) "+
-			"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		`INSERT INTO blocks
+			(block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
 		block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash)
 	var blockId int64
 	insertedBlock.Scan(&blockId)
@@ -49,8 +70,10 @@ func (repository Postgres) CreateBlock(block core.Block) {
 
 func (repository Postgres) createTransactions(blockId int64, transactions []core.Transaction) {
 	for _, transaction := range transactions {
-		repository.Db.MustExec("Insert INTO transactions "+
-			"(block_id, tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		repository.Db.MustExec(
+			`INSERT INTO transactions
+			(block_id, tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.GasLimit, transaction.GasPrice, transaction.Value)
 	}
 }

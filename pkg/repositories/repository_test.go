@@ -134,6 +134,75 @@ var _ = Describe("Repositories", func() {
 				Expect(savedTransaction.Value).To(Equal(value))
 			})
 		})
+
+		Describe("The missing block numbers", func() {
+			It("is empty the starting block number is the highest known block number", func() {
+				repository.CreateBlock(core.Block{Number: 1})
+
+				Expect(len(repository.MissingBlockNumbers(1, 1))).To(Equal(0))
+			})
+
+			It("is the only missing block number", func() {
+				repository.CreateBlock(core.Block{Number: 2})
+
+				Expect(repository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
+			})
+
+			It("is both missing block numbers", func() {
+				repository.CreateBlock(core.Block{Number: 3})
+
+				Expect(repository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
+			})
+
+			It("goes back to the starting block number", func() {
+				repository.CreateBlock(core.Block{Number: 6})
+
+				Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
+			})
+
+			It("only includes missing block numbers", func() {
+				repository.CreateBlock(core.Block{Number: 4})
+				repository.CreateBlock(core.Block{Number: 6})
+
+				Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
+			})
+
+			It("is a list with multiple gaps", func() {
+				repository.CreateBlock(core.Block{Number: 4})
+				repository.CreateBlock(core.Block{Number: 5})
+				repository.CreateBlock(core.Block{Number: 8})
+				repository.CreateBlock(core.Block{Number: 10})
+
+				Expect(repository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
+			})
+
+			It("returns empty array when lower bound exceeds upper bound", func() {
+				Expect(repository.MissingBlockNumbers(10000, 1)).To(Equal([]int64{}))
+			})
+
+			It("only returns requested range even when other gaps exist", func() {
+				repository.CreateBlock(core.Block{Number: 3})
+				repository.CreateBlock(core.Block{Number: 8})
+
+				Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
+			})
+
+		})
+
+		Describe("The max block numbers", func() {
+			It("returns the block number when a single block", func() {
+				repository.CreateBlock(core.Block{Number: 1})
+
+				Expect(repository.MaxBlockNumber()).To(Equal(int64(1)))
+			})
+
+			It("returns highest known block number when multiple blocks", func() {
+				repository.CreateBlock(core.Block{Number: 1})
+				repository.CreateBlock(core.Block{Number: 10})
+
+				Expect(repository.MaxBlockNumber()).To(Equal(int64(10)))
+			})
+		})
 	}
 
 	Describe("In memory repository", func() {
