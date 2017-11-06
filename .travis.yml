@@ -6,7 +6,7 @@ services:
   - postgresql
 before_script:
   - createdb vulcanize_private
-  - psql vulcanize_private < migrations/schema.sql
+  - psql vulcanize_private < db/schema.sql
 script:
   - go test -v ./pkg/...
 notifications:
