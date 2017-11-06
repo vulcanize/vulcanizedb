@@ -1,9 +1,9 @@
 package observers_test
 
 import (
-	"github.com/8thlight/vulcanizedb/core"
-	"github.com/8thlight/vulcanizedb/observers"
-	"github.com/8thlight/vulcanizedb/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/observers"
+	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

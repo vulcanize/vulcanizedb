@@ -1,9 +1,9 @@
 package repositories_test
 
 import (
-	"github.com/8thlight/vulcanizedb/config"
-	"github.com/8thlight/vulcanizedb/core"
-	"github.com/8thlight/vulcanizedb/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/config"
+	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"

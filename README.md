@@ -71,7 +71,7 @@ The default location for Ethereum is:
 You can create configuration files for additional environments.
 
  * Among other things, it will require the IPC file path
- * See `config/environments/private.toml` for an example
+ * See `pkg/config/environments/private.toml` for an example
  * You will need to do this if you want to run a node connecting to the public blockchain
 
 ## Running the Tests
@@ -81,8 +81,8 @@ You can create configuration files for additional environments.
 In order to run the integration tests, you will need to run them against a real blockchain.
 
 1. Run `./scripts/start_private_blockchain` as a separate process.
-2. `go test ./...`
+2. `go test ./...` to run all tests.
 
 ### Unit Tests
 
-1. `go test ./core`
+1. `go test ./pkg/...`

@@ -1,8 +1,8 @@
 package observers
 
 import (
-	"github.com/8thlight/vulcanizedb/core"
-	"github.com/8thlight/vulcanizedb/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/repositories"
 )
 
 type BlockchainDbObserver struct {

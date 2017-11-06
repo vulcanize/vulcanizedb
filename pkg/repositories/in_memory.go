@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/8thlight/vulcanizedb/core"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 )
 
 type InMemory struct {

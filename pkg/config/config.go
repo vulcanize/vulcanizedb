@@ -21,7 +21,7 @@ type Config struct {
 
 func NewConfig(environment string) Config {
 	filenameWithExtension := fmt.Sprintf("%s.toml", environment)
-	absolutePath := filepath.Join(ProjectRoot(), "config", "environments", filenameWithExtension)
+	absolutePath := filepath.Join(ProjectRoot(), "pkg", "config", "environments", filenameWithExtension)
 	config := parseConfigFile(absolutePath)
 	config.Client.IPCPath = filepath.Join(ProjectRoot(), config.Client.IPCPath)
 	return config
@@ -29,7 +29,7 @@ func NewConfig(environment string) Config {
 
 func ProjectRoot() string {
 	var _, filename, _, _ = runtime.Caller(0)
-	return path.Join(path.Dir(filename), "../")
+	return path.Join(path.Dir(filename), "..", "..")
 }
 
 func parseConfigFile(configfile string) Config {
