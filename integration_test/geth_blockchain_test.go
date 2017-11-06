@@ -26,7 +26,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 	var observer *fakes.BlockchainObserver
 
 	BeforeEach(func() {
-		observer = fakes.NewFakeBlockchainObserverTwo()
+		observer = fakes.NewFakeBlockchainObserver()
 		blockchain := geth.NewGethBlockchain(RunTimePath() + "/test_data_dir/geth.ipc")
 		observers := []core.BlockchainObserver{observer}
 		listener = blockchain_listener.NewBlockchainListener(blockchain, observers)
