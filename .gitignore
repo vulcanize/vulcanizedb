@@ -2,4 +2,4 @@
 Gododir/godobin-*
 test_data_dir/
 vendor/
-config/environments/*.toml
+pkg/config/environments/*.toml

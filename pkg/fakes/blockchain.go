@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/8thlight/vulcanizedb/core"
+import "github.com/8thlight/vulcanizedb/pkg/core"
 
 type Blockchain struct {
 	outputBlocks  chan core.Block
