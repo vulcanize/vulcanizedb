@@ -11,7 +11,7 @@ func (observer *BlockchainObserver) LastBlock() core.Block {
 	return observer.CurrentBlocks[len(observer.CurrentBlocks)-1]
 }
 
-func NewFakeBlockchainObserverTwo() *BlockchainObserver {
+func NewFakeBlockchainObserver() *BlockchainObserver {
 	return &BlockchainObserver{
 		WasNotified: make(chan bool),
 	}
