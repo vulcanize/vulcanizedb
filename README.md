@@ -65,6 +65,12 @@ The default location for Ethereum is:
 1. Start a blockchain.
 2. In a separate terminal start listener (ipcDir location)
     - `godo run -- --environment=<some-environment>`
+    
+## Retrieving Historical Data
+
+1. Start a blockchain.
+2. In a separate terminal start listener (ipcDir location)
+    - `godo populateBlocks -- --environment=<some-environment> --starting-number=<starting-block-number>`
 
 ### Configuring Additional Environments
 
