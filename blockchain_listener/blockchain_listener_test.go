@@ -11,7 +11,7 @@ import (
 var _ = Describe("Blockchain listeners", func() {
 
 	It("starts with no blocks", func(done Done) {
-		observer := fakes.NewFakeBlockchainObserverTwo()
+		observer := fakes.NewFakeBlockchainObserver()
 		blockchain := &fakes.Blockchain{}
 
 		blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
@@ -21,7 +21,7 @@ var _ = Describe("Blockchain listeners", func() {
 	}, 1)
 
 	It("sees when one block was added", func(done Done) {
-		observer := fakes.NewFakeBlockchainObserverTwo()
+		observer := fakes.NewFakeBlockchainObserver()
 		blockchain := &fakes.Blockchain{}
 		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 		go listener.Start()
@@ -37,7 +37,7 @@ var _ = Describe("Blockchain listeners", func() {
 	}, 1)
 
 	It("sees a second block", func(done Done) {
-		observer := fakes.NewFakeBlockchainObserverTwo()
+		observer := fakes.NewFakeBlockchainObserver()
 		blockchain := &fakes.Blockchain{}
 		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 		go listener.Start()
@@ -55,7 +55,7 @@ var _ = Describe("Blockchain listeners", func() {
 	}, 1)
 
 	It("stops listening", func(done Done) {
-		observer := fakes.NewFakeBlockchainObserverTwo()
+		observer := fakes.NewFakeBlockchainObserver()
 		blockchain := &fakes.Blockchain{}
 		listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{observer})
 		go listener.Start()

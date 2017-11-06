@@ -10,6 +10,7 @@ import (
 	"github.com/8thlight/vulcanizedb/core"
 	"github.com/8thlight/vulcanizedb/geth"
 	"github.com/8thlight/vulcanizedb/observers"
+	"github.com/8thlight/vulcanizedb/repositories"
 	"github.com/jmoiron/sqlx"
 	do "gopkg.in/godo.v2"
 )
@@ -31,7 +32,8 @@ func startBlockchainListener(cfg config.Config) {
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %v\n", err)
 	}
-	dbObserver := (observers.BlockchainDBObserver{Db: db})
+	repository := repositories.NewPostgres(db)
+	dbObserver := observers.NewBlockchainDbObserver(repository)
 	listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{
 		loggingObserver,
 		dbObserver,
