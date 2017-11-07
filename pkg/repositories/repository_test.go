@@ -1,6 +1,9 @@
 package repositories_test
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
@@ -133,6 +136,7 @@ var _ = Describe("Repositories", func() {
 				Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
 				Expect(savedTransaction.Value).To(Equal(value))
 			})
+
 		})
 
 		Describe("The missing block numbers", func() {
@@ -217,6 +221,48 @@ var _ = Describe("Repositories", func() {
 			db, err := sqlx.Connect("postgres", pgConfig)
 			Expect(err).Should(BeNil())
 			Expect(db).ShouldNot(BeNil())
+		})
+
+		It("does not commit block if block is invalid", func() {
+
+			//badNonce violates db Nonce field length
+			badNonce := fmt.Sprintf("x %s", strings.Repeat("1", 100))
+			badBlock := core.Block{
+				Number:       123,
+				Nonce:        badNonce,
+				Transactions: []core.Transaction{},
+			}
+			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			db, _ := sqlx.Connect("postgres", pgConfig)
+			Expect(db).ShouldNot(BeNil())
+			repository := repositories.NewPostgres(db)
+
+			err := repository.CreateBlock(badBlock)
+			savedBlock := repository.FindBlockByNumber(123)
+
+			Expect(err).ToNot(BeNil())
+			Expect(savedBlock).To(BeNil())
+		})
+
+		It("does not commit block or transactions if transaction is invalid", func() {
+
+			//badHash violates db To field length
+			badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
+			badTransaction := core.Transaction{To: badHash}
+			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			block := core.Block{
+				Number:       123,
+				Transactions: []core.Transaction{badTransaction},
+			}
+			db, _ := sqlx.Connect("postgres", pgConfig)
+			Expect(db).ShouldNot(BeNil())
+			repository := repositories.NewPostgres(db)
+
+			err := repository.CreateBlock(block)
+			savedBlock := repository.FindBlockByNumber(123)
+
+			Expect(err).ToNot(BeNil())
+			Expect(savedBlock).To(BeNil())
 		})
 
 		AssertRepositoryBehavior(func() repositories.Repository {
