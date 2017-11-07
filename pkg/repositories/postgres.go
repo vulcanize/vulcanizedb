@@ -3,6 +3,9 @@ package repositories
 import (
 	"database/sql"
 
+	"context"
+
+	"errors"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -11,6 +14,10 @@ import (
 type Postgres struct {
 	Db *sqlx.DB
 }
+
+var (
+	ErrDBInsertFailed = errors.New("postgres: insert failed")
+)
 
 func (repository Postgres) MaxBlockNumber() int64 {
 	var highestBlockNumber int64
@@ -57,25 +64,41 @@ func (repository Postgres) BlockCount() int {
 	return count
 }
 
-func (repository Postgres) CreateBlock(block core.Block) {
-	insertedBlock := repository.Db.QueryRow(
+func (repository Postgres) CreateBlock(block core.Block) error {
+	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+	var blockId int64
+	err := tx.QueryRow(
 		`INSERT INTO blocks
 			(block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-		block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash)
-	var blockId int64
-	insertedBlock.Scan(&blockId)
-	repository.createTransactions(blockId, block.Transactions)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id `,
+		block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash).
+		Scan(&blockId)
+	if err != nil {
+		tx.Rollback()
+		return ErrDBInsertFailed
+	}
+	err = repository.createTransactions(tx, blockId, block.Transactions)
+	if err != nil {
+		tx.Rollback()
+		return ErrDBInsertFailed
+	}
+	tx.Commit()
+	return nil
 }
 
-func (repository Postgres) createTransactions(blockId int64, transactions []core.Transaction) {
+func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
 	for _, transaction := range transactions {
-		repository.Db.MustExec(
+		_, err := tx.Exec(
 			`INSERT INTO transactions
 			(block_id, tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.GasLimit, transaction.GasPrice, transaction.Value)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
@@ -107,7 +130,7 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 	}
 }
 func (repository Postgres) loadTransactions(blockId int64) []core.Transaction {
-	transactionRows, _ := repository.Db.Query("SELECT tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value FROM transactions")
+	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value FROM transactions`)
 	var transactions []core.Transaction
 	for transactionRows.Next() {
 		var hash string
