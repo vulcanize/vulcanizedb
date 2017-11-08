@@ -3,6 +3,8 @@ package geth
 import (
 	"fmt"
 
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,6 +17,11 @@ type GethBlockchain struct {
 	readGethHeaders     chan *types.Header
 	outputBlocks        chan core.Block
 	newHeadSubscription ethereum.Subscription
+}
+
+func (blockchain *GethBlockchain) GetBlockByNumber(blockNumber int64) core.Block {
+	gethBlock, _ := blockchain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
+	return GethBlockToCoreBlock(gethBlock)
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
@@ -36,10 +43,8 @@ func (blockchain *GethBlockchain) SubscribeToBlocks(blocks chan core.Block) {
 }
 
 func (blockchain *GethBlockchain) StartListening() {
-	myContext := context.Background()
 	for header := range blockchain.readGethHeaders {
-		gethBlock, _ := blockchain.client.BlockByNumber(myContext, header.Number)
-		block := GethBlockToCoreBlock(gethBlock)
+		block := blockchain.GetBlockByNumber(header.Number.Int64())
 		blockchain.outputBlocks <- block
 	}
 }
