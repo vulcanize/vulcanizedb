@@ -23,7 +23,9 @@ func NewConfig(environment string) Config {
 	filenameWithExtension := fmt.Sprintf("%s.toml", environment)
 	absolutePath := filepath.Join(ProjectRoot(), "pkg", "config", "environments", filenameWithExtension)
 	config := parseConfigFile(absolutePath)
-	config.Client.IPCPath = filepath.Join(ProjectRoot(), config.Client.IPCPath)
+	if !filepath.IsAbs(config.Client.IPCPath) {
+		config.Client.IPCPath = filepath.Join(ProjectRoot(), config.Client.IPCPath)
+	}
 	return config
 }
 

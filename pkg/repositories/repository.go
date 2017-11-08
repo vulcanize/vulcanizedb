@@ -6,4 +6,6 @@ type Repository interface {
 	CreateBlock(block core.Block)
 	BlockCount() int
 	FindBlockByNumber(blockNumber int64) *core.Block
+	MaxBlockNumber() int64
+	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
 }
