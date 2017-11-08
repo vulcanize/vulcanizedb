@@ -5,26 +5,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"golang.org/x/net/context"
 )
 
-func gethTransToCoreTrans(transaction *types.Transaction) core.Transaction {
-	to := transaction.To()
-	toHex := convertTo(to)
-	return core.Transaction{
-		Hash:     transaction.Hash().Hex(),
-		Data:     transaction.Data(),
-		Nonce:    transaction.Nonce(),
-		To:       toHex,
-		GasLimit: transaction.Gas().Int64(),
-		GasPrice: transaction.GasPrice().Int64(),
-		Value:    transaction.Value().Int64(),
-	}
+type GethClient interface {
+	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
 }
 
-func GethBlockToCoreBlock(gethBlock *types.Block) core.Block {
+func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
 	transactions := []core.Transaction{}
-	for _, gethTransaction := range gethBlock.Transactions() {
-		transactions = append(transactions, gethTransToCoreTrans(gethTransaction))
+	for i, gethTransaction := range gethBlock.Transactions() {
+		from, _ := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
+		transaction := gethTransToCoreTrans(gethTransaction, &from)
+		transactions = append(transactions, transaction)
 	}
 	return core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
@@ -41,7 +34,20 @@ func GethBlockToCoreBlock(gethBlock *types.Block) core.Block {
 	}
 }
 
-func convertTo(to *common.Address) string {
+func gethTransToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
+	return core.Transaction{
+		Hash:     transaction.Hash().Hex(),
+		Data:     transaction.Data(),
+		Nonce:    transaction.Nonce(),
+		To:       addressToHex(transaction.To()),
+		From:     addressToHex(from),
+		GasLimit: transaction.Gas().Int64(),
+		GasPrice: transaction.GasPrice().Int64(),
+		Value:    transaction.Value().Int64(),
+	}
+}
+
+func addressToHex(to *common.Address) string {
 	if to == nil {
 		return ""
 	} else {

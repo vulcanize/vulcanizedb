@@ -99,9 +99,9 @@ func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transac
 	for _, transaction := range transactions {
 		_, err := tx.Exec(
 			`INSERT INTO transactions
-			(block_id, tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.GasLimit, transaction.GasPrice, transaction.Value)
+			(block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value)
 		if err != nil {
 			return err
 		}
@@ -138,20 +138,22 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 	}
 }
 func (repository Postgres) loadTransactions(blockId int64) []core.Transaction {
-	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_gaslimit, tx_gasprice, tx_value FROM transactions`)
+	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions`)
 	var transactions []core.Transaction
 	for transactionRows.Next() {
 		var hash string
 		var nonce uint64
 		var to string
+		var from string
 		var gasLimit int64
 		var gasPrice int64
 		var value int64
-		transactionRows.Scan(&hash, &nonce, &to, &gasLimit, &gasPrice, &value)
+		transactionRows.Scan(&hash, &nonce, &to, &from, &gasLimit, &gasPrice, &value)
 		transaction := core.Transaction{
 			Hash:     hash,
 			Nonce:    nonce,
 			To:       to,
+			From:     from,
 			GasLimit: gasLimit,
 			GasPrice: gasPrice,
 			Value:    value,
