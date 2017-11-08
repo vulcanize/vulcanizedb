@@ -24,8 +24,9 @@ func NewInMemory() *InMemory {
 	}
 }
 
-func (repository *InMemory) CreateBlock(block core.Block) {
+func (repository *InMemory) CreateBlock(block core.Block) error {
 	repository.blocks[block.Number] = &block
+	return nil
 }
 
 func (repository *InMemory) BlockCount() int {
