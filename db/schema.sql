@@ -73,6 +73,35 @@ ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
 
 
 --
+-- Name: contracts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE contracts (
+    contract_id integer NOT NULL,
+    contract_hash character varying(66)
+);
+
+
+--
+-- Name: contracts_contract_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE contracts_contract_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: contracts_contract_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE contracts_contract_id_seq OWNED BY contracts.contract_id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -125,6 +154,13 @@ ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::reg
 
 
 --
+-- Name: contracts contract_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY contracts ALTER COLUMN contract_id SET DEFAULT nextval('contracts_contract_id_seq'::regclass);
+
+
+--
 -- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -137,6 +173,14 @@ ALTER TABLE ONLY transactions ALTER COLUMN id SET DEFAULT nextval('transactions_
 
 ALTER TABLE ONLY blocks
     ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contracts contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY contracts
+    ADD CONSTRAINT contracts_pkey PRIMARY KEY (contract_id);
 
 
 --
