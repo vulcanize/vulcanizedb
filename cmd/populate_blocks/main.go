@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-
 	"log"
 
 	"fmt"
@@ -18,7 +17,10 @@ func main() {
 	environment := flag.String("environment", "", "Environment name")
 	startingBlockNumber := flag.Int("starting-number", -1, "First block to fill from")
 	flag.Parse()
-	cfg := config.NewConfig(*environment)
+	cfg, err := config.NewConfig(*environment)
+	if err != nil {
+		log.Fatalf("Error loading config\n%v", err)
+	}
 
 	blockchain := geth.NewGethBlockchain(cfg.Client.IPCPath)
 	connectString := config.DbConnectionString(cfg.Database)

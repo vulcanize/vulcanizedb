@@ -17,6 +17,14 @@ func parseEnvironment(context *do.Context) string {
 	return environment
 }
 
+func loadConfig(environment string) config.Config {
+	cfg, err := config.NewConfig(environment)
+	if err != nil {
+		log.Fatalf("Error loading config\n%v", err)
+	}
+	return *cfg
+}
+
 func tasks(p *do.Project) {
 
 	p.Task("run", nil, func(context *do.Context) {
@@ -37,7 +45,7 @@ func tasks(p *do.Project) {
 
 	p.Task("migrate", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := config.NewConfig(environment)
+		cfg := loadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations up", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > ./db/schema.sql", cfg.Database.Name)
@@ -47,7 +55,7 @@ func tasks(p *do.Project) {
 
 	p.Task("rollback", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := config.NewConfig(environment)
+		cfg := loadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations down 1", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > ./db/schema.sql", cfg.Database.Name)
