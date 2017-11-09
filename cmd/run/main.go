@@ -18,7 +18,10 @@ import (
 func main() {
 	environment := flag.String("environment", "", "Environment name")
 	flag.Parse()
-	cfg := config.NewConfig(*environment)
+	cfg, err := config.NewConfig(*environment)
+	if err != nil {
+		log.Fatalf("Error loading config\n%v", err)
+	}
 
 	fmt.Println("Client Path ", cfg.Client.IPCPath)
 	blockchain := geth.NewGethBlockchain(cfg.Client.IPCPath)

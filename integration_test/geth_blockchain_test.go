@@ -18,7 +18,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	BeforeEach(func() {
 		observer = fakes.NewFakeBlockchainObserver()
-		cfg := config.NewConfig("private")
+		cfg, _ := config.NewConfig("private")
 		blockchain = geth.NewGethBlockchain(cfg.Client.IPCPath)
 		observers := []core.BlockchainObserver{observer}
 		listener = blockchain_listener.NewBlockchainListener(blockchain, observers)

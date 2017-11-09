@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"errors"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"

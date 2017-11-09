@@ -11,6 +11,8 @@ import (
 	"path"
 	"runtime"
 
+	"errors"
+
 	"github.com/BurntSushi/toml"
 )
 
@@ -19,14 +21,22 @@ type Config struct {
 	Client   Client
 }
 
-func NewConfig(environment string) Config {
+var NewErrConfigFileNotFound = func(environment string) error {
+	return errors.New(fmt.Sprintf("No configuration found for environment: %v", environment))
+}
+
+func NewConfig(environment string) (*Config, error) {
 	filenameWithExtension := fmt.Sprintf("%s.toml", environment)
 	absolutePath := filepath.Join(ProjectRoot(), "pkg", "config", "environments", filenameWithExtension)
-	config := parseConfigFile(absolutePath)
-	if !filepath.IsAbs(config.Client.IPCPath) {
-		config.Client.IPCPath = filepath.Join(ProjectRoot(), config.Client.IPCPath)
+	config, err := parseConfigFile(absolutePath)
+	if err != nil {
+		return nil, NewErrConfigFileNotFound(environment)
+	} else {
+		if !filepath.IsAbs(config.Client.IPCPath) {
+			config.Client.IPCPath = filepath.Join(ProjectRoot(), config.Client.IPCPath)
+		}
+		return config, nil
 	}
-	return config
 }
 
 func ProjectRoot() string {
@@ -34,15 +44,15 @@ func ProjectRoot() string {
 	return path.Join(path.Dir(filename), "..", "..")
 }
 
-func parseConfigFile(configfile string) Config {
+func parseConfigFile(filePath string) (*Config, error) {
 	var cfg Config
-	_, err := os.Stat(configfile)
+	_, err := os.Stat(filePath)
 	if err != nil {
-		log.Fatal("Config file is missing: ", configfile)
+		return nil, err
+	} else {
+		if _, err := toml.DecodeFile(filePath, &cfg); err != nil {
+			log.Fatal(err)
+		}
+		return &cfg, err
 	}
-
-	if _, err := toml.DecodeFile(configfile, &cfg); err != nil {
-		log.Fatal(err)
-	}
-	return cfg
 }

@@ -217,7 +217,8 @@ var _ = Describe("Repositories", func() {
 
 	Describe("Postgres repository", func() {
 		It("connects to the database", func() {
-			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			cfg, _ := config.NewConfig("private")
+			pgConfig := config.DbConnectionString(cfg.Database)
 			db, err := sqlx.Connect("postgres", pgConfig)
 			Expect(err).Should(BeNil())
 			Expect(db).ShouldNot(BeNil())
@@ -232,7 +233,8 @@ var _ = Describe("Repositories", func() {
 				Nonce:        badNonce,
 				Transactions: []core.Transaction{},
 			}
-			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			cfg, _ := config.NewConfig("private")
+			pgConfig := config.DbConnectionString(cfg.Database)
 			db, _ := sqlx.Connect("postgres", pgConfig)
 			Expect(db).ShouldNot(BeNil())
 			repository := repositories.NewPostgres(db)
@@ -249,7 +251,8 @@ var _ = Describe("Repositories", func() {
 			//badHash violates db To field length
 			badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 			badTransaction := core.Transaction{To: badHash}
-			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			cfg, _ := config.NewConfig("private")
+			pgConfig := config.DbConnectionString(cfg.Database)
 			block := core.Block{
 				Number:       123,
 				Transactions: []core.Transaction{badTransaction},
@@ -266,7 +269,8 @@ var _ = Describe("Repositories", func() {
 		})
 
 		AssertRepositoryBehavior(func() repositories.Repository {
-			pgConfig := config.DbConnectionString(config.NewConfig("private").Database)
+			cfg, _ := config.NewConfig("private")
+			pgConfig := config.DbConnectionString(cfg.Database)
 			db, _ := sqlx.Connect("postgres", pgConfig)
 			db.MustExec("DELETE FROM transactions")
 			db.MustExec("DELETE FROM blocks")
