@@ -7,6 +7,7 @@ import (
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/repositories/testing"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -225,7 +226,6 @@ var _ = Describe("Repositories", func() {
 		})
 
 		It("does not commit block if block is invalid", func() {
-
 			//badNonce violates db Nonce field length
 			badNonce := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 			badBlock := core.Block{
@@ -234,10 +234,7 @@ var _ = Describe("Repositories", func() {
 				Transactions: []core.Transaction{},
 			}
 			cfg, _ := config.NewConfig("private")
-			pgConfig := config.DbConnectionString(cfg.Database)
-			db, _ := sqlx.Connect("postgres", pgConfig)
-			Expect(db).ShouldNot(BeNil())
-			repository := repositories.NewPostgres(db)
+			repository := repositories.NewPostgres(cfg.Database)
 
 			err := repository.CreateBlock(badBlock)
 			savedBlock := repository.FindBlockByNumber(123)
@@ -247,19 +244,15 @@ var _ = Describe("Repositories", func() {
 		})
 
 		It("does not commit block or transactions if transaction is invalid", func() {
-
 			//badHash violates db To field length
 			badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 			badTransaction := core.Transaction{To: badHash}
-			cfg, _ := config.NewConfig("private")
-			pgConfig := config.DbConnectionString(cfg.Database)
 			block := core.Block{
 				Number:       123,
 				Transactions: []core.Transaction{badTransaction},
 			}
-			db, _ := sqlx.Connect("postgres", pgConfig)
-			Expect(db).ShouldNot(BeNil())
-			repository := repositories.NewPostgres(db)
+			cfg, _ := config.NewConfig("private")
+			repository := repositories.NewPostgres(cfg.Database)
 
 			err := repository.CreateBlock(block)
 			savedBlock := repository.FindBlockByNumber(123)
@@ -270,11 +263,9 @@ var _ = Describe("Repositories", func() {
 
 		AssertRepositoryBehavior(func() repositories.Repository {
 			cfg, _ := config.NewConfig("private")
-			pgConfig := config.DbConnectionString(cfg.Database)
-			db, _ := sqlx.Connect("postgres", pgConfig)
-			db.MustExec("DELETE FROM transactions")
-			db.MustExec("DELETE FROM blocks")
-			return repositories.NewPostgres(db)
+			repository := repositories.NewPostgres(cfg.Database)
+			testing.ClearData(repository)
+			return repository
 		})
 	})
 
