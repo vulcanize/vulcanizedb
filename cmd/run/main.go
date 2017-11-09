@@ -17,15 +17,15 @@ func main() {
 	environment := flag.String("environment", "", "Environment name")
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
-
 	fmt.Println("Client Path ", config.Client.IPCPath)
-	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-	loggingObserver := observers.BlockchainLoggingObserver{}
+
 	repository := repositories.NewPostgres(config.Database)
-	dbObserver := observers.NewBlockchainDbObserver(repository)
-	listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{
-		loggingObserver,
-		dbObserver,
-	})
+	listener := blockchain_listener.NewBlockchainListener(
+		geth.NewGethBlockchain(config.Client.IPCPath),
+		[]core.BlockchainObserver{
+			observers.BlockchainLoggingObserver{},
+			observers.NewBlockchainDbObserver(repository),
+		},
+	)
 	listener.Start()
 }
