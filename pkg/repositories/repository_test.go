@@ -192,6 +192,13 @@ var _ = Describe("Repositories", func() {
 				Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
 			})
 
+			It("Adds a contract to the contracts table", func() {
+				repository.CreateContract(core.Contract{Hash: "x123"})
+
+				Expect(repository.IsWatchedContract("x123")).To(BeTrue())
+				Expect(repository.IsWatchedContract("x456")).To(BeFalse())
+			})
+
 		})
 
 		Describe("The max block numbers", func() {
