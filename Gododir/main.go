@@ -5,6 +5,7 @@ import (
 
 	"fmt"
 
+	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	do "gopkg.in/godo.v2"
 )
@@ -15,14 +16,6 @@ func parseEnvironment(context *do.Context) string {
 		log.Fatalln("--environment required")
 	}
 	return environment
-}
-
-func loadConfig(environment string) config.Config {
-	cfg, err := config.NewConfig(environment)
-	if err != nil {
-		log.Fatalf("Error loading config\n%v", err)
-	}
-	return *cfg
 }
 
 func tasks(p *do.Project) {
@@ -45,7 +38,7 @@ func tasks(p *do.Project) {
 
 	p.Task("migrate", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := loadConfig(environment)
+		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations up", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > ./db/schema.sql", cfg.Database.Name)
@@ -55,7 +48,7 @@ func tasks(p *do.Project) {
 
 	p.Task("rollback", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := loadConfig(environment)
+		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations down 1", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > ./db/schema.sql", cfg.Database.Name)

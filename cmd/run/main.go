@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"flag"
 
+	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/blockchain_listener"
-	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/8thlight/vulcanizedb/pkg/observers"
@@ -17,15 +16,12 @@ import (
 func main() {
 	environment := flag.String("environment", "", "Environment name")
 	flag.Parse()
-	cfg, err := config.NewConfig(*environment)
-	if err != nil {
-		log.Fatalf("Error loading config\n%v", err)
-	}
+	config := cmd.LoadConfig(*environment)
 
-	fmt.Println("Client Path ", cfg.Client.IPCPath)
-	blockchain := geth.NewGethBlockchain(cfg.Client.IPCPath)
+	fmt.Println("Client Path ", config.Client.IPCPath)
+	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 	loggingObserver := observers.BlockchainLoggingObserver{}
-	repository := repositories.NewPostgres(cfg.Database)
+	repository := repositories.NewPostgres(config.Database)
 	dbObserver := observers.NewBlockchainDbObserver(repository)
 	listener := blockchain_listener.NewBlockchainListener(blockchain, []core.BlockchainObserver{
 		loggingObserver,
