@@ -2,11 +2,13 @@ package repositories
 
 import (
 	"database/sql"
+	"log"
 
 	"context"
 
 	"errors"
 
+	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -14,6 +16,15 @@ import (
 
 type Postgres struct {
 	Db *sqlx.DB
+}
+
+func NewPostgres(databaseConfig config.Database) Postgres {
+	connectString := config.DbConnectionString(databaseConfig)
+	db, err := sqlx.Connect("postgres", connectString)
+	if err != nil {
+		log.Fatalf("Error connecting to DB: %v\n", err)
+	}
+	return Postgres{Db: db}
 }
 
 var (
@@ -38,10 +49,6 @@ func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highes
 		startingBlockNumber,
 		highestBlockNumber)
 	return numbers
-}
-
-func NewPostgres(db *sqlx.DB) Postgres {
-	return Postgres{Db: db}
 }
 
 func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
