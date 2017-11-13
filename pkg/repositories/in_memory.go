@@ -5,7 +5,18 @@ import (
 )
 
 type InMemory struct {
-	blocks map[int64]*core.Block
+	blocks           map[int64]*core.Block
+	watchedContracts map[string]*core.WatchedContract
+}
+
+func (repository *InMemory) CreateWatchedContract(watchedContract core.WatchedContract) error {
+	repository.watchedContracts[watchedContract.Hash] = &watchedContract
+	return nil
+}
+
+func (repository *InMemory) IsWatchedContract(contractHash string) bool {
+	_, present := repository.watchedContracts[contractHash]
+	return present
 }
 
 func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
@@ -20,7 +31,8 @@ func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endin
 
 func NewInMemory() *InMemory {
 	return &InMemory{
-		blocks: make(map[int64]*core.Block),
+		blocks:           make(map[int64]*core.Block),
+		watchedContracts: make(map[string]*core.WatchedContract),
 	}
 }
 
