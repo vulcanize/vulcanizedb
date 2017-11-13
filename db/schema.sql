@@ -58,7 +58,6 @@ CREATE TABLE blocks (
 --
 
 CREATE SEQUENCE blocks_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -104,7 +103,6 @@ CREATE TABLE transactions (
 --
 
 CREATE SEQUENCE transactions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -134,7 +132,6 @@ CREATE TABLE watched_contracts (
 --
 
 CREATE SEQUENCE watched_contracts_contract_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
