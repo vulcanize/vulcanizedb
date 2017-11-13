@@ -18,6 +18,10 @@ type Postgres struct {
 	Db *sqlx.DB
 }
 
+var (
+	ErrDBInsertFailed = errors.New("postgres: insert failed")
+)
+
 func NewPostgres(databaseConfig config.Database) Postgres {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, err := sqlx.Connect("postgres", connectString)
@@ -27,9 +31,24 @@ func NewPostgres(databaseConfig config.Database) Postgres {
 	return Postgres{Db: db}
 }
 
-var (
-	ErrDBInsertFailed = errors.New("postgres: insert failed")
-)
+func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) error {
+	_, err := repository.Db.Exec(
+		`INSERT INTO watched_contracts (contract_hash) VALUES ($1)`, contract.Hash)
+	if err != nil {
+		return ErrDBInsertFailed
+	}
+	return nil
+}
+
+func (repository Postgres) IsWatchedContract(contractHash string) bool {
+	var exists bool
+	err := repository.Db.QueryRow(
+		`SELECT exists(select 1 from watched_contracts where contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		log.Fatalf("error checking if row exists %v", err)
+	}
+	return exists
+}
 
 func (repository Postgres) MaxBlockNumber() int64 {
 	var highestBlockNumber int64
