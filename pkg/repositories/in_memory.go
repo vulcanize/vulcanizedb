@@ -19,6 +19,10 @@ func (repository *InMemory) IsWatchedContract(contractHash string) bool {
 	return present
 }
 
+func (repository *InMemory) FindWatchedContract(contractHash string) *core.WatchedContract {
+	return repository.watchedContracts[contractHash]
+}
+
 func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
 	missingNumbers := []int64{}
 	for blockNumber := int64(startingBlockNumber); blockNumber <= endingBlockNumber; blockNumber++ {

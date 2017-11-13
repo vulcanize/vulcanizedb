@@ -66,6 +66,16 @@ func tasks(p *do.Project) {
 		context.Bash(dumpSchema)
 	})
 
+	p.Task("showContractSummary", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		contractHash := context.Args.MayString("", "contract-hash", "c")
+		if contractHash == "" {
+			log.Fatalln("--contract-hash required")
+		}
+		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
+			do.M{"environment": environment, "contractHash": contractHash, "$in": "cmd/show_contract_summary"})
+	})
+
 }
 
 func main() {

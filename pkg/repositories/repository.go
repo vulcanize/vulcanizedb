@@ -10,4 +10,5 @@ type Repository interface {
 	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
 	CreateWatchedContract(contract core.WatchedContract) error
 	IsWatchedContract(contractHash string) bool
+	FindWatchedContract(contractHash string) *core.WatchedContract
 }
