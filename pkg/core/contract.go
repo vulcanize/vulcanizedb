@@ -1,5 +1,5 @@
 package core
 
-type Contract struct {
+type WatchedContract struct {
 	Hash string
 }

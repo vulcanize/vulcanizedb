@@ -36,7 +36,7 @@ func tasks(p *do.Project) {
 			do.M{"environment": environment, "startingNumber": startingNumber, "$in": "cmd/populate_blocks"})
 	})
 
-	p.Task("subscribeToContract", nil, func(context *do.Context) {
+	p.Task("watchContract", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")
 		if contractHash == "" {

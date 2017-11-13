@@ -1,1 +1,1 @@
-DROP TABLE contracts
+DROP TABLE watched_contracts
