@@ -50,6 +50,23 @@ func (repository Postgres) IsWatchedContract(contractHash string) bool {
 	return exists
 }
 
+func (repository Postgres) FindWatchedContract(contractHash string) *core.WatchedContract {
+	var savedContracts []core.WatchedContract
+	contractRows, _ := repository.Db.Query(
+		`select contract_hash from watched_contracts where contract_hash=$1`, contractHash)
+	for contractRows.Next() {
+		var savedContractHash string
+		contractRows.Scan(&savedContractHash)
+		savedContract := core.WatchedContract{Hash: savedContractHash}
+		savedContracts = append(savedContracts, savedContract)
+	}
+	if len(savedContracts) > 0 {
+		return &savedContracts[0]
+	} else {
+		return nil
+	}
+}
+
 func (repository Postgres) MaxBlockNumber() int64 {
 	var highestBlockNumber int64
 	repository.Db.Get(&highestBlockNumber, `SELECT MAX(block_number) FROM blocks`)

@@ -194,14 +194,6 @@ var _ = Describe("Repositories", func() {
 
 				Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
 			})
-
-			It("Adds a contract to the watched_contracts table", func() {
-				repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
-
-				Expect(repository.IsWatchedContract("x123")).To(BeTrue())
-				Expect(repository.IsWatchedContract("x456")).To(BeFalse())
-			})
-
 		})
 
 		Describe("The max block numbers", func() {
@@ -216,6 +208,24 @@ var _ = Describe("Repositories", func() {
 				repository.CreateBlock(core.Block{Number: 10})
 
 				Expect(repository.MaxBlockNumber()).To(Equal(int64(10)))
+			})
+		})
+
+		Describe("Creating watched contracts", func() {
+			It("returns the watched contract when it exists", func() {
+				repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
+
+				watchedContract := repository.FindWatchedContract("x123")
+				Expect(watchedContract).NotTo(BeNil())
+				Expect(watchedContract.Hash).To(Equal("x123"))
+
+				Expect(repository.IsWatchedContract("x123")).To(BeTrue())
+				Expect(repository.IsWatchedContract("x456")).To(BeFalse())
+			})
+
+			It("returns nil if contract does not exist", func() {
+				watchedContract := repository.FindWatchedContract("x123")
+				Expect(watchedContract).To(BeNil())
 			})
 		})
 	}
