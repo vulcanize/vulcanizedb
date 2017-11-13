@@ -31,9 +31,9 @@ func NewPostgres(databaseConfig config.Database) Postgres {
 	return Postgres{Db: db}
 }
 
-func (repository Postgres) CreateContract(contract core.Contract) error {
+func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) error {
 	_, err := repository.Db.Exec(
-		`INSERT INTO contracts (contract_hash) VALUES ($1)`, contract.Hash)
+		`INSERT INTO watched_contracts (contract_hash) VALUES ($1)`, contract.Hash)
 	if err != nil {
 		return ErrDBInsertFailed
 	}
@@ -43,7 +43,7 @@ func (repository Postgres) CreateContract(contract core.Contract) error {
 func (repository Postgres) IsWatchedContract(contractHash string) bool {
 	var exists bool
 	err := repository.Db.QueryRow(
-		`SELECT exists(select 1 from contracts where contract_hash=$1) FROM contracts`, contractHash).Scan(&exists)
+		`SELECT exists(select 1 from watched_contracts where contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		log.Fatalf("error checking if row exists %v", err)
 	}

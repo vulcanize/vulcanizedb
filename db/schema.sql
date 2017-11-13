@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.0
--- Dumped by pg_dump version 10.0
+-- Dumped by pg_dump version 10.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -58,6 +58,7 @@ CREATE TABLE blocks (
 --
 
 CREATE SEQUENCE blocks_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -70,35 +71,6 @@ CREATE SEQUENCE blocks_id_seq
 --
 
 ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
-
-
---
--- Name: contracts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE contracts (
-    contract_id integer NOT NULL,
-    contract_hash character varying(66)
-);
-
-
---
--- Name: contracts_contract_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE contracts_contract_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: contracts_contract_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE contracts_contract_id_seq OWNED BY contracts.contract_id;
 
 
 --
@@ -132,6 +104,7 @@ CREATE TABLE transactions (
 --
 
 CREATE SEQUENCE transactions_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -147,17 +120,40 @@ ALTER SEQUENCE transactions_id_seq OWNED BY transactions.id;
 
 
 --
+-- Name: watched_contracts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE watched_contracts (
+    contract_id integer NOT NULL,
+    contract_hash character varying(66)
+);
+
+
+--
+-- Name: watched_contracts_contract_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE watched_contracts_contract_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: watched_contracts_contract_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE watched_contracts_contract_id_seq OWNED BY watched_contracts.contract_id;
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::regclass);
-
-
---
--- Name: contracts contract_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY contracts ALTER COLUMN contract_id SET DEFAULT nextval('contracts_contract_id_seq'::regclass);
 
 
 --
@@ -168,19 +164,18 @@ ALTER TABLE ONLY transactions ALTER COLUMN id SET DEFAULT nextval('transactions_
 
 
 --
+-- Name: watched_contracts contract_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY watched_contracts ALTER COLUMN contract_id SET DEFAULT nextval('watched_contracts_contract_id_seq'::regclass);
+
+
+--
 -- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY blocks
     ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
-
-
---
--- Name: contracts contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY contracts
-    ADD CONSTRAINT contracts_pkey PRIMARY KEY (contract_id);
 
 
 --
@@ -197,6 +192,14 @@ ALTER TABLE ONLY schema_migrations
 
 ALTER TABLE ONLY transactions
     ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: watched_contracts watched_contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY watched_contracts
+    ADD CONSTRAINT watched_contracts_pkey PRIMARY KEY (contract_id);
 
 
 --

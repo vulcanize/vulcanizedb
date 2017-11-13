@@ -14,5 +14,5 @@ func main() {
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	repository := repositories.NewPostgres(config.Database)
-	repository.CreateContract(core.Contract{Hash: *contractHash})
+	repository.CreateWatchedContract(core.WatchedContract{Hash: *contractHash})
 }
