@@ -21,7 +21,7 @@ type GethBlockchain struct {
 
 func (blockchain *GethBlockchain) GetBlockByNumber(blockNumber int64) core.Block {
 	gethBlock, _ := blockchain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
-	return GethBlockToCoreBlock(gethBlock)
+	return GethBlockToCoreBlock(gethBlock, blockchain.client)
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
