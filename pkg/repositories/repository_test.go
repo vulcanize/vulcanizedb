@@ -227,6 +227,35 @@ var _ = Describe("Repositories", func() {
 				watchedContract := repository.FindWatchedContract("x123")
 				Expect(watchedContract).To(BeNil())
 			})
+
+			It("returns empty array when no transactions 'To' a watched contract", func() {
+				repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
+				watchedContract := repository.FindWatchedContract("x123")
+				Expect(watchedContract).ToNot(BeNil())
+				Expect(watchedContract.Transactions).To(BeEmpty())
+
+			})
+
+			It("returns transactions 'To' a watched contract", func() {
+				block := core.Block{
+					Number: 123,
+					Transactions: []core.Transaction{
+						{Hash: "TRANSACTION1", To: "x123"},
+						{Hash: "TRANSACTION2", To: "x345"},
+						{Hash: "TRANSACTION3", To: "x123"},
+					},
+				}
+				repository.CreateBlock(block)
+
+				repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
+				watchedContract := repository.FindWatchedContract("x123")
+				Expect(watchedContract).ToNot(BeNil())
+				Expect(watchedContract.Transactions).To(
+					Equal([]core.Transaction{
+						{Hash: "TRANSACTION1", To: "x123"},
+						{Hash: "TRANSACTION3", To: "x123"},
+					}))
+			})
 		})
 	}
 

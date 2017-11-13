@@ -1,5 +1,6 @@
 package core
 
 type WatchedContract struct {
-	Hash string
+	Hash         string
+	Transactions []Transaction
 }

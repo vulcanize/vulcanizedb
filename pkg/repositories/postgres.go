@@ -43,7 +43,7 @@ func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) 
 func (repository Postgres) IsWatchedContract(contractHash string) bool {
 	var exists bool
 	err := repository.Db.QueryRow(
-		`SELECT exists(select 1 from watched_contracts where contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
+		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		log.Fatalf("error checking if row exists %v", err)
 	}
@@ -53,13 +53,8 @@ func (repository Postgres) IsWatchedContract(contractHash string) bool {
 func (repository Postgres) FindWatchedContract(contractHash string) *core.WatchedContract {
 	var savedContracts []core.WatchedContract
 	contractRows, _ := repository.Db.Query(
-		`select contract_hash from watched_contracts where contract_hash=$1`, contractHash)
-	for contractRows.Next() {
-		var savedContractHash string
-		contractRows.Scan(&savedContractHash)
-		savedContract := core.WatchedContract{Hash: savedContractHash}
-		savedContracts = append(savedContracts, savedContract)
-	}
+		`SELECT contract_hash FROM watched_contracts WHERE contract_hash=$1`, contractHash)
+	savedContracts = repository.loadContract(contractRows)
 	if len(savedContracts) > 0 {
 		return &savedContracts[0]
 	} else {
@@ -104,7 +99,7 @@ func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
 
 func (repository Postgres) BlockCount() int {
 	var count int
-	repository.Db.Get(&count, "SELECT COUNT(*) FROM blocks")
+	repository.Db.Get(&count, `SELECT COUNT(*) FROM blocks`)
 	return count
 }
 
@@ -158,7 +153,8 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 	var gasUsed float64
 	var uncleHash string
 	blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash)
-	transactions := repository.loadTransactions(blockId)
+	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE block_id = $1`, blockId)
+	transactions := repository.loadTransactions(transactionRows)
 	return core.Block{
 		Difficulty:   difficulty,
 		GasLimit:     int64(gasLimit),
@@ -173,8 +169,8 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 		UncleHash:    uncleHash,
 	}
 }
-func (repository Postgres) loadTransactions(blockId int64) []core.Transaction {
-	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions`)
+
+func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Transaction {
 	var transactions []core.Transaction
 	for transactionRows.Next() {
 		var hash string
@@ -197,4 +193,17 @@ func (repository Postgres) loadTransactions(blockId int64) []core.Transaction {
 		transactions = append(transactions, transaction)
 	}
 	return transactions
+}
+
+func (repository Postgres) loadContract(contractRows *sql.Rows) []core.WatchedContract {
+	var savedContracts []core.WatchedContract
+	for contractRows.Next() {
+		var savedContractHash string
+		contractRows.Scan(&savedContractHash)
+		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1`, savedContractHash)
+		transactions := repository.loadTransactions(transactionRows)
+		savedContract := core.WatchedContract{Hash: savedContractHash, Transactions: transactions}
+		savedContracts = append(savedContracts, savedContract)
+	}
+	return savedContracts
 }
