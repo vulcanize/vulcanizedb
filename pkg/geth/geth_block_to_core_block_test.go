@@ -3,6 +3,8 @@ package geth_test
 import (
 	"math/big"
 
+	"context"
+
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -10,6 +12,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+type FakeGethClient struct{}
+
+func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
+	return common.HexToAddress("0x123"), nil
+}
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
@@ -32,7 +40,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			UncleHash:  common.Hash{128},
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
-		gethBlock := geth.GethBlockToCoreBlock(block)
+		client := &FakeGethClient{}
+		gethBlock := geth.GethBlockToCoreBlock(block, client)
 
 		Expect(gethBlock.Difficulty).To(Equal(difficulty.Int64()))
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
@@ -50,8 +59,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("is empty", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
-
-			coreBlock := geth.GethBlockToCoreBlock(block)
+			client := &FakeGethClient{}
+			coreBlock := geth.GethBlockToCoreBlock(block, client)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(0))
 		})
@@ -66,13 +75,15 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			payload := []byte("1234")
 
 			gethTransaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+			client := &FakeGethClient{}
 			gethBlock := types.NewBlock(&header, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
-			coreBlock := geth.GethBlockToCoreBlock(gethBlock)
+			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.Data).To(Equal(gethTransaction.Data()))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
+			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas().Int64()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
 			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().Int64()))
@@ -82,8 +93,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("has an empty to field when transaction creates a new contract", func() {
 			gethTransaction := types.NewContractCreation(uint64(10000), big.NewInt(10), big.NewInt(5000), big.NewInt(3), []byte("1234"))
 			gethBlock := types.NewBlock(&types.Header{}, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
+			client := &FakeGethClient{}
 
-			coreBlock := geth.GethBlockToCoreBlock(gethBlock)
+			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.To).To(Equal(""))

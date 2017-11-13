@@ -94,7 +94,8 @@ CREATE TABLE transactions (
     tx_gaslimit numeric,
     tx_gasprice numeric,
     tx_value numeric,
-    block_id integer NOT NULL
+    block_id integer NOT NULL,
+    tx_from character varying(66)
 );
 
 

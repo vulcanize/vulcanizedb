@@ -111,6 +111,7 @@ var _ = Describe("Repositories", func() {
 				gasPrice := int64(3)
 				nonce := uint64(10000)
 				to := "1234567890"
+				from := "0987654321"
 				value := int64(10)
 				transaction := core.Transaction{
 					Hash:     "x1234",
@@ -118,6 +119,7 @@ var _ = Describe("Repositories", func() {
 					GasLimit: gasLimit,
 					Nonce:    nonce,
 					To:       to,
+					From:     from,
 					Value:    value,
 				}
 				block := core.Block{
@@ -132,6 +134,7 @@ var _ = Describe("Repositories", func() {
 				savedTransaction := savedBlock.Transactions[0]
 				Expect(savedTransaction.Hash).To(Equal(transaction.Hash))
 				Expect(savedTransaction.To).To(Equal(to))
+				Expect(savedTransaction.From).To(Equal(from))
 				Expect(savedTransaction.Nonce).To(Equal(nonce))
 				Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
 				Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
