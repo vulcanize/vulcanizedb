@@ -5,6 +5,8 @@ import (
 
 	"log"
 
+	"fmt"
+
 	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	"github.com/8thlight/vulcanizedb/pkg/watched_contracts"
@@ -21,5 +23,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	watched_contracts.PrintReport(contractSummary)
+	output := watched_contracts.GenerateConsoleOutput(contractSummary)
+	fmt.Println(output)
 }

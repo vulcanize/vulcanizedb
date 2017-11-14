@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("The watched contract summary", func() {
+var _ bool = Describe("The watched contract summary", func() {
 
 	Context("when the given contract is not being watched", func() {
 		It("returns an error", func() {
@@ -41,6 +41,40 @@ var _ = Describe("The watched contract summary", func() {
 			contractSummary, _ := watched_contracts.NewSummary(repository, "0x123")
 
 			Expect(contractSummary.ContractHash).To(Equal("0x123"))
+		})
+
+		It("sets the number of transactions", func() {
+			repository := repositories.NewInMemory()
+			watchedContract := core.WatchedContract{Hash: "0x123"}
+			repository.CreateWatchedContract(watchedContract)
+			block := core.Block{
+				Transactions: []core.Transaction{
+					{To: "0x123"},
+					{To: "0x123"},
+				},
+			}
+			repository.CreateBlock(block)
+
+			contractSummary, _ := watched_contracts.NewSummary(repository, "0x123")
+
+			Expect(contractSummary.NumberOfTransactions).To(Equal(2))
+		})
+
+		It("sets the last transaction", func() {
+			repository := repositories.NewInMemory()
+			watchedContract := core.WatchedContract{Hash: "0x123"}
+			repository.CreateWatchedContract(watchedContract)
+			block := core.Block{
+				Transactions: []core.Transaction{
+					{Hash: "TRANSACTION2", To: "0x123"},
+					{Hash: "TRANSACTION1", To: "0x123"},
+				},
+			}
+			repository.CreateBlock(block)
+
+			contractSummary, _ := watched_contracts.NewSummary(repository, "0x123")
+
+			Expect(contractSummary.LastTransaction.Hash).To(Equal("TRANSACTION2"))
 		})
 	})
 

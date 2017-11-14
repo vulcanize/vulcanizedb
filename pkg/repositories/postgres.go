@@ -200,7 +200,7 @@ func (repository Postgres) loadContract(contractRows *sql.Rows) []core.WatchedCo
 	for contractRows.Next() {
 		var savedContractHash string
 		contractRows.Scan(&savedContractHash)
-		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1`, savedContractHash)
+		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, savedContractHash)
 		transactions := repository.loadTransactions(transactionRows)
 		savedContract := core.WatchedContract{Hash: savedContractHash, Transactions: transactions}
 		savedContracts = append(savedContracts, savedContract)
