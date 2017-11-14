@@ -77,7 +77,7 @@ The default location for Ethereum is:
 You can create configuration files for additional environments.
 
  * Among other things, it will require the IPC file path
- * See `pkg/config/environments/private.toml` for an example
+ * See `environments/private.toml` for an example
  * You will need to do this if you want to run a node connecting to the public blockchain
 
 ## Running the Tests

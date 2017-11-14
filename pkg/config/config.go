@@ -27,7 +27,7 @@ var NewErrConfigFileNotFound = func(environment string) error {
 
 func NewConfig(environment string) (*Config, error) {
 	filenameWithExtension := fmt.Sprintf("%s.toml", environment)
-	absolutePath := filepath.Join(ProjectRoot(), "pkg", "config", "environments", filenameWithExtension)
+	absolutePath := filepath.Join(ProjectRoot(), "environments", filenameWithExtension)
 	config, err := parseConfigFile(absolutePath)
 	if err != nil {
 		return nil, NewErrConfigFileNotFound(environment)
