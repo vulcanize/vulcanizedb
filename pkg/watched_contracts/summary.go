@@ -9,7 +9,9 @@ import (
 )
 
 type ContractSummary struct {
-	ContractHash string
+	ContractHash         string
+	NumberOfTransactions int
+	LastTransaction      *core.Transaction
 }
 
 var NewContractNotWatchedErr = func(contractHash string) error {
@@ -26,5 +28,17 @@ func NewSummary(repository repositories.Repository, contractHash string) (*Contr
 }
 
 func newContractSummary(contract core.WatchedContract) *ContractSummary {
-	return &ContractSummary{ContractHash: contract.Hash}
+	return &ContractSummary{
+		ContractHash:         contract.Hash,
+		NumberOfTransactions: len(contract.Transactions),
+		LastTransaction:      lastTransaction(contract),
+	}
+}
+
+func lastTransaction(contract core.WatchedContract) *core.Transaction {
+	if len(contract.Transactions) > 0 {
+		return &contract.Transactions[0]
+	} else {
+		return nil
+	}
 }
