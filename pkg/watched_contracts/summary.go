@@ -18,13 +18,17 @@ var NewContractNotWatchedErr = func(contractHash string) error {
 	return errors.New(fmt.Sprintf("Contract %v not being watched", contractHash))
 }
 
-func NewSummary(repository repositories.Repository, contractHash string) (*ContractSummary, error) {
+func NewSummary(_ core.Blockchain, repository repositories.Repository, contractHash string) (*ContractSummary, error) {
 	contract := repository.FindWatchedContract(contractHash)
 	if contract != nil {
 		return newContractSummary(*contract), nil
 	} else {
 		return nil, NewContractNotWatchedErr(contractHash)
 	}
+}
+
+func (ContractSummary) GetStateAttribute(attributeName string) string {
+	return "Hello world"
 }
 
 func newContractSummary(contract core.WatchedContract) *ContractSummary {
