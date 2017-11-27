@@ -9,6 +9,7 @@ import (
 func GenerateConsoleOutput(summary *ContractSummary) string {
 	return fmt.Sprintf(template(),
 		summary.ContractHash,
+		summary.GetStateAttribute("name"),
 		summary.NumberOfTransactions,
 		transactionToString(summary.LastTransaction),
 	)
@@ -17,6 +18,7 @@ func GenerateConsoleOutput(summary *ContractSummary) string {
 func template() string {
 	return `********************Contract Summary***********************
                       HASH: %v
+                      NAME: %s
     NUMBER OF TRANSACTIONS: %d
           LAST TRANSACTION:
                             %s
