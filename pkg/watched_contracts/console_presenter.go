@@ -9,18 +9,18 @@ import (
 func GenerateConsoleOutput(summary *ContractSummary) string {
 	return fmt.Sprintf(template(),
 		summary.ContractHash,
-		summary.GetStateAttribute("name"),
 		summary.NumberOfTransactions,
 		transactionToString(summary.LastTransaction),
+		attributesString(summary),
 	)
 }
-
 func template() string {
 	return `********************Contract Summary***********************
                       HASH: %v
-                      NAME: %s
     NUMBER OF TRANSACTIONS: %d
           LAST TRANSACTION:
+                            %s
+                ATTRIBUTES:
                             %s
 	`
 }
@@ -33,4 +33,18 @@ func transactionToString(transaction *core.Transaction) string {
                               To: %s
                             From: %s`, transaction.Hash, transaction.To, transaction.From)
 	}
+}
+
+func attributesString(summary *ContractSummary) string {
+	attributes := []string{"name", "symbol"}
+	var formattedAttributes string
+	for _, attribute := range attributes {
+		formattedAttributes += formatAttribute(attribute, summary) + "\n" + "                            "
+	}
+	return formattedAttributes
+}
+
+func formatAttribute(attributeName string, summary *ContractSummary) string {
+	formattedAttribute := fmt.Sprintf("%s: %s", attributeName, summary.GetStateAttribute(attributeName))
+	return formattedAttribute
 }

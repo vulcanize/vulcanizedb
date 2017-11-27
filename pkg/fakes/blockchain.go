@@ -9,6 +9,10 @@ type Blockchain struct {
 	WasToldToStop      bool
 }
 
+func (blockchain *Blockchain) GetContractAttributes(contractHash string) ([]core.ContractAttribute, error) {
+	panic("implement me")
+}
+
 func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
 	result := new(string)
 	*result = blockchain.contractAttributes[contractHash][attributeName]
