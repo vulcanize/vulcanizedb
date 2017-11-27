@@ -16,10 +16,10 @@ func GenerateConsoleOutput(summary *ContractSummary) string {
 
 func template() string {
 	return `********************Contract Summary***********************
-	                  HASH: %v
-	NUMBER OF TRANSACTIONS: %d
-	      LAST TRANSACTION:
-	                        %s
+                      HASH: %v
+    NUMBER OF TRANSACTIONS: %d
+          LAST TRANSACTION:
+                            %s
 	`
 }
 
@@ -28,7 +28,7 @@ func transactionToString(transaction *core.Transaction) string {
 		return "NONE"
 	} else {
 		return fmt.Sprintf(`Hash: %s
-                        To: %s
-                        From: %s`, transaction.Hash, transaction.To, transaction.From)
+                              To: %s
+                            From: %s`, transaction.Hash, transaction.To, transaction.From)
 	}
 }
