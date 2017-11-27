@@ -13,8 +13,7 @@ import (
 var _ = Describe("Reading ABI files", func() {
 
 	It("loads a valid ABI file", func() {
-		contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
-		path := filepath.Join(cfg.ProjectRoot(), "contracts", "public", contractHash+".json")
+		path := filepath.Join(cfg.ProjectRoot(), "pkg", "geth", "testing", "valid_abi.json")
 
 		contractAbi, err := geth.ParseAbiFile(path)
 
@@ -23,7 +22,7 @@ var _ = Describe("Reading ABI files", func() {
 	})
 
 	It("returns an error when the file does not exist", func() {
-		path := filepath.Join(cfg.ProjectRoot(), "contracts", "public", "missing_file.json")
+		path := filepath.Join(cfg.ProjectRoot(), "pkg", "geth", "testing", "missing_abi.json")
 
 		contractAbi, err := geth.ParseAbiFile(path)
 

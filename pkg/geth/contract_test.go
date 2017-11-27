@@ -3,11 +3,64 @@ package geth_test
 //import (
 //	cfg "github.com/8thlight/vulcanizedb/pkg/config"
 //	"github.com/8thlight/vulcanizedb/pkg/geth"
+//	"github.com/8thlight/vulcanizedb/pkg/geth/testing"
 //	. "github.com/onsi/ginkgo"
 //	. "github.com/onsi/gomega"
 //)
 //
-//var _ = Describe("The Geth blockchain", func() {
+//var _ = Describe("Reading contracts", func() {
+//
+//	Describe("Reading the list of attributes", func() {
+//		It("returns a string attribute for a real contract", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//
+//			Expect(err).To(BeNil())
+//			Expect(len(attributes)).NotTo(Equal(0))
+//			symbolAttribute := *testing.FindAttribute(attributes, "symbol")
+//			Expect(symbolAttribute.Name).To(Equal("symbol"))
+//			Expect(symbolAttribute.Type).To(Equal("string"))
+//		})
+//
+//		It("does not return an attribute that takes an input", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//
+//			Expect(err).To(BeNil())
+//			attribute := testing.FindAttribute(attributes, "balanceOf")
+//			Expect(attribute).To(BeNil())
+//		})
+//
+//		It("does not return an attribute that is not constant", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//
+//			Expect(err).To(BeNil())
+//			attribute := testing.FindAttribute(attributes, "unpause")
+//			Expect(attribute).To(BeNil())
+//		})
+//
+//		It("temporarily filters out non-string attributes", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//
+//			Expect(err).To(BeNil())
+//			attribute := testing.FindAttribute(attributes, "decimals")
+//			Expect(attribute).To(BeNil())
+//		})
+//	})
 //
 //	Describe("Getting a contract attribute", func() {
 //		It("returns the correct attribute for a real contract", func() {

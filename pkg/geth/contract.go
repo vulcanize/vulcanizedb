@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sort"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -13,6 +16,22 @@ import (
 var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
+
+func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) ([]core.ContractAttribute, error) {
+	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
+	parsed, _ := ParseAbiFile(abiFilePath)
+	var contractAttributes []core.ContractAttribute
+	for _, abiElement := range parsed.Methods {
+		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const && abiElement.Outputs[0].Type.String() == "string" {
+			attributeType := abiElement.Outputs[0].Type.String()
+			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
+		}
+	}
+	sort.Slice(contractAttributes, func(i, j int) bool {
+		return contractAttributes[i].Name < contractAttributes[j].Name
+	})
+	return contractAttributes, nil
+}
 
 func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
 	boundContract, err := bindContract(common.HexToAddress(contractHash), blockchain.client, blockchain.client)
