@@ -3,13 +3,23 @@ package fakes
 import "github.com/8thlight/vulcanizedb/pkg/core"
 
 type Blockchain struct {
-	blocks        map[int64]core.Block
-	blocksChannel chan core.Block
-	WasToldToStop bool
+	blocks             map[int64]core.Block
+	contractAttributes map[string]map[string]string
+	blocksChannel      chan core.Block
+	WasToldToStop      bool
+}
+
+func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
+	result := new(string)
+	*result = blockchain.contractAttributes[contractHash][attributeName]
+	return result, nil
 }
 
 func NewBlockchain() *Blockchain {
-	return &Blockchain{blocks: make(map[int64]core.Block)}
+	return &Blockchain{
+		blocks:             make(map[int64]core.Block),
+		contractAttributes: make(map[string]map[string]string),
+	}
 }
 
 func NewBlockchainWithBlocks(blocks []core.Block) *Blockchain {
@@ -39,4 +49,12 @@ func (*Blockchain) StartListening() {}
 
 func (blockchain *Blockchain) StopListening() {
 	blockchain.WasToldToStop = true
+}
+
+func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, attributeName string, attributeValue string) {
+	contractStateAttributes := blockchain.contractAttributes[contractHash]
+	if contractStateAttributes == nil {
+		blockchain.contractAttributes[contractHash] = make(map[string]string)
+	}
+	blockchain.contractAttributes[contractHash][attributeName] = attributeValue
 }

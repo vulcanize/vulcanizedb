@@ -82,6 +82,18 @@ var _ bool = Describe("The watched contract summary", func() {
 
 			Expect(contractSummary.LastTransaction.Hash).To(Equal("TRANSACTION2"))
 		})
+
+		It("gets a state attribute for the contract from the blockchain", func() {
+			repository := repositories.NewInMemory()
+			watchedContract := core.WatchedContract{Hash: "0x123"}
+			repository.CreateWatchedContract(watchedContract)
+			blockchain := fakes.NewBlockchain()
+			blockchain.SetContractStateAttribute("0x123", "foo", "bar")
+
+			contractSummary, _ := watched_contracts.NewSummary(blockchain, repository, "0x123")
+
+			Expect(contractSummary.GetStateAttribute("foo")).To(Equal("bar"))
+		})
 	})
 
 })

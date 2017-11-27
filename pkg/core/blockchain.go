@@ -5,4 +5,5 @@ type Blockchain interface {
 	SubscribeToBlocks(blocks chan Block)
 	StartListening()
 	StopListening()
+	GetContractStateAttribute(contractHash string, attributeName string) (*string, error)
 }
