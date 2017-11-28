@@ -12,13 +12,13 @@ type ContractAttribute struct {
 
 type ContractAttributes []ContractAttribute
 
-func (s ContractAttributes) Len() int {
-	return len(s)
+func (attributes ContractAttributes) Len() int {
+	return len(attributes)
 }
-func (s ContractAttributes) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (attributes ContractAttributes) Swap(i, j int) {
+	attributes[i], attributes[j] = attributes[j], attributes[i]
 }
 
-func (s ContractAttributes) Less(i, j int) bool {
-	return s[i].Name < s[j].Name
+func (attributes ContractAttributes) Less(i, j int) bool {
+	return attributes[i].Name < attributes[j].Name
 }
