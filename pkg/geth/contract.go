@@ -22,7 +22,7 @@ func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (co
 	parsed, _ := ParseAbiFile(abiFilePath)
 	var contractAttributes core.ContractAttributes
 	for _, abiElement := range parsed.Methods {
-		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const && abiElement.Outputs[0].Type.String() == "string" {
+		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {
 			attributeType := abiElement.Outputs[0].Type.String()
 			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
 		}
@@ -31,17 +31,32 @@ func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (co
 	return contractAttributes, nil
 }
 
+func convertresult(result interface{}, attributeName string) *string {
+	var stringResult = new(string)
+	fmt.Println(fmt.Sprintf("%s: %v (%T)", attributeName, result, result))
+	switch t := result.(type) {
+	case common.Address:
+		ca := result.(common.Address)
+		*stringResult = fmt.Sprintf("%v", ca.Hex())
+	default:
+		_ = t
+		*stringResult = fmt.Sprintf("%v", result)
+	}
+	return stringResult
+
+}
+
 func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
 	boundContract, err := bindContract(common.HexToAddress(contractHash), blockchain.client, blockchain.client)
 	if err != nil {
 		return nil, err
 	}
-	result := new(string)
-	err = boundContract.Call(&bind.CallOpts{}, result, attributeName)
+	var result interface{}
+	err = boundContract.Call(&bind.CallOpts{}, &result, attributeName)
 	if err != nil {
 		return nil, ErrInvalidStateAttribute
 	}
-	return result, nil
+	return convertresult(result, attributeName), nil
 }
 
 func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (*bind.BoundContract, error) {
