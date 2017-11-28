@@ -71,6 +71,20 @@ The default location for Ethereum is:
 1. Start a blockchain.
 2. In a separate terminal start listener (ipcDir location)
     - `godo populateBlocks -- --environment=<some-environment> --starting-number=<starting-block-number>`
+    
+## Retrieve Contract Attributes
+
+1. Add contract ABI to contracts / environment directory:
+```
+vulcanizedb/
+    contracts/
+        public/
+            <contract-address>.json
+        private/
+```
+The name of the JSON file should correspond the contract's address.
+2. Start watching the contract `godo watchContract -- --environment=<some-environment> --contract-hash=<contract-address>`
+3. Request summary data `godo showContractSummary -- --environment=<some-environment> --contract-hash=<contract-address>`
 
 ### Configuring Additional Environments
 
