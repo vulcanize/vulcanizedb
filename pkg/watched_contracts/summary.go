@@ -13,6 +13,7 @@ type ContractSummary struct {
 	NumberOfTransactions int
 	LastTransaction      *core.Transaction
 	blockChain           core.Blockchain
+	Attributes           []core.ContractAttribute
 }
 
 var NewContractNotWatchedErr = func(contractHash string) error {
@@ -34,11 +35,13 @@ func (contractSummary ContractSummary) GetStateAttribute(attributeName string) s
 }
 
 func newContractSummary(blockchain core.Blockchain, watchedContract core.WatchedContract) *ContractSummary {
+	attributes, _ := blockchain.GetContractAttributes(watchedContract.Hash)
 	return &ContractSummary{
 		blockChain:           blockchain,
 		ContractHash:         watchedContract.Hash,
 		NumberOfTransactions: len(watchedContract.Transactions),
 		LastTransaction:      lastTransaction(watchedContract),
+		Attributes:           attributes,
 	}
 }
 

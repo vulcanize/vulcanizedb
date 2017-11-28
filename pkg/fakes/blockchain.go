@@ -1,6 +1,8 @@
 package fakes
 
-import "github.com/8thlight/vulcanizedb/pkg/core"
+import (
+	"github.com/8thlight/vulcanizedb/pkg/core"
+)
 
 type Blockchain struct {
 	blocks             map[int64]core.Block
@@ -10,7 +12,14 @@ type Blockchain struct {
 }
 
 func (blockchain *Blockchain) GetContractAttributes(contractHash string) ([]core.ContractAttribute, error) {
-	panic("implement me")
+	var contractAttribute []core.ContractAttribute
+	attributes, ok := blockchain.contractAttributes[contractHash]
+	if ok {
+		for key, _ := range attributes {
+			contractAttribute = append(contractAttribute, core.ContractAttribute{Name: key, Type: "string"})
+		}
+	}
+	return contractAttribute, nil
 }
 
 func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
