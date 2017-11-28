@@ -17,19 +17,17 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) ([]core.ContractAttribute, error) {
+func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
 	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
 	parsed, _ := ParseAbiFile(abiFilePath)
-	var contractAttributes []core.ContractAttribute
+	var contractAttributes core.ContractAttributes
 	for _, abiElement := range parsed.Methods {
 		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const && abiElement.Outputs[0].Type.String() == "string" {
 			attributeType := abiElement.Outputs[0].Type.String()
 			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
 		}
 	}
-	sort.Slice(contractAttributes, func(i, j int) bool {
-		return contractAttributes[i].Name < contractAttributes[j].Name
-	})
+	sort.Sort(contractAttributes)
 	return contractAttributes, nil
 }
 
