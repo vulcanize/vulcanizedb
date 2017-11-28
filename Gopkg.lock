@@ -15,13 +15,19 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/aristanetworks/goarista"
+  packages = ["monotime"]
+  revision = "54fadd0c513d502544edf098480238dc9da50f9e"
+
+[[projects]]
+  branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   revision = "c7588cbf7690cd9f047a28efa2dcd8f2435a4e5e"
 
 [[projects]]
   name = "github.com/ethereum/go-ethereum"
-  packages = [".","common","common/hexutil","common/math","core/types","crypto","crypto/secp256k1","crypto/sha3","ethclient","log","params","rlp","rpc","trie"]
+  packages = [".","accounts","accounts/abi","accounts/abi/bind","accounts/keystore","common","common/hexutil","common/math","common/mclock","core/types","crypto","crypto/randentropy","crypto/secp256k1","crypto/sha3","ethclient","event","log","params","rlp","rpc","trie"]
   revision = "1db4ecdc0b9e828ff65777fb466fc7c1d04e0de9"
   version = "v1.7.2"
 
@@ -104,10 +110,22 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/rcrowley/go-metrics"
   packages = ["."]
   revision = "1f30fe9094a513ce4c700b9a54458bbb0c96996c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/rjeczalik/notify"
+  packages = ["."]
+  revision = "767eb674ef14b09119b2fff3601e64558d530c47"
 
 [[projects]]
   name = "github.com/rs/cors"
@@ -118,7 +136,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = ["pbkdf2","scrypt","ssh/terminal"]
   revision = "bd6f299fb381e4c3393d1c4b1f0b94f5e77650c8"
 
 [[projects]]
@@ -138,6 +156,12 @@
   name = "golang.org/x/text"
   packages = ["encoding","encoding/charmap","encoding/htmlindex","encoding/internal","encoding/internal/identifier","encoding/japanese","encoding/korean","encoding/simplifiedchinese","encoding/traditionalchinese","encoding/unicode","internal/gen","internal/tag","internal/utf8internal","language","runes","transform","unicode/cldr"]
   revision = "c01e4764d870b77f8abe5096ee19ad20d80e8075"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = ["go/ast/astutil","imports"]
+  revision = "6d70fb2e85323e81c89374331d3d2b93304faa36"
 
 [[projects]]
   name = "gopkg.in/fatih/set.v0"
@@ -172,6 +196,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f9569275c3b9863e5209029135f13d3d9df9a697b49e75b5cbd37942b23e4f3b"
+  inputs-digest = "d2aa2bdc1442319cde6fe38b39e0ff8e25b1a0b0c120a7e2fab8065324c98693"
   solver-name = "gps-cdcl"
   solver-version = 1
