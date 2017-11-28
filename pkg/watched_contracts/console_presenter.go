@@ -14,6 +14,7 @@ func GenerateConsoleOutput(summary *ContractSummary) string {
 		attributesString(summary),
 	)
 }
+
 func template() string {
 	return `********************Contract Summary***********************
                       HASH: %v
@@ -36,10 +37,9 @@ func transactionToString(transaction *core.Transaction) string {
 }
 
 func attributesString(summary *ContractSummary) string {
-	attributes := []string{"name", "symbol"}
 	var formattedAttributes string
-	for _, attribute := range attributes {
-		formattedAttributes += formatAttribute(attribute, summary) + "\n" + "                            "
+	for _, attribute := range summary.Attributes {
+		formattedAttributes += formatAttribute(attribute.Name, summary) + "\n" + "                            "
 	}
 	return formattedAttributes
 }
