@@ -2,6 +2,7 @@ package fakes
 
 import (
 	"github.com/8thlight/vulcanizedb/pkg/core"
+	"sort"
 )
 
 type Blockchain struct {
@@ -11,15 +12,16 @@ type Blockchain struct {
 	WasToldToStop      bool
 }
 
-func (blockchain *Blockchain) GetContractAttributes(contractHash string) ([]core.ContractAttribute, error) {
-	var contractAttribute []core.ContractAttribute
+func (blockchain *Blockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
+	var contractAttributes core.ContractAttributes
 	attributes, ok := blockchain.contractAttributes[contractHash]
 	if ok {
 		for key, _ := range attributes {
-			contractAttribute = append(contractAttribute, core.ContractAttribute{Name: key, Type: "string"})
+			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
 		}
 	}
-	return contractAttribute, nil
+	sort.Sort(contractAttributes)
+	return contractAttributes, nil
 }
 
 func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {

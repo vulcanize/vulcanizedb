@@ -106,9 +106,9 @@ var _ bool = Describe("The watched contract summary", func() {
 			contractSummary, _ := watched_contracts.NewSummary(blockchain, repository, "0x123")
 
 			Expect(contractSummary.Attributes).To(Equal(
-				[]core.ContractAttribute{
-					{Name: "foo", Type: "string"},
+				core.ContractAttributes{
 					{Name: "baz", Type: "string"},
+					{Name: "foo", Type: "string"},
 				},
 			))
 		})

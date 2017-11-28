@@ -13,7 +13,7 @@ type ContractSummary struct {
 	NumberOfTransactions int
 	LastTransaction      *core.Transaction
 	blockChain           core.Blockchain
-	Attributes           []core.ContractAttribute
+	Attributes           core.ContractAttributes
 }
 
 var NewContractNotWatchedErr = func(contractHash string) error {
