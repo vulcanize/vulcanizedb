@@ -12,26 +12,36 @@ type ContractSummary struct {
 	ContractHash         string
 	NumberOfTransactions int
 	LastTransaction      *core.Transaction
+	blockChain           core.Blockchain
+	Attributes           core.ContractAttributes
 }
 
 var NewContractNotWatchedErr = func(contractHash string) error {
 	return errors.New(fmt.Sprintf("Contract %v not being watched", contractHash))
 }
 
-func NewSummary(repository repositories.Repository, contractHash string) (*ContractSummary, error) {
-	contract := repository.FindWatchedContract(contractHash)
-	if contract != nil {
-		return newContractSummary(*contract), nil
+func NewSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string) (*ContractSummary, error) {
+	watchedContract := repository.FindWatchedContract(contractHash)
+	if watchedContract != nil {
+		return newContractSummary(blockchain, *watchedContract), nil
 	} else {
 		return nil, NewContractNotWatchedErr(contractHash)
 	}
 }
 
-func newContractSummary(contract core.WatchedContract) *ContractSummary {
+func (contractSummary ContractSummary) GetStateAttribute(attributeName string) string {
+	result, _ := contractSummary.blockChain.GetContractStateAttribute(contractSummary.ContractHash, attributeName)
+	return *result
+}
+
+func newContractSummary(blockchain core.Blockchain, watchedContract core.WatchedContract) *ContractSummary {
+	attributes, _ := blockchain.GetContractAttributes(watchedContract.Hash)
 	return &ContractSummary{
-		ContractHash:         contract.Hash,
-		NumberOfTransactions: len(contract.Transactions),
-		LastTransaction:      lastTransaction(contract),
+		blockChain:           blockchain,
+		ContractHash:         watchedContract.Hash,
+		NumberOfTransactions: len(watchedContract.Transactions),
+		LastTransaction:      lastTransaction(watchedContract),
+		Attributes:           attributes,
 	}
 }
 

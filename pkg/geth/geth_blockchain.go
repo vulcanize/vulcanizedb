@@ -25,7 +25,6 @@ func (blockchain *GethBlockchain) GetBlockByNumber(blockNumber int64) core.Block
 }
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
-	fmt.Printf("Creating Geth Blockchain to: %s\n", ipcPath)
 	blockchain := GethBlockchain{}
 	client, _ := ethclient.Dial(ipcPath)
 	blockchain.client = client
