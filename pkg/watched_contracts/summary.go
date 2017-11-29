@@ -29,9 +29,9 @@ func NewSummary(blockchain core.Blockchain, repository repositories.Repository, 
 	}
 }
 
-func (contractSummary ContractSummary) GetStateAttribute(attributeName string) string {
+func (contractSummary ContractSummary) GetStateAttribute(attributeName string) interface{} {
 	result, _ := contractSummary.blockChain.GetContractStateAttribute(contractSummary.ContractHash, attributeName)
-	return *result
+	return result
 }
 
 func newContractSummary(blockchain core.Blockchain, watchedContract core.WatchedContract) *ContractSummary {

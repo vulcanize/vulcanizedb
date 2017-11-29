@@ -31,22 +31,7 @@ func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (co
 	return contractAttributes, nil
 }
 
-func convertresult(result interface{}, attributeName string) *string {
-	var stringResult = new(string)
-	fmt.Println(fmt.Sprintf("%s: %v (%T)", attributeName, result, result))
-	switch t := result.(type) {
-	case common.Address:
-		ca := result.(common.Address)
-		*stringResult = fmt.Sprintf("%v", ca.Hex())
-	default:
-		_ = t
-		*stringResult = fmt.Sprintf("%v", result)
-	}
-	return stringResult
-
-}
-
-func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
+func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
 	boundContract, err := bindContract(common.HexToAddress(contractHash), blockchain.client, blockchain.client)
 	if err != nil {
 		return nil, err
@@ -56,7 +41,7 @@ func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string,
 	if err != nil {
 		return nil, ErrInvalidStateAttribute
 	}
-	return convertresult(result, attributeName), nil
+	return result, nil
 }
 
 func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (*bind.BoundContract, error) {
