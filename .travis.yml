@@ -5,9 +5,12 @@ go:
 services:
   - postgresql
 before_script:
+  - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
+  - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
+  - sudo cp geth-linux-amd64-1.7.2-1db4ecdc/geth /usr/local/bin
+  - ./scripts/setup
+  - nohup ./scripts/start_private_blockchain </dev/null &
   - createdb vulcanize_private
   - psql vulcanize_private < db/schema.sql
-script:
-  - go test -v ./pkg/...
 notifications:
   email: false
