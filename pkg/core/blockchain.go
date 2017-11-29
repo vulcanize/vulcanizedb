@@ -6,5 +6,5 @@ type Blockchain interface {
 	StartListening()
 	StopListening()
 	GetContractAttributes(contractHash string) (ContractAttributes, error)
-	GetContractStateAttribute(contractHash string, attributeName string) (*string, error)
+	GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error)
 }

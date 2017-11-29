@@ -91,8 +91,9 @@ var _ bool = Describe("The watched contract summary", func() {
 			blockchain.SetContractStateAttribute("0x123", "foo", "bar")
 
 			contractSummary, _ := watched_contracts.NewSummary(blockchain, repository, "0x123")
+			attribute := contractSummary.GetStateAttribute("foo")
 
-			Expect(contractSummary.GetStateAttribute("foo")).To(Equal("bar"))
+			Expect(attribute).To(Equal("bar"))
 		})
 
 		It("gets attributes for the contract from the blockchain", func() {
