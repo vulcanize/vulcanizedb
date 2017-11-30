@@ -15,11 +15,15 @@ type Blockchain struct {
 
 func (blockchain *Blockchain) GetContract(contractHash string) (core.Contract, error) {
 	contractAttributes, err := blockchain.getContractAttributes(contractHash)
-	return core.Contract{Attributes: contractAttributes}, err
+	contract := core.Contract{
+		Attributes: contractAttributes,
+		Hash:       contractHash,
+	}
+	return contract, err
 }
 
-func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
-	result := blockchain.contractAttributes[contractHash][attributeName]
+func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
+	result := blockchain.contractAttributes[contract.Hash][attributeName]
 	return result, nil
 }
 

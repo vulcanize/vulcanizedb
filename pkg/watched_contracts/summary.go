@@ -9,6 +9,7 @@ import (
 )
 
 type ContractSummary struct {
+	Contract             core.Contract
 	ContractHash         string
 	NumberOfTransactions int
 	LastTransaction      *core.Transaction
@@ -30,7 +31,7 @@ func NewSummary(blockchain core.Blockchain, repository repositories.Repository, 
 }
 
 func (contractSummary ContractSummary) GetStateAttribute(attributeName string) interface{} {
-	result, _ := contractSummary.blockChain.GetContractStateAttribute(contractSummary.ContractHash, attributeName)
+	result, _ := contractSummary.blockChain.GetAttribute(contractSummary.Contract, attributeName)
 	return result
 }
 
@@ -38,6 +39,7 @@ func newContractSummary(blockchain core.Blockchain, watchedContract core.Watched
 	contract, _ := blockchain.GetContract(watchedContract.Hash)
 	return &ContractSummary{
 		blockChain:           blockchain,
+		Contract:             contract,
 		ContractHash:         watchedContract.Hash,
 		NumberOfTransactions: len(watchedContract.Transactions),
 		LastTransaction:      lastTransaction(watchedContract),
