@@ -48,14 +48,13 @@ func attributesString(summary *ContractSummary) string {
 func formatAttribute(attributeName string, summary *ContractSummary) string {
 	var stringResult string
 	result := summary.GetStateAttribute(attributeName)
-	fmt.Println(fmt.Sprintf("%s: %v (%T)", attributeName, result, result))
 	switch t := result.(type) {
 	case common.Address:
 		ca := result.(common.Address)
-		stringResult = fmt.Sprintf("%v", ca.Hex())
+		stringResult = fmt.Sprintf("%s: %v", attributeName, ca.Hex())
 	default:
 		_ = t
-		stringResult = fmt.Sprintf("%v", result)
+		stringResult = fmt.Sprintf("%s: %v", attributeName, result)
 	}
 	return stringResult
 }
