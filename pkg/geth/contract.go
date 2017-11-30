@@ -17,18 +17,13 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
-	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
-	parsed, _ := ParseAbiFile(abiFilePath)
-	var contractAttributes core.ContractAttributes
-	for _, abiElement := range parsed.Methods {
-		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {
-			attributeType := abiElement.Outputs[0].Type.String()
-			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
-		}
+func (blockchain *GethBlockchain) GetContract(contractHash string) (core.Contract, error) {
+	attributes, err := blockchain.getContractAttributes(contractHash)
+	if err != nil {
+		return core.Contract{}, err
+	} else {
+		return core.Contract{Attributes: attributes}, nil
 	}
-	sort.Sort(contractAttributes)
-	return contractAttributes, nil
 }
 
 func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
@@ -42,6 +37,20 @@ func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string,
 		return nil, ErrInvalidStateAttribute
 	}
 	return result, nil
+}
+
+func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
+	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
+	parsed, _ := ParseAbiFile(abiFilePath)
+	var contractAttributes core.ContractAttributes
+	for _, abiElement := range parsed.Methods {
+		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {
+			attributeType := abiElement.Outputs[0].Type.String()
+			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
+		}
+	}
+	sort.Sort(contractAttributes)
+	return contractAttributes, nil
 }
 
 func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (*bind.BoundContract, error) {
