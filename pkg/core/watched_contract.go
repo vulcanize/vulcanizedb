@@ -5,6 +5,11 @@ type WatchedContract struct {
 	Transactions []Transaction
 }
 
+type Contract struct {
+	Attributes ContractAttributes
+	Hash       string
+}
+
 type ContractAttribute struct {
 	Name string
 	Type string
