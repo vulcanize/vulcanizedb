@@ -22,12 +22,16 @@ func (blockchain *GethBlockchain) GetContract(contractHash string) (core.Contrac
 	if err != nil {
 		return core.Contract{}, err
 	} else {
-		return core.Contract{Attributes: attributes}, nil
+		contract := core.Contract{
+			Attributes: attributes,
+			Hash:       contractHash,
+		}
+		return contract, nil
 	}
 }
 
-func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
-	boundContract, err := bindContract(common.HexToAddress(contractHash), blockchain.client, blockchain.client)
+func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
+	boundContract, err := bindContract(common.HexToAddress(contract.Hash), blockchain.client, blockchain.client)
 	if err != nil {
 		return nil, err
 	}
