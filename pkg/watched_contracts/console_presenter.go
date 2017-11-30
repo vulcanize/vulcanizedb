@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func GenerateConsoleOutput(summary *ContractSummary) string {
@@ -45,6 +46,16 @@ func attributesString(summary *ContractSummary) string {
 }
 
 func formatAttribute(attributeName string, summary *ContractSummary) string {
-	formattedAttribute := fmt.Sprintf("%s: %s", attributeName, summary.GetStateAttribute(attributeName))
-	return formattedAttribute
+	var stringResult string
+	result := summary.GetStateAttribute(attributeName)
+	fmt.Println(fmt.Sprintf("%s: %v (%T)", attributeName, result, result))
+	switch t := result.(type) {
+	case common.Address:
+		ca := result.(common.Address)
+		stringResult = fmt.Sprintf("%v", ca.Hex())
+	default:
+		_ = t
+		stringResult = fmt.Sprintf("%v", result)
+	}
+	return stringResult
 }

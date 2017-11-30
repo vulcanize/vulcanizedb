@@ -1,8 +1,9 @@
 package fakes
 
 import (
-	"github.com/8thlight/vulcanizedb/pkg/core"
 	"sort"
+
+	"github.com/8thlight/vulcanizedb/pkg/core"
 )
 
 type Blockchain struct {
@@ -24,9 +25,8 @@ func (blockchain *Blockchain) GetContractAttributes(contractHash string) (core.C
 	return contractAttributes, nil
 }
 
-func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (*string, error) {
-	result := new(string)
-	*result = blockchain.contractAttributes[contractHash][attributeName]
+func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
+	result := blockchain.contractAttributes[contractHash][attributeName]
 	return result, nil
 }
 
