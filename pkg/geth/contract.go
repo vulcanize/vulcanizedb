@@ -17,7 +17,33 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
+func (blockchain *GethBlockchain) GetContract(contractHash string) (core.Contract, error) {
+	attributes, err := blockchain.getContractAttributes(contractHash)
+	if err != nil {
+		return core.Contract{}, err
+	} else {
+		contract := core.Contract{
+			Attributes: attributes,
+			Hash:       contractHash,
+		}
+		return contract, nil
+	}
+}
+
+func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
+	boundContract, err := bindContract(common.HexToAddress(contract.Hash), blockchain.client, blockchain.client)
+	if err != nil {
+		return nil, err
+	}
+	var result interface{}
+	err = boundContract.Call(&bind.CallOpts{}, &result, attributeName)
+	if err != nil {
+		return nil, ErrInvalidStateAttribute
+	}
+	return result, nil
+}
+
+func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
 	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
 	parsed, _ := ParseAbiFile(abiFilePath)
 	var contractAttributes core.ContractAttributes
@@ -29,19 +55,6 @@ func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (co
 	}
 	sort.Sort(contractAttributes)
 	return contractAttributes, nil
-}
-
-func (blockchain *GethBlockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
-	boundContract, err := bindContract(common.HexToAddress(contractHash), blockchain.client, blockchain.client)
-	if err != nil {
-		return nil, err
-	}
-	var result interface{}
-	err = boundContract.Call(&bind.CallOpts{}, &result, attributeName)
-	if err != nil {
-		return nil, ErrInvalidStateAttribute
-	}
-	return result, nil
 }
 
 func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (*bind.BoundContract, error) {

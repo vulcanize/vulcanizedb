@@ -13,20 +13,17 @@ type Blockchain struct {
 	WasToldToStop      bool
 }
 
-func (blockchain *Blockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
-	var contractAttributes core.ContractAttributes
-	attributes, ok := blockchain.contractAttributes[contractHash]
-	if ok {
-		for key, _ := range attributes {
-			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
-		}
+func (blockchain *Blockchain) GetContract(contractHash string) (core.Contract, error) {
+	contractAttributes, err := blockchain.getContractAttributes(contractHash)
+	contract := core.Contract{
+		Attributes: contractAttributes,
+		Hash:       contractHash,
 	}
-	sort.Sort(contractAttributes)
-	return contractAttributes, nil
+	return contract, err
 }
 
-func (blockchain *Blockchain) GetContractStateAttribute(contractHash string, attributeName string) (interface{}, error) {
-	result := blockchain.contractAttributes[contractHash][attributeName]
+func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
+	result := blockchain.contractAttributes[contract.Hash][attributeName]
 	return result, nil
 }
 
@@ -72,4 +69,16 @@ func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, att
 		blockchain.contractAttributes[contractHash] = make(map[string]string)
 	}
 	blockchain.contractAttributes[contractHash][attributeName] = attributeValue
+}
+
+func (blockchain *Blockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
+	var contractAttributes core.ContractAttributes
+	attributes, ok := blockchain.contractAttributes[contractHash]
+	if ok {
+		for key, _ := range attributes {
+			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
+		}
+	}
+	sort.Sort(contractAttributes)
+	return contractAttributes, nil
 }

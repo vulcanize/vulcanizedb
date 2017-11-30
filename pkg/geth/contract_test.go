@@ -16,11 +16,11 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
-//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//			contract, err := blockchain.GetContract(contractHash)
 //
 //			Expect(err).To(BeNil())
-//			Expect(len(attributes)).NotTo(Equal(0))
-//			symbolAttribute := *testing.FindAttribute(attributes, "symbol")
+//			Expect(len(contract.Attributes)).NotTo(Equal(0))
+//			symbolAttribute := *testing.FindAttribute(contract.Attributes, "symbol")
 //			Expect(symbolAttribute.Name).To(Equal("symbol"))
 //			Expect(symbolAttribute.Type).To(Equal("string"))
 //		})
@@ -30,10 +30,10 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
-//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//			contract, err := blockchain.GetContract(contractHash)
 //
 //			Expect(err).To(BeNil())
-//			attribute := testing.FindAttribute(attributes, "balanceOf")
+//			attribute := testing.FindAttribute(contract.Attributes, "balanceOf")
 //			Expect(attribute).To(BeNil())
 //		})
 //
@@ -42,10 +42,10 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
-//			attributes, err := blockchain.GetContractAttributes(contractHash)
+//			contract, err := blockchain.GetContract(contractHash)
 //
 //			Expect(err).To(BeNil())
-//			attribute := testing.FindAttribute(attributes, "unpause")
+//			attribute := testing.FindAttribute(contract.Attributes, "unpause")
 //			Expect(attribute).To(BeNil())
 //		})
 //	})
@@ -56,10 +56,11 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
-//			name, err := blockchain.GetContractStateAttribute(contractHash, "name")
+//			contract, _ := blockchain.GetContract(contractHash)
+//			name, err := blockchain.GetAttribute(contract, "name")
 //
-//			Expect(name).To(Equal("OMGToken"))
 //			Expect(err).To(BeNil())
+//			Expect(name).To(Equal("OMGToken"))
 //		})
 //
 //		It("returns an error when there is no ABI for the given contract", func() {
@@ -67,10 +68,11 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "MISSINGHASH"
 //
-//			name, err := blockchain.GetContractStateAttribute(contractHash, "name")
+//			contract, _ := blockchain.GetContract(contractHash)
+//			name, err := blockchain.GetAttribute(contract, "name")
 //
-//			Expect(name).To(BeNil())
 //			Expect(err).To(Equal(geth.ErrMissingAbiFile))
+//			Expect(name).To(BeNil())
 //		})
 //
 //		It("returns an error when asking for an attribute that does not exist", func() {
@@ -78,7 +80,8 @@ package geth_test
 //			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
-//			name, err := blockchain.GetContractStateAttribute(contractHash, "missing_attribute")
+//			contract, _ := blockchain.GetContract(contractHash)
+//			name, err := blockchain.GetAttribute(contract, "missing_attribute")
 //
 //			Expect(err).To(Equal(geth.ErrInvalidStateAttribute))
 //			Expect(name).To(BeNil())
