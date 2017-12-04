@@ -18,7 +18,7 @@ var _ bool = Describe("The watched contract summary", func() {
 
 			contractSummary, err := watched_contracts.NewSummary(blockchain, repository, "123")
 
-			Expect(contractSummary).To(BeNil())
+			Expect(contractSummary).To(Equal(watched_contracts.ContractSummary{}))
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -32,7 +32,7 @@ var _ bool = Describe("The watched contract summary", func() {
 
 			contractSummary, err := watched_contracts.NewSummary(blockchain, repository, "0x123")
 
-			Expect(contractSummary).NotTo(BeNil())
+			Expect(contractSummary).NotTo(Equal(watched_contracts.ContractSummary{}))
 			Expect(err).To(BeNil())
 		})
 
