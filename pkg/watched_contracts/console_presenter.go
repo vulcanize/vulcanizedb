@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func GenerateConsoleOutput(summary *ContractSummary) string {
+func GenerateConsoleOutput(summary ContractSummary) string {
 	return fmt.Sprintf(template(),
 		summary.ContractHash,
 		summary.NumberOfTransactions,
@@ -37,7 +37,7 @@ func transactionToString(transaction *core.Transaction) string {
 	}
 }
 
-func attributesString(summary *ContractSummary) string {
+func attributesString(summary ContractSummary) string {
 	var formattedAttributes string
 	for _, attribute := range summary.Attributes {
 		formattedAttributes += formatAttribute(attribute.Name, summary) + "\n" + "                            "
@@ -45,7 +45,7 @@ func attributesString(summary *ContractSummary) string {
 	return formattedAttributes
 }
 
-func formatAttribute(attributeName string, summary *ContractSummary) string {
+func formatAttribute(attributeName string, summary ContractSummary) string {
 	var stringResult string
 	result := summary.GetStateAttribute(attributeName)
 	switch t := result.(type) {

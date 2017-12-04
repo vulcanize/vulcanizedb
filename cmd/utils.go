@@ -12,7 +12,7 @@ func LoadConfig(environment string) config.Config {
 	if err != nil {
 		log.Fatalf("Error loading config\n%v", err)
 	}
-	return *cfg
+	return cfg
 }
 
 func LoadPostgres(database config.Database) repositories.Postgres {
