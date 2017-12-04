@@ -39,7 +39,7 @@ func (contractSummary ContractSummary) GetStateAttribute(attributeName string) i
 	return result
 }
 
-func newContractSummary(blockchain core.Blockchain, watchedContract core.WatchedContract, blockNumber *big.Int) ContractSummary {
+func newContractSummary(blockchain core.Blockchain, watchedContract repositories.WatchedContract, blockNumber *big.Int) ContractSummary {
 	contract, _ := blockchain.GetContract(watchedContract.Hash)
 	return ContractSummary{
 		blockChain:           blockchain,
@@ -52,9 +52,9 @@ func newContractSummary(blockchain core.Blockchain, watchedContract core.Watched
 	}
 }
 
-func lastTransaction(contract core.WatchedContract) *core.Transaction {
-	if len(contract.Transactions) > 0 {
-		return &contract.Transactions[0]
+func lastTransaction(watchedContract repositories.WatchedContract) *core.Transaction {
+	if len(watchedContract.Transactions) > 0 {
+		return &watchedContract.Transactions[0]
 	} else {
 		return nil
 	}

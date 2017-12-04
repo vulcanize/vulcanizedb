@@ -1,10 +1,5 @@
 package core
 
-type WatchedContract struct {
-	Hash         string
-	Transactions []Transaction
-}
-
 type Contract struct {
 	Attributes ContractAttributes
 	Hash       string
@@ -20,6 +15,7 @@ type ContractAttributes []ContractAttribute
 func (attributes ContractAttributes) Len() int {
 	return len(attributes)
 }
+
 func (attributes ContractAttributes) Swap(i, j int) {
 	attributes[i], attributes[j] = attributes[j], attributes[i]
 }
