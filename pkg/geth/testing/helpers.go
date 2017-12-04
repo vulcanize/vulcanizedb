@@ -17,8 +17,8 @@ func FindAttribute(contractAttributes core.ContractAttributes, attributeName str
 	return nil
 }
 
-func SampleWatchedContract() core.WatchedContract {
-	return core.WatchedContract{
+func SampleContract() core.Contract {
+	return core.Contract{
 		Abi:  sampleAbiFileContents(),
 		Hash: "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
 	}

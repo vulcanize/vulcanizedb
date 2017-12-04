@@ -15,12 +15,12 @@ type Blockchain struct {
 	WasToldToStop      bool
 }
 
-func (blockchain *Blockchain) GetAttribute(watchedContract core.WatchedContract, attributeName string, blockNumber *big.Int) (interface{}, error) {
+func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
 	var result interface{}
 	if blockNumber == nil {
-		result = blockchain.contractAttributes[watchedContract.Hash+"-1"][attributeName]
+		result = blockchain.contractAttributes[contract.Hash+"-1"][attributeName]
 	} else {
-		result = blockchain.contractAttributes[watchedContract.Hash+blockNumber.String()][attributeName]
+		result = blockchain.contractAttributes[contract.Hash+blockNumber.String()][attributeName]
 	}
 	return result, nil
 }
@@ -75,9 +75,9 @@ func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, blo
 	blockchain.contractAttributes[key][attributeName] = attributeValue
 }
 
-func (blockchain *Blockchain) GetAttributes(watchedContract core.WatchedContract) (core.ContractAttributes, error) {
+func (blockchain *Blockchain) GetAttributes(contract core.Contract) (core.ContractAttributes, error) {
 	var contractAttributes core.ContractAttributes
-	attributes, ok := blockchain.contractAttributes[watchedContract.Hash+"-1"]
+	attributes, ok := blockchain.contractAttributes[contract.Hash+"-1"]
 	if ok {
 		for key, _ := range attributes {
 			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
