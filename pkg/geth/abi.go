@@ -18,6 +18,10 @@ func ParseAbiFile(abiFilePath string) (abi.ABI, error) {
 	if err != nil {
 		return abi.ABI{}, ErrMissingAbiFile
 	}
+	return ParseAbi(abiString)
+}
+
+func ParseAbi(abiString string) (abi.ABI, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiString))
 	if err != nil {
 		return abi.ABI{}, ErrInvalidAbiFile
