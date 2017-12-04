@@ -22,7 +22,7 @@ var (
 )
 
 func (blockchain *GethBlockchain) GetContract(contractHash string) (core.Contract, error) {
-	attributes, err := blockchain.getContractAttributes(contractHash)
+	attributes, err := blockchain.GetContractAttributes(contractHash)
 	if err != nil {
 		return core.Contract{}, err
 	} else {
@@ -69,7 +69,7 @@ func callContract(contract core.Contract, input []byte, err error, blockchain *G
 	return blockchain.client.CallContract(context.Background(), msg, blockNumber)
 }
 
-func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
+func (blockchain *GethBlockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
 	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
 	parsed, _ := ParseAbiFile(abiFilePath)
 	var contractAttributes core.ContractAttributes
