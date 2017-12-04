@@ -1,6 +1,8 @@
 package geth_test
 
 //import (
+//	"math/big"
+//
 //	cfg "github.com/8thlight/vulcanizedb/pkg/config"
 //	"github.com/8thlight/vulcanizedb/pkg/geth"
 //	"github.com/8thlight/vulcanizedb/pkg/geth/testing"
@@ -57,10 +59,34 @@ package geth_test
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
 //			contract, _ := blockchain.GetContract(contractHash)
-//			name, err := blockchain.GetAttribute(contract, "name")
+//			name, err := blockchain.GetAttribute(contract, "name", nil)
 //
 //			Expect(err).To(BeNil())
 //			Expect(name).To(Equal("OMGToken"))
+//		})
+//
+//		It("returns the correct attribute for a real contract", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			contract, _ := blockchain.GetContract(contractHash)
+//			name, err := blockchain.GetAttribute(contract, "name", nil)
+//
+//			Expect(err).To(BeNil())
+//			Expect(name).To(Equal("OMGToken"))
+//		})
+//
+//		It("returns the correct attribute for a real contract at a specific block height", func() {
+//			config, _ := cfg.NewConfig("public")
+//			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+//			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+//
+//			contract, _ := blockchain.GetContract(contractHash)
+//			name, err := blockchain.GetAttribute(contract, "name", big.NewInt(4652791))
+//
+//			Expect(name).To(Equal("OMGToken"))
+//			Expect(err).To(BeNil())
 //		})
 //
 //		It("returns an error when there is no ABI for the given contract", func() {
@@ -69,7 +95,7 @@ package geth_test
 //			contractHash := "MISSINGHASH"
 //
 //			contract, _ := blockchain.GetContract(contractHash)
-//			name, err := blockchain.GetAttribute(contract, "name")
+//			name, err := blockchain.GetAttribute(contract, "name", nil)
 //
 //			Expect(err).To(Equal(geth.ErrMissingAbiFile))
 //			Expect(name).To(BeNil())
@@ -81,7 +107,7 @@ package geth_test
 //			contractHash := "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 //
 //			contract, _ := blockchain.GetContract(contractHash)
-//			name, err := blockchain.GetAttribute(contract, "missing_attribute")
+//			name, err := blockchain.GetAttribute(contract, "missing_attribute", nil)
 //
 //			Expect(err).To(Equal(geth.ErrInvalidStateAttribute))
 //			Expect(name).To(BeNil())

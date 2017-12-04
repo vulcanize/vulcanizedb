@@ -7,9 +7,13 @@ import (
 
 	"sort"
 
+	"context"
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -30,17 +34,39 @@ func (blockchain *GethBlockchain) GetContract(contractHash string) (core.Contrac
 	}
 }
 
-func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
-	boundContract, err := bindContract(common.HexToAddress(contract.Hash), blockchain.client, blockchain.client)
+func (blockchain *GethBlockchain) getParseAbi(contract core.Contract) (abi.ABI, error) {
+	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contract.Hash))
+	parsed, err := ParseAbiFile(abiFilePath)
+	if err != nil {
+		return abi.ABI{}, err
+	}
+	return parsed, nil
+}
+
+func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
+	parsed, err := blockchain.getParseAbi(contract)
+	var result interface{}
+	if err != nil {
+		return result, err
+	}
+	input, err := parsed.Pack(attributeName)
 	if err != nil {
 		return nil, err
 	}
-	var result interface{}
-	err = boundContract.Call(&bind.CallOpts{}, &result, attributeName)
+	output, err := callContract(contract, input, err, blockchain, blockNumber)
+	if err != nil {
+		return nil, err
+	}
+	err = parsed.Unpack(&result, attributeName, output)
 	if err != nil {
 		return nil, ErrInvalidStateAttribute
 	}
 	return result, nil
+}
+func callContract(contract core.Contract, input []byte, err error, blockchain *GethBlockchain, blockNumber *big.Int) ([]byte, error) {
+	to := common.HexToAddress(contract.Hash)
+	msg := ethereum.CallMsg{To: &to, Data: input}
+	return blockchain.client.CallContract(context.Background(), msg, blockNumber)
 }
 
 func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
@@ -55,13 +81,4 @@ func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (co
 	}
 	sort.Sort(contractAttributes)
 	return contractAttributes, nil
-}
-
-func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (bind.BoundContract, error) {
-	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", address.Hex()))
-	parsed, err := ParseAbiFile(abiFilePath)
-	if err != nil {
-		return bind.BoundContract{}, err
-	}
-	return *bind.NewBoundContract(address, parsed, caller, transactor), nil
 }

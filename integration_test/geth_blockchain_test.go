@@ -42,7 +42,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		Expect(firstBlock.Number + 1).Should(Equal(secondBlock.Number))
 
 		close(done)
-	}, 10)
+	}, 15)
 
 	It("retrieves the genesis block and first block", func(done Done) {
 		genesisBlock := blockchain.GetBlockByNumber(int64(0))
@@ -52,6 +52,6 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		Expect(firstBlock.Number).To(Equal(int64(1)))
 
 		close(done)
-	}, 10)
+	}, 15)
 
 })

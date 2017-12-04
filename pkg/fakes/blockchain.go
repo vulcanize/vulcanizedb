@@ -3,6 +3,8 @@ package fakes
 import (
 	"sort"
 
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 )
 
@@ -22,8 +24,13 @@ func (blockchain *Blockchain) GetContract(contractHash string) (core.Contract, e
 	return contract, err
 }
 
-func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string) (interface{}, error) {
-	result := blockchain.contractAttributes[contract.Hash][attributeName]
+func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
+	var result interface{}
+	if blockNumber == nil {
+		result = blockchain.contractAttributes[contract.Hash+"-1"][attributeName]
+	} else {
+		result = blockchain.contractAttributes[contract.Hash+blockNumber.String()][attributeName]
+	}
 	return result, nil
 }
 
@@ -63,17 +70,23 @@ func (blockchain *Blockchain) StopListening() {
 	blockchain.WasToldToStop = true
 }
 
-func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, attributeName string, attributeValue string) {
-	contractStateAttributes := blockchain.contractAttributes[contractHash]
-	if contractStateAttributes == nil {
-		blockchain.contractAttributes[contractHash] = make(map[string]string)
+func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, blockNumber *big.Int, attributeName string, attributeValue string) {
+	var key string
+	if blockNumber == nil {
+		key = contractHash + "-1"
+	} else {
+		key = contractHash + blockNumber.String()
 	}
-	blockchain.contractAttributes[contractHash][attributeName] = attributeValue
+	contractStateAttributes := blockchain.contractAttributes[key]
+	if contractStateAttributes == nil {
+		blockchain.contractAttributes[key] = make(map[string]string)
+	}
+	blockchain.contractAttributes[key][attributeName] = attributeValue
 }
 
 func (blockchain *Blockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
 	var contractAttributes core.ContractAttributes
-	attributes, ok := blockchain.contractAttributes[contractHash]
+	attributes, ok := blockchain.contractAttributes[contractHash+"-1"]
 	if ok {
 		for key, _ := range attributes {
 			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
