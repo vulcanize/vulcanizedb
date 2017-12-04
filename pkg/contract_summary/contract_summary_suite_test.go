@@ -1,4 +1,4 @@
-package watched_contracts_test
+package contract_summary_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestWatchedContracts(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "WatchedContracts Suite")
+	RunSpecs(t, "ContractSummary Suite")
 }
