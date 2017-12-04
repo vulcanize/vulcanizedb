@@ -51,7 +51,7 @@ func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attribute
 	}
 	input, err := parsed.Pack(attributeName)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidStateAttribute
 	}
 	output, err := callContract(contract, input, err, blockchain, blockNumber)
 	if err != nil {
@@ -59,7 +59,7 @@ func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attribute
 	}
 	err = parsed.Unpack(&result, attributeName, output)
 	if err != nil {
-		return nil, ErrInvalidStateAttribute
+		return nil, err
 	}
 	return result, nil
 }
