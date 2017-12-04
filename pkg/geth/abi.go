@@ -14,14 +14,21 @@ var (
 )
 
 func ParseAbiFile(abiFilePath string) (abi.ABI, error) {
-	filesBytes, err := ioutil.ReadFile(abiFilePath)
+	abiString, err := ReadAbiFile(abiFilePath)
 	if err != nil {
 		return abi.ABI{}, ErrMissingAbiFile
 	}
-	abiString := string(filesBytes)
 	parsedAbi, err := abi.JSON(strings.NewReader(abiString))
 	if err != nil {
 		return abi.ABI{}, ErrInvalidAbiFile
 	}
 	return parsedAbi, nil
+}
+
+func ReadAbiFile(abiFilePath string) (string, error) {
+	filesBytes, err := ioutil.ReadFile(abiFilePath)
+	if err != nil {
+		return "", ErrMissingAbiFile
+	}
+	return string(filesBytes), nil
 }
