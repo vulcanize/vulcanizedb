@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.1
--- Dumped by pg_dump version 10.1
+-- Dumped from database version 10.0
+-- Dumped by pg_dump version 10.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -124,7 +124,8 @@ ALTER SEQUENCE transactions_id_seq OWNED BY transactions.id;
 
 CREATE TABLE watched_contracts (
     contract_id integer NOT NULL,
-    contract_hash character varying(66)
+    contract_hash character varying(66),
+    contract_abi json
 );
 
 
