@@ -7,6 +7,6 @@ type Blockchain interface {
 	SubscribeToBlocks(blocks chan Block)
 	StartListening()
 	StopListening()
-	GetAttributes(watchedContract WatchedContract) (ContractAttributes, error)
-	GetAttribute(watchedContract WatchedContract, attributeName string, blockNumber *big.Int) (interface{}, error)
+	GetAttributes(contract Contract) (ContractAttributes, error)
+	GetAttribute(contract Contract, attributeName string, blockNumber *big.Int) (interface{}, error)
 }

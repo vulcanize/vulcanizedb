@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestWatchedContracts(t *testing.T) {
+func TestContractSummary(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ContractSummary Suite")
 }

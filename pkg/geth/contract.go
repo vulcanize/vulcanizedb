@@ -20,8 +20,8 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockchain *GethBlockchain) GetAttribute(watchedContract core.WatchedContract, attributeName string, blockNumber *big.Int) (interface{}, error) {
-	parsed, err := ParseAbi(watchedContract.Abi)
+func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
+	parsed, err := ParseAbi(contract.Abi)
 	var result interface{}
 	if err != nil {
 		return result, err
@@ -30,7 +30,7 @@ func (blockchain *GethBlockchain) GetAttribute(watchedContract core.WatchedContr
 	if err != nil {
 		return nil, ErrInvalidStateAttribute
 	}
-	output, err := callContract(watchedContract.Hash, input, blockchain, blockNumber)
+	output, err := callContract(contract.Hash, input, blockchain, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,8 @@ func callContract(contractHash string, input []byte, blockchain *GethBlockchain,
 	return blockchain.client.CallContract(context.Background(), msg, blockNumber)
 }
 
-func (blockchain *GethBlockchain) GetAttributes(watchedContract core.WatchedContract) (core.ContractAttributes, error) {
-	parsed, _ := ParseAbi(watchedContract.Abi)
+func (blockchain *GethBlockchain) GetAttributes(contract core.Contract) (core.ContractAttributes, error) {
+	parsed, _ := ParseAbi(contract.Abi)
 	var contractAttributes core.ContractAttributes
 	for _, abiElement := range parsed.Methods {
 		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {

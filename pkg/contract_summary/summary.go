@@ -11,50 +11,50 @@ import (
 )
 
 type ContractSummary struct {
-	ContractHash         string
-	NumberOfTransactions int
-	LastTransaction      *core.Transaction
-	blockChain           core.Blockchain
 	Attributes           core.ContractAttributes
 	BlockNumber          *big.Int
-	WatchedContract      core.WatchedContract
+	Contract             core.Contract
+	ContractHash         string
+	LastTransaction      *core.Transaction
+	NumberOfTransactions int
+	blockChain           core.Blockchain
 }
 
-var NewContractNotWatchedErr = func(contractHash string) error {
-	return errors.New(fmt.Sprintf("Contract %v not being watched", contractHash))
+var ErrContractDoesNotExist = func(contractHash string) error {
+	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
 }
 
 func NewSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string, blockNumber *big.Int) (ContractSummary, error) {
-	watchedContract := repository.FindWatchedContract(contractHash)
-	if watchedContract != nil {
-		return newContractSummary(blockchain, *watchedContract, blockNumber), nil
+	contract := repository.FindContract(contractHash)
+	if contract != nil {
+		return newContractSummary(blockchain, *contract, blockNumber), nil
 	} else {
-		return ContractSummary{}, NewContractNotWatchedErr(contractHash)
+		return ContractSummary{}, ErrContractDoesNotExist(contractHash)
 	}
 }
 
 func (contractSummary ContractSummary) GetStateAttribute(attributeName string) interface{} {
 	var result interface{}
-	result, _ = contractSummary.blockChain.GetAttribute(contractSummary.WatchedContract, attributeName, contractSummary.BlockNumber)
+	result, _ = contractSummary.blockChain.GetAttribute(contractSummary.Contract, attributeName, contractSummary.BlockNumber)
 	return result
 }
 
-func newContractSummary(blockchain core.Blockchain, watchedContract core.WatchedContract, blockNumber *big.Int) ContractSummary {
-	attributes, _ := blockchain.GetAttributes(watchedContract)
+func newContractSummary(blockchain core.Blockchain, contract core.Contract, blockNumber *big.Int) ContractSummary {
+	attributes, _ := blockchain.GetAttributes(contract)
 	return ContractSummary{
-		blockChain:           blockchain,
-		ContractHash:         watchedContract.Hash,
-		NumberOfTransactions: len(watchedContract.Transactions),
-		LastTransaction:      lastTransaction(watchedContract),
 		Attributes:           attributes,
 		BlockNumber:          blockNumber,
-		WatchedContract:      watchedContract,
+		Contract:             contract,
+		ContractHash:         contract.Hash,
+		LastTransaction:      lastTransaction(contract),
+		NumberOfTransactions: len(contract.Transactions),
+		blockChain:           blockchain,
 	}
 }
 
-func lastTransaction(watchedContract core.WatchedContract) *core.Transaction {
-	if len(watchedContract.Transactions) > 0 {
-		return &watchedContract.Transactions[0]
+func lastTransaction(contract core.Contract) *core.Transaction {
+	if len(contract.Transactions) > 0 {
+		return &contract.Transactions[0]
 	} else {
 		return nil
 	}
