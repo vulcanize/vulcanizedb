@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"fmt"
@@ -50,8 +49,9 @@ func parseConfigFile(filePath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		if _, err := toml.DecodeFile(filePath, &cfg); err != nil {
-			log.Fatal(err)
+		_, err := toml.DecodeFile(filePath, &cfg)
+		if err != nil {
+			return nil, err
 		}
 		return &cfg, err
 	}
