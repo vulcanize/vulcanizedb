@@ -1,4 +1,4 @@
-package watched_contracts
+package contract_summary
 
 import (
 	"errors"

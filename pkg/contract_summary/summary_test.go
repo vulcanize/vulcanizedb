@@ -1,18 +1,18 @@
-package watched_contracts_test
+package contract_summary_test
 
 import (
 	"math/big"
 
+	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/fakes"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
-	"github.com/8thlight/vulcanizedb/pkg/watched_contracts"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func NewCurrentContractSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string) (watched_contracts.ContractSummary, error) {
-	return watched_contracts.NewSummary(blockchain, repository, contractHash, nil)
+func NewCurrentContractSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string) (contract_summary.ContractSummary, error) {
+	return contract_summary.NewSummary(blockchain, repository, contractHash, nil)
 }
 
 var _ = Describe("The watched contract summary", func() {
@@ -24,7 +24,7 @@ var _ = Describe("The watched contract summary", func() {
 
 			contractSummary, err := NewCurrentContractSummary(blockchain, repository, "0x123")
 
-			Expect(contractSummary).To(Equal(watched_contracts.ContractSummary{}))
+			Expect(contractSummary).To(Equal(contract_summary.ContractSummary{}))
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -38,7 +38,7 @@ var _ = Describe("The watched contract summary", func() {
 
 			contractSummary, err := NewCurrentContractSummary(blockchain, repository, "0x123")
 
-			Expect(contractSummary).NotTo(Equal(watched_contracts.ContractSummary{}))
+			Expect(contractSummary).NotTo(Equal(contract_summary.ContractSummary{}))
 			Expect(err).To(BeNil())
 		})
 
@@ -111,7 +111,7 @@ var _ = Describe("The watched contract summary", func() {
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
 			blockchain.SetContractStateAttribute("0x123", blockNumber, "foo", "baz")
 
-			contractSummary, _ := watched_contracts.NewSummary(blockchain, repository, "0x123", blockNumber)
+			contractSummary, _ := contract_summary.NewSummary(blockchain, repository, "0x123", blockNumber)
 			attribute := contractSummary.GetStateAttribute("foo")
 
 			Expect(attribute).To(Equal("baz"))
