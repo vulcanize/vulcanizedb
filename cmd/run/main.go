@@ -10,15 +10,13 @@ import (
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/8thlight/vulcanizedb/pkg/observers"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
 )
 
 func main() {
 	environment := flag.String("environment", "", "Environment name")
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
-
-	repository := repositories.NewPostgres(config.Database)
+	repository := cmd.LoadPostgres(config.Database)
 	fmt.Printf("Creating Geth Blockchain to: %s\n", config.Client.IPCPath)
 	listener := blockchain_listener.NewBlockchainListener(
 		geth.NewGethBlockchain(config.Client.IPCPath),

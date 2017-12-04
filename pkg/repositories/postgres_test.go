@@ -26,7 +26,7 @@ var _ = Describe("Postgres repository", func() {
 
 	testing.AssertRepositoryBehavior(func() repositories.Repository {
 		cfg, _ := config.NewConfig("private")
-		repository := repositories.NewPostgres(cfg.Database)
+		repository, _ := repositories.NewPostgres(cfg.Database)
 		testing.ClearData(repository)
 		return repository
 	})
@@ -40,13 +40,19 @@ var _ = Describe("Postgres repository", func() {
 			Transactions: []core.Transaction{},
 		}
 		cfg, _ := config.NewConfig("private")
-		repository := repositories.NewPostgres(cfg.Database)
+		repository, _ := repositories.NewPostgres(cfg.Database)
 
 		err := repository.CreateBlock(badBlock)
 		savedBlock := repository.FindBlockByNumber(123)
 
 		Expect(err).ToNot(BeNil())
 		Expect(savedBlock).To(BeNil())
+	})
+
+	It("throws error when can't connect to the database", func() {
+		invalidDatabase := config.Database{}
+		_, err := repositories.NewPostgres(invalidDatabase)
+		Expect(err).To(Equal(repositories.ErrDBConnectionFailed))
 	})
 
 	It("does not commit block or transactions if transaction is invalid", func() {
@@ -58,7 +64,7 @@ var _ = Describe("Postgres repository", func() {
 			Transactions: []core.Transaction{badTransaction},
 		}
 		cfg, _ := config.NewConfig("private")
-		repository := repositories.NewPostgres(cfg.Database)
+		repository, _ := repositories.NewPostgres(cfg.Database)
 
 		err := repository.CreateBlock(block)
 		savedBlock := repository.FindBlockByNumber(123)
