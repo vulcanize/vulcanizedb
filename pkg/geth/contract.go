@@ -57,11 +57,11 @@ func (blockchain *GethBlockchain) getContractAttributes(contractHash string) (co
 	return contractAttributes, nil
 }
 
-func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (*bind.BoundContract, error) {
+func bindContract(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor) (bind.BoundContract, error) {
 	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", address.Hex()))
 	parsed, err := ParseAbiFile(abiFilePath)
 	if err != nil {
-		return nil, err
+		return bind.BoundContract{}, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor), nil
+	return *bind.NewBoundContract(address, parsed, caller, transactor), nil
 }
