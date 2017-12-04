@@ -21,6 +21,15 @@ var _ = Describe("Reading ABI files", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("reads the contents of a valid ABI file", func() {
+		path := filepath.Join(cfg.ProjectRoot(), "pkg", "geth", "testing", "valid_abi.json")
+
+		contractAbi, err := geth.ReadAbiFile(path)
+
+		Expect(contractAbi).To(Equal("[{\"foo\": \"bar\"}]"))
+		Expect(err).To(BeNil())
+	})
+
 	It("returns an error when the file does not exist", func() {
 		path := filepath.Join(cfg.ProjectRoot(), "pkg", "geth", "testing", "missing_abi.json")
 

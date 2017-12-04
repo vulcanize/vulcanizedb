@@ -39,11 +39,20 @@ func tasks(p *do.Project) {
 	p.Task("watchContract", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")
+		abiFilepath := context.Args.MayString("", "abi-filepath", "a")
 		if contractHash == "" {
 			log.Fatalln("--contract-hash required")
 		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
-			do.M{"environment": environment, "contractHash": contractHash, "$in": "cmd/subscribe_contract"})
+		if abiFilepath == "" {
+			log.Fatalln("--abi-filepath required")
+		}
+		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --abi-filepath={{.abiFilepath}}`,
+			do.M{
+				"environment":  environment,
+				"contractHash": contractHash,
+				"abiFilepath":  abiFilepath,
+				"$in":          "cmd/subscribe_contract",
+			})
 	})
 
 	p.Task("migrate", nil, func(context *do.Context) {
