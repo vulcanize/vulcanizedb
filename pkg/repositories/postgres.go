@@ -31,7 +31,7 @@ func NewPostgres(databaseConfig config.Database) (Postgres, error) {
 	return Postgres{Db: db}, nil
 }
 
-func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) error {
+func (repository Postgres) CreateWatchedContract(contract WatchedContract) error {
 	_, err := repository.Db.Exec(
 		`INSERT INTO watched_contracts (contract_hash) VALUES ($1)`, contract.Hash)
 	if err != nil {
@@ -47,8 +47,8 @@ func (repository Postgres) IsWatchedContract(contractHash string) bool {
 	return exists
 }
 
-func (repository Postgres) FindWatchedContract(contractHash string) *core.WatchedContract {
-	var savedContracts []core.WatchedContract
+func (repository Postgres) FindWatchedContract(contractHash string) *WatchedContract {
+	var savedContracts []WatchedContract
 	contractRows, _ := repository.Db.Query(
 		`SELECT contract_hash FROM watched_contracts WHERE contract_hash=$1`, contractHash)
 	savedContracts = repository.loadContract(contractRows)
@@ -192,14 +192,14 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 	return transactions
 }
 
-func (repository Postgres) loadContract(contractRows *sql.Rows) []core.WatchedContract {
-	var savedContracts []core.WatchedContract
+func (repository Postgres) loadContract(contractRows *sql.Rows) []WatchedContract {
+	var savedContracts []WatchedContract
 	for contractRows.Next() {
 		var savedContractHash string
 		contractRows.Scan(&savedContractHash)
 		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, savedContractHash)
 		transactions := repository.loadTransactions(transactionRows)
-		savedContract := core.WatchedContract{Hash: savedContractHash, Transactions: transactions}
+		savedContract := WatchedContract{Hash: savedContractHash, Transactions: transactions}
 		savedContracts = append(savedContracts, savedContract)
 	}
 	return savedContracts

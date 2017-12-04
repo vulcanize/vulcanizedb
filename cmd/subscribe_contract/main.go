@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/repositories"
 )
 
 func main() {
@@ -13,5 +13,5 @@ func main() {
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	repository := cmd.LoadPostgres(config.Database)
-	repository.CreateWatchedContract(core.WatchedContract{Hash: *contractHash})
+	repository.CreateWatchedContract(repositories.WatchedContract{Hash: *contractHash})
 }

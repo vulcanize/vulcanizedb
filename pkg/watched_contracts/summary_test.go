@@ -32,7 +32,7 @@ var _ = Describe("The watched contract summary", func() {
 	Context("when the given contract is being watched", func() {
 		It("returns the summary", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			blockchain := fakes.NewBlockchain()
 
@@ -44,7 +44,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("includes the contract hash in the summary", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			blockchain := fakes.NewBlockchain()
 
@@ -55,7 +55,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("sets the number of transactions", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			block := core.Block{
 				Transactions: []core.Transaction{
@@ -73,7 +73,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("sets the last transaction", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			block := core.Block{
 				Transactions: []core.Transaction{
@@ -91,7 +91,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets contract state attribute for the contract from the blockchain", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			blockchain := fakes.NewBlockchain()
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
@@ -104,7 +104,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets contract state attribute for the contract from the blockchain at specific block height", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			blockchain := fakes.NewBlockchain()
 			blockNumber := big.NewInt(1000)
@@ -119,7 +119,7 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets attributes for the contract from the blockchain", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := core.WatchedContract{Hash: "0x123"}
+			watchedContract := repositories.WatchedContract{Hash: "0x123"}
 			repository.CreateWatchedContract(watchedContract)
 			blockchain := fakes.NewBlockchain()
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
