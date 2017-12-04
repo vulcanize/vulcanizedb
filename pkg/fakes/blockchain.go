@@ -16,7 +16,7 @@ type Blockchain struct {
 }
 
 func (blockchain *Blockchain) GetContract(contractHash string) (core.Contract, error) {
-	contractAttributes, err := blockchain.getContractAttributes(contractHash)
+	contractAttributes, err := blockchain.GetContractAttributes(contractHash)
 	contract := core.Contract{
 		Attributes: contractAttributes,
 		Hash:       contractHash,
@@ -84,7 +84,7 @@ func (blockchain *Blockchain) SetContractStateAttribute(contractHash string, blo
 	blockchain.contractAttributes[key][attributeName] = attributeValue
 }
 
-func (blockchain *Blockchain) getContractAttributes(contractHash string) (core.ContractAttributes, error) {
+func (blockchain *Blockchain) GetContractAttributes(contractHash string) (core.ContractAttributes, error) {
 	var contractAttributes core.ContractAttributes
 	attributes, ok := blockchain.contractAttributes[contractHash+"-1"]
 	if ok {

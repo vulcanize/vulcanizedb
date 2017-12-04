@@ -8,7 +8,7 @@ type Repository interface {
 	FindBlockByNumber(blockNumber int64) *core.Block
 	MaxBlockNumber() int64
 	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
-	CreateWatchedContract(contract WatchedContract) error
+	CreateWatchedContract(contract core.WatchedContract) error
 	IsWatchedContract(contractHash string) bool
-	FindWatchedContract(contractHash string) *WatchedContract
+	FindWatchedContract(contractHash string) *core.WatchedContract
 }

@@ -6,10 +6,10 @@ import (
 
 type InMemory struct {
 	blocks           map[int64]*core.Block
-	watchedContracts map[string]*WatchedContract
+	watchedContracts map[string]*core.WatchedContract
 }
 
-func (repository *InMemory) CreateWatchedContract(watchedContract WatchedContract) error {
+func (repository *InMemory) CreateWatchedContract(watchedContract core.WatchedContract) error {
 	repository.watchedContracts[watchedContract.Hash] = &watchedContract
 	return nil
 }
@@ -19,7 +19,7 @@ func (repository *InMemory) IsWatchedContract(contractHash string) bool {
 	return present
 }
 
-func (repository *InMemory) FindWatchedContract(contractHash string) *WatchedContract {
+func (repository *InMemory) FindWatchedContract(contractHash string) *core.WatchedContract {
 	watchedContract, ok := repository.watchedContracts[contractHash]
 	if !ok {
 		return nil
@@ -47,7 +47,7 @@ func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endin
 func NewInMemory() *InMemory {
 	return &InMemory{
 		blocks:           make(map[int64]*core.Block),
-		watchedContracts: make(map[string]*WatchedContract),
+		watchedContracts: make(map[string]*core.WatchedContract),
 	}
 }
 

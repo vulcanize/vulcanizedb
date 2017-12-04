@@ -210,7 +210,7 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 
 	Describe("Creating watched contracts", func() {
 		It("returns the watched contract when it exists", func() {
-			repository.CreateWatchedContract(repositories.WatchedContract{Hash: "x123"})
+			repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
 
 			watchedContract := repository.FindWatchedContract("x123")
 			Expect(watchedContract).NotTo(BeNil())
@@ -226,7 +226,7 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 		})
 
 		It("returns empty array when no transactions 'To' a watched contract", func() {
-			repository.CreateWatchedContract(repositories.WatchedContract{Hash: "x123"})
+			repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
 			watchedContract := repository.FindWatchedContract("x123")
 			Expect(watchedContract).ToNot(BeNil())
 			Expect(watchedContract.Transactions).To(BeEmpty())
@@ -243,7 +243,7 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 			}
 			repository.CreateBlock(block)
 
-			repository.CreateWatchedContract(repositories.WatchedContract{Hash: "x123"})
+			repository.CreateWatchedContract(core.WatchedContract{Hash: "x123"})
 			watchedContract := repository.FindWatchedContract("x123")
 			Expect(watchedContract).ToNot(BeNil())
 			Expect(watchedContract.Transactions).To(
@@ -254,7 +254,7 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 		})
 
 		It("stores the ABI of the contract", func() {
-			repository.CreateWatchedContract(repositories.WatchedContract{
+			repository.CreateWatchedContract(core.WatchedContract{
 				Abi:  "{\"some\": \"json\"}",
 				Hash: "x123",
 			})

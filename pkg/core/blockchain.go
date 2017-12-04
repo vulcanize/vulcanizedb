@@ -8,5 +8,6 @@ type Blockchain interface {
 	StartListening()
 	StopListening()
 	GetContract(contractHash string) (Contract, error)
+	GetContractAttributes(contractHash string) (ContractAttributes, error)
 	GetAttribute(contract Contract, attributeName string, blockNumber *big.Int) (interface{}, error)
 }
