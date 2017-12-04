@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"log"
 
 	"context"
 
@@ -19,16 +18,17 @@ type Postgres struct {
 }
 
 var (
-	ErrDBInsertFailed = errors.New("postgres: insert failed")
+	ErrDBInsertFailed     = errors.New("postgres: insert failed")
+	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
 )
 
-func NewPostgres(databaseConfig config.Database) Postgres {
+func NewPostgres(databaseConfig config.Database) (Postgres, error) {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
-		log.Fatalf("Error connecting to DB: %v\n", err)
+		return Postgres{}, ErrDBConnectionFailed
 	}
-	return Postgres{Db: db}
+	return Postgres{Db: db}, nil
 }
 
 func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) error {
@@ -42,11 +42,8 @@ func (repository Postgres) CreateWatchedContract(contract core.WatchedContract) 
 
 func (repository Postgres) IsWatchedContract(contractHash string) bool {
 	var exists bool
-	err := repository.Db.QueryRow(
+	repository.Db.QueryRow(
 		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
-	if err != nil && err != sql.ErrNoRows {
-		log.Fatalf("error checking if row exists %v", err)
-	}
 	return exists
 }
 

@@ -9,7 +9,6 @@ import (
 
 	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	"github.com/8thlight/vulcanizedb/pkg/watched_contracts"
 )
 
@@ -18,9 +17,8 @@ func main() {
 	contractHash := flag.String("contract-hash", "", "Contract hash to show summary")
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
-
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-	repository := repositories.NewPostgres(config.Database)
+	repository := cmd.LoadPostgres(config.Database)
 	contractSummary, err := watched_contracts.NewSummary(blockchain, repository, *contractHash)
 	if err != nil {
 		log.Fatalln(err)
