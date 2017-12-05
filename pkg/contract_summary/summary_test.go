@@ -1,51 +1,51 @@
-package watched_contracts_test
+package contract_summary_test
 
 import (
 	"math/big"
 
+	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/fakes"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
-	"github.com/8thlight/vulcanizedb/pkg/watched_contracts"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func NewCurrentContractSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string) (watched_contracts.ContractSummary, error) {
-	return watched_contracts.NewSummary(blockchain, repository, contractHash, nil)
+func NewCurrentContractSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string) (contract_summary.ContractSummary, error) {
+	return contract_summary.NewSummary(blockchain, repository, contractHash, nil)
 }
 
-var _ = Describe("The watched contract summary", func() {
+var _ = Describe("The contract summary", func() {
 
-	Context("when the given contract is not being watched", func() {
+	Context("when the given contract does not exist", func() {
 		It("returns an error", func() {
 			repository := repositories.NewInMemory()
 			blockchain := fakes.NewBlockchain()
 
 			contractSummary, err := NewCurrentContractSummary(blockchain, repository, "0x123")
 
-			Expect(contractSummary).To(Equal(watched_contracts.ContractSummary{}))
+			Expect(contractSummary).To(Equal(contract_summary.ContractSummary{}))
 			Expect(err).NotTo(BeNil())
 		})
 	})
 
-	Context("when the given contract is being watched", func() {
+	Context("when the given contract exists", func() {
 		It("returns the summary", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			blockchain := fakes.NewBlockchain()
 
 			contractSummary, err := NewCurrentContractSummary(blockchain, repository, "0x123")
 
-			Expect(contractSummary).NotTo(Equal(watched_contracts.ContractSummary{}))
+			Expect(contractSummary).NotTo(Equal(contract_summary.ContractSummary{}))
 			Expect(err).To(BeNil())
 		})
 
 		It("includes the contract hash in the summary", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			blockchain := fakes.NewBlockchain()
 
 			contractSummary, _ := NewCurrentContractSummary(blockchain, repository, "0x123")
@@ -55,8 +55,8 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("sets the number of transactions", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			block := core.Block{
 				Transactions: []core.Transaction{
 					{To: "0x123"},
@@ -73,8 +73,8 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("sets the last transaction", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			block := core.Block{
 				Transactions: []core.Transaction{
 					{Hash: "TRANSACTION2", To: "0x123"},
@@ -91,8 +91,8 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets contract state attribute for the contract from the blockchain", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			blockchain := fakes.NewBlockchain()
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
 
@@ -104,14 +104,14 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets contract state attribute for the contract from the blockchain at specific block height", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			blockchain := fakes.NewBlockchain()
 			blockNumber := big.NewInt(1000)
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
 			blockchain.SetContractStateAttribute("0x123", blockNumber, "foo", "baz")
 
-			contractSummary, _ := watched_contracts.NewSummary(blockchain, repository, "0x123", blockNumber)
+			contractSummary, _ := contract_summary.NewSummary(blockchain, repository, "0x123", blockNumber)
 			attribute := contractSummary.GetStateAttribute("foo")
 
 			Expect(attribute).To(Equal("baz"))
@@ -119,8 +119,8 @@ var _ = Describe("The watched contract summary", func() {
 
 		It("gets attributes for the contract from the blockchain", func() {
 			repository := repositories.NewInMemory()
-			watchedContract := repositories.WatchedContract{Hash: "0x123"}
-			repository.CreateWatchedContract(watchedContract)
+			contract := core.Contract{Hash: "0x123"}
+			repository.CreateContract(contract)
 			blockchain := fakes.NewBlockchain()
 			blockchain.SetContractStateAttribute("0x123", nil, "foo", "bar")
 			blockchain.SetContractStateAttribute("0x123", nil, "baz", "bar")
