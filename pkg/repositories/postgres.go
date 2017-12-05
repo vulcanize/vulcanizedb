@@ -31,7 +31,7 @@ func NewPostgres(databaseConfig config.Database) (Postgres, error) {
 	return Postgres{Db: db}, nil
 }
 
-func (repository Postgres) CreateWatchedContract(contract WatchedContract) error {
+func (repository Postgres) CreateContract(contract core.Contract) error {
 	abi := contract.Abi
 	var abiToInsert *string
 	if abi != "" {
@@ -45,15 +45,15 @@ func (repository Postgres) CreateWatchedContract(contract WatchedContract) error
 	return nil
 }
 
-func (repository Postgres) IsWatchedContract(contractHash string) bool {
+func (repository Postgres) ContractExists(contractHash string) bool {
 	var exists bool
 	repository.Db.QueryRow(
 		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
 	return exists
 }
 
-func (repository Postgres) FindWatchedContract(contractHash string) *WatchedContract {
-	var savedContracts []WatchedContract
+func (repository Postgres) FindContract(contractHash string) *core.Contract {
+	var savedContracts []core.Contract
 	contractRows, _ := repository.Db.Query(
 		`SELECT contract_hash, contract_abi FROM watched_contracts WHERE contract_hash=$1`, contractHash)
 	savedContracts = repository.loadContract(contractRows)
@@ -197,15 +197,15 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 	return transactions
 }
 
-func (repository Postgres) loadContract(contractRows *sql.Rows) []WatchedContract {
-	var savedContracts []WatchedContract
+func (repository Postgres) loadContract(contractRows *sql.Rows) []core.Contract {
+	var savedContracts []core.Contract
 	for contractRows.Next() {
 		var savedContractHash string
 		var savedContractAbi string
 		contractRows.Scan(&savedContractHash, &savedContractAbi)
 		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, savedContractHash)
 		transactions := repository.loadTransactions(transactionRows)
-		savedContract := WatchedContract{Hash: savedContractHash, Transactions: transactions, Abi: savedContractAbi}
+		savedContract := core.Contract{Hash: savedContractHash, Transactions: transactions, Abi: savedContractAbi}
 		savedContracts = append(savedContracts, savedContract)
 	}
 	return savedContracts

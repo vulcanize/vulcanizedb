@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 )
 
 func main() {
@@ -14,9 +14,9 @@ func main() {
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	repository := cmd.LoadPostgres(config.Database)
-	watchedContract := repositories.WatchedContract{
+	watchedContract := core.Contract{
 		Abi:  cmd.ReadAbiFile(*abiFilepath),
 		Hash: *contractHash,
 	}
-	repository.CreateWatchedContract(watchedContract)
+	repository.CreateContract(watchedContract)
 }

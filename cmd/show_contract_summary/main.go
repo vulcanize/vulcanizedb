@@ -10,8 +10,8 @@ import (
 	"math/big"
 
 	"github.com/8thlight/vulcanizedb/cmd"
+	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
-	"github.com/8thlight/vulcanizedb/pkg/watched_contracts"
 )
 
 func main() {
@@ -24,11 +24,11 @@ func main() {
 	repository := cmd.LoadPostgres(config.Database)
 	blockNumber := requestedBlockNumber(_blockNumber)
 
-	contractSummary, err := watched_contracts.NewSummary(blockchain, repository, *contractHash, blockNumber)
+	contractSummary, err := contract_summary.NewSummary(blockchain, repository, *contractHash, blockNumber)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	output := watched_contracts.GenerateConsoleOutput(contractSummary)
+	output := contract_summary.GenerateConsoleOutput(contractSummary)
 	fmt.Println(output)
 }
 
