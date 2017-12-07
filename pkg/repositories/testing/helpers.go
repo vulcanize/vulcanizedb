@@ -13,11 +13,12 @@ func ClearData(postgres repositories.Postgres) {
 	postgres.Db.MustExec("DELETE FROM blocks")
 }
 
-func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
+func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.Repository) {
 	var repository repositories.Repository
 
 	BeforeEach(func() {
-		repository = buildRepository()
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		repository = buildRepository(node)
 	})
 
 	Describe("Saving blocks", func() {
@@ -32,6 +33,21 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 			repository.CreateBlock(block)
 
 			Expect(repository.BlockCount()).To(Equal(1))
+		})
+
+		It("associates blocks to a node", func() {
+			block := core.Block{
+				Number: 123,
+			}
+			repository.CreateBlock(block)
+			nodeTwo := core.Node{
+				GenesisBlock: "0x456",
+				NetworkId:    1,
+			}
+			repositoryTwo := buildRepository(nodeTwo)
+
+			foundBlock := repositoryTwo.FindBlockByNumber(123)
+			Expect(foundBlock).To(BeNil())
 		})
 
 		It("saves the attributes of the block", func() {

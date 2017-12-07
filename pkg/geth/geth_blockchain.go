@@ -6,9 +6,11 @@ import (
 	"math/big"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/geth/node"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/net/context"
 )
 
@@ -17,6 +19,11 @@ type GethBlockchain struct {
 	readGethHeaders     chan *types.Header
 	outputBlocks        chan core.Block
 	newHeadSubscription ethereum.Subscription
+	node                core.Node
+}
+
+func (blockchain *GethBlockchain) Node() core.Node {
+	return blockchain.node
 }
 
 func (blockchain *GethBlockchain) GetBlockByNumber(blockNumber int64) core.Block {
@@ -26,7 +33,9 @@ func (blockchain *GethBlockchain) GetBlockByNumber(blockNumber int64) core.Block
 
 func NewGethBlockchain(ipcPath string) *GethBlockchain {
 	blockchain := GethBlockchain{}
-	client, _ := ethclient.Dial(ipcPath)
+	rpcClient, _ := rpc.Dial(ipcPath)
+	client := ethclient.NewClient(rpcClient)
+	blockchain.node = node.Retrieve(rpcClient)
 	blockchain.client = client
 	return &blockchain
 }

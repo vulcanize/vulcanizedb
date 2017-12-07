@@ -49,7 +49,8 @@ CREATE TABLE blocks (
     block_nonce character varying(20),
     block_parenthash character varying(66),
     block_size bigint,
-    uncle_hash character varying(66)
+    uncle_hash character varying(66),
+    node_id integer NOT NULL
 );
 
 
@@ -70,6 +71,36 @@ CREATE SEQUENCE blocks_id_seq
 --
 
 ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
+
+
+--
+-- Name: nodes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE nodes (
+    id integer NOT NULL,
+    genesis_block character varying(66),
+    network_id numeric
+);
+
+
+--
+-- Name: nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE nodes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE nodes_id_seq OWNED BY nodes.id;
 
 
 --
@@ -156,6 +187,13 @@ ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::reg
 
 
 --
+-- Name: nodes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY nodes ALTER COLUMN id SET DEFAULT nextval('nodes_id_seq'::regclass);
+
+
+--
 -- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -183,6 +221,22 @@ ALTER TABLE ONLY blocks
 
 ALTER TABLE ONLY watched_contracts
     ADD CONSTRAINT contract_hash_uc UNIQUE (contract_hash);
+
+
+--
+-- Name: nodes node_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY nodes
+    ADD CONSTRAINT node_uc UNIQUE (genesis_block, network_id);
+
+
+--
+-- Name: nodes nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY nodes
+    ADD CONSTRAINT nodes_pkey PRIMARY KEY (id);
 
 
 --
@@ -222,6 +276,14 @@ CREATE INDEX block_number_index ON blocks USING btree (block_number);
 
 ALTER TABLE ONLY transactions
     ADD CONSTRAINT fk_test FOREIGN KEY (block_id) REFERENCES blocks(id);
+
+
+--
+-- Name: blocks node_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY blocks
+    ADD CONSTRAINT node_fk FOREIGN KEY (node_id) REFERENCES nodes(id);
 
 
 --

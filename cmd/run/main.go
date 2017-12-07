@@ -16,10 +16,11 @@ func main() {
 	environment := flag.String("environment", "", "Environment name")
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
-	repository := cmd.LoadPostgres(config.Database)
 	fmt.Printf("Creating Geth Blockchain to: %s\n", config.Client.IPCPath)
+	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	listener := blockchain_listener.NewBlockchainListener(
-		geth.NewGethBlockchain(config.Client.IPCPath),
+		blockchain,
 		[]core.BlockchainObserver{
 			observers.BlockchainLoggingObserver{},
 			observers.NewBlockchainDbObserver(repository),

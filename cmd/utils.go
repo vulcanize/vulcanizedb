@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/8thlight/vulcanizedb/pkg/config"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 )
@@ -20,8 +21,8 @@ func LoadConfig(environment string) config.Config {
 	return cfg
 }
 
-func LoadPostgres(database config.Database) repositories.Postgres {
-	repository, err := repositories.NewPostgres(database)
+func LoadPostgres(database config.Database, node core.Node) repositories.Postgres {
+	repository, err := repositories.NewPostgres(database, node)
 	if err != nil {
 		log.Fatalf("Error loading postgres\n%v", err)
 	}
