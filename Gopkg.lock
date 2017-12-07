@@ -15,21 +15,27 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/aristanetworks/goarista"
+  packages = ["monotime"]
+  revision = "8d0e8f607a4080e7df3532e645440ed0900c64a4"
+
+[[projects]]
+  branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
-  revision = "c7588cbf7690cd9f047a28efa2dcd8f2435a4e5e"
+  revision = "2e60448ffcc6bf78332d1fe590260095f554dd78"
 
 [[projects]]
   name = "github.com/ethereum/go-ethereum"
-  packages = [".","accounts/abi","common","common/hexutil","common/math","core/types","crypto","crypto/secp256k1","crypto/sha3","ethclient","log","params","rlp","rpc","trie"]
-  revision = "1db4ecdc0b9e828ff65777fb466fc7c1d04e0de9"
-  version = "v1.7.2"
+  packages = [".","accounts/abi","common","common/hexutil","common/math","common/mclock","core/types","crypto","crypto/ecies","crypto/secp256k1","crypto/sha3","ethclient","event","log","metrics","p2p","p2p/discover","p2p/discv5","p2p/nat","p2p/netutil","params","rlp","rpc","trie"]
+  revision = "4bb3c89d44e372e6a9ab85a8be0c9345265c763a"
+  version = "v1.7.3"
 
 [[projects]]
   name = "github.com/go-stack/stack"
   packages = ["."]
-  revision = "817915b46b97fd7bb80e8ab6b69f01a53ac3eebf"
-  version = "v1.6.0"
+  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
+  version = "v1.7.0"
 
 [[projects]]
   branch = "master"
@@ -39,21 +45,39 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "553a641470496b2327abcac10b36396bd98e45c9"
+
+[[projects]]
+  branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
   branch = "master"
+  name = "github.com/huin/goupnp"
+  packages = [".","dcps/internetgateway1","dcps/internetgateway2","httpu","scpd","soap","ssdp"]
+  revision = "dceda08e705b2acee36aab47d765ed801f64cfc7"
+
+[[projects]]
+  name = "github.com/jackpal/go-nat-pmp"
+  packages = ["."]
+  revision = "c9cfead9f2a36ddf3daa40ba269aa7f4bbba6b62"
+  version = "v1.0.1"
+
+[[projects]]
+  branch = "master"
   name = "github.com/jmoiron/sqlx"
   packages = [".","reflectx"]
-  revision = "3379e5993990b1f927fc8db926485e6f6becf2d2"
+  revision = "99f3ad6d85ae53d0fecf788ab62d0e9734b3c117"
 
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
   packages = [".","oid"]
-  revision = "b609790bd85edf8e9ab7e0f8912750a786177bcf"
+  revision = "83612a56d3dd153a94a629cd64925371c9adad78"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -112,8 +136,8 @@
 [[projects]]
   branch = "master"
   name = "github.com/rcrowley/go-metrics"
-  packages = ["."]
-  revision = "1f30fe9094a513ce4c700b9a54458bbb0c96996c"
+  packages = [".","exp"]
+  revision = "e181e095bae94582363434144c61a9653aff6e50"
 
 [[projects]]
   name = "github.com/rs/cors"
@@ -123,27 +147,33 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/syndtr/goleveldb"
+  packages = ["leveldb","leveldb/cache","leveldb/comparer","leveldb/errors","leveldb/filter","leveldb/iterator","leveldb/journal","leveldb/memdb","leveldb/opt","leveldb/storage","leveldb/table","leveldb/util"]
+  revision = "adf24ef3f94bd13ec4163060b21a5678f22b429b"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "bd6f299fb381e4c3393d1c4b1f0b94f5e77650c8"
+  revision = "94eea52f7b742c7cbe0b03b22f0c4c8631ece122"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","html","html/atom","html/charset","websocket"]
-  revision = "1087133bc4af3073e18add999345c6ae75918503"
+  revision = "faacc1b5e36e3ff02cbec9661c69ac63dd5a83ad"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "8dbc5d05d6edcc104950cc299a1ce6641235bc86"
+  revision = "a0f4589a76f1f83070cb9e5613809e1d07b97c13"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["encoding","encoding/charmap","encoding/htmlindex","encoding/internal","encoding/internal/identifier","encoding/japanese","encoding/korean","encoding/simplifiedchinese","encoding/traditionalchinese","encoding/unicode","internal/gen","internal/tag","internal/utf8internal","language","runes","transform","unicode/cldr"]
-  revision = "c01e4764d870b77f8abe5096ee19ad20d80e8075"
+  revision = "be25de41fadfae372d6470bda81ca6beb55ef551"
 
 [[projects]]
   name = "gopkg.in/fatih/set.v0"
@@ -173,11 +203,11 @@
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "90af18ee127c0b2099f47adc5d33fb6ce9b98630278ec66648ef3e1c5ad9063f"
+  inputs-digest = "9b993b03db46de97fde5cfe8022a60d1654172dcb7d63c2c4b876308ffd1f73e"
   solver-name = "gps-cdcl"
   solver-version = 1

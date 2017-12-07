@@ -21,7 +21,7 @@ func main() {
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database)
+	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	blockNumber := requestedBlockNumber(_blockNumber)
 
 	contractSummary, err := contract_summary.NewSummary(blockchain, repository, *contractHash, blockNumber)

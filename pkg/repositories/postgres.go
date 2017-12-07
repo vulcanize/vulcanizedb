@@ -14,21 +14,46 @@ import (
 )
 
 type Postgres struct {
-	Db *sqlx.DB
+	Db     *sqlx.DB
+	node   core.Node
+	nodeId int64
 }
 
 var (
 	ErrDBInsertFailed     = errors.New("postgres: insert failed")
 	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
+	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
 )
 
-func NewPostgres(databaseConfig config.Database) (Postgres, error) {
+func NewPostgres(databaseConfig config.Database, node core.Node) (Postgres, error) {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		return Postgres{}, ErrDBConnectionFailed
 	}
-	return Postgres{Db: db}, nil
+	pg := Postgres{Db: db, node: node}
+	err = pg.CreateNode(&node)
+	if err != nil {
+		return Postgres{}, ErrUnableToSetNode
+	}
+	return pg, nil
+}
+
+func (repository *Postgres) CreateNode(node *core.Node) error {
+	var nodeId int64
+	err := repository.Db.QueryRow(
+		`INSERT INTO nodes (genesis_block, network_id)
+                VALUES ($1, $2)
+                ON CONFLICT (genesis_block, network_id)
+                  DO UPDATE
+                    SET genesis_block = $1, network_id = $2
+                RETURNING id`,
+		node.GenesisBlock, node.NetworkId).Scan(&nodeId)
+	if err != nil {
+		return ErrUnableToSetNode
+	}
+	repository.nodeId = nodeId
+	return nil
 }
 
 func (repository Postgres) CreateContract(contract core.Contract) error {
@@ -53,7 +78,8 @@ func (repository Postgres) CreateContract(contract core.Contract) error {
 func (repository Postgres) ContractExists(contractHash string) bool {
 	var exists bool
 	repository.Db.QueryRow(
-		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1) FROM watched_contracts`, contractHash).Scan(&exists)
+		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1)
+                FROM watched_contracts`, contractHash).Scan(&exists)
 	return exists
 }
 
@@ -92,7 +118,9 @@ func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highes
 
 func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
 	blockRows, _ := repository.Db.Query(
-		`SELECT id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash FROM blocks`)
+		`SELECT id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash
+				FROM blocks
+				WHERE node_id = $1`, repository.nodeId)
 	var savedBlocks []core.Block
 	for blockRows.Next() {
 		savedBlock := repository.loadBlock(blockRows)
@@ -116,10 +144,10 @@ func (repository Postgres) CreateBlock(block core.Block) error {
 	var blockId int64
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-			(block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id `,
-		block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash).
+			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
+			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		        RETURNING id `,
+		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
@@ -138,8 +166,8 @@ func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transac
 	for _, transaction := range transactions {
 		_, err := tx.Exec(
 			`INSERT INTO transactions
-			(block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value)
 		if err != nil {
 			return err
@@ -204,7 +232,7 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 }
 
 func (repository Postgres) addTransactions(contract core.Contract) core.Contract {
-	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, contract.Hash)
+	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id DESC`, contract.Hash)
 	transactions := repository.loadTransactions(transactionRows)
 	savedContract := core.Contract{Hash: contract.Hash, Transactions: transactions, Abi: contract.Abi}
 	return savedContract

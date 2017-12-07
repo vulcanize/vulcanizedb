@@ -13,6 +13,11 @@ type Blockchain struct {
 	contractAttributes map[string]map[string]string
 	blocksChannel      chan core.Block
 	WasToldToStop      bool
+	node               core.Node
+}
+
+func (blockchain *Blockchain) Node() core.Node {
+	return blockchain.node
 }
 
 func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
@@ -29,6 +34,7 @@ func NewBlockchain() *Blockchain {
 	return &Blockchain{
 		blocks:             make(map[int64]core.Block),
 		contractAttributes: make(map[string]map[string]string),
+		node:               core.Node{GenesisBlock: "GENESIS"},
 	}
 }
 
