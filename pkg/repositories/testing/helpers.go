@@ -262,6 +262,20 @@ func AssertRepositoryBehavior(buildRepository func() repositories.Repository) {
 			Expect(contract).ToNot(BeNil())
 			Expect(contract.Abi).To(Equal("{\"some\": \"json\"}"))
 		})
+
+		It("updates the ABI of the contract if hash already present", func() {
+			repository.CreateContract(core.Contract{
+				Abi:  "{\"some\": \"json\"}",
+				Hash: "x123",
+			})
+			repository.CreateContract(core.Contract{
+				Abi:  "{\"some\": \"different json\"}",
+				Hash: "x123",
+			})
+			contract := repository.FindContract("x123")
+			Expect(contract).ToNot(BeNil())
+			Expect(contract.Abi).To(Equal("{\"some\": \"different json\"}"))
+		})
 	})
 
 }

@@ -43,9 +43,6 @@ func tasks(p *do.Project) {
 		if contractHash == "" {
 			log.Fatalln("--contract-hash required")
 		}
-		if abiFilepath == "" {
-			log.Fatalln("--abi-filepath required")
-		}
 		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --abi-filepath={{.abiFilepath}}`,
 			do.M{
 				"environment":  environment,
@@ -78,11 +75,15 @@ func tasks(p *do.Project) {
 	p.Task("showContractSummary", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")
+		blockNumber := context.Args.MayInt(-1, "block-number", "b")
 		if contractHash == "" {
 			log.Fatalln("--contract-hash required")
 		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
-			do.M{"environment": environment, "contractHash": contractHash, "$in": "cmd/show_contract_summary"})
+		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --block-number={{.blockNumber}}`,
+			do.M{"environment": environment,
+				"contractHash": contractHash,
+				"blockNumber":  blockNumber,
+				"$in":          "cmd/show_contract_summary"})
 	})
 
 }

@@ -12,10 +12,12 @@ func main() {
 	contractHash := flag.String("contract-hash", "", "contract-hash=x1234")
 	abiFilepath := flag.String("abi-filepath", "", "path/to/abifile.json")
 	flag.Parse()
+
+	contractAbiString := cmd.GetAbi(*abiFilepath, *contractHash)
 	config := cmd.LoadConfig(*environment)
 	repository := cmd.LoadPostgres(config.Database)
 	watchedContract := core.Contract{
-		Abi:  cmd.ReadAbiFile(*abiFilepath),
+		Abi:  contractAbiString,
 		Hash: *contractHash,
 	}
 	repository.CreateContract(watchedContract)
