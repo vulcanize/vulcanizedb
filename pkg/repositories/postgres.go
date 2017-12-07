@@ -38,7 +38,12 @@ func (repository Postgres) CreateContract(contract core.Contract) error {
 		abiToInsert = &abi
 	}
 	_, err := repository.Db.Exec(
-		`INSERT INTO watched_contracts (contract_hash, contract_abi) VALUES ($1, $2)`, contract.Hash, abiToInsert)
+		`INSERT INTO watched_contracts (contract_hash, contract_abi)
+				VALUES ($1, $2)
+				ON CONFLICT (contract_hash)
+				  DO UPDATE
+					SET contract_hash = $1, contract_abi = $2
+				`, contract.Hash, abiToInsert)
 	if err != nil {
 		return ErrDBInsertFailed
 	}
@@ -53,15 +58,16 @@ func (repository Postgres) ContractExists(contractHash string) bool {
 }
 
 func (repository Postgres) FindContract(contractHash string) *core.Contract {
-	var savedContracts []core.Contract
-	contractRows, _ := repository.Db.Query(
+	var hash string
+	var abi string
+	row := repository.Db.QueryRow(
 		`SELECT contract_hash, contract_abi FROM watched_contracts WHERE contract_hash=$1`, contractHash)
-	savedContracts = repository.loadContract(contractRows)
-	if len(savedContracts) > 0 {
-		return &savedContracts[0]
-	} else {
+	err := row.Scan(&hash, &abi)
+	if err == sql.ErrNoRows {
 		return nil
 	}
+	savedContract := repository.addTransactions(core.Contract{Hash: hash, Abi: abi})
+	return &savedContract
 }
 
 func (repository Postgres) MaxBlockNumber() int64 {
@@ -197,16 +203,9 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 	return transactions
 }
 
-func (repository Postgres) loadContract(contractRows *sql.Rows) []core.Contract {
-	var savedContracts []core.Contract
-	for contractRows.Next() {
-		var savedContractHash string
-		var savedContractAbi string
-		contractRows.Scan(&savedContractHash, &savedContractAbi)
-		transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, savedContractHash)
-		transactions := repository.loadTransactions(transactionRows)
-		savedContract := core.Contract{Hash: savedContractHash, Transactions: transactions, Abi: savedContractAbi}
-		savedContracts = append(savedContracts, savedContract)
-	}
-	return savedContracts
+func (repository Postgres) addTransactions(contract core.Contract) core.Contract {
+	transactionRows, _ := repository.Db.Query(`SELECT tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value FROM transactions WHERE tx_to = $1 ORDER BY block_id desc`, contract.Hash)
+	transactions := repository.loadTransactions(transactionRows)
+	savedContract := core.Contract{Hash: contract.Hash, Transactions: transactions, Abi: contract.Abi}
+	return savedContract
 }

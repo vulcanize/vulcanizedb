@@ -2,15 +2,12 @@ package geth
 
 import (
 	"errors"
-	"fmt"
-	"path/filepath"
 
 	"sort"
 
 	"context"
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -49,20 +46,6 @@ func callContract(contractHash string, input []byte, blockchain *GethBlockchain,
 
 func (blockchain *GethBlockchain) GetAttributes(contract core.Contract) (core.ContractAttributes, error) {
 	parsed, _ := ParseAbi(contract.Abi)
-	var contractAttributes core.ContractAttributes
-	for _, abiElement := range parsed.Methods {
-		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {
-			attributeType := abiElement.Outputs[0].Type.String()
-			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
-		}
-	}
-	sort.Sort(contractAttributes)
-	return contractAttributes, nil
-}
-
-func (blockchain *GethBlockchain) GetContractAttributesOld(contractHash string) (core.ContractAttributes, error) {
-	abiFilePath := filepath.Join(config.ProjectRoot(), "contracts", "public", fmt.Sprintf("%s.json", contractHash))
-	parsed, _ := ParseAbiFile(abiFilePath)
 	var contractAttributes core.ContractAttributes
 	for _, abiElement := range parsed.Methods {
 		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {

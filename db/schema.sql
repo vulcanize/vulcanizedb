@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.0
--- Dumped by pg_dump version 10.0
+-- Dumped from database version 10.1
+-- Dumped by pg_dump version 10.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -175,6 +175,14 @@ ALTER TABLE ONLY watched_contracts ALTER COLUMN contract_id SET DEFAULT nextval(
 
 ALTER TABLE ONLY blocks
     ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: watched_contracts contract_hash_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY watched_contracts
+    ADD CONSTRAINT contract_hash_uc UNIQUE (contract_hash);
 
 
 --
