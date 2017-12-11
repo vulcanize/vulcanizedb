@@ -8,6 +8,7 @@ import (
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth/node"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -20,6 +21,21 @@ type GethBlockchain struct {
 	outputBlocks        chan core.Block
 	newHeadSubscription ethereum.Subscription
 	node                core.Node
+}
+
+func (blockchain *GethBlockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
+	contractAddress := common.HexToAddress(contract.Hash)
+	fc := ethereum.FilterQuery{
+		FromBlock: blockNumber,
+		ToBlock:   blockNumber,
+		Addresses: []common.Address{contractAddress},
+	}
+	gethLogs, err := blockchain.client.FilterLogs(context.Background(), fc)
+	if err != nil {
+		return []core.Log{}, err
+	}
+	logs := GethLogsToCoreLogs(gethLogs)
+	return logs, nil
 }
 
 func (blockchain *GethBlockchain) Node() core.Node {
@@ -59,4 +75,9 @@ func (blockchain *GethBlockchain) StartListening() {
 
 func (blockchain *GethBlockchain) StopListening() {
 	blockchain.newHeadSubscription.Unsubscribe()
+}
+
+func (blockchain *GethBlockchain) latestBlock() *big.Int {
+	block, _ := blockchain.client.HeaderByNumber(context.Background(), nil)
+	return block.Number
 }

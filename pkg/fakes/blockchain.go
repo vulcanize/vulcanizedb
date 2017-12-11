@@ -9,11 +9,16 @@ import (
 )
 
 type Blockchain struct {
+	logs               map[string][]core.Log
 	blocks             map[int64]core.Block
 	contractAttributes map[string]map[string]string
 	blocksChannel      chan core.Block
 	WasToldToStop      bool
 	node               core.Node
+}
+
+func (blockchain *Blockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
+	return blockchain.logs[contract.Hash], nil
 }
 
 func (blockchain *Blockchain) Node() core.Node {
@@ -33,6 +38,7 @@ func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName
 func NewBlockchain() *Blockchain {
 	return &Blockchain{
 		blocks:             make(map[int64]core.Block),
+		logs:               make(map[string][]core.Log),
 		contractAttributes: make(map[string]map[string]string),
 		node:               core.Node{GenesisBlock: "GENESIS"},
 	}

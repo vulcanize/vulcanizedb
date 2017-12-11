@@ -28,4 +28,14 @@ var _ = Describe("Loading the config", func() {
 		Expect(err).NotTo(BeNil())
 	})
 
+	It("reads the infura config using the environment", func() {
+		infuraConfig, err := cfg.NewConfig("infura")
+
+		Expect(err).To(BeNil())
+		Expect(infuraConfig.Database.Hostname).To(Equal("localhost"))
+		Expect(infuraConfig.Database.Name).To(Equal("vulcanize_private"))
+		Expect(infuraConfig.Database.Port).To(Equal(5432))
+		Expect(infuraConfig.Client.IPCPath).To(Equal("https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"))
+	})
+
 })

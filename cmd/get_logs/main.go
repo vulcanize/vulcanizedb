@@ -1,14 +1,13 @@
 package main
 
 import (
-	"flag"
-
+	"fmt"
 	"log"
 
-	"fmt"
+	"flag"
 
 	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
+	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 )
 
@@ -19,13 +18,23 @@ func main() {
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	blockNumber := cmd.RequestedBlockNumber(_blockNumber)
 
-	contractSummary, err := contract_summary.NewSummary(blockchain, repository, *contractHash, blockNumber)
+	logs, err := blockchain.GetLogs(core.Contract{Hash: *contractHash}, blockNumber)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	output := contract_summary.GenerateConsoleOutput(contractSummary)
-	fmt.Println(output)
+	for _, l := range logs {
+		fmt.Println("\tAddress: ", l.Address)
+		fmt.Println("\tTxHash: ", l.TxHash)
+		fmt.Println("\tBlockNumber ", l.BlockNumber)
+		fmt.Println("\tTopics: ")
+		for i, topic := range l.Topics {
+			fmt.Printf("\t\tTopic %d: %s\n", i, topic)
+		}
+		fmt.Printf("\tData: %s", l.Data)
+		fmt.Print("\n\n")
+
+	}
+
 }
