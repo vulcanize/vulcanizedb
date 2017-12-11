@@ -10,4 +10,5 @@ type Blockchain interface {
 	StopListening()
 	GetAttributes(contract Contract) (ContractAttributes, error)
 	GetAttribute(contract Contract, attributeName string, blockNumber *big.Int) (interface{}, error)
+	GetLogs(contract Contract, blockNumber *big.Int) ([]Log, error)
 }

@@ -7,6 +7,8 @@ import (
 
 	"fmt"
 
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
@@ -54,4 +56,14 @@ func GetAbi(abiFilepath string, contractHash string) string {
 		log.Fatalln("Invalid ABI")
 	}
 	return contractAbiString
+}
+
+func RequestedBlockNumber(blockNumber *int64) *big.Int {
+	var _blockNumber *big.Int
+	if *blockNumber == -1 {
+		_blockNumber = nil
+	} else {
+		_blockNumber = big.NewInt(*blockNumber)
+	}
+	return _blockNumber
 }
