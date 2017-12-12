@@ -11,4 +11,6 @@ type Repository interface {
 	CreateContract(contract core.Contract) error
 	ContractExists(contractHash string) bool
 	FindContract(contractHash string) *core.Contract
+	CreateLogs(log []core.Log) error
+	FindLogs(address string, blockNumber int64) []core.Log
 }

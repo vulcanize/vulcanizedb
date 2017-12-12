@@ -65,6 +65,25 @@ var _ = Describe("Postgres repository", func() {
 		Expect(err).To(Equal(repositories.ErrUnableToSetNode))
 	})
 
+	It("does not commit log if log is invalid", func() {
+		//badTxHash violates db tx_hash field length
+		badTxHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
+		badLog := core.Log{
+			Address:     "x123",
+			BlockNumber: 1,
+			TxHash:      badTxHash,
+		}
+		cfg, _ := config.NewConfig("private")
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		repository, _ := repositories.NewPostgres(cfg.Database, node)
+
+		err := repository.CreateLogs([]core.Log{badLog})
+		savedBlock := repository.FindLogs("x123", 1)
+
+		Expect(err).ToNot(BeNil())
+		Expect(savedBlock).To(BeNil())
+	})
+
 	It("does not commit block or transactions if transaction is invalid", func() {
 		//badHash violates db To field length
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))

@@ -1,6 +1,8 @@
 package testing
 
 import (
+	"sort"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
@@ -11,6 +13,7 @@ func ClearData(postgres repositories.Postgres) {
 	postgres.Db.MustExec("DELETE FROM watched_contracts")
 	postgres.Db.MustExec("DELETE FROM transactions")
 	postgres.Db.MustExec("DELETE FROM blocks")
+	postgres.Db.MustExec("DELETE FROM logs")
 }
 
 func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.Repository) {
@@ -294,4 +297,117 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 		})
 	})
 
+	Describe("Saving logs", func() {
+		It("returns the log when it exists", func() {
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 1,
+				Index:       0,
+				Address:     "x123",
+				TxHash:      "x456",
+				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Data:        "xabc",
+			}},
+			)
+
+			log := repository.FindLogs("x123", 1)
+
+			Expect(log).NotTo(BeNil())
+			Expect(log[0].BlockNumber).To(Equal(int64(1)))
+			Expect(log[0].Address).To(Equal("x123"))
+			Expect(log[0].Index).To(Equal(int64(0)))
+			Expect(log[0].TxHash).To(Equal("x456"))
+			Expect(log[0].Topics[0]).To(Equal("x777"))
+			Expect(log[0].Topics[1]).To(Equal("x888"))
+			Expect(log[0].Topics[2]).To(Equal("x999"))
+			Expect(log[0].Data).To(Equal("xabc"))
+		})
+
+		It("returns nil if log does not exist", func() {
+			log := repository.FindLogs("x123", 1)
+			Expect(log).To(BeNil())
+		})
+
+		It("updates the log when log with when log with same block number and index is already present", func() {
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 1,
+				Index:       0,
+				Address:     "x123",
+				TxHash:      "x456",
+				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Data:        "xABC",
+			},
+			})
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 1,
+				Index:       0,
+				Address:     "x123",
+				TxHash:      "x456",
+				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Data:        "xXYZ",
+			},
+			})
+
+			log := repository.FindLogs("x123", 1)
+			Expect(log[0].Data).To(Equal("xXYZ"))
+		})
+
+		It("filters to the correct block number and address", func() {
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 1,
+				Index:       0,
+				Address:     "x123",
+				TxHash:      "x456",
+				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Data:        "xabc",
+			}},
+			)
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 1,
+				Index:       1,
+				Address:     "x123",
+				TxHash:      "x789",
+				Topics:      map[int]string{0: "x111", 1: "x222", 2: "x333"},
+				Data:        "xdef",
+			}},
+			)
+			repository.CreateLogs([]core.Log{{
+				BlockNumber: 2,
+				Index:       0,
+				Address:     "x123",
+				TxHash:      "x456",
+				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Data:        "xabc",
+			}},
+			)
+
+			log := repository.FindLogs("x123", 1)
+
+			type logIndex struct {
+				blockNumber int64
+				Index       int64
+			}
+			var uniqueBlockNumbers []logIndex
+			for _, log := range log {
+				uniqueBlockNumbers = append(uniqueBlockNumbers,
+					logIndex{log.BlockNumber, log.Index})
+			}
+			sort.Slice(uniqueBlockNumbers, func(i, j int) bool {
+				if uniqueBlockNumbers[i].blockNumber < uniqueBlockNumbers[j].blockNumber {
+					return true
+				}
+				if uniqueBlockNumbers[i].blockNumber > uniqueBlockNumbers[j].blockNumber {
+					return false
+				}
+				return uniqueBlockNumbers[i].Index < uniqueBlockNumbers[j].Index
+			})
+
+			Expect(log).NotTo(BeNil())
+			Expect(len(log)).To(Equal(2))
+			Expect(uniqueBlockNumbers).To(Equal(
+				[]logIndex{
+					{blockNumber: 1, Index: 0},
+					{blockNumber: 1, Index: 1}},
+			))
+		})
+	})
 }

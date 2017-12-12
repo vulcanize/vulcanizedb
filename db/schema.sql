@@ -74,6 +74,43 @@ ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
 
 
 --
+-- Name: logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE logs (
+    id integer NOT NULL,
+    block_number bigint,
+    address character varying(66),
+    tx_hash character varying(66),
+    index bigint,
+    topic0 character varying(66),
+    topic1 character varying(66),
+    topic2 character varying(66),
+    topic3 character varying(66),
+    data text
+);
+
+
+--
+-- Name: logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE logs_id_seq OWNED BY logs.id;
+
+
+--
 -- Name: nodes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -187,6 +224,13 @@ ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::reg
 
 
 --
+-- Name: logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY logs ALTER COLUMN id SET DEFAULT nextval('logs_id_seq'::regclass);
+
+
+--
 -- Name: nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -221,6 +265,22 @@ ALTER TABLE ONLY blocks
 
 ALTER TABLE ONLY watched_contracts
     ADD CONSTRAINT contract_hash_uc UNIQUE (contract_hash);
+
+
+--
+-- Name: logs log_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY logs
+    ADD CONSTRAINT log_uc UNIQUE (block_number, index);
+
+
+--
+-- Name: logs logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY logs
+    ADD CONSTRAINT logs_pkey PRIMARY KEY (id);
 
 
 --

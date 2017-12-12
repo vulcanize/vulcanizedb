@@ -16,18 +16,22 @@ func main() {
 	contractHash := flag.String("contract-hash", "", "Contract hash to show summary")
 	_blockNumber := flag.Int64("block-number", -1, "Block number of summary")
 	flag.Parse()
+
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	blockNumber := cmd.RequestedBlockNumber(_blockNumber)
 
 	logs, err := blockchain.GetLogs(core.Contract{Hash: *contractHash}, blockNumber)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	repository.CreateLogs(logs)
 	for _, l := range logs {
 		fmt.Println("\tAddress: ", l.Address)
 		fmt.Println("\tTxHash: ", l.TxHash)
 		fmt.Println("\tBlockNumber ", l.BlockNumber)
+		fmt.Println("\tIndex ", l.Index)
 		fmt.Println("\tTopics: ")
 		for i, topic := range l.Topics {
 			fmt.Printf("\t\tTopic %d: %s\n", i, topic)

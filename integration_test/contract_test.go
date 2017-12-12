@@ -108,12 +108,13 @@ var _ = Describe("Reading contracts", func() {
 				BlockNumber: 4703824,
 				TxHash:      "0xf896bfd1eb539d881a1a31102b78de9f25cd591bf1fe1924b86148c0b205fd5d",
 				Address:     "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
-				Topics: []string{
-					"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-					"0x000000000000000000000000fbb1b73c4f0bda4f67dca266ce6ef42f520fbb98",
-					"0x000000000000000000000000d26114cd6ee289accf82350c8d8487fedb8a0c07",
+				Topics: map[int]string{
+					0: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+					1: "0x000000000000000000000000fbb1b73c4f0bda4f67dca266ce6ef42f520fbb98",
+					2: "0x000000000000000000000000d26114cd6ee289accf82350c8d8487fedb8a0c07",
 				},
-				Data: "0x0000000000000000000000000000000000000000000000000c7d713b49da0000"}
+				Index: 19,
+				Data:  "0x0000000000000000000000000000000000000000000000000c7d713b49da0000"}
 			config, _ := cfg.NewConfig("infura")
 			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 			contract := testing.SampleContract()

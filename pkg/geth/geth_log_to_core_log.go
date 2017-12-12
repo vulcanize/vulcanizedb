@@ -8,9 +8,9 @@ import (
 
 func GethLogToCoreLog(gethLog types.Log) core.Log {
 	topics := gethLog.Topics
-	var hexTopics []string
-	for _, topic := range topics {
-		hexTopics = append(hexTopics, topic.Hex())
+	var hexTopics = make(map[int]string)
+	for i, topic := range topics {
+		hexTopics[i] = topic.Hex()
 	}
 	return core.Log{
 		Address: gethLog.Address.Hex(),
@@ -18,6 +18,7 @@ func GethLogToCoreLog(gethLog types.Log) core.Log {
 		BlockNumber: int64(gethLog.BlockNumber),
 		Topics:      hexTopics,
 		TxHash:      gethLog.TxHash.Hex(),
+		Index:       int64(gethLog.Index),
 		Data:        hexutil.Encode(gethLog.Data),
 	}
 }
