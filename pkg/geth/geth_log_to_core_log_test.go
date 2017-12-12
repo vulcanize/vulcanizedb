@@ -32,9 +32,10 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			BlockNumber: int64(gethLog.BlockNumber),
 			Data:        hexutil.Encode(gethLog.Data),
 			TxHash:      gethLog.TxHash.Hex(),
-			Topics: []string{
-				common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef").Hex(),
-				common.HexToHash("0x00000000000000000000000080b2c9d7cbbf30a1b0fc8983c647d754c6525615").Hex(),
+			Index:       2,
+			Topics: map[int]string{
+				0: common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef").Hex(),
+				1: common.HexToHash("0x00000000000000000000000080b2c9d7cbbf30a1b0fc8983c647d754c6525615").Hex(),
 			},
 		}
 
@@ -43,6 +44,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 		Expect(coreLog.Address).To(Equal(expected.Address))
 		Expect(coreLog.BlockNumber).To(Equal(expected.BlockNumber))
 		Expect(coreLog.Data).To(Equal(expected.Data))
+		Expect(coreLog.Index).To(Equal(expected.Index))
 		Expect(coreLog.Topics[0]).To(Equal(expected.Topics[0]))
 		Expect(coreLog.Topics[1]).To(Equal(expected.Topics[1]))
 		Expect(coreLog.TxHash).To(Equal(expected.TxHash))

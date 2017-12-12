@@ -1,12 +1,36 @@
 package repositories
 
 import (
+	"fmt"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 )
 
 type InMemory struct {
 	blocks    map[int64]*core.Block
 	contracts map[string]*core.Contract
+	logs      map[string][]core.Log
+}
+
+func (repository *InMemory) CreateLogs(logs []core.Log) error {
+	for _, log := range logs {
+		key := fmt.Sprintf("%s%s", log.BlockNumber, log.Index)
+		var logs []core.Log
+		repository.logs[key] = append(logs, log)
+	}
+	return nil
+}
+
+func (repository *InMemory) FindLogs(address string, blockNumber int64) []core.Log {
+	var matchingLogs []core.Log
+	for _, logs := range repository.logs {
+		for _, log := range logs {
+			if log.Address == address && log.BlockNumber == blockNumber {
+				matchingLogs = append(matchingLogs, log)
+			}
+		}
+	}
+	return matchingLogs
 }
 
 func (repository *InMemory) CreateContract(contract core.Contract) error {
@@ -48,6 +72,7 @@ func NewInMemory() *InMemory {
 	return &InMemory{
 		blocks:    make(map[int64]*core.Block),
 		contracts: make(map[string]*core.Contract),
+		logs:      make(map[string][]core.Log),
 	}
 }
 
