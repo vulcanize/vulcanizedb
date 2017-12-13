@@ -43,11 +43,12 @@ var _ = Describe("Postgres repository", func() {
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
-		err := repository.CreateBlock(badBlock)
-		savedBlock := repository.FindBlockByNumber(123)
+		err1 := repository.CreateBlock(badBlock)
+		savedBlock, err2 := repository.FindBlockByNumber(123)
 
-		Expect(err).ToNot(BeNil())
-		Expect(savedBlock).To(BeNil())
+		Expect(err1).To(HaveOccurred())
+		Expect(err2).To(HaveOccurred())
+		Expect(savedBlock).To(BeZero())
 	})
 
 	It("throws error when can't connect to the database", func() {
@@ -96,11 +97,12 @@ var _ = Describe("Postgres repository", func() {
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
-		err := repository.CreateBlock(block)
-		savedBlock := repository.FindBlockByNumber(123)
+		err1 := repository.CreateBlock(block)
+		savedBlock, err2 := repository.FindBlockByNumber(123)
 
-		Expect(err).ToNot(BeNil())
-		Expect(savedBlock).To(BeNil())
+		Expect(err1).To(HaveOccurred())
+		Expect(err2).To(HaveOccurred())
+		Expect(savedBlock).To(BeZero())
 	})
 
 })

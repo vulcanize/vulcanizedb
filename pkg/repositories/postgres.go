@@ -7,6 +7,8 @@ import (
 
 	"errors"
 
+	"fmt"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
@@ -24,6 +26,28 @@ var (
 	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
 	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
 )
+
+var ErrContractDoesNotExist = func(contractHash string) error {
+	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
+}
+
+var ErrBlockDoesNotExist = func(blockNumber int64) error {
+	return errors.New(fmt.Sprintf("Block number %d does not exist", blockNumber))
+}
+
+func NewPostgres(databaseConfig config.Database, node core.Node) (Postgres, error) {
+	connectString := config.DbConnectionString(databaseConfig)
+	db, err := sqlx.Connect("postgres", connectString)
+	if err != nil {
+		return Postgres{}, ErrDBConnectionFailed
+	}
+	pg := Postgres{Db: db, node: node}
+	err = pg.CreateNode(&node)
+	if err != nil {
+		return Postgres{}, ErrUnableToSetNode
+	}
+	return pg, nil
+}
 
 func (repository Postgres) CreateLogs(logs []core.Log) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
@@ -71,20 +95,6 @@ func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Lo
 	return repository.loadLogs(logRows)
 }
 
-func NewPostgres(databaseConfig config.Database, node core.Node) (Postgres, error) {
-	connectString := config.DbConnectionString(databaseConfig)
-	db, err := sqlx.Connect("postgres", connectString)
-	if err != nil {
-		return Postgres{}, ErrDBConnectionFailed
-	}
-	pg := Postgres{Db: db, node: node}
-	err = pg.CreateNode(&node)
-	if err != nil {
-		return Postgres{}, ErrUnableToSetNode
-	}
-	return pg, nil
-}
-
 func (repository *Postgres) CreateNode(node *core.Node) error {
 	var nodeId int64
 	err := repository.Db.QueryRow(
@@ -129,17 +139,17 @@ func (repository Postgres) ContractExists(contractHash string) bool {
 	return exists
 }
 
-func (repository Postgres) FindContract(contractHash string) *core.Contract {
+func (repository Postgres) FindContract(contractHash string) (core.Contract, error) {
 	var hash string
 	var abi string
 	contract := repository.Db.QueryRow(
 		`SELECT contract_hash, contract_abi FROM watched_contracts WHERE contract_hash=$1`, contractHash)
 	err := contract.Scan(&hash, &abi)
 	if err == sql.ErrNoRows {
-		return nil
+		return core.Contract{}, ErrContractDoesNotExist(contractHash)
 	}
 	savedContract := repository.addTransactions(core.Contract{Hash: hash, Abi: abi})
-	return &savedContract
+	return savedContract, nil
 }
 
 func (repository Postgres) MaxBlockNumber() int64 {
@@ -162,7 +172,7 @@ func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highes
 	return numbers
 }
 
-func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
+func (repository Postgres) FindBlockByNumber(blockNumber int64) (core.Block, error) {
 	blockRows, _ := repository.Db.Query(
 		`SELECT id,
                        block_number,
@@ -183,9 +193,9 @@ func (repository Postgres) FindBlockByNumber(blockNumber int64) *core.Block {
 		savedBlocks = append(savedBlocks, savedBlock)
 	}
 	if len(savedBlocks) > 0 {
-		return &savedBlocks[0]
+		return savedBlocks[0], nil
 	} else {
-		return nil
+		return core.Block{}, ErrBlockDoesNotExist(blockNumber)
 	}
 }
 

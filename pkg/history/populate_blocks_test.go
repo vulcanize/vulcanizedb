@@ -19,8 +19,8 @@ var _ = Describe("Populating blocks", func() {
 
 		history.PopulateBlocks(blockchain, repository, 1)
 
-		block := repository.FindBlockByNumber(1)
-		Expect(block).NotTo(BeNil())
+		block, err := repository.FindBlockByNumber(1)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(block.Hash).To(Equal("x012343"))
 	})
 
@@ -45,11 +45,16 @@ var _ = Describe("Populating blocks", func() {
 		history.PopulateBlocks(blockchain, repository, 5)
 
 		Expect(repository.BlockCount()).To(Equal(11))
-		Expect(repository.FindBlockByNumber(4)).To(BeNil())
-		Expect(repository.FindBlockByNumber(5)).NotTo(BeNil())
-		Expect(repository.FindBlockByNumber(8)).NotTo(BeNil())
-		Expect(repository.FindBlockByNumber(10)).NotTo(BeNil())
-		Expect(repository.FindBlockByNumber(13)).To(BeNil())
+		_, err := repository.FindBlockByNumber(4)
+		Expect(err).To(HaveOccurred())
+		_, err = repository.FindBlockByNumber(5)
+		Expect(err).ToNot(HaveOccurred())
+		_, err = repository.FindBlockByNumber(8)
+		Expect(err).ToNot(HaveOccurred())
+		_, err = repository.FindBlockByNumber(10)
+		Expect(err).ToNot(HaveOccurred())
+		_, err = repository.FindBlockByNumber(13)
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns the number of blocks created", func() {

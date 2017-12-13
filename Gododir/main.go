@@ -64,7 +64,7 @@ func tasks(p *do.Project) {
 				"environment":  environment,
 				"contractHash": contractHash,
 				"abiFilepath":  abiFilepath,
-				"$in":          "cmd/subscribe_contract",
+				"$in":          "cmd/watch_contract",
 			})
 	})
 
