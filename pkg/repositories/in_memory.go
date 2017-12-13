@@ -7,8 +7,8 @@ import (
 )
 
 type InMemory struct {
-	blocks    map[int64]*core.Block
-	contracts map[string]*core.Contract
+	blocks    map[int64]core.Block
+	contracts map[string]core.Contract
 	logs      map[string][]core.Log
 }
 
@@ -34,7 +34,7 @@ func (repository *InMemory) FindLogs(address string, blockNumber int64) []core.L
 }
 
 func (repository *InMemory) CreateContract(contract core.Contract) error {
-	repository.contracts[contract.Hash] = &contract
+	repository.contracts[contract.Hash] = contract
 	return nil
 }
 
@@ -43,10 +43,10 @@ func (repository *InMemory) ContractExists(contractHash string) bool {
 	return present
 }
 
-func (repository *InMemory) FindContract(contractHash string) *core.Contract {
+func (repository *InMemory) FindContract(contractHash string) (core.Contract, error) {
 	contract, ok := repository.contracts[contractHash]
 	if !ok {
-		return nil
+		return core.Contract{}, ErrContractDoesNotExist(contractHash)
 	}
 	for _, block := range repository.blocks {
 		for _, transaction := range block.Transactions {
@@ -55,13 +55,13 @@ func (repository *InMemory) FindContract(contractHash string) *core.Contract {
 			}
 		}
 	}
-	return contract
+	return contract, nil
 }
 
 func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
 	missingNumbers := []int64{}
 	for blockNumber := int64(startingBlockNumber); blockNumber <= endingBlockNumber; blockNumber++ {
-		if repository.blocks[blockNumber] == nil {
+		if _, ok := repository.blocks[blockNumber]; !ok {
 			missingNumbers = append(missingNumbers, blockNumber)
 		}
 	}
@@ -70,14 +70,14 @@ func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endin
 
 func NewInMemory() *InMemory {
 	return &InMemory{
-		blocks:    make(map[int64]*core.Block),
-		contracts: make(map[string]*core.Contract),
+		blocks:    make(map[int64]core.Block),
+		contracts: make(map[string]core.Contract),
 		logs:      make(map[string][]core.Log),
 	}
 }
 
 func (repository *InMemory) CreateBlock(block core.Block) error {
-	repository.blocks[block.Number] = &block
+	repository.blocks[block.Number] = block
 	return nil
 }
 
@@ -85,8 +85,11 @@ func (repository *InMemory) BlockCount() int {
 	return len(repository.blocks)
 }
 
-func (repository *InMemory) FindBlockByNumber(blockNumber int64) *core.Block {
-	return repository.blocks[blockNumber]
+func (repository *InMemory) FindBlockByNumber(blockNumber int64) (core.Block, error) {
+	if block, ok := repository.blocks[blockNumber]; ok {
+		return block, nil
+	}
+	return core.Block{}, ErrBlockDoesNotExist(blockNumber)
 }
 
 func (repository *InMemory) MaxBlockNumber() int64 {

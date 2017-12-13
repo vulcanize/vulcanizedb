@@ -30,8 +30,8 @@ var _ = Describe("Saving blocks to the database", func() {
 		observer := observers.NewBlockchainDbObserver(repository)
 		observer.NotifyBlockAdded(block)
 
-		savedBlock := repository.FindBlockByNumber(123)
-		Expect(savedBlock).NotTo(BeNil())
+		savedBlock, err := repository.FindBlockByNumber(123)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 	})
 

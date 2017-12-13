@@ -49,8 +49,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			}
 			repositoryTwo := buildRepository(nodeTwo)
 
-			foundBlock := repositoryTwo.FindBlockByNumber(123)
-			Expect(foundBlock).To(BeNil())
+			_, err := repositoryTwo.FindBlockByNumber(123)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("saves the attributes of the block", func() {
@@ -79,7 +79,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 			repository.CreateBlock(block)
 
-			savedBlock := repository.FindBlockByNumber(blockNumber)
+			savedBlock, err := repository.FindBlockByNumber(blockNumber)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(savedBlock.Difficulty).To(Equal(difficulty))
 			Expect(savedBlock.GasLimit).To(Equal(gasLimit))
 			Expect(savedBlock.GasUsed).To(Equal(gasUsed))
@@ -93,9 +94,9 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 		})
 
 		It("does not find a block when searching for a number that does not exist", func() {
-			savedBlock := repository.FindBlockByNumber(111)
+			_, err := repository.FindBlockByNumber(111)
 
-			Expect(savedBlock).To(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("saves one transaction associated to the block", func() {
@@ -106,7 +107,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 			repository.CreateBlock(block)
 
-			savedBlock := repository.FindBlockByNumber(123)
+			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(1))
 		})
 
@@ -118,7 +119,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 			repository.CreateBlock(block)
 
-			savedBlock := repository.FindBlockByNumber(123)
+			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(2))
 		})
 
@@ -145,7 +146,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 			repository.CreateBlock(block)
 
-			savedBlock := repository.FindBlockByNumber(123)
+			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(1))
 			savedTransaction := savedBlock.Transactions[0]
 			Expect(savedTransaction.Hash).To(Equal(transaction.Hash))
@@ -231,23 +232,23 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 		It("returns the contract when it exists", func() {
 			repository.CreateContract(core.Contract{Hash: "x123"})
 
-			contract := repository.FindContract("x123")
-			Expect(contract).NotTo(BeNil())
+			contract, err := repository.FindContract("x123")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(contract.Hash).To(Equal("x123"))
 
 			Expect(repository.ContractExists("x123")).To(BeTrue())
 			Expect(repository.ContractExists("x456")).To(BeFalse())
 		})
 
-		It("returns nil if contract does not exist", func() {
-			contract := repository.FindContract("x123")
-			Expect(contract).To(BeNil())
+		It("returns err if contract does not exist", func() {
+			_, err := repository.FindContract("x123")
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("returns empty array when no transactions 'To' a contract", func() {
 			repository.CreateContract(core.Contract{Hash: "x123"})
-			contract := repository.FindContract("x123")
-			Expect(contract).ToNot(BeNil())
+			contract, err := repository.FindContract("x123")
+			Expect(err).ToNot(HaveOccurred())
 			Expect(contract.Transactions).To(BeEmpty())
 		})
 
@@ -263,8 +264,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			repository.CreateBlock(block)
 
 			repository.CreateContract(core.Contract{Hash: "x123"})
-			contract := repository.FindContract("x123")
-			Expect(contract).ToNot(BeNil())
+			contract, err := repository.FindContract("x123")
+			Expect(err).ToNot(HaveOccurred())
 			Expect(contract.Transactions).To(
 				Equal([]core.Transaction{
 					{Hash: "TRANSACTION1", To: "x123"},
@@ -277,8 +278,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Abi:  "{\"some\": \"json\"}",
 				Hash: "x123",
 			})
-			contract := repository.FindContract("x123")
-			Expect(contract).ToNot(BeNil())
+			contract, err := repository.FindContract("x123")
+			Expect(err).ToNot(HaveOccurred())
 			Expect(contract.Abi).To(Equal("{\"some\": \"json\"}"))
 		})
 
@@ -291,8 +292,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Abi:  "{\"some\": \"different json\"}",
 				Hash: "x123",
 			})
-			contract := repository.FindContract("x123")
-			Expect(contract).ToNot(BeNil())
+			contract, err := repository.FindContract("x123")
+			Expect(err).ToNot(HaveOccurred())
 			Expect(contract.Abi).To(Equal("{\"some\": \"different json\"}"))
 		})
 	})

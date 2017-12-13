@@ -1,9 +1,6 @@
 package contract_summary
 
 import (
-	"errors"
-	"fmt"
-
 	"math/big"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
@@ -20,16 +17,12 @@ type ContractSummary struct {
 	blockChain           core.Blockchain
 }
 
-var ErrContractDoesNotExist = func(contractHash string) error {
-	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
-}
-
 func NewSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string, blockNumber *big.Int) (ContractSummary, error) {
-	contract := repository.FindContract(contractHash)
-	if contract != nil {
-		return newContractSummary(blockchain, *contract, blockNumber), nil
+	contract, err := repository.FindContract(contractHash)
+	if err != nil {
+		return ContractSummary{}, err
 	} else {
-		return ContractSummary{}, ErrContractDoesNotExist(contractHash)
+		return newContractSummary(blockchain, contract, blockNumber), nil
 	}
 }
 
