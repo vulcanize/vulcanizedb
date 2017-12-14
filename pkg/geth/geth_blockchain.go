@@ -24,6 +24,9 @@ type GethBlockchain struct {
 }
 
 func (blockchain *GethBlockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
+	if blockNumber == nil {
+		blockNumber = blockchain.latestBlock()
+	}
 	contractAddress := common.HexToAddress(contract.Hash)
 	fc := ethereum.FilterQuery{
 		FromBlock: blockNumber,

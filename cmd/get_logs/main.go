@@ -15,6 +15,7 @@ func main() {
 	environment := flag.String("environment", "", "Environment name")
 	contractHash := flag.String("contract-hash", "", "Contract hash to show summary")
 	_blockNumber := flag.Int64("block-number", -1, "Block number of summary")
+
 	flag.Parse()
 
 	config := cmd.LoadConfig(*environment)
