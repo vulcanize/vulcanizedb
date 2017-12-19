@@ -1,6 +1,9 @@
 package integration_test
 
 import (
+	"io/ioutil"
+	"log"
+
 	"github.com/8thlight/vulcanizedb/pkg/blockchain_listener"
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
@@ -9,6 +12,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
 
 var _ = Describe("Reading from the Geth blockchain", func() {
 

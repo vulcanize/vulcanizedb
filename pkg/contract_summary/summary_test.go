@@ -63,7 +63,7 @@ var _ = Describe("The contract summary", func() {
 					{To: "0x123"},
 				},
 			}
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 			blockchain := fakes.NewBlockchain()
 
 			contractSummary, _ := NewCurrentContractSummary(blockchain, repository, "0x123")
@@ -81,7 +81,7 @@ var _ = Describe("The contract summary", func() {
 					{Hash: "TRANSACTION1", To: "0x123"},
 				},
 			}
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 			blockchain := fakes.NewBlockchain()
 
 			contractSummary, _ := NewCurrentContractSummary(blockchain, repository, "0x123")

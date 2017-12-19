@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"io/ioutil"
+	"log"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
@@ -13,6 +16,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
 
 var _ = Describe("Postgres repository", func() {
 
@@ -43,7 +50,7 @@ var _ = Describe("Postgres repository", func() {
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
-		err1 := repository.CreateBlock(badBlock)
+		err1 := repository.CreateOrUpdateBlock(badBlock)
 		savedBlock, err2 := repository.FindBlockByNumber(123)
 
 		Expect(err1).To(HaveOccurred())
@@ -97,7 +104,7 @@ var _ = Describe("Postgres repository", func() {
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
-		err1 := repository.CreateBlock(block)
+		err1 := repository.CreateOrUpdateBlock(block)
 		savedBlock, err2 := repository.FindBlockByNumber(123)
 
 		Expect(err1).To(HaveOccurred())

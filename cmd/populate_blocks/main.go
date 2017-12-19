@@ -17,6 +17,6 @@ func main() {
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
-	numberOfBlocksCreated := history.PopulateBlocks(blockchain, repository, int64(*startingBlockNumber))
+	numberOfBlocksCreated := history.PopulateMissingBlocks(blockchain, repository, int64(*startingBlockNumber))
 	fmt.Printf("Populated %d blocks", numberOfBlocksCreated)
 }

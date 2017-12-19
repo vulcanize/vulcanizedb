@@ -33,7 +33,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 		It("increments the block count", func() {
 			block := core.Block{Number: 123}
 
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			Expect(repository.BlockCount()).To(Equal(1))
 		})
@@ -42,7 +42,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			block := core.Block{
 				Number: 123,
 			}
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 			nodeTwo := core.Node{
 				GenesisBlock: "0x456",
 				NetworkId:    1,
@@ -77,7 +77,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				UncleHash:  uncleHash,
 			}
 
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			savedBlock, err := repository.FindBlockByNumber(blockNumber)
 			Expect(err).NotTo(HaveOccurred())
@@ -105,7 +105,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Transactions: []core.Transaction{{}},
 			}
 
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(1))
@@ -117,10 +117,58 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Transactions: []core.Transaction{{}, {}},
 			}
 
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(2))
+		})
+
+		It(`replaces blocks and transactions associated to the block
+			when a more new block is in conflict (same block number + nodeid)`, func() {
+			blockOne := core.Block{
+				Number:       123,
+				Hash:         "xabc",
+				Transactions: []core.Transaction{{Hash: "x123"}, {Hash: "x345"}},
+			}
+			blockTwo := core.Block{
+				Number:       123,
+				Hash:         "xdef",
+				Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
+			}
+
+			repository.CreateOrUpdateBlock(blockOne)
+			repository.CreateOrUpdateBlock(blockTwo)
+
+			savedBlock, _ := repository.FindBlockByNumber(123)
+			Expect(len(savedBlock.Transactions)).To(Equal(2))
+			Expect(savedBlock.Transactions[0].Hash).To(Equal("x678"))
+			Expect(savedBlock.Transactions[1].Hash).To(Equal("x9ab"))
+		})
+
+		It(`does not replace blocks when block number is not unique
+			     but block number + node id is`, func() {
+			blockOne := core.Block{
+				Number:       123,
+				Transactions: []core.Transaction{{Hash: "x123"}, {Hash: "x345"}},
+			}
+			blockTwo := core.Block{
+				Number:       123,
+				Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
+			}
+			repository.CreateOrUpdateBlock(blockOne)
+			nodeTwo := core.Node{
+				GenesisBlock: "0x456",
+				NetworkId:    1,
+			}
+			repositoryTwo := buildRepository(nodeTwo)
+
+			repository.CreateOrUpdateBlock(blockOne)
+			repositoryTwo.CreateOrUpdateBlock(blockTwo)
+			retrievedBlockOne, _ := repository.FindBlockByNumber(123)
+			retrievedBlockTwo, _ := repositoryTwo.FindBlockByNumber(123)
+
+			Expect(retrievedBlockOne.Transactions[0].Hash).To(Equal("x123"))
+			Expect(retrievedBlockTwo.Transactions[0].Hash).To(Equal("x678"))
 		})
 
 		It("saves the attributes associated to a transaction", func() {
@@ -144,7 +192,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Transactions: []core.Transaction{transaction},
 			}
 
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(1))
@@ -162,41 +210,41 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 	Describe("The missing block numbers", func() {
 		It("is empty the starting block number is the highest known block number", func() {
-			repository.CreateBlock(core.Block{Number: 1})
+			repository.CreateOrUpdateBlock(core.Block{Number: 1})
 
 			Expect(len(repository.MissingBlockNumbers(1, 1))).To(Equal(0))
 		})
 
 		It("is the only missing block number", func() {
-			repository.CreateBlock(core.Block{Number: 2})
+			repository.CreateOrUpdateBlock(core.Block{Number: 2})
 
 			Expect(repository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
 		})
 
 		It("is both missing block numbers", func() {
-			repository.CreateBlock(core.Block{Number: 3})
+			repository.CreateOrUpdateBlock(core.Block{Number: 3})
 
 			Expect(repository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
 		})
 
 		It("goes back to the starting block number", func() {
-			repository.CreateBlock(core.Block{Number: 6})
+			repository.CreateOrUpdateBlock(core.Block{Number: 6})
 
 			Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
 		})
 
 		It("only includes missing block numbers", func() {
-			repository.CreateBlock(core.Block{Number: 4})
-			repository.CreateBlock(core.Block{Number: 6})
+			repository.CreateOrUpdateBlock(core.Block{Number: 4})
+			repository.CreateOrUpdateBlock(core.Block{Number: 6})
 
 			Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
 		})
 
 		It("is a list with multiple gaps", func() {
-			repository.CreateBlock(core.Block{Number: 4})
-			repository.CreateBlock(core.Block{Number: 5})
-			repository.CreateBlock(core.Block{Number: 8})
-			repository.CreateBlock(core.Block{Number: 10})
+			repository.CreateOrUpdateBlock(core.Block{Number: 4})
+			repository.CreateOrUpdateBlock(core.Block{Number: 5})
+			repository.CreateOrUpdateBlock(core.Block{Number: 8})
+			repository.CreateOrUpdateBlock(core.Block{Number: 10})
 
 			Expect(repository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
 		})
@@ -206,8 +254,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 		})
 
 		It("only returns requested range even when other gaps exist", func() {
-			repository.CreateBlock(core.Block{Number: 3})
-			repository.CreateBlock(core.Block{Number: 8})
+			repository.CreateOrUpdateBlock(core.Block{Number: 3})
+			repository.CreateOrUpdateBlock(core.Block{Number: 8})
 
 			Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
 		})
@@ -215,14 +263,14 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 	Describe("The max block numbers", func() {
 		It("returns the block number when a single block", func() {
-			repository.CreateBlock(core.Block{Number: 1})
+			repository.CreateOrUpdateBlock(core.Block{Number: 1})
 
 			Expect(repository.MaxBlockNumber()).To(Equal(int64(1)))
 		})
 
 		It("returns highest known block number when multiple blocks", func() {
-			repository.CreateBlock(core.Block{Number: 1})
-			repository.CreateBlock(core.Block{Number: 10})
+			repository.CreateOrUpdateBlock(core.Block{Number: 1})
+			repository.CreateOrUpdateBlock(core.Block{Number: 10})
 
 			Expect(repository.MaxBlockNumber()).To(Equal(int64(10)))
 		})
@@ -261,7 +309,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 					{Hash: "TRANSACTION3", To: "x123"},
 				},
 			}
-			repository.CreateBlock(block)
+			repository.CreateOrUpdateBlock(block)
 
 			repository.CreateContract(core.Contract{Hash: "x123"})
 			contract, err := repository.FindContract("x123")
