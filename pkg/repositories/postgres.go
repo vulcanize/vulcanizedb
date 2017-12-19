@@ -15,6 +15,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type BlockStatus int
+
 type Postgres struct {
 	Db     *sqlx.DB
 	node   core.Node
@@ -23,6 +25,7 @@ type Postgres struct {
 
 var (
 	ErrDBInsertFailed     = errors.New("postgres: insert failed")
+	ErrDBDeleteFailed     = errors.New("postgres: delete failed")
 	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
 	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
 )
@@ -134,8 +137,10 @@ func (repository Postgres) CreateContract(contract core.Contract) error {
 func (repository Postgres) ContractExists(contractHash string) bool {
 	var exists bool
 	repository.Db.QueryRow(
-		`SELECT exists(SELECT 1 FROM watched_contracts WHERE contract_hash=$1)
-                FROM watched_contracts`, contractHash).Scan(&exists)
+		`SELECT exists(
+                   SELECT 1
+                   FROM watched_contracts
+                   WHERE contract_hash = $1)`, contractHash).Scan(&exists)
 	return exists
 }
 
@@ -205,9 +210,41 @@ func (repository Postgres) BlockCount() int {
 	return count
 }
 
-func (repository Postgres) CreateBlock(block core.Block) error {
-	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+func (repository Postgres) getBlockHash(block core.Block) (string, bool) {
+	var retrievedBlockHash string
+	repository.Db.Get(&retrievedBlockHash,
+		`SELECT block_hash
+			   FROM blocks
+			   WHERE block_number = $1 AND node_id = $2`,
+		block.Number, repository.nodeId)
+	return retrievedBlockHash, blockExists(retrievedBlockHash)
+}
+
+func blockExists(retrievedBlockHash string) bool {
+	return retrievedBlockHash != ""
+}
+
+func (repository Postgres) CreateOrUpdateBlock(block core.Block) error {
+	var err error
+	retrievedBlockHash, ok := repository.getBlockHash(block)
+	if !ok {
+		err = repository.insertBlock(block)
+		return err
+	}
+	if ok && retrievedBlockHash != block.Hash {
+		err = repository.removeBlock(block.Number)
+		if err != nil {
+			return err
+		}
+		err = repository.insertBlock(block)
+		return err
+	}
+	return nil
+}
+
+func (repository Postgres) insertBlock(block core.Block) error {
 	var blockId int64
+	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
 			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
@@ -225,6 +262,18 @@ func (repository Postgres) CreateBlock(block core.Block) error {
 		return ErrDBInsertFailed
 	}
 	tx.Commit()
+	return nil
+}
+
+func (repository Postgres) removeBlock(blockNumber int64) error {
+	_, err := repository.Db.Exec(
+		`DELETE FROM
+				blocks
+				WHERE block_number=$1 AND node_id=$2`,
+		blockNumber, repository.nodeId)
+	if err != nil {
+		return ErrDBDeleteFailed
+	}
 	return nil
 }
 

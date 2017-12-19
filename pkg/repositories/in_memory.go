@@ -7,9 +7,10 @@ import (
 )
 
 type InMemory struct {
-	blocks    map[int64]core.Block
-	contracts map[string]core.Contract
-	logs      map[string][]core.Log
+	blocks               map[int64]core.Block
+	contracts            map[string]core.Contract
+	logs                 map[string][]core.Log
+	HandleBlockCallCount int
 }
 
 func (repository *InMemory) CreateLogs(logs []core.Log) error {
@@ -70,13 +71,15 @@ func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endin
 
 func NewInMemory() *InMemory {
 	return &InMemory{
-		blocks:    make(map[int64]core.Block),
-		contracts: make(map[string]core.Contract),
-		logs:      make(map[string][]core.Log),
+		HandleBlockCallCount: 0,
+		blocks:               make(map[int64]core.Block),
+		contracts:            make(map[string]core.Contract),
+		logs:                 make(map[string][]core.Log),
 	}
 }
 
-func (repository *InMemory) CreateBlock(block core.Block) error {
+func (repository *InMemory) CreateOrUpdateBlock(block core.Block) error {
+	repository.HandleBlockCallCount++
 	repository.blocks[block.Number] = block
 	return nil
 }

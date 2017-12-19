@@ -1,9 +1,9 @@
 package geth
 
 import (
-	"fmt"
-
 	"math/big"
+
+	"log"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth/node"
@@ -61,7 +61,7 @@ func NewGethBlockchain(ipcPath string) *GethBlockchain {
 
 func (blockchain *GethBlockchain) SubscribeToBlocks(blocks chan core.Block) {
 	blockchain.outputBlocks = blocks
-	fmt.Println("SubscribeToBlocks")
+	log.Println("SubscribeToBlocks")
 	inputHeaders := make(chan *types.Header, 10)
 	myContext := context.Background()
 	blockchain.readGethHeaders = inputHeaders

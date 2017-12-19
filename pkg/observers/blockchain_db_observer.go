@@ -14,5 +14,5 @@ func NewBlockchainDbObserver(repository repositories.Repository) BlockchainDbObs
 }
 
 func (observer BlockchainDbObserver) NotifyBlockAdded(block core.Block) {
-	observer.repository.CreateBlock(block)
+	observer.repository.CreateOrUpdateBlock(block)
 }

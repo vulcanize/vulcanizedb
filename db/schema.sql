@@ -331,11 +331,11 @@ CREATE INDEX block_number_index ON blocks USING btree (block_number);
 
 
 --
--- Name: transactions fk_test; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY transactions
-    ADD CONSTRAINT fk_test FOREIGN KEY (block_id) REFERENCES blocks(id);
+    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE;
 
 
 --
@@ -343,7 +343,7 @@ ALTER TABLE ONLY transactions
 --
 
 ALTER TABLE ONLY blocks
-    ADD CONSTRAINT node_fk FOREIGN KEY (node_id) REFERENCES nodes(id);
+    ADD CONSTRAINT node_fk FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
 
 
 --

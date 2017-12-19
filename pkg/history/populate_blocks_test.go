@@ -15,16 +15,16 @@ var _ = Describe("Populating blocks", func() {
 		blocks := []core.Block{{Number: 1, Hash: "x012343"}}
 		blockchain := fakes.NewBlockchainWithBlocks(blocks)
 		repository := repositories.NewInMemory()
-		repository.CreateBlock(core.Block{Number: 2})
+		repository.CreateOrUpdateBlock(core.Block{Number: 2})
 
-		history.PopulateBlocks(blockchain, repository, 1)
+		history.PopulateMissingBlocks(blockchain, repository, 1)
 
 		block, err := repository.FindBlockByNumber(1)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(block.Hash).To(Equal("x012343"))
 	})
 
-	It("fills in two missing blocks", func() {
+	It("fills in the three missing blocks (5,8,10)", func() {
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
 			{Number: 4},
 			{Number: 5},
@@ -33,16 +33,16 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 13},
 		})
 		repository := repositories.NewInMemory()
-		repository.CreateBlock(core.Block{Number: 1})
-		repository.CreateBlock(core.Block{Number: 2})
-		repository.CreateBlock(core.Block{Number: 3})
-		repository.CreateBlock(core.Block{Number: 6})
-		repository.CreateBlock(core.Block{Number: 7})
-		repository.CreateBlock(core.Block{Number: 9})
-		repository.CreateBlock(core.Block{Number: 11})
-		repository.CreateBlock(core.Block{Number: 12})
+		repository.CreateOrUpdateBlock(core.Block{Number: 1})
+		repository.CreateOrUpdateBlock(core.Block{Number: 2})
+		repository.CreateOrUpdateBlock(core.Block{Number: 3})
+		repository.CreateOrUpdateBlock(core.Block{Number: 6})
+		repository.CreateOrUpdateBlock(core.Block{Number: 7})
+		repository.CreateOrUpdateBlock(core.Block{Number: 9})
+		repository.CreateOrUpdateBlock(core.Block{Number: 11})
+		repository.CreateOrUpdateBlock(core.Block{Number: 12})
 
-		history.PopulateBlocks(blockchain, repository, 5)
+		history.PopulateMissingBlocks(blockchain, repository, 5)
 
 		Expect(repository.BlockCount()).To(Equal(11))
 		_, err := repository.FindBlockByNumber(4)
@@ -57,18 +57,47 @@ var _ = Describe("Populating blocks", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("updates the repository with a range of blocks w/in sliding window ", func() {
+		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+			{Number: 1},
+			{Number: 2},
+			{Number: 3},
+			{Number: 4},
+			{Number: 5},
+		})
+		repository := repositories.NewInMemory()
+		repository.CreateOrUpdateBlock(blockchain.GetBlockByNumber(5))
+
+		history.UpdateBlocksWindow(blockchain, repository, 2)
+
+		Expect(repository.BlockCount()).To(Equal(3))
+		Expect(repository.HandleBlockCallCount).To(Equal(3))
+	})
+
+	It("Generates a range of int64", func() {
+		numberOfBlocksCreated := history.MakeRange(0, 5)
+		expected := []int64{0, 1, 2, 3, 4}
+
+		Expect(numberOfBlocksCreated).To(Equal(expected))
+	})
+
 	It("returns the number of blocks created", func() {
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
 			{Number: 4},
 			{Number: 5},
 		})
 		repository := repositories.NewInMemory()
-		repository.CreateBlock(core.Block{Number: 3})
-		repository.CreateBlock(core.Block{Number: 6})
+		repository.CreateOrUpdateBlock(core.Block{Number: 3})
+		repository.CreateOrUpdateBlock(core.Block{Number: 6})
 
-		numberOfBlocksCreated := history.PopulateBlocks(blockchain, repository, 3)
+		numberOfBlocksCreated := history.PopulateMissingBlocks(blockchain, repository, 3)
 
 		Expect(numberOfBlocksCreated).To(Equal(2))
+	})
+
+	It("returns the window size", func() {
+		window := history.Window{1, 3, 10}
+		Expect(window.Size()).To(Equal(2))
 	})
 
 })
