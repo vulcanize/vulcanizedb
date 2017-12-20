@@ -1,0 +1,1 @@
+CREATE INDEX node_id_index ON blocks (node_id);

@@ -4,3 +4,6 @@ test_data_dir/
 vendor/
 contracts/*
 environments/*.toml
+Vagrantfile
+vagrant_bootstrap.sh
+.vagrant

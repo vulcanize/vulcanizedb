@@ -25,7 +25,7 @@ type GethBlockchain struct {
 
 func (blockchain *GethBlockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
 	if blockNumber == nil {
-		blockNumber = blockchain.latestBlock()
+		blockNumber = blockchain.LastBlock()
 	}
 	contractAddress := common.HexToAddress(contract.Hash)
 	fc := ethereum.FilterQuery{
@@ -80,7 +80,7 @@ func (blockchain *GethBlockchain) StopListening() {
 	blockchain.newHeadSubscription.Unsubscribe()
 }
 
-func (blockchain *GethBlockchain) latestBlock() *big.Int {
+func (blockchain *GethBlockchain) LastBlock() *big.Int {
 	block, _ := blockchain.client.HeaderByNumber(context.Background(), nil)
 	return block.Number
 }

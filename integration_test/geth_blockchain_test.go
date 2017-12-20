@@ -54,10 +54,11 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 	It("retrieves the genesis block and first block", func(done Done) {
 		genesisBlock := blockchain.GetBlockByNumber(int64(0))
 		firstBlock := blockchain.GetBlockByNumber(int64(1))
+		lastBlockNumber := blockchain.LastBlock()
 
 		Expect(genesisBlock.Number).To(Equal(int64(0)))
 		Expect(firstBlock.Number).To(Equal(int64(1)))
-
+		Expect(lastBlockNumber.Int64()).To(BeNumerically(">", 0))
 		close(done)
 	}, 15)
 

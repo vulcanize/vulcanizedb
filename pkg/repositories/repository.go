@@ -2,6 +2,10 @@ package repositories
 
 import "github.com/8thlight/vulcanizedb/pkg/core"
 
+const (
+	blocksFromHeadBeforeFinal = 20
+)
+
 type Repository interface {
 	CreateOrUpdateBlock(block core.Block) error
 	BlockCount() int
@@ -13,4 +17,5 @@ type Repository interface {
 	FindContract(contractHash string) (core.Contract, error)
 	CreateLogs(log []core.Log) error
 	FindLogs(address string, blockNumber int64) []core.Log
+	SetBlocksStatus(chainHead int64)
 }

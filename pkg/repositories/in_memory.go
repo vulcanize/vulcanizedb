@@ -13,6 +13,16 @@ type InMemory struct {
 	HandleBlockCallCount int
 }
 
+func (repository *InMemory) SetBlocksStatus(chainHead int64) {
+	for key, block := range repository.blocks {
+		if key < (chainHead - blocksFromHeadBeforeFinal) {
+			tmp := block
+			tmp.IsFinal = true
+			repository.blocks[key] = tmp
+		}
+	}
+}
+
 func (repository *InMemory) CreateLogs(logs []core.Log) error {
 	for _, log := range logs {
 		key := fmt.Sprintf("%s%s", log.BlockNumber, log.Index)

@@ -1,0 +1,1 @@
+DROP INDEX node_id_index;

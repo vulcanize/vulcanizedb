@@ -26,6 +26,12 @@ func tasks(p *do.Project) {
 			do.M{"environment": environment, "$in": "cmd/run"})
 	})
 
+	p.Task("vulcanizeDb", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		context.Start(`go run main.go --environment={{.environment}}`,
+			do.M{"environment": environment, "$in": "cmd/vulcanize_db"})
+	})
+
 	p.Task("populateBlocks", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		startingNumber := context.Args.MayInt(-1, "starting-number")

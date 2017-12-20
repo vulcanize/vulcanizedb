@@ -53,6 +53,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.Size).To(Equal(block.Size().Int64()))
 		Expect(gethBlock.Time).To(Equal(time))
 		Expect(gethBlock.UncleHash).To(Equal(block.UncleHash().Hex()))
+		Expect(gethBlock.IsFinal).To(BeFalse())
 	})
 
 	Describe("the converted transations", func() {
