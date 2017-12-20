@@ -1,0 +1,1 @@
+DROP INDEX tx_from_index;
