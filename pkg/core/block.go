@@ -12,4 +12,5 @@ type Block struct {
 	Time         int64
 	Transactions []Transaction
 	UncleHash    string
+	IsFinal      bool
 }

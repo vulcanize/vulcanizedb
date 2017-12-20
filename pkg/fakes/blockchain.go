@@ -17,6 +17,16 @@ type Blockchain struct {
 	node               core.Node
 }
 
+func (blockchain *Blockchain) LastBlock() *big.Int {
+	var max int64
+	for blockNumber := range blockchain.blocks {
+		if blockNumber > max {
+			max = blockNumber
+		}
+	}
+	return big.NewInt(max)
+}
+
 func (blockchain *Blockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
 	return blockchain.logs[contract.Hash], nil
 }

@@ -50,7 +50,8 @@ CREATE TABLE blocks (
     block_parenthash character varying(66),
     block_size bigint,
     uncle_hash character varying(66),
-    node_id integer NOT NULL
+    node_id integer NOT NULL,
+    is_final boolean
 );
 
 
@@ -284,6 +285,14 @@ ALTER TABLE ONLY logs
 
 
 --
+-- Name: blocks node_id_block_number_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY blocks
+    ADD CONSTRAINT node_id_block_number_uc UNIQUE (block_number, node_id);
+
+
+--
 -- Name: nodes node_uc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -324,10 +333,24 @@ ALTER TABLE ONLY watched_contracts
 
 
 --
+-- Name: block_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX block_id_index ON transactions USING btree (block_id);
+
+
+--
 -- Name: block_number_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX block_number_index ON blocks USING btree (block_number);
+
+
+--
+-- Name: node_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX node_id_index ON blocks USING btree (node_id);
 
 
 --

@@ -52,6 +52,14 @@ func NewPostgres(databaseConfig config.Database, node core.Node) (Postgres, erro
 	return pg, nil
 }
 
+func (repository Postgres) SetBlocksStatus(chainHead int64) {
+	cutoff := chainHead - blocksFromHeadBeforeFinal
+	repository.Db.Exec(`
+                  UPDATE blocks SET is_final = TRUE
+                  WHERE is_final = FALSE AND block_number < $1`,
+		cutoff)
+}
+
 func (repository Postgres) CreateLogs(logs []core.Log) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	for _, tlog := range logs {
@@ -178,7 +186,7 @@ func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highes
 }
 
 func (repository Postgres) FindBlockByNumber(blockNumber int64) (core.Block, error) {
-	blockRows, _ := repository.Db.Query(
+	blockRows := repository.Db.QueryRow(
 		`SELECT id,
                        block_number,
                        block_gaslimit,
@@ -189,19 +197,20 @@ func (repository Postgres) FindBlockByNumber(blockNumber int64) (core.Block, err
                        block_nonce,
                        block_parenthash,
                        block_size,
-                       uncle_hash
+                       uncle_hash,
+                       is_final
                FROM blocks
-               WHERE node_id = $1`, repository.nodeId)
-	var savedBlocks []core.Block
-	for blockRows.Next() {
-		savedBlock := repository.loadBlock(blockRows)
-		savedBlocks = append(savedBlocks, savedBlock)
+               WHERE node_id = $1 AND block_number = $2`, repository.nodeId, blockNumber)
+	savedBlock, err := repository.loadBlock(blockRows)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return core.Block{}, ErrBlockDoesNotExist(blockNumber)
+		default:
+			return savedBlock, err
+		}
 	}
-	if len(savedBlocks) > 0 {
-		return savedBlocks[0], nil
-	} else {
-		return core.Block{}, ErrBlockDoesNotExist(blockNumber)
-	}
+	return savedBlock, nil
 }
 
 func (repository Postgres) BlockCount() int {
@@ -247,10 +256,10 @@ func (repository Postgres) insertBlock(block core.Block) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash)
-			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final)
+			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		        RETURNING id `,
-		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash).
+		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
@@ -291,7 +300,7 @@ func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transac
 	return nil
 }
 
-func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
+func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 	var blockId int64
 	var blockHash string
 	var blockNonce string
@@ -303,7 +312,11 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 	var gasLimit float64
 	var gasUsed float64
 	var uncleHash string
-	blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash)
+	var isFinal bool
+	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal)
+	if err != nil {
+		return core.Block{}, err
+	}
 	transactionRows, _ := repository.Db.Query(`
             SELECT tx_hash,
 				   tx_nonce,
@@ -313,7 +326,8 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 				   tx_gasprice,
 				   tx_value
             FROM transactions
-            WHERE block_id = $1`, blockId)
+            WHERE block_id = $1
+            ORDER BY tx_hash`, blockId)
 	transactions := repository.loadTransactions(transactionRows)
 	return core.Block{
 		Difficulty:   difficulty,
@@ -327,7 +341,8 @@ func (repository Postgres) loadBlock(blockRows *sql.Rows) core.Block {
 		Time:         int64(blockTime),
 		Transactions: transactions,
 		UncleHash:    uncleHash,
-	}
+		IsFinal:      isFinal,
+	}, nil
 }
 
 func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {

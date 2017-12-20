@@ -100,4 +100,14 @@ var _ = Describe("Populating blocks", func() {
 		Expect(window.Size()).To(Equal(2))
 	})
 
+	It("returns the number of largest block", func() {
+		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+			{Number: 1},
+			{Number: 2},
+			{Number: 3},
+		})
+		maxBlockNumber := blockchain.LastBlock()
+
+		Expect(maxBlockNumber.Int64()).To(Equal(int64(3)))
+	})
 })

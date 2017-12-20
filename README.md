@@ -11,18 +11,17 @@
     - `go get -u github.com/golang/dep/cmd/dep`
  - https://github.com/go-godo/godo
     - `go get -u gopkg.in/godo.v2/cmd/godo`
- - Postgres 10
-
+ - Postgres 10 
+ - Go Ethereum 
+    - https://ethereum.github.io/go-ethereum/downloads/ 
+    
 ### Cloning the Repository
 
 1. `git config --global url."git@github.com:".insteadOf "https://github.com/"`
     - By default, `go get` does not work for private GitHub repos. This will fix that.
 2. `go get github.com/8thlight/vulcanizedb`
-3. `go get github.com/ethereum/go-ethereum`
-    - This will take a while and gives poor indication of progress.
-4. `go install github.com/ethereum/go-ethereum/cmd/geth`
-5. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
-6. `dep ensure`
+3. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+4. `dep ensure`
 
 ### Setting up the Databases
 
@@ -59,6 +58,11 @@ The default location for Ethereum is:
  - `$GOPATH/src/gihub.com/8thlight/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
 
 **Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to for configuration**
+
+## Start Vulcanize DB
+1. Start a blockchain.
+2. In a separate terminal start vulcanize_db
+    - `godo vulcanizeDb -- --environment=<some-environment>`
 
 ## Running Listener
 
@@ -102,13 +106,13 @@ You can create configuration files for additional environments.
 
 ## Running the Tests
 
-### Integration Test
-
-In order to run the integration tests, you will need to run them against a real blockchain.
-
-1. Run `./scripts/start_private_blockchain` as a separate process.
-2. `go test ./...` to run all tests.
-
 ### Unit Tests
 
 1. `go test ./pkg/...`
+
+### Integration Test
+
+In order to run the integration tests, you will need to run them against a real blockchain. At the moment the integration tests require [Geth v1.7.2](https://ethereum.github.io/go-ethereum/downloads/) as they depend on the `--dev` mode, which changed in v1.7.3 
+
+1. Run `./scripts/start_private_blockchain` as a separate process.
+2. `go test ./...` to run all tests.

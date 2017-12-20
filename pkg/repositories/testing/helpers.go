@@ -2,6 +2,7 @@ package testing
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
@@ -274,6 +275,25 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 
 			Expect(repository.MaxBlockNumber()).To(Equal(int64(10)))
 		})
+	})
+
+	Describe("The block status", func() {
+		It("sets the status of blocks within n-20 of chain HEAD as final", func() {
+			blockNumberOfChainHead := 25
+			for i := 0; i < blockNumberOfChainHead; i++ {
+				repository.CreateOrUpdateBlock(core.Block{Number: int64(i), Hash: strconv.Itoa(i)})
+			}
+
+			repository.SetBlocksStatus(int64(blockNumberOfChainHead))
+
+			blockOne, err := repository.FindBlockByNumber(1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blockOne.IsFinal).To(Equal(true))
+			blockTwo, err := repository.FindBlockByNumber(24)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blockTwo.IsFinal).To(BeFalse())
+		})
+
 	})
 
 	Describe("Creating contracts", func() {

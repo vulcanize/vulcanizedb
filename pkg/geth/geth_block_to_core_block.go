@@ -1,6 +1,8 @@
 package geth
 
 import (
+	"strings"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -39,8 +41,8 @@ func gethTransToCoreTrans(transaction *types.Transaction, from *common.Address) 
 		Hash:     transaction.Hash().Hex(),
 		Data:     transaction.Data(),
 		Nonce:    transaction.Nonce(),
-		To:       addressToHex(transaction.To()),
-		From:     addressToHex(from),
+		To:       strings.ToLower(addressToHex(transaction.To())),
+		From:     strings.ToLower(addressToHex(from)),
 		GasLimit: transaction.Gas().Int64(),
 		GasPrice: transaction.GasPrice().Int64(),
 		Value:    transaction.Value().Int64(),
