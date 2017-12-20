@@ -1,0 +1,1 @@
+CREATE INDEX tx_to_index ON transactions(tx_to);

@@ -334,6 +334,9 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			repository.CreateContract(core.Contract{Hash: "x123"})
 			contract, err := repository.FindContract("x123")
 			Expect(err).ToNot(HaveOccurred())
+			sort.Slice(contract.Transactions, func(i, j int) bool {
+				return contract.Transactions[i].Hash < contract.Transactions[j].Hash
+			})
 			Expect(contract.Transactions).To(
 				Equal([]core.Transaction{
 					{Hash: "TRANSACTION1", To: "x123"},

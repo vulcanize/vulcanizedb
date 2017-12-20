@@ -354,6 +354,20 @@ CREATE INDEX node_id_index ON blocks USING btree (node_id);
 
 
 --
+-- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tx_from_index ON transactions USING btree (tx_from);
+
+
+--
+-- Name: tx_to_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tx_to_index ON transactions USING btree (tx_to);
+
+
+--
 -- Name: transactions blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
