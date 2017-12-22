@@ -44,16 +44,14 @@ func tasks(p *do.Project) {
 
 	p.Task("getLogs", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		blockNumber := context.Args.MayInt(-1, "block-number", "b")
 		contractHash := context.Args.MayString("", "contract-hash", "c")
 		if contractHash == "" {
 			log.Fatalln("--contract-hash required")
 		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --block-number={{.blockNumber}}`,
+		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
 			do.M{
 				"environment":  environment,
 				"contractHash": contractHash,
-				"blockNumber":  blockNumber,
 				"$in":          "cmd/get_logs",
 			})
 	})

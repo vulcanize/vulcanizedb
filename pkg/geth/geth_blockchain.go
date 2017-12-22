@@ -23,14 +23,14 @@ type GethBlockchain struct {
 	node                core.Node
 }
 
-func (blockchain *GethBlockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
-	if blockNumber == nil {
-		blockNumber = blockchain.LastBlock()
+func (blockchain *GethBlockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {
+	if endingBlockNumber == nil {
+		endingBlockNumber = startingBlockNumber
 	}
 	contractAddress := common.HexToAddress(contract.Hash)
 	fc := ethereum.FilterQuery{
-		FromBlock: blockNumber,
-		ToBlock:   blockNumber,
+		FromBlock: startingBlockNumber,
+		ToBlock:   endingBlockNumber,
 		Addresses: []common.Address{contractAddress},
 	}
 	gethLogs, err := blockchain.client.FilterLogs(context.Background(), fc)

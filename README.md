@@ -93,8 +93,8 @@ The name of the JSON file should correspond the contract's address.
 
 ## Retrieving Contract Logs
 
-1. Get the logs    
-    - `godo getLogs -- --environment=<some-environment> --contract-hash=<contract-address> --starting-number=<starting-block-number>`
+1. Get the logs for a specific contract
+    - `godo getLogs -- --environment=<some-environment> --contract-hash=<contract-address>`
     
 ### Configuring Additional Environments
 
