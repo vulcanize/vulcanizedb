@@ -1,45 +1,71 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"flag"
+
+	"math/big"
+
+	"time"
 
 	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 )
 
+func min(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+const (
+	windowSize      = 24
+	pollingInterval = 10 * time.Second
+)
+
 func main() {
 	environment := flag.String("environment", "", "Environment name")
 	contractHash := flag.String("contract-hash", "", "Contract hash to show summary")
-	_blockNumber := flag.Int64("block-number", -1, "Block number of summary")
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
 
 	flag.Parse()
 
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
-	blockNumber := cmd.RequestedBlockNumber(_blockNumber)
 
-	logs, err := blockchain.GetLogs(core.Contract{Hash: *contractHash}, blockNumber)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	repository.CreateLogs(logs)
-	for _, l := range logs {
-		fmt.Println("\tAddress: ", l.Address)
-		fmt.Println("\tTxHash: ", l.TxHash)
-		fmt.Println("\tBlockNumber ", l.BlockNumber)
-		fmt.Println("\tIndex ", l.Index)
-		fmt.Println("\tTopics: ")
-		for i, topic := range l.Topics {
-			fmt.Printf("\t\tTopic %d: %s\n", i, topic)
+	lastBlockNumber := blockchain.LastBlock().Int64()
+	stepSize := int64(1000)
+
+	go func() {
+		for i := int64(0); i < lastBlockNumber; i = min(i+stepSize, lastBlockNumber) {
+			logs, err := blockchain.GetLogs(core.Contract{Hash: *contractHash}, big.NewInt(i), big.NewInt(i+stepSize))
+			log.Println("Backfilling Logs:", i)
+			if err != nil {
+				log.Println(err)
+			}
+			repository.CreateLogs(logs)
 		}
-		fmt.Printf("\tData: %s", l.Data)
-		fmt.Print("\n\n")
+	}()
 
+	done := make(chan struct{})
+	go func() { done <- struct{}{} }()
+	for range ticker.C {
+		select {
+		case <-done:
+			go func() {
+				z := &big.Int{}
+				z.Sub(blockchain.LastBlock(), big.NewInt(25))
+				log.Printf("Logs Window: %d - %d", z.Int64(), blockchain.LastBlock().Int64())
+				logs, _ := blockchain.GetLogs(core.Contract{Hash: *contractHash}, z, blockchain.LastBlock())
+				repository.CreateLogs(logs)
+				done <- struct{}{}
+			}()
+		default:
+		}
 	}
-
 }

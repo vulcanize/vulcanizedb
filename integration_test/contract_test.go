@@ -119,7 +119,7 @@ var _ = Describe("Reading contracts", func() {
 			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 			contract := testing.SampleContract()
 
-			logs, err := blockchain.GetLogs(contract, big.NewInt(4703824))
+			logs, err := blockchain.GetLogs(contract, big.NewInt(4703824), nil)
 
 			Expect(err).To(BeNil())
 			Expect(len(logs)).To(Equal(3))
@@ -131,7 +131,7 @@ var _ = Describe("Reading contracts", func() {
 			config, _ := cfg.NewConfig("infura")
 			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
 
-			logs, err := blockchain.GetLogs(core.Contract{Hash: "x123"}, big.NewInt(4703824))
+			logs, err := blockchain.GetLogs(core.Contract{Hash: "x123"}, big.NewInt(4703824), nil)
 
 			Expect(err).To(BeNil())
 			Expect(len(logs)).To(Equal(0))

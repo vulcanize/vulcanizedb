@@ -27,7 +27,7 @@ func (blockchain *Blockchain) LastBlock() *big.Int {
 	return big.NewInt(max)
 }
 
-func (blockchain *Blockchain) GetLogs(contract core.Contract, blockNumber *big.Int) ([]core.Log, error) {
+func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlock *big.Int, endingBlock *big.Int) ([]core.Log, error) {
 	return blockchain.logs[contract.Hash], nil
 }
 
