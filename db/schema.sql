@@ -51,7 +51,8 @@ CREATE TABLE blocks (
     block_size bigint,
     uncle_hash character varying(66),
     node_id integer NOT NULL,
-    is_final boolean
+    is_final boolean,
+    block_miner character varying(42)
 );
 
 
