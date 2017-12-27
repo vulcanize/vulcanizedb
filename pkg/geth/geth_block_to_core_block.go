@@ -12,6 +12,7 @@ import (
 
 type GethClient interface {
 	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }
 
 func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
@@ -21,6 +22,8 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		transaction := gethTransToCoreTrans(gethTransaction, &from)
 		transactions = append(transactions, transaction)
 	}
+	blockReward := BlockReward(gethBlock, client)
+	uncleReward := UncleReward(gethBlock, client)
 	return core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
 		GasLimit:     gethBlock.GasLimit().Int64(),
@@ -34,7 +37,9 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		Size:         gethBlock.Size().Int64(),
 		Time:         gethBlock.Time().Int64(),
 		Transactions: transactions,
+		BlockReward:  blockReward,
 		UncleHash:    gethBlock.UncleHash().Hex(),
+		UncleReward:  uncleReward,
 	}
 }
 
