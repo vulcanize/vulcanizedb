@@ -62,6 +62,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			blockParentHash := "x456"
 			blockNonce := "0x881db2ca900682e9a9"
 			miner := "x123"
+			extraData := "xextraData"
 			blockTime := int64(1508981640)
 			uncleHash := "x789"
 			blockSize := int64(1000)
@@ -71,6 +72,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				GasLimit:   gasLimit,
 				GasUsed:    gasUsed,
 				Hash:       blockHash,
+				ExtraData:  extraData,
 				Nonce:      blockNonce,
 				Miner:      miner,
 				Number:     blockNumber,
@@ -90,6 +92,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(savedBlock.Hash).To(Equal(blockHash))
 			Expect(savedBlock.Nonce).To(Equal(blockNonce))
 			Expect(savedBlock.Miner).To(Equal(miner))
+			Expect(savedBlock.ExtraData).To(Equal(extraData))
 			Expect(savedBlock.Number).To(Equal(blockNumber))
 			Expect(savedBlock.ParentHash).To(Equal(blockParentHash))
 			Expect(savedBlock.Size).To(Equal(blockSize))

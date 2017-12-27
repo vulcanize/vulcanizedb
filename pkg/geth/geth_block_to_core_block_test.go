@@ -26,6 +26,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		gasLimit := int64(100000)
 		gasUsed := int64(100000)
 		miner := common.HexToAddress("0x0000000000000000000000000000000000000123")
+		extraData, _ := hexutil.Decode("0xe4b883e5bda9e7a59ee4bb99e9b1bc")
 		nonce := types.BlockNonce{10}
 		number := int64(1)
 		time := int64(140000000)
@@ -34,6 +35,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Difficulty: difficulty,
 			GasLimit:   big.NewInt(gasLimit),
 			GasUsed:    big.NewInt(gasUsed),
+			Extra:      extraData,
 			Coinbase:   miner,
 			Nonce:      nonce,
 			Number:     big.NewInt(number),
@@ -53,6 +55,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.Nonce).To(Equal(hexutil.Encode(header.Nonce[:])))
 		Expect(gethBlock.Number).To(Equal(number))
 		Expect(gethBlock.ParentHash).To(Equal(block.ParentHash().Hex()))
+		Expect(gethBlock.ExtraData).To(Equal(hexutil.Encode(block.Extra())))
 		Expect(gethBlock.Size).To(Equal(block.Size().Int64()))
 		Expect(gethBlock.Time).To(Equal(time))
 		Expect(gethBlock.UncleHash).To(Equal(block.UncleHash().Hex()))
