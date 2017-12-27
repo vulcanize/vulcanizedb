@@ -1,6 +1,7 @@
 package core
 
 type Block struct {
+	BlockReward  float64
 	Difficulty   int64
 	ExtraData    string
 	GasLimit     int64
@@ -15,4 +16,5 @@ type Block struct {
 	Time         int64
 	Transactions []Transaction
 	UncleHash    string
+	UncleReward  float64
 }

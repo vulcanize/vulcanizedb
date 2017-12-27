@@ -13,7 +13,28 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type FakeGethClient struct{}
+type FakeGethClient struct {
+	receipts map[string]*types.Receipt
+}
+
+func NewFakeClient() *FakeGethClient {
+	return &FakeGethClient{
+		receipts: make(map[string]*types.Receipt),
+	}
+}
+
+func (client *FakeGethClient) AddReceipts(receipts []*types.Receipt) {
+	for _, receipt := range receipts {
+		client.receipts[receipt.TxHash.Hex()] = receipt
+	}
+}
+
+func (client *FakeGethClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	if gasUsed, ok := client.receipts[txHash.Hex()]; ok {
+		return gasUsed, nil
+	}
+	return &types.Receipt{GasUsed: big.NewInt(0)}, nil
+}
 
 func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
 	return common.HexToAddress("0x123"), nil
@@ -62,6 +83,103 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.IsFinal).To(BeFalse())
 	})
 
+	Describe("the block and uncle rewards calculations", func() {
+		It("Calculates block rewards for a block", func() {
+			number := int64(1071819)
+			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
+
+			nonce := uint64(226823)
+			to := common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f")
+			amount := big.NewInt(1080900090000000000)
+			gasLimit := big.NewInt(90000)
+			gasPrice := big.NewInt(50000000000)
+			var payload []byte
+			transaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+			transactions := []*types.Transaction{transaction}
+
+			txHash := transaction.Hash()
+			receipt := types.Receipt{TxHash: txHash, GasUsed: big.NewInt(21000)}
+			receipts := []*types.Receipt{&receipt}
+
+			header := types.Header{
+				Number: big.NewInt(number),
+			}
+			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
+
+			client := NewFakeClient()
+			client.AddReceipts(receipts)
+
+			Expect(geth.BlockReward(block, client)).To(Equal(5.31355))
+		})
+
+		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
+			number := int64(4370055)
+			var uncles []*types.Header
+
+			nonce := uint64(8072)
+			to := common.HexToAddress("0xebd17720aeb7ac5186c5dfa7bafeb0bb14c02551 ")
+			amount := big.NewInt(0)
+			gasLimit := big.NewInt(500000)
+			gasPrice := big.NewInt(42000000000)
+			var payload []byte
+			transactionOne := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+
+			nonce = uint64(8071)
+			to = common.HexToAddress("0x3cdab63d764c8c5048ed5e8f0a4e95534ba7e1ea")
+			amount = big.NewInt(0)
+			gasLimit = big.NewInt(500000)
+			gasPrice = big.NewInt(42000000000)
+			transactionTwo := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+
+			transactions := []*types.Transaction{transactionOne, transactionTwo}
+
+			txHashOne := transactionOne.Hash()
+			receiptOne := types.Receipt{TxHash: txHashOne, GasUsed: big.NewInt(297508)}
+			txHashTwo := transactionTwo.Hash()
+			receiptTwo := types.Receipt{TxHash: txHashTwo, GasUsed: big.NewInt(297508)}
+			receipts := []*types.Receipt{&receiptOne, &receiptTwo}
+
+			header := types.Header{
+				Number: big.NewInt(number),
+			}
+			block := types.NewBlock(&header, transactions, uncles, receipts)
+
+			client := NewFakeClient()
+			client.AddReceipts(receipts)
+
+			Expect(geth.BlockReward(block, client)).To(Equal(3.024990672))
+		})
+
+		It("Calculates uncle rewards for a block", func() {
+			number := int64(1071819)
+			uncles := []*types.Header{{Number: big.NewInt(1071816)}, {Number: big.NewInt(1071817)}}
+
+			nonce := uint64(226823)
+			to := common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f")
+			amount := big.NewInt(1080900090000000000)
+			gasLimit := big.NewInt(90000)
+			gasPrice := big.NewInt(50000000000)
+			var payload []byte
+			transaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+			transactions := []*types.Transaction{transaction}
+
+			txHash := transaction.Hash()
+			receipt := types.Receipt{TxHash: txHash, GasUsed: big.NewInt(21000)}
+			receipts := []*types.Receipt{&receipt}
+
+			header := types.Header{
+				Number: big.NewInt(number),
+			}
+			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
+
+			client := NewFakeClient()
+			client.AddReceipts(receipts)
+
+			Expect(geth.UncleReward(block, client)).To(Equal(6.875))
+		})
+
+	})
+
 	Describe("the converted transations", func() {
 		It("is empty", func() {
 			header := types.Header{}
@@ -72,7 +190,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(len(coreBlock.Transactions)).To(Equal(0))
 		})
 
-		It("converts a single transations", func() {
+		It("converts a single transaction", func() {
 			nonce := uint64(10000)
 			header := types.Header{}
 			to := common.Address{1}
@@ -82,7 +200,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			payload := []byte("1234")
 
 			gethTransaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
-			client := &FakeGethClient{}
+
+			client := NewFakeClient()
+
 			gethBlock := types.NewBlock(&header, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
 			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
@@ -100,8 +220,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("has an empty to field when transaction creates a new contract", func() {
 			gethTransaction := types.NewContractCreation(uint64(10000), big.NewInt(10), big.NewInt(5000), big.NewInt(3), []byte("1234"))
 			gethBlock := types.NewBlock(&types.Header{}, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
-			client := &FakeGethClient{}
 
+			client := NewFakeClient()
 			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
 			coreTransaction := coreBlock.Transactions[0]
