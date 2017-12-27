@@ -26,6 +26,7 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		GasLimit:     gethBlock.GasLimit().Int64(),
 		GasUsed:      gethBlock.GasUsed().Int64(),
 		Hash:         gethBlock.Hash().Hex(),
+		ExtraData:    hexutil.Encode(gethBlock.Extra()),
 		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
 		Number:       gethBlock.Number().Int64(),
 		Miner:        gethBlock.Coinbase().Hex(),
