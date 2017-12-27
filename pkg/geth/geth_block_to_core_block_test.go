@@ -21,10 +21,11 @@ func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.T
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
-	It("converts basic Block metada", func() {
+	It("converts basic Block metadata", func() {
 		difficulty := big.NewInt(1)
 		gasLimit := int64(100000)
 		gasUsed := int64(100000)
+		miner := common.HexToAddress("0x0000000000000000000000000000000000000123")
 		nonce := types.BlockNonce{10}
 		number := int64(1)
 		time := int64(140000000)
@@ -33,6 +34,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Difficulty: difficulty,
 			GasLimit:   big.NewInt(gasLimit),
 			GasUsed:    big.NewInt(gasUsed),
+			Coinbase:   miner,
 			Nonce:      nonce,
 			Number:     big.NewInt(number),
 			ParentHash: common.Hash{64},
@@ -45,6 +47,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 		Expect(gethBlock.Difficulty).To(Equal(difficulty.Int64()))
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
+		Expect(gethBlock.Miner).To(Equal(miner.Hex()))
 		Expect(gethBlock.GasUsed).To(Equal(gasUsed))
 		Expect(gethBlock.Hash).To(Equal(block.Hash().Hex()))
 		Expect(gethBlock.Nonce).To(Equal(hexutil.Encode(header.Nonce[:])))

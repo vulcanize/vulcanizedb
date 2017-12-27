@@ -198,7 +198,8 @@ func (repository Postgres) FindBlockByNumber(blockNumber int64) (core.Block, err
                        block_parenthash,
                        block_size,
                        uncle_hash,
-                       is_final
+                       is_final,
+                       block_miner
                FROM blocks
                WHERE node_id = $1 AND block_number = $2`, repository.nodeId, blockNumber)
 	savedBlock, err := repository.loadBlock(blockRows)
@@ -256,10 +257,10 @@ func (repository Postgres) insertBlock(block core.Block) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final)
-			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final, block_miner)
+			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		        RETURNING id `,
-		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal).
+		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
@@ -305,6 +306,7 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 	var blockHash string
 	var blockNonce string
 	var blockNumber int64
+	var blockMiner string
 	var blockParentHash string
 	var blockSize int64
 	var blockTime float64
@@ -313,7 +315,7 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 	var gasUsed float64
 	var uncleHash string
 	var isFinal bool
-	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal)
+	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal, &blockMiner)
 	if err != nil {
 		return core.Block{}, err
 	}
@@ -336,6 +338,7 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 		Hash:         blockHash,
 		Nonce:        blockNonce,
 		Number:       blockNumber,
+		Miner:        blockMiner,
 		ParentHash:   blockParentHash,
 		Size:         blockSize,
 		Time:         int64(blockTime),

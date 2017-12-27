@@ -7,6 +7,7 @@ type Block struct {
 	Hash         string
 	Nonce        string
 	Number       int64
+	Miner        string
 	ParentHash   string
 	Size         int64
 	Time         int64

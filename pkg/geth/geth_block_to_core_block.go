@@ -28,6 +28,7 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		Hash:         gethBlock.Hash().Hex(),
 		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
 		Number:       gethBlock.Number().Int64(),
+		Miner:        gethBlock.Coinbase().Hex(),
 		ParentHash:   gethBlock.ParentHash().Hex(),
 		Size:         gethBlock.Size().Int64(),
 		Time:         gethBlock.Time().Int64(),
