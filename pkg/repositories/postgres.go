@@ -294,9 +294,9 @@ func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transac
 	for _, transaction := range transactions {
 		_, err := tx.Exec(
 			`INSERT INTO transactions
-           (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value)
+           (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data)
 		if err != nil {
 			return err
 		}
@@ -332,7 +332,8 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 				   tx_from,
 				   tx_gaslimit,
 				   tx_gasprice,
-				   tx_value
+				   tx_value,
+				   tx_input_data
             FROM transactions
             WHERE block_id = $1
             ORDER BY tx_hash`, blockId)
@@ -392,8 +393,9 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 		var from string
 		var gasLimit int64
 		var gasPrice int64
+		var inputData string
 		var value int64
-		transactionRows.Scan(&hash, &nonce, &to, &from, &gasLimit, &gasPrice, &value)
+		transactionRows.Scan(&hash, &nonce, &to, &from, &gasLimit, &gasPrice, &value, &inputData)
 		transaction := core.Transaction{
 			Hash:     hash,
 			Nonce:    nonce,
@@ -402,6 +404,7 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 			GasLimit: gasLimit,
 			GasPrice: gasPrice,
 			Value:    value,
+			Data:     inputData,
 		}
 		transactions = append(transactions, transaction)
 	}
@@ -416,7 +419,8 @@ func (repository Postgres) addTransactions(contract core.Contract) core.Contract
                    tx_from,
                    tx_gaslimit,
                    tx_gasprice,
-                   tx_value
+                   tx_value,
+                   tx_input_data
             FROM transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)

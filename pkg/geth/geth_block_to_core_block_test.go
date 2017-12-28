@@ -203,7 +203,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			amount := big.NewInt(10)
 			gasLimit := big.NewInt(5000)
 			gasPrice := big.NewInt(3)
-			payload := []byte("1234")
+			input := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
+			payload, _ := hexutil.Decode(input)
 
 			gethTransaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
 
@@ -214,7 +215,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
-			Expect(coreTransaction.Data).To(Equal(gethTransaction.Data()))
+			Expect(coreTransaction.Data).To(Equal(input))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas().Int64()))

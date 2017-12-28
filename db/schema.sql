@@ -168,7 +168,8 @@ CREATE TABLE transactions (
     tx_gasprice numeric,
     tx_value numeric,
     block_id integer NOT NULL,
-    tx_from character varying(66)
+    tx_from character varying(66),
+    tx_input_data character varying
 );
 
 
