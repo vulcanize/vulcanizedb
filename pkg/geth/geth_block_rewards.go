@@ -7,24 +7,27 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-func UncleReward(gethBlock *types.Block, client GethClient) float64 {
-	var uncleReward float64
+func CalcUnclesReward(gethBlock *types.Block) float64 {
+	var unclesReward float64
 	for _, uncle := range gethBlock.Uncles() {
-		staticBlockReward := float64(blockNumberStaticReward(gethBlock)) / float64(8)
-		uncleReward += float64(uncle.Number.Int64()-gethBlock.Number().Int64()+int64(8)) * staticBlockReward
+		blockNumber := gethBlock.Number().Int64()
+		staticBlockReward := float64(staticRewardByBlockNumber(blockNumber))
+		unclesReward += (1.0 + float64(uncle.Number.Int64()-gethBlock.Number().Int64())/8.0) * staticBlockReward
 	}
-	return uncleReward
+	return unclesReward
 }
 
-func BlockReward(gethBlock *types.Block, client GethClient) float64 {
-	staticBlockReward := blockNumberStaticReward(gethBlock)
+func CalcBlockReward(gethBlock *types.Block, client GethClient) float64 {
+	blockNumber := gethBlock.Number().Int64()
+	staticBlockReward := staticRewardByBlockNumber(blockNumber)
 	transactionFees := calcTransactionFees(gethBlock, client)
-	uncleInclusionRewards := uncleInclusionRewards(gethBlock, staticBlockReward)
+	uncleInclusionRewards := calcUncleInclusionRewards(gethBlock)
 	return transactionFees + uncleInclusionRewards + staticBlockReward
 }
 
-func uncleInclusionRewards(gethBlock *types.Block, staticBlockReward float64) float64 {
+func calcUncleInclusionRewards(gethBlock *types.Block) float64 {
 	var uncleInclusionRewards float64
+	staticBlockReward := staticRewardByBlockNumber(gethBlock.Number().Int64())
 	for range gethBlock.Uncles() {
 		uncleInclusionRewards += staticBlockReward * 1 / 32
 	}
@@ -43,9 +46,10 @@ func calcTransactionFees(gethBlock *types.Block, client GethClient) float64 {
 	return transactionFees / params.Ether
 }
 
-func blockNumberStaticReward(gethBlock *types.Block) float64 {
+func staticRewardByBlockNumber(blockNumber int64) float64 {
 	var staticBlockReward float64
-	if gethBlock.Number().Int64() > 4269999 {
+	//https://blog.ethereum.org/2017/10/12/byzantium-hf-announcement/
+	if blockNumber >= 4370000 {
 		staticBlockReward = 3
 	} else {
 		staticBlockReward = 5

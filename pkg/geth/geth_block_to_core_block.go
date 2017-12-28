@@ -22,24 +22,24 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		transaction := gethTransToCoreTrans(gethTransaction, &from)
 		transactions = append(transactions, transaction)
 	}
-	blockReward := BlockReward(gethBlock, client)
-	uncleReward := UncleReward(gethBlock, client)
+	blockReward := CalcBlockReward(gethBlock, client)
+	uncleReward := CalcUnclesReward(gethBlock)
 	return core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
+		ExtraData:    hexutil.Encode(gethBlock.Extra()),
 		GasLimit:     gethBlock.GasLimit().Int64(),
 		GasUsed:      gethBlock.GasUsed().Int64(),
 		Hash:         gethBlock.Hash().Hex(),
-		ExtraData:    hexutil.Encode(gethBlock.Extra()),
+		Miner:        gethBlock.Coinbase().Hex(),
 		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
 		Number:       gethBlock.Number().Int64(),
-		Miner:        gethBlock.Coinbase().Hex(),
 		ParentHash:   gethBlock.ParentHash().Hex(),
+		Reward:       blockReward,
 		Size:         gethBlock.Size().Int64(),
 		Time:         gethBlock.Time().Int64(),
 		Transactions: transactions,
-		BlockReward:  blockReward,
 		UncleHash:    gethBlock.UncleHash().Hex(),
-		UncleReward:  uncleReward,
+		UnclesReward: uncleReward,
 	}
 }
 

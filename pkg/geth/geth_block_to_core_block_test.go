@@ -83,104 +83,110 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.IsFinal).To(BeFalse())
 	})
 
-	Describe("the block and uncle rewards calculations", func() {
-		It("Calculates block rewards for a block", func() {
-			number := int64(1071819)
-			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
-
-			nonce := uint64(226823)
-			to := common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f")
-			amount := big.NewInt(1080900090000000000)
-			gasLimit := big.NewInt(90000)
-			gasPrice := big.NewInt(50000000000)
-			var payload []byte
-			transaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+	Describe("The block and uncle rewards calculations", func() {
+		It("calculates block rewards for a block", func() {
+			transaction := types.NewTransaction(
+				uint64(226823),
+				common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f"),
+				big.NewInt(1080900090000000000),
+				big.NewInt(90000),
+				big.NewInt(50000000000),
+				[]byte{},
+			)
 			transactions := []*types.Transaction{transaction}
 
 			txHash := transaction.Hash()
 			receipt := types.Receipt{TxHash: txHash, GasUsed: big.NewInt(21000)}
 			receipts := []*types.Receipt{&receipt}
 
+			number := int64(1071819)
 			header := types.Header{
 				Number: big.NewInt(number),
+			}
+			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
+			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
+
+			client := NewFakeClient()
+			client.AddReceipts(receipts)
+
+			Expect(geth.CalcBlockReward(block, client)).To(Equal(5.31355))
+		})
+
+		It("calculates the uncles reward for a block", func() {
+			transaction := types.NewTransaction(
+				uint64(226823),
+				common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f"),
+				big.NewInt(1080900090000000000),
+				big.NewInt(90000),
+				big.NewInt(50000000000),
+				[]byte{})
+			transactions := []*types.Transaction{transaction}
+
+			receipt := types.Receipt{
+				TxHash:  transaction.Hash(),
+				GasUsed: big.NewInt(21000),
+			}
+			receipts := []*types.Receipt{&receipt}
+
+			header := types.Header{
+				Number: big.NewInt(int64(1071819)),
+			}
+			uncles := []*types.Header{
+				{Number: big.NewInt(1071816)},
+				{Number: big.NewInt(1071817)},
 			}
 			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
 
 			client := NewFakeClient()
 			client.AddReceipts(receipts)
 
-			Expect(geth.BlockReward(block, client)).To(Equal(5.31355))
+			Expect(geth.CalcUnclesReward(block)).To(Equal(6.875))
 		})
 
 		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
-			number := int64(4370055)
-			var uncles []*types.Header
+			transactionOne := types.NewTransaction(
+				uint64(8072),
+				common.HexToAddress("0xebd17720aeb7ac5186c5dfa7bafeb0bb14c02551 "),
+				big.NewInt(0),
+				big.NewInt(500000),
+				big.NewInt(42000000000),
+				[]byte{},
+			)
 
-			nonce := uint64(8072)
-			to := common.HexToAddress("0xebd17720aeb7ac5186c5dfa7bafeb0bb14c02551 ")
-			amount := big.NewInt(0)
-			gasLimit := big.NewInt(500000)
-			gasPrice := big.NewInt(42000000000)
-			var payload []byte
-			transactionOne := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
-
-			nonce = uint64(8071)
-			to = common.HexToAddress("0x3cdab63d764c8c5048ed5e8f0a4e95534ba7e1ea")
-			amount = big.NewInt(0)
-			gasLimit = big.NewInt(500000)
-			gasPrice = big.NewInt(42000000000)
-			transactionTwo := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+			transactionTwo := types.NewTransaction(uint64(8071),
+				common.HexToAddress("0x3cdab63d764c8c5048ed5e8f0a4e95534ba7e1ea"),
+				big.NewInt(0),
+				big.NewInt(500000),
+				big.NewInt(42000000000),
+				[]byte{})
 
 			transactions := []*types.Transaction{transactionOne, transactionTwo}
 
-			txHashOne := transactionOne.Hash()
-			receiptOne := types.Receipt{TxHash: txHashOne, GasUsed: big.NewInt(297508)}
-			txHashTwo := transactionTwo.Hash()
-			receiptTwo := types.Receipt{TxHash: txHashTwo, GasUsed: big.NewInt(297508)}
+			receiptOne := types.Receipt{
+				TxHash:  transactionOne.Hash(),
+				GasUsed: big.NewInt(297508),
+			}
+			receiptTwo := types.Receipt{
+				TxHash:  transactionTwo.Hash(),
+				GasUsed: big.NewInt(297508),
+			}
 			receipts := []*types.Receipt{&receiptOne, &receiptTwo}
 
+			number := int64(4370055)
 			header := types.Header{
 				Number: big.NewInt(number),
 			}
+			var uncles []*types.Header
 			block := types.NewBlock(&header, transactions, uncles, receipts)
 
 			client := NewFakeClient()
 			client.AddReceipts(receipts)
 
-			Expect(geth.BlockReward(block, client)).To(Equal(3.024990672))
+			Expect(geth.CalcBlockReward(block, client)).To(Equal(3.024990672))
 		})
-
-		It("Calculates uncle rewards for a block", func() {
-			number := int64(1071819)
-			uncles := []*types.Header{{Number: big.NewInt(1071816)}, {Number: big.NewInt(1071817)}}
-
-			nonce := uint64(226823)
-			to := common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f")
-			amount := big.NewInt(1080900090000000000)
-			gasLimit := big.NewInt(90000)
-			gasPrice := big.NewInt(50000000000)
-			var payload []byte
-			transaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
-			transactions := []*types.Transaction{transaction}
-
-			txHash := transaction.Hash()
-			receipt := types.Receipt{TxHash: txHash, GasUsed: big.NewInt(21000)}
-			receipts := []*types.Receipt{&receipt}
-
-			header := types.Header{
-				Number: big.NewInt(number),
-			}
-			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
-
-			client := NewFakeClient()
-			client.AddReceipts(receipts)
-
-			Expect(geth.UncleReward(block, client)).To(Equal(6.875))
-		})
-
 	})
 
-	Describe("the converted transations", func() {
+	Describe("the converted transactions", func() {
 		It("is empty", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})

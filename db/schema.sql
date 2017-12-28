@@ -53,7 +53,9 @@ CREATE TABLE blocks (
     node_id integer NOT NULL,
     is_final boolean,
     block_miner character varying(42),
-    block_extra_data character varying
+    block_extra_data character varying,
+    block_reward numeric,
+    block_uncles_reward numeric
 );
 
 
