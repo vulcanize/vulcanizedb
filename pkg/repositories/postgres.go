@@ -198,7 +198,11 @@ func (repository Postgres) FindBlockByNumber(blockNumber int64) (core.Block, err
                        block_parenthash,
                        block_size,
                        uncle_hash,
-                       is_final
+                       is_final,
+                       block_miner,
+                       block_extra_data,
+                       block_reward,
+                       block_uncles_reward
                FROM blocks
                WHERE node_id = $1 AND block_number = $2`, repository.nodeId, blockNumber)
 	savedBlock, err := repository.loadBlock(blockRows)
@@ -256,10 +260,10 @@ func (repository Postgres) insertBlock(block core.Block) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final)
-			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			    (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final, block_miner, block_extra_data, block_reward, block_uncles_reward)
+			    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		        RETURNING id `,
-		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal).
+		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
@@ -305,15 +309,19 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 	var blockHash string
 	var blockNonce string
 	var blockNumber int64
+	var blockMiner string
+	var blockExtraData string
 	var blockParentHash string
 	var blockSize int64
 	var blockTime float64
+	var blockReward float64
 	var difficulty int64
 	var gasLimit float64
 	var gasUsed float64
 	var uncleHash string
+	var unclesReward float64
 	var isFinal bool
-	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal)
+	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal, &blockMiner, &blockExtraData, &blockReward, &unclesReward)
 	if err != nil {
 		return core.Block{}, err
 	}
@@ -330,10 +338,14 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
             ORDER BY tx_hash`, blockId)
 	transactions := repository.loadTransactions(transactionRows)
 	return core.Block{
+		Reward:       blockReward,
 		Difficulty:   difficulty,
+		ExtraData:    blockExtraData,
 		GasLimit:     int64(gasLimit),
 		GasUsed:      int64(gasUsed),
 		Hash:         blockHash,
+		IsFinal:      isFinal,
+		Miner:        blockMiner,
 		Nonce:        blockNonce,
 		Number:       blockNumber,
 		ParentHash:   blockParentHash,
@@ -341,7 +353,7 @@ func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
 		Time:         int64(blockTime),
 		Transactions: transactions,
 		UncleHash:    uncleHash,
-		IsFinal:      isFinal,
+		UnclesReward: unclesReward,
 	}, nil
 }
 

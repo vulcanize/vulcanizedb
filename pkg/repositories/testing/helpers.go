@@ -61,37 +61,49 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			blockHash := "x123"
 			blockParentHash := "x456"
 			blockNonce := "0x881db2ca900682e9a9"
+			miner := "x123"
+			extraData := "xextraData"
 			blockTime := int64(1508981640)
 			uncleHash := "x789"
 			blockSize := int64(1000)
 			difficulty := int64(10)
+			blockReward := float64(5.132)
+			unclesReward := float64(3.580)
 			block := core.Block{
-				Difficulty: difficulty,
-				GasLimit:   gasLimit,
-				GasUsed:    gasUsed,
-				Hash:       blockHash,
-				Nonce:      blockNonce,
-				Number:     blockNumber,
-				ParentHash: blockParentHash,
-				Size:       blockSize,
-				Time:       blockTime,
-				UncleHash:  uncleHash,
+				Reward:       blockReward,
+				Difficulty:   difficulty,
+				GasLimit:     gasLimit,
+				GasUsed:      gasUsed,
+				Hash:         blockHash,
+				ExtraData:    extraData,
+				Nonce:        blockNonce,
+				Miner:        miner,
+				Number:       blockNumber,
+				ParentHash:   blockParentHash,
+				Size:         blockSize,
+				Time:         blockTime,
+				UncleHash:    uncleHash,
+				UnclesReward: unclesReward,
 			}
 
 			repository.CreateOrUpdateBlock(block)
 
 			savedBlock, err := repository.FindBlockByNumber(blockNumber)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(savedBlock.Reward).To(Equal(blockReward))
 			Expect(savedBlock.Difficulty).To(Equal(difficulty))
 			Expect(savedBlock.GasLimit).To(Equal(gasLimit))
 			Expect(savedBlock.GasUsed).To(Equal(gasUsed))
 			Expect(savedBlock.Hash).To(Equal(blockHash))
 			Expect(savedBlock.Nonce).To(Equal(blockNonce))
+			Expect(savedBlock.Miner).To(Equal(miner))
+			Expect(savedBlock.ExtraData).To(Equal(extraData))
 			Expect(savedBlock.Number).To(Equal(blockNumber))
 			Expect(savedBlock.ParentHash).To(Equal(blockParentHash))
 			Expect(savedBlock.Size).To(Equal(blockSize))
 			Expect(savedBlock.Time).To(Equal(blockTime))
 			Expect(savedBlock.UncleHash).To(Equal(uncleHash))
+			Expect(savedBlock.UnclesReward).To(Equal(unclesReward))
 		})
 
 		It("does not find a block when searching for a number that does not exist", func() {

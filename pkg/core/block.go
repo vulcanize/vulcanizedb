@@ -1,10 +1,14 @@
 package core
 
 type Block struct {
+	Reward       float64
 	Difficulty   int64
+	ExtraData    string
 	GasLimit     int64
 	GasUsed      int64
 	Hash         string
+	IsFinal      bool
+	Miner        string
 	Nonce        string
 	Number       int64
 	ParentHash   string
@@ -12,5 +16,5 @@ type Block struct {
 	Time         int64
 	Transactions []Transaction
 	UncleHash    string
-	IsFinal      bool
+	UnclesReward float64
 }
