@@ -9,28 +9,26 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Reading contracts", func() {
+var _ = Describe("Rewards calculations", func() {
 
-	Describe("Block and Uncle rewards", func() {
-		It("calculates a block reward for a real block", func() {
-			config, err := cfg.NewConfig("infura")
-			if err != nil {
-				log.Fatalln(err)
-			}
-			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-			block := blockchain.GetBlockByNumber(1071819)
-			Expect(block.BlockReward).To(Equal(5.31355))
-		})
+	It("calculates a block reward for a real block", func() {
+		config, err := cfg.NewConfig("infura")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+		block := blockchain.GetBlockByNumber(1071819)
+		Expect(block.Reward).To(Equal(5.31355))
+	})
 
-		It("calculates an uncle reward for a real block", func() {
-			config, err := cfg.NewConfig("infura")
-			if err != nil {
-				log.Fatalln(err)
-			}
-			blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
-			block := blockchain.GetBlockByNumber(1071819)
-			Expect(block.UncleReward).To(Equal(6.875))
-		})
+	It("calculates an uncle reward for a real block", func() {
+		config, err := cfg.NewConfig("infura")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+		block := blockchain.GetBlockByNumber(1071819)
+		Expect(block.UnclesReward).To(Equal(6.875))
 	})
 
 })
