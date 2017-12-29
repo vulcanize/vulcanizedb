@@ -2,7 +2,7 @@ package core
 
 type Transaction struct {
 	Hash     string
-	Data     []byte
+	Data     string
 	Nonce    uint64
 	To       string
 	From     string
