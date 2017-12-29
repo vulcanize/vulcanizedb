@@ -44,15 +44,16 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 }
 
 func gethTransToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
+	data := hexutil.Encode(transaction.Data())
 	return core.Transaction{
 		Hash:     transaction.Hash().Hex(),
-		Data:     transaction.Data(),
 		Nonce:    transaction.Nonce(),
 		To:       strings.ToLower(addressToHex(transaction.To())),
 		From:     strings.ToLower(addressToHex(from)),
 		GasLimit: transaction.Gas().Int64(),
 		GasPrice: transaction.GasPrice().Int64(),
 		Value:    transaction.Value().Int64(),
+		Data:     data,
 	}
 }
 

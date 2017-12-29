@@ -191,6 +191,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			to := "1234567890"
 			from := "0987654321"
 			value := int64(10)
+			inputData := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
 			transaction := core.Transaction{
 				Hash:     "x1234",
 				GasPrice: gasPrice,
@@ -199,6 +200,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				To:       to,
 				From:     from,
 				Value:    value,
+				Data:     inputData,
 			}
 			block := core.Block{
 				Number:       123,
@@ -210,6 +212,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			savedBlock, _ := repository.FindBlockByNumber(123)
 			Expect(len(savedBlock.Transactions)).To(Equal(1))
 			savedTransaction := savedBlock.Transactions[0]
+			Expect(savedTransaction.Data).To(Equal(transaction.Data))
 			Expect(savedTransaction.Hash).To(Equal(transaction.Hash))
 			Expect(savedTransaction.To).To(Equal(to))
 			Expect(savedTransaction.From).To(Equal(from))
