@@ -16,14 +16,15 @@ func (window Window) Size() int {
 }
 
 func PopulateMissingBlocks(blockchain core.Blockchain, repository repositories.Repository, startingBlockNumber int64) int {
-	blockRange := repository.MissingBlockNumbers(startingBlockNumber, repository.MaxBlockNumber())
+	lastBlock := blockchain.LastBlock().Int64()
+	blockRange := repository.MissingBlockNumbers(startingBlockNumber, lastBlock-1)
 	updateBlockRange(blockchain, repository, blockRange)
 	return len(blockRange)
 }
 
 func UpdateBlocksWindow(blockchain core.Blockchain, repository repositories.Repository, windowSize int) Window {
-	maxBlockNumber := repository.MaxBlockNumber()
-	upperBound := repository.MaxBlockNumber() - int64(2)
+	maxBlockNumber := blockchain.LastBlock().Int64()
+	upperBound := maxBlockNumber - int64(1)
 	lowerBound := upperBound - int64(windowSize)
 	blockRange := MakeRange(lowerBound, upperBound)
 	updateBlockRange(blockchain, repository, blockRange)
