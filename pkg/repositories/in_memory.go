@@ -8,9 +8,27 @@ import (
 
 type InMemory struct {
 	blocks               map[int64]core.Block
+	receipts             map[string]core.Receipt
 	contracts            map[string]core.Contract
 	logs                 map[string][]core.Log
 	HandleBlockCallCount int
+}
+
+func NewInMemory() *InMemory {
+	return &InMemory{
+		HandleBlockCallCount: 0,
+		blocks:               make(map[int64]core.Block),
+		receipts:             make(map[string]core.Receipt),
+		contracts:            make(map[string]core.Contract),
+		logs:                 make(map[string][]core.Log),
+	}
+}
+
+func (repository *InMemory) FindReceipt(txHash string) (core.Receipt, error) {
+	if receipt, ok := repository.receipts[txHash]; ok {
+		return receipt, nil
+	}
+	return core.Receipt{}, ErrReceiptDoesNotExist(txHash)
 }
 
 func (repository *InMemory) SetBlocksStatus(chainHead int64) {
@@ -79,18 +97,12 @@ func (repository *InMemory) MissingBlockNumbers(startingBlockNumber int64, endin
 	return missingNumbers
 }
 
-func NewInMemory() *InMemory {
-	return &InMemory{
-		HandleBlockCallCount: 0,
-		blocks:               make(map[int64]core.Block),
-		contracts:            make(map[string]core.Contract),
-		logs:                 make(map[string][]core.Log),
-	}
-}
-
 func (repository *InMemory) CreateOrUpdateBlock(block core.Block) error {
 	repository.HandleBlockCallCount++
 	repository.blocks[block.Number] = block
+	for _, transaction := range block.Transactions {
+		repository.receipts[transaction.Hash] = transaction.Receipt
+	}
 	return nil
 }
 

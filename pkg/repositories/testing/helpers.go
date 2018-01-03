@@ -15,6 +15,7 @@ func ClearData(postgres repositories.Postgres) {
 	postgres.Db.MustExec("DELETE FROM transactions")
 	postgres.Db.MustExec("DELETE FROM blocks")
 	postgres.Db.MustExec("DELETE FROM logs")
+	postgres.Db.MustExec("DELETE FROM receipts")
 }
 
 func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.Repository) {
@@ -496,5 +497,44 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 					{blockNumber: 1, Index: 1}},
 			))
 		})
+	})
+
+	Describe("Saving receipts", func() {
+		It("returns the receipt when it exists", func() {
+			expected := core.Receipt{
+				ContractAddress:   "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
+				CumulativeGasUsed: 7996119,
+				GasUsed:           21000,
+				Logs:              []core.Log{},
+				StateRoot:         "0x88abf7e73128227370aa7baa3dd4e18d0af70e92ef1f9ef426942fbe2dddb733",
+				Status:            1,
+				TxHash:            "0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223",
+			}
+
+			transaction := core.Transaction{
+				Hash:    expected.TxHash,
+				Receipt: expected,
+			}
+
+			block := core.Block{Transactions: []core.Transaction{transaction}}
+			repository.CreateOrUpdateBlock(block)
+			receipt, err := repository.FindReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
+
+			Expect(err).ToNot(HaveOccurred())
+			//Not currently serializing bloom logs
+			Expect(receipt.Bloom).To(Equal(core.Receipt{}.Bloom))
+			Expect(receipt.TxHash).To(Equal(expected.TxHash))
+			Expect(receipt.CumulativeGasUsed).To(Equal(expected.CumulativeGasUsed))
+			Expect(receipt.GasUsed).To(Equal(expected.GasUsed))
+			Expect(receipt.StateRoot).To(Equal(expected.StateRoot))
+			Expect(receipt.Status).To(Equal(expected.Status))
+		})
+
+		It("returns ErrReceiptDoesNotExist when receipt does not exist", func() {
+			receipt, err := repository.FindReceipt("DOES NOT EXIST")
+			Expect(err).To(HaveOccurred())
+			Expect(receipt).To(BeZero())
+		})
+
 	})
 }

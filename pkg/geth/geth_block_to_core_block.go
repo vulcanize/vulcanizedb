@@ -3,6 +3,8 @@ package geth
 import (
 	"strings"
 
+	"log"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,12 +18,7 @@ type GethClient interface {
 }
 
 func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
-	transactions := []core.Transaction{}
-	for i, gethTransaction := range gethBlock.Transactions() {
-		from, _ := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
-		transaction := gethTransToCoreTrans(gethTransaction, &from)
-		transactions = append(transactions, transaction)
-	}
+	transactions := convertGethTransactionsToCore(gethBlock, client)
 	blockReward := CalcBlockReward(gethBlock, client)
 	uncleReward := CalcUnclesReward(gethBlock)
 	return core.Block{
@@ -41,6 +38,30 @@ func GethBlockToCoreBlock(gethBlock *types.Block, client GethClient) core.Block 
 		UncleHash:    gethBlock.UncleHash().Hex(),
 		UnclesReward: uncleReward,
 	}
+}
+
+func convertGethTransactionsToCore(gethBlock *types.Block, client GethClient) []core.Transaction {
+	transactions := make([]core.Transaction, 0)
+	for i, gethTransaction := range gethBlock.Transactions() {
+		from, err := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
+		if err != nil {
+			log.Println(err)
+		}
+		transaction := gethTransToCoreTrans(gethTransaction, &from)
+		transaction, err = appendReceiptToTransaction(client, transaction)
+		if err != nil {
+			log.Println(err)
+		}
+		transactions = append(transactions, transaction)
+	}
+	return transactions
+}
+
+func appendReceiptToTransaction(client GethClient, transaction core.Transaction) (core.Transaction, error) {
+	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+	receipt := GethReceiptToCoreReceipt(gethReceipt)
+	transaction.Receipt = receipt
+	return transaction, err
 }
 
 func gethTransToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {

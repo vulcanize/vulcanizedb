@@ -6,6 +6,12 @@ services:
   - postgresql
 addons:
   postgresql: "9.6"
+
+install:
+  - go get -u github.com/golang/dep/cmd/dep
+  - dep ensure
+  - go get -u github.com/onsi/ginkgo/ginkgo
+
 before_script:
   - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
@@ -14,5 +20,9 @@ before_script:
   - nohup ./scripts/start_private_blockchain </dev/null &
   - createdb vulcanize_private
   - psql vulcanize_private < db/schema.sql
+
+script:
+  - ginkgo -r
+
 notifications:
   email: false

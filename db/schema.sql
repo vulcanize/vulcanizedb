@@ -146,6 +146,41 @@ ALTER SEQUENCE nodes_id_seq OWNED BY nodes.id;
 
 
 --
+-- Name: receipts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE receipts (
+    id integer NOT NULL,
+    transaction_id integer NOT NULL,
+    contract_address character varying(42),
+    cumulative_gas_used numeric,
+    gas_used numeric,
+    state_root character varying(66),
+    status integer,
+    tx_hash character varying(66)
+);
+
+
+--
+-- Name: receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE receipts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE receipts_id_seq OWNED BY receipts.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -244,6 +279,13 @@ ALTER TABLE ONLY nodes ALTER COLUMN id SET DEFAULT nextval('nodes_id_seq'::regcl
 
 
 --
+-- Name: receipts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY receipts ALTER COLUMN id SET DEFAULT nextval('receipts_id_seq'::regclass);
+
+
+--
 -- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -314,6 +356,14 @@ ALTER TABLE ONLY nodes
 
 
 --
+-- Name: receipts receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY receipts
+    ADD CONSTRAINT receipts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -359,6 +409,13 @@ CREATE INDEX node_id_index ON blocks USING btree (node_id);
 
 
 --
+-- Name: transaction_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX transaction_id_index ON receipts USING btree (transaction_id);
+
+
+--
 -- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -386,6 +443,14 @@ ALTER TABLE ONLY transactions
 
 ALTER TABLE ONLY blocks
     ADD CONSTRAINT node_fk FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: receipts transaction_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY receipts
+    ADD CONSTRAINT transaction_fk FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE;
 
 
 --

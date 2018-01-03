@@ -15,8 +15,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type BlockStatus int
-
 type Postgres struct {
 	Db     *sqlx.DB
 	node   core.Node
@@ -29,6 +27,10 @@ var (
 	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
 	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
 )
+
+var ErrReceiptDoesNotExist = func(txHash string) error {
+	return errors.New(fmt.Sprintf("Receipt for tx: %v does not exist", txHash))
+}
 
 var ErrContractDoesNotExist = func(contractHash string) error {
 	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
@@ -290,18 +292,89 @@ func (repository Postgres) removeBlock(blockNumber int64) error {
 	return nil
 }
 
+func (repository Postgres) FindReceipt(txHash string) (core.Receipt, error) {
+	row := repository.Db.QueryRow(
+		`SELECT contract_address,
+                       tx_hash,
+                       cumulative_gas_used,
+                       gas_used,
+                       state_root,
+                       status
+                FROM receipts
+                WHERE tx_hash = $1`, txHash)
+	receipt, err := loadReceipt(row)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return core.Receipt{}, ErrReceiptDoesNotExist(txHash)
+		default:
+			return core.Receipt{}, err
+		}
+	}
+	return receipt, nil
+}
+
 func (repository Postgres) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
 	for _, transaction := range transactions {
-		_, err := tx.Exec(
-			`INSERT INTO transactions
-           (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-			blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data)
+		err := repository.createTransaction(tx, blockId, transaction)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
+	var transactionId int
+	err := tx.QueryRow(
+		`INSERT INTO transactions
+	   (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
+	   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	   RETURNING id`,
+		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data).
+		Scan(&transactionId)
+	if err != nil {
+		return err
+	}
+	if transaction.Receipt.TxHash != "" {
+		err = repository.createReceipt(tx, transactionId, transaction.Receipt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) error {
+	//Not currently persisting log bloom filters
+	_, err := tx.Exec(
+		`INSERT INTO receipts
+               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, transaction_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func loadReceipt(receiptsRow *sql.Row) (core.Receipt, error) {
+	var contractAddress string
+	var txHash string
+	var cumulativeGasUsed int64
+	var gasUsed int64
+	var stateRoot string
+	var status int
+
+	err := receiptsRow.Scan(&contractAddress, &txHash, &cumulativeGasUsed, &gasUsed, &stateRoot, &status)
+	return core.Receipt{
+		TxHash:            txHash,
+		ContractAddress:   contractAddress,
+		CumulativeGasUsed: cumulativeGasUsed,
+		GasUsed:           gasUsed,
+		StateRoot:         stateRoot,
+		Status:            status,
+	}, err
 }
 
 func (repository Postgres) loadBlock(blockRows *sql.Row) (core.Block, error) {
