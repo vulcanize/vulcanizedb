@@ -7,19 +7,30 @@ services:
 addons:
   postgresql: "9.6"
 
-install:
+before_install:
+  # godo
+  - go get -u gopkg.in/godo.v2/cmd/godo
+  # dep
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure
+  # ginkgo
   - go get -u github.com/onsi/ginkgo/ginkgo
-
-before_script:
+  # migrate
+  - go get -u -d github.com/mattes/migrate/cli github.com/lib/pq
+  - sudo $(which go) build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli
+  - sudo -u postgres createdb vulcanize_private
+  # geth
   - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - sudo cp geth-linux-amd64-1.7.2-1db4ecdc/geth /usr/local/bin
+
+install:
+  - dep ensure
+
+before_script:
   - ./scripts/setup
   - nohup ./scripts/start_private_blockchain </dev/null &
-  - createdb vulcanize_private
-  - psql vulcanize_private < db/schema.sql
+  - godo migrate -- -e private
 
 script:
   - ginkgo -r
