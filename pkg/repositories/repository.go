@@ -12,6 +12,7 @@ type Repository interface {
 	FindBlockByNumber(blockNumber int64) (core.Block, error)
 	MaxBlockNumber() int64
 	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
+	FindReceipt(txHash string) (core.Receipt, error)
 	CreateContract(contract core.Contract) error
 	ContractExists(contractHash string) bool
 	FindContract(contractHash string) (core.Contract, error)

@@ -8,5 +8,6 @@ type Transaction struct {
 	From     string
 	GasLimit int64
 	GasPrice int64
-	Value    int64
+	Receipt
+	Value int64
 }

@@ -197,42 +197,86 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		})
 
 		It("converts a single transaction", func() {
-			nonce := uint64(10000)
-			header := types.Header{}
-			to := common.Address{1}
-			amount := big.NewInt(10)
-			gasLimit := big.NewInt(5000)
-			gasPrice := big.NewInt(3)
-			input := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
-			payload, _ := hexutil.Decode(input)
+			gethTransaction := types.NewTransaction(
+				uint64(10000), common.Address{1},
+				big.NewInt(10),
+				big.NewInt(5000),
+				big.NewInt(3),
+				hexutil.MustDecode("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"),
+			)
 
-			gethTransaction := types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, payload)
+			gethReceipt := &types.Receipt{
+				Bloom:             types.BytesToBloom(hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")),
+				ContractAddress:   common.HexToAddress("x123"),
+				CumulativeGasUsed: big.NewInt(7996119),
+				GasUsed:           big.NewInt(21000),
+				Logs:              []*types.Log{},
+				Status:            uint(1),
+				TxHash:            gethTransaction.Hash(),
+			}
 
 			client := NewFakeClient()
+			client.AddReceipts([]*types.Receipt{gethReceipt})
 
-			gethBlock := types.NewBlock(&header, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
+			header := types.Header{}
+			gethBlock := types.NewBlock(
+				&header,
+				[]*types.Transaction{gethTransaction},
+				[]*types.Header{},
+				[]*types.Receipt{gethReceipt},
+			)
 			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
-			Expect(coreTransaction.Data).To(Equal(input))
+			Expect(coreTransaction.Data).To(Equal("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas().Int64()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
 			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().Int64()))
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
+
+			coreReceipt := coreTransaction.Receipt
+			expectedReceipt := geth.GethReceiptToCoreReceipt(gethReceipt)
+			Expect(coreReceipt).To(Equal(expectedReceipt))
+
 		})
 
-		It("has an empty to field when transaction creates a new contract", func() {
-			gethTransaction := types.NewContractCreation(uint64(10000), big.NewInt(10), big.NewInt(5000), big.NewInt(3), []byte("1234"))
-			gethBlock := types.NewBlock(&types.Header{}, []*types.Transaction{gethTransaction}, []*types.Header{}, []*types.Receipt{})
+		It("has an empty 'To' field when transaction creates a new contract", func() {
+			gethTransaction := types.NewContractCreation(
+				uint64(10000),
+				big.NewInt(10),
+				big.NewInt(5000),
+				big.NewInt(3),
+				[]byte("1234"),
+			)
+
+			gethReceipt := &types.Receipt{
+				CumulativeGasUsed: big.NewInt(1),
+				GasUsed:           big.NewInt(1),
+				TxHash:            gethTransaction.Hash(),
+				ContractAddress:   common.HexToAddress("0x1023342345"),
+			}
 
 			client := NewFakeClient()
+			client.AddReceipts([]*types.Receipt{gethReceipt})
+
+			gethBlock := types.NewBlock(
+				&types.Header{},
+				[]*types.Transaction{gethTransaction},
+				[]*types.Header{},
+				[]*types.Receipt{gethReceipt},
+			)
+
 			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
 
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.To).To(Equal(""))
+
+			coreReceipt := coreTransaction.Receipt
+			expectedReceipt := geth.GethReceiptToCoreReceipt(gethReceipt)
+			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 	})
 
