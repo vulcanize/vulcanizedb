@@ -36,7 +36,7 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			TxHash:            receipt.TxHash.Hex(),
 		}
 
-		coreReceipt := geth.GethReceiptToCoreReceipt(&receipt)
+		coreReceipt := geth.ReceiptToCoreReceipt(&receipt)
 		Expect(coreReceipt.Bloom).To(Equal(expected.Bloom))
 		Expect(coreReceipt.ContractAddress).To(Equal(expected.ContractAddress))
 		Expect(coreReceipt.CumulativeGasUsed).To(Equal(expected.CumulativeGasUsed))
@@ -70,7 +70,7 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			TxHash:            receipt.TxHash.Hex(),
 		}
 
-		coreReceipt := geth.GethReceiptToCoreReceipt(&receipt)
+		coreReceipt := geth.ReceiptToCoreReceipt(&receipt)
 		Expect(coreReceipt.Bloom).To(Equal(expected.Bloom))
 		Expect(coreReceipt.ContractAddress).To(Equal(""))
 		Expect(coreReceipt.CumulativeGasUsed).To(Equal(expected.CumulativeGasUsed))

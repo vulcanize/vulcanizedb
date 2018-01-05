@@ -18,7 +18,7 @@ func BigTo64(n *big.Int) int64 {
 	return 0
 }
 
-func GethReceiptToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
+func ReceiptToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
 	bloom := hexutil.Encode(gethReceipt.Bloom.Bytes())
 	var postState string
 	var status int
@@ -49,7 +49,7 @@ func setContractAddress(gethReceipt *types.Receipt) string {
 func dereferenceLogs(gethReceipt *types.Receipt) []core.Log {
 	logs := []core.Log{}
 	for _, log := range gethReceipt.Logs {
-		logs = append(logs, GethLogToCoreLog(*log))
+		logs = append(logs, LogToCoreLog(*log))
 	}
 	return logs
 }

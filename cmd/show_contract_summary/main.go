@@ -18,7 +18,7 @@ func main() {
 	_blockNumber := flag.Int64("block-number", -1, "Block number of summary")
 	flag.Parse()
 	config := cmd.LoadConfig(*environment)
-	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+	blockchain := geth.NewBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	blockNumber := cmd.RequestedBlockNumber(_blockNumber)
 

@@ -174,7 +174,7 @@ func (repository Postgres) MaxBlockNumber() int64 {
 }
 
 func (repository Postgres) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
-	numbers := []int64{}
+	numbers := make([]int64, 0)
 	repository.Db.Select(&numbers,
 		`SELECT all_block_numbers
 			FROM (
