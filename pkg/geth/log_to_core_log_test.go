@@ -39,7 +39,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			},
 		}
 
-		coreLog := geth.GethLogToCoreLog(gethLog)
+		coreLog := geth.LogToCoreLog(gethLog)
 
 		Expect(coreLog.Address).To(Equal(expected.Address))
 		Expect(coreLog.BlockNumber).To(Equal(expected.BlockNumber))
@@ -79,8 +79,8 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			},
 		}
 
-		expectedOne := geth.GethLogToCoreLog(gethLogOne)
-		expectedTwo := geth.GethLogToCoreLog(gethLogTwo)
+		expectedOne := geth.LogToCoreLog(gethLogOne)
+		expectedTwo := geth.LogToCoreLog(gethLogTwo)
 
 		coreLogs := geth.GethLogsToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
 

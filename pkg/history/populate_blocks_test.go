@@ -66,30 +66,6 @@ var _ = Describe("Populating blocks", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("updates the repository with a range of blocks w/in sliding window ", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
-			{Number: 1},
-			{Number: 2},
-			{Number: 3},
-			{Number: 4},
-			{Number: 5},
-		})
-		repository := repositories.NewInMemory()
-		repository.CreateOrUpdateBlock(blockchain.GetBlockByNumber(5))
-
-		history.UpdateBlocksWindow(blockchain, repository, 2)
-
-		Expect(repository.BlockCount()).To(Equal(3))
-		Expect(repository.HandleBlockCallCount).To(Equal(3))
-	})
-
-	It("Generates a range of int64", func() {
-		numberOfBlocksCreated := history.MakeRange(0, 5)
-		expected := []int64{0, 1, 2, 3, 4}
-
-		Expect(numberOfBlocksCreated).To(Equal(expected))
-	})
-
 	It("returns the number of blocks created", func() {
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
 			{Number: 4},
@@ -105,19 +81,19 @@ var _ = Describe("Populating blocks", func() {
 		Expect(numberOfBlocksCreated).To(Equal(2))
 	})
 
-	It("returns the window size", func() {
-		window := history.Window{1, 3, 10}
-		Expect(window.Size()).To(Equal(2))
-	})
-
-	It("returns the number of largest block", func() {
+	It("updates the repository with a range of blocks w/in the range ", func() {
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
 			{Number: 1},
 			{Number: 2},
 			{Number: 3},
+			{Number: 4},
+			{Number: 5},
 		})
-		maxBlockNumber := blockchain.LastBlock()
+		repository := repositories.NewInMemory()
 
-		Expect(maxBlockNumber.Int64()).To(Equal(int64(3)))
+		history.RetrieveAndUpdateBlocks(blockchain, repository, history.MakeRange(2, 5))
+		Expect(repository.BlockCount()).To(Equal(3))
+		Expect(repository.CreateOrUpdateBlockCallCount).To(Equal(3))
 	})
+
 })

@@ -17,7 +17,7 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
+func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName string, blockNumber *big.Int) (interface{}, error) {
 	parsed, err := ParseAbi(contract.Abi)
 	var result interface{}
 	if err != nil {
@@ -38,13 +38,13 @@ func (blockchain *GethBlockchain) GetAttribute(contract core.Contract, attribute
 	return result, nil
 }
 
-func callContract(contractHash string, input []byte, blockchain *GethBlockchain, blockNumber *big.Int) ([]byte, error) {
+func callContract(contractHash string, input []byte, blockchain *Blockchain, blockNumber *big.Int) ([]byte, error) {
 	to := common.HexToAddress(contractHash)
 	msg := ethereum.CallMsg{To: &to, Data: input}
 	return blockchain.client.CallContract(context.Background(), msg, blockNumber)
 }
 
-func (blockchain *GethBlockchain) GetAttributes(contract core.Contract) (core.ContractAttributes, error) {
+func (blockchain *Blockchain) GetAttributes(contract core.Contract) (core.ContractAttributes, error) {
 	parsed, _ := ParseAbi(contract.Abi)
 	var contractAttributes core.ContractAttributes
 	for _, abiElement := range parsed.Methods {

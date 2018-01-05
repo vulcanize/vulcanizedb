@@ -16,7 +16,7 @@ var _ = Describe("Rewards calculations", func() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+		blockchain := geth.NewBlockchain(config.Client.IPCPath)
 		block := blockchain.GetBlockByNumber(1071819)
 		Expect(block.Reward).To(Equal(5.31355))
 	})
@@ -26,7 +26,7 @@ var _ = Describe("Rewards calculations", func() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+		blockchain := geth.NewBlockchain(config.Client.IPCPath)
 		block := blockchain.GetBlockByNumber(1071819)
 		Expect(block.UnclesReward).To(Equal(6.875))
 	})

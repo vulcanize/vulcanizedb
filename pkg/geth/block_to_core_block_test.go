@@ -66,7 +66,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 		client := &FakeGethClient{}
-		gethBlock := geth.GethBlockToCoreBlock(block, client)
+		gethBlock := geth.ToCoreBlock(block, client)
 
 		Expect(gethBlock.Difficulty).To(Equal(difficulty.Int64()))
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
@@ -85,6 +85,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 	Describe("The block and uncle rewards calculations", func() {
 		It("calculates block rewards for a block", func() {
+
 			transaction := types.NewTransaction(
 				uint64(226823),
 				common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f"),
@@ -96,20 +97,25 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			transactions := []*types.Transaction{transaction}
 
 			txHash := transaction.Hash()
-			receipt := types.Receipt{TxHash: txHash, GasUsed: big.NewInt(21000)}
+			receipt := types.Receipt{
+				TxHash:            txHash,
+				GasUsed:           big.NewInt(21000),
+				CumulativeGasUsed: big.NewInt(21000),
+			}
 			receipts := []*types.Receipt{&receipt}
+
+			client := NewFakeClient()
+			client.AddReceipts(receipts)
 
 			number := int64(1071819)
 			header := types.Header{
 				Number: big.NewInt(number),
 			}
 			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
-			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
+			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{&receipt})
+			coreBlock := geth.ToCoreBlock(block, client)
 
-			client := NewFakeClient()
-			client.AddReceipts(receipts)
-
-			Expect(geth.CalcBlockReward(block, client)).To(Equal(5.31355))
+			Expect(geth.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(5.31355))
 		})
 
 		It("calculates the uncles reward for a block", func() {
@@ -123,8 +129,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			transactions := []*types.Transaction{transaction}
 
 			receipt := types.Receipt{
-				TxHash:  transaction.Hash(),
-				GasUsed: big.NewInt(21000),
+				TxHash:            transaction.Hash(),
+				GasUsed:           big.NewInt(21000),
+				CumulativeGasUsed: big.NewInt(21000),
 			}
 			receipts := []*types.Receipt{&receipt}
 
@@ -135,12 +142,14 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				{Number: big.NewInt(1071816)},
 				{Number: big.NewInt(1071817)},
 			}
-			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{})
+			block := types.NewBlock(&header, transactions, uncles, receipts)
 
 			client := NewFakeClient()
 			client.AddReceipts(receipts)
 
-			Expect(geth.CalcUnclesReward(block)).To(Equal(6.875))
+			coreBlock := geth.ToCoreBlock(block, client)
+
+			Expect(geth.CalcUnclesReward(coreBlock, block.Uncles())).To(Equal(6.875))
 		})
 
 		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
@@ -163,12 +172,14 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			transactions := []*types.Transaction{transactionOne, transactionTwo}
 
 			receiptOne := types.Receipt{
-				TxHash:  transactionOne.Hash(),
-				GasUsed: big.NewInt(297508),
+				TxHash:            transactionOne.Hash(),
+				GasUsed:           big.NewInt(297508),
+				CumulativeGasUsed: big.NewInt(0),
 			}
 			receiptTwo := types.Receipt{
-				TxHash:  transactionTwo.Hash(),
-				GasUsed: big.NewInt(297508),
+				TxHash:            transactionTwo.Hash(),
+				GasUsed:           big.NewInt(297508),
+				CumulativeGasUsed: big.NewInt(0),
 			}
 			receipts := []*types.Receipt{&receiptOne, &receiptTwo}
 
@@ -181,8 +192,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			client := NewFakeClient()
 			client.AddReceipts(receipts)
+			coreBlock := geth.ToCoreBlock(block, client)
 
-			Expect(geth.CalcBlockReward(block, client)).To(Equal(3.024990672))
+			Expect(geth.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(3.024990672))
 		})
 	})
 
@@ -191,7 +203,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 			client := &FakeGethClient{}
-			coreBlock := geth.GethBlockToCoreBlock(block, client)
+			coreBlock := geth.ToCoreBlock(block, client)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(0))
 		})
@@ -225,7 +237,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Header{},
 				[]*types.Receipt{gethReceipt},
 			)
-			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
+			coreBlock := geth.ToCoreBlock(gethBlock, client)
 
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
@@ -238,7 +250,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := geth.GethReceiptToCoreReceipt(gethReceipt)
+			expectedReceipt := geth.ReceiptToCoreReceipt(gethReceipt)
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 
 		})
@@ -269,13 +281,13 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Receipt{gethReceipt},
 			)
 
-			coreBlock := geth.GethBlockToCoreBlock(gethBlock, client)
+			coreBlock := geth.ToCoreBlock(gethBlock, client)
 
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.To).To(Equal(""))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := geth.GethReceiptToCoreReceipt(gethReceipt)
+			expectedReceipt := geth.ReceiptToCoreReceipt(gethReceipt)
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 	})

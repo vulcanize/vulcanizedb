@@ -16,7 +16,7 @@ func main() {
 
 	contractAbiString := cmd.GetAbi(*abiFilepath, *contractHash)
 	config := cmd.LoadConfig(*environment)
-	blockchain := geth.NewGethBlockchain(config.Client.IPCPath)
+	blockchain := geth.NewBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
 	watchedContract := core.Contract{
 		Abi:  contractAbiString,

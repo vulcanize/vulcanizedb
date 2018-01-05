@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func GethLogToCoreLog(gethLog types.Log) core.Log {
+func LogToCoreLog(gethLog types.Log) core.Log {
 	topics := gethLog.Topics
 	var hexTopics = make(map[int]string)
 	for i, topic := range topics {
@@ -26,7 +26,7 @@ func GethLogToCoreLog(gethLog types.Log) core.Log {
 func GethLogsToCoreLogs(gethLogs []types.Log) []core.Log {
 	var logs []core.Log
 	for _, log := range gethLogs {
-		log := GethLogToCoreLog(log)
+		log := LogToCoreLog(log)
 		logs = append(logs, log)
 	}
 	return logs
