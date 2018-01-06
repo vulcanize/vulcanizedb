@@ -3,7 +3,7 @@ package contract_summary
 import (
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 )
 

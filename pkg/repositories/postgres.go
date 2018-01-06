@@ -9,8 +9,8 @@ import (
 
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/pkg/config"
-	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )

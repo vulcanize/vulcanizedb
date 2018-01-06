@@ -1,6 +1,6 @@
 # Vulcanize DB
 
-[![Build Status](https://travis-ci.com/8thlight/vulcanizedb.svg?token=GKv2Y33qsFnfYgejjvYx&branch=master)](https://travis-ci.com/8thlight/vulcanizedb)
+[![Build Status](https://travis-ci.com/vulcanize/vulcanizedb.svg?token=GKv2Y33qsFnfYgejjvYx&branch=master)](https://travis-ci.com/vulcanize/vulcanizedb)
 
 ## Development Setup
 
@@ -19,8 +19,8 @@
 
 1. `git config --global url."git@github.com:".insteadOf "https://github.com/"`
     - By default, `go get` does not work for private GitHub repos. This will fix that.
-2. `go get github.com/8thlight/vulcanizedb`
-3. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+2. `go get github.com/vulcanize/vulcanizedb`
+3. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
 4. `dep ensure`
 
 ### Setting up the Databases
@@ -30,7 +30,7 @@
 3. `go get -u -d github.com/mattes/migrate/cli github.com/lib/pq`
 4. `go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli`
 5. `createdb vulcanize_private`
-6. `cd $GOPATH/src/github.com/8thlight/vulcanizedb`
+6. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
 7. `godo migrate -- --environment=<some-environment>`
     * See below for configuring additional environments
 
@@ -55,7 +55,7 @@ Here are some instructions for creating a private blockchain that does not depen
 The default location for Ethereum is:
  - `$HOME/Library/Ethereum` for Mac
  - `$HOME/.ethereum` for Ubuntu
- - `$GOPATH/src/gihub.com/8thlight/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
+ - `$GOPATH/src/gihub.com/vulcanize/vulcanizedb/test_data_dir/geth.ipc` for private blockchain.
 
 **Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to for configuration**
 

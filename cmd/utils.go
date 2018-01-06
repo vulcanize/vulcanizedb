@@ -9,10 +9,10 @@ import (
 
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/pkg/config"
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
 func LoadConfig(environment string) config.Config {

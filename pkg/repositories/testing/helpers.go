@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

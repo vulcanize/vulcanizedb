@@ -9,9 +9,9 @@ import (
 
 	"time"
 
-	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/cmd"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 func min(a, b int64) int64 {

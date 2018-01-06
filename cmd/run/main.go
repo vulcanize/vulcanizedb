@@ -7,9 +7,9 @@ import (
 
 	"os"
 
-	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
-	"github.com/8thlight/vulcanizedb/pkg/history"
+	"github.com/vulcanize/vulcanizedb/cmd"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/history"
 )
 
 const (
