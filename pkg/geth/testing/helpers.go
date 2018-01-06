@@ -3,9 +3,9 @@ package testing
 import (
 	"path/filepath"
 
-	"github.com/8thlight/vulcanizedb/pkg/config"
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 func FindAttribute(contractAttributes core.ContractAttributes, attributeName string) *core.ContractAttribute {

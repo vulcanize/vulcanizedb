@@ -3,7 +3,7 @@ package config_test
 import (
 	"path/filepath"
 
-	cfg "github.com/8thlight/vulcanizedb/pkg/config"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

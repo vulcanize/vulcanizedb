@@ -3,8 +3,8 @@ package geth
 import (
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

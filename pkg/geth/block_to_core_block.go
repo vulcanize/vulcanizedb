@@ -5,7 +5,7 @@ import (
 
 	"log"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"

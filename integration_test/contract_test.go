@@ -5,10 +5,10 @@ import (
 
 	"log"
 
-	cfg "github.com/8thlight/vulcanizedb/pkg/config"
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
-	"github.com/8thlight/vulcanizedb/pkg/geth/testing"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -1,10 +1,10 @@
 package history_test
 
 import (
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/fakes"
-	"github.com/8thlight/vulcanizedb/pkg/history"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/history"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

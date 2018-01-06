@@ -3,8 +3,8 @@ package integration
 import (
 	"log"
 
-	cfg "github.com/8thlight/vulcanizedb/pkg/config"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

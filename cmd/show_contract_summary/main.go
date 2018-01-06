@@ -7,9 +7,9 @@ import (
 
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/cmd"
-	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
-	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/cmd"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_summary"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 func main() {

@@ -3,8 +3,8 @@ package history
 import (
 	"log"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
 func PopulateMissingBlocks(blockchain core.Blockchain, repository repositories.Repository, startingBlockNumber int64) int {

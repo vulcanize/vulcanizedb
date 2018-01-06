@@ -3,10 +3,10 @@ package contract_summary_test
 import (
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
-	"github.com/8thlight/vulcanizedb/pkg/core"
-	"github.com/8thlight/vulcanizedb/pkg/fakes"
-	"github.com/8thlight/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_summary"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

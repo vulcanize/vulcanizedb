@@ -5,7 +5,7 @@ import (
 
 	"math/big"
 
-	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type Blockchain struct {
