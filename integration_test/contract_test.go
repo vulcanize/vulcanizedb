@@ -15,8 +15,7 @@ import (
 
 var _ = Describe("Reading contracts", func() {
 
-	//TODO was experiencing Infura issue (I suspect) on 1/5. Unignore these and revisit if persists on next commit
-	XDescribe("Reading the list of attributes", func() {
+	Describe("Reading the list of attributes", func() {
 		It("returns a string attribute for a real contract", func() {
 			config, err := cfg.NewConfig("infura")
 			if err != nil {
@@ -59,8 +58,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 	})
 
-	//TODO was experiencing Infura issue (I suspect) on 1/5. Unignore these and revisit if persists on next commit
-	XDescribe("Getting a contract attribute", func() {
+	Describe("Getting a contract attribute", func() {
 		It("returns the correct attribute for a real contract", func() {
 			config, _ := cfg.NewConfig("infura")
 			blockchain := geth.NewBlockchain(config.Client.IPCPath)
