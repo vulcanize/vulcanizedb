@@ -86,8 +86,8 @@ vulcanizedb/
             <contract-address>.json
         private/
 ```
-The name of the JSON file should correspond the contract's address.
-2. Start watching the contract `godo watchContract -- --environment=<some-environment> --contract-hash=<contract-address>`
+The name of the JSON file should correspond the contract's address. 
+2. Start watching the contract `godo watchContract -- --environment=<some-environment> --contract-hash=<contract-address>` 
 3. Request summary data `godo showContractSummary -- --environment=<some-environment> --contract-hash=<contract-address>`
 
 

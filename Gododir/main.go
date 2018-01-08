@@ -60,14 +60,16 @@ func tasks(p *do.Project) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")
 		abiFilepath := context.Args.MayString("", "abi-filepath", "a")
+		network := context.Args.MayString("", "network", "n")
 		if contractHash == "" {
 			log.Fatalln("--contract-hash required")
 		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --abi-filepath={{.abiFilepath}}`,
+		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}} --abi-filepath={{.abiFilepath}} --network={{.network}}`,
 			do.M{
 				"environment":  environment,
 				"contractHash": contractHash,
 				"abiFilepath":  abiFilepath,
+				"network":      network,
 				"$in":          "cmd/watch_contract",
 			})
 	})
