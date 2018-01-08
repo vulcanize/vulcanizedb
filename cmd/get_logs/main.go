@@ -9,6 +9,8 @@ import (
 
 	"time"
 
+	"strings"
+
 	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
@@ -29,11 +31,12 @@ const (
 func main() {
 	environment := flag.String("environment", "", "Environment name")
 	contractHash := flag.String("contract-hash", "", "Contract hash to show summary")
+	flag.Parse()
+
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
-	flag.Parse()
-
+	contractHashLowered := strings.ToLower(*contractHash)
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
@@ -43,7 +46,7 @@ func main() {
 
 	go func() {
 		for i := int64(0); i < lastBlockNumber; i = min(i+stepSize, lastBlockNumber) {
-			logs, err := blockchain.GetLogs(core.Contract{Hash: *contractHash}, big.NewInt(i), big.NewInt(i+stepSize))
+			logs, err := blockchain.GetLogs(core.Contract{Hash: contractHashLowered}, big.NewInt(i), big.NewInt(i+stepSize))
 			log.Println("Backfilling Logs:", i)
 			if err != nil {
 				log.Println(err)
@@ -61,7 +64,7 @@ func main() {
 				z := &big.Int{}
 				z.Sub(blockchain.LastBlock(), big.NewInt(25))
 				log.Printf("Logs Window: %d - %d", z.Int64(), blockchain.LastBlock().Int64())
-				logs, _ := blockchain.GetLogs(core.Contract{Hash: *contractHash}, z, blockchain.LastBlock())
+				logs, _ := blockchain.GetLogs(core.Contract{Hash: contractHashLowered}, z, blockchain.LastBlock())
 				repository.CreateLogs(logs)
 				done <- struct{}{}
 			}()

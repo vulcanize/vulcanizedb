@@ -5,8 +5,6 @@ import (
 
 	"path/filepath"
 
-	"fmt"
-
 	"math/big"
 
 	"github.com/8thlight/vulcanizedb/pkg/config"
@@ -42,13 +40,14 @@ func ReadAbiFile(abiFilepath string) string {
 	return abi
 }
 
-func GetAbi(abiFilepath string, contractHash string) string {
+func GetAbi(abiFilepath string, contractHash string, network string) string {
 	var contractAbiString string
 	if abiFilepath != "" {
 		contractAbiString = ReadAbiFile(abiFilepath)
 	} else {
-		etherscan := geth.NewEtherScanClient("https://api.etherscan.io")
-		fmt.Println("No ABI supplied. Retrieving ABI from Etherscan")
+		url := geth.GenUrl(network)
+		etherscan := geth.NewEtherScanClient(url)
+		log.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
 		contractAbiString, _ = etherscan.GetAbi(contractHash)
 	}
 	_, err := geth.ParseAbi(contractAbiString)

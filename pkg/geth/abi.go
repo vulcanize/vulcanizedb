@@ -38,6 +38,19 @@ func NewEtherScanClient(url string) *EtherScanApi {
 
 }
 
+func GenUrl(network string) string {
+	switch network {
+	case "ropsten":
+		return "https://ropsten.etherscan.io"
+	case "kovan":
+		return "https://kovan.etherscan.io"
+	case "rinkeby":
+		return "https://rinkeby.etherscan.io"
+	default:
+		return "https://api.etherscan.io"
+	}
+}
+
 //https://api.etherscan.io/api?module=contract&action=getabi&address=%s
 func (e *EtherScanApi) GetAbi(contractHash string) (string, error) {
 	target := new(Response)

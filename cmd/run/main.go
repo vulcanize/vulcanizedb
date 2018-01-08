@@ -17,11 +17,12 @@ const (
 )
 
 func main() {
+	environment := flag.String("environment", "", "Environment name")
+	flag.Parse()
+
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
-	environment := flag.String("environment", "", "Environment name")
-	flag.Parse()
 	config := cmd.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
 	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
