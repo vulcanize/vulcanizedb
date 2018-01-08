@@ -58,6 +58,10 @@ func convertTransactionsToCore(gethBlock *types.Block, client GethClient) []core
 
 func appendReceiptToTransaction(client GethClient, transaction core.Transaction) (core.Transaction, error) {
 	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+	if err != nil {
+		log.Println(err)
+		return transaction, err
+	}
 	receipt := ReceiptToCoreReceipt(gethReceipt)
 	transaction.Receipt = receipt
 	return transaction, err
