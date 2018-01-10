@@ -111,13 +111,16 @@ func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Lo
 func (repository *Postgres) CreateNode(node *core.Node) error {
 	var nodeId int64
 	err := repository.Db.QueryRow(
-		`INSERT INTO nodes (genesis_block, network_id)
-                VALUES ($1, $2)
-                ON CONFLICT (genesis_block, network_id)
+		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (genesis_block, network_id, node_id)
                   DO UPDATE
-                    SET genesis_block = $1, network_id = $2
+                    SET genesis_block = $1,
+                    	network_id = $2,
+                    	node_id = $3,
+                    	client_name = $4
                 RETURNING id`,
-		node.GenesisBlock, node.NetworkId).Scan(&nodeId)
+		node.GenesisBlock, node.NetworkId, node.Id, node.ClientName).Scan(&nodeId)
 	if err != nil {
 		return ErrUnableToSetNode
 	}

@@ -50,7 +50,7 @@ func NewBlockchain() *Blockchain {
 		blocks:             make(map[int64]core.Block),
 		logs:               make(map[string][]core.Log),
 		contractAttributes: make(map[string]map[string]string),
-		node:               core.Node{GenesisBlock: "GENESIS"},
+		node:               core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "Geth"},
 	}
 }
 

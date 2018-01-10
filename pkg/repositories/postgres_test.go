@@ -47,7 +47,7 @@ var _ = Describe("Postgres repository", func() {
 			Transactions: []core.Transaction{},
 		}
 		cfg, _ := config.NewConfig("private")
-		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(badBlock)
@@ -60,7 +60,7 @@ var _ = Describe("Postgres repository", func() {
 
 	It("throws error when can't connect to the database", func() {
 		invalidDatabase := config.Database{}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
 		_, err := repositories.NewPostgres(invalidDatabase, node)
 		Expect(err).To(Equal(repositories.ErrDBConnectionFailed))
 	})
@@ -68,7 +68,7 @@ var _ = Describe("Postgres repository", func() {
 	It("throws error when can't create node", func() {
 		cfg, _ := config.NewConfig("private")
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		node := core.Node{GenesisBlock: badHash, NetworkId: 1}
+		node := core.Node{GenesisBlock: badHash, NetworkId: 1, Id: "x123", ClientName: "geth"}
 		_, err := repositories.NewPostgres(cfg.Database, node)
 		Expect(err).To(Equal(repositories.ErrUnableToSetNode))
 	})
@@ -82,7 +82,7 @@ var _ = Describe("Postgres repository", func() {
 			TxHash:      badTxHash,
 		}
 		cfg, _ := config.NewConfig("private")
-		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
 		err := repository.CreateLogs([]core.Log{badLog})
@@ -101,7 +101,7 @@ var _ = Describe("Postgres repository", func() {
 			Transactions: []core.Transaction{badTransaction},
 		}
 		cfg, _ := config.NewConfig("private")
-		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(block)
