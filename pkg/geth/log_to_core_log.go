@@ -9,16 +9,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func LogsToCoreLogs(gethLogs []types.Log) []core.Log {
+func ToCoreLogs(gethLogs []types.Log) []core.Log {
 	var logs []core.Log
 	for _, log := range gethLogs {
-		log := LogToCoreLog(log)
+		log := ToCoreLog(log)
 		logs = append(logs, log)
 	}
 	return logs
 }
 
-func MakeTopics(topics []common.Hash) core.Topics {
+func makeTopics(topics []common.Hash) core.Topics {
 	var hexTopics core.Topics
 	for i, topic := range topics {
 		hexTopics[i] = topic.Hex()
@@ -26,9 +26,9 @@ func MakeTopics(topics []common.Hash) core.Topics {
 	return hexTopics
 }
 
-func LogToCoreLog(gethLog types.Log) core.Log {
+func ToCoreLog(gethLog types.Log) core.Log {
 	topics := gethLog.Topics
-	hexTopics := MakeTopics(topics)
+	hexTopics := makeTopics(topics)
 	return core.Log{
 		Address: strings.ToLower(gethLog.Address.Hex()),
 
@@ -37,6 +37,5 @@ func LogToCoreLog(gethLog types.Log) core.Log {
 		TxHash:      gethLog.TxHash.Hex(),
 		Index:       int64(gethLog.Index),
 		Data:        hexutil.Encode(gethLog.Data),
-		Removed:     gethLog.Removed,
 	}
 }

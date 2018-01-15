@@ -399,7 +399,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      [4]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -428,7 +428,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      [4]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xABC",
 			},
 			})
@@ -437,7 +437,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      [4]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xXYZ",
 			},
 			})
@@ -452,7 +452,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      [4]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -461,7 +461,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       1,
 				Address:     "x123",
 				TxHash:      "x789",
-				Topics:      [4]string{0: "x111", 1: "x222", 2: "x333"},
+				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
 			}},
 			)
@@ -470,7 +470,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      [4]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -561,13 +561,12 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(err).To(Not(HaveOccurred()))
 			retrievedLogs := repository.FindLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 
-			Expect(retrievedLogs).To(Not(BeZero()))
+			expected := logs[1:]
+			Expect(retrievedLogs).To(Equal(expected))
 		})
 
-		It("saves the logs attached to a receipt", func() {
-			logs := make([]core.Log, 0)
+		It("still saves receipts without logs", func() {
 			receipt := core.Receipt{
-				Logs:   logs,
 				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
 			}
 			transaction := core.Transaction{
@@ -580,11 +579,9 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			}
 			repository.CreateOrUpdateBlock(block)
 
-			retrievedLogs := repository.FindLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 			_, err := repository.FindReceipt(receipt.TxHash)
 
 			Expect(err).To(Not(HaveOccurred()))
-			Expect(retrievedLogs).To(BeZero())
 		})
 	})
 

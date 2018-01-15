@@ -49,7 +49,7 @@ func setContractAddress(gethReceipt *types.Receipt) string {
 func dereferenceLogs(gethReceipt *types.Receipt) []core.Log {
 	logs := []core.Log{}
 	for _, log := range gethReceipt.Logs {
-		logs = append(logs, LogToCoreLog(*log))
+		logs = append(logs, ToCoreLog(*log))
 	}
 	return logs
 }

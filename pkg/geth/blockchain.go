@@ -5,6 +5,8 @@ import (
 
 	"strings"
 
+	"log"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth/node"
 	"github.com/ethereum/go-ethereum"
@@ -25,7 +27,10 @@ type Blockchain struct {
 
 func NewBlockchain(ipcPath string) *Blockchain {
 	blockchain := Blockchain{}
-	rpcClient, _ := rpc.Dial(ipcPath)
+	rpcClient, err := rpc.Dial(ipcPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	client := ethclient.NewClient(rpcClient)
 	blockchain.node = node.Info(rpcClient)
 	if infura := isInfuraNode(ipcPath); infura {
@@ -57,7 +62,7 @@ func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumbe
 	if err != nil {
 		return []core.Log{}, err
 	}
-	logs := LogsToCoreLogs(gethLogs)
+	logs := ToCoreLogs(gethLogs)
 	return logs, nil
 }
 

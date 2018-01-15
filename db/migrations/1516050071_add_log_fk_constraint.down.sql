@@ -1,0 +1,9 @@
+BEGIN;
+
+ALTER TABLE logs
+  DROP CONSTRAINT receipts_fk;
+
+ALTER TABLE logs
+  DROP COLUMN receipt_id;
+
+COMMIT;
