@@ -1,6 +1,8 @@
 package geth
 
 import (
+	"strings"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,7 +15,7 @@ func LogToCoreLog(gethLog types.Log) core.Log {
 		hexTopics[i] = topic.Hex()
 	}
 	return core.Log{
-		Address: gethLog.Address.Hex(),
+		Address: strings.ToLower(gethLog.Address.Hex()),
 
 		BlockNumber: int64(gethLog.BlockNumber),
 		Topics:      hexTopics,
