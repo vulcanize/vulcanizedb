@@ -27,6 +27,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 				common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"),
 				common.HexToHash("0x00000000000000000000000080b2c9d7cbbf30a1b0fc8983c647d754c6525615"),
 			},
+			Removed: true,
 		}
 
 		expected := core.Log{
@@ -35,10 +36,11 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			Data:        hexutil.Encode(gethLog.Data),
 			TxHash:      gethLog.TxHash.Hex(),
 			Index:       2,
-			Topics: map[int]string{
+			Topics: core.Topics{
 				0: common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef").Hex(),
 				1: common.HexToHash("0x00000000000000000000000080b2c9d7cbbf30a1b0fc8983c647d754c6525615").Hex(),
 			},
+			Removed: gethLog.Removed,
 		}
 
 		coreLog := geth.LogToCoreLog(gethLog)
@@ -46,6 +48,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 		Expect(coreLog.Address).To(Equal(expected.Address))
 		Expect(coreLog.BlockNumber).To(Equal(expected.BlockNumber))
 		Expect(coreLog.Data).To(Equal(expected.Data))
+		Expect(coreLog.Removed).To(Equal(expected.Removed))
 		Expect(coreLog.Index).To(Equal(expected.Index))
 		Expect(coreLog.Topics[0]).To(Equal(expected.Topics[0]))
 		Expect(coreLog.Topics[1]).To(Equal(expected.Topics[1]))
@@ -84,7 +87,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 		expectedOne := geth.LogToCoreLog(gethLogOne)
 		expectedTwo := geth.LogToCoreLog(gethLogTwo)
 
-		coreLogs := geth.GethLogsToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
+		coreLogs := geth.LogsToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
 
 		Expect(len(coreLogs)).To(Equal(2))
 		Expect(coreLogs[0]).To(Equal(expectedOne))
