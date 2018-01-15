@@ -310,19 +310,30 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 	if err != nil {
 		return err
 	}
-	if transaction.Receipt.TxHash != "" {
-		err = repository.createReceipt(tx, transactionId, transaction.Receipt)
+	if hasReceipt(transaction) {
+		receiptId, err := repository.createReceipt(tx, transactionId, transaction.Receipt)
 		if err != nil {
 			return err
 		}
-		if len(transaction.Receipt.Logs) > 0 {
-			err = repository.CreateLogs(transaction.Receipt.Logs)
+		if hasLogs(transaction) {
+			err = repository.createLogs(tx, transaction.Receipt.Logs, receiptId)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) error {
+func hasLogs(transaction core.Transaction) bool {
+	return len(transaction.Receipt.Logs) > 0
+}
+
+func hasReceipt(transaction core.Transaction) bool {
+	return transaction.Receipt.TxHash != ""
+}
+
+func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
@@ -332,7 +343,33 @@ func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt 
                RETURNING id`,
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId).Scan(&receiptId)
 	if err != nil {
-		return err
+		return receiptId, err
+	}
+	return receiptId, nil
+}
+
+func (repository Postgres) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+	for _, tlog := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (index, block_number)
+                  DO UPDATE
+                    SET block_number = $1,
+                   	    address = $2,
+                   	    tx_hash = $3,
+                   	    index = $4,
+                   	    topic0 = $5,
+                   	    topic1 = $6,
+                   	    topic2 = $7,
+                   	    topic3 = $8,
+                   	    data = $9
+                `,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
+		)
+		if err != nil {
+			return ErrDBInsertFailed
+		}
 	}
 	return nil
 }

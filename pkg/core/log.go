@@ -5,7 +5,6 @@ type Log struct {
 	TxHash      string
 	Address     string
 	Topics
-	Index   int64
-	Data    string
-	Removed bool
+	Index int64
+	Data  string
 }
