@@ -344,6 +344,9 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 		if err != nil {
 			return err
 		}
+		if len(transaction.Receipt.Logs) > 0 {
+			err = repository.CreateLogs(transaction.Receipt.Logs)
+		}
 	}
 	return nil
 }

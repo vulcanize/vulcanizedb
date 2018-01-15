@@ -102,6 +102,7 @@ func (repository *InMemory) CreateOrUpdateBlock(block core.Block) error {
 	repository.blocks[block.Number] = block
 	for _, transaction := range block.Transactions {
 		repository.receipts[transaction.Hash] = transaction.Receipt
+		repository.logs[transaction.TxHash] = transaction.Logs
 	}
 	return nil
 }
