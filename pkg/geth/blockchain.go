@@ -57,7 +57,7 @@ func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumbe
 	if err != nil {
 		return []core.Log{}, err
 	}
-	logs := GethLogsToCoreLogs(gethLogs)
+	logs := LogsToCoreLogs(gethLogs)
 	return logs, nil
 }
 
