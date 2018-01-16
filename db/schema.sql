@@ -325,14 +325,6 @@ ALTER TABLE ONLY watched_contracts
 
 
 --
--- Name: logs log_uc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY logs
-    ADD CONSTRAINT log_uc UNIQUE (block_number, index);
-
-
---
 -- Name: logs logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

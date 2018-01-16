@@ -422,30 +422,6 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(log).To(BeNil())
 		})
 
-		It("updates the log when log with when log with same block number and index is already present", func() {
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xABC",
-			},
-			})
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xXYZ",
-			},
-			})
-
-			log := repository.FindLogs("x123", 1)
-			Expect(log[0].Data).To(Equal("xXYZ"))
-		})
-
 		It("filters to the correct block number and address", func() {
 			repository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
