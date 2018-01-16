@@ -79,7 +79,9 @@ func tasks(p *do.Project) {
 		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations up", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)
 		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
 	p.Task("rollback", nil, func(context *do.Context) {
@@ -87,7 +89,9 @@ func tasks(p *do.Project) {
 		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations down 1", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)
 		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
 	p.Task("showContractSummary", nil, func(context *do.Context) {
