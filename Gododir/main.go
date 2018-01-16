@@ -42,20 +42,6 @@ func tasks(p *do.Project) {
 			do.M{"environment": environment, "startingNumber": startingNumber, "$in": "cmd/populate_blocks"})
 	})
 
-	p.Task("getLogs", nil, func(context *do.Context) {
-		environment := parseEnvironment(context)
-		contractHash := context.Args.MayString("", "contract-hash", "c")
-		if contractHash == "" {
-			log.Fatalln("--contract-hash required")
-		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
-			do.M{
-				"environment":  environment,
-				"contractHash": contractHash,
-				"$in":          "cmd/get_logs",
-			})
-	})
-
 	p.Task("watchContract", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")

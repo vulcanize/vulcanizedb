@@ -91,12 +91,6 @@ The name of the JSON file should correspond the contract's address.
 2. Start watching the contract `godo watchContract -- --environment=<some-environment> --contract-hash=<contract-address>`
 3. Request summary data `godo showContractSummary -- --environment=<some-environment> --contract-hash=<contract-address>`
 
-
-## Retrieving Contract Logs
-
-1. Get the logs for a specific contract
-    - `godo getLogs -- --environment=<some-environment> --contract-hash=<contract-address>`
-    
 ### Configuring Additional Environments
 
 You can create configuration files for additional environments.
