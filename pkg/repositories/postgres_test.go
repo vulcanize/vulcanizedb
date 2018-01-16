@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
@@ -36,6 +38,42 @@ var _ = Describe("Postgres repository", func() {
 		repository, _ := repositories.NewPostgres(cfg.Database, node)
 		testing.ClearData(repository)
 		return repository
+	})
+
+	It("serializes big.Int to db", func() {
+		// postgres driver doesn't support go big.Int type
+		// various casts in golang uint64, int64, overflow for
+		// transaction value (in wei) even though
+		// postgres numeric can handle an arbitrary
+		// sized int, so use string representation of big.Int
+		// and cast on insert
+
+		cfg, _ := config.NewConfig("private")
+		pgConfig := config.DbConnectionString(cfg.Database)
+		db, err := sqlx.Connect("postgres", pgConfig)
+
+		bi := new(big.Int)
+		bi.SetString("34940183920000000000", 10)
+		Expect(bi.String()).To(Equal("34940183920000000000"))
+
+		defer db.Exec(`DROP TABLE IF EXISTS example`)
+		_, err = db.Exec("CREATE TABLE example ( id INTEGER, data NUMERIC )")
+		Expect(err).ToNot(HaveOccurred())
+
+		sqlStatement := `  
+			INSERT INTO example (id, data)
+			VALUES (1, cast($1 AS NUMERIC))`
+		_, err = db.Exec(sqlStatement, bi.String())
+		Expect(err).ToNot(HaveOccurred())
+
+		var data string
+		err = db.QueryRow(`SELECT data FROM example WHERE id = 1`).Scan(&data)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(bi.String()).To(Equal(data))
+		actual := new(big.Int)
+		actual.SetString(data, 10)
+		Expect(actual).To(Equal(bi))
 	})
 
 	It("does not commit block if block is invalid", func() {

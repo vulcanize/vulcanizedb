@@ -303,7 +303,7 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 	err := tx.QueryRow(
 		`INSERT INTO transactions
 	   (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
-	   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	   VALUES ($1, $2, $3, $4, $5, $6, $7,  cast(NULLIF($8, '') as NUMERIC), $9)
 	   RETURNING id`,
 		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data).
 		Scan(&transactionId)
@@ -489,7 +489,7 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 		var gasLimit int64
 		var gasPrice int64
 		var inputData string
-		var value int64
+		var value string
 		transactionRows.Scan(&hash, &nonce, &to, &from, &gasLimit, &gasPrice, &value, &inputData)
 		transaction := core.Transaction{
 			Hash:     hash,
