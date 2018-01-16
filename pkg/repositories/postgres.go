@@ -351,21 +351,10 @@ func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt 
 func (repository Postgres) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (index, block_number)
-                  DO UPDATE
-                    SET block_number = $1,
-                   	    address = $2,
-                   	    tx_hash = $3,
-                   	    index = $4,
-                   	    topic0 = $5,
-                   	    topic1 = $6,
-                   	    topic2 = $7,
-                   	    topic3 = $8,
-                   	    data = $9
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
-			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
 		)
 		if err != nil {
 			return ErrDBInsertFailed
@@ -380,17 +369,6 @@ func (repository Postgres) CreateLogs(logs []core.Log) error {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (index, block_number)
-                  DO UPDATE
-                    SET block_number = $1,
-                   	    address = $2,
-                   	    tx_hash = $3,
-                   	    index = $4,
-                   	    topic0 = $5,
-                   	    topic1 = $6,
-                   	    topic2 = $7,
-                   	    topic3 = $8,
-                   	    data = $9
                 `,
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
 		)

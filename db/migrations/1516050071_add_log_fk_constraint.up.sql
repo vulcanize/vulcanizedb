@@ -1,4 +1,6 @@
 BEGIN;
+ALTER TABLE logs
+    DROP CONSTRAINT log_uc;
 
 ALTER TABLE logs
   ADD COLUMN receipt_id INT;
