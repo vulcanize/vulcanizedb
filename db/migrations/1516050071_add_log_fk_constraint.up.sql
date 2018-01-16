@@ -1,0 +1,14 @@
+BEGIN;
+ALTER TABLE logs
+    DROP CONSTRAINT log_uc;
+
+ALTER TABLE logs
+  ADD COLUMN receipt_id INT;
+
+ALTER TABLE logs
+  ADD CONSTRAINT receipts_fk
+FOREIGN KEY (receipt_id)
+REFERENCES receipts (id)
+ON DELETE CASCADE;
+
+COMMIT;
