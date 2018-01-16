@@ -76,7 +76,7 @@ func transToCoreTrans(transaction *types.Transaction, from *common.Address) core
 		From:     strings.ToLower(addressToHex(from)),
 		GasLimit: transaction.Gas().Int64(),
 		GasPrice: transaction.GasPrice().Int64(),
-		Value:    transaction.Value().Int64(),
+		Value:    transaction.Value().String(),
 		Data:     data,
 	}
 }

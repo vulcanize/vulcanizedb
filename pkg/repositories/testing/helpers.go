@@ -4,6 +4,8 @@ import (
 	"sort"
 	"strconv"
 
+	"math/big"
+
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
@@ -198,7 +200,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			nonce := uint64(10000)
 			to := "1234567890"
 			from := "0987654321"
-			value := int64(10)
+			var value = new(big.Int)
+			value.SetString("34940183920000000000", 10)
 			inputData := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
 			transaction := core.Transaction{
 				Hash:     "x1234",
@@ -207,7 +210,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Nonce:    nonce,
 				To:       to,
 				From:     from,
-				Value:    value,
+				Value:    value.String(),
 				Data:     inputData,
 			}
 			block := core.Block{
@@ -227,7 +230,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(savedTransaction.Nonce).To(Equal(nonce))
 			Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
 			Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
-			Expect(savedTransaction.Value).To(Equal(value))
+			Expect(savedTransaction.Value).To(Equal(value.String()))
 		})
 
 	})
