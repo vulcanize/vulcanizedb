@@ -62,35 +62,6 @@ func (repository Postgres) SetBlocksStatus(chainHead int64) {
 		cutoff)
 }
 
-func (repository Postgres) CreateLogs(logs []core.Log) error {
-	tx, _ := repository.Db.BeginTx(context.Background(), nil)
-	for _, tlog := range logs {
-		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (index, block_number)
-                  DO UPDATE
-                    SET block_number = $1,
-                   	    address = $2,
-                   	    tx_hash = $3,
-                   	    index = $4,
-                   	    topic0 = $5,
-                   	    topic1 = $6,
-                   	    topic2 = $7,
-                   	    topic3 = $8,
-                   	    data = $9
-                `,
-			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
-		)
-		if err != nil {
-			tx.Rollback()
-			return ErrDBInsertFailed
-		}
-	}
-	tx.Commit()
-	return nil
-}
-
 func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Log {
 	logRows, _ := repository.Db.Query(
 		`SELECT block_number,
@@ -339,25 +310,74 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 	if err != nil {
 		return err
 	}
-	if transaction.Receipt.TxHash != "" {
-		err = repository.createReceipt(tx, transactionId, transaction.Receipt)
+	if hasReceipt(transaction) {
+		receiptId, err := repository.createReceipt(tx, transactionId, transaction.Receipt)
 		if err != nil {
 			return err
+		}
+		if hasLogs(transaction) {
+			err = repository.createLogs(tx, transaction.Receipt.Logs, receiptId)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) error {
+func hasLogs(transaction core.Transaction) bool {
+	return len(transaction.Receipt.Logs) > 0
+}
+
+func hasReceipt(transaction core.Transaction) bool {
+	return transaction.Receipt.TxHash != ""
+}
+
+func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
-	_, err := tx.Exec(
+	var receiptId int
+	err := tx.QueryRow(
 		`INSERT INTO receipts
                (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, transaction_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId)
+               VALUES ($1, $2, $3, $4, $5, $6, $7) 
+               RETURNING id`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId).Scan(&receiptId)
 	if err != nil {
-		return err
+		return receiptId, err
 	}
+	return receiptId, nil
+}
+
+func (repository Postgres) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+	for _, tlog := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                `,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
+		)
+		if err != nil {
+			return ErrDBInsertFailed
+		}
+	}
+	return nil
+}
+
+func (repository Postgres) CreateLogs(logs []core.Log) error {
+	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+	for _, tlog := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
+		)
+		if err != nil {
+			tx.Rollback()
+			return ErrDBInsertFailed
+		}
+	}
+	tx.Commit()
 	return nil
 }
 
@@ -442,7 +462,7 @@ func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
 		var txHash string
 		var index int64
 		var data string
-		topics := make([]string, 4)
+		var topics core.Topics
 		logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
 		log := core.Log{
 			BlockNumber: blockNumber,
@@ -451,7 +471,6 @@ func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
 			Index:       index,
 			Data:        data,
 		}
-		log.Topics = make(map[int]string)
 		for i, topic := range topics {
 			log.Topics[i] = topic
 		}

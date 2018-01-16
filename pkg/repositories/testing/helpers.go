@@ -399,7 +399,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -422,37 +422,13 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(log).To(BeNil())
 		})
 
-		It("updates the log when log with when log with same block number and index is already present", func() {
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xABC",
-			},
-			})
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xXYZ",
-			},
-			})
-
-			log := repository.FindLogs("x123", 1)
-			Expect(log[0].Data).To(Equal("xXYZ"))
-		})
-
 		It("filters to the correct block number and address", func() {
 			repository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -461,7 +437,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       1,
 				Address:     "x123",
 				TxHash:      "x789",
-				Topics:      map[int]string{0: "x111", 1: "x222", 2: "x333"},
+				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
 			}},
 			)
@@ -470,7 +446,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -503,6 +479,85 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 					{blockNumber: 1, Index: 0},
 					{blockNumber: 1, Index: 1}},
 			))
+		})
+
+		It("saves the logs attached to a receipt", func() {
+			logs := []core.Log{{
+				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
+				BlockNumber: 4745407,
+				Data:        "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000645a68669900000000000000000000000000000000000000000000003397684ab5869b0000000000000000000000000000000000000000000000000000000000005a36053200000000000000000000000099041f808d598b782d5a3e498681c2452a31da08",
+				Index:       86,
+				Topics: core.Topics{
+					0: "0x5a68669900000000000000000000000000000000000000000000000000000000",
+					1: "0x000000000000000000000000d0148dad63f73ce6f1b6c607e3413dcf1ff5f030",
+					2: "0x00000000000000000000000000000000000000000000003397684ab5869b0000",
+					3: "0x000000000000000000000000000000000000000000000000000000005a360532",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}, {
+				Address:     "0x99041f808d598b782d5a3e498681c2452a31da08",
+				BlockNumber: 4745407,
+				Data:        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000418178358",
+				Index:       87,
+				Topics: core.Topics{
+					0: "0x1817835800000000000000000000000000000000000000000000000000000000",
+					1: "0x0000000000000000000000008a4774fe82c63484afef97ca8d89a6ea5e21f973",
+					2: "0x0000000000000000000000000000000000000000000000000000000000000000",
+					3: "0x0000000000000000000000000000000000000000000000000000000000000000",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}, {
+				Address:     "0x99041f808d598b782d5a3e498681c2452a31da08",
+				BlockNumber: 4745407,
+				Data:        "0x00000000000000000000000000000000000000000000003338f64c8423af4000",
+				Index:       88,
+				Topics: core.Topics{
+					0: "0x296ba4ca62c6c21c95e828080cb8aec7481b71390585605300a8a76f9e95b527",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			},
+			}
+			receipt := core.Receipt{
+				ContractAddress:   "",
+				CumulativeGasUsed: 7481414,
+				GasUsed:           60711,
+				Logs:              logs,
+				Bloom:             "0x00000800000000000000001000000000000000400000000080000000000000000000400000010000000000000000000000000000040000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000800004000000000000001000000000000000000000000000002000000480000000000000002000000000000000020000000000000000000000000000000000000000080000000000180000c00000000000000002000002000000040000000000000000000000000000010000000000020000000000000000000002000000000000000000000000400800000000000000000",
+				Status:            1,
+				TxHash:            "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}
+			transaction :=
+				core.Transaction{
+					Hash:    receipt.TxHash,
+					Receipt: receipt,
+				}
+
+			block := core.Block{Transactions: []core.Transaction{transaction}}
+			err := repository.CreateOrUpdateBlock(block)
+			Expect(err).To(Not(HaveOccurred()))
+			retrievedLogs := repository.FindLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
+
+			expected := logs[1:]
+			Expect(retrievedLogs).To(Equal(expected))
+		})
+
+		It("still saves receipts without logs", func() {
+			receipt := core.Receipt{
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}
+			transaction := core.Transaction{
+				Hash:    receipt.TxHash,
+				Receipt: receipt,
+			}
+
+			block := core.Block{
+				Transactions: []core.Transaction{transaction},
+			}
+			repository.CreateOrUpdateBlock(block)
+
+			_, err := repository.FindReceipt(receipt.TxHash)
+
+			Expect(err).To(Not(HaveOccurred()))
 		})
 	})
 

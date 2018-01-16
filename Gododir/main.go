@@ -42,20 +42,6 @@ func tasks(p *do.Project) {
 			do.M{"environment": environment, "startingNumber": startingNumber, "$in": "cmd/populate_blocks"})
 	})
 
-	p.Task("getLogs", nil, func(context *do.Context) {
-		environment := parseEnvironment(context)
-		contractHash := context.Args.MayString("", "contract-hash", "c")
-		if contractHash == "" {
-			log.Fatalln("--contract-hash required")
-		}
-		context.Start(`go run main.go --environment={{.environment}} --contract-hash={{.contractHash}}`,
-			do.M{
-				"environment":  environment,
-				"contractHash": contractHash,
-				"$in":          "cmd/get_logs",
-			})
-	})
-
 	p.Task("watchContract", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
 		contractHash := context.Args.MayString("", "contract-hash", "c")
@@ -79,7 +65,9 @@ func tasks(p *do.Project) {
 		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations up", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)
 		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
 	p.Task("rollback", nil, func(context *do.Context) {
@@ -87,7 +75,9 @@ func tasks(p *do.Project) {
 		cfg := cmd.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations down 1", connectString)
+		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)
 		context.Bash(migrate)
+		context.Bash(dumpSchema)
 	})
 
 	p.Task("showContractSummary", nil, func(context *do.Context) {
