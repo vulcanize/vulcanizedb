@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/filters"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,6 +19,7 @@ func ClearData(postgres repositories.Postgres) {
 	postgres.Db.MustExec("DELETE FROM blocks")
 	postgres.Db.MustExec("DELETE FROM logs")
 	postgres.Db.MustExec("DELETE FROM receipts")
+	postgres.Db.MustExec("DELETE FROM log_filters")
 }
 
 func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.Repository) {
@@ -600,6 +602,43 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(err).To(HaveOccurred())
 			Expect(receipt).To(BeZero())
 		})
+	})
 
+	Describe("LogFilter", func() {
+
+		It("inserts filter into watched events", func() {
+
+			logFilter := filters.LogFilter{
+				Name:      "TestFilter",
+				FromBlock: 1,
+				ToBlock:   2,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err := repository.AddFilter(logFilter)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns error if name is not provided", func() {
+
+			logFilter := filters.LogFilter{
+				FromBlock: 1,
+				ToBlock:   2,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err := repository.AddFilter(logFilter)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 }

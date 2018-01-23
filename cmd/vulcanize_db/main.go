@@ -18,14 +18,15 @@ const (
 	pollingInterval = 7 * time.Second
 )
 
-func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postgres, missingBlocksPopulated chan int) {
+func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postgres, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	go func() {
-		missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, repository, 0)
+		missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, repository, startingBlockNumber)
 	}()
 }
 
 func main() {
 	environment := flag.String("environment", "", "Environment name")
+	startingBlockNumber := flag.Int("starting-number", 0, "First block to fill from")
 	flag.Parse()
 
 	ticker := time.NewTicker(pollingInterval)
@@ -37,7 +38,8 @@ func main() {
 	validator := history.NewBlockValidator(blockchain, repository, 15)
 
 	missingBlocksPopulated := make(chan int)
-	go backFillAllBlocks(blockchain, repository, missingBlocksPopulated)
+	_startingBlockNumber := int64(*startingBlockNumber)
+	go backFillAllBlocks(blockchain, repository, missingBlocksPopulated, _startingBlockNumber)
 
 	for {
 		select {
@@ -45,7 +47,7 @@ func main() {
 			window := validator.ValidateBlocks()
 			validator.Log(os.Stdout, window)
 		case <-missingBlocksPopulated:
-			go backFillAllBlocks(blockchain, repository, missingBlocksPopulated)
+			go backFillAllBlocks(blockchain, repository, missingBlocksPopulated, _startingBlockNumber)
 		}
 	}
 }

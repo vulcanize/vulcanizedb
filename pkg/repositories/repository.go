@@ -1,6 +1,9 @@
 package repositories
 
-import "github.com/8thlight/vulcanizedb/pkg/core"
+import (
+	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/filters"
+)
 
 const (
 	blocksFromHeadBeforeFinal = 20
@@ -19,4 +22,5 @@ type Repository interface {
 	CreateLogs(log []core.Log) error
 	FindLogs(address string, blockNumber int64) []core.Log
 	SetBlocksStatus(chainHead int64)
+	AddFilter(filter filters.LogFilter) error
 }
