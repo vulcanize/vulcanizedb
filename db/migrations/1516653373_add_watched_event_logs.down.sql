@@ -1,0 +1,1 @@
+DROP VIEW watched_event_logs;

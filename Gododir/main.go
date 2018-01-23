@@ -28,18 +28,35 @@ func tasks(p *do.Project) {
 
 	p.Task("vulcanizeDb", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		context.Start(`go run main.go --environment={{.environment}}`,
-			do.M{"environment": environment, "$in": "cmd/vulcanize_db"})
+		startingNumber := context.Args.MayInt(0, "starting-number", "s")
+		context.Start(`go run main.go --environment={{.environment}} --starting-number={{.startingNumber}}`,
+			do.M{"environment": environment,
+				"startingNumber": startingNumber,
+				"$in":            "cmd/vulcanize_db"})
 	})
 
 	p.Task("populateBlocks", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		startingNumber := context.Args.MayInt(-1, "starting-number")
+		startingNumber := context.Args.MayInt(-1, "starting-number", "s")
 		if startingNumber < 0 {
 			log.Fatalln("--starting-number required")
 		}
 		context.Start(`go run main.go --environment={{.environment}} --starting-number={{.startingNumber}}`,
 			do.M{"environment": environment, "startingNumber": startingNumber, "$in": "cmd/populate_blocks"})
+	})
+
+	p.Task("watchEvent", nil, func(context *do.Context) {
+		environment := parseEnvironment(context)
+		filterFilePath := context.Args.MayString("", "filter-filepath", "f")
+		if filterFilePath == "" {
+			log.Fatalln("--filter-filepath required")
+		}
+		context.Start(`go run main.go --environment={{.environment}} --filter-filepath={{.filterFilePath}}`,
+			do.M{
+				"environment":    environment,
+				"filterFilePath": filterFilePath,
+				"$in":            "cmd/add_filter",
+			})
 	})
 
 	p.Task("watchContract", nil, func(context *do.Context) {

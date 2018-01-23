@@ -30,14 +30,19 @@ func LoadPostgres(database config.Database, node core.Node) repositories.Postgre
 }
 
 func ReadAbiFile(abiFilepath string) string {
-	if !filepath.IsAbs(abiFilepath) {
-		abiFilepath = filepath.Join(config.ProjectRoot(), abiFilepath)
-	}
+	abiFilepath = AbsFilePath(abiFilepath)
 	abi, err := geth.ReadAbiFile(abiFilepath)
 	if err != nil {
 		log.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
 	}
 	return abi
+}
+
+func AbsFilePath(filePath string) string {
+	if !filepath.IsAbs(filePath) {
+		filePath = filepath.Join(config.ProjectRoot(), filePath)
+	}
+	return filePath
 }
 
 func GetAbi(abiFilepath string, contractHash string, network string) string {

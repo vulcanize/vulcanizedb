@@ -11,6 +11,7 @@ import (
 
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
+	"github.com/8thlight/vulcanizedb/pkg/filters"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -303,7 +304,7 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 	err := tx.QueryRow(
 		`INSERT INTO transactions
 	   (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
-	   VALUES ($1, $2, $3, $4, $5, $6, $7,  cast(NULLIF($8, '') as NUMERIC), $9)
+	   VALUES ($1, $2, $3, $4, $5, $6, $7,  cast(NULLIF($8, '') AS NUMERIC), $9)
 	   RETURNING id`,
 		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data).
 		Scan(&transactionId)
@@ -378,6 +379,18 @@ func (repository Postgres) CreateLogs(logs []core.Log) error {
 		}
 	}
 	tx.Commit()
+	return nil
+}
+
+func (repository Postgres) AddFilter(query filters.LogFilter) error {
+	_, err := repository.Db.Exec(
+		`INSERT INTO log_filters 
+		(name, from_block, to_block, address, topic0, topic1, topic2, topic3)
+		VALUES ($1, NULLIF($2, -1), NULLIF($3, -1), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))`,
+		query.Name, query.FromBlock, query.ToBlock, query.Address, query.Topics[0], query.Topics[1], query.Topics[2], query.Topics[3])
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

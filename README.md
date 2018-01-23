@@ -60,19 +60,26 @@ The default location for Ethereum is:
 **Note the location of the ipc file is outputted when you connect to a blockchain. It is needed to for configuration**
 
 ## Start Vulcanize DB
-1. Start a blockchain.
+1. Start geth
 2. In a separate terminal start vulcanize_db
     - `godo vulcanizeDb -- --environment=<some-environment>`
 
+## Watch contract events
+1. Start geth
+2. In a separate terminal start vulcanize_db
+    - `godo vulcanizeDb -- --environment=<some-environment>`
+3. Create event filter 
+    - `godo watchEvent -- --environment=<some-environment> --filter-filepath=<filters/example-filer.json>`
+     
 ## Running Listener
 
-1. Start a blockchain.
+1. Start geth
 2. In a separate terminal start listener (ipcDir location)
     - `godo run -- --environment=<some-environment>`
     
 ## Retrieving Historical Data
 
-1. Start a blockchain.
+1. Start geth
 2. In a separate terminal start listener (ipcDir location)
     - `godo populateBlocks -- --environment=<some-environment> --starting-number=<starting-block-number>`
     

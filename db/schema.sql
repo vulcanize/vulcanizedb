@@ -35,6 +35,35 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE logs (
+    id integer NOT NULL,
+    block_number bigint,
+    address character varying(66),
+    tx_hash character varying(66),
+    index bigint,
+    topic0 character varying(66),
+    topic1 character varying(66),
+    topic2 character varying(66),
+    topic3 character varying(66),
+    data text,
+    receipt_id integer
+);
+
+
+--
+-- Name: block_stats; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW block_stats AS
+ SELECT max(logs.block_number) AS max_block,
+    min(logs.block_number) AS min_block
+   FROM logs;
+
+
+--
 -- Name: blocks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -80,22 +109,43 @@ ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
 
 
 --
--- Name: logs; Type: TABLE; Schema: public; Owner: -
+-- Name: log_filters; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE logs (
+CREATE TABLE log_filters (
     id integer NOT NULL,
-    block_number bigint,
+    name character varying NOT NULL,
+    from_block bigint,
+    to_block bigint,
     address character varying(66),
-    tx_hash character varying(66),
-    index bigint,
     topic0 character varying(66),
     topic1 character varying(66),
     topic2 character varying(66),
     topic3 character varying(66),
-    data text,
-    receipt_id integer
+    CONSTRAINT log_filters_from_block_check CHECK ((from_block >= 0)),
+    CONSTRAINT log_filters_from_block_check1 CHECK ((from_block >= 0)),
+    CONSTRAINT log_filters_name_check CHECK (((name)::text <> ''::text))
 );
+
+
+--
+-- Name: log_filters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE log_filters_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: log_filters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE log_filters_id_seq OWNED BY log_filters.id;
 
 
 --
@@ -267,10 +317,40 @@ ALTER SEQUENCE watched_contracts_contract_id_seq OWNED BY watched_contracts.cont
 
 
 --
+-- Name: watched_event_logs; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW watched_event_logs AS
+ SELECT log_filters.name,
+    logs.id,
+    logs.block_number,
+    logs.address,
+    logs.tx_hash,
+    logs.index,
+    logs.topic0,
+    logs.topic1,
+    logs.topic2,
+    logs.topic3,
+    logs.data,
+    logs.receipt_id
+   FROM ((log_filters
+     CROSS JOIN block_stats)
+     JOIN logs ON ((((logs.address)::text = (log_filters.address)::text) AND (logs.block_number >= COALESCE(log_filters.from_block, block_stats.min_block)) AND (logs.block_number <= COALESCE(log_filters.to_block, block_stats.max_block)))))
+  WHERE ((((log_filters.topic0)::text = (logs.topic0)::text) OR (log_filters.topic0 IS NULL)) AND (((log_filters.topic1)::text = (logs.topic1)::text) OR (log_filters.topic1 IS NULL)) AND (((log_filters.topic2)::text = (logs.topic2)::text) OR (log_filters.topic2 IS NULL)) AND (((log_filters.topic3)::text = (logs.topic3)::text) OR (log_filters.topic3 IS NULL)));
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::regclass);
+
+
+--
+-- Name: log_filters id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY log_filters ALTER COLUMN id SET DEFAULT nextval('log_filters_id_seq'::regclass);
 
 
 --
@@ -330,6 +410,14 @@ ALTER TABLE ONLY watched_contracts
 
 ALTER TABLE ONLY logs
     ADD CONSTRAINT logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: log_filters name_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY log_filters
+    ADD CONSTRAINT name_uc UNIQUE (name);
 
 
 --
