@@ -1,4 +1,4 @@
-package cmd
+package utils
 
 import (
 	"log"
@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"math/big"
+
+	"os"
 
 	"github.com/8thlight/vulcanizedb/pkg/config"
 	"github.com/8thlight/vulcanizedb/pkg/core"
@@ -40,7 +42,8 @@ func ReadAbiFile(abiFilepath string) string {
 
 func AbsFilePath(filePath string) string {
 	if !filepath.IsAbs(filePath) {
-		filePath = filepath.Join(config.ProjectRoot(), filePath)
+		cwd, _ := os.Getwd()
+		filePath = filepath.Join(cwd, filePath)
 	}
 	return filePath
 }

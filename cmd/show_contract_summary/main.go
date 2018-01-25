@@ -9,9 +9,9 @@ import (
 
 	"strings"
 
-	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/contract_summary"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/8thlight/vulcanizedb/utils"
 )
 
 func main() {
@@ -21,10 +21,10 @@ func main() {
 	flag.Parse()
 
 	contractHashLowered := strings.ToLower(*contractHash)
-	config := cmd.LoadConfig(*environment)
+	config := utils.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
-	blockNumber := cmd.RequestedBlockNumber(_blockNumber)
+	repository := utils.LoadPostgres(config.Database, blockchain.Node())
+	blockNumber := utils.RequestedBlockNumber(_blockNumber)
 
 	contractSummary, err := contract_summary.NewSummary(blockchain, repository, contractHashLowered, blockNumber)
 	if err != nil {

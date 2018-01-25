@@ -5,8 +5,8 @@ import (
 
 	"fmt"
 
-	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/config"
+	"github.com/8thlight/vulcanizedb/utils"
 	do "gopkg.in/godo.v2"
 )
 
@@ -79,7 +79,7 @@ func tasks(p *do.Project) {
 
 	p.Task("migrate", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := cmd.LoadConfig(environment)
+		cfg := utils.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations up", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)
@@ -89,7 +89,7 @@ func tasks(p *do.Project) {
 
 	p.Task("rollback", nil, func(context *do.Context) {
 		environment := parseEnvironment(context)
-		cfg := cmd.LoadConfig(environment)
+		cfg := utils.LoadConfig(environment)
 		connectString := config.DbConnectionString(cfg.Database)
 		migrate := fmt.Sprintf("migrate -database '%s' -path ./db/migrations down 1", connectString)
 		dumpSchema := fmt.Sprintf("pg_dump -O -s %s > db/schema.sql", cfg.Database.Name)

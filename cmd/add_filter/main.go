@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/filters"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/8thlight/vulcanizedb/utils"
 )
 
 func main() {
@@ -17,10 +17,10 @@ func main() {
 
 	flag.Parse()
 	var logFilters filters.LogFilters
-	config := cmd.LoadConfig(*environment)
+	config := utils.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
-	absFilePath := cmd.AbsFilePath(*filterFilePath)
+	repository := utils.LoadPostgres(config.Database, blockchain.Node())
+	absFilePath := utils.AbsFilePath(*filterFilePath)
 	logFilterBytes, err := ioutil.ReadFile(absFilePath)
 	if err != nil {
 		log.Fatal(err)
