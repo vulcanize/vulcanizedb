@@ -1,6 +1,6 @@
-HOST_NAME ?= $(DB_HOST_NAME) 
-PORT ?= $(DB_PORT)  
-NAME ?= $(DB_NAME) 
+HOST_NAME =
+PORT =
+NAME =
 CONNECT_STRING=postgresql://$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
 $(MATTESMIGRATE):
@@ -14,7 +14,7 @@ $(GINKGO):
 	go get -u github.com/onsi/ginkgo/ginkgo  
 
 checkdbvars:
-	test -n "$(HOST_NAME)" # $$HOST_NAME
+	test -n "$(HOST_NAME)" # $$HOST_NAME 
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
 
@@ -26,11 +26,15 @@ migrate: $(MATTESMIGRATE) checkdbvars
 	migrate -database $(CONNECT_STRING) -path ./db/migrations up
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
+import:
+	test -n "$(NAME)" # $$NAME
+	psql $(NAME) < db/schema.sql
+
 dep: $(DEP)
 	dep ensure
 
-build: dep 
-	go build -o vulcanize ./commands 
+build: dep
+	go build
 
 test: $(GINKGO)
 	ginkgo -r
