@@ -15,7 +15,7 @@ var databaseConfig config.Database
 var ipc string
 
 var rootCmd = &cobra.Command{
-	Use:              "vulcanize",
+	Use:              "vulcanizedb",
 	PersistentPreRun: database,
 }
 
@@ -39,11 +39,11 @@ func database(cmd *cobra.Command, args []string) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file: (default is $HOME/.vulcanize.yaml)")
-	rootCmd.PersistentFlags().String("database-name", "vulcanize", "database: name")
-	rootCmd.PersistentFlags().Int("database-port", 5432, "database: port")
-	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database: hostname")
-	rootCmd.PersistentFlags().String("client-ipcPath", "", "geth: geth.ipc file")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "environment/public.toml", "config file location")
+	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
+	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
+	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
+	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -63,7 +63,7 @@ func initConfig() {
 		}
 
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".vulcanize")
+		viper.SetConfigName(".vulcanizedb")
 	}
 
 	viper.AutomaticEnv()

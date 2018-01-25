@@ -14,12 +14,12 @@ import (
 // addFilterCmd represents the addFilter command
 var addFilterCmd = &cobra.Command{
 	Use:   "addFilter",
-	Short: "Adds event filter to vulcanize_db",
+	Short: "Adds event filter to vulcanizedb",
 	Long: `An event filter is added to the vulcanize_db. 
 All events matching the filter conitions will be tracked 
-in vulcanize. 
+in vulcanizedb. 
 
-vulcanize addFilter --config config.toml --filter-filepath filter.json
+vulcanizedb addFilter --config config.toml --filter-filepath filter.json
 
 The event filters are expected to match
 the format described in the ethereum RPC wiki:
