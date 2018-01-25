@@ -7,9 +7,9 @@ import (
 
 	"os"
 
-	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/8thlight/vulcanizedb/pkg/history"
+	"github.com/8thlight/vulcanizedb/utils"
 )
 
 const (
@@ -23,9 +23,9 @@ func main() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
-	config := cmd.LoadConfig(*environment)
+	config := utils.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
+	repository := utils.LoadPostgres(config.Database, blockchain.Node())
 	validator := history.NewBlockValidator(blockchain, repository, 15)
 
 	for range ticker.C {

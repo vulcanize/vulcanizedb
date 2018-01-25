@@ -1,22 +1,51 @@
-package main
+package cmd
 
 import (
-	"flag"
+	"os"
 
 	"time"
-
-	"os"
 
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
 	"github.com/8thlight/vulcanizedb/pkg/history"
 	"github.com/8thlight/vulcanizedb/pkg/repositories"
 	"github.com/8thlight/vulcanizedb/utils"
+	"github.com/spf13/cobra"
 )
+
+// syncCmd represents the sync command
+var syncCmd = &cobra.Command{
+	Use:   "sync",
+	Short: "Syncs vulcanize_db with local ethereum node",
+	Long: `Syncs vulcanize_db with local ethereum node. 
+vulcanize sync --startingBlockNumber 0 --config public.toml
+
+Expects ethereum node to be running and requires a .toml config:
+
+  [database]
+  name = "vulcanize_public"
+  hostname = "localhost"
+  port = 5432
+
+  [client]
+  ipcPath = "/Users/mattkrump/Library/Ethereum/geth.ipc"
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		sync()
+	},
+}
 
 const (
 	pollingInterval = 7 * time.Second
 )
+
+var startingBlockNumber int
+
+func init() {
+	rootCmd.AddCommand(syncCmd)
+
+	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+}
 
 func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postgres, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	go func() {
@@ -24,21 +53,16 @@ func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postg
 	}()
 }
 
-func main() {
-	environment := flag.String("environment", "", "Environment name")
-	startingBlockNumber := flag.Int("starting-number", 0, "First block to fill from")
-	flag.Parse()
-
+func sync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
-	config := utils.LoadConfig(*environment)
-	blockchain := geth.NewBlockchain(config.Client.IPCPath)
-	repository := utils.LoadPostgres(config.Database, blockchain.Node())
+	blockchain := geth.NewBlockchain(ipc)
+	repository := utils.LoadPostgres(databaseConfig, blockchain.Node())
 	validator := history.NewBlockValidator(blockchain, repository, 15)
 
 	missingBlocksPopulated := make(chan int)
-	_startingBlockNumber := int64(*startingBlockNumber)
+	_startingBlockNumber := int64(startingBlockNumber)
 	go backFillAllBlocks(blockchain, repository, missingBlocksPopulated, _startingBlockNumber)
 
 	for {

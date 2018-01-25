@@ -5,9 +5,9 @@ import (
 
 	"strings"
 
-	"github.com/8thlight/vulcanizedb/cmd"
 	"github.com/8thlight/vulcanizedb/pkg/core"
 	"github.com/8thlight/vulcanizedb/pkg/geth"
+	"github.com/8thlight/vulcanizedb/utils"
 )
 
 func main() {
@@ -19,10 +19,10 @@ func main() {
 	flag.Parse()
 	contractHashLowered := strings.ToLower(*contractHash)
 
-	contractAbiString := cmd.GetAbi(*abiFilepath, contractHashLowered, *network)
-	config := cmd.LoadConfig(*environment)
+	contractAbiString := utils.GetAbi(*abiFilepath, contractHashLowered, *network)
+	config := utils.LoadConfig(*environment)
 	blockchain := geth.NewBlockchain(config.Client.IPCPath)
-	repository := cmd.LoadPostgres(config.Database, blockchain.Node())
+	repository := utils.LoadPostgres(config.Database, blockchain.Node())
 	watchedContract := core.Contract{
 		Abi:  contractAbiString,
 		Hash: contractHashLowered,
