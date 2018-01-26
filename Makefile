@@ -38,3 +38,14 @@ build: dep
 
 test: $(GINKGO)
 	ginkgo -r
+
+createprivate:
+	#!/bin/bash
+	echo "Deleting test blockchain"
+	rm -rf test_data_dir
+	echo "Creating test blockchain with a new account"
+	mkdir test_data_dir
+	geth --dev --datadir test_data_dir --password .private_blockchain_password account new
+
+startprivate: createprivate
+	geth --datadir test_data_dir --dev --nodiscover --mine --minerthreads 1 --maxpeers 0 --verbosity 3 --unlock 0 --password .private_blockchain_password --rpc
