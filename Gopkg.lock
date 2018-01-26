@@ -9,12 +9,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/MichaelTJones/walk"
-  packages = ["."]
-  revision = "4748e29d5718c2df4028a6543edf86fd8cc0f881"
-
-[[projects]]
-  branch = "master"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
   revision = "8d0e8f607a4080e7df3532e645440ed0900c64a4"
@@ -63,12 +57,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/howeyc/gopass"
-  packages = ["."]
-  revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
-
-[[projects]]
-  branch = "master"
   name = "github.com/huin/goupnp"
   packages = [".","dcps/internetgateway1","dcps/internetgateway2","httpu","scpd","soap","ssdp"]
   revision = "dceda08e705b2acee36aab47d765ed801f64cfc7"
@@ -104,42 +92,6 @@
   version = "v1.7.4"
 
 [[projects]]
-  name = "github.com/mattn/go-colorable"
-  packages = ["."]
-  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
-  version = "v0.0.9"
-
-[[projects]]
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mgutz/ansi"
-  packages = ["."]
-  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mgutz/minimist"
-  packages = ["."]
-  revision = "39eb8cf573ca29344bd7d7e6ba4d7febdebd37a9"
-
-[[projects]]
-  name = "github.com/mgutz/str"
-  packages = ["."]
-  revision = "968bf66e3da857419e4f6e71b2d5c9ae95682dc4"
-  version = "v1.2.0"
-
-[[projects]]
-  name = "github.com/mgutz/to"
-  packages = ["."]
-  revision = "00c06406c2dd2e011f153a6502a21473676db33f"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
@@ -150,12 +102,6 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "b4575eea38cca1123ec2dc90c26529b5c5acfcff"
-
-[[projects]]
-  name = "github.com/nozzle/throttler"
-  packages = ["."]
-  revision = "d9b45f19996c645d38c9266d1f5cf1990e930119"
-  version = "v1.0"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -231,12 +177,6 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  revision = "94eea52f7b742c7cbe0b03b22f0c4c8631ece122"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/net"
   packages = ["context","html","html/atom","html/charset","websocket"]
   revision = "faacc1b5e36e3ff02cbec9661c69ac63dd5a83ad"
@@ -244,7 +184,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
+  packages = ["unix"]
   revision = "a0f4589a76f1f83070cb9e5613809e1d07b97c13"
 
 [[projects]]
@@ -258,12 +198,6 @@
   packages = ["."]
   revision = "57907de300222151a123d29255ed17f5ed43fad3"
   version = "v0.1.0"
-
-[[projects]]
-  name = "gopkg.in/godo.v2"
-  packages = [".","glob","util","watcher","watcher/fswatch"]
-  revision = "b5fd2f0bef1ebe832e628cfad18ab1cc707f65a1"
-  version = "v2.0.9"
 
 [[projects]]
   branch = "v2"
@@ -286,6 +220,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "46080c5bb453cb31ea731741d5defda225e2dc75bf7c11179d69422c82de37ca"
+  inputs-digest = "641a04f7f89572adf1ebd051d0839eb5b03fdc67bb50838bfac98832246636f0"
   solver-name = "gps-cdcl"
   solver-version = 1
