@@ -11,6 +11,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	"github.com/vulcanize/vulcanizedb/utils"
 	"github.com/spf13/cobra"
+	"log"
 )
 
 // syncCmd represents the sync command
@@ -58,6 +59,9 @@ func sync() {
 	defer ticker.Stop()
 
 	blockchain := geth.NewBlockchain(ipc)
+	if blockchain.LastBlock().Int64() == 0 {
+		log.Fatal("geth initial: state sync not finished")
+	}
 	repository := utils.LoadPostgres(databaseConfig, blockchain.Node())
 	validator := history.NewBlockValidator(blockchain, repository, 15)
 

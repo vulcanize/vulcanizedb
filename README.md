@@ -18,39 +18,31 @@
 2. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 3. `createdb vulcanize_private`
 4. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
-5. Import the schema: 
-    `psql vulcanize_private < db/schema.sql`
-   or run the migrations: 
-    `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
+5. Import the schema: `psql vulcanize_private < db/schema.sql`
+
+   or run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
     * See below for configuring additional environments
     
 Adding a new migration: `./scripts/create_migration <migration-name>`
 
 ## Start syncing with postgres
-1. Start geth
+1. Start geth node (**if fast syncing wait for geth to finsh initial sync**)
 2. In a separate terminal start vulcanize_db
     - `vulcanizedb sync --config <config.toml> --starting-block-number <block-numbe>`
     
    * see `environments` for example config 
 
-## Watch specific contract events
-1. Start geth
+## Watch specific events
+1. Start geth 
 2. In a separate terminal start vulcanize_db
     - `vulcanizedb sync --config <config.toml> --starting-block-number <block-numbe>`
 3. Create event filter 
     - `vulcanizedb addFilter --config <config.toml> --filter-filepath <filter.json>`
-    
-   * see `filters` for example filter 
+4. The filters are tracked in the `log_filters` table and the filtered events 
+will show up in the `watched_log_events` view
+   * see `./filters` for example filter 
      
 ## Development Setup
-
-### Cloning the Repository (Private repo only)
-
-1. `git config --global url."git@github.com:".insteadOf "https://github.com/"`
-    - By default, `go get` does not work for private GitHub repos. This will fix that.
-2. `go get github.com/vulcanize/vulcanizedb`
-3. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
-4. `dep ensure`
 
 ### Creating/Using a test node
 
@@ -80,5 +72,10 @@ The default location for Ethereum is:
 
 In order to run the integration tests, you will need to run them against a real blockchain. At the moment the integration tests require [Geth v1.7.2](https://ethereum.github.io/go-ethereum/downloads/) as they depend on the `--dev` mode, which changed in v1.7.3 
 
-1. Run `./scripts/start_private_blockchain` as a separate process.
-2. `go test ./...` to run all tests.
+1. Run `make startprivate` in a separate terminal
+2. Setup a test database and import the schema: 
+
+   `createdb vulcanize_private`
+   
+    `psql vulcanize_private < db/schema.sql`
+3. `go test ./...` to run all tests.
