@@ -49,8 +49,6 @@ The default location for Ethereum is:
 4. The filters are tracked in the `log_filters` table and the filtered events 
 will show up in the `watched_log_events` view
      
-## Development Setup
-
 ## Running the Tests
 
 ### Unit Tests
