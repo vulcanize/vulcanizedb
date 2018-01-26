@@ -246,7 +246,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas().Int64()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
-			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().Int64()))
+			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().String()))
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
 
 			coreReceipt := coreTransaction.Receipt

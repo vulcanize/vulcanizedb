@@ -101,5 +101,22 @@ var _ = Describe("ABI files", func() {
 				})
 			})
 		})
+
+		Describe("Generating etherscan endpoints based on network", func() {
+			It("should return the main endpoint as the default", func() {
+				url := geth.GenUrl("")
+				Expect(url).To(Equal("https://api.etherscan.io"))
+			})
+
+			It("generates various test network endpoint if test network is supplied", func() {
+				ropstenUrl := geth.GenUrl("ropsten")
+				rinkebyUrl := geth.GenUrl("rinkeby")
+				kovanUrl := geth.GenUrl("kovan")
+
+				Expect(ropstenUrl).To(Equal("https://ropsten.etherscan.io"))
+				Expect(kovanUrl).To(Equal("https://kovan.etherscan.io"))
+				Expect(rinkebyUrl).To(Equal("https://rinkeby.etherscan.io"))
+			})
+		})
 	})
 })

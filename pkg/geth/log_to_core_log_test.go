@@ -1,6 +1,8 @@
 package geth_test
 
 import (
+	"strings"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +16,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 
 	It("converts geth log to internal log format", func() {
 		gethLog := types.Log{
-			Address:     common.HexToAddress("0xecf8f87f810ecf450940c9f60066b4a7a501d6a7"),
+			Address:     common.HexToAddress("0x448a5065aeBB8E423F0896E6c5D525C040f59af3"),
 			BlockHash:   common.HexToHash("0x656c34545f90a730a19008c0e7a7cd4fb3895064b48d6d69761bd5abad681056"),
 			BlockNumber: 2019236,
 			Data:        hexutil.MustDecode("0x000000000000000000000000000000000000000000000001a055690d9db80000"),
@@ -28,18 +30,18 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 		}
 
 		expected := core.Log{
-			Address:     gethLog.Address.Hex(),
+			Address:     strings.ToLower(gethLog.Address.Hex()),
 			BlockNumber: int64(gethLog.BlockNumber),
 			Data:        hexutil.Encode(gethLog.Data),
 			TxHash:      gethLog.TxHash.Hex(),
 			Index:       2,
-			Topics: map[int]string{
-				0: common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef").Hex(),
-				1: common.HexToHash("0x00000000000000000000000080b2c9d7cbbf30a1b0fc8983c647d754c6525615").Hex(),
+			Topics: core.Topics{
+				gethLog.Topics[0].Hex(),
+				gethLog.Topics[1].Hex(),
 			},
 		}
 
-		coreLog := geth.LogToCoreLog(gethLog)
+		coreLog := geth.ToCoreLog(gethLog)
 
 		Expect(coreLog.Address).To(Equal(expected.Address))
 		Expect(coreLog.BlockNumber).To(Equal(expected.BlockNumber))
@@ -79,10 +81,10 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			},
 		}
 
-		expectedOne := geth.LogToCoreLog(gethLogOne)
-		expectedTwo := geth.LogToCoreLog(gethLogTwo)
+		expectedOne := geth.ToCoreLog(gethLogOne)
+		expectedTwo := geth.ToCoreLog(gethLogTwo)
 
-		coreLogs := geth.GethLogsToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
+		coreLogs := geth.ToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
 
 		Expect(len(coreLogs)).To(Equal(2))
 		Expect(coreLogs[0]).To(Equal(expectedOne))

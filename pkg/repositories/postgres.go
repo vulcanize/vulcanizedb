@@ -11,6 +11,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -62,35 +63,6 @@ func (repository Postgres) SetBlocksStatus(chainHead int64) {
 		cutoff)
 }
 
-func (repository Postgres) CreateLogs(logs []core.Log) error {
-	tx, _ := repository.Db.BeginTx(context.Background(), nil)
-	for _, tlog := range logs {
-		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (index, block_number)
-                  DO UPDATE
-                    SET block_number = $1,
-                   	    address = $2,
-                   	    tx_hash = $3,
-                   	    index = $4,
-                   	    topic0 = $5,
-                   	    topic1 = $6,
-                   	    topic2 = $7,
-                   	    topic3 = $8,
-                   	    data = $9
-                `,
-			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
-		)
-		if err != nil {
-			tx.Rollback()
-			return ErrDBInsertFailed
-		}
-	}
-	tx.Commit()
-	return nil
-}
-
 func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Log {
 	logRows, _ := repository.Db.Query(
 		`SELECT block_number,
@@ -111,13 +83,16 @@ func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Lo
 func (repository *Postgres) CreateNode(node *core.Node) error {
 	var nodeId int64
 	err := repository.Db.QueryRow(
-		`INSERT INTO nodes (genesis_block, network_id)
-                VALUES ($1, $2)
-                ON CONFLICT (genesis_block, network_id)
+		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (genesis_block, network_id, node_id)
                   DO UPDATE
-                    SET genesis_block = $1, network_id = $2
+                    SET genesis_block = $1,
+                    	network_id = $2,
+                    	node_id = $3,
+                    	client_name = $4
                 RETURNING id`,
-		node.GenesisBlock, node.NetworkId).Scan(&nodeId)
+		node.GenesisBlock, node.NetworkId, node.Id, node.ClientName).Scan(&nodeId)
 	if err != nil {
 		return ErrUnableToSetNode
 	}
@@ -329,29 +304,90 @@ func (repository Postgres) createTransaction(tx *sql.Tx, blockId int64, transact
 	err := tx.QueryRow(
 		`INSERT INTO transactions
 	   (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
-	   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	   VALUES ($1, $2, $3, $4, $5, $6, $7,  cast(NULLIF($8, '') AS NUMERIC), $9)
 	   RETURNING id`,
 		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, transaction.Value, transaction.Data).
 		Scan(&transactionId)
 	if err != nil {
 		return err
 	}
-	if transaction.Receipt.TxHash != "" {
-		err = repository.createReceipt(tx, transactionId, transaction.Receipt)
+	if hasReceipt(transaction) {
+		receiptId, err := repository.createReceipt(tx, transactionId, transaction.Receipt)
 		if err != nil {
 			return err
+		}
+		if hasLogs(transaction) {
+			err = repository.createLogs(tx, transaction.Receipt.Logs, receiptId)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) error {
+func hasLogs(transaction core.Transaction) bool {
+	return len(transaction.Receipt.Logs) > 0
+}
+
+func hasReceipt(transaction core.Transaction) bool {
+	return transaction.Receipt.TxHash != ""
+}
+
+func (repository Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
-	_, err := tx.Exec(
+	var receiptId int
+	err := tx.QueryRow(
 		`INSERT INTO receipts
                (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, transaction_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId)
+               VALUES ($1, $2, $3, $4, $5, $6, $7) 
+               RETURNING id`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId).Scan(&receiptId)
+	if err != nil {
+		return receiptId, err
+	}
+	return receiptId, nil
+}
+
+func (repository Postgres) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+	for _, tlog := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                `,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
+		)
+		if err != nil {
+			return ErrDBInsertFailed
+		}
+	}
+	return nil
+}
+
+func (repository Postgres) CreateLogs(logs []core.Log) error {
+	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+	for _, tlog := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
+		)
+		if err != nil {
+			tx.Rollback()
+			return ErrDBInsertFailed
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (repository Postgres) AddFilter(query filters.LogFilter) error {
+	_, err := repository.Db.Exec(
+		`INSERT INTO log_filters 
+		(name, from_block, to_block, address, topic0, topic1, topic2, topic3)
+		VALUES ($1, NULLIF($2, -1), NULLIF($3, -1), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))`,
+		query.Name, query.FromBlock, query.ToBlock, query.Address, query.Topics[0], query.Topics[1], query.Topics[2], query.Topics[3])
 	if err != nil {
 		return err
 	}
@@ -439,7 +475,7 @@ func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
 		var txHash string
 		var index int64
 		var data string
-		topics := make([]string, 4)
+		var topics core.Topics
 		logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
 		log := core.Log{
 			BlockNumber: blockNumber,
@@ -448,7 +484,6 @@ func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
 			Index:       index,
 			Data:        data,
 		}
-		log.Topics = make(map[int]string)
 		for i, topic := range topics {
 			log.Topics[i] = topic
 		}
@@ -467,7 +502,7 @@ func (repository Postgres) loadTransactions(transactionRows *sql.Rows) []core.Tr
 		var gasLimit int64
 		var gasPrice int64
 		var inputData string
-		var value int64
+		var value string
 		transactionRows.Scan(&hash, &nonce, &to, &from, &gasLimit, &gasPrice, &value, &inputData)
 		transaction := core.Transaction{
 			Hash:     hash,
