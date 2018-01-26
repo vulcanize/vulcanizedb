@@ -57,8 +57,6 @@ will show up in the `watched_log_events` view
 
 ### Integration Test
 
-### Creating/Using a test node
-
 In order to run the integration tests, you will need to run them against a real node. At the moment the integration tests require [Geth v1.7.2](https://ethereum.github.io/go-ethereum/downloads/) as they depend on the `--dev` mode, which changed in v1.7.3 
 
 1. Run `make startprivate` in a separate terminal
