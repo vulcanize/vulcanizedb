@@ -4,7 +4,10 @@ import (
 	"sort"
 	"strconv"
 
+	"math/big"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,13 +19,19 @@ func ClearData(postgres repositories.Postgres) {
 	postgres.Db.MustExec("DELETE FROM blocks")
 	postgres.Db.MustExec("DELETE FROM logs")
 	postgres.Db.MustExec("DELETE FROM receipts")
+	postgres.Db.MustExec("DELETE FROM log_filters")
 }
 
 func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.Repository) {
 	var repository repositories.Repository
 
 	BeforeEach(func() {
-		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1}
+		node := core.Node{
+			GenesisBlock: "GENESIS",
+			NetworkId:    1,
+			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
+			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
+		}
 		repository = buildRepository(node)
 	})
 
@@ -48,6 +57,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			nodeTwo := core.Node{
 				GenesisBlock: "0x456",
 				NetworkId:    1,
+				Id:           "x123456",
+				ClientName:   "Geth",
 			}
 			repositoryTwo := buildRepository(nodeTwo)
 
@@ -191,7 +202,8 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			nonce := uint64(10000)
 			to := "1234567890"
 			from := "0987654321"
-			value := int64(10)
+			var value = new(big.Int)
+			value.SetString("34940183920000000000", 10)
 			inputData := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
 			transaction := core.Transaction{
 				Hash:     "x1234",
@@ -200,7 +212,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Nonce:    nonce,
 				To:       to,
 				From:     from,
-				Value:    value,
+				Value:    value.String(),
 				Data:     inputData,
 			}
 			block := core.Block{
@@ -220,7 +232,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(savedTransaction.Nonce).To(Equal(nonce))
 			Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
 			Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
-			Expect(savedTransaction.Value).To(Equal(value))
+			Expect(savedTransaction.Value).To(Equal(value.String()))
 		})
 
 	})
@@ -392,7 +404,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -415,37 +427,13 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(log).To(BeNil())
 		})
 
-		It("updates the log when log with when log with same block number and index is already present", func() {
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xABC",
-			},
-			})
-			repository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
-				Index:       0,
-				Address:     "x123",
-				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
-				Data:        "xXYZ",
-			},
-			})
-
-			log := repository.FindLogs("x123", 1)
-			Expect(log[0].Data).To(Equal("xXYZ"))
-		})
-
 		It("filters to the correct block number and address", func() {
 			repository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -454,7 +442,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       1,
 				Address:     "x123",
 				TxHash:      "x789",
-				Topics:      map[int]string{0: "x111", 1: "x222", 2: "x333"},
+				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
 			}},
 			)
@@ -463,7 +451,7 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
-				Topics:      map[int]string{0: "x777", 1: "x888", 2: "x999"},
+				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}},
 			)
@@ -496,6 +484,85 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 					{blockNumber: 1, Index: 0},
 					{blockNumber: 1, Index: 1}},
 			))
+		})
+
+		It("saves the logs attached to a receipt", func() {
+			logs := []core.Log{{
+				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
+				BlockNumber: 4745407,
+				Data:        "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000645a68669900000000000000000000000000000000000000000000003397684ab5869b0000000000000000000000000000000000000000000000000000000000005a36053200000000000000000000000099041f808d598b782d5a3e498681c2452a31da08",
+				Index:       86,
+				Topics: core.Topics{
+					0: "0x5a68669900000000000000000000000000000000000000000000000000000000",
+					1: "0x000000000000000000000000d0148dad63f73ce6f1b6c607e3413dcf1ff5f030",
+					2: "0x00000000000000000000000000000000000000000000003397684ab5869b0000",
+					3: "0x000000000000000000000000000000000000000000000000000000005a360532",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}, {
+				Address:     "0x99041f808d598b782d5a3e498681c2452a31da08",
+				BlockNumber: 4745407,
+				Data:        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000418178358",
+				Index:       87,
+				Topics: core.Topics{
+					0: "0x1817835800000000000000000000000000000000000000000000000000000000",
+					1: "0x0000000000000000000000008a4774fe82c63484afef97ca8d89a6ea5e21f973",
+					2: "0x0000000000000000000000000000000000000000000000000000000000000000",
+					3: "0x0000000000000000000000000000000000000000000000000000000000000000",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}, {
+				Address:     "0x99041f808d598b782d5a3e498681c2452a31da08",
+				BlockNumber: 4745407,
+				Data:        "0x00000000000000000000000000000000000000000000003338f64c8423af4000",
+				Index:       88,
+				Topics: core.Topics{
+					0: "0x296ba4ca62c6c21c95e828080cb8aec7481b71390585605300a8a76f9e95b527",
+				},
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			},
+			}
+			receipt := core.Receipt{
+				ContractAddress:   "",
+				CumulativeGasUsed: 7481414,
+				GasUsed:           60711,
+				Logs:              logs,
+				Bloom:             "0x00000800000000000000001000000000000000400000000080000000000000000000400000010000000000000000000000000000040000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000800004000000000000001000000000000000000000000000002000000480000000000000002000000000000000020000000000000000000000000000000000000000080000000000180000c00000000000000002000002000000040000000000000000000000000000010000000000020000000000000000000002000000000000000000000000400800000000000000000",
+				Status:            1,
+				TxHash:            "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}
+			transaction :=
+				core.Transaction{
+					Hash:    receipt.TxHash,
+					Receipt: receipt,
+				}
+
+			block := core.Block{Transactions: []core.Transaction{transaction}}
+			err := repository.CreateOrUpdateBlock(block)
+			Expect(err).To(Not(HaveOccurred()))
+			retrievedLogs := repository.FindLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
+
+			expected := logs[1:]
+			Expect(retrievedLogs).To(Equal(expected))
+		})
+
+		It("still saves receipts without logs", func() {
+			receipt := core.Receipt{
+				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
+			}
+			transaction := core.Transaction{
+				Hash:    receipt.TxHash,
+				Receipt: receipt,
+			}
+
+			block := core.Block{
+				Transactions: []core.Transaction{transaction},
+			}
+			repository.CreateOrUpdateBlock(block)
+
+			_, err := repository.FindReceipt(receipt.TxHash)
+
+			Expect(err).To(Not(HaveOccurred()))
 		})
 	})
 
@@ -535,6 +602,43 @@ func AssertRepositoryBehavior(buildRepository func(node core.Node) repositories.
 			Expect(err).To(HaveOccurred())
 			Expect(receipt).To(BeZero())
 		})
+	})
 
+	Describe("LogFilter", func() {
+
+		It("inserts filter into watched events", func() {
+
+			logFilter := filters.LogFilter{
+				Name:      "TestFilter",
+				FromBlock: 1,
+				ToBlock:   2,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err := repository.AddFilter(logFilter)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns error if name is not provided", func() {
+
+			logFilter := filters.LogFilter{
+				FromBlock: 1,
+				ToBlock:   2,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err := repository.AddFilter(logFilter)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 }

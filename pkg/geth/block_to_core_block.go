@@ -25,7 +25,7 @@ func ToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
 		GasLimit:     gethBlock.GasLimit().Int64(),
 		GasUsed:      gethBlock.GasUsed().Int64(),
 		Hash:         gethBlock.Hash().Hex(),
-		Miner:        gethBlock.Coinbase().Hex(),
+		Miner:        strings.ToLower(gethBlock.Coinbase().Hex()),
 		Nonce:        hexutil.Encode(gethBlock.Header().Nonce[:]),
 		Number:       gethBlock.Number().Int64(),
 		ParentHash:   gethBlock.ParentHash().Hex(),
@@ -58,6 +58,10 @@ func convertTransactionsToCore(gethBlock *types.Block, client GethClient) []core
 
 func appendReceiptToTransaction(client GethClient, transaction core.Transaction) (core.Transaction, error) {
 	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+	if err != nil {
+		log.Println(err)
+		return transaction, err
+	}
 	receipt := ReceiptToCoreReceipt(gethReceipt)
 	transaction.Receipt = receipt
 	return transaction, err
@@ -72,7 +76,7 @@ func transToCoreTrans(transaction *types.Transaction, from *common.Address) core
 		From:     strings.ToLower(addressToHex(from)),
 		GasLimit: transaction.Gas().Int64(),
 		GasPrice: transaction.GasPrice().Int64(),
-		Value:    transaction.Value().Int64(),
+		Value:    transaction.Value().String(),
 		Data:     data,
 	}
 }

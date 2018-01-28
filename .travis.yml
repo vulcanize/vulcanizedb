@@ -7,12 +7,9 @@ services:
 addons:
   postgresql: "9.6"
 
+go_import_path: github.com/vulcanize/vulcanizedb
+
 before_install:
-  # godo
-  - go get -u gopkg.in/godo.v2/cmd/godo
-  # dep
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure
   # ginkgo
   - go get -u github.com/onsi/ginkgo/ginkgo
   # migrate
@@ -24,13 +21,10 @@ before_install:
   - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - sudo cp geth-linux-amd64-1.7.2-1db4ecdc/geth /usr/local/bin
 
-install:
-  - dep ensure
-
 before_script:
   - ./scripts/setup
   - nohup ./scripts/start_private_blockchain </dev/null &
-  - godo migrate -- -e private
+  - make migrate HOST_NAME=localhost NAME=vulcanize_private PORT=5432
 
 script:
   - ginkgo -r

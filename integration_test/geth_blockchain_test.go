@@ -52,6 +52,8 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 		Expect(node.GenesisBlock).To(Equal(devNetworkGenesisBlock))
 		Expect(node.NetworkId).To(Equal(devNetworkNodeId))
+		Expect(len(node.Id)).To(Equal(128))
+		Expect(node.ClientName).To(ContainSubstring("Geth"))
 
 		close(done)
 	}, 15)

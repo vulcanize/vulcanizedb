@@ -3,7 +3,10 @@ package repositories
 import (
 	"fmt"
 
+	"errors"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
 type InMemory struct {
@@ -11,16 +14,27 @@ type InMemory struct {
 	receipts                     map[string]core.Receipt
 	contracts                    map[string]core.Contract
 	logs                         map[string][]core.Log
+	logFilters                   map[string]filters.LogFilter
 	CreateOrUpdateBlockCallCount int
+}
+
+func (repository *InMemory) AddFilter(filter filters.LogFilter) error {
+	key := filter.Name
+	if _, ok := repository.logFilters[key]; ok || key == "" {
+		return errors.New("filter name not unique")
+	}
+	repository.logFilters[key] = filter
+	return nil
 }
 
 func NewInMemory() *InMemory {
 	return &InMemory{
 		CreateOrUpdateBlockCallCount: 0,
-		blocks:    make(map[int64]core.Block),
-		receipts:  make(map[string]core.Receipt),
-		contracts: make(map[string]core.Contract),
-		logs:      make(map[string][]core.Log),
+		blocks:     make(map[int64]core.Block),
+		receipts:   make(map[string]core.Receipt),
+		contracts:  make(map[string]core.Contract),
+		logs:       make(map[string][]core.Log),
+		logFilters: make(map[string]filters.LogFilter),
 	}
 }
 
@@ -102,6 +116,7 @@ func (repository *InMemory) CreateOrUpdateBlock(block core.Block) error {
 	repository.blocks[block.Number] = block
 	for _, transaction := range block.Transactions {
 		repository.receipts[transaction.Hash] = transaction.Receipt
+		repository.logs[transaction.TxHash] = transaction.Logs
 	}
 	return nil
 }
