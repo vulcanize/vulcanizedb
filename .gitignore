@@ -7,3 +7,5 @@ environments/*.toml
 Vagrantfile
 vagrant_bootstrap.sh
 .vagrant
+test_scripts/
+vulcanizedb
