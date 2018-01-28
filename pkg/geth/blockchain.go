@@ -3,6 +3,10 @@ package geth
 import (
 	"math/big"
 
+	"strings"
+
+	"log"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/ethereum/go-ethereum"
@@ -23,11 +27,25 @@ type Blockchain struct {
 
 func NewBlockchain(ipcPath string) *Blockchain {
 	blockchain := Blockchain{}
-	rpcClient, _ := rpc.Dial(ipcPath)
+	rpcClient, err := rpc.Dial(ipcPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	client := ethclient.NewClient(rpcClient)
-	blockchain.node = node.Retrieve(rpcClient)
+	blockchain.node = node.Info(rpcClient)
+	if infura := isInfuraNode(ipcPath); infura {
+		blockchain.node.Id = "infura"
+		blockchain.node.ClientName = "infura"
+	}
 	blockchain.client = client
 	return &blockchain
+}
+
+func isInfuraNode(ipcPath string) bool {
+	if strings.Contains(ipcPath, "infura") {
+		return true
+	}
+	return false
 }
 
 func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {
@@ -44,7 +62,7 @@ func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumbe
 	if err != nil {
 		return []core.Log{}, err
 	}
-	logs := GethLogsToCoreLogs(gethLogs)
+	logs := ToCoreLogs(gethLogs)
 	return logs, nil
 }
 

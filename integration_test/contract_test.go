@@ -15,8 +15,7 @@ import (
 
 var _ = Describe("Reading contracts", func() {
 
-	//TODO was experiencing Infura issue (I suspect) on 1/5. Unignore these and revisit if persists on next commit
-	XDescribe("Reading the list of attributes", func() {
+	Describe("Reading the list of attributes", func() {
 		It("returns a string attribute for a real contract", func() {
 			config, err := cfg.NewConfig("infura")
 			if err != nil {
@@ -59,8 +58,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 	})
 
-	//TODO was experiencing Infura issue (I suspect) on 1/5. Unignore these and revisit if persists on next commit
-	XDescribe("Getting a contract attribute", func() {
+	Describe("Getting a contract attribute", func() {
 		It("returns the correct attribute for a real contract", func() {
 			config, _ := cfg.NewConfig("infura")
 			blockchain := geth.NewBlockchain(config.Client.IPCPath)
@@ -109,8 +107,8 @@ var _ = Describe("Reading contracts", func() {
 			expectedLogZero := core.Log{
 				BlockNumber: 4703824,
 				TxHash:      "0xf896bfd1eb539d881a1a31102b78de9f25cd591bf1fe1924b86148c0b205fd5d",
-				Address:     "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
-				Topics: map[int]string{
+				Address:     "0xd26114cd6ee289accf82350c8d8487fedb8a0c07",
+				Topics: core.Topics{
 					0: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
 					1: "0x000000000000000000000000fbb1b73c4f0bda4f67dca266ce6ef42f520fbb98",
 					2: "0x000000000000000000000000d26114cd6ee289accf82350c8d8487fedb8a0c07",

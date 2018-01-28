@@ -1,13 +1,13 @@
-package cmd
+package utils
 
 import (
 	"log"
 
 	"path/filepath"
 
-	"fmt"
-
 	"math/big"
+
+	"os"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -32,9 +32,7 @@ func LoadPostgres(database config.Database, node core.Node) repositories.Postgre
 }
 
 func ReadAbiFile(abiFilepath string) string {
-	if !filepath.IsAbs(abiFilepath) {
-		abiFilepath = filepath.Join(config.ProjectRoot(), abiFilepath)
-	}
+	abiFilepath = AbsFilePath(abiFilepath)
 	abi, err := geth.ReadAbiFile(abiFilepath)
 	if err != nil {
 		log.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
@@ -42,13 +40,22 @@ func ReadAbiFile(abiFilepath string) string {
 	return abi
 }
 
-func GetAbi(abiFilepath string, contractHash string) string {
+func AbsFilePath(filePath string) string {
+	if !filepath.IsAbs(filePath) {
+		cwd, _ := os.Getwd()
+		filePath = filepath.Join(cwd, filePath)
+	}
+	return filePath
+}
+
+func GetAbi(abiFilepath string, contractHash string, network string) string {
 	var contractAbiString string
 	if abiFilepath != "" {
 		contractAbiString = ReadAbiFile(abiFilepath)
 	} else {
-		etherscan := geth.NewEtherScanClient("https://api.etherscan.io")
-		fmt.Println("No ABI supplied. Retrieving ABI from Etherscan")
+		url := geth.GenUrl(network)
+		etherscan := geth.NewEtherScanClient(url)
+		log.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
 		contractAbiString, _ = etherscan.GetAbi(contractHash)
 	}
 	_, err := geth.ParseAbi(contractAbiString)
