@@ -1,5 +1,7 @@
 # Vulcanize DB
 
+[![Build Status](https://travis-ci.org/vulcanize/VulcanizeDB.svg?branch=master)](https://travis-ci.org/vulcanize/VulcanizeDB)
+
 ### Dependencies
 
  - Go 1.9+
@@ -10,7 +12,6 @@
 ### Installation 
 `go get github.com/vulcanize/vulcanizedb`
 
->>>>>>> Add vendor dir (#16)
 ### Setting up the Databases
 
 1. Install Postgres
