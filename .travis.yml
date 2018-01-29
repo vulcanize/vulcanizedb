@@ -10,8 +10,6 @@ addons:
 go_import_path: github.com/vulcanize/vulcanizedb
 
 before_install:
-  # dep
-  - go get -u github.com/golang/dep/cmd/dep
   # ginkgo
   - go get -u github.com/onsi/ginkgo/ginkgo
   # migrate
@@ -22,9 +20,6 @@ before_install:
   - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
   - sudo cp geth-linux-amd64-1.7.2-1db4ecdc/geth /usr/local/bin
-
-install:
-  - dep ensure
 
 before_script:
   - ./scripts/setup
