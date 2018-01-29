@@ -1,11 +1,10 @@
 .idea
 Gododir/godobin-*
 test_data_dir/
-vendor/
 contracts/*
 environments/*.toml
 Vagrantfile
-vagrant_bootstrap.sh
+vagrant*.sh
 .vagrant
 test_scripts/
 vulcanizedb
