@@ -1,6 +1,6 @@
 # Vulcanize DB
 
-[![Build Status](https://travis-ci.com/8thlight/vulcanizedb.svg?token=3psFYN2533rYjhRbvjte&branch=master)](https://travis-ci.com/8thlight/vulcanizedb)
+[![Build Status](https://travis-ci.org/vulcanize/VulcanizeDB.svg?branch=master)](https://travis-ci.org/vulcanize/VulcanizeDB)
 
 ### Dependencies
 
@@ -10,11 +10,8 @@
     - https://ethereum.github.io/go-ethereum/downloads/ 
  
 ### Installation 
-```
-git clone https://github.com/vulcanize/vulcanizedb.git $GOPATH/src/github.com/vulcanize/vulcanizedb
-cd $GOPATH/src/github.com/vulcanize/vulcanizedb
-make build
-```    
+`go get github.com/vulcanize/vulcanizedb`
+
 ### Setting up the Databases
 
 1. Install Postgres
