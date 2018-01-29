@@ -10,8 +10,11 @@
     - https://ethereum.github.io/go-ethereum/downloads/ 
  
 ### Installation 
-    go get github.com/vulcanize/vulcanizedb
-    
+```
+git clone https://github.com/vulcanize/vulcanizedb.git $GOPATH/src/github.com/vulcanize/vulcanizedb
+cd $GOPATH/src/github.com/vulcanize/vulcanizedb
+make build
+```    
 ### Setting up the Databases
 
 1. Install Postgres
