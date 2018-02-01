@@ -2,7 +2,6 @@ package repositories_test
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories/testing"
 
 	"log"
 
@@ -17,6 +16,7 @@ var _ = Describe("Watched Events Repository", func() {
 	var repository repositories.Postgres
 
 	BeforeEach(func() {
+
 		cfg, err := config.NewConfig("private")
 		if err != nil {
 			log.Fatal(err)
@@ -25,7 +25,7 @@ var _ = Describe("Watched Events Repository", func() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		testing.ClearData(repository)
+		repositories.ClearData(repository)
 	})
 
 	It("retrieves watched logs that match the event filter", func() {
