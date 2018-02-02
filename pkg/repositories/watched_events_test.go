@@ -13,7 +13,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
-var _ = FDescribe("Watched Events Repository", func() {
+var _ = Describe("Watched Events Repository", func() {
 	var repository repositories.Postgres
 
 	BeforeEach(func() {
