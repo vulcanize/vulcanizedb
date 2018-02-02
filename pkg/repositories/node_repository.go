@@ -6,9 +6,9 @@ type NodeRepository interface {
 	CreateNode(node *core.Node) error
 }
 
-func (repository *DB) CreateNode(node *core.Node) error {
+func (pg *Postgres) CreateNode(node *core.Node) error {
 	var nodeId int64
-	err := repository.Db.QueryRow(
+	err := pg.Db.QueryRow(
 		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (genesis_block, network_id, node_id)
@@ -22,6 +22,6 @@ func (repository *DB) CreateNode(node *core.Node) error {
 	if err != nil {
 		return ErrUnableToSetNode
 	}
-	repository.nodeId = nodeId
+	pg.nodeId = nodeId
 	return nil
 }

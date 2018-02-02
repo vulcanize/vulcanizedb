@@ -16,8 +16,8 @@ var ErrReceiptDoesNotExist = func(txHash string) error {
 	return errors.New(fmt.Sprintf("Receipt for tx: %v does not exist", txHash))
 }
 
-func (repository DB) FindReceipt(txHash string) (core.Receipt, error) {
-	row := repository.Db.QueryRow(
+func (pg Postgres) FindReceipt(txHash string) (core.Receipt, error) {
+	row := pg.Db.QueryRow(
 		`SELECT contract_address,
                        tx_hash,
                        cumulative_gas_used,

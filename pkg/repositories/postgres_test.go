@@ -23,7 +23,7 @@ func init() {
 }
 
 var _ = Describe("Postgres repository", func() {
-	var repository *repositories.DB
+	var repository *repositories.Postgres
 
 	It("connects to the database", func() {
 		cfg, _ := config.NewConfig("private")

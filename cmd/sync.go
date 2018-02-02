@@ -49,7 +49,7 @@ func init() {
 	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
-func backFillAllBlocks(blockchain core.Blockchain, repository repositories.DB, missingBlocksPopulated chan int, startingBlockNumber int64) {
+func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postgres, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	go func() {
 		missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, repository, startingBlockNumber)
 	}()

@@ -24,35 +24,35 @@ var ErrBlockDoesNotExist = func(blockNumber int64) error {
 	return errors.New(fmt.Sprintf("Block number %d does not exist", blockNumber))
 }
 
-func (repository DB) SetBlocksStatus(chainHead int64) {
+func (pg Postgres) SetBlocksStatus(chainHead int64) {
 	cutoff := chainHead - blocksFromHeadBeforeFinal
-	repository.Db.Exec(`
+	pg.Db.Exec(`
                   UPDATE blocks SET is_final = TRUE
                   WHERE is_final = FALSE AND block_number < $1`,
 		cutoff)
 }
 
-func (repository DB) CreateOrUpdateBlock(block core.Block) error {
+func (pg Postgres) CreateOrUpdateBlock(block core.Block) error {
 	var err error
-	retrievedBlockHash, ok := repository.getBlockHash(block)
+	retrievedBlockHash, ok := pg.getBlockHash(block)
 	if !ok {
-		err = repository.insertBlock(block)
+		err = pg.insertBlock(block)
 		return err
 	}
 	if ok && retrievedBlockHash != block.Hash {
-		err = repository.removeBlock(block.Number)
+		err = pg.removeBlock(block.Number)
 		if err != nil {
 			return err
 		}
-		err = repository.insertBlock(block)
+		err = pg.insertBlock(block)
 		return err
 	}
 	return nil
 }
 
-func (repository DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
+func (pg Postgres) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
 	numbers := make([]int64, 0)
-	repository.Db.Select(&numbers,
+	pg.Db.Select(&numbers,
 		`SELECT all_block_numbers
             FROM (
                 SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
@@ -64,8 +64,8 @@ func (repository DB) MissingBlockNumbers(startingBlockNumber int64, highestBlock
 	return numbers
 }
 
-func (repository DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
-	blockRows := repository.Db.QueryRowx(
+func (pg Postgres) FindBlockByNumber(blockNumber int64) (core.Block, error) {
+	blockRows := pg.Db.QueryRowx(
 		`SELECT id,
                        block_number,
                        block_gaslimit,
@@ -83,8 +83,8 @@ func (repository DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
                        block_reward,
                        block_uncles_reward
                FROM blocks
-               WHERE node_id = $1 AND block_number = $2`, repository.nodeId, blockNumber)
-	savedBlock, err := repository.loadBlock(blockRows)
+               WHERE node_id = $1 AND block_number = $2`, pg.nodeId, blockNumber)
+	savedBlock, err := pg.loadBlock(blockRows)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -96,21 +96,21 @@ func (repository DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
 	return savedBlock, nil
 }
 
-func (repository DB) insertBlock(block core.Block) error {
+func (pg Postgres) insertBlock(block core.Block) error {
 	var blockId int64
-	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+	tx, _ := pg.Db.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
                 (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final, block_miner, block_extra_data, block_reward, block_uncles_reward)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING id `,
-		repository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
+		pg.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
 		return ErrDBInsertFailed
 	}
-	err = repository.createTransactions(tx, blockId, block.Transactions)
+	err = pg.createTransactions(tx, blockId, block.Transactions)
 	if err != nil {
 		tx.Rollback()
 		return ErrDBInsertFailed
@@ -119,9 +119,9 @@ func (repository DB) insertBlock(block core.Block) error {
 	return nil
 }
 
-func (repository DB) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
+func (pg Postgres) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
 	for _, transaction := range transactions {
-		err := repository.createTransaction(tx, blockId, transaction)
+		err := pg.createTransaction(tx, blockId, transaction)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func nullStringToZero(s string) string {
 	return s
 }
 
-func (repository DB) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
+func (pg Postgres) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
 	var transactionId int
 	err := tx.QueryRow(
 		`INSERT INTO transactions
@@ -152,12 +152,12 @@ func (repository DB) createTransaction(tx *sql.Tx, blockId int64, transaction co
 		return err
 	}
 	if hasReceipt(transaction) {
-		receiptId, err := repository.createReceipt(tx, transactionId, transaction.Receipt)
+		receiptId, err := pg.createReceipt(tx, transactionId, transaction.Receipt)
 		if err != nil {
 			return err
 		}
 		if hasLogs(transaction) {
-			err = repository.createLogs(tx, transaction.Receipt.Logs, receiptId)
+			err = pg.createLogs(tx, transaction.Receipt.Logs, receiptId)
 			if err != nil {
 				return err
 			}
@@ -174,7 +174,7 @@ func hasReceipt(transaction core.Transaction) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
-func (repository DB) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
+func (pg Postgres) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
@@ -189,17 +189,17 @@ func (repository DB) createReceipt(tx *sql.Tx, transactionId int, receipt core.R
 	return receiptId, nil
 }
 
-func (repository DB) getBlockHash(block core.Block) (string, bool) {
+func (pg Postgres) getBlockHash(block core.Block) (string, bool) {
 	var retrievedBlockHash string
-	repository.Db.Get(&retrievedBlockHash,
+	pg.Db.Get(&retrievedBlockHash,
 		`SELECT block_hash
                FROM blocks
                WHERE block_number = $1 AND node_id = $2`,
-		block.Number, repository.nodeId)
+		block.Number, pg.nodeId)
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
 
-func (repository DB) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+func (pg Postgres) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -218,19 +218,19 @@ func blockExists(retrievedBlockHash string) bool {
 	return retrievedBlockHash != ""
 }
 
-func (repository DB) removeBlock(blockNumber int64) error {
-	_, err := repository.Db.Exec(
+func (pg Postgres) removeBlock(blockNumber int64) error {
+	_, err := pg.Db.Exec(
 		`DELETE FROM
                 blocks
                 WHERE block_number=$1 AND node_id=$2`,
-		blockNumber, repository.nodeId)
+		blockNumber, pg.nodeId)
 	if err != nil {
 		return ErrDBDeleteFailed
 	}
 	return nil
 }
 
-func (repository DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
+func (pg Postgres) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	type b struct {
 		ID int
 		core.Block
@@ -240,7 +240,7 @@ func (repository DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	if err != nil {
 		return core.Block{}, err
 	}
-	transactionRows, err := repository.Db.Queryx(`
+	transactionRows, err := pg.Db.Queryx(`
             SELECT tx_hash,
 				   tx_nonce,
 				   tx_to,
@@ -255,11 +255,11 @@ func (repository DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	if err != nil {
 		return core.Block{}, err
 	}
-	block.Transactions = repository.loadTransactions(transactionRows)
+	block.Transactions = pg.loadTransactions(transactionRows)
 	return block.Block, nil
 }
 
-func (repository DB) loadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
+func (pg Postgres) loadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
 	var transactions []core.Transaction
 	for transactionRows.Next() {
 		var transaction core.Transaction

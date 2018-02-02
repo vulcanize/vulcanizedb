@@ -13,8 +13,8 @@ type LogsRepository interface {
 	CreateLogs(logs []core.Log) error
 }
 
-func (repository DB) CreateLogs(logs []core.Log) error {
-	tx, _ := repository.Db.BeginTx(context.Background(), nil)
+func (pg Postgres) CreateLogs(logs []core.Log) error {
+	tx, _ := pg.Db.BeginTx(context.Background(), nil)
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
@@ -31,8 +31,8 @@ func (repository DB) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (repository DB) FindLogs(address string, blockNumber int64) []core.Log {
-	logRows, _ := repository.Db.Query(
+func (pg Postgres) FindLogs(address string, blockNumber int64) []core.Log {
+	logRows, _ := pg.Db.Query(
 		`SELECT block_number,
 					  address,
 					  tx_hash,
@@ -45,10 +45,10 @@ func (repository DB) FindLogs(address string, blockNumber int64) []core.Log {
 				FROM logs
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
-	return repository.loadLogs(logRows)
+	return pg.loadLogs(logRows)
 }
 
-func (repository DB) loadLogs(logsRows *sql.Rows) []core.Log {
+func (pg Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
 	var logs []core.Log
 	for logsRows.Next() {
 		var blockNumber int64
