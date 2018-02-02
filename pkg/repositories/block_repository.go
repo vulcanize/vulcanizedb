@@ -79,7 +79,7 @@ func (repository DB) MissingBlockNumbers(startingBlockNumber int64, highestBlock
 }
 
 func (repository DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
-	blockRows := repository.Db.QueryRow(
+	blockRows := repository.Db.QueryRowx(
 		`SELECT id,
                        block_number,
                        block_gaslimit,
@@ -244,28 +244,17 @@ func (repository DB) removeBlock(blockNumber int64) error {
 	return nil
 }
 
-func (repository DB) loadBlock(blockRows *sql.Row) (core.Block, error) {
-	var blockId int64
-	var blockHash string
-	var blockNonce string
-	var blockNumber int64
-	var blockMiner string
-	var blockExtraData string
-	var blockParentHash string
-	var blockSize int64
-	var blockTime float64
-	var blockReward float64
-	var difficulty int64
-	var gasLimit float64
-	var gasUsed float64
-	var uncleHash string
-	var unclesReward float64
-	var isFinal bool
-	err := blockRows.Scan(&blockId, &blockNumber, &gasLimit, &gasUsed, &blockTime, &difficulty, &blockHash, &blockNonce, &blockParentHash, &blockSize, &uncleHash, &isFinal, &blockMiner, &blockExtraData, &blockReward, &unclesReward)
+func (repository DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
+	type b struct {
+		ID int
+		core.Block
+	}
+	var block b
+	err := blockRows.StructScan(&block)
 	if err != nil {
 		return core.Block{}, err
 	}
-	transactionRows, _ := repository.Db.Queryx(`
+	transactionRows, err := repository.Db.Queryx(`
             SELECT tx_hash,
 				   tx_nonce,
 				   tx_to,
@@ -276,26 +265,12 @@ func (repository DB) loadBlock(blockRows *sql.Row) (core.Block, error) {
 				   tx_input_data
             FROM transactions
             WHERE block_id = $1
-            ORDER BY tx_hash`, blockId)
-	transactions := repository.loadTransactions(transactionRows)
-	return core.Block{
-		Reward:       blockReward,
-		Difficulty:   difficulty,
-		ExtraData:    blockExtraData,
-		GasLimit:     int64(gasLimit),
-		GasUsed:      int64(gasUsed),
-		Hash:         blockHash,
-		IsFinal:      isFinal,
-		Miner:        blockMiner,
-		Nonce:        blockNonce,
-		Number:       blockNumber,
-		ParentHash:   blockParentHash,
-		Size:         blockSize,
-		Time:         int64(blockTime),
-		Transactions: transactions,
-		UncleHash:    uncleHash,
-		UnclesReward: unclesReward,
-	}, nil
+            ORDER BY tx_hash`, block.ID)
+	if err != nil {
+		return core.Block{}, err
+	}
+	block.Transactions = repository.loadTransactions(transactionRows)
+	return block.Block, nil
 }
 
 func (repository DB) loadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
