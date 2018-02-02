@@ -1,9 +1,6 @@
-package repositories_test
+package postgres_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories/testing"
-
 	"log"
 
 	. "github.com/onsi/ginkgo"
@@ -11,21 +8,23 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
 var _ = Describe("Watched Events Repository", func() {
-	var repository repositories.Postgres
+	var repository *postgres.DB
 
 	BeforeEach(func() {
+
 		cfg, err := config.NewConfig("private")
 		if err != nil {
 			log.Fatal(err)
 		}
-		repository, err = repositories.NewPostgres(cfg.Database, core.Node{})
+		repository, err = postgres.NewDB(cfg.Database, core.Node{})
 		if err != nil {
 			log.Fatal(err)
 		}
-		testing.ClearData(repository)
+		postgres.ClearData(repository)
 	})
 
 	It("retrieves watched logs that match the event filter", func() {
@@ -46,7 +45,7 @@ var _ = Describe("Watched Events Repository", func() {
 				Data:        "",
 			},
 		}
-		expectedWatchedEventLog := []*repositories.WatchedEventLog{
+		expectedWatchedEventLog := []*postgres.WatchedEventLog{
 			{
 				Name:        "Filter1",
 				BlockNumber: 0,

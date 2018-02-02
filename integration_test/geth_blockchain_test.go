@@ -4,12 +4,12 @@ import (
 	"io/ioutil"
 	"log"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/inmemory"
 )
 
 func init() {
@@ -19,12 +19,12 @@ func init() {
 var _ = Describe("Reading from the Geth blockchain", func() {
 
 	var blockchain *geth.Blockchain
-	var repository *repositories.InMemory
+	var repository *inmemory.InMemory
 
 	BeforeEach(func() {
 		cfg, _ := config.NewConfig("private")
 		blockchain = geth.NewBlockchain(cfg.Client.IPCPath)
-		repository = repositories.NewInMemory()
+		repository = inmemory.NewInMemory()
 	})
 
 	It("reads two blocks", func(done Done) {

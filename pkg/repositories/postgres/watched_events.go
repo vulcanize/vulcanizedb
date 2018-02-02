@@ -1,4 +1,4 @@
-package repositories
+package postgres
 
 type WatchedEventLog struct {
 	Name        string `json:"name"`                           // name
@@ -17,8 +17,8 @@ type WatchedEventLogs interface {
 	AllWatchedEventLogs() ([]*WatchedEventLog, error)
 }
 
-func (pg *Postgres) AllWatchedEventLogs() ([]*WatchedEventLog, error) {
-	rows, err := pg.Db.Queryx("SELECT name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs")
+func (db *DB) AllWatchedEventLogs() ([]*WatchedEventLog, error) {
+	rows, err := db.DB.Queryx(`SELECT name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs`)
 	if err != nil {
 		return nil, err
 	}

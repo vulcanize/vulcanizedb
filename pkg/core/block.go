@@ -1,20 +1,20 @@
 package core
 
 type Block struct {
-	Reward       float64
-	Difficulty   int64
-	ExtraData    string
-	GasLimit     int64
-	GasUsed      int64
-	Hash         string
-	IsFinal      bool
-	Miner        string
-	Nonce        string
-	Number       int64
-	ParentHash   string
-	Size         int64
-	Time         int64
+	Reward       float64 `db:"block_reward"`
+	Difficulty   int64   `db:"block_difficulty"`
+	ExtraData    string  `db:"block_extra_data"`
+	GasLimit     int64   `db:"block_gaslimit"`
+	GasUsed      int64   `db:"block_gasused"`
+	Hash         string  `db:"block_hash"`
+	IsFinal      bool    `db:"is_final"`
+	Miner        string  `db:"block_miner"`
+	Nonce        string  `db:"block_nonce"`
+	Number       int64   `db:"block_number"`
+	ParentHash   string  `db:"block_parenthash"`
+	Size         int64   `db:"block_size"`
+	Time         int64   `db:"block_time"`
 	Transactions []Transaction
-	UncleHash    string
-	UnclesReward float64
+	UncleHash    string  `db:"uncle_hash"`
+	UnclesReward float64 `db:"block_uncles_reward"`
 }
