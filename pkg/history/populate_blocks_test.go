@@ -1,12 +1,12 @@
 package history_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/inmemory"
 )
 
 var _ = Describe("Populating blocks", func() {
@@ -17,7 +17,7 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 2},
 		}
 		blockchain := fakes.NewBlockchainWithBlocks(blocks)
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 		repository.CreateOrUpdateBlock(core.Block{Number: 2})
 
 		blocksAdded := history.PopulateMissingBlocks(blockchain, repository, 1)
@@ -40,7 +40,7 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 12},
 			{Number: 13},
 		})
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 		repository.CreateOrUpdateBlock(core.Block{Number: 1})
 		repository.CreateOrUpdateBlock(core.Block{Number: 2})
 		repository.CreateOrUpdateBlock(core.Block{Number: 3})
@@ -72,7 +72,7 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 5},
 			{Number: 6},
 		})
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 		repository.CreateOrUpdateBlock(core.Block{Number: 3})
 		repository.CreateOrUpdateBlock(core.Block{Number: 6})
 
@@ -89,7 +89,7 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 4},
 			{Number: 5},
 		})
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 
 		history.RetrieveAndUpdateBlocks(blockchain, repository, history.MakeRange(2, 5))
 		Expect(repository.BlockCount()).To(Equal(3))

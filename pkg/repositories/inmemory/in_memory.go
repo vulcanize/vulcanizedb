@@ -1,4 +1,4 @@
-package repositories
+package inmemory
 
 import (
 	"fmt"
@@ -7,6 +7,11 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+)
+
+const (
+	blocksFromHeadBeforeFinal = 20
 )
 
 type InMemory struct {
@@ -42,7 +47,7 @@ func (repository *InMemory) FindReceipt(txHash string) (core.Receipt, error) {
 	if receipt, ok := repository.receipts[txHash]; ok {
 		return receipt, nil
 	}
-	return core.Receipt{}, ErrReceiptDoesNotExist(txHash)
+	return core.Receipt{}, repositories.ErrReceiptDoesNotExist(txHash)
 }
 
 func (repository *InMemory) SetBlocksStatus(chainHead int64) {
@@ -89,7 +94,7 @@ func (repository *InMemory) ContractExists(contractHash string) bool {
 func (repository *InMemory) FindContract(contractHash string) (core.Contract, error) {
 	contract, ok := repository.contracts[contractHash]
 	if !ok {
-		return core.Contract{}, ErrContractDoesNotExist(contractHash)
+		return core.Contract{}, repositories.ErrContractDoesNotExist(contractHash)
 	}
 	for _, block := range repository.blocks {
 		for _, transaction := range block.Transactions {
@@ -129,7 +134,7 @@ func (repository *InMemory) FindBlockByNumber(blockNumber int64) (core.Block, er
 	if block, ok := repository.blocks[blockNumber]; ok {
 		return block, nil
 	}
-	return core.Block{}, ErrBlockDoesNotExist(blockNumber)
+	return core.Block{}, repositories.ErrBlockDoesNotExist(blockNumber)
 }
 
 func (repository *InMemory) MaxBlockNumber() int64 {

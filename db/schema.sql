@@ -69,9 +69,9 @@ CREATE VIEW block_stats AS
 
 CREATE TABLE blocks (
     block_number bigint,
-    block_gaslimit double precision,
-    block_gasused double precision,
-    block_time double precision,
+    block_gaslimit bigint,
+    block_gasused bigint,
+    block_time bigint,
     id integer NOT NULL,
     block_difficulty bigint,
     block_hash character varying(66),
@@ -83,8 +83,8 @@ CREATE TABLE blocks (
     is_final boolean,
     block_miner character varying(42),
     block_extra_data character varying,
-    block_reward numeric,
-    block_uncles_reward numeric
+    block_reward double precision,
+    block_uncles_reward double precision
 );
 
 

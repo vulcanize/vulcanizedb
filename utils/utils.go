@@ -12,7 +12,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
 func LoadConfig(environment string) config.Config {
@@ -23,12 +23,12 @@ func LoadConfig(environment string) config.Config {
 	return cfg
 }
 
-func LoadPostgres(database config.Database, node core.Node) repositories.Postgres {
-	repository, err := repositories.NewPostgres(database, node)
+func LoadPostgres(database config.Database, node core.Node) postgres.DB {
+	repository, err := postgres.NewDB(database, node)
 	if err != nil {
 		log.Fatalf("Error loading postgres\n%v", err)
 	}
-	return repository
+	return *repository
 }
 
 func ReadAbiFile(abiFilepath string) string {

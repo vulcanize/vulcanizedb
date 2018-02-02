@@ -1,4 +1,4 @@
-package repositories_test
+package postgres_test
 
 import (
 	"fmt"
@@ -9,14 +9,13 @@ import (
 
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories/testing"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
 func init() {
@@ -24,6 +23,7 @@ func init() {
 }
 
 var _ = Describe("Postgres repository", func() {
+	var repository *postgres.DB
 
 	It("connects to the database", func() {
 		cfg, _ := config.NewConfig("private")
@@ -33,11 +33,16 @@ var _ = Describe("Postgres repository", func() {
 		Expect(db).ShouldNot(BeNil())
 	})
 
-	testing.AssertRepositoryBehavior(func(node core.Node) repositories.Repository {
+	BeforeEach(func() {
+		node := core.Node{
+			GenesisBlock: "GENESIS",
+			NetworkId:    1,
+			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
+			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
+		}
 		cfg, _ := config.NewConfig("private")
-		repository, _ := repositories.NewPostgres(cfg.Database, node)
-		testing.ClearData(repository)
-		return repository
+		repository, _ = postgres.NewDB(cfg.Database, node)
+		postgres.ClearData(repository)
 	})
 
 	It("serializes big.Int to db", func() {
@@ -86,7 +91,7 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := repositories.NewPostgres(cfg.Database, node)
+		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(badBlock)
 		savedBlock, err2 := repository.FindBlockByNumber(123)
@@ -99,16 +104,16 @@ var _ = Describe("Postgres repository", func() {
 	It("throws error when can't connect to the database", func() {
 		invalidDatabase := config.Database{}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		_, err := repositories.NewPostgres(invalidDatabase, node)
-		Expect(err).To(Equal(repositories.ErrDBConnectionFailed))
+		_, err := postgres.NewDB(invalidDatabase, node)
+		Expect(err).To(Equal(postgres.ErrDBConnectionFailed))
 	})
 
 	It("throws error when can't create node", func() {
 		cfg, _ := config.NewConfig("private")
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 		node := core.Node{GenesisBlock: badHash, NetworkId: 1, Id: "x123", ClientName: "geth"}
-		_, err := repositories.NewPostgres(cfg.Database, node)
-		Expect(err).To(Equal(repositories.ErrUnableToSetNode))
+		_, err := postgres.NewDB(cfg.Database, node)
+		Expect(err).To(Equal(postgres.ErrUnableToSetNode))
 	})
 
 	It("does not commit log if log is invalid", func() {
@@ -121,7 +126,7 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := repositories.NewPostgres(cfg.Database, node)
+		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err := repository.CreateLogs([]core.Log{badLog})
 		savedBlock := repository.FindLogs("x123", 1)
@@ -140,7 +145,7 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := repositories.NewPostgres(cfg.Database, node)
+		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(block)
 		savedBlock, err2 := repository.FindBlockByNumber(123)

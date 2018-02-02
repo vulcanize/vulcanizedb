@@ -6,12 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/inmemory"
 )
 
 func init() {
@@ -47,7 +47,7 @@ var _ = Describe("Blocks validator", func() {
 			{Number: 6},
 			{Number: 7},
 		})
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 
 		validator := history.NewBlockValidator(blockchain, repository, 2)
 		window := validator.ValidateBlocks()
@@ -62,7 +62,7 @@ var _ = Describe("Blocks validator", func() {
 		history.ParsedWindowTemplate.Execute(expectedMessage, history.ValidationWindow{5, 7})
 
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{})
-		repository := repositories.NewInMemory()
+		repository := inmemory.NewInMemory()
 		validator := history.NewBlockValidator(blockchain, repository, 2)
 		actualMessage := &bytes.Buffer{}
 		validator.Log(actualMessage, window)

@@ -5,13 +5,14 @@ import (
 
 	"time"
 
+	"log"
+
+	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"github.com/spf13/cobra"
-	"log"
 )
 
 // syncCmd represents the sync command
@@ -48,7 +49,7 @@ func init() {
 	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
-func backFillAllBlocks(blockchain core.Blockchain, repository repositories.Postgres, missingBlocksPopulated chan int, startingBlockNumber int64) {
+func backFillAllBlocks(blockchain core.Blockchain, repository postgres.DB, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	go func() {
 		missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, repository, startingBlockNumber)
 	}()
