@@ -20,7 +20,7 @@ func (db DB) SetBlocksStatus(chainHead int64) {
 	cutoff := chainHead - blocksFromHeadBeforeFinal
 	db.DB.Exec(`
                   UPDATE blocks SET is_final = TRUE
-                  WHERE is_final = FALSE AND block_number < $1`,
+                  WHERE is_final = FALSE AND number < $1`,
 		cutoff)
 }
 
@@ -49,8 +49,8 @@ func (db DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber i
             FROM (
                 SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
                 LEFT JOIN blocks
-                    ON block_number = all_block_numbers
-            WHERE block_number ISNULL`,
+                    ON number = all_block_numbers
+            WHERE number ISNULL`,
 		startingBlockNumber,
 		highestBlockNumber)
 	return numbers
@@ -59,23 +59,23 @@ func (db DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber i
 func (db DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
 	blockRows := db.DB.QueryRowx(
 		`SELECT id,
-                       block_number,
-                       block_gaslimit,
-                       block_gasused,
-                       block_time,
-                       block_difficulty,
-                       block_hash,
-                       block_nonce,
-                       block_parenthash,
-                       block_size,
+                       number,
+                       gaslimit,
+                       gasused,
+                       time,
+                       difficulty,
+                       hash,
+                       nonce,
+                       parenthash,
+                       size,
                        uncle_hash,
                        is_final,
-                       block_miner,
-                       block_extra_data,
-                       block_reward,
-                       block_uncles_reward
+                       miner,
+                       extra_data,
+                       reward,
+                       uncles_reward
                FROM blocks
-               WHERE node_id = $1 AND block_number = $2`, db.nodeId, blockNumber)
+               WHERE node_id = $1 AND number = $2`, db.nodeId, blockNumber)
 	savedBlock, err := db.loadBlock(blockRows)
 	if err != nil {
 		switch err {
@@ -93,7 +93,7 @@ func (db DB) insertBlock(block core.Block) error {
 	tx, _ := db.DB.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-                (node_id, block_number, block_gaslimit, block_gasused, block_time, block_difficulty, block_hash, block_nonce, block_parenthash, block_size, uncle_hash, is_final, block_miner, block_extra_data, block_reward, block_uncles_reward)
+                (node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING id `,
 		db.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
@@ -184,9 +184,9 @@ func (db DB) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) 
 func (db DB) getBlockHash(block core.Block) (string, bool) {
 	var retrievedBlockHash string
 	db.DB.Get(&retrievedBlockHash,
-		`SELECT block_hash
+		`SELECT hash
                FROM blocks
-               WHERE block_number = $1 AND node_id = $2`,
+               WHERE number = $1 AND node_id = $2`,
 		block.Number, db.nodeId)
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
@@ -214,7 +214,7 @@ func (db DB) removeBlock(blockNumber int64) error {
 	_, err := db.DB.Exec(
 		`DELETE FROM
                 blocks
-                WHERE block_number=$1 AND node_id=$2`,
+                WHERE number=$1 AND node_id=$2`,
 		blockNumber, db.nodeId)
 	if err != nil {
 		return ErrDBDeleteFailed
