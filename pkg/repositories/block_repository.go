@@ -15,9 +15,7 @@ import (
 
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) error
-	BlockCount() int
 	FindBlockByNumber(blockNumber int64) (core.Block, error)
-	MaxBlockNumber() int64
 	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
 	SetBlocksStatus(chainHead int64)
 }
@@ -50,18 +48,6 @@ func (repository DB) CreateOrUpdateBlock(block core.Block) error {
 		return err
 	}
 	return nil
-}
-
-func (repository DB) BlockCount() int {
-	var count int
-	repository.Db.Get(&count, `SELECT COUNT(*) FROM blocks`)
-	return count
-}
-
-func (repository DB) MaxBlockNumber() int64 {
-	var highestBlockNumber int64
-	repository.Db.Get(&highestBlockNumber, `SELECT MAX(block_number) FROM blocks`)
-	return highestBlockNumber
 }
 
 func (repository DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {

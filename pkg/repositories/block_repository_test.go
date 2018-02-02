@@ -22,19 +22,6 @@ var _ = Describe("Saving blocks", func() {
 		repository = repositories.BuildRepository(node)
 	})
 
-	It("starts with no blocks", func() {
-		count := repository.BlockCount()
-		Expect(count).Should(Equal(0))
-	})
-
-	It("increments the block count", func() {
-		block := core.Block{Number: 123}
-
-		repository.CreateOrUpdateBlock(block)
-
-		Expect(repository.BlockCount()).To(Equal(1))
-	})
-
 	It("associates blocks to a node", func() {
 		block := core.Block{
 			Number: 123,
@@ -271,21 +258,6 @@ var _ = Describe("Saving blocks", func() {
 			repository.CreateOrUpdateBlock(core.Block{Number: 8})
 
 			Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
-		})
-	})
-
-	Describe("The max block numbers", func() {
-		It("returns the block number when a single block", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 1})
-
-			Expect(repository.MaxBlockNumber()).To(Equal(int64(1)))
-		})
-
-		It("returns highest known block number when multiple blocks", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 1})
-			repository.CreateOrUpdateBlock(core.Block{Number: 10})
-
-			Expect(repository.MaxBlockNumber()).To(Equal(int64(10)))
 		})
 	})
 
