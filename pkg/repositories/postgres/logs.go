@@ -1,4 +1,4 @@
-package repositories
+package postgres
 
 import (
 	"context"
@@ -8,13 +8,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type LogsRepository interface {
-	FindLogs(address string, blockNumber int64) []core.Log
-	CreateLogs(logs []core.Log) error
-}
-
-func (pg Postgres) CreateLogs(logs []core.Log) error {
-	tx, _ := pg.Db.BeginTx(context.Background(), nil)
+func (db DB) CreateLogs(logs []core.Log) error {
+	tx, _ := db.DB.BeginTx(context.Background(), nil)
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
@@ -31,8 +26,8 @@ func (pg Postgres) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (pg Postgres) FindLogs(address string, blockNumber int64) []core.Log {
-	logRows, _ := pg.Db.Query(
+func (db DB) FindLogs(address string, blockNumber int64) []core.Log {
+	logRows, _ := db.DB.Query(
 		`SELECT block_number,
 					  address,
 					  tx_hash,
@@ -45,10 +40,10 @@ func (pg Postgres) FindLogs(address string, blockNumber int64) []core.Log {
 				FROM logs
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
-	return pg.loadLogs(logRows)
+	return db.loadLogs(logRows)
 }
 
-func (pg Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
+func (db DB) loadLogs(logsRows *sql.Rows) []core.Log {
 	var logs []core.Log
 	for logsRows.Next() {
 		var blockNumber int64

@@ -1,4 +1,4 @@
-package repositories
+package postgres
 
 import (
 	"errors"
@@ -9,8 +9,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type Postgres struct {
-	Db     *sqlx.DB
+type DB struct {
+	*sqlx.DB
 	node   core.Node
 	nodeId int64
 }
@@ -22,16 +22,16 @@ var (
 	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
 )
 
-func NewPostgres(databaseConfig config.Database, node core.Node) (*Postgres, error) {
+func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
-		return &Postgres{}, ErrDBConnectionFailed
+		return &DB{}, ErrDBConnectionFailed
 	}
-	pg := Postgres{Db: db, node: node}
+	pg := DB{DB: db, node: node}
 	err = pg.CreateNode(&node)
 	if err != nil {
-		return &Postgres{}, ErrUnableToSetNode
+		return &DB{}, ErrUnableToSetNode
 	}
 	return &pg, nil
 }

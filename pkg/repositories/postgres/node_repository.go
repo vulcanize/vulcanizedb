@@ -1,4 +1,4 @@
-package repositories
+package postgres
 
 import "github.com/vulcanize/vulcanizedb/pkg/core"
 
@@ -6,9 +6,9 @@ type NodeRepository interface {
 	CreateNode(node *core.Node) error
 }
 
-func (pg *Postgres) CreateNode(node *core.Node) error {
+func (db *DB) CreateNode(node *core.Node) error {
 	var nodeId int64
-	err := pg.Db.QueryRow(
+	err := db.DB.QueryRow(
 		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (genesis_block, network_id, node_id)
@@ -22,6 +22,6 @@ func (pg *Postgres) CreateNode(node *core.Node) error {
 	if err != nil {
 		return ErrUnableToSetNode
 	}
-	pg.nodeId = nodeId
+	db.nodeId = nodeId
 	return nil
 }

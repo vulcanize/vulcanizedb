@@ -1,30 +1,19 @@
-package repositories
+package postgres
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-type ContractRepository interface {
-	CreateContract(contract core.Contract) error
-	ContractExists(contractHash string) bool
-	FindContract(contractHash string) (core.Contract, error)
-}
-
-var ErrContractDoesNotExist = func(contractHash string) error {
-	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
-}
-
-func (pg Postgres) CreateContract(contract core.Contract) error {
+func (db DB) CreateContract(contract core.Contract) error {
 	abi := contract.Abi
 	var abiToInsert *string
 	if abi != "" {
 		abiToInsert = &abi
 	}
-	_, err := pg.Db.Exec(
+	_, err := db.DB.Exec(
 		`INSERT INTO watched_contracts (contract_hash, contract_abi)
 				VALUES ($1, $2)
 				ON CONFLICT (contract_hash)
@@ -37,9 +26,9 @@ func (pg Postgres) CreateContract(contract core.Contract) error {
 	return nil
 }
 
-func (pg Postgres) ContractExists(contractHash string) bool {
+func (db DB) ContractExists(contractHash string) bool {
 	var exists bool
-	pg.Db.QueryRow(
+	db.DB.QueryRow(
 		`SELECT exists(
                    SELECT 1
                    FROM watched_contracts
@@ -47,21 +36,21 @@ func (pg Postgres) ContractExists(contractHash string) bool {
 	return exists
 }
 
-func (pg Postgres) FindContract(contractHash string) (core.Contract, error) {
+func (db DB) FindContract(contractHash string) (core.Contract, error) {
 	var hash string
 	var abi string
-	contract := pg.Db.QueryRow(
+	contract := db.DB.QueryRow(
 		`SELECT contract_hash, contract_abi FROM watched_contracts WHERE contract_hash=$1`, contractHash)
 	err := contract.Scan(&hash, &abi)
 	if err == sql.ErrNoRows {
-		return core.Contract{}, ErrContractDoesNotExist(contractHash)
+		return core.Contract{}, repositories.ErrContractDoesNotExist(contractHash)
 	}
-	savedContract := pg.addTransactions(core.Contract{Hash: hash, Abi: abi})
+	savedContract := db.addTransactions(core.Contract{Hash: hash, Abi: abi})
 	return savedContract, nil
 }
 
-func (pg Postgres) addTransactions(contract core.Contract) core.Contract {
-	transactionRows, _ := pg.Db.Queryx(`
+func (db DB) addTransactions(contract core.Contract) core.Contract {
+	transactionRows, _ := db.DB.Queryx(`
             SELECT tx_hash,
                    tx_nonce,
                    tx_to,
@@ -73,7 +62,7 @@ func (pg Postgres) addTransactions(contract core.Contract) core.Contract {
             FROM transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)
-	transactions := pg.loadTransactions(transactionRows)
+	transactions := db.loadTransactions(transactionRows)
 	savedContract := core.Contract{Hash: contract.Hash, Transactions: transactions, Abi: contract.Abi}
 	return savedContract
 }

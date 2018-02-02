@@ -1,13 +1,9 @@
-package repositories
+package postgres
 
 import "github.com/vulcanize/vulcanizedb/pkg/filters"
 
-type FilterRepository interface {
-	AddFilter(filter filters.LogFilter) error
-}
-
-func (pg Postgres) AddFilter(query filters.LogFilter) error {
-	_, err := pg.Db.Exec(
+func (db DB) AddFilter(query filters.LogFilter) error {
+	_, err := db.DB.Exec(
 		`INSERT INTO log_filters 
         (name, from_block, to_block, address, topic0, topic1, topic2, topic3)
         VALUES ($1, NULLIF($2, -1), NULLIF($3, -1), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))`,

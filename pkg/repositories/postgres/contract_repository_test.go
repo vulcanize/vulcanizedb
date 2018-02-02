@@ -1,4 +1,4 @@
-package repositories_test
+package postgres
 
 import (
 	"sort"
@@ -19,7 +19,7 @@ var _ = Describe("Creating contracts", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		repository = repositories.BuildRepository(node)
+		repository = BuildRepository(node)
 	})
 
 	It("returns the contract when it exists", func() {
@@ -47,7 +47,7 @@ var _ = Describe("Creating contracts", func() {
 
 	It("returns transactions 'To' a contract", func() {
 		var blockRepository repositories.BlockRepository
-		blockRepository = repositories.BuildRepository(node)
+		blockRepository = BuildRepository(node)
 		block := core.Block{
 			Number: 123,
 			Transactions: []core.Transaction{

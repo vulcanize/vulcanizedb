@@ -1,23 +1,14 @@
-package repositories
+package postgres
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-type ReceiptRepository interface {
-	FindReceipt(txHash string) (core.Receipt, error)
-}
-
-var ErrReceiptDoesNotExist = func(txHash string) error {
-	return errors.New(fmt.Sprintf("Receipt for tx: %v does not exist", txHash))
-}
-
-func (pg Postgres) FindReceipt(txHash string) (core.Receipt, error) {
-	row := pg.Db.QueryRow(
+func (db DB) FindReceipt(txHash string) (core.Receipt, error) {
+	row := db.DB.QueryRow(
 		`SELECT contract_address,
                        tx_hash,
                        cumulative_gas_used,
@@ -30,7 +21,7 @@ func (pg Postgres) FindReceipt(txHash string) (core.Receipt, error) {
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return core.Receipt{}, ErrReceiptDoesNotExist(txHash)
+			return core.Receipt{}, repositories.ErrReceiptDoesNotExist(txHash)
 		default:
 			return core.Receipt{}, err
 		}

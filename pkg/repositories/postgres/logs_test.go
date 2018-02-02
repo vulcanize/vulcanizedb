@@ -1,4 +1,4 @@
-package repositories_test
+package postgres_test
 
 import (
 	"sort"
@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
 var _ = Describe("Logs Repository", func() {
@@ -19,7 +20,7 @@ var _ = Describe("Logs Repository", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		repository = repositories.BuildRepository(node)
+		repository = postgres.BuildRepository(node)
 	})
 
 	Describe("Saving logs", func() {
@@ -113,7 +114,7 @@ var _ = Describe("Logs Repository", func() {
 
 		It("saves the logs attached to a receipt", func() {
 			var blockRepository repositories.BlockRepository
-			blockRepository = repositories.BuildRepository(node)
+			blockRepository = postgres.BuildRepository(node)
 			logs := []core.Log{{
 				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
 				BlockNumber: 4745407,
