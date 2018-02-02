@@ -51,14 +51,14 @@ func (db DB) FindContract(contractHash string) (core.Contract, error) {
 
 func (db DB) addTransactions(contract core.Contract) core.Contract {
 	transactionRows, _ := db.DB.Queryx(`
-            SELECT tx_hash,
-                   tx_nonce,
+            SELECT hash,
+                   nonce,
                    tx_to,
                    tx_from,
-                   tx_gaslimit,
-                   tx_gasprice,
-                   tx_value,
-                   tx_input_data
+                   gaslimit,
+                   gasprice,
+                   value,
+                   input_data
             FROM transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)
