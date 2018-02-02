@@ -253,15 +253,15 @@ CREATE TABLE schema_migrations (
 
 CREATE TABLE transactions (
     id integer NOT NULL,
-    tx_hash character varying(66),
-    tx_nonce numeric,
+    hash character varying(66),
+    nonce numeric,
     tx_to character varying(66),
-    tx_gaslimit numeric,
-    tx_gasprice numeric,
-    tx_value numeric,
+    gaslimit numeric,
+    gasprice numeric,
+    value numeric,
     block_id integer NOT NULL,
     tx_from character varying(66),
-    tx_input_data character varying
+    input_data character varying
 );
 
 

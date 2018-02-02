@@ -135,7 +135,7 @@ func (db DB) createTransaction(tx *sql.Tx, blockId int64, transaction core.Trans
 	var transactionId int
 	err := tx.QueryRow(
 		`INSERT INTO transactions
-       (block_id, tx_hash, tx_nonce, tx_to, tx_from, tx_gaslimit, tx_gasprice, tx_value, tx_input_data)
+       (block_id, hash, nonce, tx_to, tx_from, gaslimit, gasprice, value, input_data)
        VALUES ($1, $2, $3, $4, $5, $6, $7,  $8::NUMERIC, $9)
        RETURNING id`,
 		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, nullStringToZero(transaction.Value), transaction.Data).
@@ -233,17 +233,17 @@ func (db DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 		return core.Block{}, err
 	}
 	transactionRows, err := db.DB.Queryx(`
-            SELECT tx_hash,
-				   tx_nonce,
+            SELECT hash,
+				   nonce,
 				   tx_to,
 				   tx_from,
-				   tx_gaslimit,
-				   tx_gasprice,
-				   tx_value,
-				   tx_input_data
+				   gaslimit,
+				   gasprice,
+				   value,
+				   input_data
             FROM transactions
             WHERE block_id = $1
-            ORDER BY tx_hash`, block.ID)
+            ORDER BY hash`, block.ID)
 	if err != nil {
 		return core.Block{}, err
 	}
