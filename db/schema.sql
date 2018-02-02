@@ -68,23 +68,23 @@ CREATE VIEW block_stats AS
 --
 
 CREATE TABLE blocks (
-    block_number bigint,
-    block_gaslimit bigint,
-    block_gasused bigint,
-    block_time bigint,
+    number bigint,
+    gaslimit bigint,
+    gasused bigint,
+    "time" bigint,
     id integer NOT NULL,
-    block_difficulty bigint,
-    block_hash character varying(66),
-    block_nonce character varying(20),
-    block_parenthash character varying(66),
-    block_size bigint,
+    difficulty bigint,
+    hash character varying(66),
+    nonce character varying(20),
+    parenthash character varying(66),
+    size bigint,
     uncle_hash character varying(66),
     node_id integer NOT NULL,
     is_final boolean,
-    block_miner character varying(42),
-    block_extra_data character varying,
-    block_reward double precision,
-    block_uncles_reward double precision
+    miner character varying(42),
+    extra_data character varying,
+    reward double precision,
+    uncles_reward double precision
 );
 
 
@@ -253,15 +253,15 @@ CREATE TABLE schema_migrations (
 
 CREATE TABLE transactions (
     id integer NOT NULL,
-    tx_hash character varying(66),
-    tx_nonce numeric,
+    hash character varying(66),
+    nonce numeric,
     tx_to character varying(66),
-    tx_gaslimit numeric,
-    tx_gasprice numeric,
-    tx_value numeric,
+    gaslimit numeric,
+    gasprice numeric,
+    value numeric,
     block_id integer NOT NULL,
     tx_from character varying(66),
-    tx_input_data character varying
+    input_data character varying
 );
 
 
@@ -425,7 +425,7 @@ ALTER TABLE ONLY log_filters
 --
 
 ALTER TABLE ONLY blocks
-    ADD CONSTRAINT node_id_block_number_uc UNIQUE (block_number, node_id);
+    ADD CONSTRAINT node_id_block_number_uc UNIQUE (number, node_id);
 
 
 --
@@ -487,7 +487,7 @@ CREATE INDEX block_id_index ON transactions USING btree (block_id);
 -- Name: block_number_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX block_number_index ON blocks USING btree (block_number);
+CREATE INDEX block_number_index ON blocks USING btree (number);
 
 
 --
