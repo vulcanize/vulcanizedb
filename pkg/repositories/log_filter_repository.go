@@ -6,7 +6,7 @@ type FilterRepository interface {
 	AddFilter(filter filters.LogFilter) error
 }
 
-func (repository Postgres) AddFilter(query filters.LogFilter) error {
+func (repository DB) AddFilter(query filters.LogFilter) error {
 	_, err := repository.Db.Exec(
 		`INSERT INTO log_filters 
         (name, from_block, to_block, address, topic0, topic1, topic2, topic3)

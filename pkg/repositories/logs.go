@@ -13,7 +13,7 @@ type LogsRepository interface {
 	CreateLogs(logs []core.Log) error
 }
 
-func (repository Postgres) CreateLogs(logs []core.Log) error {
+func (repository DB) CreateLogs(logs []core.Log) error {
 	tx, _ := repository.Db.BeginTx(context.Background(), nil)
 	for _, tlog := range logs {
 		_, err := tx.Exec(
@@ -31,7 +31,7 @@ func (repository Postgres) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Log {
+func (repository DB) FindLogs(address string, blockNumber int64) []core.Log {
 	logRows, _ := repository.Db.Query(
 		`SELECT block_number,
 					  address,
@@ -48,7 +48,7 @@ func (repository Postgres) FindLogs(address string, blockNumber int64) []core.Lo
 	return repository.loadLogs(logRows)
 }
 
-func (repository Postgres) loadLogs(logsRows *sql.Rows) []core.Log {
+func (repository DB) loadLogs(logsRows *sql.Rows) []core.Log {
 	var logs []core.Log
 	for logsRows.Next() {
 		var blockNumber int64

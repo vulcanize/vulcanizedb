@@ -13,7 +13,7 @@ import (
 )
 
 var _ = Describe("Watched Events Repository", func() {
-	var repository repositories.Postgres
+	var repository *repositories.DB
 
 	BeforeEach(func() {
 

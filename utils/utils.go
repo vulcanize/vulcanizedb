@@ -23,7 +23,7 @@ func LoadConfig(environment string) config.Config {
 	return cfg
 }
 
-func LoadPostgres(database config.Database, node core.Node) repositories.Postgres {
+func LoadPostgres(database config.Database, node core.Node) repositories.DB {
 	repository, err := repositories.NewPostgres(database, node)
 	if err != nil {
 		log.Fatalf("Error loading postgres\n%v", err)

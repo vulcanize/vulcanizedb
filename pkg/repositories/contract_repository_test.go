@@ -51,9 +51,9 @@ var _ = Describe("Creating contracts", func() {
 		block := core.Block{
 			Number: 123,
 			Transactions: []core.Transaction{
-				{Hash: "TRANSACTION1", To: "x123"},
-				{Hash: "TRANSACTION2", To: "x345"},
-				{Hash: "TRANSACTION3", To: "x123"},
+				{Hash: "TRANSACTION1", To: "x123", Value: "0"},
+				{Hash: "TRANSACTION2", To: "x345", Value: "0"},
+				{Hash: "TRANSACTION3", To: "x123", Value: "0"},
 			},
 		}
 		blockRepository.CreateOrUpdateBlock(block)
@@ -66,8 +66,8 @@ var _ = Describe("Creating contracts", func() {
 		})
 		Expect(contract.Transactions).To(
 			Equal([]core.Transaction{
-				{Hash: "TRANSACTION1", To: "x123"},
-				{Hash: "TRANSACTION3", To: "x123"},
+				{Hash: "TRANSACTION1", To: "x123", Value: "0"},
+				{Hash: "TRANSACTION3", To: "x123", Value: "0"},
 			}))
 	})
 

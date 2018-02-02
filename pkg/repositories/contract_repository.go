@@ -18,7 +18,7 @@ var ErrContractDoesNotExist = func(contractHash string) error {
 	return errors.New(fmt.Sprintf("Contract %v does not exist", contractHash))
 }
 
-func (repository Postgres) CreateContract(contract core.Contract) error {
+func (repository DB) CreateContract(contract core.Contract) error {
 	abi := contract.Abi
 	var abiToInsert *string
 	if abi != "" {
@@ -37,7 +37,7 @@ func (repository Postgres) CreateContract(contract core.Contract) error {
 	return nil
 }
 
-func (repository Postgres) ContractExists(contractHash string) bool {
+func (repository DB) ContractExists(contractHash string) bool {
 	var exists bool
 	repository.Db.QueryRow(
 		`SELECT exists(
@@ -47,7 +47,7 @@ func (repository Postgres) ContractExists(contractHash string) bool {
 	return exists
 }
 
-func (repository Postgres) FindContract(contractHash string) (core.Contract, error) {
+func (repository DB) FindContract(contractHash string) (core.Contract, error) {
 	var hash string
 	var abi string
 	contract := repository.Db.QueryRow(
@@ -60,8 +60,8 @@ func (repository Postgres) FindContract(contractHash string) (core.Contract, err
 	return savedContract, nil
 }
 
-func (repository Postgres) addTransactions(contract core.Contract) core.Contract {
-	transactionRows, _ := repository.Db.Query(`
+func (repository DB) addTransactions(contract core.Contract) core.Contract {
+	transactionRows, _ := repository.Db.Queryx(`
             SELECT tx_hash,
                    tx_nonce,
                    tx_to,

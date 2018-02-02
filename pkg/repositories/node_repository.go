@@ -6,7 +6,7 @@ type NodeRepository interface {
 	CreateNode(node *core.Node) error
 }
 
-func (repository *Postgres) CreateNode(node *core.Node) error {
+func (repository *DB) CreateNode(node *core.Node) error {
 	var nodeId int64
 	err := repository.Db.QueryRow(
 		`INSERT INTO nodes (genesis_block, network_id, node_id, client_name)

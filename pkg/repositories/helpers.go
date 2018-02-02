@@ -5,7 +5,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func ClearData(postgres Postgres) {
+func ClearData(postgres *DB) {
 	postgres.Db.MustExec("DELETE FROM watched_contracts")
 	postgres.Db.MustExec("DELETE FROM transactions")
 	postgres.Db.MustExec("DELETE FROM blocks")
