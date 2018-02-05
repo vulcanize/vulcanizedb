@@ -25,6 +25,10 @@ $(BIN)/gometalinter.v2:
 	go get -u gopkg.in/alecthomas/gometalinter.v2
 	$(METALINT) --install
 
+.PHONY: installtools
+installtools: | $(LINT) $(MIGRATE) $(GINKGO) $(DEP)
+	echo "Installing tools"
+
 .PHONY: metalint
 metalint: | $(METALINT)
 	$(METALINT) ./... --vendor \
@@ -40,7 +44,6 @@ lint:
 test: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	#$(LINT)
 	$(GINKGO) -r
 
 .PHONY: dep
