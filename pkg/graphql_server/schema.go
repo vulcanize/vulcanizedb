@@ -11,30 +11,15 @@ var Schema = `
 	}
 	# The query type, represents all of the entry points into our object graph
 	type Query {
-		block(number: Int!): Block
-		logs(address: String!, blockNumber: Int!): [Log]
+        logFilter(name: String!): LogFilter
 	}
+
     type LogFilter {
         name: String!
         fromBlock: Int
         toBlock: Int
         address: String!
-        topic0: String
-        topic1: String
-        topic2: String
-        topic3: String
-    }
-
-    type WatchedEvent {
-        name: String!
-        blockNumber: Int 
-        address: String!
-        txHash: String
-        topic0: String
-        topic1: String
-        topic2: String
-        topic3: String        
-        data: String
+        topics: [String]!
     }
 `
 
@@ -46,29 +31,48 @@ func NewResolver(repository repositories.Repository) *Resolver {
 	return &Resolver{repository: repository}
 }
 
-type LogFilter struct {
+type logFilter struct {
 	*filters.LogFilter
 }
 
 type logFilterResolver struct {
-	lf *LogFilter
+	lf *logFilter
 }
 
 func (r *Resolver) LogFilter(args struct {
 	Name string
-}) *logFilterResolver {
-	//logFilter := r.repository.GetLogFilter(args.Name)
-	return &logFilterResolver{logFilter}
+}) (*logFilterResolver, error) {
+	lf, err := r.repository.GetFilter(args.Name)
+	if err != nil {
+		return &logFilterResolver{}, err
+	}
+	return &logFilterResolver{&logFilter{&lf}}, nil
 }
 
 func (lr *logFilterResolver) Name() string {
 	return lr.lf.Name
 }
 
-func (lr *logFilterResolver) FromBlock() int32 {
-	return int32(lr.lf.FromBlock)
+func (lr *logFilterResolver) FromBlock() *int32 {
+	fromBlock := int32(lr.lf.FromBlock)
+	return &fromBlock
 }
 
-func (lr *logFilterResolver) ToBlock() int32 {
-	return int32(lr.lf.ToBlock)
+func (lr *logFilterResolver) ToBlock() *int32 {
+	toBlock := int32(lr.lf.ToBlock)
+	return &toBlock
+}
+
+func (lr *logFilterResolver) Address() string {
+	return lr.lf.Address
+}
+
+func (lr *logFilterResolver) Topics() []*string {
+	var topics = make([]*string, 4)
+	for i := range topics {
+		if lr.lf.Topics[i] != "" {
+			topics[i] = &lr.lf.Topics[i]
+		}
+	}
+	return topics
 }

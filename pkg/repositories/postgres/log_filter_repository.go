@@ -23,7 +23,7 @@ func (db DB) AddFilter(query filters.LogFilter) error {
 }
 
 func (db DB) GetFilter(name string) (filters.LogFilter, error) {
-	lf := dbLogFilter{}
+	lf := DBLogFilter{}
 	err := db.DB.Get(&lf,
 		`SELECT
                   id,
@@ -58,13 +58,13 @@ func (t *DBTopics) Scan(src interface{}) error {
 	return nil
 }
 
-type dbLogFilter struct {
+type DBLogFilter struct {
 	ID int
 	*filters.LogFilter
 	Topics DBTopics
 }
 
-func dbLogFilterToCoreLogFilter(lf dbLogFilter) {
+func dbLogFilterToCoreLogFilter(lf DBLogFilter) {
 	for i, v := range lf.Topics {
 		if v != nil {
 			lf.LogFilter.Topics[i] = *v
