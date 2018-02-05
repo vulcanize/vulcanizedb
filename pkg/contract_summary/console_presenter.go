@@ -3,8 +3,8 @@ package contract_summary
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 func GenerateConsoleOutput(summary ContractSummary) string {

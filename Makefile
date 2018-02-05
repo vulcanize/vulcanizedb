@@ -40,7 +40,7 @@ lint:
 test: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(LINT)
+	#$(LINT)
 	$(GINKGO) -r
 
 .PHONY: dep

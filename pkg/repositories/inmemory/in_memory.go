@@ -23,6 +23,10 @@ type InMemory struct {
 	CreateOrUpdateBlockCallCount int
 }
 
+func (repository *InMemory) GetFilter(name string) (filters.LogFilter, error) {
+	panic("implement me")
+}
+
 func (repository *InMemory) AddFilter(filter filters.LogFilter) error {
 	key := filter.Name
 	if _, ok := repository.logFilters[key]; ok || key == "" {
@@ -62,7 +66,7 @@ func (repository *InMemory) SetBlocksStatus(chainHead int64) {
 
 func (repository *InMemory) CreateLogs(logs []core.Log) error {
 	for _, log := range logs {
-		key := fmt.Sprintf("%s%s", log.BlockNumber, log.Index)
+		key := fmt.Sprintf("%d%d", log.BlockNumber, log.Index)
 		var logs []core.Log
 		repository.logs[key] = append(logs, log)
 	}
