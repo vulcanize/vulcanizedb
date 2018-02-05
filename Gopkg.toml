@@ -40,3 +40,7 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
   version = "1.7.3"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/neelance/graphql-go"
