@@ -123,8 +123,8 @@ CREATE TABLE log_filters (
     topic2 character varying(66),
     topic3 character varying(66),
     CONSTRAINT log_filters_from_block_check CHECK ((from_block >= 0)),
-    CONSTRAINT log_filters_from_block_check1 CHECK ((from_block >= 0)),
-    CONSTRAINT log_filters_name_check CHECK (((name)::text <> ''::text))
+    CONSTRAINT log_filters_name_check CHECK (((name)::text <> ''::text)),
+    CONSTRAINT log_filters_to_block_check CHECK ((to_block >= 0))
 );
 
 
