@@ -37,8 +37,13 @@ type ContractRepository interface {
 	FindContract(contractHash string) (core.Contract, error)
 }
 
+var ErrFilterDoesNotExist = func(name string) error {
+	return errors.New(fmt.Sprintf("filter %s does not exist", name))
+}
+
 type FilterRepository interface {
 	AddFilter(filter filters.LogFilter) error
+	GetFilter(name string) (filters.LogFilter, error)
 }
 
 type LogsRepository interface {

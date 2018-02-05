@@ -5,17 +5,17 @@ import (
 
 	"errors"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type LogFilters []LogFilter
 
 type LogFilter struct {
 	Name        string `json:"name"`
-	FromBlock   int64  `json:"fromBlock"`
-	ToBlock     int64  `json:"toBlock"`
+	FromBlock   int64  `json:"fromBlock" db:"from_block"`
+	ToBlock     int64  `json:"toBlock" db:"to_block"`
 	Address     string `json:"address"`
 	core.Topics `json:"topics"`
 }
