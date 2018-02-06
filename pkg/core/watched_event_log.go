@@ -1,6 +1,6 @@
 package core
 
-type WatchedEventLog struct {
+type WatchedEvent struct {
 	Name        string `json:"name"`                           // name
 	BlockNumber int64  `json:"block_number" db:"block_number"` // block_number
 	Address     string `json:"address"`                        // address

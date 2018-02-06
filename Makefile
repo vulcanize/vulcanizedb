@@ -81,6 +81,9 @@ import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
 
+startgraphql:
+	go install
+	vulcanizedb graphql --config environments/public.toml
 
 #Ethereum
 createprivate:

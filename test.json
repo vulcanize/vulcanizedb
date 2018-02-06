@@ -1,0 +1,1 @@
+{"query":"{\n  watchedEvents(name: \"TransferFilter\") {\n    total\n    watchedEvents {\n      name\n      blockNumber\n      address\n    }\n  }\n}\n","variables":null,"operationName":null}

@@ -23,6 +23,10 @@ type InMemory struct {
 	CreateOrUpdateBlockCallCount int
 }
 
+func (repository *InMemory) GetWatchedEvents(name string) ([]*core.WatchedEvent, error) {
+	panic("implement me")
+}
+
 func (repository *InMemory) GetFilter(name string) (filters.LogFilter, error) {
 	panic("implement me")
 }

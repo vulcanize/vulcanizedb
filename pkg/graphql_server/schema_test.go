@@ -44,7 +44,7 @@ var _ = Describe("GraphQL", func() {
 			FromBlock: 1,
 			ToBlock:   10,
 			Address:   "0x123456789",
-			Topics:    core.Topics{0: "event=1", 2: "event=2"},
+			Topics:    core.Topics{0: "topic=1", 2: "topic=2"},
 		})
 		if e != nil {
 			log.Fatal(e)
@@ -52,6 +52,27 @@ var _ = Describe("GraphQL", func() {
 		f, e := repository.GetFilter("TestFilter1")
 		if e != nil {
 			log.Println(f)
+			log.Fatal(e)
+		}
+
+		matchingEvent := core.Log{
+			BlockNumber: 5,
+			TxHash:      "0xTX1",
+			Address:     "0x123456789",
+			Topics:      core.Topics{0: "topic=1", 2: "topic=2"},
+			Index:       0,
+			Data:        "0xDATADATADATA",
+		}
+		nonMatchingEvent := core.Log{
+			BlockNumber: 5,
+			TxHash:      "0xTX2",
+			Address:     "0xOTHERADDRESS",
+			Topics:      core.Topics{0: "topic=1", 2: "topic=2"},
+			Index:       0,
+			Data:        "0xDATADATADATA",
+		}
+		e = repository.CreateLogs([]core.Log{matchingEvent, nonMatchingEvent})
+		if e != nil {
 			log.Fatal(e)
 		}
 	})
@@ -78,9 +99,62 @@ var _ = Describe("GraphQL", func() {
 						    "fromBlock": 1, 
 						    "toBlock": 10,
                             "address": "0x123456789",
-                            "topics": ["event=1", null, "event=2", null]
+                            "topics": ["topic=1", null, "topic=2", null]
 						}
 						 }`
+		var v interface{}
+		if len(response.Errors) != 0 {
+			log.Fatal(response.Errors)
+		}
+		err := json.Unmarshal(response.Data, &v)
+		Expect(err).ToNot(HaveOccurred())
+		a := formatJSON(response.Data)
+		e := formatJSON([]byte(expected))
+		Expect(a).To(Equal(e))
+	})
+
+	It("Queries example schema for specific watched event log", func() {
+		var variables map[string]interface{}
+
+		r := graphql_server.NewResolver(repository)
+		var schema = graphql.MustParseSchema(graphql_server.Schema, r)
+		response := schema.Exec(context.Background(),
+			`{
+                           watchedEvents(name: "TestFilter1") {
+                            total
+                            watchedEvents{
+                                name
+                                blockNumber
+                                address
+                                tx_hash
+                                topic0
+                                topic1
+                                topic2
+                                topic3
+                                data
+                              }
+                            }
+                        }`,
+			"",
+			variables)
+		expected := `{
+	                  "watchedEvents":
+	                     {
+                            "total": 1,
+                            "watchedEvents": [
+                                {"name":"TestFilter1",
+                                 "blockNumber": 5,
+                                 "address": "0x123456789",
+                                 "tx_hash": "0xTX1",
+                                 "topic0": "topic=1",
+                                 "topic1": "",
+                                 "topic2": "topic=2",
+                                 "topic3": "",
+                                 "data": "0xDATADATADATA"
+                                }
+                            ]
+	                     }
+	               }`
 		var v interface{}
 		if len(response.Errors) != 0 {
 			log.Fatal(response.Errors)

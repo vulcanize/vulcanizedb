@@ -168,6 +168,7 @@
     "internal/validation",
     "introspection",
     "log",
+    "relay",
     "trace"
   ]
   revision = "b46637030579abd312c5eea21d36845b6e9e7ca4"
@@ -378,6 +379,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "20ddf967d611a78096a13c66768b700b83ec10eee28dcd2d6223885d85860d66"
+  inputs-digest = "4d1806bf6a5678261abb604455d0076906ca5aba42e8625ee09cae019fb21d40"
   solver-name = "gps-cdcl"
   solver-version = 1

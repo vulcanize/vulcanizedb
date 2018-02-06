@@ -14,6 +14,7 @@ type Repository interface {
 	LogsRepository
 	ReceiptRepository
 	FilterRepository
+	WatchedEventLogs
 }
 
 var ErrBlockDoesNotExist = func(blockNumber int64) error {
@@ -60,6 +61,5 @@ type ReceiptRepository interface {
 }
 
 type WatchedEventLogs interface {
-	AllWatchedEventLogs() ([]*core.WatchedEventLog, error)
-	GetWatchedEvent(name string) (*core.WatchedEventLog, error)
+	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
 }

@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"log"
 	"net/http"
+	_ "net/http/pprof"
+
+	"log"
 
 	"github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -34,8 +36,8 @@ func init() {
 	)
 	rootCmd.AddCommand(graphqlCmd)
 
-	syncCmd.Flags().IntVarP(&port, "port", "p", 9090, "graphql: port")
-	syncCmd.Flags().StringVarP(&host, "host", "h", "localhost", "graphql: host")
+	syncCmd.Flags().IntVar(&port, "port", 9090, "graphql: port")
+	syncCmd.Flags().StringVar(&host, "host", "localhost", "graphql: host")
 
 }
 
