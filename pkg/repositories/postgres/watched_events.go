@@ -1,32 +1,22 @@
 package postgres
 
-type WatchedEventLog struct {
-	Name        string `json:"name"`                           // name
-	BlockNumber int64  `json:"block_number" db:"block_number"` // block_number
-	Address     string `json:"address"`                        // address
-	TxHash      string `json:"tx_hash" db:"tx_hash"`           // tx_hash
-	Index       int64  `json:"index"`                          // index
-	Topic0      string `json:"topic0"`                         // topic0
-	Topic1      string `json:"topic1"`                         // topic1
-	Topic2      string `json:"topic2"`                         // topic2
-	Topic3      string `json:"topic3"`                         // topic3
-	Data        string `json:"data"`                           // data
-}
+import (
+	"database/sql"
 
-type WatchedEventLogs interface {
-	AllWatchedEventLogs() ([]*WatchedEventLog, error)
-}
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+)
 
-func (db *DB) AllWatchedEventLogs() ([]*WatchedEventLog, error) {
+func (db *DB) AllWatchedEventLogs() ([]*core.WatchedEventLog, error) {
 	rows, err := db.DB.Queryx(`SELECT name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	lgs := make([]*WatchedEventLog, 0)
+	lgs := make([]*core.WatchedEventLog, 0)
 	for rows.Next() {
-		lg := new(WatchedEventLog)
+		lg := new(core.WatchedEventLog)
 		err := rows.StructScan(lg)
 		if err != nil {
 			return nil, err
@@ -37,4 +27,29 @@ func (db *DB) AllWatchedEventLogs() ([]*WatchedEventLog, error) {
 		return nil, err
 	}
 	return lgs, nil
+}
+
+func (db DB) GetWatchedEvent(name string) (*core.WatchedEventLog, error) {
+	watchedEventLog := core.WatchedEventLog{}
+	err := db.DB.Get(&watchedEventLog,
+		`SELECT name, 
+       block_number, 
+       address, 
+       tx_hash, 
+       topic0, 
+       topic1, 
+       topic2, 
+       topic3, 
+       data
+FROM watched_event_logs
+WHERE name = $1`, name)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return &core.WatchedEventLog{}, repositories.ErrFilterDoesNotExist(name)
+		default:
+			return &core.WatchedEventLog{}, err
+		}
+	}
+	return &watchedEventLog, nil
 }

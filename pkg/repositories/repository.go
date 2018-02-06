@@ -58,3 +58,8 @@ var ErrReceiptDoesNotExist = func(txHash string) error {
 type ReceiptRepository interface {
 	FindReceipt(txHash string) (core.Receipt, error)
 }
+
+type WatchedEventLogs interface {
+	AllWatchedEventLogs() ([]*core.WatchedEventLog, error)
+	GetWatchedEvent(name string) (*core.WatchedEventLog, error)
+}
