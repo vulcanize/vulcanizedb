@@ -14,14 +14,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// startGraphqlCmd represents the startGraphql command
 var graphqlCmd = &cobra.Command{
 	Use:   "graphql",
 	Short: "Starts Vulcanize graphql server",
 	Long: `Starts vulcanize graphql server
 and usage of using your command. For example:
 
-graphql --port 9090 --host localhost
+vulcanizedb graphql --port 9090 --host localhost
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		schema := parseSchema()

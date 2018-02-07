@@ -67,7 +67,7 @@ func addFilter() {
 		log.Fatal(err)
 	}
 	for _, filter := range logFilters {
-		err = repository.AddFilter(filter)
+		err = repository.CreateFilter(filter)
 		if err != nil {
 			log.Fatal(err)
 		}

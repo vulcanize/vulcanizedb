@@ -25,7 +25,7 @@ var _ = Describe("Creating contracts", func() {
 	It("returns the contract when it exists", func() {
 		repository.CreateContract(core.Contract{Hash: "x123"})
 
-		contract, err := repository.FindContract("x123")
+		contract, err := repository.GetContract("x123")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(contract.Hash).To(Equal("x123"))
 
@@ -34,13 +34,13 @@ var _ = Describe("Creating contracts", func() {
 	})
 
 	It("returns err if contract does not exist", func() {
-		_, err := repository.FindContract("x123")
+		_, err := repository.GetContract("x123")
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns empty array when no transactions 'To' a contract", func() {
 		repository.CreateContract(core.Contract{Hash: "x123"})
-		contract, err := repository.FindContract("x123")
+		contract, err := repository.GetContract("x123")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(contract.Transactions).To(BeEmpty())
 	})
@@ -59,7 +59,7 @@ var _ = Describe("Creating contracts", func() {
 		blockRepository.CreateOrUpdateBlock(block)
 
 		repository.CreateContract(core.Contract{Hash: "x123"})
-		contract, err := repository.FindContract("x123")
+		contract, err := repository.GetContract("x123")
 		Expect(err).ToNot(HaveOccurred())
 		sort.Slice(contract.Transactions, func(i, j int) bool {
 			return contract.Transactions[i].Hash < contract.Transactions[j].Hash
@@ -76,7 +76,7 @@ var _ = Describe("Creating contracts", func() {
 			Abi:  "{\"some\": \"json\"}",
 			Hash: "x123",
 		})
-		contract, err := repository.FindContract("x123")
+		contract, err := repository.GetContract("x123")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(contract.Abi).To(Equal("{\"some\": \"json\"}"))
 	})
@@ -90,7 +90,7 @@ var _ = Describe("Creating contracts", func() {
 			Abi:  "{\"some\": \"different json\"}",
 			Hash: "x123",
 		})
-		contract, err := repository.FindContract("x123")
+		contract, err := repository.GetContract("x123")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(contract.Abi).To(Equal("{\"some\": \"different json\"}"))
 	})

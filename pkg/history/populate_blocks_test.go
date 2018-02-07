@@ -21,7 +21,7 @@ var _ = Describe("Populating blocks", func() {
 		repository.CreateOrUpdateBlock(core.Block{Number: 2})
 
 		blocksAdded := history.PopulateMissingBlocks(blockchain, repository, 1)
-		_, err := repository.FindBlockByNumber(1)
+		_, err := repository.GetBlock(1)
 
 		Expect(blocksAdded).To(Equal(1))
 		Expect(err).ToNot(HaveOccurred())
@@ -54,15 +54,15 @@ var _ = Describe("Populating blocks", func() {
 
 		Expect(blocksAdded).To(Equal(3))
 		Expect(repository.BlockCount()).To(Equal(11))
-		_, err := repository.FindBlockByNumber(4)
+		_, err := repository.GetBlock(4)
 		Expect(err).To(HaveOccurred())
-		_, err = repository.FindBlockByNumber(5)
+		_, err = repository.GetBlock(5)
 		Expect(err).ToNot(HaveOccurred())
-		_, err = repository.FindBlockByNumber(8)
+		_, err = repository.GetBlock(8)
 		Expect(err).ToNot(HaveOccurred())
-		_, err = repository.FindBlockByNumber(10)
+		_, err = repository.GetBlock(10)
 		Expect(err).ToNot(HaveOccurred())
-		_, err = repository.FindBlockByNumber(13)
+		_, err = repository.GetBlock(13)
 		Expect(err).To(HaveOccurred())
 	})
 

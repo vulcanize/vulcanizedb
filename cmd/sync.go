@@ -46,7 +46,7 @@ var startingBlockNumber int
 func init() {
 	rootCmd.AddCommand(syncCmd)
 
-	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to parseSchema syncing from")
+	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
 func backFillAllBlocks(blockchain core.Blockchain, repository postgres.DB, missingBlocksPopulated chan int, startingBlockNumber int64) {

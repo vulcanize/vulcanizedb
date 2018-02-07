@@ -66,12 +66,12 @@ checkdbvars:
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
 
-.PHONY: checkdbvars
+.PHONY: rollback
 rollback: $(MIGRATE) checkdbvars
 	$(MIGRATE) -database $(CONNECT_STRING) -path ./db/migrations down 1
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
-.PHONY: checkdbvars
+.PHONY: migrate
 migrate: $(MIGRATE) checkdbvars
 	$(MIGRATE) -database $(CONNECT_STRING) -path ./db/migrations up
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
@@ -80,10 +80,6 @@ migrate: $(MIGRATE) checkdbvars
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
-
-startgraphql:
-	go install
-	vulcanizedb graphql --config environments/public.toml
 
 #Ethereum
 createprivate:

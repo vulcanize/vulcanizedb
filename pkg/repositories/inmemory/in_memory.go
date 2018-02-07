@@ -31,7 +31,7 @@ func (repository *InMemory) GetFilter(name string) (filters.LogFilter, error) {
 	panic("implement me")
 }
 
-func (repository *InMemory) AddFilter(filter filters.LogFilter) error {
+func (repository *InMemory) CreateFilter(filter filters.LogFilter) error {
 	key := filter.Name
 	if _, ok := repository.logFilters[key]; ok || key == "" {
 		return errors.New("filter name not unique")
@@ -51,7 +51,7 @@ func NewInMemory() *InMemory {
 	}
 }
 
-func (repository *InMemory) FindReceipt(txHash string) (core.Receipt, error) {
+func (repository *InMemory) GetReceipt(txHash string) (core.Receipt, error) {
 	if receipt, ok := repository.receipts[txHash]; ok {
 		return receipt, nil
 	}
@@ -77,7 +77,7 @@ func (repository *InMemory) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (repository *InMemory) FindLogs(address string, blockNumber int64) []core.Log {
+func (repository *InMemory) GetLogs(address string, blockNumber int64) []core.Log {
 	var matchingLogs []core.Log
 	for _, logs := range repository.logs {
 		for _, log := range logs {
@@ -99,7 +99,7 @@ func (repository *InMemory) ContractExists(contractHash string) bool {
 	return present
 }
 
-func (repository *InMemory) FindContract(contractHash string) (core.Contract, error) {
+func (repository *InMemory) GetContract(contractHash string) (core.Contract, error) {
 	contract, ok := repository.contracts[contractHash]
 	if !ok {
 		return core.Contract{}, repositories.ErrContractDoesNotExist(contractHash)
@@ -138,7 +138,7 @@ func (repository *InMemory) BlockCount() int {
 	return len(repository.blocks)
 }
 
-func (repository *InMemory) FindBlockByNumber(blockNumber int64) (core.Block, error) {
+func (repository *InMemory) GetBlock(blockNumber int64) (core.Block, error) {
 	if block, ok := repository.blocks[blockNumber]; ok {
 		return block, nil
 	}

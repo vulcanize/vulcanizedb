@@ -57,7 +57,7 @@ var _ = Describe("Watched Events Repository", func() {
 				Data:        "",
 			},
 		}
-		err := repository.AddFilter(filter)
+		err := repository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
 		err = repository.CreateLogs(logs)
 		Expect(err).ToNot(HaveOccurred())
@@ -103,7 +103,7 @@ var _ = Describe("Watched Events Repository", func() {
 			Index:       0,
 			Data:        "",
 		}}
-		err := repository.AddFilter(filter)
+		err := repository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
 		err = repository.CreateLogs(logs)
 		Expect(err).ToNot(HaveOccurred())

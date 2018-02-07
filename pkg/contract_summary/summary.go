@@ -18,7 +18,7 @@ type ContractSummary struct {
 }
 
 func NewSummary(blockchain core.Blockchain, repository repositories.Repository, contractHash string, blockNumber *big.Int) (ContractSummary, error) {
-	contract, err := repository.FindContract(contractHash)
+	contract, err := repository.GetContract(contractHash)
 	if err != nil {
 		return ContractSummary{}, err
 	} else {

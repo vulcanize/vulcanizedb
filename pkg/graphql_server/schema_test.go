@@ -39,7 +39,7 @@ var _ = Describe("GraphQL", func() {
 		cfg, _ = config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
 		repository = postgres.BuildRepository(node)
-		e := repository.AddFilter(filters.LogFilter{
+		e := repository.CreateFilter(filters.LogFilter{
 			Name:      "TestFilter1",
 			FromBlock: 1,
 			ToBlock:   10,

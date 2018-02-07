@@ -36,7 +36,7 @@ func (db DB) ContractExists(contractHash string) bool {
 	return exists
 }
 
-func (db DB) FindContract(contractHash string) (core.Contract, error) {
+func (db DB) GetContract(contractHash string) (core.Contract, error) {
 	var hash string
 	var abi string
 	contract := db.DB.QueryRow(

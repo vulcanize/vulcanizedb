@@ -36,7 +36,7 @@ var _ = Describe("Saving blocks", func() {
 		}
 		repositoryTwo := postgres.BuildRepository(nodeTwo)
 
-		_, err := repositoryTwo.FindBlockByNumber(123)
+		_, err := repositoryTwo.GetBlock(123)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -74,7 +74,7 @@ var _ = Describe("Saving blocks", func() {
 
 		repository.CreateOrUpdateBlock(block)
 
-		savedBlock, err := repository.FindBlockByNumber(blockNumber)
+		savedBlock, err := repository.GetBlock(blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(savedBlock.Reward).To(Equal(blockReward))
 		Expect(savedBlock.Difficulty).To(Equal(difficulty))
@@ -93,7 +93,7 @@ var _ = Describe("Saving blocks", func() {
 	})
 
 	It("does not find a block when searching for a number that does not exist", func() {
-		_, err := repository.FindBlockByNumber(111)
+		_, err := repository.GetBlock(111)
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -106,7 +106,7 @@ var _ = Describe("Saving blocks", func() {
 
 		repository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.FindBlockByNumber(123)
+		savedBlock, _ := repository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 	})
 
@@ -118,7 +118,7 @@ var _ = Describe("Saving blocks", func() {
 
 		repository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.FindBlockByNumber(123)
+		savedBlock, _ := repository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
 	})
 
@@ -138,7 +138,7 @@ var _ = Describe("Saving blocks", func() {
 		repository.CreateOrUpdateBlock(blockOne)
 		repository.CreateOrUpdateBlock(blockTwo)
 
-		savedBlock, _ := repository.FindBlockByNumber(123)
+		savedBlock, _ := repository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
 		Expect(savedBlock.Transactions[0].Hash).To(Equal("x678"))
 		Expect(savedBlock.Transactions[1].Hash).To(Equal("x9ab"))
@@ -163,8 +163,8 @@ var _ = Describe("Saving blocks", func() {
 
 		repository.CreateOrUpdateBlock(blockOne)
 		repositoryTwo.CreateOrUpdateBlock(blockTwo)
-		retrievedBlockOne, _ := repository.FindBlockByNumber(123)
-		retrievedBlockTwo, _ := repositoryTwo.FindBlockByNumber(123)
+		retrievedBlockOne, _ := repository.GetBlock(123)
+		retrievedBlockTwo, _ := repositoryTwo.GetBlock(123)
 
 		Expect(retrievedBlockOne.Transactions[0].Hash).To(Equal("x123"))
 		Expect(retrievedBlockTwo.Transactions[0].Hash).To(Equal("x678"))
@@ -196,7 +196,7 @@ var _ = Describe("Saving blocks", func() {
 
 		repository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.FindBlockByNumber(123)
+		savedBlock, _ := repository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 		savedTransaction := savedBlock.Transactions[0]
 		Expect(savedTransaction.Data).To(Equal(transaction.Data))
@@ -271,10 +271,10 @@ var _ = Describe("Saving blocks", func() {
 
 			repository.SetBlocksStatus(int64(blockNumberOfChainHead))
 
-			blockOne, err := repository.FindBlockByNumber(1)
+			blockOne, err := repository.GetBlock(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blockOne.IsFinal).To(Equal(true))
-			blockTwo, err := repository.FindBlockByNumber(24)
+			blockTwo, err := repository.GetBlock(24)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blockTwo.IsFinal).To(BeFalse())
 		})

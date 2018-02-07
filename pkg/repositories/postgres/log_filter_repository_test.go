@@ -37,7 +37,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.AddFilter(logFilter)
+			err := repository.CreateFilter(logFilter)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -54,7 +54,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.AddFilter(logFilter)
+			err := repository.CreateFilter(logFilter)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -72,7 +72,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.AddFilter(logFilter1)
+			err := repository.CreateFilter(logFilter1)
 			Expect(err).ToNot(HaveOccurred())
 			logFilter2 := filters.LogFilter{
 				Name:      "TestFilter2",
@@ -86,7 +86,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err = repository.AddFilter(logFilter2)
+			err = repository.CreateFilter(logFilter2)
 			Expect(err).ToNot(HaveOccurred())
 
 			logFilter1, err = repository.GetFilter("TestFilter1")

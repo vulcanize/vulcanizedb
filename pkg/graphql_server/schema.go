@@ -10,7 +10,6 @@ var Schema = `
 	schema {
 		query: Query
 	}
-	# The query type, represents all of the entry points into our object graph
 	type Query {
         logFilter(name: String!): LogFilter
         watchedEvents(name: String!): WatchedEventList
@@ -50,122 +49,114 @@ func NewResolver(repository repositories.Repository) *Resolver {
 	return &Resolver{repository: repository}
 }
 
-func (r *Resolver) WatchedEvents(args struct {
-	Name string
-}) (*watchedEventsResolver, error) {
-	wel, err := r.repository.GetWatchedEvents(args.Name)
-	if err != nil {
-		return &watchedEventsResolver{}, err
-	}
-	return &watchedEventsResolver{wels: wel}, err
-}
-
 func (r *Resolver) LogFilter(args struct {
 	Name string
 }) (*logFilterResolver, error) {
-	lf, err := r.repository.GetFilter(args.Name)
+	logFilter, err := r.repository.GetFilter(args.Name)
 	if err != nil {
 		return &logFilterResolver{}, err
 	}
-	return &logFilterResolver{&logFilter{&lf}}, nil
-}
-
-type logFilter struct {
-	*filters.LogFilter
+	return &logFilterResolver{&logFilter}, nil
 }
 
 type logFilterResolver struct {
-	lf *logFilter
+	lf *filters.LogFilter
 }
 
-func (lr *logFilterResolver) Name() string {
-	return lr.lf.Name
+func (lfr *logFilterResolver) Name() string {
+	return lfr.lf.Name
 }
 
-func (lr *logFilterResolver) FromBlock() *int32 {
-	fromBlock := int32(lr.lf.FromBlock)
+func (lfr *logFilterResolver) FromBlock() *int32 {
+	fromBlock := int32(lfr.lf.FromBlock)
 	return &fromBlock
 }
 
-func (lr *logFilterResolver) ToBlock() *int32 {
-	toBlock := int32(lr.lf.ToBlock)
+func (lfr *logFilterResolver) ToBlock() *int32 {
+	toBlock := int32(lfr.lf.ToBlock)
 	return &toBlock
 }
 
-func (lr *logFilterResolver) Address() string {
-	return lr.lf.Address
+func (lfr *logFilterResolver) Address() string {
+	return lfr.lf.Address
 }
 
-func (lr *logFilterResolver) Topics() []*string {
+func (lfr *logFilterResolver) Topics() []*string {
 	var topics = make([]*string, 4)
 	for i := range topics {
-		if lr.lf.Topics[i] != "" {
-			topics[i] = &lr.lf.Topics[i]
+		if lfr.lf.Topics[i] != "" {
+			topics[i] = &lfr.lf.Topics[i]
 		}
 	}
 	return topics
 }
 
+func (r *Resolver) WatchedEvents(args struct {
+	Name string
+}) (*watchedEventsResolver, error) {
+	watchedEvents, err := r.repository.GetWatchedEvents(args.Name)
+	if err != nil {
+		return &watchedEventsResolver{}, err
+	}
+	return &watchedEventsResolver{watchedEvents: watchedEvents}, err
+}
+
 type watchedEventsResolver struct {
-	wels []*core.WatchedEvent
+	watchedEvents []*core.WatchedEvent
 }
 
-func (wels watchedEventsResolver) WatchedEvents() []*watchedEventResolver {
-	return newWatchedEventsResolver(wels.wels)
+func (wesr watchedEventsResolver) WatchedEvents() []*watchedEventResolver {
+	return resolveWatchedEvents(wesr.watchedEvents)
 }
 
-func (wels watchedEventsResolver) Total() int32 {
-	return int32(len(wels.wels))
+func (wesr watchedEventsResolver) Total() int32 {
+	return int32(len(wesr.watchedEvents))
 }
 
-func newWatchedEventsResolver(wel []*core.WatchedEvent) []*watchedEventResolver {
+func resolveWatchedEvents(watchedEvents []*core.WatchedEvent) []*watchedEventResolver {
 	watchedEventResolvers := make([]*watchedEventResolver, 0)
-	for _, e := range wel {
-		watchedEventResolvers = append(watchedEventResolvers, &watchedEventResolver{&watchedEvent{e}})
+	for _, watchedEvent := range watchedEvents {
+		watchedEventResolvers = append(watchedEventResolvers, &watchedEventResolver{watchedEvent})
 	}
 	return watchedEventResolvers
 }
 
-type watchedEvent struct {
-	*core.WatchedEvent
-}
-
 type watchedEventResolver struct {
-	we *watchedEvent
+	we *core.WatchedEvent
 }
 
-func (wr watchedEventResolver) Name() string {
-	return wr.we.Name
+func (wer watchedEventResolver) Name() string {
+	return wer.we.Name
 }
 
-func (wr watchedEventResolver) BlockNumber() int32 {
-	return int32(wr.we.BlockNumber)
+func (wer watchedEventResolver) BlockNumber() int32 {
+	return int32(wer.we.BlockNumber)
 }
 
-func (wr watchedEventResolver) Address() string {
-	return wr.we.Address
+func (wer watchedEventResolver) Address() string {
+	return wer.we.Address
 }
 
-func (wr watchedEventResolver) TxHash() string {
-	return wr.we.TxHash
+func (wer watchedEventResolver) TxHash() string {
+	return wer.we.TxHash
 }
 
-func (wr watchedEventResolver) Topic0() string {
-	return wr.we.Topic0
+func (wer watchedEventResolver) Topic0() string {
+	return wer.we.Topic0
 }
 
-func (wr watchedEventResolver) Topic1() string {
-	return wr.we.Topic1
+func (wer watchedEventResolver) Topic1() string {
+	return wer.we.Topic1
 }
 
-func (wr watchedEventResolver) Topic2() string {
-	return wr.we.Topic2
+func (wer watchedEventResolver) Topic2() string {
+	return wer.we.Topic2
 }
 
-func (wr watchedEventResolver) Topic3() string {
-	return wr.we.Topic3
+func (wer watchedEventResolver) Topic3() string {
+	return wer.we.Topic3
 }
 
-func (wr watchedEventResolver) Data() string {
-	return wr.we.Data
+func (wer watchedEventResolver) Data() string {
+	return wer.we.Data
 }

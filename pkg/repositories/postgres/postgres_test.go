@@ -94,7 +94,7 @@ var _ = Describe("Postgres repository", func() {
 		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(badBlock)
-		savedBlock, err2 := repository.FindBlockByNumber(123)
+		savedBlock, err2 := repository.GetBlock(123)
 
 		Expect(err1).To(HaveOccurred())
 		Expect(err2).To(HaveOccurred())
@@ -129,7 +129,7 @@ var _ = Describe("Postgres repository", func() {
 		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err := repository.CreateLogs([]core.Log{badLog})
-		savedBlock := repository.FindLogs("x123", 1)
+		savedBlock := repository.GetLogs("x123", 1)
 
 		Expect(err).ToNot(BeNil())
 		Expect(savedBlock).To(BeNil())
@@ -148,7 +148,7 @@ var _ = Describe("Postgres repository", func() {
 		repository, _ := postgres.NewDB(cfg.Database, node)
 
 		err1 := repository.CreateOrUpdateBlock(block)
-		savedBlock, err2 := repository.FindBlockByNumber(123)
+		savedBlock, err2 := repository.GetBlock(123)
 
 		Expect(err1).To(HaveOccurred())
 		Expect(err2).To(HaveOccurred())
