@@ -1,14 +1,20 @@
-[{
-"name": "TransferFilter",
-"fromBlock": "0x488290",
-"toBlock": "0x488678",
-"address": "0x06012c8cf97bead5deae237070f9587f8e7a266d",
-"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]
-},
-{
-  "name": "NewFilter",
-  "fromBlock": "0x4B34AD",
-  "address": "0x06012c8cf97bead5deae237070f9587f8e7a266d",
-  "topics": ["0x241ea03ca20251805084d27d4440371c34a0b85ff108f6bb5611248f73818b80"]
-}]
+[
+  {
+    "name": "TransferFilter",
+    "fromBlock": "0x488290",
+    "toBlock": "0x488678",
+    "address": "0x06012c8cf97bead5deae237070f9587f8e7a266d",
+    "topics": [
+      "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    ]
+  },
+  {
+    "name": "NewFilter",
+    "fromBlock": "0x4B34AD",
+    "address": "0x06012c8cf97bead5deae237070f9587f8e7a266d",
+    "topics": [
+      "0x241ea03ca20251805084d27d4440371c34a0b85ff108f6bb5611248f73818b80"
+    ]
+  }
+]
 
