@@ -26,7 +26,7 @@ func (db DB) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (db DB) FindLogs(address string, blockNumber int64) []core.Log {
+func (db DB) GetLogs(address string, blockNumber int64) []core.Log {
 	logRows, _ := db.DB.Query(
 		`SELECT block_number,
 					  address,

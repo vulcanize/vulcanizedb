@@ -42,7 +42,7 @@ var _ = Describe("Logs Repository", func() {
 
 			block := core.Block{Transactions: []core.Transaction{transaction}}
 			blockRepository.CreateOrUpdateBlock(block)
-			receipt, err := repository.FindReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
+			receipt, err := repository.GetReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
 
 			Expect(err).ToNot(HaveOccurred())
 			//Not currently serializing bloom logs
@@ -55,7 +55,7 @@ var _ = Describe("Logs Repository", func() {
 		})
 
 		It("returns ErrReceiptDoesNotExist when receipt does not exist", func() {
-			receipt, err := repository.FindReceipt("DOES NOT EXIST")
+			receipt, err := repository.GetReceipt("DOES NOT EXIST")
 			Expect(err).To(HaveOccurred())
 			Expect(receipt).To(BeZero())
 		})
@@ -76,7 +76,7 @@ var _ = Describe("Logs Repository", func() {
 			}
 			blockRepository.CreateOrUpdateBlock(block)
 
-			_, err := repository.FindReceipt(receipt.TxHash)
+			_, err := repository.GetReceipt(receipt.TxHash)
 
 			Expect(err).To(Not(HaveOccurred()))
 		})

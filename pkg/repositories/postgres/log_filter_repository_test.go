@@ -37,7 +37,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.AddFilter(logFilter)
+			err := repository.CreateFilter(logFilter)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -54,8 +54,52 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.AddFilter(logFilter)
+			err := repository.CreateFilter(logFilter)
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("gets a log filter", func() {
+
+			logFilter1 := filters.LogFilter{
+				Name:      "TestFilter1",
+				FromBlock: 1,
+				ToBlock:   2,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err := repository.CreateFilter(logFilter1)
+			Expect(err).ToNot(HaveOccurred())
+			logFilter2 := filters.LogFilter{
+				Name:      "TestFilter2",
+				FromBlock: 10,
+				ToBlock:   20,
+				Address:   "0x8888f1f195afa192cfee860698584c030f4c9db1",
+				Topics: core.Topics{
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+					"0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+					"",
+				},
+			}
+			err = repository.CreateFilter(logFilter2)
+			Expect(err).ToNot(HaveOccurred())
+
+			logFilter1, err = repository.GetFilter("TestFilter1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(logFilter1).To(Equal(logFilter1))
+			logFilter1, err = repository.GetFilter("TestFilter1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(logFilter2).To(Equal(logFilter2))
+		})
+
+		It("returns ErrFilterDoesNotExist error when log does not exist", func() {
+			_, err := repository.GetFilter("TestFilter1")
+			Expect(err).To(Equal(repositories.ErrFilterDoesNotExist("TestFilter1")))
 		})
 	})
 })

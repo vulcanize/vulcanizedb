@@ -27,7 +27,7 @@ var _ = Describe("Watched Events Repository", func() {
 		postgres.ClearData(repository)
 	})
 
-	It("retrieves watched logs that match the event filter", func() {
+	It("retrieves watched event logs that match the event filter", func() {
 		filter := filters.LogFilter{
 			Name:      "Filter1",
 			FromBlock: 0,
@@ -45,7 +45,7 @@ var _ = Describe("Watched Events Repository", func() {
 				Data:        "",
 			},
 		}
-		expectedWatchedEventLog := []*postgres.WatchedEventLog{
+		expectedWatchedEventLog := []*core.WatchedEvent{
 			{
 				Name:        "Filter1",
 				BlockNumber: 0,
@@ -57,11 +57,57 @@ var _ = Describe("Watched Events Repository", func() {
 				Data:        "",
 			},
 		}
-		err := repository.AddFilter(filter)
+		err := repository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
 		err = repository.CreateLogs(logs)
 		Expect(err).ToNot(HaveOccurred())
-		matchingLogs, err := repository.AllWatchedEventLogs()
+		matchingLogs, err := repository.GetWatchedEvents("Filter1")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(matchingLogs).To(Equal(expectedWatchedEventLog))
+
+	})
+
+	It("retrieves a watched event log by name", func() {
+		filter := filters.LogFilter{
+			Name:      "Filter1",
+			FromBlock: 0,
+			ToBlock:   10,
+			Address:   "0x123",
+			Topics:    core.Topics{0: "event1=10", 2: "event3=hello"},
+		}
+		logs := []core.Log{
+			{
+				BlockNumber: 0,
+				TxHash:      "0x1",
+				Address:     "0x123",
+				Topics:      core.Topics{0: "event1=10", 2: "event3=hello"},
+				Index:       0,
+				Data:        "",
+			},
+			{
+				BlockNumber: 100,
+				TxHash:      "",
+				Address:     "",
+				Topics:      core.Topics{},
+				Index:       0,
+				Data:        "",
+			},
+		}
+		expectedWatchedEventLog := []*core.WatchedEvent{{
+			Name:        "Filter1",
+			BlockNumber: 0,
+			TxHash:      "0x1",
+			Address:     "0x123",
+			Topic0:      "event1=10",
+			Topic2:      "event3=hello",
+			Index:       0,
+			Data:        "",
+		}}
+		err := repository.CreateFilter(filter)
+		Expect(err).ToNot(HaveOccurred())
+		err = repository.CreateLogs(logs)
+		Expect(err).ToNot(HaveOccurred())
+		matchingLogs, err := repository.GetWatchedEvents("Filter1")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(matchingLogs).To(Equal(expectedWatchedEventLog))
 

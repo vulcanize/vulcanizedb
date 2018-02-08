@@ -7,7 +7,6 @@
 },
 {
   "name": "NewFilter",
-  "toBlock": "0x4B34AA",
   "fromBlock": "0x4B34AD",
   "address": "0x06012c8cf97bead5deae237070f9587f8e7a266d",
   "topics": ["0x241ea03ca20251805084d27d4440371c34a0b85ff108f6bb5611248f73818b80"]

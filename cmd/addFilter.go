@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"github.com/spf13/cobra"
 )
 
 // addFilterCmd represents the addFilter command
@@ -67,7 +67,7 @@ func addFilter() {
 		log.Fatal(err)
 	}
 	for _, filter := range logFilters {
-		err = repository.AddFilter(filter)
+		err = repository.CreateFilter(filter)
 		if err != nil {
 			log.Fatal(err)
 		}

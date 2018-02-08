@@ -14,6 +14,7 @@ type Repository interface {
 	LogsRepository
 	ReceiptRepository
 	FilterRepository
+	WatchedEventsRepository
 }
 
 var ErrBlockDoesNotExist = func(blockNumber int64) error {
@@ -22,7 +23,7 @@ var ErrBlockDoesNotExist = func(blockNumber int64) error {
 
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) error
-	FindBlockByNumber(blockNumber int64) (core.Block, error)
+	GetBlock(blockNumber int64) (core.Block, error)
 	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
 	SetBlocksStatus(chainHead int64)
 }
@@ -33,17 +34,22 @@ var ErrContractDoesNotExist = func(contractHash string) error {
 
 type ContractRepository interface {
 	CreateContract(contract core.Contract) error
+	GetContract(contractHash string) (core.Contract, error)
 	ContractExists(contractHash string) bool
-	FindContract(contractHash string) (core.Contract, error)
+}
+
+var ErrFilterDoesNotExist = func(name string) error {
+	return errors.New(fmt.Sprintf("filter %s does not exist", name))
 }
 
 type FilterRepository interface {
-	AddFilter(filter filters.LogFilter) error
+	CreateFilter(filter filters.LogFilter) error
+	GetFilter(name string) (filters.LogFilter, error)
 }
 
 type LogsRepository interface {
-	FindLogs(address string, blockNumber int64) []core.Log
 	CreateLogs(logs []core.Log) error
+	GetLogs(address string, blockNumber int64) []core.Log
 }
 
 var ErrReceiptDoesNotExist = func(txHash string) error {
@@ -51,5 +57,9 @@ var ErrReceiptDoesNotExist = func(txHash string) error {
 }
 
 type ReceiptRepository interface {
-	FindReceipt(txHash string) (core.Receipt, error)
+	GetReceipt(txHash string) (core.Receipt, error)
+}
+
+type WatchedEventsRepository interface {
+	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
 }

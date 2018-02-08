@@ -8,9 +8,9 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 var (
@@ -50,7 +50,7 @@ func (blockchain *Blockchain) GetAttributes(contract core.Contract) (core.Contra
 	for _, abiElement := range parsed.Methods {
 		if (len(abiElement.Outputs) > 0) && (len(abiElement.Inputs) == 0) && abiElement.Const {
 			attributeType := abiElement.Outputs[0].Type.String()
-			contractAttributes = append(contractAttributes, core.ContractAttribute{abiElement.Name, attributeType})
+			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: abiElement.Name, Type: attributeType})
 		}
 	}
 	sort.Sort(contractAttributes)
