@@ -41,18 +41,25 @@ var Schema = `
     }
 `
 
-type Resolver struct {
-	repository repositories.Repository
+type GraphQLRepositories struct {
+	repositories.BlockRepository
+	repositories.LogRepository
+	repositories.WatchedEventRepository
+	repositories.FilterRepository
 }
 
-func NewResolver(repository repositories.Repository) *Resolver {
-	return &Resolver{repository: repository}
+type Resolver struct {
+	graphQLRepositories GraphQLRepositories
+}
+
+func NewResolver(repositories GraphQLRepositories) *Resolver {
+	return &Resolver{graphQLRepositories: repositories}
 }
 
 func (r *Resolver) LogFilter(args struct {
 	Name string
 }) (*logFilterResolver, error) {
-	logFilter, err := r.repository.GetFilter(args.Name)
+	logFilter, err := r.graphQLRepositories.GetFilter(args.Name)
 	if err != nil {
 		return &logFilterResolver{}, err
 	}
@@ -94,7 +101,7 @@ func (lfr *logFilterResolver) Topics() []*string {
 func (r *Resolver) WatchedEvents(args struct {
 	Name string
 }) (*watchedEventsResolver, error) {
-	watchedEvents, err := r.repository.GetWatchedEvents(args.Name)
+	watchedEvents, err := r.graphQLRepositories.GetWatchedEvents(args.Name)
 	if err != nil {
 		return &watchedEventsResolver{}, err
 	}

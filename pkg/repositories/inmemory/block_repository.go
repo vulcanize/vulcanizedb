@@ -5,47 +5,47 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-type Blocks struct {
+type BlockRepository struct {
 	*InMemory
 }
 
-func (blocks *Blocks) CreateOrUpdateBlock(block core.Block) error {
-	blocks.CreateOrUpdateBlockCallCount++
-	blocks.blocks[block.Number] = block
+func (blockRepository *BlockRepository) CreateOrUpdateBlock(block core.Block) error {
+	blockRepository.CreateOrUpdateBlockCallCount++
+	blockRepository.blocks[block.Number] = block
 	for _, transaction := range block.Transactions {
-		blocks.receipts[transaction.Hash] = transaction.Receipt
-		blocks.logs[transaction.TxHash] = transaction.Logs
+		blockRepository.receipts[transaction.Hash] = transaction.Receipt
+		blockRepository.logs[transaction.TxHash] = transaction.Logs
 	}
 	return nil
 }
 
-func (repository *Blocks) GetBlock(blockNumber int64) (core.Block, error) {
-	if block, ok := repository.blocks[blockNumber]; ok {
+func (blockRepository *BlockRepository) GetBlock(blockNumber int64) (core.Block, error) {
+	if block, ok := blockRepository.blocks[blockNumber]; ok {
 		return block, nil
 	}
 	return core.Block{}, repositories.ErrBlockDoesNotExist(blockNumber)
 }
 
-func (repository *Blocks) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
+func (blockRepository *BlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
 	missingNumbers := []int64{}
 	for blockNumber := int64(startingBlockNumber); blockNumber <= endingBlockNumber; blockNumber++ {
-		if _, ok := repository.blocks[blockNumber]; !ok {
+		if _, ok := blockRepository.blocks[blockNumber]; !ok {
 			missingNumbers = append(missingNumbers, blockNumber)
 		}
 	}
 	return missingNumbers
 }
 
-func (repository *Blocks) SetBlocksStatus(chainHead int64) {
-	for key, block := range repository.blocks {
+func (blockRepository *BlockRepository) SetBlocksStatus(chainHead int64) {
+	for key, block := range blockRepository.blocks {
 		if key < (chainHead - blocksFromHeadBeforeFinal) {
 			tmp := block
 			tmp.IsFinal = true
-			repository.blocks[key] = tmp
+			blockRepository.blocks[key] = tmp
 		}
 	}
 }
 
-func (repository *Blocks) BlockCount() int {
-	return len(repository.blocks)
+func (blockRepository *BlockRepository) BlockCount() int {
+	return len(blockRepository.blocks)
 }

@@ -8,9 +8,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func (db DB) CreateLogs(logs []core.Log) error {
-	tx, _ := db.DB.BeginTx(context.Background(), nil)
-	for _, tlog := range logs {
+type LogRepository struct {
+	*DB
+}
+
+func (logRepository LogRepository) CreateLogs(lgs []core.Log) error {
+	tx, _ := logRepository.DB.BeginTx(context.Background(), nil)
+	for _, tlog := range lgs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -26,8 +30,8 @@ func (db DB) CreateLogs(logs []core.Log) error {
 	return nil
 }
 
-func (db DB) GetLogs(address string, blockNumber int64) []core.Log {
-	logRows, _ := db.DB.Query(
+func (logRepository LogRepository) GetLogs(address string, blockNumber int64) []core.Log {
+	logRows, _ := logRepository.DB.Query(
 		`SELECT block_number,
 					  address,
 					  tx_hash,
@@ -40,11 +44,11 @@ func (db DB) GetLogs(address string, blockNumber int64) []core.Log {
 				FROM logs
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
-	return db.loadLogs(logRows)
+	return logRepository.loadLogs(logRows)
 }
 
-func (db DB) loadLogs(logsRows *sql.Rows) []core.Log {
-	var logs []core.Log
+func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) []core.Log {
+	var lgs []core.Log
 	for logsRows.Next() {
 		var blockNumber int64
 		var address string
@@ -53,7 +57,7 @@ func (db DB) loadLogs(logsRows *sql.Rows) []core.Log {
 		var data string
 		var topics core.Topics
 		logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
-		log := core.Log{
+		lg := core.Log{
 			BlockNumber: blockNumber,
 			TxHash:      txHash,
 			Address:     address,
@@ -61,9 +65,9 @@ func (db DB) loadLogs(logsRows *sql.Rows) []core.Log {
 			Data:        data,
 		}
 		for i, topic := range topics {
-			log.Topics[i] = topic
+			lg.Topics[i] = topic
 		}
-		logs = append(logs, log)
+		lgs = append(lgs, lg)
 	}
-	return logs
+	return lgs
 }

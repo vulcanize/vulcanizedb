@@ -17,15 +17,15 @@ var ParsedWindowTemplate = *template.Must(template.New("window").Parse(WindowTem
 
 type BlockValidator struct {
 	blockchain            core.Blockchain
-	repository            repositories.BlockRepository
+	blockRepository       repositories.BlockRepository
 	windowSize            int
 	parsedLoggingTemplate template.Template
 }
 
-func NewBlockValidator(blockchain core.Blockchain, repository repositories.BlockRepository, windowSize int) *BlockValidator {
+func NewBlockValidator(blockchain core.Blockchain, blockRepository repositories.BlockRepository, windowSize int) *BlockValidator {
 	return &BlockValidator{
 		blockchain,
-		repository,
+		blockRepository,
 		windowSize,
 		ParsedWindowTemplate,
 	}
@@ -34,9 +34,9 @@ func NewBlockValidator(blockchain core.Blockchain, repository repositories.Block
 func (bv BlockValidator) ValidateBlocks() ValidationWindow {
 	window := MakeValidationWindow(bv.blockchain, bv.windowSize)
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
-	RetrieveAndUpdateBlocks(bv.blockchain, bv.repository, blockNumbers)
+	RetrieveAndUpdateBlocks(bv.blockchain, bv.blockRepository, blockNumbers)
 	lastBlock := bv.blockchain.LastBlock().Int64()
-	bv.repository.SetBlocksStatus(lastBlock)
+	bv.blockRepository.SetBlocksStatus(lastBlock)
 	return window
 }
 

@@ -24,11 +24,11 @@ func LoadConfig(environment string) config.Config {
 }
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
-	repository, err := postgres.NewDB(database, node)
+	db, err := postgres.NewDB(database, node)
 	if err != nil {
 		log.Fatalf("Error loading postgres\n%v", err)
 	}
-	return *repository
+	return *db
 }
 
 func ReadAbiFile(abiFilepath string) string {

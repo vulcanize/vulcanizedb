@@ -16,35 +16,39 @@ const (
 	blocksFromHeadBeforeFinal = 20
 )
 
-func (db DB) SetBlocksStatus(chainHead int64) {
+type BlockRepository struct {
+	*DB
+}
+
+func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) {
 	cutoff := chainHead - blocksFromHeadBeforeFinal
-	db.DB.Exec(`
+	blockRepository.DB.Exec(`
                   UPDATE blocks SET is_final = TRUE
                   WHERE is_final = FALSE AND number < $1`,
 		cutoff)
 }
 
-func (db DB) CreateOrUpdateBlock(block core.Block) error {
+func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) error {
 	var err error
-	retrievedBlockHash, ok := db.getBlockHash(block)
+	retrievedBlockHash, ok := blockRepository.getBlockHash(block)
 	if !ok {
-		err = db.insertBlock(block)
+		err = blockRepository.insertBlock(block)
 		return err
 	}
 	if ok && retrievedBlockHash != block.Hash {
-		err = db.removeBlock(block.Number)
+		err = blockRepository.removeBlock(block.Number)
 		if err != nil {
 			return err
 		}
-		err = db.insertBlock(block)
+		err = blockRepository.insertBlock(block)
 		return err
 	}
 	return nil
 }
 
-func (db DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
+func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
 	numbers := make([]int64, 0)
-	db.DB.Select(&numbers,
+	blockRepository.DB.Select(&numbers,
 		`SELECT all_block_numbers
             FROM (
                 SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
@@ -56,8 +60,8 @@ func (db DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber i
 	return numbers
 }
 
-func (db DB) GetBlock(blockNumber int64) (core.Block, error) {
-	blockRows := db.DB.QueryRowx(
+func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, error) {
+	blockRows := blockRepository.DB.QueryRowx(
 		`SELECT id,
                        number,
                        gaslimit,
@@ -75,8 +79,8 @@ func (db DB) GetBlock(blockNumber int64) (core.Block, error) {
                        reward,
                        uncles_reward
                FROM blocks
-               WHERE node_id = $1 AND number = $2`, db.nodeId, blockNumber)
-	savedBlock, err := db.loadBlock(blockRows)
+               WHERE node_id = $1 AND number = $2`, blockRepository.nodeId, blockNumber)
+	savedBlock, err := blockRepository.loadBlock(blockRows)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -88,21 +92,21 @@ func (db DB) GetBlock(blockNumber int64) (core.Block, error) {
 	return savedBlock, nil
 }
 
-func (db DB) insertBlock(block core.Block) error {
+func (blockRepository BlockRepository) insertBlock(block core.Block) error {
 	var blockId int64
-	tx, _ := db.DB.BeginTx(context.Background(), nil)
+	tx, _ := blockRepository.DB.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
                 (node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING id `,
-		db.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
+		blockRepository.nodeId, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
 		return ErrDBInsertFailed
 	}
-	err = db.createTransactions(tx, blockId, block.Transactions)
+	err = blockRepository.createTransactions(tx, blockId, block.Transactions)
 	if err != nil {
 		tx.Rollback()
 		return ErrDBInsertFailed
@@ -111,9 +115,9 @@ func (db DB) insertBlock(block core.Block) error {
 	return nil
 }
 
-func (db DB) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
+func (blockRepository BlockRepository) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
 	for _, transaction := range transactions {
-		err := db.createTransaction(tx, blockId, transaction)
+		err := blockRepository.createTransaction(tx, blockId, transaction)
 		if err != nil {
 			return err
 		}
@@ -131,7 +135,7 @@ func nullStringToZero(s string) string {
 	return s
 }
 
-func (db DB) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
+func (blockRepository BlockRepository) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
 	var transactionId int
 	err := tx.QueryRow(
 		`INSERT INTO transactions
@@ -144,12 +148,12 @@ func (db DB) createTransaction(tx *sql.Tx, blockId int64, transaction core.Trans
 		return err
 	}
 	if hasReceipt(transaction) {
-		receiptId, err := db.createReceipt(tx, transactionId, transaction.Receipt)
+		receiptId, err := blockRepository.createReceipt(tx, transactionId, transaction.Receipt)
 		if err != nil {
 			return err
 		}
 		if hasLogs(transaction) {
-			err = db.createLogs(tx, transaction.Receipt.Logs, receiptId)
+			err = blockRepository.createLogs(tx, transaction.Receipt.Logs, receiptId)
 			if err != nil {
 				return err
 			}
@@ -166,7 +170,7 @@ func hasReceipt(transaction core.Transaction) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
-func (db DB) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
+func (blockRepository BlockRepository) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
@@ -181,17 +185,17 @@ func (db DB) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) 
 	return receiptId, nil
 }
 
-func (db DB) getBlockHash(block core.Block) (string, bool) {
+func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, bool) {
 	var retrievedBlockHash string
-	db.DB.Get(&retrievedBlockHash,
+	blockRepository.DB.Get(&retrievedBlockHash,
 		`SELECT hash
                FROM blocks
                WHERE number = $1 AND node_id = $2`,
-		block.Number, db.nodeId)
+		block.Number, blockRepository.nodeId)
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
 
-func (db DB) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+func (blockRepository BlockRepository) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -210,19 +214,19 @@ func blockExists(retrievedBlockHash string) bool {
 	return retrievedBlockHash != ""
 }
 
-func (db DB) removeBlock(blockNumber int64) error {
-	_, err := db.DB.Exec(
+func (blockRepository BlockRepository) removeBlock(blockNumber int64) error {
+	_, err := blockRepository.DB.Exec(
 		`DELETE FROM
                 blocks
                 WHERE number=$1 AND node_id=$2`,
-		blockNumber, db.nodeId)
+		blockNumber, blockRepository.nodeId)
 	if err != nil {
 		return ErrDBDeleteFailed
 	}
 	return nil
 }
 
-func (db DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
+func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	type b struct {
 		ID int
 		core.Block
@@ -232,7 +236,7 @@ func (db DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	if err != nil {
 		return core.Block{}, err
 	}
-	transactionRows, err := db.DB.Queryx(`
+	transactionRows, err := blockRepository.DB.Queryx(`
             SELECT hash,
 				   nonce,
 				   tx_to,
@@ -247,11 +251,11 @@ func (db DB) loadBlock(blockRows *sqlx.Row) (core.Block, error) {
 	if err != nil {
 		return core.Block{}, err
 	}
-	block.Transactions = db.loadTransactions(transactionRows)
+	block.Transactions = blockRepository.LoadTransactions(transactionRows)
 	return block.Block, nil
 }
 
-func (db DB) loadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
+func (blockRepository BlockRepository) LoadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
 	var transactions []core.Transaction
 	for transactionRows.Next() {
 		var transaction core.Transaction

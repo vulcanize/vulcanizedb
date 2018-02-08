@@ -7,8 +7,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-func (db DB) GetReceipt(txHash string) (core.Receipt, error) {
-	row := db.DB.QueryRow(
+type ReceiptRepository struct {
+	*DB
+}
+
+func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Receipt, error) {
+	row := receiptRepository.DB.QueryRow(
 		`SELECT contract_address,
                        tx_hash,
                        cumulative_gas_used,

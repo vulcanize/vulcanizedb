@@ -1,4 +1,4 @@
-package postgres
+package postgres_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -6,10 +6,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
-var _ = Describe("Logs Repository", func() {
-	var repository repositories.FilterRepository
+var _ = Describe("Log Filters Repository", func() {
+	var db *postgres.DB
+	var filterRepository repositories.FilterRepository
 	var node core.Node
 	BeforeEach(func() {
 		node = core.Node{
@@ -18,7 +20,8 @@ var _ = Describe("Logs Repository", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		repository = BuildRepository(node)
+		db = postgres.NewTestDB(node)
+		filterRepository = postgres.FilterRepository{DB: db}
 	})
 
 	Describe("LogFilter", func() {
@@ -37,7 +40,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.CreateFilter(logFilter)
+			err := filterRepository.CreateFilter(logFilter)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -54,7 +57,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.CreateFilter(logFilter)
+			err := filterRepository.CreateFilter(logFilter)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -72,7 +75,7 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err := repository.CreateFilter(logFilter1)
+			err := filterRepository.CreateFilter(logFilter1)
 			Expect(err).ToNot(HaveOccurred())
 			logFilter2 := filters.LogFilter{
 				Name:      "TestFilter2",
@@ -86,19 +89,19 @@ var _ = Describe("Logs Repository", func() {
 					"",
 				},
 			}
-			err = repository.CreateFilter(logFilter2)
+			err = filterRepository.CreateFilter(logFilter2)
 			Expect(err).ToNot(HaveOccurred())
 
-			logFilter1, err = repository.GetFilter("TestFilter1")
+			logFilter1, err = filterRepository.GetFilter("TestFilter1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logFilter1).To(Equal(logFilter1))
-			logFilter1, err = repository.GetFilter("TestFilter1")
+			logFilter1, err = filterRepository.GetFilter("TestFilter1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logFilter2).To(Equal(logFilter2))
 		})
 
 		It("returns ErrFilterDoesNotExist error when log does not exist", func() {
-			_, err := repository.GetFilter("TestFilter1")
+			_, err := filterRepository.GetFilter("TestFilter1")
 			Expect(err).To(Equal(repositories.ErrFilterDoesNotExist("TestFilter1")))
 		})
 	})

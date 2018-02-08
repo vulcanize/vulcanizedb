@@ -22,8 +22,8 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
-var _ = Describe("Postgres repository", func() {
-	var repository *postgres.DB
+var _ = Describe("Postgres DB", func() {
+	var db *postgres.DB
 
 	It("connects to the database", func() {
 		cfg, _ := config.NewConfig("private")
@@ -40,9 +40,7 @@ var _ = Describe("Postgres repository", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		cfg, _ := config.NewConfig("private")
-		repository, _ = postgres.NewDB(cfg.Database, node)
-		postgres.ClearData(repository)
+		db = postgres.NewTestDB(node)
 	})
 
 	It("serializes big.Int to db", func() {
@@ -91,10 +89,11 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := postgres.NewDB(cfg.Database, node)
+		db, _ := postgres.NewDB(cfg.Database, node)
+		blocksRepository := postgres.BlockRepository{DB: db}
 
-		err1 := repository.CreateOrUpdateBlock(badBlock)
-		savedBlock, err2 := repository.GetBlock(123)
+		err1 := blocksRepository.CreateOrUpdateBlock(badBlock)
+		savedBlock, err2 := blocksRepository.GetBlock(123)
 
 		Expect(err1).To(HaveOccurred())
 		Expect(err2).To(HaveOccurred())
@@ -126,10 +125,11 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := postgres.NewDB(cfg.Database, node)
+		db, _ := postgres.NewDB(cfg.Database, node)
+		logRepository := postgres.LogRepository{DB: db}
 
-		err := repository.CreateLogs([]core.Log{badLog})
-		savedBlock := repository.GetLogs("x123", 1)
+		err := logRepository.CreateLogs([]core.Log{badLog})
+		savedBlock := logRepository.GetLogs("x123", 1)
 
 		Expect(err).ToNot(BeNil())
 		Expect(savedBlock).To(BeNil())
@@ -145,10 +145,11 @@ var _ = Describe("Postgres repository", func() {
 		}
 		cfg, _ := config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository, _ := postgres.NewDB(cfg.Database, node)
+		db, _ := postgres.NewDB(cfg.Database, node)
+		blockRepository := postgres.BlockRepository{DB: db}
 
-		err1 := repository.CreateOrUpdateBlock(block)
-		savedBlock, err2 := repository.GetBlock(123)
+		err1 := blockRepository.CreateOrUpdateBlock(block)
+		savedBlock, err2 := blockRepository.GetBlock(123)
 
 		Expect(err1).To(HaveOccurred())
 		Expect(err2).To(HaveOccurred())
