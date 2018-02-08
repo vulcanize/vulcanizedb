@@ -5,6 +5,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
+type Contracts struct {
+	*InMemory
+}
+
 func (repository *InMemory) ContractExists(contractHash string) bool {
 	_, present := repository.contracts[contractHash]
 	return present

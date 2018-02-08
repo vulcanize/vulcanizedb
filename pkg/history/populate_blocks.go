@@ -7,7 +7,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-func PopulateMissingBlocks(blockchain core.Blockchain, repository repositories.Repository, startingBlockNumber int64) int {
+func PopulateMissingBlocks(blockchain core.Blockchain, repository repositories.BlockRepository, startingBlockNumber int64) int {
 	lastBlock := blockchain.LastBlock().Int64()
 	blockRange := repository.MissingBlockNumbers(startingBlockNumber, lastBlock-1)
 	log.SetPrefix("")
@@ -16,7 +16,7 @@ func PopulateMissingBlocks(blockchain core.Blockchain, repository repositories.R
 	return len(blockRange)
 }
 
-func RetrieveAndUpdateBlocks(blockchain core.Blockchain, repository repositories.Repository, blockNumbers []int64) int {
+func RetrieveAndUpdateBlocks(blockchain core.Blockchain, repository repositories.BlockRepository, blockNumbers []int64) int {
 	for _, blockNumber := range blockNumbers {
 		block := blockchain.GetBlockByNumber(blockNumber)
 		repository.CreateOrUpdateBlock(block)

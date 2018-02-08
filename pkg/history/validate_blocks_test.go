@@ -47,7 +47,8 @@ var _ = Describe("Blocks validator", func() {
 			{Number: 6},
 			{Number: 7},
 		})
-		repository := inmemory.NewInMemory()
+		inMemoryDB := inmemory.NewInMemory()
+		repository := &inmemory.Blocks{InMemory: inMemoryDB}
 
 		validator := history.NewBlockValidator(blockchain, repository, 2)
 		window := validator.ValidateBlocks()
@@ -57,13 +58,15 @@ var _ = Describe("Blocks validator", func() {
 	})
 
 	It("logs window message", func() {
+		inMemoryDB := inmemory.NewInMemory()
+		blocks := &inmemory.Blocks{InMemory: inMemoryDB}
+
 		expectedMessage := &bytes.Buffer{}
 		window := history.ValidationWindow{LowerBound: 5, UpperBound: 7}
 		history.ParsedWindowTemplate.Execute(expectedMessage, history.ValidationWindow{LowerBound: 5, UpperBound: 7})
 
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{})
-		repository := inmemory.NewInMemory()
-		validator := history.NewBlockValidator(blockchain, repository, 2)
+		validator := history.NewBlockValidator(blockchain, blocks, 2)
 		actualMessage := &bytes.Buffer{}
 		validator.Log(actualMessage, window)
 		Expect(actualMessage).To(Equal(expectedMessage))

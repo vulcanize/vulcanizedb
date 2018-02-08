@@ -17,12 +17,12 @@ var ParsedWindowTemplate = *template.Must(template.New("window").Parse(WindowTem
 
 type BlockValidator struct {
 	blockchain            core.Blockchain
-	repository            repositories.Repository
+	repository            repositories.BlockRepository
 	windowSize            int
 	parsedLoggingTemplate template.Template
 }
 
-func NewBlockValidator(blockchain core.Blockchain, repository repositories.Repository, windowSize int) *BlockValidator {
+func NewBlockValidator(blockchain core.Blockchain, repository repositories.BlockRepository, windowSize int) *BlockValidator {
 	return &BlockValidator{
 		blockchain,
 		repository,
