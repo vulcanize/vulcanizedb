@@ -35,7 +35,7 @@ var _ = Describe("Logs Repository", func() {
 			}},
 			)
 
-			log := repository.FindLogs("x123", 1)
+			log := repository.GetLogs("x123", 1)
 
 			Expect(log).NotTo(BeNil())
 			Expect(log[0].BlockNumber).To(Equal(int64(1)))
@@ -49,7 +49,7 @@ var _ = Describe("Logs Repository", func() {
 		})
 
 		It("returns nil if log does not exist", func() {
-			log := repository.FindLogs("x123", 1)
+			log := repository.GetLogs("x123", 1)
 			Expect(log).To(BeNil())
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("Logs Repository", func() {
 			}},
 			)
 
-			log := repository.FindLogs("x123", 1)
+			log := repository.GetLogs("x123", 1)
 
 			type logIndex struct {
 				blockNumber int64
@@ -168,7 +168,7 @@ var _ = Describe("Logs Repository", func() {
 			block := core.Block{Transactions: []core.Transaction{transaction}}
 			err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
-			retrievedLogs := repository.FindLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
+			retrievedLogs := repository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 
 			expected := logs[1:]
 			Expect(retrievedLogs).To(Equal(expected))

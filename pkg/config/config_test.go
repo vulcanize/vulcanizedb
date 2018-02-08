@@ -3,9 +3,9 @@ package config_test
 import (
 	"path/filepath"
 
-	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
 )
 
 var _ = Describe("Loading the config", func() {

@@ -36,7 +36,7 @@ var _ = Describe("Blocks validator", func() {
 	})
 
 	It("returns the window size", func() {
-		window := history.ValidationWindow{1, 3}
+		window := history.ValidationWindow{LowerBound: 1, UpperBound: 3}
 		Expect(window.Size()).To(Equal(2))
 	})
 
@@ -51,15 +51,15 @@ var _ = Describe("Blocks validator", func() {
 
 		validator := history.NewBlockValidator(blockchain, repository, 2)
 		window := validator.ValidateBlocks()
-		Expect(window).To(Equal(history.ValidationWindow{5, 7}))
+		Expect(window).To(Equal(history.ValidationWindow{LowerBound: 5, UpperBound: 7}))
 		Expect(repository.BlockCount()).To(Equal(2))
 		Expect(repository.CreateOrUpdateBlockCallCount).To(Equal(2))
 	})
 
 	It("logs window message", func() {
 		expectedMessage := &bytes.Buffer{}
-		window := history.ValidationWindow{5, 7}
-		history.ParsedWindowTemplate.Execute(expectedMessage, history.ValidationWindow{5, 7})
+		window := history.ValidationWindow{LowerBound: 5, UpperBound: 7}
+		history.ParsedWindowTemplate.Execute(expectedMessage, history.ValidationWindow{LowerBound: 5, UpperBound: 7})
 
 		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{})
 		repository := inmemory.NewInMemory()

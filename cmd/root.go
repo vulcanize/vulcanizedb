@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 )
 
-var cfgFile string
-var databaseConfig config.Database
-var ipc string
+var (
+	cfgFile        string
+	databaseConfig config.Database
+	ipc            string
+)
 
 var rootCmd = &cobra.Command{
 	Use:              "vulcanizedb",

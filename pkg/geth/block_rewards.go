@@ -1,9 +1,9 @@
 package geth
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 func CalcUnclesReward(block core.Block, uncles []*types.Header) float64 {

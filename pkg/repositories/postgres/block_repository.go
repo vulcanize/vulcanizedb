@@ -56,7 +56,7 @@ func (db DB) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber i
 	return numbers
 }
 
-func (db DB) FindBlockByNumber(blockNumber int64) (core.Block, error) {
+func (db DB) GetBlock(blockNumber int64) (core.Block, error) {
 	blockRows := db.DB.QueryRowx(
 		`SELECT id,
                        number,

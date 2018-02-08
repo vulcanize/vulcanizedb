@@ -5,12 +5,12 @@ import (
 
 	"log"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/testing"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Reading contracts", func() {

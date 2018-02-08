@@ -5,10 +5,10 @@ import (
 
 	"strconv"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 func Info(client *rpc.Client) core.Node {

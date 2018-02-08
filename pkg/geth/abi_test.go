@@ -9,12 +9,12 @@ import (
 
 	"log"
 
-	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 var _ = Describe("ABI files", func() {

@@ -3,10 +3,10 @@ package integration
 import (
 	"log"
 
-	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 var _ = Describe("Rewards calculations", func() {
