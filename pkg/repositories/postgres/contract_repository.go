@@ -7,13 +7,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-func (db DB) CreateContract(contract core.Contract) error {
+type ContractRepository struct {
+	*DB
+}
+
+func (contractRepository ContractRepository) CreateContract(contract core.Contract) error {
 	abi := contract.Abi
 	var abiToInsert *string
 	if abi != "" {
 		abiToInsert = &abi
 	}
-	_, err := db.DB.Exec(
+	_, err := contractRepository.DB.Exec(
 		`INSERT INTO watched_contracts (contract_hash, contract_abi)
 				VALUES ($1, $2)
 				ON CONFLICT (contract_hash)
@@ -26,9 +30,9 @@ func (db DB) CreateContract(contract core.Contract) error {
 	return nil
 }
 
-func (db DB) ContractExists(contractHash string) bool {
+func (contractRepository ContractRepository) ContractExists(contractHash string) bool {
 	var exists bool
-	db.DB.QueryRow(
+	contractRepository.DB.QueryRow(
 		`SELECT exists(
                    SELECT 1
                    FROM watched_contracts
@@ -36,21 +40,21 @@ func (db DB) ContractExists(contractHash string) bool {
 	return exists
 }
 
-func (db DB) GetContract(contractHash string) (core.Contract, error) {
+func (contractRepository ContractRepository) GetContract(contractHash string) (core.Contract, error) {
 	var hash string
 	var abi string
-	contract := db.DB.QueryRow(
+	contract := contractRepository.DB.QueryRow(
 		`SELECT contract_hash, contract_abi FROM watched_contracts WHERE contract_hash=$1`, contractHash)
 	err := contract.Scan(&hash, &abi)
 	if err == sql.ErrNoRows {
 		return core.Contract{}, repositories.ErrContractDoesNotExist(contractHash)
 	}
-	savedContract := db.addTransactions(core.Contract{Hash: hash, Abi: abi})
+	savedContract := contractRepository.addTransactions(core.Contract{Hash: hash, Abi: abi})
 	return savedContract, nil
 }
 
-func (db DB) addTransactions(contract core.Contract) core.Contract {
-	transactionRows, _ := db.DB.Queryx(`
+func (contractRepository ContractRepository) addTransactions(contract core.Contract) core.Contract {
+	transactionRows, _ := contractRepository.DB.Queryx(`
             SELECT hash,
                    nonce,
                    tx_to,
@@ -62,7 +66,8 @@ func (db DB) addTransactions(contract core.Contract) core.Contract {
             FROM transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)
-	transactions := db.loadTransactions(transactionRows)
+	blockRepository := &BlockRepository{contractRepository.DB}
+	transactions := blockRepository.LoadTransactions(transactionRows)
 	savedContract := core.Contract{Hash: contract.Hash, Transactions: transactions, Abi: contract.Abi}
 	return savedContract
 }

@@ -12,7 +12,8 @@ import (
 )
 
 var _ = Describe("Saving blocks", func() {
-	var repository repositories.BlockRepository
+	var db *postgres.DB
+	var blockRepository repositories.BlockRepository
 	BeforeEach(func() {
 		node := core.Node{
 			GenesisBlock: "GENESIS",
@@ -20,21 +21,24 @@ var _ = Describe("Saving blocks", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		repository = postgres.BuildRepository(node)
+		db = postgres.NewTestDB(node)
+		blockRepository = postgres.BlockRepository{DB: db}
+
 	})
 
 	It("associates blocks to a node", func() {
 		block := core.Block{
 			Number: 123,
 		}
-		repository.CreateOrUpdateBlock(block)
+		blockRepository.CreateOrUpdateBlock(block)
 		nodeTwo := core.Node{
 			GenesisBlock: "0x456",
 			NetworkId:    1,
 			Id:           "x123456",
 			ClientName:   "Geth",
 		}
-		repositoryTwo := postgres.BuildRepository(nodeTwo)
+		dbTwo := postgres.NewTestDB(nodeTwo)
+		repositoryTwo := postgres.BlockRepository{DB: dbTwo}
 
 		_, err := repositoryTwo.GetBlock(123)
 		Expect(err).To(HaveOccurred())
@@ -72,9 +76,9 @@ var _ = Describe("Saving blocks", func() {
 			UnclesReward: unclesReward,
 		}
 
-		repository.CreateOrUpdateBlock(block)
+		blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, err := repository.GetBlock(blockNumber)
+		savedBlock, err := blockRepository.GetBlock(blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(savedBlock.Reward).To(Equal(blockReward))
 		Expect(savedBlock.Difficulty).To(Equal(difficulty))
@@ -93,7 +97,7 @@ var _ = Describe("Saving blocks", func() {
 	})
 
 	It("does not find a block when searching for a number that does not exist", func() {
-		_, err := repository.GetBlock(111)
+		_, err := blockRepository.GetBlock(111)
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -104,9 +108,9 @@ var _ = Describe("Saving blocks", func() {
 			Transactions: []core.Transaction{{}},
 		}
 
-		repository.CreateOrUpdateBlock(block)
+		blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.GetBlock(123)
+		savedBlock, _ := blockRepository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 	})
 
@@ -116,9 +120,9 @@ var _ = Describe("Saving blocks", func() {
 			Transactions: []core.Transaction{{}, {}},
 		}
 
-		repository.CreateOrUpdateBlock(block)
+		blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.GetBlock(123)
+		savedBlock, _ := blockRepository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
 	})
 
@@ -135,10 +139,10 @@ var _ = Describe("Saving blocks", func() {
 			Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
 		}
 
-		repository.CreateOrUpdateBlock(blockOne)
-		repository.CreateOrUpdateBlock(blockTwo)
+		blockRepository.CreateOrUpdateBlock(blockOne)
+		blockRepository.CreateOrUpdateBlock(blockTwo)
 
-		savedBlock, _ := repository.GetBlock(123)
+		savedBlock, _ := blockRepository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
 		Expect(savedBlock.Transactions[0].Hash).To(Equal("x678"))
 		Expect(savedBlock.Transactions[1].Hash).To(Equal("x9ab"))
@@ -154,16 +158,17 @@ var _ = Describe("Saving blocks", func() {
 			Number:       123,
 			Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
 		}
-		repository.CreateOrUpdateBlock(blockOne)
+		blockRepository.CreateOrUpdateBlock(blockOne)
 		nodeTwo := core.Node{
 			GenesisBlock: "0x456",
 			NetworkId:    1,
 		}
-		repositoryTwo := postgres.BuildRepository(nodeTwo)
+		dbTwo := postgres.NewTestDB(nodeTwo)
+		repositoryTwo := postgres.BlockRepository{DB: dbTwo}
 
-		repository.CreateOrUpdateBlock(blockOne)
+		blockRepository.CreateOrUpdateBlock(blockOne)
 		repositoryTwo.CreateOrUpdateBlock(blockTwo)
-		retrievedBlockOne, _ := repository.GetBlock(123)
+		retrievedBlockOne, _ := blockRepository.GetBlock(123)
 		retrievedBlockTwo, _ := repositoryTwo.GetBlock(123)
 
 		Expect(retrievedBlockOne.Transactions[0].Hash).To(Equal("x123"))
@@ -194,9 +199,9 @@ var _ = Describe("Saving blocks", func() {
 			Transactions: []core.Transaction{transaction},
 		}
 
-		repository.CreateOrUpdateBlock(block)
+		blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := repository.GetBlock(123)
+		savedBlock, _ := blockRepository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 		savedTransaction := savedBlock.Transactions[0]
 		Expect(savedTransaction.Data).To(Equal(transaction.Data))
@@ -211,54 +216,54 @@ var _ = Describe("Saving blocks", func() {
 
 	Describe("The missing block numbers", func() {
 		It("is empty the starting block number is the highest known block number", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 1})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
 
-			Expect(len(repository.MissingBlockNumbers(1, 1))).To(Equal(0))
+			Expect(len(blockRepository.MissingBlockNumbers(1, 1))).To(Equal(0))
 		})
 
 		It("is the only missing block number", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 2})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
 
-			Expect(repository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
+			Expect(blockRepository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
 		})
 
 		It("is both missing block numbers", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 3})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
 
-			Expect(repository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
+			Expect(blockRepository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
 		})
 
 		It("goes back to the starting block number", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 6})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 
-			Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
 		})
 
 		It("only includes missing block numbers", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 4})
-			repository.CreateOrUpdateBlock(core.Block{Number: 6})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 
-			Expect(repository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
 		})
 
 		It("is a list with multiple gaps", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 4})
-			repository.CreateOrUpdateBlock(core.Block{Number: 5})
-			repository.CreateOrUpdateBlock(core.Block{Number: 8})
-			repository.CreateOrUpdateBlock(core.Block{Number: 10})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 5})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 10})
 
-			Expect(repository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
+			Expect(blockRepository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
 		})
 
 		It("returns empty array when lower bound exceeds upper bound", func() {
-			Expect(repository.MissingBlockNumbers(10000, 1)).To(Equal([]int64{}))
+			Expect(blockRepository.MissingBlockNumbers(10000, 1)).To(Equal([]int64{}))
 		})
 
 		It("only returns requested range even when other gaps exist", func() {
-			repository.CreateOrUpdateBlock(core.Block{Number: 3})
-			repository.CreateOrUpdateBlock(core.Block{Number: 8})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
 
-			Expect(repository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
 		})
 	})
 
@@ -266,15 +271,15 @@ var _ = Describe("Saving blocks", func() {
 		It("sets the status of blocks within n-20 of chain HEAD as final", func() {
 			blockNumberOfChainHead := 25
 			for i := 0; i < blockNumberOfChainHead; i++ {
-				repository.CreateOrUpdateBlock(core.Block{Number: int64(i), Hash: strconv.Itoa(i)})
+				blockRepository.CreateOrUpdateBlock(core.Block{Number: int64(i), Hash: strconv.Itoa(i)})
 			}
 
-			repository.SetBlocksStatus(int64(blockNumberOfChainHead))
+			blockRepository.SetBlocksStatus(int64(blockNumberOfChainHead))
 
-			blockOne, err := repository.GetBlock(1)
+			blockOne, err := blockRepository.GetBlock(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blockOne.IsFinal).To(Equal(true))
-			blockTwo, err := repository.GetBlock(24)
+			blockTwo, err := blockRepository.GetBlock(24)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blockTwo.IsFinal).To(BeFalse())
 		})

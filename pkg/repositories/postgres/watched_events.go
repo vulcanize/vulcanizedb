@@ -4,8 +4,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func (db DB) GetWatchedEvents(name string) ([]*core.WatchedEvent, error) {
-	rows, err := db.DB.Queryx(`SELECT name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs where name=$1`, name)
+type WatchedEventRepository struct {
+	*DB
+}
+
+func (watchedEventRepository WatchedEventRepository) GetWatchedEvents(name string) ([]*core.WatchedEvent, error) {
+	rows, err := watchedEventRepository.DB.Queryx(`SELECT name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs where name=$1`, name)
 	if err != nil {
 		return nil, err
 	}

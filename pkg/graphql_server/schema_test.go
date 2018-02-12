@@ -14,7 +14,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/graphql_server"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
@@ -32,27 +31,38 @@ func formatJSON(data []byte) []byte {
 
 var _ = Describe("GraphQL", func() {
 	var cfg config.Config
-	var repository repositories.Repository
+	var graphQLRepositories graphql_server.GraphQLRepositories
 
 	BeforeEach(func() {
 
 		cfg, _ = config.NewConfig("private")
 		node := core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "geth"}
-		repository = postgres.BuildRepository(node)
-		e := repository.CreateFilter(filters.LogFilter{
+		db := postgres.NewTestDB(node)
+		blockRepository := &postgres.BlockRepository{DB: db}
+		logRepository := &postgres.LogRepository{DB: db}
+		filterRepository := &postgres.FilterRepository{DB: db}
+		watchedEventRepository := &postgres.WatchedEventRepository{DB: db}
+		graphQLRepositories = graphql_server.GraphQLRepositories{
+			WatchedEventRepository: watchedEventRepository,
+			BlockRepository:        blockRepository,
+			LogRepository:          logRepository,
+			FilterRepository:       filterRepository,
+		}
+
+		err := graphQLRepositories.CreateFilter(filters.LogFilter{
 			Name:      "TestFilter1",
 			FromBlock: 1,
 			ToBlock:   10,
 			Address:   "0x123456789",
 			Topics:    core.Topics{0: "topic=1", 2: "topic=2"},
 		})
-		if e != nil {
-			log.Fatal(e)
+		if err != nil {
+			log.Fatal(err)
 		}
-		f, e := repository.GetFilter("TestFilter1")
-		if e != nil {
-			log.Println(f)
-			log.Fatal(e)
+		filter, err := graphQLRepositories.GetFilter("TestFilter1")
+		if err != nil {
+			log.Println(filter)
+			log.Fatal(err)
 		}
 
 		matchingEvent := core.Log{
@@ -71,16 +81,16 @@ var _ = Describe("GraphQL", func() {
 			Index:       0,
 			Data:        "0xDATADATADATA",
 		}
-		e = repository.CreateLogs([]core.Log{matchingEvent, nonMatchingEvent})
-		if e != nil {
-			log.Fatal(e)
+		err = graphQLRepositories.CreateLogs([]core.Log{matchingEvent, nonMatchingEvent})
+		if err != nil {
+			log.Fatal(err)
 		}
 	})
 
 	It("Queries example schema for specific log filter", func() {
 		var variables map[string]interface{}
-		r := graphql_server.NewResolver(repository)
-		var schema = graphql.MustParseSchema(graphql_server.Schema, r)
+		resolver := graphql_server.NewResolver(graphQLRepositories)
+		var schema = graphql.MustParseSchema(graphql_server.Schema, resolver)
 		response := schema.Exec(context.Background(),
 			`{
                             logFilter(name: "TestFilter1") {
@@ -108,16 +118,16 @@ var _ = Describe("GraphQL", func() {
 		}
 		err := json.Unmarshal(response.Data, &v)
 		Expect(err).ToNot(HaveOccurred())
-		a := formatJSON(response.Data)
-		e := formatJSON([]byte(expected))
-		Expect(a).To(Equal(e))
+		actualJSON := formatJSON(response.Data)
+		expectedJSON := formatJSON([]byte(expected))
+		Expect(actualJSON).To(Equal(expectedJSON))
 	})
 
 	It("Queries example schema for specific watched event log", func() {
 		var variables map[string]interface{}
 
-		r := graphql_server.NewResolver(repository)
-		var schema = graphql.MustParseSchema(graphql_server.Schema, r)
+		resolver := graphql_server.NewResolver(graphQLRepositories)
+		var schema = graphql.MustParseSchema(graphql_server.Schema, resolver)
 		response := schema.Exec(context.Background(),
 			`{
                            watchedEvents(name: "TestFilter1") {
@@ -161,8 +171,8 @@ var _ = Describe("GraphQL", func() {
 		}
 		err := json.Unmarshal(response.Data, &v)
 		Expect(err).ToNot(HaveOccurred())
-		a := formatJSON(response.Data)
-		e := formatJSON([]byte(expected))
-		Expect(a).To(Equal(e))
+		actualJSON := formatJSON(response.Data)
+		expectedJSON := formatJSON([]byte(expected))
+		Expect(actualJSON).To(Equal(expectedJSON))
 	})
 })

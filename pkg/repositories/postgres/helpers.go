@@ -5,18 +5,18 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func ClearData(postgres *DB) {
-	postgres.DB.MustExec("DELETE FROM watched_contracts")
-	postgres.DB.MustExec("DELETE FROM transactions")
-	postgres.DB.MustExec("DELETE FROM blocks")
-	postgres.DB.MustExec("DELETE FROM logs")
-	postgres.DB.MustExec("DELETE FROM receipts")
-	postgres.DB.MustExec("DELETE FROM log_filters")
+func (db *DB) clearData() {
+	db.MustExec("DELETE FROM watched_contracts")
+	db.MustExec("DELETE FROM transactions")
+	db.MustExec("DELETE FROM blocks")
+	db.MustExec("DELETE FROM logs")
+	db.MustExec("DELETE FROM receipts")
+	db.MustExec("DELETE FROM log_filters")
 }
 
-func BuildRepository(node core.Node) *DB {
+func NewTestDB(node core.Node) *DB {
 	cfg, _ := config.NewConfig("private")
-	repository, _ := NewDB(cfg.Database, node)
-	ClearData(repository)
-	return repository
+	db, _ := NewDB(cfg.Database, node)
+	db.clearData()
+	return db
 }

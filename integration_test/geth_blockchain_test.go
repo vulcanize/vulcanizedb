@@ -19,18 +19,19 @@ func init() {
 var _ = Describe("Reading from the Geth blockchain", func() {
 
 	var blockchain *geth.Blockchain
-	var repository *inmemory.InMemory
+	var inMemory *inmemory.InMemory
 
 	BeforeEach(func() {
 		cfg, _ := config.NewConfig("private")
 		blockchain = geth.NewBlockchain(cfg.Client.IPCPath)
-		repository = inmemory.NewInMemory()
+		inMemory = inmemory.NewInMemory()
 	})
 
 	It("reads two blocks", func(done Done) {
-		validator := history.NewBlockValidator(blockchain, repository, 2)
+		blocks := &inmemory.BlockRepository{InMemory: inMemory}
+		validator := history.NewBlockValidator(blockchain, blocks, 2)
 		validator.ValidateBlocks()
-		Expect(repository.BlockCount()).To(Equal(2))
+		Expect(blocks.BlockCount()).To(Equal(2))
 		close(done)
 	}, 15)
 

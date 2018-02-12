@@ -1,30 +1,24 @@
 package postgres_test
 
 import (
-	"log"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
 
 var _ = Describe("Watched Events Repository", func() {
-	var repository *postgres.DB
+	var db *postgres.DB
+	var logRepository postgres.LogRepository
+	var filterRepository postgres.FilterRepository
+	var watchedEventRepository postgres.WatchedEventRepository
 
 	BeforeEach(func() {
-
-		cfg, err := config.NewConfig("private")
-		if err != nil {
-			log.Fatal(err)
-		}
-		repository, err = postgres.NewDB(cfg.Database, core.Node{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		postgres.ClearData(repository)
+		db = postgres.NewTestDB(core.Node{})
+		logRepository = postgres.LogRepository{DB: db}
+		filterRepository = postgres.FilterRepository{DB: db}
+		watchedEventRepository = postgres.WatchedEventRepository{DB: db}
 	})
 
 	It("retrieves watched event logs that match the event filter", func() {
@@ -57,11 +51,11 @@ var _ = Describe("Watched Events Repository", func() {
 				Data:        "",
 			},
 		}
-		err := repository.CreateFilter(filter)
+		err := filterRepository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
-		err = repository.CreateLogs(logs)
+		err = logRepository.CreateLogs(logs)
 		Expect(err).ToNot(HaveOccurred())
-		matchingLogs, err := repository.GetWatchedEvents("Filter1")
+		matchingLogs, err := watchedEventRepository.GetWatchedEvents("Filter1")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(matchingLogs).To(Equal(expectedWatchedEventLog))
 
@@ -103,11 +97,11 @@ var _ = Describe("Watched Events Repository", func() {
 			Index:       0,
 			Data:        "",
 		}}
-		err := repository.CreateFilter(filter)
+		err := filterRepository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
-		err = repository.CreateLogs(logs)
+		err = logRepository.CreateLogs(logs)
 		Expect(err).ToNot(HaveOccurred())
-		matchingLogs, err := repository.GetWatchedEvents("Filter1")
+		matchingLogs, err := watchedEventRepository.GetWatchedEvents("Filter1")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(matchingLogs).To(Equal(expectedWatchedEventLog))
 

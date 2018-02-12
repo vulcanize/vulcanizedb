@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/graphql_server"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -43,8 +44,18 @@ func init() {
 func parseSchema() *graphql.Schema {
 
 	blockchain := geth.NewBlockchain(ipc)
-	repository := utils.LoadPostgres(databaseConfig, blockchain.Node())
-	schema := graphql.MustParseSchema(graphql_server.Schema, graphql_server.NewResolver(repository))
+	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
+	blockRepository := &postgres.BlockRepository{DB: &db}
+	logRepository := &postgres.LogRepository{DB: &db}
+	filterRepository := &postgres.FilterRepository{DB: &db}
+	watchedEventRepository := &postgres.WatchedEventRepository{DB: &db}
+	graphQLRepositories := graphql_server.GraphQLRepositories{
+		WatchedEventRepository: watchedEventRepository,
+		BlockRepository:        blockRepository,
+		LogRepository:          logRepository,
+		FilterRepository:       filterRepository,
+	}
+	schema := graphql.MustParseSchema(graphql_server.Schema, graphql_server.NewResolver(graphQLRepositories))
 	return schema
 
 }

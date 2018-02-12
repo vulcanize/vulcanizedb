@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -56,7 +57,8 @@ func addFilter() {
 	}
 	var logFilters filters.LogFilters
 	blockchain := geth.NewBlockchain(ipc)
-	repository := utils.LoadPostgres(databaseConfig, blockchain.Node())
+	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
+	filterRepository := postgres.FilterRepository{DB: &db}
 	absFilePath := utils.AbsFilePath(filterFilepath)
 	logFilterBytes, err := ioutil.ReadFile(absFilePath)
 	if err != nil {
@@ -67,7 +69,7 @@ func addFilter() {
 		log.Fatal(err)
 	}
 	for _, filter := range logFilters {
-		err = repository.CreateFilter(filter)
+		err = filterRepository.CreateFilter(filter)
 		if err != nil {
 			log.Fatal(err)
 		}
