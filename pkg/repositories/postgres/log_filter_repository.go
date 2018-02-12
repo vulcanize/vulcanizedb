@@ -10,8 +10,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/repositories"
 )
 
-func (db DB) CreateFilter(query filters.LogFilter) error {
-	_, err := db.DB.Exec(
+type FilterRepository struct {
+	*DB
+}
+
+func (filterRepository FilterRepository) CreateFilter(query filters.LogFilter) error {
+	_, err := filterRepository.DB.Exec(
 		`INSERT INTO log_filters 
         (name, from_block, to_block, address, topic0, topic1, topic2, topic3)
         VALUES ($1, NULLIF($2, -1), NULLIF($3, -1), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''))`,
@@ -22,9 +26,9 @@ func (db DB) CreateFilter(query filters.LogFilter) error {
 	return nil
 }
 
-func (db DB) GetFilter(name string) (filters.LogFilter, error) {
+func (filterRepository FilterRepository) GetFilter(name string) (filters.LogFilter, error) {
 	lf := DBLogFilter{}
-	err := db.DB.Get(&lf,
+	err := filterRepository.DB.Get(&lf,
 		`SELECT
                   id,
                   name,

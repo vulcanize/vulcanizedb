@@ -11,7 +11,8 @@ import (
 )
 
 var _ = Describe("Logs Repository", func() {
-	var repository repositories.LogsRepository
+	var db *postgres.DB
+	var logsRepository repositories.LogRepository
 	var node core.Node
 	BeforeEach(func() {
 		node = core.Node{
@@ -20,12 +21,13 @@ var _ = Describe("Logs Repository", func() {
 			Id:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
-		repository = postgres.BuildRepository(node)
+		db = postgres.NewTestDB(node)
+		logsRepository = postgres.LogRepository{DB: db}
 	})
 
 	Describe("Saving logs", func() {
 		It("returns the log when it exists", func() {
-			repository.CreateLogs([]core.Log{{
+			logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
 				Index:       0,
 				Address:     "x123",
@@ -35,7 +37,7 @@ var _ = Describe("Logs Repository", func() {
 			}},
 			)
 
-			log := repository.GetLogs("x123", 1)
+			log := logsRepository.GetLogs("x123", 1)
 
 			Expect(log).NotTo(BeNil())
 			Expect(log[0].BlockNumber).To(Equal(int64(1)))
@@ -49,12 +51,12 @@ var _ = Describe("Logs Repository", func() {
 		})
 
 		It("returns nil if log does not exist", func() {
-			log := repository.GetLogs("x123", 1)
+			log := logsRepository.GetLogs("x123", 1)
 			Expect(log).To(BeNil())
 		})
 
 		It("filters to the correct block number and address", func() {
-			repository.CreateLogs([]core.Log{{
+			logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
 				Index:       0,
 				Address:     "x123",
@@ -63,7 +65,7 @@ var _ = Describe("Logs Repository", func() {
 				Data:        "xabc",
 			}},
 			)
-			repository.CreateLogs([]core.Log{{
+			logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 1,
 				Index:       1,
 				Address:     "x123",
@@ -72,7 +74,7 @@ var _ = Describe("Logs Repository", func() {
 				Data:        "xdef",
 			}},
 			)
-			repository.CreateLogs([]core.Log{{
+			logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 2,
 				Index:       0,
 				Address:     "x123",
@@ -82,7 +84,7 @@ var _ = Describe("Logs Repository", func() {
 			}},
 			)
 
-			log := repository.GetLogs("x123", 1)
+			log := logsRepository.GetLogs("x123", 1)
 
 			type logIndex struct {
 				blockNumber int64
@@ -114,7 +116,8 @@ var _ = Describe("Logs Repository", func() {
 
 		It("saves the logs attached to a receipt", func() {
 			var blockRepository repositories.BlockRepository
-			blockRepository = postgres.BuildRepository(node)
+			blockRepository = postgres.BlockRepository{DB: db}
+
 			logs := []core.Log{{
 				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
 				BlockNumber: 4745407,
@@ -168,7 +171,7 @@ var _ = Describe("Logs Repository", func() {
 			block := core.Block{Transactions: []core.Transaction{transaction}}
 			err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
-			retrievedLogs := repository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
+			retrievedLogs := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 
 			expected := logs[1:]
 			Expect(retrievedLogs).To(Equal(expected))

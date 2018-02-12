@@ -8,15 +8,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
-type Repository interface {
-	BlockRepository
-	ContractRepository
-	LogsRepository
-	ReceiptRepository
-	FilterRepository
-	WatchedEventsRepository
-}
-
 var ErrBlockDoesNotExist = func(blockNumber int64) error {
 	return errors.New(fmt.Sprintf("Block number %d does not exist", blockNumber))
 }
@@ -47,7 +38,7 @@ type FilterRepository interface {
 	GetFilter(name string) (filters.LogFilter, error)
 }
 
-type LogsRepository interface {
+type LogRepository interface {
 	CreateLogs(logs []core.Log) error
 	GetLogs(address string, blockNumber int64) []core.Log
 }
@@ -60,6 +51,6 @@ type ReceiptRepository interface {
 	GetReceipt(txHash string) (core.Receipt, error)
 }
 
-type WatchedEventsRepository interface {
+type WatchedEventRepository interface {
 	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
 }
