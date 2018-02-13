@@ -1,41 +1,24 @@
 package config_test
 
 import (
-	"path/filepath"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("Loading the config", func() {
 
 	It("reads the private config using the environment", func() {
-		privateConfig, err := cfg.NewConfig("private")
-
+		testConfig := viper.New()
+		testConfig.SetConfigName("private")
+		testConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+		err := testConfig.ReadInConfig()
+		Expect(viper.Get("client.ipcpath")).To(BeNil())
 		Expect(err).To(BeNil())
-		Expect(privateConfig.Database.Hostname).To(Equal("localhost"))
-		Expect(privateConfig.Database.Name).To(Equal("vulcanize_private"))
-		Expect(privateConfig.Database.Port).To(Equal(5432))
-		expandedPath := filepath.Join(cfg.ProjectRoot(), "test_data_dir/geth.ipc")
-		Expect(privateConfig.Client.IPCPath).To(Equal(expandedPath))
-	})
-
-	It("returns an error when there is no matching config file", func() {
-		config, err := cfg.NewConfig("bad-config")
-
-		Expect(config).To(Equal(cfg.Config{}))
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("reads the infura config using the environment", func() {
-		infuraConfig, err := cfg.NewConfig("infura")
-
-		Expect(err).To(BeNil())
-		Expect(infuraConfig.Database.Hostname).To(Equal("localhost"))
-		Expect(infuraConfig.Database.Name).To(Equal("vulcanize_private"))
-		Expect(infuraConfig.Database.Port).To(Equal(5432))
-		Expect(infuraConfig.Client.IPCPath).To(Equal("https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"))
+		Expect(testConfig.Get("database.hostname")).To(Equal("localhost"))
+		Expect(testConfig.Get("database.name")).To(Equal("vulcanize_private"))
+		Expect(testConfig.Get("database.port")).To(Equal(int64(5432)))
+		Expect(testConfig.Get("client.ipcpath")).To(Equal("test_data_dir/geth.ipc"))
 	})
 
 })

@@ -3,25 +3,20 @@ package integration
 import (
 	"math/big"
 
-	"log"
-
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	cfg "github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/testing"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Reading contracts", func() {
 
 	Describe("Reading the list of attributes", func() {
 		It("returns a string attribute for a real contract", func() {
-			config, err := cfg.NewConfig("infura")
-			if err != nil {
-				log.Fatalln(err)
-			}
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			contractAttributes, err := blockchain.GetAttributes(contract)
@@ -34,8 +29,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("does not return an attribute that takes an input", func() {
-			config, err := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			contractAttributes, err := blockchain.GetAttributes(contract)
@@ -46,8 +40,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("does not return an attribute that is not constant", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			contractAttributes, err := blockchain.GetAttributes(contract)
@@ -60,8 +53,7 @@ var _ = Describe("Reading contracts", func() {
 
 	Describe("Getting a contract attribute", func() {
 		It("returns the correct attribute for a real contract", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 
 			contract := testing.SampleContract()
 			name, err := blockchain.GetAttribute(contract, "name", nil)
@@ -71,8 +63,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns the correct attribute for a real contract", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			name, err := blockchain.GetAttribute(contract, "name", nil)
@@ -82,8 +73,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns the correct attribute for a real contract at a specific block height", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			name, err := blockchain.GetAttribute(contract, "name", big.NewInt(4701536))
@@ -93,8 +83,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns an error when asking for an attribute that does not exist", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			name, err := blockchain.GetAttribute(contract, "missing_attribute", nil)
@@ -115,8 +104,7 @@ var _ = Describe("Reading contracts", func() {
 				},
 				Index: 19,
 				Data:  "0x0000000000000000000000000000000000000000000000000c7d713b49da0000"}
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			logs, err := blockchain.GetLogs(contract, big.NewInt(4703824), nil)
@@ -128,8 +116,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns and empty log array when no events for a given block / contract combo", func() {
-			config, _ := cfg.NewConfig("infura")
-			blockchain := geth.NewBlockchain(config.Client.IPCPath)
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 
 			logs, err := blockchain.GetLogs(core.Contract{Hash: "x123"}, big.NewInt(4703824), nil)
 
@@ -138,6 +125,21 @@ var _ = Describe("Reading contracts", func() {
 
 		})
 
+	})
+
+	Describe("Fetching Contract data", func() {
+		It("returns the correct attribute for a real contract", func() {
+			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
+
+			contract := testing.SampleContract()
+			var balance = new(big.Int)
+			args := common.HexToHash("0xd26114cd6ee289accf82350c8d8487fedb8a0c07")
+			err := blockchain.FetchContractData(contract.Abi, "0xd26114cd6ee289accf82350c8d8487fedb8a0c07", "balanceOf", args, &balance, 5167471)
+			Expect(err).NotTo(HaveOccurred())
+			expected := new(big.Int)
+			expected.SetString("10897295492887612977137", 10)
+			Expect(balance).To(Equal(expected))
+		})
 	})
 
 })

@@ -1,11 +1,11 @@
 package testing
 
 import (
-	"path/filepath"
+	"log"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 func FindAttribute(contractAttributes core.ContractAttributes, attributeName string) *core.ContractAttribute {
@@ -25,7 +25,9 @@ func SampleContract() core.Contract {
 }
 
 func sampleAbiFileContents() string {
-	abiFilepath := filepath.Join(config.ProjectRoot(), "pkg", "geth", "testing", "sample_abi.json")
-	abiFileContents, _ := geth.ReadAbiFile(abiFilepath)
+	abiFileContents, err := geth.ReadAbiFile(test_config.ABIFilePath + "sample_abi.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	return abiFileContents
 }
