@@ -29,12 +29,13 @@ func NewBlockchain(ipcPath string) *Blockchain {
 	blockchain := Blockchain{}
 	rpcClient, err := rpc.Dial(ipcPath)
 	if err != nil {
+		log.Println("Unable to connect to node")
 		log.Fatal(err)
 	}
 	client := ethclient.NewClient(rpcClient)
 	blockchain.node = node.Info(rpcClient)
 	if infura := isInfuraNode(ipcPath); infura {
-		blockchain.node.Id = "infura"
+		blockchain.node.ID = "infura"
 		blockchain.node.ClientName = "infura"
 	}
 	blockchain.client = client

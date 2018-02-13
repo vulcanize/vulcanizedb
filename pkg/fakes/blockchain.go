@@ -9,12 +9,17 @@ import (
 )
 
 type Blockchain struct {
-	logs               map[string][]core.Log
-	blocks             map[int64]core.Block
-	contractAttributes map[string]map[string]string
-	blocksChannel      chan core.Block
-	WasToldToStop      bool
-	node               core.Node
+	logs                map[string][]core.Log
+	blocks              map[int64]core.Block
+	contractAttributes  map[string]map[string]string
+	blocksChannel       chan core.Block
+	WasToldToStop       bool
+	node                core.Node
+	ContractReturnValue []byte
+}
+
+func (blockchain *Blockchain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
+	return blockchain.ContractReturnValue, nil
 }
 
 func (blockchain *Blockchain) LastBlock() *big.Int {
@@ -50,7 +55,7 @@ func NewBlockchain() *Blockchain {
 		blocks:             make(map[int64]core.Block),
 		logs:               make(map[string][]core.Log),
 		contractAttributes: make(map[string]map[string]string),
-		node:               core.Node{GenesisBlock: "GENESIS", NetworkId: 1, Id: "x123", ClientName: "Geth"},
+		node:               core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
 	}
 }
 
@@ -91,7 +96,7 @@ func (blockchain *Blockchain) GetAttributes(contract core.Contract) (core.Contra
 	var contractAttributes core.ContractAttributes
 	attributes, ok := blockchain.contractAttributes[contract.Hash+"-1"]
 	if ok {
-		for key, _ := range attributes {
+		for key := range attributes {
 			contractAttributes = append(contractAttributes, core.ContractAttribute{Name: key, Type: "string"})
 		}
 	}

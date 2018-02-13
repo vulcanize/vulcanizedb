@@ -11,17 +11,9 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories/postgres"
 )
-
-func LoadConfig(environment string) config.Config {
-	cfg, err := config.NewConfig(environment)
-	if err != nil {
-		log.Fatalf("Error loading config\n%v", err)
-	}
-	return cfg
-}
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 	db, err := postgres.NewDB(database, node)
@@ -53,7 +45,7 @@ func GetAbi(abiFilepath string, contractHash string, network string) string {
 	if abiFilepath != "" {
 		contractAbiString = ReadAbiFile(abiFilepath)
 	} else {
-		url := geth.GenUrl(network)
+		url := geth.GenURL(network)
 		etherscan := geth.NewEtherScanClient(url)
 		log.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
 		contractAbiString, _ = etherscan.GetAbi(contractHash)

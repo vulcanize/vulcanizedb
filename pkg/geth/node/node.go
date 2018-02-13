@@ -13,13 +13,13 @@ import (
 
 func Info(client *rpc.Client) core.Node {
 	node := core.Node{}
-	node.NetworkId = NetworkId(client)
+	node.NetworkID = NetworkID(client)
 	node.GenesisBlock = GenesisBlock(client)
-	node.Id, node.ClientName = IdClientName(client)
+	node.ID, node.ClientName = IDClientName(client)
 	return node
 }
 
-func IdClientName(client *rpc.Client) (string, string) {
+func IDClientName(client *rpc.Client) (string, string) {
 	var info p2p.NodeInfo
 	modules, _ := client.SupportedModules()
 	if _, ok := modules["admin"]; ok {
@@ -29,7 +29,7 @@ func IdClientName(client *rpc.Client) (string, string) {
 	return "", ""
 }
 
-func NetworkId(client *rpc.Client) float64 {
+func NetworkID(client *rpc.Client) float64 {
 	var version string
 	client.CallContext(context.Background(), &version, "net_version")
 	networkId, _ := strconv.ParseFloat(version, 64)

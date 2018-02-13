@@ -7,12 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_summary"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/inmemory"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories/inmemory"
 )
 
-func NewCurrentContractSummary(blockchain core.Blockchain, contractRepository repositories.ContractRepository, contractHash string) (contract_summary.ContractSummary, error) {
+func NewCurrentContractSummary(blockchain core.Blockchain, contractRepository datastore.ContractRepository, contractHash string) (contract_summary.ContractSummary, error) {
 	return contract_summary.NewSummary(blockchain, contractRepository, contractHash, nil)
 }
 
@@ -143,6 +143,7 @@ var _ = Describe("The contract summary", func() {
 				},
 			))
 		})
+
 	})
 
 })
