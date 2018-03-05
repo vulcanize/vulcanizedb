@@ -39,16 +39,6 @@ The default location for Ethereum is:
     
    * see `./environments` for example config 
 
-## Watch specific events
-1. Start geth 
-2. In a separate terminal start vulcanize_db
-    - `vulcanizedb sync --config <config.toml> --starting-block-number <block-number>`
-3. Create event filter 
-    - `vulcanizedb addFilter --config <config.toml> --filter-filepath <filter.json>`
-   * see `./filters` for example filter 
-4. The filters are tracked in the `log_filters` table and the filtered events 
-will show up in the `watched_log_events` view
-     
 ## Running the Tests
 
 ### Unit Tests

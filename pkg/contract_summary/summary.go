@@ -4,7 +4,7 @@ import (
 	"math/big"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
 type ContractSummary struct {
@@ -17,13 +17,12 @@ type ContractSummary struct {
 	blockChain           core.Blockchain
 }
 
-func NewSummary(blockchain core.Blockchain, contractRepository repositories.ContractRepository, contractHash string, blockNumber *big.Int) (ContractSummary, error) {
+func NewSummary(blockchain core.Blockchain, contractRepository datastore.ContractRepository, contractHash string, blockNumber *big.Int) (ContractSummary, error) {
 	contract, err := contractRepository.GetContract(contractHash)
 	if err != nil {
 		return ContractSummary{}, err
-	} else {
-		return newContractSummary(blockchain, contract, blockNumber), nil
 	}
+	return newContractSummary(blockchain, contract, blockNumber), nil
 }
 
 func (contractSummary ContractSummary) GetStateAttribute(attributeName string) interface{} {
@@ -48,7 +47,6 @@ func newContractSummary(blockchain core.Blockchain, contract core.Contract, bloc
 func lastTransaction(contract core.Contract) *core.Transaction {
 	if len(contract.Transactions) > 0 {
 		return &contract.Transactions[0]
-	} else {
-		return nil
 	}
+	return nil
 }

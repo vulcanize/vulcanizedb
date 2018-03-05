@@ -31,7 +31,7 @@ func (filterQuery *LogFilter) UnmarshalJSON(input []byte) error {
 	}{
 		Alias: (*Alias)(filterQuery),
 	}
-	if err := json.Unmarshal(input, &aux); err != nil {
+	if err = json.Unmarshal(input, &aux); err != nil {
 		return err
 	}
 	if filterQuery.Name == "" {

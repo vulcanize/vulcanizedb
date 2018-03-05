@@ -65,6 +65,8 @@ checkdbvars:
 	test -n "$(HOST_NAME)" # $$HOST_NAME 
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
+	@echo $(CONNECT_STRING)
+
 
 .PHONY: rollback
 rollback: $(MIGRATE) checkdbvars

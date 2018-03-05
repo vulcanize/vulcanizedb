@@ -25,20 +25,19 @@ type Response struct {
 	Result  string
 }
 
-type EtherScanApi struct {
+type EtherScanAPI struct {
 	client *http.Client
 	url    string
 }
 
-func NewEtherScanClient(url string) *EtherScanApi {
-	return &EtherScanApi{
+func NewEtherScanClient(url string) *EtherScanAPI {
+	return &EtherScanAPI{
 		client: &http.Client{Timeout: 10 * time.Second},
 		url:    url,
 	}
-
 }
 
-func GenUrl(network string) string {
+func GenURL(network string) string {
 	switch network {
 	case "ropsten":
 		return "https://ropsten.etherscan.io"
@@ -52,7 +51,7 @@ func GenUrl(network string) string {
 }
 
 //https://api.etherscan.io/api?module=contract&action=getabi&address=%s
-func (e *EtherScanApi) GetAbi(contractHash string) (string, error) {
+func (e *EtherScanAPI) GetAbi(contractHash string) (string, error) {
 	target := new(Response)
 	request := fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s", e.url, contractHash)
 	r, err := e.client.Get(request)
@@ -60,8 +59,8 @@ func (e *EtherScanApi) GetAbi(contractHash string) (string, error) {
 		return "", ErrApiRequestFailed
 	}
 	defer r.Body.Close()
-	json.NewDecoder(r.Body).Decode(&target)
-	return target.Result, nil
+	err = json.NewDecoder(r.Body).Decode(&target)
+	return target.Result, err
 }
 
 func ParseAbiFile(abiFilePath string) (abi.ABI, error) {

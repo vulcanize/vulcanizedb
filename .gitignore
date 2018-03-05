@@ -1,5 +1,4 @@
 .idea
-Gododir/godobin-*
 test_data_dir/
 contracts/*
 environments/*.toml
