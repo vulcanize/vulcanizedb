@@ -12,12 +12,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-type GethClient interface {
+type Client interface {
 	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }
 
-func ToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
+func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
 	transactions := convertTransactionsToCore(gethBlock, client)
 	coreBlock := core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
@@ -39,7 +39,7 @@ func ToCoreBlock(gethBlock *types.Block, client GethClient) core.Block {
 	return coreBlock
 }
 
-func convertTransactionsToCore(gethBlock *types.Block, client GethClient) []core.Transaction {
+func convertTransactionsToCore(gethBlock *types.Block, client Client) []core.Transaction {
 	transactions := make([]core.Transaction, 0)
 	for i, gethTransaction := range gethBlock.Transactions() {
 		from, err := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
@@ -56,7 +56,7 @@ func convertTransactionsToCore(gethBlock *types.Block, client GethClient) []core
 	return transactions
 }
 
-func appendReceiptToTransaction(client GethClient, transaction core.Transaction) (core.Transaction, error) {
+func appendReceiptToTransaction(client Client, transaction core.Transaction) (core.Transaction, error) {
 	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
 		log.Println(err)
@@ -84,7 +84,6 @@ func transToCoreTrans(transaction *types.Transaction, from *common.Address) core
 func addressToHex(to *common.Address) string {
 	if to == nil {
 		return ""
-	} else {
-		return to.Hex()
 	}
+	return to.Hex()
 }

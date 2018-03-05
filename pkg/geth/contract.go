@@ -27,7 +27,7 @@ func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName
 	if err != nil {
 		return nil, ErrInvalidStateAttribute
 	}
-	output, err := callContract(contract.Hash, input, blockchain, blockNumber)
+	output, err := blockchain.callContract(contract.Hash, input, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,23 @@ func (blockchain *Blockchain) GetAttribute(contract core.Contract, attributeName
 	return result, nil
 }
 
-func callContract(contractHash string, input []byte, blockchain *Blockchain, blockNumber *big.Int) ([]byte, error) {
+func (blockchain *Blockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
+	parsed, err := ParseAbi(abiJSON)
+	if err != nil {
+		return err
+	}
+	input, err := parsed.Pack(method, methodArg)
+	if err != nil {
+		return err
+	}
+	output, err := blockchain.callContract(address, input, big.NewInt(blockNumber))
+	if err != nil {
+		return err
+	}
+	return parsed.Unpack(result, method, output)
+}
+
+func (blockchain *Blockchain) callContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
 	to := common.HexToAddress(contractHash)
 	msg := ethereum.CallMsg{To: &to, Data: input}
 	return blockchain.client.CallContract(context.Background(), msg, blockNumber)

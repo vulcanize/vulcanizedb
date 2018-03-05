@@ -30,11 +30,10 @@ func template() string {
 func transactionToString(transaction *core.Transaction) string {
 	if transaction == nil {
 		return "NONE"
-	} else {
-		return fmt.Sprintf(`Hash: %s
+	}
+	return fmt.Sprintf(`Hash: %s
                               To: %s
                             From: %s`, transaction.Hash, transaction.To, transaction.From)
-	}
 }
 
 func attributesString(summary ContractSummary) string {

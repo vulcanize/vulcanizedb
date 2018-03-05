@@ -2,7 +2,7 @@ package core
 
 type Node struct {
 	GenesisBlock string
-	NetworkId    float64
-	Id           string
+	NetworkID    float64
+	ID           string
 	ClientName   string
 }

@@ -5,7 +5,7 @@ import (
 	"text/template"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
 const WindowTemplate = `Validating Blocks
@@ -17,12 +17,12 @@ var ParsedWindowTemplate = *template.Must(template.New("window").Parse(WindowTem
 
 type BlockValidator struct {
 	blockchain            core.Blockchain
-	blockRepository       repositories.BlockRepository
+	blockRepository       datastore.BlockRepository
 	windowSize            int
 	parsedLoggingTemplate template.Template
 }
 
-func NewBlockValidator(blockchain core.Blockchain, blockRepository repositories.BlockRepository, windowSize int) *BlockValidator {
+func NewBlockValidator(blockchain core.Blockchain, blockRepository datastore.BlockRepository, windowSize int) *BlockValidator {
 	return &BlockValidator{
 		blockchain,
 		blockRepository,
