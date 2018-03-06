@@ -3,40 +3,69 @@ package node_test
 import (
 	"encoding/json"
 
+	"context"
+
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/p2p"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
-type MockNodeFactory struct {
-	gethNodeName   string
-	gethNodeId     string
-	parityNodeName string
-	parityNodeId   string
-	networkId      float64
-	genesisBlock   string
+type MockContextCaller struct {
+	nodeType core.NodeType
 }
 
-func (mnf MockNodeFactory) NetworkId() float64 {
-	return mnf.networkId
+var EmpytHeaderHash = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
+
+func (MockContextCaller) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	switch method {
+	case "admin_nodeInfo":
+		if p, ok := result.(*p2p.NodeInfo); ok {
+			p.ID = "enode://GethNode@172.17.0.1:30303"
+			p.Name = "Geth/v1.7"
+		}
+	case "eth_getBlockByNumber":
+		if p, ok := result.(*types.Header); ok {
+			*p = types.Header{}
+		}
+
+	case "parity_versionInfo":
+		if p, ok := result.(*core.ParityNodeInfo); ok {
+			*p = core.ParityNodeInfo{
+				Track: "",
+				ParityVersion: core.ParityVersion{
+					Major: 1,
+					Minor: 2,
+					Patch: 3,
+				},
+				Hash: "",
+			}
+		}
+	case "parity_enode":
+		if p, ok := result.(*string); ok {
+			*p = "enode://ParityNode@172.17.0.1:30303"
+		}
+	case "net_version":
+		if p, ok := result.(*string); ok {
+			*p = "1234"
+		}
+	}
+	return nil
 }
 
-func (mnf MockNodeFactory) GenesisBlock() string {
-	return mnf.genesisBlock
-}
-
-func (mnf MockNodeFactory) GethNodeInfo() (string, string) {
-	return mnf.gethNodeId, mnf.gethNodeName
-}
-
-func (mnf MockNodeFactory) ParityNodeInfo() (string, string) {
-	return mnf.parityNodeId, mnf.parityNodeName
+func (mcc MockContextCaller) SupportedModules() (map[string]string, error) {
+	result := make(map[string]string)
+	if mcc.nodeType == core.GETH {
+		result["admin"] = "ok"
+	}
+	return result, nil
 }
 
 var _ = Describe("Parity Node Info", func() {
 
-	It("Decodes json from parity_versionInfo", func() {
+	It("verifies parity_versionInfo can be unmarshalled into ParityNodeInfo", func() {
 		var parityNodeInfo core.ParityNodeInfo
 		nodeInfoJSON := []byte(
 			`{
@@ -69,18 +98,41 @@ var _ = Describe("Parity Node Info", func() {
 		Expect(parityNodeInfo.String()).To(Equal("Parity/v1.6.0/"))
 	})
 
-	It("Returns parity node for parity client", func() {
-		mf := MockNodeFactory{parityNodeId: "0x1232389", parityNodeName: "Parity"}
-		node := node.MakeNode(mf)
-		Expect(node.ClientName).To(Equal("Parity"))
-		Expect(node.ID).To(Equal("0x1232389"))
+	It("returns the genesis block for any client", func() {
+		mcc := MockContextCaller{}
+		cw := node.ClientWrapper{ContextCaller: mcc}
+		n := node.MakeNode(cw)
+		Expect(n.GenesisBlock).To(Equal(EmpytHeaderHash))
 	})
 
-	It("Returns geth node for geth client", func() {
-		mf := MockNodeFactory{gethNodeId: "0x1234", gethNodeName: "Geth"}
-		node := node.MakeNode(mf)
-		Expect(node.ClientName).To(Equal("Geth"))
-		Expect(node.ID).To(Equal("0x1234"))
+	It("returns the network id for any client", func() {
+		mcc := MockContextCaller{}
+		cw := node.ClientWrapper{ContextCaller: mcc}
+		n := node.MakeNode(cw)
+		Expect(n.NetworkID).To(Equal(float64(1234)))
 	})
 
+	It("returns parity ID and client name for parity node", func() {
+		mcc := MockContextCaller{core.PARITY}
+		cw := node.ClientWrapper{ContextCaller: mcc}
+		n := node.MakeNode(cw)
+		Expect(n.ID).To(Equal("ParityNode"))
+		Expect(n.ClientName).To(Equal("Parity/v1.2.3/"))
+	})
+
+	It("returns geth ID and client name for geth node", func() {
+		mcc := MockContextCaller{core.GETH}
+		cw := node.ClientWrapper{ContextCaller: mcc}
+		n := node.MakeNode(cw)
+		Expect(n.ID).To(Equal("enode://GethNode@172.17.0.1:30303"))
+		Expect(n.ClientName).To(Equal("Geth/v1.7"))
+	})
+
+	It("returns infura ID and client name for infura node", func() {
+		mcc := MockContextCaller{core.INFURA}
+		cw := node.ClientWrapper{mcc, "https://mainnet.infura.io/123"}
+		n := node.MakeNode(cw)
+		Expect(n.ID).To(Equal("infura"))
+		Expect(n.ClientName).To(Equal("infura"))
+	})
 })

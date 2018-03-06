@@ -13,14 +13,13 @@ before_install:
   # ginkgo golint dep migrate
   - make installtools
   # geth
-  - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
-  - tar -xzf geth-linux-amd64-1.7.2-1db4ecdc.tar.gz
-  - sudo cp geth-linux-amd64-1.7.2-1db4ecdc/geth /usr/local/bin
+  - wget https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.0-5f540757.tar.gz
+  - tar -xzf geth-linux-amd64-1.8.0-5f540757.tar.gz
+  - sudo cp geth-linux-amd64-1.8.0-5f540757/geth /usr/local/bin
 
 before_script:
   - sudo -u postgres createdb vulcanize_private
   - make migrate HOST_NAME=localhost NAME=vulcanize_private PORT=5432
-  - make createprivate
   - nohup make startprivate </dev/null &
 
 script:

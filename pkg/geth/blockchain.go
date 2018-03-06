@@ -3,8 +3,6 @@ package geth
 import (
 	"math/big"
 
-	"strings"
-
 	"log"
 
 	"github.com/ethereum/go-ethereum"
@@ -29,25 +27,13 @@ func NewBlockchain(ipcPath string) *Blockchain {
 	blockchain := Blockchain{}
 	rpcClient, err := rpc.Dial(ipcPath)
 	if err != nil {
-		log.Println("Unable to connect to node")
 		log.Fatal(err)
 	}
 	client := ethclient.NewClient(rpcClient)
-	nf := node.NodeFactory{Client: rpcClient}
-	blockchain.node = node.MakeNode(&nf)
-	if infura := isInfuraNode(ipcPath); infura {
-		blockchain.node.ID = "infura"
-		blockchain.node.ClientName = "infura"
-	}
+	clientWrapper := node.ClientWrapper{ContextCaller: rpcClient, IPCPath: ipcPath}
+	blockchain.node = node.MakeNode(clientWrapper)
 	blockchain.client = client
 	return &blockchain
-}
-
-func isInfuraNode(ipcPath string) bool {
-	if strings.Contains(ipcPath, "infura") {
-		return true
-	}
-	return false
 }
 
 func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {

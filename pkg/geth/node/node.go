@@ -7,80 +7,120 @@ import (
 
 	"regexp"
 
+	"strings"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type Getter interface {
+type PropertiesReader interface {
+	NodeInfo() (id string, name string)
 	NetworkId() float64
 	GenesisBlock() string
-	GethNodeInfo() (string, string)
-	ParityNodeInfo() (string, string)
 }
 
-type NodeFactory struct {
-	Client *rpc.Client
+type ClientWrapper struct {
+	ContextCaller
+	IPCPath string
 }
 
-func MakeNode(getter Getter) core.Node {
-	node := core.Node{}
-	node.NetworkID = getter.NetworkId()
-	node.GenesisBlock = getter.GenesisBlock()
-	node.ID, node.ClientName = getter.GethNodeInfo()
-	if notGethNode(node) {
-		node.ID, node.ClientName = getter.ParityNodeInfo()
+type ContextCaller interface {
+	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+	SupportedModules() (map[string]string, error)
+}
+
+type ParityClient struct {
+	ClientWrapper
+}
+
+type GethClient struct {
+	ClientWrapper
+}
+
+type InfuraClient struct {
+	ClientWrapper
+}
+
+func (clientWrapper ClientWrapper) NodeType() core.NodeType {
+	if strings.Contains(clientWrapper.IPCPath, "infura") {
+		return core.INFURA
 	}
-	return node
-}
-
-func notGethNode(node core.Node) bool {
-	return node.ID == ""
-}
-
-func (nf *NodeFactory) GethNodeInfo() (string, string) {
-	var info p2p.NodeInfo
-	modules, _ := nf.Client.SupportedModules()
+	modules, _ := clientWrapper.SupportedModules()
 	if _, ok := modules["admin"]; ok {
-		nf.Client.CallContext(context.Background(), &info, "admin_nodeInfo")
-		return info.ID, info.Name
+		return core.GETH
 	}
-	return "", ""
+	return core.PARITY
 }
 
-func (nf *NodeFactory) NetworkId() float64 {
+func makePropertiesReader(wrapper ClientWrapper) PropertiesReader {
+	switch wrapper.NodeType() {
+	case core.GETH:
+		return GethClient{ClientWrapper: wrapper}
+	case core.PARITY:
+		return ParityClient{ClientWrapper: wrapper}
+	case core.INFURA:
+		return InfuraClient{ClientWrapper: wrapper}
+	default:
+		return wrapper
+	}
+}
+
+func MakeNode(wrapper ClientWrapper) core.Node {
+	pr := makePropertiesReader(wrapper)
+	id, name := pr.NodeInfo()
+	return core.Node{
+		GenesisBlock: pr.GenesisBlock(),
+		NetworkID:    pr.NetworkId(),
+		ID:           id,
+		ClientName:   name,
+	}
+}
+
+func (client ClientWrapper) NetworkId() float64 {
 	var version string
-	nf.Client.CallContext(context.Background(), &version, "net_version")
+	client.CallContext(context.Background(), &version, "net_version")
 	networkId, _ := strconv.ParseFloat(version, 64)
 	return networkId
 }
 
-func (nf *NodeFactory) ParityNodeInfo() (string, string) {
-	client := nf.parityClient()
-	id := nf.parityId()
-	return id, client
+func (client ClientWrapper) GenesisBlock() string {
+	var header *types.Header
+	blockZero := "0x0"
+	includeTransactions := false
+	client.CallContext(context.Background(), &header, "eth_getBlockByNumber", blockZero, includeTransactions)
+	return header.Hash().Hex()
 }
 
-func (nf *NodeFactory) parityClient() string {
+func (client ClientWrapper) NodeInfo() (string, string) {
+	var info p2p.NodeInfo
+	client.CallContext(context.Background(), &info, "admin_nodeInfo")
+	return info.ID, info.Name
+}
+
+func (client ParityClient) NodeInfo() (string, string) {
+	nodeInfo := client.parityNodeInfo()
+	id := client.parityID()
+	return id, nodeInfo
+}
+
+func (client InfuraClient) NodeInfo() (string, string) {
+	return "infura", "infura"
+}
+
+func (client ParityClient) parityNodeInfo() string {
 	var nodeInfo core.ParityNodeInfo
-	nf.Client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
+	client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
 	return nodeInfo.String()
 }
 
-func (nf *NodeFactory) parityId() string {
+func (client ParityClient) parityID() string {
 	var enodeId = regexp.MustCompile(`^enode://(.+)@.+$`)
 	var enodeURL string
-	nf.Client.CallContext(context.Background(), &enodeURL, "parity_enode")
+	client.CallContext(context.Background(), &enodeURL, "parity_enode")
 	enode := enodeId.FindStringSubmatch(enodeURL)
 	if len(enode) < 2 {
 		return ""
 	}
 	return enode[1]
-}
-
-func (nf *NodeFactory) GenesisBlock() string {
-	var header *types.Header
-	nf.Client.CallContext(context.Background(), &header, "eth_getBlockByNumber", "0x0", false)
-	return header.Hash().Hex()
 }

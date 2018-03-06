@@ -1,6 +1,16 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type NodeType int
+
+const (
+	GETH NodeType = iota
+	PARITY
+	INFURA
+)
 
 type Node struct {
 	GenesisBlock string
