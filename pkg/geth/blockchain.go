@@ -33,7 +33,8 @@ func NewBlockchain(ipcPath string) *Blockchain {
 		log.Fatal(err)
 	}
 	client := ethclient.NewClient(rpcClient)
-	blockchain.node = node.Info(rpcClient)
+	nf := node.NodeFactory{Client: rpcClient}
+	blockchain.node = node.MakeNode(&nf)
 	if infura := isInfuraNode(ipcPath); infura {
 		blockchain.node.ID = "infura"
 		blockchain.node.ClientName = "infura"
