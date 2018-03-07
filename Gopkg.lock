@@ -28,6 +28,7 @@
     "crypto/secp256k1",
     "crypto/sha3",
     "ethclient",
+    "ethdb",
     "event",
     "log",
     "metrics",
@@ -41,8 +42,8 @@
     "rpc",
     "trie"
   ]
-  revision = "4bb3c89d44e372e6a9ab85a8be0c9345265c763a"
-  version = "v1.7.3"
+  revision = "b8b9f7f4476a30a0aaf6077daade6ae77f969960"
+  version = "v1.8.2"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -198,15 +199,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/rcrowley/go-metrics"
-  packages = [
-    ".",
-    "exp"
-  ]
-  revision = "e181e095bae94582363434144c61a9653aff6e50"
-
-[[projects]]
   name = "github.com/rs/cors"
   packages = ["."]
   revision = "7af7a1e09ba336d2ea14b1ce73bf693c6837dbf6"
@@ -342,6 +334,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "61dea45437b8efb926e1f7446fef75449f89530b201c2ab1893469d13a37b0c9"
+  inputs-digest = "b35f7b80a7695fb1a7d247be178212e16a0647363affc0071c5a2280817dd906"
   solver-name = "gps-cdcl"
   solver-version = 1

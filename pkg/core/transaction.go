@@ -6,7 +6,7 @@ type Transaction struct {
 	Nonce    uint64 `db:"nonce"`
 	To       string `db:"tx_to"`
 	From     string `db:"tx_from"`
-	GasLimit int64  `db:"gaslimit"`
+	GasLimit uint64 `db:"gaslimit"`
 	GasPrice int64  `db:"gasprice"`
 	Receipt
 	Value string `db:"value"`

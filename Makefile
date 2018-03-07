@@ -85,12 +85,10 @@ import:
 
 #Ethereum
 createprivate:
-	#!/bin/bash
-	echo "Deleting test node"
+	echo "deleting test_data_dir"
 	rm -rf test_data_dir
-	echo "Creating test node with a new account"
+	echo "adding test_data_dir"
 	mkdir test_data_dir
-	geth --dev --datadir test_data_dir --password .private_blockchain_password account new
 
 startprivate: createprivate
-	geth --datadir test_data_dir --dev --nodiscover --mine --minerthreads 1 --maxpeers 0 --verbosity 3 --unlock 0 --password .private_blockchain_password --rpc
+	geth --dev --dev.period=1 --datadir=test_data_dir --nodiscover
