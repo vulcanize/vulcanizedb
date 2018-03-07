@@ -6,9 +6,9 @@
 
  - Go 1.9+
  - Postgres 10 
- - Go Ethereum (1.8+)
-    - https://ethereum.github.io/go-ethereum/downloads/ 
-   Or Parity 1.8.11+
+ - Ethereum Node
+   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8+)
+   - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
    
 ### Installation 
 `go get github.com/vulcanize/vulcanizedb`
