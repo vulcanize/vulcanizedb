@@ -48,8 +48,8 @@ var _ = Describe("Saving blocks", func() {
 
 	It("saves the attributes of the block", func() {
 		blockNumber := int64(123)
-		gasLimit := int64(1000000)
-		gasUsed := int64(10)
+		gasLimit := uint64(1000000)
+		gasUsed := uint64(10)
 		blockHash := "x123"
 		blockParentHash := "x456"
 		blockNonce := "0x881db2ca900682e9a9"
@@ -57,7 +57,7 @@ var _ = Describe("Saving blocks", func() {
 		extraData := "xextraData"
 		blockTime := int64(1508981640)
 		uncleHash := "x789"
-		blockSize := int64(1000)
+		blockSize := string("1000")
 		difficulty := int64(10)
 		blockReward := float64(5.132)
 		unclesReward := float64(3.580)
@@ -178,7 +178,7 @@ var _ = Describe("Saving blocks", func() {
 	})
 
 	It("saves the attributes associated to a transaction", func() {
-		gasLimit := int64(5000)
+		gasLimit := uint64(5000)
 		gasPrice := int64(3)
 		nonce := uint64(10000)
 		to := "1234567890"

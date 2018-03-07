@@ -33,7 +33,7 @@ func (client *FakeGethClient) TransactionReceipt(ctx context.Context, txHash com
 	if gasUsed, ok := client.receipts[txHash.Hex()]; ok {
 		return gasUsed, nil
 	}
-	return &types.Receipt{GasUsed: big.NewInt(0)}, nil
+	return &types.Receipt{GasUsed: uint64(0)}, nil
 }
 
 func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
@@ -44,8 +44,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 	It("converts basic Block metadata", func() {
 		difficulty := big.NewInt(1)
-		gasLimit := int64(100000)
-		gasUsed := int64(100000)
+		gasLimit := uint64(100000)
+		gasUsed := uint64(100000)
 		miner := common.HexToAddress("0x0000000000000000000000000000000000000123")
 		extraData, _ := hexutil.Decode("0xe4b883e5bda9e7a59ee4bb99e9b1bc")
 		nonce := types.BlockNonce{10}
@@ -54,8 +54,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 		header := types.Header{
 			Difficulty: difficulty,
-			GasLimit:   big.NewInt(gasLimit),
-			GasUsed:    big.NewInt(gasUsed),
+			GasLimit:   uint64(gasLimit),
+			GasUsed:    uint64(gasUsed),
 			Extra:      extraData,
 			Coinbase:   miner,
 			Nonce:      nonce,
@@ -77,7 +77,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(gethBlock.Number).To(Equal(number))
 		Expect(gethBlock.ParentHash).To(Equal(block.ParentHash().Hex()))
 		Expect(gethBlock.ExtraData).To(Equal(hexutil.Encode(block.Extra())))
-		Expect(gethBlock.Size).To(Equal(block.Size().Int64()))
+		Expect(gethBlock.Size).To(Equal(block.Size().String()))
 		Expect(gethBlock.Time).To(Equal(time))
 		Expect(gethBlock.UncleHash).To(Equal(block.UncleHash().Hex()))
 		Expect(gethBlock.IsFinal).To(BeFalse())
@@ -90,7 +90,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				uint64(226823),
 				common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f"),
 				big.NewInt(1080900090000000000),
-				big.NewInt(90000),
+				uint64(90000),
 				big.NewInt(50000000000),
 				[]byte{},
 			)
@@ -99,8 +99,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			txHash := transaction.Hash()
 			receipt := types.Receipt{
 				TxHash:            txHash,
-				GasUsed:           big.NewInt(21000),
-				CumulativeGasUsed: big.NewInt(21000),
+				GasUsed:           uint64(21000),
+				CumulativeGasUsed: uint64(21000),
 			}
 			receipts := []*types.Receipt{&receipt}
 
@@ -123,15 +123,15 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				uint64(226823),
 				common.HexToAddress("0x108fedb097c1dcfed441480170144d8e19bb217f"),
 				big.NewInt(1080900090000000000),
-				big.NewInt(90000),
+				uint64(90000),
 				big.NewInt(50000000000),
 				[]byte{})
 			transactions := []*types.Transaction{transaction}
 
 			receipt := types.Receipt{
 				TxHash:            transaction.Hash(),
-				GasUsed:           big.NewInt(21000),
-				CumulativeGasUsed: big.NewInt(21000),
+				GasUsed:           uint64(21000),
+				CumulativeGasUsed: uint64(21000),
 			}
 			receipts := []*types.Receipt{&receipt}
 
@@ -157,7 +157,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				uint64(8072),
 				common.HexToAddress("0xebd17720aeb7ac5186c5dfa7bafeb0bb14c02551 "),
 				big.NewInt(0),
-				big.NewInt(500000),
+				uint64(500000),
 				big.NewInt(42000000000),
 				[]byte{},
 			)
@@ -165,7 +165,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			transactionTwo := types.NewTransaction(uint64(8071),
 				common.HexToAddress("0x3cdab63d764c8c5048ed5e8f0a4e95534ba7e1ea"),
 				big.NewInt(0),
-				big.NewInt(500000),
+				uint64(500000),
 				big.NewInt(42000000000),
 				[]byte{})
 
@@ -173,13 +173,13 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			receiptOne := types.Receipt{
 				TxHash:            transactionOne.Hash(),
-				GasUsed:           big.NewInt(297508),
-				CumulativeGasUsed: big.NewInt(0),
+				GasUsed:           uint64(297508),
+				CumulativeGasUsed: uint64(0),
 			}
 			receiptTwo := types.Receipt{
 				TxHash:            transactionTwo.Hash(),
-				GasUsed:           big.NewInt(297508),
-				CumulativeGasUsed: big.NewInt(0),
+				GasUsed:           uint64(297508),
+				CumulativeGasUsed: uint64(0),
 			}
 			receipts := []*types.Receipt{&receiptOne, &receiptTwo}
 
@@ -212,7 +212,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			gethTransaction := types.NewTransaction(
 				uint64(10000), common.Address{1},
 				big.NewInt(10),
-				big.NewInt(5000),
+				uint64(5000),
 				big.NewInt(3),
 				hexutil.MustDecode("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"),
 			)
@@ -220,8 +220,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			gethReceipt := &types.Receipt{
 				Bloom:             types.BytesToBloom(hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")),
 				ContractAddress:   common.HexToAddress("x123"),
-				CumulativeGasUsed: big.NewInt(7996119),
-				GasUsed:           big.NewInt(21000),
+				CumulativeGasUsed: uint64(7996119),
+				GasUsed:           uint64(21000),
 				Logs:              []*types.Log{},
 				Status:            uint(1),
 				TxHash:            gethTransaction.Hash(),
@@ -244,7 +244,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.Data).To(Equal("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
-			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas().Int64()))
+			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
 			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().String()))
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
@@ -259,14 +259,14 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			gethTransaction := types.NewContractCreation(
 				uint64(10000),
 				big.NewInt(10),
-				big.NewInt(5000),
+				uint64(5000),
 				big.NewInt(3),
 				[]byte("1234"),
 			)
 
 			gethReceipt := &types.Receipt{
-				CumulativeGasUsed: big.NewInt(1),
-				GasUsed:           big.NewInt(1),
+				CumulativeGasUsed: uint64(1),
+				GasUsed:           uint64(1),
 				TxHash:            gethTransaction.Hash(),
 				ContractAddress:   common.HexToAddress("0x1023342345"),
 			}

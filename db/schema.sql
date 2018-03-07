@@ -77,7 +77,7 @@ CREATE TABLE blocks (
     hash character varying(66),
     nonce character varying(20),
     parenthash character varying(66),
-    size bigint,
+    size character varying,
     uncle_hash character varying(66),
     node_id integer NOT NULL,
     is_final boolean,

@@ -6,9 +6,10 @@
 
  - Go 1.9+
  - Postgres 10 
- - Go Ethereum 
+ - Go Ethereum (1.8+)
     - https://ethereum.github.io/go-ethereum/downloads/ 
- 
+   Or Parity 1.8.11+
+   
 ### Installation 
 `go get github.com/vulcanize/vulcanizedb`
 
@@ -46,8 +47,6 @@ The default location for Ethereum is:
 1. `go test ./pkg/...`
 
 ### Integration Test
-
-In order to run the integration tests, you will need to run them against a real node. At the moment the integration tests require [Geth v1.7.2](https://ethereum.github.io/go-ethereum/downloads/) as they depend on the `--dev` mode, which changed in v1.7.3 
 
 1. Run `make startprivate` in a separate terminal
 2. Setup a test database and import the schema: 

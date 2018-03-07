@@ -28,7 +28,7 @@ func calcTransactionFees(block core.Block) float64 {
 	var transactionFees float64
 	for _, transaction := range block.Transactions {
 		receipt := transaction.Receipt
-		transactionFees += float64(transaction.GasPrice * receipt.GasUsed)
+		transactionFees += float64(uint64(transaction.GasPrice) * receipt.GasUsed)
 	}
 	return transactionFees / params.Ether
 }

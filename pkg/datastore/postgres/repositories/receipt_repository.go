@@ -37,8 +37,8 @@ func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Recei
 func loadReceipt(receiptsRow *sql.Row) (core.Receipt, error) {
 	var contractAddress string
 	var txHash string
-	var cumulativeGasUsed int64
-	var gasUsed int64
+	var cumulativeGasUsed uint64
+	var gasUsed uint64
 	var stateRoot string
 	var status int
 

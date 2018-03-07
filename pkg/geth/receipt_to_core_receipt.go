@@ -29,8 +29,8 @@ func ReceiptToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
 	return core.Receipt{
 		Bloom:             bloom,
 		ContractAddress:   contractAddress,
-		CumulativeGasUsed: gethReceipt.CumulativeGasUsed.Int64(),
-		GasUsed:           gethReceipt.GasUsed.Int64(),
+		CumulativeGasUsed: gethReceipt.CumulativeGasUsed,
+		GasUsed:           gethReceipt.GasUsed,
 		Logs:              logs,
 		StateRoot:         postState,
 		TxHash:            gethReceipt.TxHash.Hex(),
