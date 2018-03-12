@@ -130,7 +130,7 @@ var _ = Describe("Parity Node Info", func() {
 
 	It("returns infura ID and client name for infura node", func() {
 		mcc := MockContextCaller{core.INFURA}
-		cw := node.ClientWrapper{mcc, "https://mainnet.infura.io/123"}
+		cw := node.ClientWrapper{ContextCaller: mcc, IPCPath: "https://mainnet.infura.io/123"}
 		n := node.MakeNode(cw)
 		Expect(n.ID).To(Equal("infura"))
 		Expect(n.ClientName).To(Equal("infura"))
