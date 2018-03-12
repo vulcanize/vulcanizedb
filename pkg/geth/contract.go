@@ -19,7 +19,12 @@ func (blockchain *Blockchain) FetchContractData(abiJSON string, address string, 
 	if err != nil {
 		return err
 	}
-	input, err := parsed.Pack(method, methodArg)
+	var input []byte
+	if methodArg != nil {
+		input, err = parsed.Pack(method, methodArg)
+	} else {
+		input, err = parsed.Pack(method)
+	}
 	if err != nil {
 		return err
 	}
