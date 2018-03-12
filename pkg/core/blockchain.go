@@ -3,8 +3,7 @@ package core
 import "math/big"
 
 type Blockchain interface {
-	GetAttribute(contract Contract, attributeName string, blockNumber *big.Int) (interface{}, error)
-	GetAttributes(contract Contract) (ContractAttributes, error)
+	ContractDataFetcher
 	GetBlockByNumber(blockNumber int64) Block
 	GetLogs(contract Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]Log, error)
 	LastBlock() *big.Int
