@@ -10,7 +10,7 @@ type Handler interface {
 	Execute() error
 }
 
-type HandlerInitializer func(db *postgres.DB, blockchain core.ContractDataFetcher) Handler
+type HandlerInitializer func(db *postgres.DB, blockchain core.Blockchain) Handler
 
 func HexToInt64(byteString string) int64 {
 	intHash := common.HexToHash(byteString)
