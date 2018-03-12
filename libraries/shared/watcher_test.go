@@ -23,7 +23,7 @@ func (mh *MockHandler) Execute() error {
 	return nil
 }
 
-func fakeHandlerInitializer(db *postgres.DB, blockchain core.ContractDataFetcher) shared.Handler {
+func fakeHandlerInitializer(db *postgres.DB, blockchain core.Blockchain) shared.Handler {
 	return &MockHandler{}
 }
 

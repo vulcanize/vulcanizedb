@@ -8,7 +8,7 @@ import (
 type Watcher struct {
 	Handlers   []Handler
 	DB         postgres.DB
-	Blockchain core.ContractDataFetcher
+	Blockchain core.Blockchain
 }
 
 func (watcher *Watcher) AddHandlers(us []HandlerInitializer) {
