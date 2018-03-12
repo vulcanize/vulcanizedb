@@ -8,15 +8,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-func FindAttribute(contractAttributes core.ContractAttributes, attributeName string) *core.ContractAttribute {
-	for _, contractAttribute := range contractAttributes {
-		if contractAttribute.Name == attributeName {
-			return &contractAttribute
-		}
-	}
-	return nil
-}
-
 func SampleContract() core.Contract {
 	return core.Contract{
 		Abi:  sampleAbiFileContents(),
