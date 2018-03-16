@@ -6,22 +6,22 @@ import (
 )
 
 type Watcher struct {
-	Handlers   []Handler
+	Transformers   []Transformer
 	DB         postgres.DB
 	Blockchain core.Blockchain
 }
 
-func (watcher *Watcher) AddHandlers(us []HandlerInitializer) {
-	for _, handlerInitializer := range us {
-		handler := handlerInitializer(&watcher.DB, watcher.Blockchain)
-		watcher.Handlers = append(watcher.Handlers, handler)
+func (watcher *Watcher) AddTransformers(us []TransformerInitializer) {
+	for _, transformerInitializer := range us {
+		transformer := transformerInitializer(&watcher.DB, watcher.Blockchain)
+		watcher.Transformers = append(watcher.Transformers, transformer)
 	}
 }
 
 func (watcher *Watcher) Execute() error {
 	var err error
-	for _, handler := range watcher.Handlers {
-		err = handler.Execute()
+	for _, transformer := range watcher.Transformers {
+		err = transformer.Execute()
 	}
 	return err
 }

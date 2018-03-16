@@ -6,15 +6,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Handler interface {
+type Transformer interface {
 	Execute() error
 }
 
-type HandlerInitializer func(db *postgres.DB, blockchain core.Blockchain) Handler
+type TransformerInitializer func(db *postgres.DB, blockchain core.Blockchain) Transformer
 
 func HexToInt64(byteString string) int64 {
-	intHash := common.HexToHash(byteString)
-	return intHash.Big().Int64()
+	value := common.HexToHash(byteString)
+	return value.Big().Int64()
 }
 
 func HexToString(byteString string) string {

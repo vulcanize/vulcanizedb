@@ -10,12 +10,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type MockHandler struct {
+type MockTransformer struct {
 	executeWasCalled bool
 	executeError     error
 }
 
-func (mh *MockHandler) Execute() error {
+func (mh *MockTransformer) Execute() error {
 	if mh.executeError != nil {
 		return mh.executeError
 	}
@@ -23,47 +23,47 @@ func (mh *MockHandler) Execute() error {
 	return nil
 }
 
-func fakeHandlerInitializer(db *postgres.DB, blockchain core.Blockchain) shared.Handler {
-	return &MockHandler{}
+func fakeTransformerInitializer(db *postgres.DB, blockchain core.Blockchain) shared.Transformer {
+	return &MockTransformer{}
 }
 
 var _ = Describe("Watcher", func() {
-	It("Adds handlers", func() {
+	It("Adds transformers", func() {
 		watcher := shared.Watcher{}
 
-		watcher.AddHandlers([]shared.HandlerInitializer{fakeHandlerInitializer})
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
 
-		Expect(len(watcher.Handlers)).To(Equal(1))
-		Expect(watcher.Handlers).To(ConsistOf(&MockHandler{}))
+		Expect(len(watcher.Transformers)).To(Equal(1))
+		Expect(watcher.Transformers).To(ConsistOf(&MockTransformer{}))
 	})
 
-	It("Adds handlers from multiple sources", func() {
+	It("Adds transformers from multiple sources", func() {
 		watcher := shared.Watcher{}
 
-		watcher.AddHandlers([]shared.HandlerInitializer{fakeHandlerInitializer})
-		watcher.AddHandlers([]shared.HandlerInitializer{fakeHandlerInitializer})
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
 
-		Expect(len(watcher.Handlers)).To(Equal(2))
+		Expect(len(watcher.Transformers)).To(Equal(2))
 	})
 
-	It("Executes each handler", func() {
+	It("Executes each transformer", func() {
 		watcher := shared.Watcher{}
-		fakeHandler := &MockHandler{}
-		watcher.Handlers = []shared.Handler{fakeHandler}
+		fakeTransformer := &MockTransformer{}
+		watcher.Transformers = []shared.Transformer{fakeTransformer}
 
 		watcher.Execute()
 
-		Expect(fakeHandler.executeWasCalled).To(BeTrue())
+		Expect(fakeTransformer.executeWasCalled).To(BeTrue())
 	})
 
-	It("Returns an error if handler returns an error", func() {
+	It("Returns an error if transformer returns an error", func() {
 		watcher := shared.Watcher{}
-		fakeHandler := &MockHandler{executeError: errors.New("Something bad happened")}
-		watcher.Handlers = []shared.Handler{fakeHandler}
+		fakeTransformer := &MockTransformer{executeError: errors.New("Something bad happened")}
+		watcher.Transformers = []shared.Transformer{fakeTransformer}
 
 		err := watcher.Execute()
 
 		Expect(err).To(HaveOccurred())
-		Expect(fakeHandler.executeWasCalled).To(BeFalse())
+		Expect(fakeTransformer.executeWasCalled).To(BeFalse())
 	})
 })
