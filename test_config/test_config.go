@@ -13,7 +13,6 @@ import (
 
 var TestConfig *viper.Viper
 var DBConfig config.Database
-var TestClientConfig config.Client
 var Infura *viper.Viper
 var InfuraClient config.Client
 var ABIFilePath string
@@ -39,11 +38,6 @@ func setTestConfig() {
 		Hostname: hn,
 		Name:     name,
 		Port:     port,
-	}
-	ipc := TestConfig.GetString("client.ipcpath")
-	gopath := os.Getenv("GOPATH")
-	TestClientConfig = config.Client{
-		IPCPath: gopath + "/src/github.com/vulcanize/vulcanizedb/" + ipc,
 	}
 }
 
