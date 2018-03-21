@@ -79,7 +79,7 @@ CREATE TABLE blocks (
     parenthash character varying(66),
     size character varying,
     uncle_hash character varying(66),
-    node_id integer NOT NULL,
+    eth_node_id integer NOT NULL,
     is_final boolean,
     miner character varying(42),
     extra_data character varying,
@@ -106,6 +106,19 @@ CREATE SEQUENCE blocks_id_seq
 --
 
 ALTER SEQUENCE blocks_id_seq OWNED BY blocks.id;
+
+
+--
+-- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE eth_nodes (
+    id integer NOT NULL,
+    genesis_block character varying(66),
+    network_id numeric,
+    eth_node_id character varying(128),
+    client_name character varying
+);
 
 
 --
@@ -169,19 +182,6 @@ ALTER SEQUENCE logs_id_seq OWNED BY logs.id;
 
 
 --
--- Name: nodes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE nodes (
-    id integer NOT NULL,
-    genesis_block character varying(66),
-    network_id numeric,
-    node_id character varying(128),
-    client_name character varying
-);
-
-
---
 -- Name: nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -198,7 +198,7 @@ CREATE SEQUENCE nodes_id_seq
 -- Name: nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE nodes_id_seq OWNED BY nodes.id;
+ALTER SEQUENCE nodes_id_seq OWNED BY eth_nodes.id;
 
 
 --
@@ -347,6 +347,13 @@ ALTER TABLE ONLY blocks ALTER COLUMN id SET DEFAULT nextval('blocks_id_seq'::reg
 
 
 --
+-- Name: eth_nodes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY eth_nodes ALTER COLUMN id SET DEFAULT nextval('nodes_id_seq'::regclass);
+
+
+--
 -- Name: log_filters id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -358,13 +365,6 @@ ALTER TABLE ONLY log_filters ALTER COLUMN id SET DEFAULT nextval('log_filters_id
 --
 
 ALTER TABLE ONLY logs ALTER COLUMN id SET DEFAULT nextval('logs_id_seq'::regclass);
-
-
---
--- Name: nodes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY nodes ALTER COLUMN id SET DEFAULT nextval('nodes_id_seq'::regclass);
 
 
 --
@@ -405,6 +405,22 @@ ALTER TABLE ONLY watched_contracts
 
 
 --
+-- Name: blocks eth_node_id_block_number_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY blocks
+    ADD CONSTRAINT eth_node_id_block_number_uc UNIQUE (number, eth_node_id);
+
+
+--
+-- Name: eth_nodes eth_node_uc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY eth_nodes
+    ADD CONSTRAINT eth_node_uc UNIQUE (genesis_block, network_id, eth_node_id);
+
+
+--
 -- Name: logs logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -421,26 +437,10 @@ ALTER TABLE ONLY log_filters
 
 
 --
--- Name: blocks node_id_block_number_uc; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: eth_nodes nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY blocks
-    ADD CONSTRAINT node_id_block_number_uc UNIQUE (number, node_id);
-
-
---
--- Name: nodes node_uc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY nodes
-    ADD CONSTRAINT node_uc UNIQUE (genesis_block, network_id, node_id);
-
-
---
--- Name: nodes nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY nodes
+ALTER TABLE ONLY eth_nodes
     ADD CONSTRAINT nodes_pkey PRIMARY KEY (id);
 
 
@@ -494,7 +494,7 @@ CREATE INDEX block_number_index ON blocks USING btree (number);
 -- Name: node_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX node_id_index ON blocks USING btree (node_id);
+CREATE INDEX node_id_index ON blocks USING btree (eth_node_id);
 
 
 --
@@ -531,7 +531,7 @@ ALTER TABLE ONLY transactions
 --
 
 ALTER TABLE ONLY blocks
-    ADD CONSTRAINT node_fk FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT node_fk FOREIGN KEY (eth_node_id) REFERENCES eth_nodes(id) ON DELETE CASCADE;
 
 
 --
