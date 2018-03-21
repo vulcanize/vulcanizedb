@@ -82,13 +82,3 @@ migrate: $(MIGRATE) checkdbvars
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
-
-#Ethereum
-createprivate:
-	echo "deleting test_data_dir"
-	rm -rf test_data_dir
-	echo "adding test_data_dir"
-	mkdir test_data_dir
-
-startprivate: createprivate
-	geth --dev --dev.period=1 --datadir=test_data_dir --nodiscover

@@ -15,7 +15,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 	var inMemory *inmemory.InMemory
 
 	BeforeEach(func() {
-		blockchain = geth.NewBlockchain(test_config.TestClientConfig.IPCPath)
+		blockchain = geth.NewBlockchain(test_config.InfuraClient.IPCPath)
 		inMemory = inmemory.NewInMemory()
 	})
 
@@ -25,7 +25,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		validator.ValidateBlocks()
 		Expect(blocks.BlockCount()).To(Equal(2))
 		close(done)
-	}, 15)
+	}, 30)
 
 	It("retrieves the genesis block and first block", func(done Done) {
 		genesisBlock := blockchain.GetBlockByNumber(int64(0))
@@ -44,8 +44,8 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 		Expect(node.GenesisBlock).ToNot(BeNil())
 		Expect(node.NetworkID).To(Equal(devNetworkNodeId))
-		Expect(len(node.ID)).To(Equal(128))
-		Expect(node.ClientName).To(ContainSubstring("Geth"))
+		Expect(len(node.ID)).ToNot(BeZero())
+		Expect(node.ClientName).ToNot(BeZero())
 
 		close(done)
 	}, 15)
