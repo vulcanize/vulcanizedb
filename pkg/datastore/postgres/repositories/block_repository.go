@@ -79,7 +79,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
                        reward,
                        uncles_reward
                FROM blocks
-               WHERE node_id = $1 AND number = $2`, blockRepository.NodeID, blockNumber)
+               WHERE eth_node_id = $1 AND number = $2`, blockRepository.NodeID, blockNumber)
 	savedBlock, err := blockRepository.loadBlock(blockRows)
 	if err != nil {
 		switch err {
@@ -97,7 +97,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) error {
 	tx, _ := blockRepository.DB.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
 		`INSERT INTO blocks
-                (node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward)
+                (eth_node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING id `,
 		blockRepository.NodeID, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward).
@@ -190,7 +190,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 	blockRepository.DB.Get(&retrievedBlockHash,
 		`SELECT hash
                FROM blocks
-               WHERE number = $1 AND node_id = $2`,
+               WHERE number = $1 AND eth_node_id = $2`,
 		block.Number, blockRepository.NodeID)
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
@@ -218,7 +218,7 @@ func (blockRepository BlockRepository) removeBlock(blockNumber int64) error {
 	_, err := blockRepository.DB.Exec(
 		`DELETE FROM
                 blocks
-                WHERE number=$1 AND node_id=$2`,
+                WHERE number=$1 AND eth_node_id=$2`,
 		blockNumber, blockRepository.NodeID)
 	if err != nil {
 		return postgres.ErrDBDeleteFailed
