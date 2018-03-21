@@ -6,9 +6,9 @@ import (
 )
 
 type Watcher struct {
-	Transformers   []Transformer
-	DB         postgres.DB
-	Blockchain core.Blockchain
+	Transformers []Transformer
+	DB           postgres.DB
+	Blockchain   core.Blockchain
 }
 
 func (watcher *Watcher) AddTransformers(us []TransformerInitializer) {
