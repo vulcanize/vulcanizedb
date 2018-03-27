@@ -3,9 +3,6 @@ package history_test
 import (
 	"bytes"
 
-	"io/ioutil"
-	"log"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -13,10 +10,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 )
-
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
 
 var _ = Describe("Blocks validator", func() {
 

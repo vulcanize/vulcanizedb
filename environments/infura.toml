@@ -1,5 +1,5 @@
 [database]
-name = "vulcanize_public"
+name = "vulcanize_private"
 hostname = "localhost"
 port = 5432
 

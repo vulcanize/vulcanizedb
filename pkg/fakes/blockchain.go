@@ -14,6 +14,7 @@ type Blockchain struct {
 	WasToldToStop       bool
 	node                core.Node
 	ContractReturnValue []byte
+	err                 error
 }
 
 func (blockchain *Blockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
@@ -42,12 +43,13 @@ func (blockchain *Blockchain) Node() core.Node {
 	return blockchain.node
 }
 
-func NewBlockchain() *Blockchain {
+func NewBlockchain(err error) *Blockchain {
 	return &Blockchain{
 		blocks:             make(map[int64]core.Block),
 		logs:               make(map[string][]core.Log),
 		contractAttributes: make(map[string]map[string]string),
 		node:               core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
+		err:                err,
 	}
 }
 
@@ -61,8 +63,11 @@ func NewBlockchainWithBlocks(blocks []core.Block) *Blockchain {
 	}
 }
 
-func (blockchain *Blockchain) GetBlockByNumber(blockNumber int64) core.Block {
-	return blockchain.blocks[blockNumber]
+func (blockchain *Blockchain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
+	if blockchain.err != nil {
+		return core.Block{}, blockchain.err
+	}
+	return blockchain.blocks[blockNumber], nil
 }
 
 func (blockchain *Blockchain) AddBlock(block core.Block) {

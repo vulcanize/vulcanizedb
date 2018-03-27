@@ -58,9 +58,16 @@ func (blockchain *Blockchain) Node() core.Node {
 	return blockchain.node
 }
 
-func (blockchain *Blockchain) GetBlockByNumber(blockNumber int64) core.Block {
-	gethBlock, _ := blockchain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
-	return ToCoreBlock(gethBlock, blockchain.client)
+func (blockchain *Blockchain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
+	gethBlock, err := blockchain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
+	if err != nil {
+		return core.Block{}, err
+	}
+	block, err := ToCoreBlock(gethBlock, blockchain.client)
+	if err != nil {
+		return core.Block{}, err
+	}
+	return block, nil
 }
 
 func (blockchain *Blockchain) LastBlock() *big.Int {

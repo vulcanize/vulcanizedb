@@ -5,8 +5,6 @@ import (
 
 	"log"
 
-	"sync"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -20,8 +18,11 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }
 
-func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
-	transactions := convertTransactionsToCore(gethBlock, client)
+func ToCoreBlock(gethBlock *types.Block, client Client) (core.Block, error) {
+	transactions, err := convertTransactionsToCore(gethBlock, client)
+	if err != nil {
+		return core.Block{}, err
+	}
 	coreBlock := core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
 		ExtraData:    hexutil.Encode(gethBlock.Extra()),
@@ -39,21 +40,18 @@ func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
 	}
 	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles())
 	coreBlock.UnclesReward = CalcUnclesReward(coreBlock, gethBlock.Uncles())
-	return coreBlock
+	return coreBlock, nil
 }
 
-func convertTransactionsToCore(gethBlock *types.Block, client Client) []core.Transaction {
+func convertTransactionsToCore(gethBlock *types.Block, client Client) ([]core.Transaction, error) {
 	var g errgroup.Group
-	var wg sync.WaitGroup
 	coreTransactions := make([]core.Transaction, len(gethBlock.Transactions()))
-	wg.Add(len(gethBlock.Transactions()))
 
 	for gethTransactionIndex, gethTransaction := range gethBlock.Transactions() {
 		//https://golang.org/doc/faq#closures_and_goroutines
 		transaction := gethTransaction
 		transactionIndex := uint(gethTransactionIndex)
 		g.Go(func() error {
-			defer wg.Done()
 			from, err := client.TransactionSender(context.Background(), transaction, gethBlock.Hash(), transactionIndex)
 			if err != nil {
 				log.Println("transaction sender: ", err)
@@ -71,9 +69,9 @@ func convertTransactionsToCore(gethBlock *types.Block, client Client) []core.Tra
 	}
 	if err := g.Wait(); err != nil {
 		log.Println("transactions: ", err)
-		return coreTransactions
+		return coreTransactions, err
 	}
-	return coreTransactions
+	return coreTransactions, nil
 }
 
 func appendReceiptToTransaction(client Client, transaction core.Transaction) (core.Transaction, error) {

@@ -18,7 +18,7 @@ $(BIN)/migrate:
 
 LINT = $(BIN)/golint
 $(BIN)/golint:
-	go get github.com/golang/lint/golint
+	go get -u golang.org/x/lint/golint
 
 METALINT = $(BIN)/gometalinter.v2
 $(BIN)/gometalinter.v2:
@@ -44,7 +44,7 @@ lint:
 test: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r 
+	$(GINKGO) -r
 
 .PHONY: dep
 dep: | $(DEP)

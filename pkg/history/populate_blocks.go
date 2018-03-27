@@ -18,7 +18,11 @@ func PopulateMissingBlocks(blockchain core.Blockchain, blockRepository datastore
 
 func RetrieveAndUpdateBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, blockNumbers []int64) int {
 	for _, blockNumber := range blockNumbers {
-		block := blockchain.GetBlockByNumber(blockNumber)
+		block, err := blockchain.GetBlockByNumber(blockNumber)
+		if err != nil {
+			log.Printf("failed to retrieve block number: %d\n", blockNumber)
+			return 0
+		}
 		blockRepository.CreateOrUpdateBlock(block)
 	}
 	return len(blockNumbers)

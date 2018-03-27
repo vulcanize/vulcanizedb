@@ -29,8 +29,10 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 	}, 30)
 
 	It("retrieves the genesis block and first block", func(done Done) {
-		genesisBlock := blockchain.GetBlockByNumber(int64(0))
-		firstBlock := blockchain.GetBlockByNumber(int64(1))
+		genesisBlock, err := blockchain.GetBlockByNumber(int64(0))
+		Expect(err).ToNot(HaveOccurred())
+		firstBlock, err := blockchain.GetBlockByNumber(int64(1))
+		Expect(err).ToNot(HaveOccurred())
 		lastBlockNumber := blockchain.LastBlock()
 
 		Expect(genesisBlock.Number).To(Equal(int64(0)))
@@ -51,12 +53,14 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		close(done)
 	}, 15)
 
+	//Benchmarking test: remove skip to test performance of block retrieval
 	XMeasure("retrieving n blocks", func(b Benchmarker) {
 		b.Time("runtime", func() {
 			var blocks []core.Block
 			n := 10
 			for i := 5327459; i > 5327459-n; i-- {
-				block := blockchain.GetBlockByNumber(int64(i))
+				block, err := blockchain.GetBlockByNumber(int64(i))
+				Expect(err).ToNot(HaveOccurred())
 				blocks = append(blocks, block)
 			}
 			Expect(len(blocks)).To(Equal(n))
