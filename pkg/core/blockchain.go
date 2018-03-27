@@ -4,7 +4,7 @@ import "math/big"
 
 type Blockchain interface {
 	ContractDataFetcher
-	GetBlockByNumber(blockNumber int64) Block
+	GetBlockByNumber(blockNumber int64) (Block, error)
 	GetLogs(contract Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]Log, error)
 	LastBlock() *big.Int
 	Node() Node

@@ -12,10 +12,11 @@ go_import_path: github.com/vulcanize/vulcanizedb
 before_install:
   # ginkgo golint dep migrate
   - make installtools
+  - bash ./scripts/install-postgres-10.sh
 
 before_script:
   - sudo -u postgres createdb vulcanize_private
-  - make migrate HOST_NAME=localhost NAME=vulcanize_private PORT=5432
+  - make migrate NAME=vulcanize_private
 
 script:
   - make test

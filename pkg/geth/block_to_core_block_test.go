@@ -5,6 +5,13 @@ import (
 
 	"context"
 
+	"fmt"
+
+	"io/ioutil"
+	"log"
+
+	"os"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,11 +22,25 @@ import (
 
 type FakeGethClient struct {
 	receipts map[string]*types.Receipt
+	err      error
 }
 
-func NewFakeClient() *FakeGethClient {
+type TransActionReceiptError struct{}
+
+func (tarErr TransActionReceiptError) Error() string {
+	return fmt.Sprintf("transaction receipt error")
+}
+
+type TransactionSenderError struct{}
+
+func (tasErr TransactionSenderError) Error() string {
+	return fmt.Sprintf("transaction sender error")
+}
+
+func NewFakeClient(err error) *FakeGethClient {
 	return &FakeGethClient{
 		receipts: make(map[string]*types.Receipt),
+		err:      err,
 	}
 }
 
@@ -30,6 +51,9 @@ func (client *FakeGethClient) AddReceipts(receipts []*types.Receipt) {
 }
 
 func (client *FakeGethClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	if err, ok := client.err.(TransActionReceiptError); ok {
+		return &types.Receipt{}, err
+	}
 	if gasUsed, ok := client.receipts[txHash.Hex()]; ok {
 		return gasUsed, nil
 	}
@@ -37,6 +61,9 @@ func (client *FakeGethClient) TransactionReceipt(ctx context.Context, txHash com
 }
 
 func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
+	if err, ok := client.err.(TransactionSenderError); ok {
+		return common.Address{}, err
+	}
 	return common.HexToAddress("0x123"), nil
 }
 
@@ -66,8 +93,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 		client := &FakeGethClient{}
-		gethBlock := geth.ToCoreBlock(block, client)
+		gethBlock, err := geth.ToCoreBlock(block, client)
 
+		Expect(err).ToNot(HaveOccurred())
 		Expect(gethBlock.Difficulty).To(Equal(difficulty.Int64()))
 		Expect(gethBlock.GasLimit).To(Equal(gasLimit))
 		Expect(gethBlock.Miner).To(Equal(miner.Hex()))
@@ -104,7 +132,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			receipts := []*types.Receipt{&receipt}
 
-			client := NewFakeClient()
+			client := NewFakeClient(nil)
 			client.AddReceipts(receipts)
 
 			number := int64(1071819)
@@ -113,8 +141,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
 			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{&receipt})
-			coreBlock := geth.ToCoreBlock(block, client)
+			coreBlock, err := geth.ToCoreBlock(block, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			Expect(geth.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(5.31355))
 		})
 
@@ -144,11 +173,12 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			block := types.NewBlock(&header, transactions, uncles, receipts)
 
-			client := NewFakeClient()
+			client := NewFakeClient(nil)
 			client.AddReceipts(receipts)
 
-			coreBlock := geth.ToCoreBlock(block, client)
+			coreBlock, err := geth.ToCoreBlock(block, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			Expect(geth.CalcUnclesReward(coreBlock, block.Uncles())).To(Equal(6.875))
 		})
 
@@ -190,10 +220,11 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			var uncles []*types.Header
 			block := types.NewBlock(&header, transactions, uncles, receipts)
 
-			client := NewFakeClient()
+			client := NewFakeClient(nil)
 			client.AddReceipts(receipts)
-			coreBlock := geth.ToCoreBlock(block, client)
+			coreBlock, err := geth.ToCoreBlock(block, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			Expect(geth.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(3.024990672))
 		})
 	})
@@ -203,8 +234,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 			client := &FakeGethClient{}
-			coreBlock := geth.ToCoreBlock(block, client)
+			coreBlock, err := geth.ToCoreBlock(block, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			Expect(len(coreBlock.Transactions)).To(Equal(0))
 		})
 
@@ -227,7 +259,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				TxHash:            gethTransaction.Hash(),
 			}
 
-			client := NewFakeClient()
+			client := NewFakeClient(nil)
 			client.AddReceipts([]*types.Receipt{gethReceipt})
 
 			header := types.Header{}
@@ -237,8 +269,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Header{},
 				[]*types.Receipt{gethReceipt},
 			)
-			coreBlock := geth.ToCoreBlock(gethBlock, client)
+			coreBlock, err := geth.ToCoreBlock(gethBlock, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.Data).To(Equal("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"))
@@ -271,7 +304,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				ContractAddress:   common.HexToAddress("0x1023342345"),
 			}
 
-			client := NewFakeClient()
+			client := NewFakeClient(nil)
 			client.AddReceipts([]*types.Receipt{gethReceipt})
 
 			gethBlock := types.NewBlock(
@@ -281,14 +314,61 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Receipt{gethReceipt},
 			)
 
-			coreBlock := geth.ToCoreBlock(gethBlock, client)
+			coreBlock, err := geth.ToCoreBlock(gethBlock, client)
 
+			Expect(err).ToNot(HaveOccurred())
 			coreTransaction := coreBlock.Transactions[0]
 			Expect(coreTransaction.To).To(Equal(""))
 
 			coreReceipt := coreTransaction.Receipt
 			expectedReceipt := geth.ReceiptToCoreReceipt(gethReceipt)
 			Expect(coreReceipt).To(Equal(expectedReceipt))
+		})
+	})
+
+	Describe("transaction error handling", func() {
+		var gethTransaction *types.Transaction
+		var gethReceipt *types.Receipt
+		var header *types.Header
+		var gethBlock *types.Block
+
+		BeforeEach(func() {
+			log.SetOutput(ioutil.Discard)
+			gethTransaction = types.NewTransaction(
+				uint64(0),
+				common.Address{},
+				big.NewInt(0),
+				uint64(0),
+				big.NewInt(0),
+				[]byte{},
+			)
+			gethReceipt = &types.Receipt{}
+			header = &types.Header{}
+			gethBlock = types.NewBlock(
+				header,
+				[]*types.Transaction{gethTransaction},
+				[]*types.Header{},
+				[]*types.Receipt{gethReceipt},
+			)
+
+		})
+
+		AfterEach(func() {
+			defer log.SetOutput(os.Stdout)
+		})
+
+		It("returns an error when transaction sender call fails", func() {
+			client := NewFakeClient(TransactionSenderError{})
+			client.AddReceipts([]*types.Receipt{})
+			_, err := geth.ToCoreBlock(gethBlock, client)
+			Expect(err).To(Equal(TransactionSenderError{}))
+		})
+
+		It("returns an error when transaction receipt call fails", func() {
+			client := NewFakeClient(TransActionReceiptError{})
+			client.AddReceipts([]*types.Receipt{})
+			_, err := geth.ToCoreBlock(gethBlock, client)
+			Expect(err).To(Equal(TransActionReceiptError{}))
 		})
 	})
 

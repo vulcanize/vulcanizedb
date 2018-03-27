@@ -1,6 +1,8 @@
 package history_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -98,6 +100,14 @@ var _ = Describe("Populating blocks", func() {
 		history.RetrieveAndUpdateBlocks(blockchain, blockRepository, history.MakeRange(2, 5))
 		Expect(blockRepository.BlockCount()).To(Equal(3))
 		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(3))
+	})
+
+	It("does not call repository create block when there is an error", func() {
+		blockchain := fakes.NewBlockchain(errors.New("error getting block"))
+		blocks := history.MakeRange(1, 10)
+		history.RetrieveAndUpdateBlocks(blockchain, blockRepository, blocks)
+		Expect(blockRepository.BlockCount()).To(Equal(0))
+		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(0))
 	})
 
 })
