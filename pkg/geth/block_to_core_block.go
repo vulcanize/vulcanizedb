@@ -5,11 +5,14 @@ import (
 
 	"log"
 
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 )
 
 type Client interface {
@@ -40,31 +43,47 @@ func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
 }
 
 func convertTransactionsToCore(gethBlock *types.Block, client Client) []core.Transaction {
-	transactions := make([]core.Transaction, 0)
-	for i, gethTransaction := range gethBlock.Transactions() {
-		from, err := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
-		if err != nil {
-			log.Println(err)
-		}
-		transaction := transToCoreTrans(gethTransaction, &from)
-		transaction, err = appendReceiptToTransaction(client, transaction)
-		if err != nil {
-			log.Println(err)
-		}
-		transactions = append(transactions, transaction)
+	var g errgroup.Group
+	var wg sync.WaitGroup
+	coreTransactions := make([]core.Transaction, len(gethBlock.Transactions()))
+	wg.Add(len(gethBlock.Transactions()))
+
+	for gethTransactionIndex, gethTransaction := range gethBlock.Transactions() {
+		//https://golang.org/doc/faq#closures_and_goroutines
+		transaction := gethTransaction
+		transactionIndex := uint(gethTransactionIndex)
+		g.Go(func() error {
+			defer wg.Done()
+			from, err := client.TransactionSender(context.Background(), transaction, gethBlock.Hash(), transactionIndex)
+			if err != nil {
+				log.Println("transaction sender: ", err)
+				return err
+			}
+			coreTransaction := transToCoreTrans(transaction, &from)
+			coreTransaction, err = appendReceiptToTransaction(client, coreTransaction)
+			if err != nil {
+				log.Println("receipt: ", err)
+				return err
+			}
+			coreTransactions[transactionIndex] = coreTransaction
+			return nil
+		})
 	}
-	return transactions
+	if err := g.Wait(); err != nil {
+		log.Println("transactions: ", err)
+		return coreTransactions
+	}
+	return coreTransactions
 }
 
 func appendReceiptToTransaction(client Client, transaction core.Transaction) (core.Transaction, error) {
 	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
-		log.Println(err)
 		return transaction, err
 	}
 	receipt := ReceiptToCoreReceipt(gethReceipt)
 	transaction.Receipt = receipt
-	return transaction, err
+	return transaction, nil
 }
 
 func transToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
