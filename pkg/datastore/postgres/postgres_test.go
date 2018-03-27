@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"io/ioutil"
-	"log"
-
 	"math/big"
 
 	"github.com/jmoiron/sqlx"
@@ -19,10 +16,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
-
-func init() {
-	log.SetOutput(ioutil.Discard)
-}
 
 var _ = Describe("Postgres DB", func() {
 	var sqlxdb *sqlx.DB

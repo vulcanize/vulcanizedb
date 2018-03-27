@@ -9,6 +9,8 @@ import (
 
 	"strings"
 
+	"log"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -79,7 +81,10 @@ func MakeNode(wrapper ClientWrapper) core.Node {
 
 func (client ClientWrapper) NetworkId() float64 {
 	var version string
-	client.CallContext(context.Background(), &version, "net_version")
+	err := client.CallContext(context.Background(), &version, "net_version")
+	if err != nil {
+		log.Println(err)
+	}
 	networkId, _ := strconv.ParseFloat(version, 64)
 	return networkId
 }

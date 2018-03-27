@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 )
 
 type Client interface {
@@ -17,8 +18,11 @@ type Client interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 }
 
-func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
-	transactions := convertTransactionsToCore(gethBlock, client)
+func ToCoreBlock(gethBlock *types.Block, client Client) (core.Block, error) {
+	transactions, err := convertTransactionsToCore(gethBlock, client)
+	if err != nil {
+		return core.Block{}, err
+	}
 	coreBlock := core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
 		ExtraData:    hexutil.Encode(gethBlock.Extra()),
@@ -36,35 +40,48 @@ func ToCoreBlock(gethBlock *types.Block, client Client) core.Block {
 	}
 	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles())
 	coreBlock.UnclesReward = CalcUnclesReward(coreBlock, gethBlock.Uncles())
-	return coreBlock
+	return coreBlock, nil
 }
 
-func convertTransactionsToCore(gethBlock *types.Block, client Client) []core.Transaction {
-	transactions := make([]core.Transaction, 0)
-	for i, gethTransaction := range gethBlock.Transactions() {
-		from, err := client.TransactionSender(context.Background(), gethTransaction, gethBlock.Hash(), uint(i))
-		if err != nil {
-			log.Println(err)
-		}
-		transaction := transToCoreTrans(gethTransaction, &from)
-		transaction, err = appendReceiptToTransaction(client, transaction)
-		if err != nil {
-			log.Println(err)
-		}
-		transactions = append(transactions, transaction)
+func convertTransactionsToCore(gethBlock *types.Block, client Client) ([]core.Transaction, error) {
+	var g errgroup.Group
+	coreTransactions := make([]core.Transaction, len(gethBlock.Transactions()))
+
+	for gethTransactionIndex, gethTransaction := range gethBlock.Transactions() {
+		//https://golang.org/doc/faq#closures_and_goroutines
+		transaction := gethTransaction
+		transactionIndex := uint(gethTransactionIndex)
+		g.Go(func() error {
+			from, err := client.TransactionSender(context.Background(), transaction, gethBlock.Hash(), transactionIndex)
+			if err != nil {
+				log.Println("transaction sender: ", err)
+				return err
+			}
+			coreTransaction := transToCoreTrans(transaction, &from)
+			coreTransaction, err = appendReceiptToTransaction(client, coreTransaction)
+			if err != nil {
+				log.Println("receipt: ", err)
+				return err
+			}
+			coreTransactions[transactionIndex] = coreTransaction
+			return nil
+		})
 	}
-	return transactions
+	if err := g.Wait(); err != nil {
+		log.Println("transactions: ", err)
+		return coreTransactions, err
+	}
+	return coreTransactions, nil
 }
 
 func appendReceiptToTransaction(client Client, transaction core.Transaction) (core.Transaction, error) {
 	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
-		log.Println(err)
 		return transaction, err
 	}
 	receipt := ReceiptToCoreReceipt(gethReceipt)
 	transaction.Receipt = receipt
-	return transaction, err
+	return transaction, nil
 }
 
 func transToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
