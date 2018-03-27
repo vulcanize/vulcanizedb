@@ -59,17 +59,21 @@ func backFillAllBlocks(blockchain core.Blockchain, blockRepository datastore.Blo
 func sync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-
 	blockchain := geth.NewBlockchain(ipc)
-	if blockchain.LastBlock().Int64() == 0 {
+
+	lastBlock := blockchain.LastBlock().Int64()
+	if lastBlock == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
+	_startingBlockNumber := int64(startingBlockNumber)
+	if _startingBlockNumber > lastBlock {
+		log.Fatal("starting block number > current block number")
+	}
+
 	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
 	blockRepository := repositories.BlockRepository{DB: &db}
 	validator := history.NewBlockValidator(blockchain, blockRepository, 15)
-
 	missingBlocksPopulated := make(chan int)
-	_startingBlockNumber := int64(startingBlockNumber)
 	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, _startingBlockNumber)
 
 	for {
