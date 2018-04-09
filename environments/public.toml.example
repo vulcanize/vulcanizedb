@@ -1,0 +1,7 @@
+[database]
+name = "vulcanize_public"
+hostname = "localhost"
+port = 5432
+
+[client]
+ipcPath = <local node's IPC filepath>
