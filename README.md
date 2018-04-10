@@ -38,8 +38,7 @@
       - Mac: `$HOME/Library/Application\ Support/io.parity.ethereum/`
       - Linux: `$HOME/.local/share/io.parity.ethereum/`
 
-- `environments/infura.toml` can be used to run commands with a full
-  archive node, rather than a local quick sync node.
+- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable
 
 ## Start syncing with postgres
 Syncs VulcanizeDB with the configured Ethereum node.
