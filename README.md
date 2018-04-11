@@ -17,9 +17,8 @@
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. `createdb vulcanize_public`
 1. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
-1. Import the schema: `psql vulcanize_public < db/schema.sql`
+1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
 
-   or run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
     * See below for configuring additional environments
 
 ## Configuration
