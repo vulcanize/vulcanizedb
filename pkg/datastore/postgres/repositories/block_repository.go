@@ -136,19 +136,17 @@ func nullStringToZero(s string) string {
 }
 
 func (blockRepository BlockRepository) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
-	var transactionId int
-	err := tx.QueryRow(
+	_, err := tx.Exec(
 		`INSERT INTO transactions
        (block_id, hash, nonce, tx_to, tx_from, gaslimit, gasprice, value, input_data)
        VALUES ($1, $2, $3, $4, $5, $6, $7,  $8::NUMERIC, $9)
        RETURNING id`,
-		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, nullStringToZero(transaction.Value), transaction.Data).
-		Scan(&transactionId)
+		blockId, transaction.Hash, transaction.Nonce, transaction.To, transaction.From, transaction.GasLimit, transaction.GasPrice, nullStringToZero(transaction.Value), transaction.Data)
 	if err != nil {
 		return err
 	}
 	if hasReceipt(transaction) {
-		receiptId, err := blockRepository.createReceipt(tx, transactionId, transaction.Receipt)
+		receiptId, err := blockRepository.createReceipt(tx, blockId, transaction.Receipt)
 		if err != nil {
 			return err
 		}
@@ -170,15 +168,15 @@ func hasReceipt(transaction core.Transaction) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
-func (blockRepository BlockRepository) createReceipt(tx *sql.Tx, transactionId int, receipt core.Receipt) (int, error) {
+func (blockRepository BlockRepository) createReceipt(tx *sql.Tx, blockId int64, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
 		`INSERT INTO receipts
-               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, transaction_id)
+               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7) 
                RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, transactionId).Scan(&receiptId)
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
 	if err != nil {
 		return receiptId, err
 	}
