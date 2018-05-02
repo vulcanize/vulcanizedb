@@ -23,7 +23,9 @@ var _ = Describe("Postgres DB", func() {
 	It("connects to the database", func() {
 		var err error
 		pgConfig := config.DbConnectionString(test_config.DBConfig)
+
 		sqlxdb, err = sqlx.Connect("postgres", pgConfig)
+
 		Expect(err).Should(BeNil())
 		Expect(sqlxdb).ShouldNot(BeNil())
 	})
@@ -76,10 +78,10 @@ var _ = Describe("Postgres DB", func() {
 		db := test_config.NewTestDB(node)
 		blocksRepository := repositories.BlockRepository{DB: db}
 
-		err1 := blocksRepository.CreateOrUpdateBlock(badBlock)
-		savedBlock, err2 := blocksRepository.GetBlock(123)
+		_, err1 := blocksRepository.CreateOrUpdateBlock(badBlock)
 
 		Expect(err1).To(HaveOccurred())
+		savedBlock, err2 := blocksRepository.GetBlock(123)
 		Expect(err2).To(HaveOccurred())
 		Expect(savedBlock).To(BeZero())
 	})
@@ -87,7 +89,9 @@ var _ = Describe("Postgres DB", func() {
 	It("throws error when can't connect to the database", func() {
 		invalidDatabase := config.Database{}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
+
 		_, err := postgres.NewDB(invalidDatabase, node)
+
 		Expect(err).To(Equal(postgres.ErrDBConnectionFailed))
 	})
 
@@ -110,10 +114,10 @@ var _ = Describe("Postgres DB", func() {
 		db, _ := postgres.NewDB(test_config.DBConfig, node)
 		logRepository := repositories.LogRepository{DB: db}
 
-		err := logRepository.CreateLogs([]core.Log{badLog})
-		savedBlock := logRepository.GetLogs("x123", 1)
+		err := logRepository.CreateLogs([]core.Log{badLog}, 123)
 
 		Expect(err).ToNot(BeNil())
+		savedBlock := logRepository.GetLogs("x123", 1)
 		Expect(savedBlock).To(BeNil())
 	})
 
@@ -129,12 +133,11 @@ var _ = Describe("Postgres DB", func() {
 		db, _ := postgres.NewDB(test_config.DBConfig, node)
 		blockRepository := repositories.BlockRepository{DB: db}
 
-		err1 := blockRepository.CreateOrUpdateBlock(block)
-		savedBlock, err2 := blockRepository.GetBlock(123)
+		_, err1 := blockRepository.CreateOrUpdateBlock(block)
 
 		Expect(err1).To(HaveOccurred())
+		savedBlock, err2 := blockRepository.GetBlock(123)
 		Expect(err2).To(HaveOccurred())
 		Expect(savedBlock).To(BeZero())
 	})
-
 })

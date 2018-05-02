@@ -10,7 +10,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ bool = Describe("Logs Repository", func() {
+var _ = Describe("Logs Repository", func() {
+	var blockRepository datastore.BlockRepository
+	var logRepository datastore.LogRepository
 	var receiptRepository datastore.ReceiptRepository
 	var db *postgres.DB
 	var node core.Node
@@ -22,14 +24,67 @@ var _ bool = Describe("Logs Repository", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
+		blockRepository = repositories.BlockRepository{DB: db}
+		logRepository = repositories.LogRepository{DB: db}
 		receiptRepository = repositories.ReceiptRepository{DB: db}
 	})
 
-	Describe("Saving receipts", func() {
+	Describe("Saving multiple receipts", func() {
+		It("persists each receipt and its logs", func() {
+			blockNumber := int64(1234567)
+			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
+			Expect(err).NotTo(HaveOccurred())
+			txHashOne := "0xTxHashOne"
+			txHashTwo := "0xTxHashTwo"
+			addressOne := "0xAddressOne"
+			addressTwo := "0xAddressTwo"
+			logsOne := []core.Log{{
+				Address:     addressOne,
+				BlockNumber: blockNumber,
+				TxHash:      txHashOne,
+			}, {
+				Address:     addressOne,
+				BlockNumber: blockNumber,
+				TxHash:      txHashOne,
+			}}
+			logsTwo := []core.Log{{
+				BlockNumber: blockNumber,
+				TxHash:      txHashTwo,
+				Address:     addressTwo,
+			}}
+			receiptOne := core.Receipt{
+				Logs:   logsOne,
+				TxHash: txHashOne,
+			}
+			receiptTwo := core.Receipt{
+				Logs:   logsTwo,
+				TxHash: txHashTwo,
+			}
+			receipts := []core.Receipt{receiptOne, receiptTwo}
+
+			err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			persistedReceiptOne, err := receiptRepository.GetReceipt(txHashOne)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(persistedReceiptOne).NotTo(BeNil())
+			Expect(persistedReceiptOne.TxHash).To(Equal(txHashOne))
+			persistedReceiptTwo, err := receiptRepository.GetReceipt(txHashTwo)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(persistedReceiptTwo).NotTo(BeNil())
+			Expect(persistedReceiptTwo.TxHash).To(Equal(txHashTwo))
+			persistedAddressOneLogs := logRepository.GetLogs(addressOne, blockNumber)
+			Expect(persistedAddressOneLogs).NotTo(BeNil())
+			Expect(len(persistedAddressOneLogs)).To(Equal(2))
+			persistedAddressTwoLogs := logRepository.GetLogs(addressTwo, blockNumber)
+			Expect(persistedAddressTwoLogs).NotTo(BeNil())
+			Expect(len(persistedAddressTwoLogs)).To(Equal(1))
+		})
+	})
+
+	Describe("Saving receipts on a block's transactions", func() {
 		It("returns the receipt when it exists", func() {
-			var blockRepository datastore.BlockRepository
-			db := test_config.NewTestDB(node)
-			blockRepository = repositories.BlockRepository{DB: db}
 			expected := core.Receipt{
 				ContractAddress:   "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
 				CumulativeGasUsed: 7996119,
@@ -66,9 +121,6 @@ var _ bool = Describe("Logs Repository", func() {
 		})
 
 		It("still saves receipts without logs", func() {
-			var blockRepository datastore.BlockRepository
-			db := test_config.NewTestDB(node)
-			blockRepository = repositories.BlockRepository{DB: db}
 			receipt := core.Receipt{
 				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
 			}

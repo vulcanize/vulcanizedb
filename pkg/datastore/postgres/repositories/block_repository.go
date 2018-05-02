@@ -3,10 +3,11 @@ package repositories
 import (
 	"context"
 	"database/sql"
-
+	"errors"
 	"log"
 
 	"github.com/jmoiron/sqlx"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -15,6 +16,8 @@ import (
 const (
 	blocksFromHeadBeforeFinal = 20
 )
+
+var ErrBlockExists = errors.New("Won't add block that already exists.")
 
 type BlockRepository struct {
 	*postgres.DB
@@ -28,22 +31,21 @@ func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) {
 		cutoff)
 }
 
-func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) error {
+func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
 	var err error
+	var blockId int64
 	retrievedBlockHash, ok := blockRepository.getBlockHash(block)
 	if !ok {
-		err = blockRepository.insertBlock(block)
-		return err
+		return blockRepository.insertBlock(block)
 	}
 	if ok && retrievedBlockHash != block.Hash {
 		err = blockRepository.removeBlock(block.Number)
 		if err != nil {
-			return err
+			return 0, err
 		}
-		err = blockRepository.insertBlock(block)
-		return err
+		return blockRepository.insertBlock(block)
 	}
-	return nil
+	return blockId, ErrBlockExists
 }
 
 func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64) []int64 {
@@ -92,7 +94,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 	return savedBlock, nil
 }
 
-func (blockRepository BlockRepository) insertBlock(block core.Block) error {
+func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, error) {
 	var blockId int64
 	tx, _ := blockRepository.DB.BeginTx(context.Background(), nil)
 	err := tx.QueryRow(
@@ -104,15 +106,17 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) error {
 		Scan(&blockId)
 	if err != nil {
 		tx.Rollback()
-		return postgres.ErrDBInsertFailed
+		return 0, postgres.ErrDBInsertFailed
 	}
-	err = blockRepository.createTransactions(tx, blockId, block.Transactions)
-	if err != nil {
-		tx.Rollback()
-		return postgres.ErrDBInsertFailed
+	if len(block.Transactions) > 0 {
+		err = blockRepository.createTransactions(tx, blockId, block.Transactions)
+		if err != nil {
+			tx.Rollback()
+			return 0, postgres.ErrDBInsertFailed
+		}
 	}
 	tx.Commit()
-	return nil
+	return blockId, nil
 }
 
 func (blockRepository BlockRepository) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {

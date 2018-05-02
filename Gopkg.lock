@@ -22,8 +22,16 @@
     "common/hexutil",
     "common/math",
     "common/mclock",
+    "consensus",
+    "consensus/misc",
+    "core",
+    "core/state",
     "core/types",
+    "core/vm",
     "crypto",
+    "crypto/bn256",
+    "crypto/bn256/cloudflare",
+    "crypto/bn256/google",
     "crypto/ecies",
     "crypto/secp256k1",
     "crypto/sha3",
@@ -68,6 +76,15 @@
   name = "github.com/golang/snappy"
   packages = ["."]
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru"
+  ]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
   branch = "master"
@@ -264,6 +281,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ripemd160"]
+  revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -340,6 +363,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4dcddfb7fa2db8ba7e3d8e70ec8ba23a7e9b6a1d99c62933ed63624412967aeb"
+  inputs-digest = "8e609f758d10041b1746db11078eca9cad29a7dbf9939d14e49d70ee172dfd2e"
   solver-name = "gps-cdcl"
   solver-version = 1

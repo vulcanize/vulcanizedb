@@ -177,6 +177,22 @@ var _ = Describe("Saving blocks", func() {
 		Expect(retrievedBlockTwo.Transactions[0].Hash).To(Equal("x678"))
 	})
 
+	It("returns 'block exists' error if attempting to add duplicate block", func() {
+		block := core.Block{
+			Number: 12345,
+			Hash:   "0x12345",
+		}
+
+		_, err := blockRepository.CreateOrUpdateBlock(block)
+
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = blockRepository.CreateOrUpdateBlock(block)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(repositories.ErrBlockExists))
+	})
+
 	It("saves the attributes associated to a transaction", func() {
 		gasLimit := uint64(5000)
 		gasPrice := int64(3)

@@ -23,19 +23,27 @@
 
 ## Configuration
 - To use a local Ethereum node, copy `environments/public.toml.example` to
-  `environments/public.toml` and update the `ipcPath` to the local node's IPC filepath:
-  - when using geth:
-    - The IPC file is called `geth.ipc`.
-    - The geth IPC file path is printed to the console when you start geth.
-    - The default location is:
-      - Mac: `$HOME/Library/Ethereum`
-      - Linux: `$HOME/.ethereum`
+  `environments/public.toml` and update the `ipcPath` and `levelDbPath`.
+  - `ipcPath` should match the local node's IPC filepath:
+      - when using geth:
+        - The IPC file is called `geth.ipc`.
+        - The geth IPC file path is printed to the console when you start geth.
+        - The default location is:
+          - Mac: `$HOME/Library/Ethereum`
+          - Linux: `$HOME/.ethereum`
 
-  - when using parity:
-    - The IPC file is called `jsonrpc.ipc`.
-    - The default location is:
-      - Mac: `$HOME/Library/Application\ Support/io.parity.ethereum/`
-      - Linux: `$HOME/.local/share/io.parity.ethereum/`
+      - when using parity:
+        - The IPC file is called `jsonrpc.ipc`.
+        - The default location is:
+          - Mac: `$HOME/Library/Application\ Support/io.parity.ethereum/`
+          - Linux: `$HOME/.local/share/io.parity.ethereum/`
+          
+  - `levelDbPath` should match Geth's chaindata directory path.
+      - The geth LevelDB chaindata path is printed to the console when you start geth.
+      - The default location is:
+          - Mac: `$HOME/Library/Ethereum/geth/chaindata`
+          - Linux: `$HOME/.ethereum/geth/chaindata`
+      - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
 
 - See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable
 
@@ -43,7 +51,13 @@
 Syncs VulcanizeDB with the configured Ethereum node.
 1. Start node (**if fast syncing wait for initial sync to finish**)
 1. In a separate terminal start vulcanize_db
-    - `vulcanizedb sync --config <config.toml> --starting-block-number <block-number>`
+    - `./vulcanizedb sync --config <config.toml> --starting-block-number <block-number>`
+
+## Alternatively, sync from Geth's underlying LevelDB
+Sync VulcanizeDB from the LevelDB underlying a Geth node.
+1. Assure node is not running, and that it has synced to the desired block height.
+1. Start vulcanize_db
+   - `./vulcanizedb coldImport --config <config.toml> --starting-block-number <block-number> --ending-block-number <block-number>`
 
 ## Running the Tests
 

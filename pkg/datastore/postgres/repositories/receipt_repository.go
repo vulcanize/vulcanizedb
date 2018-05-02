@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -10,6 +11,73 @@ import (
 
 type ReceiptRepository struct {
 	*postgres.DB
+}
+
+func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
+	tx, err := receiptRepository.DB.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	for _, receipt := range receipts {
+		receiptId, err := createReceipt(receipt, blockId, tx)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if len(receipt.Logs) > 0 {
+			err = createLogs(receipt.Logs, receiptId, tx)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func createReceipt(receipt core.Receipt, blockId int64, tx *sql.Tx) (int64, error) {
+	var receiptId int64
+	err := tx.QueryRow(
+		`INSERT INTO receipts
+		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
+		               VALUES ($1, $2, $3, $4, $5, $6, $7)
+		               RETURNING id`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
+	).Scan(&receiptId)
+	return receiptId, err
+}
+
+func createLogs(logs []core.Log, receiptId int64, tx *sql.Tx) error {
+	for _, log := range logs {
+		_, err := tx.Exec(
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                `,
+			log.BlockNumber, log.Address, log.TxHash, log.Index, log.Topics[0], log.Topics[1], log.Topics[2], log.Topics[3], log.Data, receiptId,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt) (int64, error) {
+	tx, _ := receiptRepository.DB.BeginTx(context.Background(), nil)
+	var receiptId int64
+	err := tx.QueryRow(
+		`INSERT INTO receipts
+               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)
+               RETURNING id`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
+	if err != nil {
+		tx.Rollback()
+		return receiptId, err
+	}
+	tx.Commit()
+	return receiptId, nil
 }
 
 func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Receipt, error) {
