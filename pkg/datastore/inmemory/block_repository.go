@@ -9,14 +9,14 @@ type BlockRepository struct {
 	*InMemory
 }
 
-func (blockRepository *BlockRepository) CreateOrUpdateBlock(block core.Block) error {
+func (blockRepository *BlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
 	blockRepository.CreateOrUpdateBlockCallCount++
 	blockRepository.blocks[block.Number] = block
 	for _, transaction := range block.Transactions {
 		blockRepository.receipts[transaction.Hash] = transaction.Receipt
 		blockRepository.logs[transaction.TxHash] = transaction.Logs
 	}
-	return nil
+	return 0, nil
 }
 
 func (blockRepository *BlockRepository) GetBlock(blockNumber int64) (core.Block, error) {

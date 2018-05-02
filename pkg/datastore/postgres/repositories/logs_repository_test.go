@@ -13,36 +13,45 @@ import (
 )
 
 var _ = Describe("Logs Repository", func() {
-	var db *postgres.DB
-	var logsRepository datastore.LogRepository
-	var node core.Node
-	BeforeEach(func() {
-		node = core.Node{
-			GenesisBlock: "GENESIS",
-			NetworkID:    1,
-			ID:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
-			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
-		}
-		db = test_config.NewTestDB(node)
-		logsRepository = repositories.LogRepository{DB: db}
-	})
-
 	Describe("Saving logs", func() {
+		var db *postgres.DB
+		var blockRepository datastore.BlockRepository
+		var logsRepository datastore.LogRepository
+		var receiptRepository datastore.ReceiptRepository
+		var node core.Node
+
+		BeforeEach(func() {
+			node = core.Node{
+				GenesisBlock: "GENESIS",
+				NetworkID:    1,
+				ID:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
+				ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
+			}
+			db = test_config.NewTestDB(node)
+			blockRepository = repositories.BlockRepository{DB: db}
+			logsRepository = repositories.LogRepository{DB: db}
+			receiptRepository = repositories.ReceiptRepository{DB: db}
+		})
+
 		It("returns the log when it exists", func() {
+			blockNumber := int64(12345)
+			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
+			Expect(err).NotTo(HaveOccurred())
+			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			Expect(err).NotTo(HaveOccurred())
 			logsRepository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
+				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
-			}},
-			)
+			}}, receiptId)
 
-			log := logsRepository.GetLogs("x123", 1)
+			log := logsRepository.GetLogs("x123", blockNumber)
 
 			Expect(log).NotTo(BeNil())
-			Expect(log[0].BlockNumber).To(Equal(int64(1)))
+			Expect(log[0].BlockNumber).To(Equal(blockNumber))
 			Expect(log[0].Address).To(Equal("x123"))
 			Expect(log[0].Index).To(Equal(int64(0)))
 			Expect(log[0].TxHash).To(Equal("x456"))
@@ -58,24 +67,27 @@ var _ = Describe("Logs Repository", func() {
 		})
 
 		It("filters to the correct block number and address", func() {
+			blockNumber := int64(12345)
+			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
+			Expect(err).NotTo(HaveOccurred())
+			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			Expect(err).NotTo(HaveOccurred())
 			logsRepository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
+				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
 				TxHash:      "x456",
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
-			}},
-			)
+			}}, receiptId)
 			logsRepository.CreateLogs([]core.Log{{
-				BlockNumber: 1,
+				BlockNumber: blockNumber,
 				Index:       1,
 				Address:     "x123",
 				TxHash:      "x789",
 				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
-			}},
-			)
+			}}, receiptId)
 			logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 2,
 				Index:       0,
@@ -83,10 +95,9 @@ var _ = Describe("Logs Repository", func() {
 				TxHash:      "x456",
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
-			}},
-			)
+			}}, receiptId)
 
-			log := logsRepository.GetLogs("x123", 1)
+			log := logsRepository.GetLogs("x123", blockNumber)
 
 			type logIndex struct {
 				blockNumber int64
@@ -111,14 +122,12 @@ var _ = Describe("Logs Repository", func() {
 			Expect(len(log)).To(Equal(2))
 			Expect(uniqueBlockNumbers).To(Equal(
 				[]logIndex{
-					{blockNumber: 1, Index: 0},
-					{blockNumber: 1, Index: 1}},
+					{blockNumber: blockNumber, Index: 0},
+					{blockNumber: blockNumber, Index: 1}},
 			))
 		})
 
 		It("saves the logs attached to a receipt", func() {
-			var blockRepository datastore.BlockRepository
-			blockRepository = repositories.BlockRepository{DB: db}
 
 			logs := []core.Log{{
 				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
@@ -171,7 +180,7 @@ var _ = Describe("Logs Repository", func() {
 				}
 
 			block := core.Block{Transactions: []core.Transaction{transaction}}
-			err := blockRepository.CreateOrUpdateBlock(block)
+			_, err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
 			retrievedLogs := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 

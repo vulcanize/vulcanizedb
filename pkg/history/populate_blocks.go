@@ -23,6 +23,7 @@ func RetrieveAndUpdateBlocks(blockchain core.Blockchain, blockRepository datasto
 			log.Printf("failed to retrieve block number: %d\n", blockNumber)
 			return 0
 		}
+		// TODO: handle possible error here
 		blockRepository.CreateOrUpdateBlock(block)
 	}
 	return len(blockNumbers)

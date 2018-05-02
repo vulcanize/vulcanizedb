@@ -13,14 +13,18 @@ import (
 
 var _ = Describe("Watched Events Repository", func() {
 	var db *postgres.DB
-	var logRepository datastore.LogRepository
+	var blocksRepository datastore.BlockRepository
 	var filterRepository datastore.FilterRepository
+	var logRepository datastore.LogRepository
+	var receiptRepository datastore.ReceiptRepository
 	var watchedEventRepository datastore.WatchedEventRepository
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
-		logRepository = repositories.LogRepository{DB: db}
+		blocksRepository = repositories.BlockRepository{DB: db}
 		filterRepository = repositories.FilterRepository{DB: db}
+		logRepository = repositories.LogRepository{DB: db}
+		receiptRepository = repositories.ReceiptRepository{DB: db}
 		watchedEventRepository = repositories.WatchedEventRepository{DB: db}
 	})
 
@@ -56,7 +60,11 @@ var _ = Describe("Watched Events Repository", func() {
 		}
 		err := filterRepository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
-		err = logRepository.CreateLogs(logs)
+		blockId, err := blocksRepository.CreateOrUpdateBlock(core.Block{})
+		Expect(err).NotTo(HaveOccurred())
+		receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+		Expect(err).NotTo(HaveOccurred())
+		err = logRepository.CreateLogs(logs, receiptId)
 		Expect(err).ToNot(HaveOccurred())
 		matchingLogs, err := watchedEventRepository.GetWatchedEvents("Filter1")
 		Expect(err).ToNot(HaveOccurred())
@@ -69,7 +77,6 @@ var _ = Describe("Watched Events Repository", func() {
 		Expect(matchingLogs[0].Topic1).To(Equal(expectedWatchedEventLog[0].Topic1))
 		Expect(matchingLogs[0].Topic2).To(Equal(expectedWatchedEventLog[0].Topic2))
 		Expect(matchingLogs[0].Data).To(Equal(expectedWatchedEventLog[0].Data))
-
 	})
 
 	It("retrieves a watched event log by name", func() {
@@ -110,7 +117,11 @@ var _ = Describe("Watched Events Repository", func() {
 		}}
 		err := filterRepository.CreateFilter(filter)
 		Expect(err).ToNot(HaveOccurred())
-		err = logRepository.CreateLogs(logs)
+		blockId, err := blocksRepository.CreateOrUpdateBlock(core.Block{Hash: "Ox123"})
+		Expect(err).NotTo(HaveOccurred())
+		receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{TxHash: "0x123"})
+		Expect(err).NotTo(HaveOccurred())
+		err = logRepository.CreateLogs(logs, receiptId)
 		Expect(err).ToNot(HaveOccurred())
 		matchingLogs, err := watchedEventRepository.GetWatchedEvents("Filter1")
 		Expect(err).ToNot(HaveOccurred())
