@@ -18,6 +18,8 @@ type MockEthereumDatabase struct {
 	getBlockReceiptsPassedHash     []byte
 	getBlockReceiptsPassedNumber   int64
 	getBlockReceiptsReturnReceipts types.Receipts
+	getHeadBlockNumberCalled       bool
+	getHeadBlockNumberReturnVal    int64
 }
 
 func NewMockEthereumDatabase() *MockEthereumDatabase {
@@ -33,6 +35,8 @@ func NewMockEthereumDatabase() *MockEthereumDatabase {
 		getBlockReceiptsPassedHash:     nil,
 		getBlockReceiptsPassedNumber:   0,
 		getBlockReceiptsReturnReceipts: nil,
+		getHeadBlockNumberCalled:       false,
+		getHeadBlockNumberReturnVal:    0,
 	}
 }
 
@@ -66,6 +70,11 @@ func (med *MockEthereumDatabase) GetBlockReceipts(blockHash []byte, blockNumber 
 	med.getBlockReceiptsPassedHash = blockHash
 	med.getBlockReceiptsPassedNumber = blockNumber
 	return med.getBlockReceiptsReturnReceipts
+}
+
+func (med *MockEthereumDatabase) GetHeadBlockNumber() int64 {
+	med.getHeadBlockNumberCalled = true
+	return med.getHeadBlockNumberReturnVal
 }
 
 func (med *MockEthereumDatabase) AssertGetBlockCalledWith(hash []byte, blockNumber int64) {

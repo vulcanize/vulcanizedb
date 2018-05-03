@@ -49,15 +49,19 @@ func init() {
 }
 
 func coldImport() {
-	if endingBlockNumber < startingBlockNumber {
-		log.Fatal("Ending block number must be greater than starting block number for cold import.")
-	}
-
 	// init eth db
 	ethDBConfig := ethereum.CreateDatabaseConfig(ethereum.Level, levelDbPath)
 	ethDB, err := ethereum.CreateDatabase(ethDBConfig)
 	if err != nil {
 		log.Fatal("Error connecting to ethereum db: ", err)
+	}
+
+	if endingBlockNumber < startingBlockNumber {
+		log.Fatal("Ending block number must be greater than starting block number for cold import.")
+	}
+	mostRecentBlockNumberInDb := ethDB.GetHeadBlockNumber()
+	if endingBlockNumber > mostRecentBlockNumberInDb {
+		log.Fatal("Ending block number is greater than most recent block in db: ", mostRecentBlockNumberInDb)
 	}
 
 	// init pg db

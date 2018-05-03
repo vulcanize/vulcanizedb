@@ -13,6 +13,7 @@ type Database interface {
 	GetBlock(hash []byte, blockNumber int64) *types.Block
 	GetBlockHash(blockNumber int64) []byte
 	GetBlockReceipts(blockHash []byte, blockNumber int64) types.Receipts
+	GetHeadBlockNumber() int64
 }
 
 func CreateDatabase(config DatabaseConfig) (Database, error) {
