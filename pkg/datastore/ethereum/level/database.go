@@ -32,3 +32,9 @@ func (l LevelDatabase) GetBlockReceipts(blockHash []byte, blockNumber int64) typ
 	h := common.BytesToHash(blockHash)
 	return l.reader.GetBlockReceipts(h, n)
 }
+
+func (l LevelDatabase) GetHeadBlockNumber() int64 {
+	h := l.reader.GetHeadBlockHash()
+	n := l.reader.GetBlockNumber(h)
+	return int64(n)
+}
