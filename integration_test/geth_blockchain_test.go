@@ -22,8 +22,9 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	It("reads two blocks", func(done Done) {
 		blocks := &inmemory.BlockRepository{InMemory: inMemory}
-		validator := history.NewBlockValidator(blockchain, blocks, 2)
-		validator.ValidateBlocks()
+		lastBlock := blockchain.LastBlock()
+		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
+		history.RetrieveAndUpdateBlocks(blockchain, blocks, queriedBlocks)
 		Expect(blocks.BlockCount()).To(Equal(2))
 		close(done)
 	}, 30)
