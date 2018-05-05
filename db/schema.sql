@@ -248,6 +248,38 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: token_supply; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.token_supply (
+    id integer NOT NULL,
+    block_id integer NOT NULL,
+    supply numeric NOT NULL,
+    token_address character varying(66) NOT NULL
+);
+
+
+--
+-- Name: token_supply_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.token_supply_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: token_supply_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.token_supply_id_seq OWNED BY public.token_supply.id;
+
+
+--
 -- Name: transactions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -372,6 +404,13 @@ ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id
 --
 
 ALTER TABLE ONLY public.receipts ALTER COLUMN id SET DEFAULT nextval('public.receipts_id_seq'::regclass);
+
+
+--
+-- Name: token_supply id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_supply ALTER COLUMN id SET DEFAULT nextval('public.token_supply_id_seq'::regclass);
 
 
 --
@@ -524,6 +563,14 @@ ALTER TABLE ONLY public.transactions
 --
 
 ALTER TABLE ONLY public.receipts
+    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: token_supply blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_supply
     ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
 
 
