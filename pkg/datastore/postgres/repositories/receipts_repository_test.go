@@ -10,7 +10,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Logs Repository", func() {
+var _ = Describe("Receipts Repository", func() {
 	var blockRepository datastore.BlockRepository
 	var logRepository datastore.LogRepository
 	var receiptRepository datastore.ReceiptRepository
@@ -24,7 +24,7 @@ var _ = Describe("Logs Repository", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
-		blockRepository = repositories.BlockRepository{DB: db}
+		blockRepository = repositories.NewBlockRepository(db)
 		logRepository = repositories.LogRepository{DB: db}
 		receiptRepository = repositories.ReceiptRepository{DB: db}
 	})
@@ -99,11 +99,12 @@ var _ = Describe("Logs Repository", func() {
 				Hash:    expected.TxHash,
 				Receipt: expected,
 			}
-
 			block := core.Block{Transactions: []core.Transaction{transaction}}
-			blockRepository.CreateOrUpdateBlock(block)
-			receipt, err := receiptRepository.GetReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
 
+			_, err := blockRepository.CreateOrUpdateBlock(block)
+
+			Expect(err).NotTo(HaveOccurred())
+			receipt, err := receiptRepository.GetReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
 			Expect(err).ToNot(HaveOccurred())
 			//Not currently serializing bloom logs
 			Expect(receipt.Bloom).To(Equal(core.Receipt{}.Bloom))
@@ -132,10 +133,11 @@ var _ = Describe("Logs Repository", func() {
 			block := core.Block{
 				Transactions: []core.Transaction{transaction},
 			}
-			blockRepository.CreateOrUpdateBlock(block)
 
-			_, err := receiptRepository.GetReceipt(receipt.TxHash)
+			_, err := blockRepository.CreateOrUpdateBlock(block)
 
+			Expect(err).NotTo(HaveOccurred())
+			_, err = receiptRepository.GetReceipt(receipt.TxHash)
 			Expect(err).To(Not(HaveOccurred()))
 		})
 	})

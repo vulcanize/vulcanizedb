@@ -16,6 +16,7 @@ var (
 	ipc                 string
 	levelDbPath         string
 	startingBlockNumber int64
+	syncAll             bool
 	endingBlockNumber   int64
 )
 

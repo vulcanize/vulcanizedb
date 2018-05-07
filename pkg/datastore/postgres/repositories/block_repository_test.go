@@ -15,16 +15,18 @@ import (
 
 var _ = Describe("Saving blocks", func() {
 	var db *postgres.DB
+	var node core.Node
 	var blockRepository datastore.BlockRepository
+
 	BeforeEach(func() {
-		node := core.Node{
+		node = core.Node{
 			GenesisBlock: "GENESIS",
 			NetworkID:    1,
 			ID:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
-		blockRepository = repositories.BlockRepository{DB: db}
+		blockRepository = repositories.NewBlockRepository(db)
 
 	})
 
@@ -40,7 +42,7 @@ var _ = Describe("Saving blocks", func() {
 			ClientName:   "Geth",
 		}
 		dbTwo := test_config.NewTestDB(nodeTwo)
-		repositoryTwo := repositories.BlockRepository{DB: dbTwo}
+		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
 		_, err := repositoryTwo.GetBlock(123)
 		Expect(err).To(HaveOccurred())
@@ -166,7 +168,7 @@ var _ = Describe("Saving blocks", func() {
 			NetworkID:    1,
 		}
 		dbTwo := test_config.NewTestDB(nodeTwo)
-		repositoryTwo := repositories.BlockRepository{DB: dbTwo}
+		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
 		blockRepository.CreateOrUpdateBlock(blockOne)
 		repositoryTwo.CreateOrUpdateBlock(blockTwo)
@@ -236,32 +238,39 @@ var _ = Describe("Saving blocks", func() {
 		It("is empty the starting block number is the highest known block number", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
 
-			Expect(len(blockRepository.MissingBlockNumbers(1, 1))).To(Equal(0))
+			Expect(len(blockRepository.MissingBlockNumbers(1, 1, node.ID))).To(Equal(0))
 		})
 
 		It("is the only missing block number", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
 
-			Expect(blockRepository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
+			Expect(blockRepository.MissingBlockNumbers(1, 2, node.ID)).To(Equal([]int64{1}))
 		})
 
 		It("is both missing block numbers", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
 
-			Expect(blockRepository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
+			Expect(blockRepository.MissingBlockNumbers(1, 3, node.ID)).To(Equal([]int64{1, 2}))
 		})
 
 		It("goes back to the starting block number", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 
-			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{4, 5}))
 		})
 
 		It("only includes missing block numbers", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 
-			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{5}))
+		})
+
+		It("includes blocks created by a different node", func() {
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+
+			Expect(blockRepository.MissingBlockNumbers(4, 6, "Different node id")).To(Equal([]int64{4, 5, 6}))
 		})
 
 		It("is a list with multiple gaps", func() {
@@ -270,18 +279,18 @@ var _ = Describe("Saving blocks", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 10})
 
-			Expect(blockRepository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
+			Expect(blockRepository.MissingBlockNumbers(3, 10, node.ID)).To(Equal([]int64{3, 6, 7, 9}))
 		})
 
 		It("returns empty array when lower bound exceeds upper bound", func() {
-			Expect(blockRepository.MissingBlockNumbers(10000, 1)).To(Equal([]int64{}))
+			Expect(blockRepository.MissingBlockNumbers(10000, 1, node.ID)).To(Equal([]int64{}))
 		})
 
 		It("only returns requested range even when other gaps exist", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
 
-			Expect(blockRepository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(1, 5, node.ID)).To(Equal([]int64{1, 2, 4, 5}))
 		})
 	})
 

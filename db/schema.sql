@@ -83,7 +83,8 @@ CREATE TABLE public.blocks (
     miner character varying(42),
     extra_data character varying,
     reward double precision,
-    uncles_reward double precision
+    uncles_reward double precision,
+    eth_node_fingerprint character varying(128) NOT NULL
 );
 
 

@@ -14,7 +14,7 @@ var ErrBlockDoesNotExist = func(blockNumber int64) error {
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
-	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64
+	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64
 	SetBlocksStatus(chainHead int64)
 }
 

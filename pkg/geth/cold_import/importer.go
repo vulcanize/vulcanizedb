@@ -1,9 +1,8 @@
-package geth
+package cold_import
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
 
@@ -23,22 +22,21 @@ func NewColdImporter(ethDB ethereum.Database, blockRepository datastore.BlockRep
 	}
 }
 
-func (ci *ColdImporter) Execute(startingBlockNumber int64, endingBlockNumber int64) error {
-	for i := startingBlockNumber; i <= endingBlockNumber; i++ {
-		hash := ci.ethDB.GetBlockHash(i)
+func (ci *ColdImporter) Execute(startingBlockNumber int64, endingBlockNumber int64, nodeId string) error {
+	missingBlocks := ci.blockRepository.MissingBlockNumbers(startingBlockNumber, endingBlockNumber, nodeId)
+	for _, n := range missingBlocks {
+		hash := ci.ethDB.GetBlockHash(n)
 
-		blockId, err := ci.createBlocksAndTransactions(hash, i)
+		blockId, err := ci.createBlocksAndTransactions(hash, n)
 		if err != nil {
-			if err == repositories.ErrBlockExists {
-				continue
-			}
 			return err
 		}
-		err = ci.createReceiptsAndLogs(hash, i, blockId)
+		err = ci.createReceiptsAndLogs(hash, n, blockId)
 		if err != nil {
 			return err
 		}
 	}
+	ci.blockRepository.SetBlocksStatus(endingBlockNumber)
 	return nil
 }
 

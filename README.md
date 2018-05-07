@@ -58,6 +58,10 @@ Sync VulcanizeDB from the LevelDB underlying a Geth node.
 1. Assure node is not running, and that it has synced to the desired block height.
 1. Start vulcanize_db
    - `./vulcanizedb coldImport --config <config.toml> --starting-block-number <block-number> --ending-block-number <block-number>`
+1. Optional flags:
+    - `--starting-block-number`/`-s`: block number to start syncing from
+    - `--ending-block-number`/`-e`: block number to sync to
+    - `--all`/`-a`: sync all missing blocks
 
 ## Running the Tests
 

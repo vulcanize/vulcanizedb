@@ -76,7 +76,7 @@ var _ = Describe("Postgres DB", func() {
 		}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
 		db := test_config.NewTestDB(node)
-		blocksRepository := repositories.BlockRepository{DB: db}
+		blocksRepository := repositories.NewBlockRepository(db)
 
 		_, err1 := blocksRepository.CreateOrUpdateBlock(badBlock)
 
@@ -131,7 +131,7 @@ var _ = Describe("Postgres DB", func() {
 		}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
 		db, _ := postgres.NewDB(test_config.DBConfig, node)
-		blockRepository := repositories.BlockRepository{DB: db}
+		blockRepository := repositories.NewBlockRepository(db)
 
 		_, err1 := blockRepository.CreateOrUpdateBlock(block)
 

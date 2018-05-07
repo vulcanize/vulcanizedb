@@ -9,7 +9,7 @@ import (
 
 func PopulateMissingBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, startingBlockNumber int64) int {
 	lastBlock := blockchain.LastBlock().Int64()
-	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock-1)
+	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock-1, blockchain.Node().ID)
 	log.SetPrefix("")
 	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
 	RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
