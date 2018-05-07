@@ -26,7 +26,7 @@ func (blockRepository *BlockRepository) GetBlock(blockNumber int64) (core.Block,
 	return core.Block{}, datastore.ErrBlockDoesNotExist(blockNumber)
 }
 
-func (blockRepository *BlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64) []int64 {
+func (blockRepository *BlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64 {
 	missingNumbers := []int64{}
 	for blockNumber := int64(startingBlockNumber); blockNumber <= endingBlockNumber; blockNumber++ {
 		if _, ok := blockRepository.blocks[blockNumber]; !ok {

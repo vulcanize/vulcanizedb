@@ -17,13 +17,13 @@ package cmd
 import (
 	"log"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/cold_import"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/converters/cold_db"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 	"github.com/vulcanize/vulcanizedb/utils"
@@ -44,8 +44,9 @@ Geth must be synced over all of the desired blocks and must not be running in or
 
 func init() {
 	rootCmd.AddCommand(coldImportCmd)
-	coldImportCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Number for first block to cold import")
-	coldImportCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "e", 5500000, "Number for last block to cold import")
+	coldImportCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Number for first block to cold import.")
+	coldImportCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "e", 5500000, "Number for last block to cold import.")
+	coldImportCmd.Flags().BoolVarP(&syncAll, "all", "a", false, "Option to sync all missing blocks.")
 }
 
 func coldImport() {
@@ -55,34 +56,38 @@ func coldImport() {
 	if err != nil {
 		log.Fatal("Error connecting to ethereum db: ", err)
 	}
-
+	mostRecentBlockNumberInDb := ethDB.GetHeadBlockNumber()
+	if syncAll {
+		startingBlockNumber = 0
+		endingBlockNumber = mostRecentBlockNumberInDb
+	}
 	if endingBlockNumber < startingBlockNumber {
 		log.Fatal("Ending block number must be greater than starting block number for cold import.")
 	}
-	mostRecentBlockNumberInDb := ethDB.GetHeadBlockNumber()
 	if endingBlockNumber > mostRecentBlockNumberInDb {
 		log.Fatal("Ending block number is greater than most recent block in db: ", mostRecentBlockNumberInDb)
 	}
 
 	// init pg db
-	genesisBlockHash := common.BytesToHash(ethDB.GetBlockHash(0)).String()
-	coldNode := core.Node{
-		GenesisBlock: genesisBlockHash,
-		NetworkID:    1,
-		ID:           "LevelDbColdImport",
-		ClientName:   "LevelDbColdImport",
+	genesisBlock := ethDB.GetBlockHash(0)
+	reader := fs.FsReader{}
+	parser := crypto.EthPublicKeyParser{}
+	nodeBuilder := cold_import.NewColdImportNodeBuilder(reader, parser)
+	coldNode, err := nodeBuilder.GetNode(genesisBlock, levelDbPath)
+	if err != nil {
+		log.Fatal("Error getting node: ", err)
 	}
 	pgDB := utils.LoadPostgres(databaseConfig, coldNode)
 
 	// init cold importer deps
-	blockRepository := repositories.BlockRepository{DB: &pgDB}
+	blockRepository := repositories.NewBlockRepository(&pgDB)
 	receiptRepository := repositories.ReceiptRepository{DB: &pgDB}
 	transactionconverter := cold_db.NewColdDbTransactionConverter()
 	blockConverter := vulcCommon.NewBlockConverter(transactionconverter)
 
 	// init and execute cold importer
-	coldImporter := geth.NewColdImporter(ethDB, blockRepository, receiptRepository, blockConverter)
-	err = coldImporter.Execute(startingBlockNumber, endingBlockNumber)
+	coldImporter := cold_import.NewColdImporter(ethDB, blockRepository, receiptRepository, blockConverter)
+	err = coldImporter.Execute(startingBlockNumber, endingBlockNumber, coldNode.ID)
 	if err != nil {
 		log.Fatal("Error executing cold import: ", err)
 	}

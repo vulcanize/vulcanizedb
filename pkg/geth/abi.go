@@ -2,7 +2,6 @@ package geth
 
 import (
 	"errors"
-	"io/ioutil"
 	"strings"
 
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 )
 
 var (
@@ -80,7 +80,8 @@ func ParseAbi(abiString string) (abi.ABI, error) {
 }
 
 func ReadAbiFile(abiFilePath string) (string, error) {
-	filesBytes, err := ioutil.ReadFile(abiFilePath)
+	reader := fs.FsReader{}
+	filesBytes, err := reader.Read(abiFilePath)
 	if err != nil {
 		return "", ErrMissingAbiFile
 	}

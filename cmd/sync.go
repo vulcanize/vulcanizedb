@@ -68,7 +68,7 @@ func sync() {
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
-	blockRepository := repositories.BlockRepository{DB: &db}
+	blockRepository := repositories.NewBlockRepository(&db)
 	validator := history.NewBlockValidator(blockchain, blockRepository, 15)
 	missingBlocksPopulated := make(chan int)
 	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
