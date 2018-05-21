@@ -11,9 +11,13 @@ import (
 )
 
 var (
-	cfgFile        string
-	databaseConfig config.Database
-	ipc            string
+	cfgFile             string
+	databaseConfig      config.Database
+	ipc                 string
+	levelDbPath         string
+	startingBlockNumber int64
+	syncAll             bool
+	endingBlockNumber   int64
 )
 
 var rootCmd = &cobra.Command{
@@ -30,6 +34,7 @@ func Execute() {
 
 func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
+	levelDbPath = viper.GetString("client.leveldbpath")
 	databaseConfig = config.Database{
 		Name:     viper.GetString("database.name"),
 		Hostname: viper.GetString("database.hostname"),
@@ -46,12 +51,13 @@ func init() {
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
+	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
 	viper.BindPFlag("database.hostname", rootCmd.PersistentFlags().Lookup("database-hostname"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
-
+	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 }
 
 func initConfig() {

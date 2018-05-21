@@ -42,12 +42,10 @@ const (
 	pollingInterval = 7 * time.Second
 )
 
-var startingBlockNumber int
-
 func init() {
 	rootCmd.AddCommand(syncCmd)
 
-	syncCmd.Flags().IntVarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	syncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
 func backFillAllBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
@@ -65,16 +63,15 @@ func sync() {
 	if lastBlock == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
-	_startingBlockNumber := int64(startingBlockNumber)
-	if _startingBlockNumber > lastBlock {
+	if startingBlockNumber > lastBlock {
 		log.Fatal("starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
-	blockRepository := repositories.BlockRepository{DB: &db}
+	blockRepository := repositories.NewBlockRepository(&db)
 	validator := history.NewBlockValidator(blockchain, blockRepository, 15)
 	missingBlocksPopulated := make(chan int)
-	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, _startingBlockNumber)
+	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 
 	for {
 		select {
@@ -82,7 +79,7 @@ func sync() {
 			window := validator.ValidateBlocks()
 			validator.Log(os.Stdout, window)
 		case <-missingBlocksPopulated:
-			go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, _startingBlockNumber)
+			go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
 }
