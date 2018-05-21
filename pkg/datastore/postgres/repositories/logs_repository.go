@@ -13,14 +13,14 @@ type LogRepository struct {
 	*postgres.DB
 }
 
-func (logRepository LogRepository) CreateLogs(lgs []core.Log) error {
+func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) error {
 	tx, _ := logRepository.DB.BeginTx(context.Background(), nil)
 	for _, tlog := range lgs {
 		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
-			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
 		)
 		if err != nil {
 			tx.Rollback()

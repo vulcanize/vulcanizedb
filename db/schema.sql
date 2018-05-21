@@ -83,7 +83,8 @@ CREATE TABLE public.blocks (
     miner character varying(42),
     extra_data character varying,
     reward double precision,
-    uncles_reward double precision
+    uncles_reward double precision,
+    eth_node_fingerprint character varying(128) NOT NULL
 );
 
 
@@ -206,13 +207,13 @@ ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
 
 CREATE TABLE public.receipts (
     id integer NOT NULL,
-    transaction_id integer NOT NULL,
     contract_address character varying(42),
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),
     status integer,
-    tx_hash character varying(66)
+    tx_hash character varying(66),
+    block_id integer NOT NULL
 );
 
 
@@ -497,13 +498,6 @@ CREATE INDEX node_id_index ON public.blocks USING btree (eth_node_id);
 
 
 --
--- Name: transaction_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX transaction_id_index ON public.receipts USING btree (transaction_id);
-
-
---
 -- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -526,6 +520,14 @@ ALTER TABLE ONLY public.transactions
 
 
 --
+-- Name: receipts blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.receipts
+    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
 -- Name: blocks node_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -539,14 +541,6 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.receipts(id) ON DELETE CASCADE;
-
-
---
--- Name: receipts transaction_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT transaction_fk FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
 
 
 --

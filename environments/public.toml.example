@@ -5,3 +5,4 @@ port = 5432
 
 [client]
 ipcPath = <local node's IPC filepath>
+levelDbPath = <local node's LevelDB chaindata filepath>

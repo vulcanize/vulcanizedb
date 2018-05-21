@@ -53,7 +53,7 @@ var _ = Describe("Creating contracts", func() {
 
 	It("returns transactions 'To' a contract", func() {
 		var blockRepository datastore.BlockRepository
-		blockRepository = repositories.BlockRepository{DB: db}
+		blockRepository = repositories.NewBlockRepository(db)
 		block := core.Block{
 			Number: 123,
 			Transactions: []core.Transaction{
