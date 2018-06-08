@@ -241,6 +241,23 @@ var _ = Describe("Saving blocks", func() {
 			Expect(len(blockRepository.MissingBlockNumbers(1, 1, node.ID))).To(Equal(0))
 		})
 
+		It("is empty if copies of block exist from both current node and another", func() {
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 0})
+			blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
+			nodeTwo := core.Node{
+				GenesisBlock: "0x456",
+				NetworkID:    1,
+			}
+			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
+			Expect(err).NotTo(HaveOccurred())
+			repositoryTwo := repositories.NewBlockRepository(dbTwo)
+			repositoryTwo.CreateOrUpdateBlock(core.Block{Number: 0})
+
+			missing := blockRepository.MissingBlockNumbers(0, 1, node.ID)
+
+			Expect(len(missing)).To(BeZero())
+		})
+
 		It("is the only missing block number", func() {
 			blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
 

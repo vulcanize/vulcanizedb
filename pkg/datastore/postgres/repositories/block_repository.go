@@ -56,11 +56,11 @@ func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber i
 	numbers := make([]int64, 0)
 	blockRepository.database.Select(&numbers,
 		`SELECT all_block_numbers
-            FROM (
-                SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
-                LEFT JOIN blocks
-                    ON number = all_block_numbers
-            WHERE number ISNULL OR eth_node_fingerprint != $3`,
+          FROM (
+              SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
+          WHERE all_block_numbers NOT IN (
+		  	  SELECT number FROM blocks WHERE eth_node_fingerprint = $3
+		  ) `,
 		startingBlockNumber,
 		highestBlockNumber, nodeId)
 	return numbers
