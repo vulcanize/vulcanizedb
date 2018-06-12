@@ -27,13 +27,20 @@ import (
 // erc20Cmd represents the erc20 command
 var erc20Cmd = &cobra.Command{
 	Use:   "erc20",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Fetches and persists token supply",
+	Long: `Fetches the totalSupply for the configured token from each block and persists it in Vulcanize DB.
+vulcanizedb erc20 --config environments/public
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Expects an ethereum node to be running and requires a .toml config file:
+
+  [database]
+  name = "vulcanize_public"
+  hostname = "localhost"
+  port = 5432
+
+  [client]
+  ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		watchERC20s()
 	},
