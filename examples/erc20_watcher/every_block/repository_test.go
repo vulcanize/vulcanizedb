@@ -23,16 +23,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/rand"
 )
 
-var db *postgres.DB
-
 var _ = Describe("ERC20 Token Repository", func() {
+	var db *postgres.DB
 	var blockId int64
 	var blockNumber int64
 	var repository every_block.TokenSupplyRepository
 	var blockRepository repositories.BlockRepository
+	testAddress := "abc"
 
 	BeforeEach(func() {
 		db = test_helpers.CreateNewDatabase()
@@ -47,8 +48,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 	Describe("Create", func() {
 		It("creates a token supply record", func() {
-			address := "abc"
-			supply := supplyModel(blockNumber, address, "100")
+			supply := supplyModel(blockNumber, testAddress, "100")
 			err := repository.Create(supply)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -56,7 +56,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 			expectedTokenSupply := TokenSupplyDBRow{
 				Supply:       int64(100),
 				BlockID:      blockId,
-				TokenAddress: address,
+				TokenAddress: testAddress,
 			}
 
 			var count int
@@ -80,7 +80,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 			Expect(err.Error()).To(ContainSubstring("block number -1"))
 		})
 
-		It("returns an error inserting the token_supply fails", func() {
+		It("returns an error if inserting the token_supply fails", func() {
 			errorSupply := supplyModel(blockNumber, "", "")
 			err := repository.Create(errorSupply)
 
@@ -90,16 +90,68 @@ var _ = Describe("ERC20 Token Repository", func() {
 		})
 	})
 
+	Describe("When there are multiple nodes", func() {
+		var node2DB *postgres.DB
+		var node2BlockRepo *repositories.BlockRepository
+		var node2BlockId int64
+		var node2TokenSupplyRepo every_block.TokenSupplyRepository
+		var tokenSupply every_block.TokenSupply
+
+		BeforeEach(func() {
+			node2DB = createDbForAnotherNode()
+
+			//create another block with the same number on node2
+			node2BlockRepo = repositories.NewBlockRepository(node2DB)
+			node2BlockId = createBlock(blockNumber, *node2BlockRepo)
+
+			tokenSupply = supplyModel(blockNumber, "abc", "100")
+			node2TokenSupplyRepo = every_block.TokenSupplyRepository{DB: node2DB}
+		})
+
+		It("only creates token_supply records for the current node (node2)", func() {
+			err := node2TokenSupplyRepo.Create(tokenSupply)
+			Expect(err).NotTo(HaveOccurred())
+
+			var tokenSupplies []TokenSupplyDBRow
+			err = node2TokenSupplyRepo.DB.Select(&tokenSupplies, `SELECT * FROM token_supply`)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(tokenSupplies)).To(Equal(1))
+			Expect(tokenSupplies[0].BlockID).To(Equal(node2BlockId))
+		})
+
+		It("only includes missing block numbers for the current node", func() {
+			//create token_supply on original node
+			err := repository.Create(tokenSupply)
+			Expect(err).NotTo(HaveOccurred())
+
+			originalNodeMissingBlocks, err := repository.MissingBlocks(blockNumber, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(originalNodeMissingBlocks)).To(Equal(0))
+
+			node2MissingBlocks, err := node2TokenSupplyRepo.MissingBlocks(blockNumber, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(node2MissingBlocks)).To(Equal(1))
+		})
+	})
+
 	Describe("MissingBlocks", func() {
 		It("returns the block numbers for which an associated TokenSupply record hasn't been created", func() {
 			createTokenSupplyFor(repository, blockNumber)
+
 			newBlockNumber := blockNumber + 1
 			createBlock(newBlockNumber, blockRepository)
 			blocks, err := repository.MissingBlocks(blockNumber, newBlockNumber)
-			anotherNewBlockNumber := newBlockNumber + 1
-			createBlock(anotherNewBlockNumber, blockRepository)
 
 			Expect(blocks).To(ConsistOf(newBlockNumber))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("only returns blocks within the given range", func() {
+			newBlockNumber := blockNumber + 1
+			createBlock(newBlockNumber, blockRepository)
+			blocks, err := repository.MissingBlocks(blockNumber, blockNumber)
+
+			Expect(blocks).NotTo(ConsistOf(newBlockNumber))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -155,4 +207,15 @@ func createBlock(blockNumber int64, repository repositories.BlockRepository) (bl
 	Expect(err).NotTo(HaveOccurred())
 
 	return blockId
+}
+
+func createDbForAnotherNode() *postgres.DB {
+	anotherNode := core.Node{
+		GenesisBlock: "GENESIS",
+		NetworkID:    1,
+		ID:           "testNodeId",
+		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
+	}
+
+	return test_config.NewTestDBWithoutDeletingRecords(anotherNode)
 }

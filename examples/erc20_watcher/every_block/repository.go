@@ -53,7 +53,7 @@ const (
 
 func (tsp *TokenSupplyRepository) Create(supply TokenSupply) error {
 	var blockId int
-	err := tsp.DB.Get(&blockId, `SELECT id FROM blocks WHERE number = $1`, supply.BlockNumber)
+	err := tsp.DB.Get(&blockId, `SELECT id FROM blocks WHERE number = $1 AND eth_node_id = $2`, supply.BlockNumber, tsp.NodeID)
 	if err != nil {
 		return newRepositoryError(err, GetBlockError, supply.BlockNumber)
 	}
@@ -76,9 +76,11 @@ func (tsp *TokenSupplyRepository) MissingBlocks(startingBlock int64, highestBloc
 		`SELECT number FROM BLOCKS
                LEFT JOIN token_supply ON blocks.id = block_id
                WHERE block_id ISNULL
-               AND number >= $1
-               AND number <= $2
+               AND eth_node_id = $1
+               AND number >= $2
+               AND number <= $3
                LIMIT 20`,
+		tsp.NodeID,
 		startingBlock,
 		highestBlock,
 	)
