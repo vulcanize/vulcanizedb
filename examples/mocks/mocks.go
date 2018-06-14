@@ -27,11 +27,16 @@ type Fetcher struct {
 	ContractAddress string
 	Abi             string
 	FetchedBlocks   []int64
+	Blockchain      core.Blockchain
 	supply          big.Int
 }
 
 func (f *Fetcher) SetSupply(supply string) {
 	f.supply.SetString(supply, 10)
+}
+
+func (f Fetcher) GetBlockchain() core.Blockchain {
+	return f.Blockchain
 }
 
 func (f *Fetcher) FetchBalanceOf(contractAbi string, contractAddress string, ownerAddress string, blockNumber int64) (big.Int, error) {
@@ -145,7 +150,9 @@ func (fb *Blockchain) SetLastBlock(lastBlock *big.Int) {
 	fb.lastBlock = lastBlock
 }
 
-type FailureBlockchain struct{}
+type FailureBlockchain struct {
+	lastBlock *big.Int
+}
 
 func (FailureBlockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
 	return errors.New("TestError")
@@ -159,10 +166,14 @@ func (FailureBlockchain) GetLogs(contract core.Contract, startingBlockNumber *bi
 	panic("implement me")
 }
 
-func (FailureBlockchain) LastBlock() *big.Int {
-	panic("implement me")
+func (fb FailureBlockchain) LastBlock() *big.Int {
+	return fb.lastBlock
 }
 
 func (FailureBlockchain) Node() core.Node {
 	panic("implement me")
+}
+
+func (fb *FailureBlockchain) SetLastBlock(lastBlock *big.Int) {
+	fb.lastBlock = lastBlock
 }

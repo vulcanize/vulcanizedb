@@ -25,6 +25,7 @@ import (
 type ERC20FetcherInterface interface {
 	FetchBalanceOf(contractAbi string, contractAddress string, ownerAddress string, blockNumber int64) (big.Int, error)
 	FetchSupplyOf(contractAbi string, contractAddress string, blockNumber int64) (big.Int, error)
+	GetBlockchain() core.Blockchain
 }
 
 func NewFetcher(blockchain core.Blockchain) Fetcher {
@@ -77,4 +78,8 @@ func (f Fetcher) FetchSupplyOf(contractAbi string, contractAddress string, block
 	}
 
 	return *result, nil
+}
+
+func (f Fetcher) GetBlockchain() core.Blockchain {
+	return f.Blockchain
 }

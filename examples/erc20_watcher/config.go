@@ -28,6 +28,6 @@ var DaiConfig = ContractConfig{
 	Address:    constants.DaiContractAddress,
 	Abi:        constants.DaiAbiString,
 	FirstBlock: int64(4752008),
-	LastBlock:  int64(5750050),
+	LastBlock:  -1,
 	Name:       "Dai",
 }

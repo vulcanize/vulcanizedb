@@ -71,7 +71,17 @@ func newTransformerError(err error, blockNumber int64, msg string) error {
 }
 
 func (t Transformer) Execute() error {
-	blocks, err := t.Repository.MissingBlocks(t.Config.FirstBlock, t.Config.LastBlock)
+	var upperBoundBlock int64
+	blockchain := t.Fetcher.GetBlockchain()
+	lastBlock := blockchain.LastBlock().Int64()
+
+	if t.Config.LastBlock == -1 {
+		upperBoundBlock = lastBlock
+	} else {
+		upperBoundBlock = t.Config.LastBlock
+	}
+
+	blocks, err := t.Repository.MissingBlocks(t.Config.FirstBlock, upperBoundBlock)
 
 	if err != nil {
 		return newTransformerError(err, t.Config.FirstBlock, FetchingBlocksError)

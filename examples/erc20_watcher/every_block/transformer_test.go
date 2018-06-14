@@ -17,36 +17,43 @@ package every_block_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"math/big"
+	"math/rand"
+	"strconv"
 )
 
 //allow for setting configuration OR using a default config?
 //handle errors
 
-var config = erc20_watcher.DaiConfig
+var testContractConfig = erc20_watcher.ContractConfig{
+	Address:    constants.DaiContractAddress,
+	Abi:        constants.DaiAbiString,
+	FirstBlock: int64(4752008),
+	LastBlock:  int64(5750050),
+	Name:       "Dai",
+}
+
+var config = testContractConfig
 
 var _ = Describe("Everyblock transformer", func() {
 	var fetcher mocks.Fetcher
 	var repository mocks.TotalSupplyRepository
 	var transformer every_block.Transformer
+	var blockchain mocks.Blockchain
 	var initialSupply = "27647235749155415536952630"
 	var initialSupplyPlusOne = "27647235749155415536952631"
 	var initialSupplyPlusTwo = "27647235749155415536952632"
 	var initialSupplyPlusThree = "27647235749155415536952633"
-
-	var testContractConfig = erc20_watcher.ContractConfig{
-		Address:    "testAddress",
-		Abi:        "testAbi",
-		FirstBlock: 111,
-		LastBlock:  112,
-		Name:       "A test contract",
-	}
+	var defaultLastBlock = big.Int{}
 
 	BeforeEach(func() {
-		fetcher = mocks.Fetcher{}
+		blockchain = mocks.Blockchain{}
+		blockchain.SetLastBlock(&defaultLastBlock)
+		fetcher = mocks.Fetcher{Blockchain: &blockchain}
 		fetcher.SetSupply(initialSupply)
 		repository = mocks.TotalSupplyRepository{}
 		repository.SetMissingBlocks([]int64{config.FirstBlock})
@@ -56,7 +63,7 @@ var _ = Describe("Everyblock transformer", func() {
 			Fetcher:    &fetcher,
 			Repository: &repository,
 		}
-		transformer.SetConfiguration(erc20_watcher.DaiConfig)
+		transformer.SetConfiguration(config)
 	})
 
 	It("fetches and persists the total supply of a token for a single block", func() {
@@ -119,6 +126,23 @@ var _ = Describe("Everyblock transformer", func() {
 		Expect(repository.TotalSuppliesCreated[0]).To(Equal(expectedTokenSupply))
 	})
 
+	It("uses the most recent block if the Config.LastBlock is -1", func() {
+		testContractConfig.LastBlock = -1
+		transformer.SetConfiguration(testContractConfig)
+
+		randomBlockNumber := rand.Int63()
+		numberToString := strconv.FormatInt(randomBlockNumber, 10)
+		mostRecentBlock := big.Int{}
+		mostRecentBlock.SetString(numberToString, 10)
+
+		blockchain.SetLastBlock(&mostRecentBlock)
+
+		err := transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(repository.EndingBlock).To(Equal(randomBlockNumber))
+	})
+
 	It("returns an error if the call to get missing blocks fails", func() {
 		failureRepository := mocks.FailureRepository{}
 		failureRepository.SetMissingBlocksFail(true)
@@ -133,7 +157,9 @@ var _ = Describe("Everyblock transformer", func() {
 	})
 
 	It("returns an error if the call to the blockchain fails", func() {
-		fetcher := every_block.NewFetcher(mocks.FailureBlockchain{})
+		failureBlockchain := mocks.FailureBlockchain{}
+		failureBlockchain.SetLastBlock(&defaultLastBlock)
+		fetcher := every_block.NewFetcher(failureBlockchain)
 		transformer = every_block.Transformer{
 			Fetcher:    &fetcher,
 			Repository: &repository,
