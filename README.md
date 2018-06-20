@@ -4,6 +4,10 @@
 
 [![Build Status](https://travis-ci.org/vulcanize/VulcanizeDB.svg?branch=master)](https://travis-ci.org/vulcanize/VulcanizeDB)
 
+## About
+
+Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
+
 ## Dependencies
  - Go 1.9+
  - Postgres 10
