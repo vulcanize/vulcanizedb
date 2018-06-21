@@ -49,9 +49,7 @@ func init() {
 }
 
 func backFillAllBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	go func() {
-		missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
-	}()
+	missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
 }
 
 func sync() {
