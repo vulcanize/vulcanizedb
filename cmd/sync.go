@@ -21,7 +21,7 @@ var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Syncs vulcanizedb with local ethereum node",
 	Long: `Syncs vulcanizedb with local ethereum node. 
-vulcanizedb sync --startingBlockNumber 0 --config public.toml
+vulcanizedb sync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
