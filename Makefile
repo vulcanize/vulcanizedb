@@ -82,3 +82,24 @@ migrate: $(MIGRATE) checkdbvars
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
+
+#Dev environment
+DEV_COMPOSE_FILE=dockerfiles/dev/docker-compose.yml
+
+.PHONY: dev_env_up
+dev_env_up:
+	docker-compose -f $(DEV_COMPOSE_FILE) up -d geth
+	docker-compose -f $(DEV_COMPOSE_FILE) up --build migrations
+	docker-compose -f $(DEV_COMPOSE_FILE) up -d --build vulcanizedb
+
+.PHONY: dev_env_deploy
+dev_env_deploy:
+	docker-compose -f $(DEV_COMPOSE_FILE) up -d --build vulcanizedb
+
+.PHONY: dev_env_migrate
+dev_env_migrate:
+	docker-compose -f $(DEV_COMPOSE_FILE) up --build migrations
+
+.PHONY: dev_env_down
+dev_env_down:
+	docker-compose -f $(DEV_COMPOSE_FILE) down
