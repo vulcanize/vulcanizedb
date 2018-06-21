@@ -1,0 +1,9 @@
+[database]
+name = "vulcanizedb"
+hostname = "postgres"
+port = 5432
+user = "postgres"
+password = "postgres"
+
+[client]
+ipcPath = "/geth/geth.ipc"
