@@ -82,3 +82,24 @@ migrate: $(MIGRATE) checkdbvars
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
+
+#Rinkeby docker environment
+RINKEBY_COMPOSE_FILE=dockerfiles/rinkeby/docker-compose.yml
+
+.PHONY: rinkeby_env_up
+rinkeby_env_up:
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d geth
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) up --build migrations
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d --build vulcanizedb
+
+.PHONY: rinkeby_env_deploy
+rinkeby_env_deploy:
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) up -d --build vulcanizedb
+
+.PHONY: dev_env_migrate
+rinkeby_env_migrate:
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) up --build migrations
+
+.PHONY: rinkeby_env_down
+rinkeby_env_down:
+	docker-compose -f $(RINKEBY_COMPOSE_FILE) down
