@@ -70,3 +70,8 @@ func NewTestDB(node core.Node) *postgres.DB {
 	db.MustExec("DELETE FROM log_filters")
 	return db
 }
+
+func NewTestDBWithoutDeletingRecords(node core.Node) *postgres.DB {
+	db, _ := postgres.NewDB(DBConfig, node)
+	return db
+}
