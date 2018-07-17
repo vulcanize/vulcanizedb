@@ -20,6 +20,7 @@ func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error)
 	if err != nil {
 		return core.Block{}, err
 	}
+
 	coreBlock := core.Block{
 		Difficulty:   gethBlock.Difficulty().Int64(),
 		ExtraData:    hexutil.Encode(gethBlock.Extra()),

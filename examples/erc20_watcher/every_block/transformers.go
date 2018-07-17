@@ -15,8 +15,8 @@
 package every_block
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {

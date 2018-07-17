@@ -15,12 +15,6 @@
 package cmd
 
 import (
-	"os"
-
-	"time"
-
-	"log"
-
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -28,16 +22,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
+	"log"
+	"os"
+	"time"
 )
 
-// syncCmd represents the sync command
-var syncCmd = &cobra.Command{
-	Use:   "sync",
-	Short: "Syncs VulcanizeDB with local ethereum node",
+// lightSyncCmd represents the lightSync command
+var lightSyncCmd = &cobra.Command{
+	Use:   "lightSync",
+	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
-Postgres with blocks, transactions, receipts, and logs.
+Postgres with block headers.
 
-./vulcanizedb sync --starting-block-number 0 --config public.toml
+./vulcanizedb lightSync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
@@ -50,31 +47,25 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		sync()
+		lightSync()
 	},
 }
 
-const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
-)
-
 func init() {
-	rootCmd.AddCommand(syncCmd)
-
-	syncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	rootCmd.AddCommand(lightSyncCmd)
+	lightSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
-func backFillAllBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+func backFillAllHeaders(blockchain core.Blockchain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
+	missingBlocksPopulated <- history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 }
 
-func sync() {
+func lightSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	blockchain := geth.NewBlockChain(ipc)
+	blockChain := geth.NewBlockChain(ipc)
 
-	lastBlock := blockchain.LastBlock().Int64()
+	lastBlock := blockChain.LastBlock().Int64()
 	if lastBlock == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
@@ -82,19 +73,19 @@ func sync() {
 		log.Fatal("starting block number > current block number")
 	}
 
-	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
-	blockRepository := repositories.NewBlockRepository(&db)
-	validator := history.NewBlockValidator(blockchain, blockRepository, validationWindow)
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	headerRepository := repositories.NewHeaderRepository(&db)
+	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
-	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateBlocks()
+			window := validator.ValidateHeaders()
 			window.Log(os.Stdout)
 		case <-missingBlocksPopulated:
-			go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
 }
