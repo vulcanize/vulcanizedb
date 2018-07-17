@@ -58,7 +58,7 @@ var _ = Describe("Everyblock transformers", func() {
 	})
 
 	It("creates a token_supply record for each block in the given range", func() {
-		initializer := every_block.TokenSupplyTransformerInitializer{erc20_watcher.DaiConfig}
+		initializer := every_block.TokenSupplyTransformerInitializer{Config: erc20_watcher.DaiConfig}
 		transformer := initializer.NewTokenSupplyTransformer(db, &blockchain)
 		transformer.Execute()
 

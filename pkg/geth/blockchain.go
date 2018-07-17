@@ -1,13 +1,11 @@
 package geth
 
 import (
-	"math/big"
-
 	"log"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/net/context"
@@ -18,31 +16,30 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
-type Blockchain struct {
-	client              *ethclient.Client
-	blockConverter      vulcCommon.BlockConverter
-	readGethHeaders     chan *types.Header
-	outputBlocks        chan core.Block
-	newHeadSubscription ethereum.Subscription
-	node                core.Node
+type BlockChain struct {
+	client          *ethclient.Client
+	blockConverter  vulcCommon.BlockConverter
+	headerConverter vulcCommon.HeaderConverter
+	node            core.Node
 }
 
-func NewBlockchain(ipcPath string) *Blockchain {
-	blockchain := Blockchain{}
+func NewBlockChain(ipcPath string) *BlockChain {
 	rpcClient, err := rpc.Dial(ipcPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	client := ethclient.NewClient(rpcClient)
 	clientWrapper := node.ClientWrapper{ContextCaller: rpcClient, IPCPath: ipcPath}
-	blockchain.node = node.MakeNode(clientWrapper)
-	blockchain.client = client
 	transactionConverter := vulcRpc.NewRpcTransactionConverter(client)
-	blockchain.blockConverter = vulcCommon.NewBlockConverter(transactionConverter)
-	return &blockchain
+	return &BlockChain{
+		client:          client,
+		blockConverter:  vulcCommon.NewBlockConverter(transactionConverter),
+		headerConverter: vulcCommon.HeaderConverter{},
+		node:            node.MakeNode(clientWrapper),
+	}
 }
 
-func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {
+func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
 	if endingBlockNumber == nil {
 		endingBlockNumber = startingBlockNumber
 	}
@@ -52,7 +49,7 @@ func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumbe
 		ToBlock:   endingBlockNumber,
 		Addresses: []common.Address{contractAddress},
 	}
-	gethLogs, err := blockchain.client.FilterLogs(context.Background(), fc)
+	gethLogs, err := blockChain.client.FilterLogs(context.Background(), fc)
 	if err != nil {
 		return []core.Log{}, err
 	}
@@ -60,23 +57,27 @@ func (blockchain *Blockchain) GetLogs(contract core.Contract, startingBlockNumbe
 	return logs, nil
 }
 
-func (blockchain *Blockchain) Node() core.Node {
-	return blockchain.node
+func (blockChain *BlockChain) Node() core.Node {
+	return blockChain.node
 }
 
-func (blockchain *Blockchain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	gethBlock, err := blockchain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
+func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Block, err error) {
+	gethBlock, err := blockChain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
-		return core.Block{}, err
+		return block, err
 	}
-	block, err := blockchain.blockConverter.ToCoreBlock(gethBlock)
-	if err != nil {
-		return core.Block{}, err
-	}
-	return block, nil
+	return blockChain.blockConverter.ToCoreBlock(gethBlock)
 }
 
-func (blockchain *Blockchain) LastBlock() *big.Int {
-	block, _ := blockchain.client.HeaderByNumber(context.Background(), nil)
+func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.Header, err error) {
+	gethHeader, err := blockChain.client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
+	if err != nil {
+		return header, err
+	}
+	return blockChain.headerConverter.Convert(gethHeader)
+}
+
+func (blockChain *BlockChain) LastBlock() *big.Int {
+	block, _ := blockChain.client.HeaderByNumber(context.Background(), nil)
 	return block.Number
 }

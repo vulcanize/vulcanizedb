@@ -62,12 +62,13 @@ func setABIPath() {
 
 func NewTestDB(node core.Node) *postgres.DB {
 	db, _ := postgres.NewDB(DBConfig, node)
-	db.MustExec("DELETE FROM watched_contracts")
-	db.MustExec("DELETE FROM transactions")
 	db.MustExec("DELETE FROM blocks")
+	db.MustExec("DELETE FROM headers")
+	db.MustExec("DELETE FROM log_filters")
 	db.MustExec("DELETE FROM logs")
 	db.MustExec("DELETE FROM receipts")
-	db.MustExec("DELETE FROM log_filters")
+	db.MustExec("DELETE FROM transactions")
+	db.MustExec("DELETE FROM watched_contracts")
 	return db
 }
 

@@ -49,7 +49,7 @@ Expects an ethereum node to be running and requires a .toml config file:
 func watchERC20s() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	blockchain := geth.NewBlockchain(ipc)
+	blockchain := geth.NewBlockChain(ipc)
 	db, err := postgres.NewDB(databaseConfig, blockchain.Node())
 	if err != nil {
 		log.Fatal("Failed to initialize database.")
