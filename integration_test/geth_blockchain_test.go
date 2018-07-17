@@ -12,11 +12,11 @@ import (
 
 var _ = Describe("Reading from the Geth blockchain", func() {
 
-	var blockchain *geth.Blockchain
+	var blockchain *geth.BlockChain
 	var inMemory *inmemory.InMemory
 
 	BeforeEach(func() {
-		blockchain = geth.NewBlockchain(test_config.InfuraClient.IPCPath)
+		blockchain = geth.NewBlockChain(test_config.InfuraClient.IPCPath)
 		inMemory = inmemory.NewInMemory()
 	})
 

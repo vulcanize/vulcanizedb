@@ -116,6 +116,10 @@ type Blockchain struct {
 	lastBlock              *big.Int
 }
 
+func (fb *Blockchain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
+	panic("implement me")
+}
+
 func (fb *Blockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
 	fb.FetchedAbi = abiJSON
 	fb.FetchedContractAddress = address
@@ -148,6 +152,10 @@ func (fb *Blockchain) SetLastBlock(lastBlock *big.Int) {
 
 type FailureBlockchain struct {
 	lastBlock *big.Int
+}
+
+func (fb FailureBlockchain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
+	panic("implement me")
 }
 
 func (FailureBlockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {

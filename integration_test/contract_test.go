@@ -27,7 +27,7 @@ var _ = Describe("Reading contracts", func() {
 				},
 				Index: 19,
 				Data:  "0x0000000000000000000000000000000000000000000000000c7d713b49da0000"}
-			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
+			blockchain := geth.NewBlockChain(test_config.InfuraClient.IPCPath)
 			contract := testing.SampleContract()
 
 			logs, err := blockchain.GetLogs(contract, big.NewInt(4703824), nil)
@@ -39,7 +39,7 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns and empty log array when no events for a given block / contract combo", func() {
-			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
+			blockchain := geth.NewBlockChain(test_config.InfuraClient.IPCPath)
 
 			logs, err := blockchain.GetLogs(core.Contract{Hash: "x123"}, big.NewInt(4703824), nil)
 
@@ -52,7 +52,7 @@ var _ = Describe("Reading contracts", func() {
 
 	Describe("Fetching Contract data", func() {
 		It("returns the correct attribute for a real contract", func() {
-			blockchain := geth.NewBlockchain(test_config.InfuraClient.IPCPath)
+			blockchain := geth.NewBlockChain(test_config.InfuraClient.IPCPath)
 
 			contract := testing.SampleContract()
 			var balance = new(big.Int)

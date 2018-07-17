@@ -10,21 +10,23 @@ const (
 )
 
 type InMemory struct {
-	blocks                       map[int64]core.Block
-	receipts                     map[string]core.Receipt
-	contracts                    map[string]core.Contract
-	logs                         map[string][]core.Log
-	logFilters                   map[string]filters.LogFilter
 	CreateOrUpdateBlockCallCount int
+	blocks                       map[int64]core.Block
+	contracts                    map[string]core.Contract
+	headers                      map[int64]core.Header
+	logFilters                   map[string]filters.LogFilter
+	logs                         map[string][]core.Log
+	receipts                     map[string]core.Receipt
 }
 
 func NewInMemory() *InMemory {
 	return &InMemory{
 		CreateOrUpdateBlockCallCount: 0,
 		blocks:     make(map[int64]core.Block),
-		receipts:   make(map[string]core.Receipt),
 		contracts:  make(map[string]core.Contract),
-		logs:       make(map[string][]core.Log),
+		headers:    make(map[int64]core.Header),
 		logFilters: make(map[string]filters.LogFilter),
+		logs:       make(map[string][]core.Log),
+		receipts:   make(map[string]core.Receipt),
 	}
 }

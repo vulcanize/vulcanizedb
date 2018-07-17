@@ -54,9 +54,10 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 - See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable
 
 ## Start syncing with postgres
-Syncs VulcanizeDB with the configured Ethereum node.
-1. Start node (**if fast syncing wait for initial sync to finish**)
-1. In a separate terminal start vulcanize_db
+Syncs VulcanizeDB with the configured Ethereum node, populating blocks, transactions, receipts, and logs.
+This command is useful when you want to maintain a broad cache of what's happening on the blockchain.
+1. Start Ethereum node (**if fast syncing your Ethereum node, wait for initial sync to finish**)
+1. In a separate terminal start VulcanizeDB:
     - `./vulcanizedb sync --config <config.toml> --starting-block-number <block-number>`
 
 ## Alternatively, sync from Geth's underlying LevelDB
@@ -68,6 +69,13 @@ Sync VulcanizeDB from the LevelDB underlying a Geth node.
     - `--starting-block-number`/`-s`: block number to start syncing from
     - `--ending-block-number`/`-e`: block number to sync to
     - `--all`/`-a`: sync all missing blocks
+
+## Alternatively, sync in "light" mode
+Syncs VulcanizeDB with the configured Ethereum node, populating only block headers.
+This command is useful when you want a minimal baseline from which to track targeted data on the blockchain (e.g. individual smart contract storage values).
+1. Start Ethereum node
+2. In a separate terminal start VulcanizeDB:
+    - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
 
 ## Start full environment in docker by single command
 

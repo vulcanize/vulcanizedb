@@ -28,7 +28,7 @@ var _ = Describe("ERC20 Fetcher", func() {
 	blockNumber := int64(5502914)
 
 	infuraIPC := "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
-	realBlockchain := geth.NewBlockchain(infuraIPC)
+	realBlockchain := geth.NewBlockChain(infuraIPC)
 	realFetcher := every_block.NewFetcher(realBlockchain)
 
 	fakeBlockchain := &mocks.Blockchain{}
