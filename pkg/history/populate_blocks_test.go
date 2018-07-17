@@ -20,7 +20,7 @@ var _ = Describe("Populating blocks", func() {
 		blockRepository = &inmemory.BlockRepository{InMemory: inMemory}
 	})
 
-	It("fills in the only missing block (Number 1)", func() {
+	It("fills in the only missing block (BlockNumber 1)", func() {
 		blocks := []core.Block{
 			{Number: 1},
 			{Number: 2},
@@ -57,11 +57,12 @@ var _ = Describe("Populating blocks", func() {
 		blockRepository.CreateOrUpdateBlock(core.Block{Number: 9})
 		blockRepository.CreateOrUpdateBlock(core.Block{Number: 11})
 		blockRepository.CreateOrUpdateBlock(core.Block{Number: 12})
+		blockRepository.CreateOrUpdateBlock(core.Block{Number: 13})
 
 		blocksAdded := history.PopulateMissingBlocks(blockchain, blockRepository, 5)
 
 		Expect(blocksAdded).To(Equal(3))
-		Expect(blockRepository.BlockCount()).To(Equal(11))
+		Expect(blockRepository.BlockCount()).To(Equal(12))
 		_, err := blockRepository.GetBlock(4)
 		Expect(err).To(HaveOccurred())
 		_, err = blockRepository.GetBlock(5)
@@ -70,7 +71,7 @@ var _ = Describe("Populating blocks", func() {
 		Expect(err).ToNot(HaveOccurred())
 		_, err = blockRepository.GetBlock(10)
 		Expect(err).ToNot(HaveOccurred())
-		_, err = blockRepository.GetBlock(13)
+		_, err = blockRepository.GetBlock(14)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -98,8 +99,8 @@ var _ = Describe("Populating blocks", func() {
 		})
 
 		history.RetrieveAndUpdateBlocks(blockchain, blockRepository, history.MakeRange(2, 5))
-		Expect(blockRepository.BlockCount()).To(Equal(3))
-		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(3))
+		Expect(blockRepository.BlockCount()).To(Equal(4))
+		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(4))
 	})
 
 	It("does not call repository create block when there is an error", func() {
@@ -109,5 +110,4 @@ var _ = Describe("Populating blocks", func() {
 		Expect(blockRepository.BlockCount()).To(Equal(0))
 		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(0))
 	})
-
 })
