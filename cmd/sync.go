@@ -21,11 +21,16 @@ import (
 
 	"log"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -72,9 +77,18 @@ func backFillAllBlocks(blockchain core.Blockchain, blockRepository datastore.Blo
 func sync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	blockchain := geth.NewBlockChain(ipc)
+	rpcClient, err := rpc.Dial(ipc)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ethClient := ethclient.NewClient(rpcClient)
+	client := client.NewClient(ethClient)
+	clientWrapper := node.ClientWrapper{ContextCaller: rpcClient, IPCPath: ipc}
+	node := node.MakeNode(clientWrapper)
+	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+	blockChain := geth.NewBlockChain(client, node, transactionConverter)
 
-	lastBlock := blockchain.LastBlock().Int64()
+	lastBlock := blockChain.LastBlock().Int64()
 	if lastBlock == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
@@ -82,11 +96,11 @@ func sync() {
 		log.Fatal("starting block number > current block number")
 	}
 
-	db := utils.LoadPostgres(databaseConfig, blockchain.Node())
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	blockRepository := repositories.NewBlockRepository(&db)
-	validator := history.NewBlockValidator(blockchain, blockRepository, validationWindow)
+	validator := history.NewBlockValidator(blockChain, blockRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
-	go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+	go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 
 	for {
 		select {
@@ -94,7 +108,7 @@ func sync() {
 			window := validator.ValidateBlocks()
 			window.Log(os.Stdout)
 		case <-missingBlocksPopulated:
-			go backFillAllBlocks(blockchain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
 }

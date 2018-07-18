@@ -25,7 +25,7 @@ var _ = Describe("Populating blocks", func() {
 			{Number: 1},
 			{Number: 2},
 		}
-		blockchain := fakes.NewBlockchainWithBlocks(blocks)
+		blockchain := fakes.NewMockBlockChainWithBlocks(blocks)
 
 		blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
 
@@ -37,7 +37,7 @@ var _ = Describe("Populating blocks", func() {
 	})
 
 	It("fills in the three missing blocks (Numbers: 5,8,10)", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 4},
 			{Number: 5},
 			{Number: 6},
@@ -76,7 +76,7 @@ var _ = Describe("Populating blocks", func() {
 	})
 
 	It("returns the number of blocks created", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 4},
 			{Number: 5},
 			{Number: 6},
@@ -90,7 +90,7 @@ var _ = Describe("Populating blocks", func() {
 	})
 
 	It("updates the repository with a range of blocks w/in the range ", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 1},
 			{Number: 2},
 			{Number: 3},
@@ -104,7 +104,7 @@ var _ = Describe("Populating blocks", func() {
 	})
 
 	It("does not call repository create block when there is an error", func() {
-		blockchain := fakes.NewBlockchain(errors.New("error getting block"))
+		blockchain := fakes.NewMockBlockChain(errors.New("error getting block"))
 		blocks := history.MakeRange(1, 10)
 		history.RetrieveAndUpdateBlocks(blockchain, blockRepository, blocks)
 		Expect(blockRepository.BlockCount()).To(Equal(0))
