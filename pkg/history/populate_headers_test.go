@@ -26,7 +26,7 @@ var _ = Describe("Populating headers", func() {
 				{BlockNumber: 1},
 				{BlockNumber: 2},
 			}
-			blockChain := fakes.NewBlockChainWithHeaders(headers)
+			blockChain := fakes.NewMockBlockChainWithHeaders(headers)
 			headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: 2})
 
 			headersAdded := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
@@ -40,7 +40,7 @@ var _ = Describe("Populating headers", func() {
 			{BlockNumber: 1},
 			{BlockNumber: 2},
 		}
-		blockChain := fakes.NewBlockChainWithHeaders(headers)
+		blockChain := fakes.NewMockBlockChainWithHeaders(headers)
 		dbHeader, _ := headerRepository.GetHeader(1)
 		Expect(dbHeader.BlockNumber).To(BeZero())
 

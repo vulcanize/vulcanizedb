@@ -27,7 +27,7 @@ var _ = Describe("Header validator", func() {
 			Hash:        newHash,
 		}
 		headers := []core.Header{newHeader}
-		blockChain := fakes.NewBlockChainWithHeaders(headers)
+		blockChain := fakes.NewMockBlockChainWithHeaders(headers)
 		validator := history.NewHeaderValidator(blockChain, headerRepository, 1)
 
 		validator.ValidateHeaders()
