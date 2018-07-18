@@ -13,7 +13,7 @@ import (
 var _ = Describe("Blocks validator", func() {
 
 	It("calls create or update for all blocks within the window", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 4},
 			{Number: 5},
 			{Number: 6},
@@ -31,7 +31,7 @@ var _ = Describe("Blocks validator", func() {
 	})
 
 	It("returns the number of largest block", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 1},
 			{Number: 2},
 			{Number: 3},

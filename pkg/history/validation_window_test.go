@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("", func() {
 	It("creates a ValidationWindow equal to (HEAD-windowSize, HEAD)", func() {
-		blockchain := fakes.NewBlockchainWithBlocks([]core.Block{
+		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
 			{Number: 1},
 			{Number: 2},
 			{Number: 3},
