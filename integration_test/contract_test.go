@@ -32,15 +32,12 @@ var _ = Describe("Reading contracts", func() {
 				},
 				Index: 19,
 				Data:  "0x0000000000000000000000000000000000000000000000000c7d713b49da0000"}
-			rpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+			rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
 			Expect(err).NotTo(HaveOccurred())
-			ethClient := ethclient.NewClient(rpcClient)
-			blockChainClient := client.NewClient(ethClient)
-			clientWrapper := node.ClientWrapper{
-				ContextCaller: rpcClient,
-				IPCPath:       test_config.InfuraClient.IPCPath,
-			}
-			node := node.MakeNode(clientWrapper)
+			rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
 			contract := testing.SampleContract()
@@ -53,15 +50,12 @@ var _ = Describe("Reading contracts", func() {
 		})
 
 		It("returns and empty log array when no events for a given block / contract combo", func() {
-			rpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+			rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
 			Expect(err).NotTo(HaveOccurred())
-			ethClient := ethclient.NewClient(rpcClient)
-			blockChainClient := client.NewClient(ethClient)
-			clientWrapper := node.ClientWrapper{
-				ContextCaller: rpcClient,
-				IPCPath:       test_config.InfuraClient.IPCPath,
-			}
-			node := node.MakeNode(clientWrapper)
+			rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
 
@@ -75,15 +69,12 @@ var _ = Describe("Reading contracts", func() {
 
 	Describe("Fetching Contract data", func() {
 		It("returns the correct attribute for a real contract", func() {
-			rpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+			rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
 			Expect(err).NotTo(HaveOccurred())
-			ethClient := ethclient.NewClient(rpcClient)
-			blockChainClient := client.NewClient(ethClient)
-			clientWrapper := node.ClientWrapper{
-				ContextCaller: rpcClient,
-				IPCPath:       test_config.InfuraClient.IPCPath,
-			}
-			node := node.MakeNode(clientWrapper)
+			rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
 

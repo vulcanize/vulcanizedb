@@ -6,22 +6,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
+	"math/big"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Validation window", func() {
 	It("creates a ValidationWindow equal to (HEAD-windowSize, HEAD)", func() {
-		blockchain := fakes.NewMockBlockChainWithBlocks([]core.Block{
-			{Number: 1},
-			{Number: 2},
-			{Number: 3},
-			{Number: 4},
-			{Number: 5},
-		})
+		blockChain := fakes.NewMockBlockChain()
+		blockChain.SetLastBlock(big.NewInt(5))
 
-		validationWindow := history.MakeValidationWindow(blockchain, 2)
+		validationWindow := history.MakeValidationWindow(blockChain, 2)
 
 		Expect(validationWindow.LowerBound).To(Equal(int64(3)))
 		Expect(validationWindow.UpperBound).To(Equal(int64(5)))

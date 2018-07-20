@@ -3,95 +3,81 @@ package fakes
 import (
 	"math/big"
 
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type MockBlockChain struct {
-	ContractReturnValue []byte
-	WasToldToStop       bool
-	blocks              map[int64]core.Block
-	blocksChannel       chan core.Block
-	contractAttributes  map[string]map[string]string
-	err                 error
-	headers             map[int64]core.Header
-	logs                map[string][]core.Log
-	node                core.Node
+	fetchContractDataErr               error
+	fetchContractDataPassedAbi         string
+	fetchContractDataPassedAddress     string
+	fetchContractDataPassedMethod      string
+	fetchContractDataPassedMethodArg   interface{}
+	fetchContractDataPassedResult      interface{}
+	fetchContractDataPassedBlockNumber int64
+	getBlockByNumberErr                error
+	lastBlock                          *big.Int
+	node                               core.Node
+}
+
+func NewMockBlockChain() *MockBlockChain {
+	return &MockBlockChain{
+		node: core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
+	}
+}
+
+func (blockChain *MockBlockChain) SetFetchContractDataErr(err error) {
+	blockChain.fetchContractDataErr = err
+}
+
+func (blockChain *MockBlockChain) SetLastBlock(blockNumber *big.Int) {
+	blockChain.lastBlock = blockNumber
+}
+
+func (blockChain *MockBlockChain) SetGetBlockByNumberErr(err error) {
+	blockChain.getBlockByNumberErr = err
 }
 
 func (blockChain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
-	return blockChain.headers[blockNumber], nil
+	return core.Header{BlockNumber: blockNumber}, nil
 }
 
 func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
-	panic("implement me")
+	blockChain.fetchContractDataPassedAbi = abiJSON
+	blockChain.fetchContractDataPassedAddress = address
+	blockChain.fetchContractDataPassedMethod = method
+	blockChain.fetchContractDataPassedMethodArg = methodArg
+	blockChain.fetchContractDataPassedResult = result
+	blockChain.fetchContractDataPassedBlockNumber = blockNumber
+	return blockChain.fetchContractDataErr
 }
 
 func (blockChain *MockBlockChain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
-	return blockChain.ContractReturnValue, nil
+	return []byte{}, nil
 }
 
 func (blockChain *MockBlockChain) LastBlock() *big.Int {
-	var max int64
-	for blockNumber := range blockChain.blocks {
-		if blockNumber > max {
-			max = blockNumber
-		}
-	}
-	return big.NewInt(max)
+	return blockChain.lastBlock
 }
 
 func (blockChain *MockBlockChain) GetLogs(contract core.Contract, startingBlock *big.Int, endingBlock *big.Int) ([]core.Log, error) {
-	return blockChain.logs[contract.Hash], nil
+	return []core.Log{}, nil
 }
 
 func (blockChain *MockBlockChain) Node() core.Node {
 	return blockChain.node
 }
 
-func NewMockBlockChain(err error) *MockBlockChain {
-	return &MockBlockChain{
-		blocks:             make(map[int64]core.Block),
-		logs:               make(map[string][]core.Log),
-		contractAttributes: make(map[string]map[string]string),
-		node:               core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
-		err:                err,
-	}
-}
-
-func NewMockBlockChainWithBlocks(blocks []core.Block) *MockBlockChain {
-	blockNumberToBlocks := make(map[int64]core.Block)
-	for _, block := range blocks {
-		blockNumberToBlocks[block.Number] = block
-	}
-	return &MockBlockChain{
-		blocks: blockNumberToBlocks,
-	}
-}
-
-func NewMockBlockChainWithHeaders(headers []core.Header) *MockBlockChain {
-	// need to create blocks and headers so that LastBlock() will work in the mock
-	// no reason to implement LastBlock() separately for headers since it checks
-	// the last header in the Node's DB already
-	memoryBlocks := make(map[int64]core.Block)
-	memoryHeaders := make(map[int64]core.Header)
-	for _, header := range headers {
-		memoryBlocks[header.BlockNumber] = core.Block{Number: header.BlockNumber}
-		memoryHeaders[header.BlockNumber] = header
-	}
-	return &MockBlockChain{
-		blocks:  memoryBlocks,
-		headers: memoryHeaders,
-	}
-}
-
 func (blockChain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	if blockChain.err != nil {
-		return core.Block{}, blockChain.err
-	}
-	return blockChain.blocks[blockNumber], nil
+	return core.Block{Number: blockNumber}, blockChain.getBlockByNumberErr
 }
 
-func (blockChain *MockBlockChain) AddBlock(block core.Block) {
-	blockChain.blocks[block.Number] = block
-	blockChain.blocksChannel <- block
+// TODO: handle methodArg being nil (can't match nil to nil in Gomega)
+func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) {
+	Expect(blockChain.fetchContractDataPassedAbi).To(Equal(abiJSON))
+	Expect(blockChain.fetchContractDataPassedAddress).To(Equal(address))
+	Expect(blockChain.fetchContractDataPassedMethod).To(Equal(method))
+	Expect(blockChain.fetchContractDataPassedResult).To(Equal(result))
+	Expect(blockChain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
 }

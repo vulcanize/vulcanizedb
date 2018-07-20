@@ -14,16 +14,11 @@ import (
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
 
-type Client interface {
-	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
-	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
-}
-
 type RpcTransactionConverter struct {
-	client Client
+	client core.EthClient
 }
 
-func NewRpcTransactionConverter(client Client) *RpcTransactionConverter {
+func NewRpcTransactionConverter(client core.EthClient) *RpcTransactionConverter {
 	return &RpcTransactionConverter{client: client}
 }
 
@@ -42,7 +37,7 @@ func (rtc *RpcTransactionConverter) ConvertTransactionsToCore(gethBlock *types.B
 				return err
 			}
 			coreTransaction := transToCoreTrans(transaction, &from)
-			coreTransaction, err = appendReceiptToTransaction(rtc.client, coreTransaction)
+			coreTransaction, err = rtc.appendReceiptToTransaction(coreTransaction)
 			if err != nil {
 				log.Println("receipt: ", err)
 				return err
@@ -58,8 +53,8 @@ func (rtc *RpcTransactionConverter) ConvertTransactionsToCore(gethBlock *types.B
 	return coreTransactions, nil
 }
 
-func appendReceiptToTransaction(client Client, transaction core.Transaction) (core.Transaction, error) {
-	gethReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+func (rtc *RpcTransactionConverter) appendReceiptToTransaction(transaction core.Transaction) (core.Transaction, error) {
+	gethReceipt, err := rtc.client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
 		return transaction, err
 	}

@@ -12,13 +12,13 @@ import (
 )
 
 type BlockChain struct {
-	client          core.Client
+	client          core.EthClient
 	blockConverter  vulcCommon.BlockConverter
 	headerConverter vulcCommon.HeaderConverter
 	node            core.Node
 }
 
-func NewBlockChain(client core.Client, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
+func NewBlockChain(client core.EthClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
 	return &BlockChain{
 		client:          client,
 		blockConverter:  vulcCommon.NewBlockConverter(converter),

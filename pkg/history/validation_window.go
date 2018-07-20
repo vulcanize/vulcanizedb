@@ -22,7 +22,7 @@ func (window ValidationWindow) Size() int {
 	return int(window.UpperBound - window.LowerBound)
 }
 
-func MakeValidationWindow(blockchain core.Blockchain, windowSize int) ValidationWindow {
+func MakeValidationWindow(blockchain core.BlockChain, windowSize int) ValidationWindow {
 	upperBound := blockchain.LastBlock().Int64()
 	lowerBound := upperBound - int64(windowSize)
 	return ValidationWindow{lowerBound, upperBound}

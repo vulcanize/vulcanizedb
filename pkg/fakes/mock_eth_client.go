@@ -5,11 +5,12 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
 )
 
-type MockClient struct {
+type MockEthClient struct {
 	callContractErr             error
 	callContractPassedContext   context.Context
 	callContractPassedMsg       ethereum.CallMsg
@@ -27,10 +28,14 @@ type MockClient struct {
 	filterLogsPassedContext     context.Context
 	filterLogsPassedQuery       ethereum.FilterQuery
 	filterLogsReturnLogs        []types.Log
+	transactionReceipts         map[string]*types.Receipt
+	err                         error
+	transactionSenderErr        error
+	transactionReceiptErr       error
 }
 
-func NewMockClient() *MockClient {
-	return &MockClient{
+func NewMockEthClient() *MockEthClient {
+	return &MockEthClient{
 		callContractErr:             nil,
 		callContractPassedContext:   nil,
 		callContractPassedMsg:       ethereum.CallMsg{},
@@ -48,83 +53,110 @@ func NewMockClient() *MockClient {
 		filterLogsPassedContext:     nil,
 		filterLogsPassedQuery:       ethereum.FilterQuery{},
 		filterLogsReturnLogs:        nil,
+		transactionReceipts:         make(map[string]*types.Receipt),
+		err:                         nil,
 	}
 }
 
-func (client *MockClient) SetCallContractErr(err error) {
+func (client *MockEthClient) SetCallContractErr(err error) {
 	client.callContractErr = err
 }
 
-func (client *MockClient) SetCallContractReturnBytes(returnBytes []byte) {
+func (client *MockEthClient) SetCallContractReturnBytes(returnBytes []byte) {
 	client.callContractReturnBytes = returnBytes
 }
 
-func (client *MockClient) SetBlockByNumberErr(err error) {
+func (client *MockEthClient) SetBlockByNumberErr(err error) {
 	client.blockByNumberErr = err
 }
 
-func (client *MockClient) SetBlockByNumberReturnBlock(block *types.Block) {
+func (client *MockEthClient) SetBlockByNumberReturnBlock(block *types.Block) {
 	client.blockByNumberReturnBlock = block
 }
 
-func (client *MockClient) SetHeaderByNumberErr(err error) {
+func (client *MockEthClient) SetHeaderByNumberErr(err error) {
 	client.headerByNumberErr = err
 }
 
-func (client *MockClient) SetHeaderByNumberReturnHeader(header *types.Header) {
+func (client *MockEthClient) SetHeaderByNumberReturnHeader(header *types.Header) {
 	client.headerByNumberReturnHeader = header
 }
 
-func (client *MockClient) SetFilterLogsErr(err error) {
+func (client *MockEthClient) SetFilterLogsErr(err error) {
 	client.filterLogsErr = err
 }
 
-func (client *MockClient) SetFilterLogsReturnLogs(logs []types.Log) {
+func (client *MockEthClient) SetFilterLogsReturnLogs(logs []types.Log) {
 	client.filterLogsReturnLogs = logs
 }
 
-func (client *MockClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+func (client *MockEthClient) SetTransactionReceiptErr(err error) {
+	client.transactionReceiptErr = err
+}
+
+func (client *MockEthClient) SetTransactionReceipts(receipts []*types.Receipt) {
+	for _, receipt := range receipts {
+		client.transactionReceipts[receipt.TxHash.Hex()] = receipt
+	}
+}
+
+func (client *MockEthClient) SetTransactionSenderErr(err error) {
+	client.transactionSenderErr = err
+}
+
+func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	client.callContractPassedContext = ctx
 	client.callContractPassedMsg = msg
 	client.callContractPassedNumber = blockNumber
 	return client.callContractReturnBytes, client.callContractErr
 }
 
-func (client *MockClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+func (client *MockEthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	client.blockByNumberPassedContext = ctx
 	client.blockByNumberPassedNumber = number
 	return client.blockByNumberReturnBlock, client.blockByNumberErr
 }
 
-func (client *MockClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
+func (client *MockEthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	client.headerByNumberPassedContext = ctx
 	client.headerByNumberPassedNumber = number
 	return client.headerByNumberReturnHeader, client.headerByNumberErr
 }
 
-func (client *MockClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+func (client *MockEthClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	client.filterLogsPassedContext = ctx
 	client.filterLogsPassedQuery = q
 	return client.filterLogsReturnLogs, client.filterLogsErr
 }
 
-func (client *MockClient) AssertCallContractCalledWith(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) {
+func (client *MockEthClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
+	return common.HexToAddress("0x123"), client.transactionSenderErr
+}
+
+func (client *MockEthClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	if gasUsed, ok := client.transactionReceipts[txHash.Hex()]; ok {
+		return gasUsed, client.transactionReceiptErr
+	}
+	return &types.Receipt{GasUsed: uint64(0)}, client.transactionReceiptErr
+}
+
+func (client *MockEthClient) AssertCallContractCalledWith(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) {
 	Expect(client.callContractPassedContext).To(Equal(ctx))
 	Expect(client.callContractPassedMsg).To(Equal(msg))
 	Expect(client.callContractPassedNumber).To(Equal(blockNumber))
 }
 
-func (client *MockClient) AssertBlockByNumberCalledWith(ctx context.Context, number *big.Int) {
+func (client *MockEthClient) AssertBlockByNumberCalledWith(ctx context.Context, number *big.Int) {
 	Expect(client.blockByNumberPassedContext).To(Equal(ctx))
 	Expect(client.blockByNumberPassedNumber).To(Equal(number))
 }
 
-func (client *MockClient) AssertHeaderByNumberCalledWith(ctx context.Context, number *big.Int) {
+func (client *MockEthClient) AssertHeaderByNumberCalledWith(ctx context.Context, number *big.Int) {
 	Expect(client.headerByNumberPassedContext).To(Equal(ctx))
 	Expect(client.headerByNumberPassedNumber).To(Equal(number))
 }
 
-func (client *MockClient) AssertFilterLogsCalledWith(ctx context.Context, q ethereum.FilterQuery) {
+func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q ethereum.FilterQuery) {
 	Expect(client.filterLogsPassedContext).To(Equal(ctx))
 	Expect(client.filterLogsPassedQuery).To(Equal(q))
 }
