@@ -1,40 +1,49 @@
 package integration_test
 
 import (
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/inmemory"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Reading from the Geth blockchain", func() {
-
-	var blockchain *geth.Blockchain
-	var inMemory *inmemory.InMemory
+	var blockChain *geth.BlockChain
 
 	BeforeEach(func() {
-		blockchain = geth.NewBlockchain(test_config.InfuraClient.IPCPath)
-		inMemory = inmemory.NewInMemory()
+		rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+		Expect(err).NotTo(HaveOccurred())
+		rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+		ethClient := ethclient.NewClient(rawRpcClient)
+		blockChainClient := client.NewEthClient(ethClient)
+		node := node.MakeNode(rpcClient)
+		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+		blockChain = geth.NewBlockChain(blockChainClient, node, transactionConverter)
 	})
 
 	It("reads two blocks", func(done Done) {
-		blocks := &inmemory.BlockRepository{InMemory: inMemory}
-		lastBlock := blockchain.LastBlock()
+		blocks := fakes.NewMockBlockRepository()
+		lastBlock := blockChain.LastBlock()
 		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
-		history.RetrieveAndUpdateBlocks(blockchain, blocks, queriedBlocks)
-		Expect(blocks.BlockCount()).To(Equal(2))
+		history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
+		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
 		close(done)
 	}, 30)
 
 	It("retrieves the genesis block and first block", func(done Done) {
-		genesisBlock, err := blockchain.GetBlockByNumber(int64(0))
+		genesisBlock, err := blockChain.GetBlockByNumber(int64(0))
 		Expect(err).ToNot(HaveOccurred())
-		firstBlock, err := blockchain.GetBlockByNumber(int64(1))
+		firstBlock, err := blockChain.GetBlockByNumber(int64(1))
 		Expect(err).ToNot(HaveOccurred())
-		lastBlockNumber := blockchain.LastBlock()
+		lastBlockNumber := blockChain.LastBlock()
 
 		Expect(genesisBlock.Number).To(Equal(int64(0)))
 		Expect(firstBlock.Number).To(Equal(int64(1)))
@@ -43,7 +52,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 	}, 15)
 
 	It("retrieves the node info", func(done Done) {
-		node := blockchain.Node()
+		node := blockChain.Node()
 		mainnetID := float64(1)
 
 		Expect(node.GenesisBlock).ToNot(BeNil())
@@ -60,7 +69,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 			var blocks []core.Block
 			n := 10
 			for i := 5327459; i > 5327459-n; i-- {
-				block, err := blockchain.GetBlockByNumber(int64(i))
+				block, err := blockChain.GetBlockByNumber(int64(i))
 				Expect(err).ToNot(HaveOccurred())
 				blocks = append(blocks, block)
 			}

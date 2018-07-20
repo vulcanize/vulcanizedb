@@ -1,8 +1,6 @@
 package common_test
 
 import (
-	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -14,56 +12,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 )
-
-type FakeGethClient struct {
-	receipts map[string]*types.Receipt
-	err      error
-}
-
-type TransActionReceiptError struct{}
-
-func (tarErr TransActionReceiptError) Error() string {
-	return fmt.Sprintf("transaction receipt error")
-}
-
-type TransactionSenderError struct{}
-
-func (tasErr TransactionSenderError) Error() string {
-	return fmt.Sprintf("transaction sender error")
-}
-
-func NewFakeClient(err error) *FakeGethClient {
-	return &FakeGethClient{
-		receipts: make(map[string]*types.Receipt),
-		err:      err,
-	}
-}
-
-func (client *FakeGethClient) AddReceipts(receipts []*types.Receipt) {
-	for _, receipt := range receipts {
-		client.receipts[receipt.TxHash.Hex()] = receipt
-	}
-}
-
-func (client *FakeGethClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	if err, ok := client.err.(TransActionReceiptError); ok {
-		return &types.Receipt{}, err
-	}
-	if gasUsed, ok := client.receipts[txHash.Hex()]; ok {
-		return gasUsed, nil
-	}
-	return &types.Receipt{GasUsed: uint64(0)}, nil
-}
-
-func (client *FakeGethClient) TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error) {
-	if err, ok := client.err.(TransactionSenderError); ok {
-		return common.Address{}, err
-	}
-	return common.HexToAddress("0x123"), nil
-}
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
@@ -90,7 +42,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			UncleHash:  common.Hash{128},
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
-		client := &FakeGethClient{}
+		client := fakes.NewMockEthClient()
 		transactionConverter := rpc.NewRpcTransactionConverter(client)
 		blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
@@ -132,8 +84,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			receipts := []*types.Receipt{&receipt}
 
-			client := NewFakeClient(nil)
-			client.AddReceipts(receipts)
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceipts(receipts)
 
 			number := int64(1071819)
 			header := types.Header{
@@ -176,8 +128,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			block := types.NewBlock(&header, transactions, uncles, receipts)
 
-			client := NewFakeClient(nil)
-			client.AddReceipts(receipts)
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceipts(receipts)
 			transactionConverter := rpc.NewRpcTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
@@ -225,8 +177,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			var uncles []*types.Header
 			block := types.NewBlock(&header, transactions, uncles, receipts)
 
-			client := NewFakeClient(nil)
-			client.AddReceipts(receipts)
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceipts(receipts)
 			transactionConverter := rpc.NewRpcTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
@@ -241,7 +193,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("is empty", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
-			client := &FakeGethClient{}
+			client := fakes.NewMockEthClient()
 			transactionConverter := rpc.NewRpcTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
@@ -270,8 +222,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				TxHash:            gethTransaction.Hash(),
 			}
 
-			client := NewFakeClient(nil)
-			client.AddReceipts([]*types.Receipt{gethReceipt})
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceipts([]*types.Receipt{gethReceipt})
 
 			header := types.Header{}
 			block := types.NewBlock(
@@ -317,8 +269,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				ContractAddress:   common.HexToAddress("0x1023342345"),
 			}
 
-			client := NewFakeClient(nil)
-			client.AddReceipts([]*types.Receipt{gethReceipt})
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceipts([]*types.Receipt{gethReceipt})
 
 			block := types.NewBlock(
 				&types.Header{},
@@ -373,25 +325,25 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		})
 
 		It("returns an error when transaction sender call fails", func() {
-			client := NewFakeClient(TransactionSenderError{})
-			client.AddReceipts([]*types.Receipt{})
+			client := fakes.NewMockEthClient()
+			client.SetTransactionSenderErr(fakes.FakeError)
 			transactionConverter := rpc.NewRpcTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			_, err := blockConverter.ToCoreBlock(block)
 
-			Expect(err).To(Equal(TransactionSenderError{}))
+			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
 		It("returns an error when transaction receipt call fails", func() {
-			client := NewFakeClient(TransActionReceiptError{})
-			client.AddReceipts([]*types.Receipt{})
+			client := fakes.NewMockEthClient()
+			client.SetTransactionReceiptErr(fakes.FakeError)
 			transactionConverter := rpc.NewRpcTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			_, err := blockConverter.ToCoreBlock(block)
 
-			Expect(err).To(Equal(TransActionReceiptError{}))
+			Expect(err).To(MatchError(fakes.FakeError))
 		})
 	})
 

@@ -34,14 +34,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// syncCmd represents the sync command
-var syncCmd = &cobra.Command{
-	Use:   "sync",
-	Short: "Syncs VulcanizeDB with local ethereum node",
+// lightSyncCmd represents the lightSync command
+var lightSyncCmd = &cobra.Command{
+	Use:   "lightSync",
+	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
-Postgres with blocks, transactions, receipts, and logs.
+Postgres with block headers.
 
-./vulcanizedb sync --starting-block-number 0 --config public.toml
+./vulcanizedb lightSync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
@@ -54,26 +54,20 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		sync()
+		lightSync()
 	},
 }
 
-const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
-)
-
 func init() {
-	rootCmd.AddCommand(syncCmd)
-
-	syncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	rootCmd.AddCommand(lightSyncCmd)
+	lightSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
-func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
+	missingBlocksPopulated <- history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 }
 
-func sync() {
+func lightSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	rawRpcClient, err := rpc.Dial(ipc)
@@ -84,7 +78,7 @@ func sync() {
 	ethClient := ethclient.NewClient(rawRpcClient)
 	client := client.NewEthClient(ethClient)
 	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	transactionConverter := vRpc.NewRpcTransactionConverter(client)
 	blockChain := geth.NewBlockChain(client, node, transactionConverter)
 
 	lastBlock := blockChain.LastBlock().Int64()
@@ -96,18 +90,18 @@ func sync() {
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	blockRepository := repositories.NewBlockRepository(&db)
-	validator := history.NewBlockValidator(blockChain, blockRepository, validationWindow)
+	headerRepository := repositories.NewHeaderRepository(&db)
+	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
-	go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateBlocks()
+			window := validator.ValidateHeaders()
 			window.Log(os.Stdout)
 		case <-missingBlocksPopulated:
-			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
+			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
 }

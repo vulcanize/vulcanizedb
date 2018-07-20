@@ -38,7 +38,7 @@ type TokenSupplyTransformerInitializer struct {
 	Config erc20_watcher.ContractConfig
 }
 
-func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgres.DB, blockchain core.Blockchain) shared.Transformer {
+func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
 	fetcher := NewFetcher(blockchain)
 	repository := TokenSupplyRepository{DB: db}
 	transformer := Transformer{
@@ -74,7 +74,7 @@ func newTransformerError(err error, blockNumber int64, msg string) error {
 
 func (t Transformer) Execute() error {
 	var upperBoundBlock int64
-	blockchain := t.Fetcher.GetBlockchain()
+	blockchain := t.Fetcher.GetBlockChain()
 	lastBlock := blockchain.LastBlock().Int64()
 
 	if t.Config.LastBlock == -1 {
