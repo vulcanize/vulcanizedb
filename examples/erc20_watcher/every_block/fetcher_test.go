@@ -15,68 +15,50 @@
 package every_block_test
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
-	"github.com/vulcanize/vulcanizedb/examples/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"math/big"
 )
 
 var _ = Describe("ERC20 Fetcher", func() {
 	blockNumber := int64(5502914)
-	infuraIPC := "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
-	var errorFetcher every_block.Fetcher
-	var realFetcher every_block.Fetcher
-	var testFetcher every_block.Fetcher
-	var fakeBlockchain *mocks.Blockchain
-	var testAbi string
-	var testContractAddress string
-
-	BeforeEach(func() {
-		rpcClient, err := rpc.Dial(infuraIPC)
-		Expect(err).NotTo(HaveOccurred())
-		ethClient := ethclient.NewClient(rpcClient)
-		blockChainClient := client.NewClient(ethClient)
-		clientWrapper := node.ClientWrapper{
-			ContextCaller: rpcClient,
-			IPCPath:       infuraIPC,
-		}
-		node := node.MakeNode(clientWrapper)
-		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-		realBlockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
-		realFetcher = every_block.NewFetcher(realBlockChain)
-		fakeBlockchain = &mocks.Blockchain{}
-		testFetcher = every_block.NewFetcher(fakeBlockchain)
-		testAbi = "testAbi"
-		testContractAddress = "testContractAddress"
-
-		errorBlockchain := &mocks.FailureBlockchain{}
-		errorFetcher = every_block.NewFetcher(errorBlockchain)
-	})
 
 	Describe("FetchSupplyOf", func() {
 		It("fetches data from the blockchain with the correct arguments", func() {
+			fakeBlockchain := fakes.NewMockBlockChain()
+			testFetcher := every_block.NewFetcher(fakeBlockchain)
+			testAbi := "testAbi"
+			testContractAddress := "testContractAddress"
 			_, err := testFetcher.FetchSupplyOf(testAbi, testContractAddress, blockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeBlockchain.FetchedAbi).To(Equal(testAbi))
-			Expect(fakeBlockchain.FetchedContractAddress).To(Equal(testContractAddress))
-			Expect(fakeBlockchain.FetchedMethod).To(Equal("totalSupply"))
-			Expect(fakeBlockchain.FetchedMethodArg).To(BeNil())
 			expectedResult := big.Int{}
 			expected := &expectedResult
-			Expect(fakeBlockchain.FetchedResult).To(Equal(&expected))
-			Expect(fakeBlockchain.FetchedBlockNumber).To(Equal(blockNumber))
+			fakeBlockchain.AssertFetchContractDataCalledWith(testAbi, testContractAddress, "totalSupply", nil, &expected, blockNumber)
 		})
 
 		It("fetches a token's total supply at the given block height", func() {
+			infuraIPC := "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+			rawRpcClient, err := rpc.Dial(infuraIPC)
+			Expect(err).NotTo(HaveOccurred())
+			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
+			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			realFetcher := every_block.NewFetcher(blockChain)
 			result, err := realFetcher.FetchSupplyOf(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -86,12 +68,15 @@ var _ = Describe("ERC20 Fetcher", func() {
 		})
 
 		It("returns an error if the call to the blockchain fails", func() {
+			blockChain := fakes.NewMockBlockChain()
+			blockChain.SetFetchContractDataErr(fakes.FakeError)
+			errorFetcher := every_block.NewFetcher(blockChain)
 			result, err := errorFetcher.FetchSupplyOf("", "", 0)
 
 			Expect(result.String()).To(Equal("0"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("totalSupply"))
-			Expect(err.Error()).To(ContainSubstring(mocks.TestError.Error()))
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		})
 	})
 })

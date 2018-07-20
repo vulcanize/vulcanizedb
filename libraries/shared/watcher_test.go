@@ -23,7 +23,7 @@ func (mh *MockTransformer) Execute() error {
 	return nil
 }
 
-func fakeTransformerInitializer(db *postgres.DB, blockchain core.Blockchain) shared.Transformer {
+func fakeTransformerInitializer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
 	return &MockTransformer{}
 }
 

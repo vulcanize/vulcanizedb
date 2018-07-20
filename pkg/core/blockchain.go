@@ -2,7 +2,7 @@ package core
 
 import "math/big"
 
-type Blockchain interface {
+type BlockChain interface {
 	ContractDataFetcher
 	GetBlockByNumber(blockNumber int64) (Block, error)
 	GetHeaderByNumber(blockNumber int64) (Header, error)

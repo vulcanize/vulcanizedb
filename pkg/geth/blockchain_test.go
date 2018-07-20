@@ -19,7 +19,7 @@ import (
 var _ = Describe("Geth blockchain", func() {
 	Describe("getting a block", func() {
 		It("fetches block from client", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			mockClient.SetBlockByNumberReturnBlock(types.NewBlockWithHeader(&types.Header{}))
 			node := vulcCore.Node{}
 			blockChain := geth.NewBlockChain(mockClient, node, cold_db.NewColdDbTransactionConverter())
@@ -32,7 +32,7 @@ var _ = Describe("Geth blockchain", func() {
 		})
 
 		It("returns err if client returns err", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			mockClient.SetBlockByNumberErr(fakes.FakeError)
 			node := vulcCore.Node{}
 			blockChain := geth.NewBlockChain(mockClient, node, cold_db.NewColdDbTransactionConverter())
@@ -46,7 +46,7 @@ var _ = Describe("Geth blockchain", func() {
 
 	Describe("getting a header", func() {
 		It("fetches header from client", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			blockNumber := int64(100)
 			mockClient.SetHeaderByNumberReturnHeader(&types.Header{Number: big.NewInt(blockNumber)})
 			node := vulcCore.Node{}
@@ -59,7 +59,7 @@ var _ = Describe("Geth blockchain", func() {
 		})
 
 		It("returns err if client returns err", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			mockClient.SetHeaderByNumberErr(fakes.FakeError)
 			node := vulcCore.Node{}
 			blockChain := geth.NewBlockChain(mockClient, node, cold_db.NewColdDbTransactionConverter())
@@ -73,7 +73,7 @@ var _ = Describe("Geth blockchain", func() {
 
 	Describe("getting logs", func() {
 		It("fetches logs from client", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			mockClient.SetFilterLogsReturnLogs([]types.Log{{}})
 			node := vulcCore.Node{}
 			blockChain := geth.NewBlockChain(mockClient, node, cold_db.NewColdDbTransactionConverter())
@@ -93,7 +93,7 @@ var _ = Describe("Geth blockchain", func() {
 		})
 
 		It("returns err if client returns err", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			mockClient.SetFilterLogsErr(fakes.FakeError)
 			node := vulcCore.Node{}
 			blockChain := geth.NewBlockChain(mockClient, node, cold_db.NewColdDbTransactionConverter())
@@ -110,7 +110,7 @@ var _ = Describe("Geth blockchain", func() {
 
 	Describe("getting the most recent block number", func() {
 		It("fetches latest header from client", func() {
-			mockClient := fakes.NewMockClient()
+			mockClient := fakes.NewMockEthClient()
 			blockNumber := int64(100)
 			mockClient.SetHeaderByNumberReturnHeader(&types.Header{Number: big.NewInt(blockNumber)})
 			node := vulcCore.Node{}

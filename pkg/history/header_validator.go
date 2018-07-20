@@ -6,12 +6,12 @@ import (
 )
 
 type HeaderValidator struct {
-	blockChain       core.Blockchain
+	blockChain       core.BlockChain
 	headerRepository datastore.HeaderRepository
 	windowSize       int
 }
 
-func NewHeaderValidator(blockChain core.Blockchain, repository datastore.HeaderRepository, windowSize int) HeaderValidator {
+func NewHeaderValidator(blockChain core.BlockChain, repository datastore.HeaderRepository, windowSize int) HeaderValidator {
 	return HeaderValidator{
 		blockChain:       blockChain,
 		headerRepository: repository,
