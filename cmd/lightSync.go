@@ -15,21 +15,23 @@
 package cmd
 
 import (
+	"log"
+	"os"
+	"time"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"log"
-	"os"
-	"time"
 )
 
 // lightSyncCmd represents the lightSync command
@@ -61,22 +63,22 @@ func init() {
 	lightSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
-func backFillAllHeaders(blockchain core.Blockchain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
+func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	missingBlocksPopulated <- history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 }
 
 func lightSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	rpcClient, err := rpc.Dial(ipc)
+	rawRpcClient, err := rpc.Dial(ipc)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ethClient := ethclient.NewClient(rpcClient)
-	client := client.NewClient(ethClient)
-	clientWrapper := node.ClientWrapper{ContextCaller: rpcClient, IPCPath: ipc}
-	node := node.MakeNode(clientWrapper)
-	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
+	ethClient := ethclient.NewClient(rawRpcClient)
+	client := client.NewEthClient(ethClient)
+	node := node.MakeNode(rpcClient)
+	transactionConverter := vRpc.NewRpcTransactionConverter(client)
 	blockChain := geth.NewBlockChain(client, node, transactionConverter)
 
 	lastBlock := blockChain.LastBlock().Int64()

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/inmemory"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
@@ -17,29 +17,24 @@ import (
 
 var _ = Describe("Reading from the Geth blockchain", func() {
 	var blockChain *geth.BlockChain
-	var inMemory *inmemory.InMemory
 
 	BeforeEach(func() {
-		rpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+		rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
 		Expect(err).NotTo(HaveOccurred())
-		ethClient := ethclient.NewClient(rpcClient)
-		blockChainClient := client.NewClient(ethClient)
-		clientWrapper := node.ClientWrapper{
-			ContextCaller: rpcClient,
-			IPCPath:       test_config.InfuraClient.IPCPath,
-		}
-		node := node.MakeNode(clientWrapper)
+		rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+		ethClient := ethclient.NewClient(rawRpcClient)
+		blockChainClient := client.NewEthClient(ethClient)
+		node := node.MakeNode(rpcClient)
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 		blockChain = geth.NewBlockChain(blockChainClient, node, transactionConverter)
-		inMemory = inmemory.NewInMemory()
 	})
 
 	It("reads two blocks", func(done Done) {
-		blocks := &inmemory.BlockRepository{InMemory: inMemory}
+		blocks := fakes.NewMockBlockRepository()
 		lastBlock := blockChain.LastBlock()
 		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
 		history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
-		Expect(blocks.BlockCount()).To(Equal(2))
+		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
 		close(done)
 	}, 30)
 

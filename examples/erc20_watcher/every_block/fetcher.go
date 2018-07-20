@@ -16,24 +16,25 @@ package every_block
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"log"
 	"math/big"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type ERC20FetcherInterface interface {
 	FetchSupplyOf(contractAbi string, contractAddress string, blockNumber int64) (big.Int, error)
-	GetBlockchain() core.Blockchain
+	GetBlockChain() core.BlockChain
 }
 
-func NewFetcher(blockchain core.Blockchain) Fetcher {
+func NewFetcher(blockchain core.BlockChain) Fetcher {
 	return Fetcher{
 		Blockchain: blockchain,
 	}
 }
 
 type Fetcher struct {
-	Blockchain      core.Blockchain
+	Blockchain      core.BlockChain
 	ContractAbi     string
 	ContractAddress string
 }
@@ -65,6 +66,6 @@ func (f Fetcher) FetchSupplyOf(contractAbi string, contractAddress string, block
 	return *result, nil
 }
 
-func (f Fetcher) GetBlockchain() core.Blockchain {
+func (f Fetcher) GetBlockChain() core.BlockChain {
 	return f.Blockchain
 }

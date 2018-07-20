@@ -1,33 +1,29 @@
 package history_test
 
 import (
+	"math/big"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/inmemory"
+
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 )
 
 var _ = Describe("Populating headers", func() {
 
-	var inMemory *inmemory.InMemory
-	var headerRepository *inmemory.HeaderRepository
+	var headerRepository *fakes.MockHeaderRepository
 
 	BeforeEach(func() {
-		inMemory = inmemory.NewInMemory()
-		headerRepository = inmemory.NewHeaderRepository(inMemory)
+		headerRepository = fakes.NewMockHeaderRepository()
 	})
 
 	Describe("When 1 missing header", func() {
 
 		It("returns number of headers added", func() {
-			headers := []core.Header{
-				{BlockNumber: 1},
-				{BlockNumber: 2},
-			}
-			blockChain := fakes.NewMockBlockChainWithHeaders(headers)
-			headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: 2})
+			blockChain := fakes.NewMockBlockChain()
+			blockChain.SetLastBlock(big.NewInt(2))
+			headerRepository.SetMissingBlockNumbers([]int64{2})
 
 			headersAdded := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
@@ -36,17 +32,12 @@ var _ = Describe("Populating headers", func() {
 	})
 
 	It("adds missing headers to the db", func() {
-		headers := []core.Header{
-			{BlockNumber: 1},
-			{BlockNumber: 2},
-		}
-		blockChain := fakes.NewMockBlockChainWithHeaders(headers)
-		dbHeader, _ := headerRepository.GetHeader(1)
-		Expect(dbHeader.BlockNumber).To(BeZero())
+		blockChain := fakes.NewMockBlockChain()
+		blockChain.SetLastBlock(big.NewInt(2))
+		headerRepository.SetMissingBlockNumbers([]int64{2})
 
 		history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
-		dbHeader, _ = headerRepository.GetHeader(1)
-		Expect(dbHeader.BlockNumber).To(Equal(int64(1)))
+		headerRepository.AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(1, []int64{2})
 	})
 })

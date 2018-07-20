@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func PopulateMissingHeaders(blockchain core.Blockchain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) int {
+func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) int {
 	lastBlock := blockchain.LastBlock().Int64()
 	blockRange := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
 	log.SetPrefix("")
@@ -15,7 +15,7 @@ func PopulateMissingHeaders(blockchain core.Blockchain, headerRepository datasto
 	return len(blockRange)
 }
 
-func RetrieveAndUpdateHeaders(blockchain core.Blockchain, headerRepository datastore.HeaderRepository, blockNumbers []int64) int {
+func RetrieveAndUpdateHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) int {
 	for _, blockNumber := range blockNumbers {
 		header, err := blockchain.GetHeaderByNumber(blockNumber)
 		if err != nil {
