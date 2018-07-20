@@ -14,7 +14,7 @@ var ErrBlockDoesNotExist = func(blockNumber int64) error {
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
-	MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
 	SetBlocksStatus(chainHead int64)
 }
 
@@ -35,6 +35,12 @@ var ErrFilterDoesNotExist = func(name string) error {
 type FilterRepository interface {
 	CreateFilter(filter filters.LogFilter) error
 	GetFilter(name string) (filters.LogFilter, error)
+}
+
+type HeaderRepository interface {
+	CreateOrUpdateHeader(header core.Header) (int64, error)
+	GetHeader(blockNumber int64) (core.Header, error)
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
 }
 
 type LogRepository interface {

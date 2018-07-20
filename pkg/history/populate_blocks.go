@@ -7,16 +7,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
-func PopulateMissingBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, startingBlockNumber int64) int {
+func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, startingBlockNumber int64) int {
 	lastBlock := blockchain.LastBlock().Int64()
-	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock-1, blockchain.Node().ID)
+	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
 	log.SetPrefix("")
 	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
 	RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
 	return len(blockRange)
 }
 
-func RetrieveAndUpdateBlocks(blockchain core.Blockchain, blockRepository datastore.BlockRepository, blockNumbers []int64) int {
+func RetrieveAndUpdateBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, blockNumbers []int64) int {
 	for _, blockNumber := range blockNumbers {
 		block, err := blockchain.GetBlockByNumber(blockNumber)
 		if err != nil {

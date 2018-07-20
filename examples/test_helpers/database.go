@@ -35,21 +35,6 @@ type TransferDBRow struct {
 	VulcanizeLogID int64 `db:"vulcanize_log_id"`
 }
 
-func CreateLogRecord(db *postgres.DB, logRepository repositories.LogRepository, log core.Log) {
-	blockRepository := repositories.NewBlockRepository(db)
-	receiptRepository := repositories.ReceiptRepository{DB: db}
-
-	blockNumber := log.BlockNumber
-	blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
-	Expect(err).NotTo(HaveOccurred())
-
-	receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = logRepository.CreateLogs([]core.Log{log}, receiptId)
-	Expect(err).NotTo(HaveOccurred())
-}
-
 func CreateNewDatabase() *postgres.DB {
 	var node core.Node
 	node = core.Node{

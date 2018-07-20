@@ -7,14 +7,16 @@ import (
 )
 
 type MockBlockRepository struct {
+	createOrUpdateBlockCallCount                 int
 	createOrUpdateBlockCalled                    bool
 	createOrUpdateBlockPassedBlock               core.Block
-	createOrUpdateBlockReturnInt                 int64
+	createOrUpdateBlockPassedBlockNumbers        []int64
 	createOrUpdateBlockReturnErr                 error
+	createOrUpdateBlockReturnInt                 int64
 	missingBlockNumbersCalled                    bool
-	missingBlockNumbersPassedStartingBlockNumber int64
 	missingBlockNumbersPassedEndingBlockNumber   int64
 	missingBlockNumbersPassedNodeId              string
+	missingBlockNumbersPassedStartingBlockNumber int64
 	missingBlockNumbersReturnArray               []int64
 	setBlockStatusCalled                         bool
 	setBlockStatusPassedChainHead                int64
@@ -22,65 +24,78 @@ type MockBlockRepository struct {
 
 func NewMockBlockRepository() *MockBlockRepository {
 	return &MockBlockRepository{
+		createOrUpdateBlockCallCount:                 0,
 		createOrUpdateBlockCalled:                    false,
 		createOrUpdateBlockPassedBlock:               core.Block{},
-		createOrUpdateBlockReturnInt:                 0,
+		createOrUpdateBlockPassedBlockNumbers:        nil,
 		createOrUpdateBlockReturnErr:                 nil,
+		createOrUpdateBlockReturnInt:                 0,
 		missingBlockNumbersCalled:                    false,
-		missingBlockNumbersPassedStartingBlockNumber: 0,
 		missingBlockNumbersPassedEndingBlockNumber:   0,
 		missingBlockNumbersPassedNodeId:              "",
+		missingBlockNumbersPassedStartingBlockNumber: 0,
 		missingBlockNumbersReturnArray:               nil,
 		setBlockStatusCalled:                         false,
 		setBlockStatusPassedChainHead:                0,
 	}
 }
 
-func (mbr *MockBlockRepository) SetCreateOrUpdateBlockReturnVals(i int64, err error) {
-	mbr.createOrUpdateBlockReturnInt = i
-	mbr.createOrUpdateBlockReturnErr = err
+func (repository *MockBlockRepository) SetCreateOrUpdateBlockReturnVals(i int64, err error) {
+	repository.createOrUpdateBlockReturnInt = i
+	repository.createOrUpdateBlockReturnErr = err
 }
 
-func (mbr *MockBlockRepository) SetMissingBlockNumbersReturnArray(returnArray []int64) {
-	mbr.missingBlockNumbersReturnArray = returnArray
+func (repository *MockBlockRepository) SetMissingBlockNumbersReturnArray(returnArray []int64) {
+	repository.missingBlockNumbersReturnArray = returnArray
 }
 
-func (mbr *MockBlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
-	mbr.createOrUpdateBlockCalled = true
-	mbr.createOrUpdateBlockPassedBlock = block
-	return mbr.createOrUpdateBlockReturnInt, mbr.createOrUpdateBlockReturnErr
+func (repository *MockBlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
+	repository.createOrUpdateBlockCallCount++
+	repository.createOrUpdateBlockCalled = true
+	repository.createOrUpdateBlockPassedBlock = block
+	repository.createOrUpdateBlockPassedBlockNumbers = append(repository.createOrUpdateBlockPassedBlockNumbers, block.Number)
+	return repository.createOrUpdateBlockReturnInt, repository.createOrUpdateBlockReturnErr
 }
 
-func (mbr *MockBlockRepository) GetBlock(blockNumber int64) (core.Block, error) {
-	panic("implement me")
+func (repository *MockBlockRepository) GetBlock(blockNumber int64) (core.Block, error) {
+	return core.Block{Number: blockNumber}, nil
 }
 
-func (mbr *MockBlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64 {
-	mbr.missingBlockNumbersCalled = true
-	mbr.missingBlockNumbersPassedStartingBlockNumber = startingBlockNumber
-	mbr.missingBlockNumbersPassedEndingBlockNumber = endingBlockNumber
-	mbr.missingBlockNumbersPassedNodeId = nodeId
-	return mbr.missingBlockNumbersReturnArray
+func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64 {
+	repository.missingBlockNumbersCalled = true
+	repository.missingBlockNumbersPassedStartingBlockNumber = startingBlockNumber
+	repository.missingBlockNumbersPassedEndingBlockNumber = endingBlockNumber
+	repository.missingBlockNumbersPassedNodeId = nodeId
+	return repository.missingBlockNumbersReturnArray
 }
 
-func (mbr *MockBlockRepository) SetBlocksStatus(chainHead int64) {
-	mbr.setBlockStatusCalled = true
-	mbr.setBlockStatusPassedChainHead = chainHead
+func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) {
+	repository.setBlockStatusCalled = true
+	repository.setBlockStatusPassedChainHead = chainHead
 }
 
-func (mbr *MockBlockRepository) AssertCreateOrUpdateBlockCalledWith(block core.Block) {
-	Expect(mbr.createOrUpdateBlockCalled).To(BeTrue())
-	Expect(mbr.createOrUpdateBlockPassedBlock).To(Equal(block))
+func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCallCountEquals(times int) {
+	Expect(repository.createOrUpdateBlockCallCount).To(Equal(times))
 }
 
-func (mbr *MockBlockRepository) AssertMissingBlockNumbersCalledWith(startingBlockNumber int64, endingBlockNumber int64, nodeId string) {
-	Expect(mbr.missingBlockNumbersCalled).To(BeTrue())
-	Expect(mbr.missingBlockNumbersPassedStartingBlockNumber).To(Equal(startingBlockNumber))
-	Expect(mbr.missingBlockNumbersPassedEndingBlockNumber).To(Equal(endingBlockNumber))
-	Expect(mbr.missingBlockNumbersPassedNodeId).To(Equal(nodeId))
+func (repository *MockBlockRepository) AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(times int, blockNumbers []int64) {
+	Expect(repository.createOrUpdateBlockCallCount).To(Equal(times))
+	Expect(repository.createOrUpdateBlockPassedBlockNumbers).To(Equal(blockNumbers))
 }
 
-func (mbr *MockBlockRepository) AssertSetBlockStatusCalledWith(chainHead int64) {
-	Expect(mbr.setBlockStatusCalled).To(BeTrue())
-	Expect(mbr.setBlockStatusPassedChainHead).To(Equal(chainHead))
+func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCalledWith(block core.Block) {
+	Expect(repository.createOrUpdateBlockCalled).To(BeTrue())
+	Expect(repository.createOrUpdateBlockPassedBlock).To(Equal(block))
+}
+
+func (repository *MockBlockRepository) AssertMissingBlockNumbersCalledWith(startingBlockNumber int64, endingBlockNumber int64, nodeId string) {
+	Expect(repository.missingBlockNumbersCalled).To(BeTrue())
+	Expect(repository.missingBlockNumbersPassedStartingBlockNumber).To(Equal(startingBlockNumber))
+	Expect(repository.missingBlockNumbersPassedEndingBlockNumber).To(Equal(endingBlockNumber))
+	Expect(repository.missingBlockNumbersPassedNodeId).To(Equal(nodeId))
+}
+
+func (repository *MockBlockRepository) AssertSetBlockStatusCalledWith(chainHead int64) {
+	Expect(repository.setBlockStatusCalled).To(BeTrue())
+	Expect(repository.setBlockStatusPassedChainHead).To(Equal(chainHead))
 }

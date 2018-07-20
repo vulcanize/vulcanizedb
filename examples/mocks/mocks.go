@@ -15,19 +15,18 @@
 package mocks
 
 import (
-	"errors"
+	"math/big"
+
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"math/big"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
-
-var TestError = errors.New("TestError")
 
 type Fetcher struct {
 	ContractAddress string
 	Abi             string
 	FetchedBlocks   []int64
-	Blockchain      core.Blockchain
+	BlockChain      core.BlockChain
 	supply          big.Int
 }
 
@@ -35,8 +34,8 @@ func (f *Fetcher) SetSupply(supply string) {
 	f.supply.SetString(supply, 10)
 }
 
-func (f Fetcher) GetBlockchain() core.Blockchain {
-	return f.Blockchain
+func (f Fetcher) GetBlockChain() core.BlockChain {
+	return f.BlockChain
 }
 
 func (f *Fetcher) FetchSupplyOf(contractAbi string, contractAddress string, blockNumber int64) (big.Int, error) {
@@ -80,7 +79,7 @@ type FailureRepository struct {
 
 func (fr *FailureRepository) Create(supply every_block.TokenSupply) error {
 	if fr.createFail {
-		return TestError
+		return fakes.FakeError
 	} else {
 		return nil
 	}
@@ -88,7 +87,7 @@ func (fr *FailureRepository) Create(supply every_block.TokenSupply) error {
 
 func (fr *FailureRepository) MissingBlocks(startingBlock int64, highestBlock int64) ([]int64, error) {
 	if fr.missingBlocksFail {
-		return []int64{}, TestError
+		return []int64{}, fakes.FakeError
 	} else {
 		return fr.missingBlocksNumbers, nil
 	}
@@ -104,72 +103,4 @@ func (fr *FailureRepository) SetMissingBlocksFail(fail bool) {
 
 func (fr *FailureRepository) SetMissingBlocks(missingBlocks []int64) {
 	fr.missingBlocksNumbers = missingBlocks
-}
-
-type Blockchain struct {
-	FetchedAbi             string
-	FetchedContractAddress string
-	FetchedMethod          string
-	FetchedMethodArg       interface{}
-	FetchedResult          interface{}
-	FetchedBlockNumber     int64
-	lastBlock              *big.Int
-}
-
-func (fb *Blockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
-	fb.FetchedAbi = abiJSON
-	fb.FetchedContractAddress = address
-	fb.FetchedMethod = method
-	fb.FetchedMethodArg = methodArg
-	fb.FetchedResult = result
-	fb.FetchedBlockNumber = blockNumber
-	return nil
-}
-
-func (fb *Blockchain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	panic("implement me")
-}
-
-func (fb *Blockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {
-	panic("implement me")
-}
-
-func (fb *Blockchain) LastBlock() *big.Int {
-	return fb.lastBlock
-}
-
-func (fb *Blockchain) Node() core.Node {
-	panic("implement me")
-}
-
-func (fb *Blockchain) SetLastBlock(lastBlock *big.Int) {
-	fb.lastBlock = lastBlock
-}
-
-type FailureBlockchain struct {
-	lastBlock *big.Int
-}
-
-func (FailureBlockchain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
-	return errors.New("TestError")
-}
-
-func (FailureBlockchain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	panic("implement me")
-}
-
-func (FailureBlockchain) GetLogs(contract core.Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]core.Log, error) {
-	panic("implement me")
-}
-
-func (fb FailureBlockchain) LastBlock() *big.Int {
-	return fb.lastBlock
-}
-
-func (FailureBlockchain) Node() core.Node {
-	panic("implement me")
-}
-
-func (fb *FailureBlockchain) SetLastBlock(lastBlock *big.Int) {
-	fb.lastBlock = lastBlock
 }

@@ -122,6 +122,40 @@ CREATE TABLE public.eth_nodes (
 
 
 --
+-- Name: headers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.headers (
+    id integer NOT NULL,
+    hash character varying(66),
+    block_number bigint,
+    raw bytea,
+    eth_node_id integer,
+    eth_node_fingerprint character varying(128)
+);
+
+
+--
+-- Name: headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.headers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: headers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.headers_id_seq OWNED BY public.headers.id;
+
+
+--
 -- Name: log_filters; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -386,6 +420,13 @@ ALTER TABLE ONLY public.eth_nodes ALTER COLUMN id SET DEFAULT nextval('public.no
 
 
 --
+-- Name: headers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.headers_id_seq'::regclass);
+
+
+--
 -- Name: log_filters id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -457,6 +498,14 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.eth_nodes
     ADD CONSTRAINT eth_node_uc UNIQUE (genesis_block, network_id, eth_node_id);
+
+
+--
+-- Name: headers headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.headers
+    ADD CONSTRAINT headers_pkey PRIMARY KEY (id);
 
 
 --
@@ -572,6 +621,14 @@ ALTER TABLE ONLY public.receipts
 
 ALTER TABLE ONLY public.token_supply
     ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: headers eth_nodes_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.headers
+    ADD CONSTRAINT eth_nodes_fk FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
