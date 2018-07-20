@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 	"math/rand"
 	"strconv"
@@ -40,7 +41,7 @@ var _ = Describe("Everyblock transformer", func() {
 	var fetcher mocks.Fetcher
 	var repository mocks.TotalSupplyRepository
 	var transformer every_block.Transformer
-	var blockchain mocks.Blockchain
+	var blockChain *fakes.MockBlockChain
 	var initialSupply = "27647235749155415536952630"
 	var initialSupplyPlusOne = "27647235749155415536952631"
 	var initialSupplyPlusTwo = "27647235749155415536952632"
@@ -48,9 +49,9 @@ var _ = Describe("Everyblock transformer", func() {
 	var defaultLastBlock = big.Int{}
 
 	BeforeEach(func() {
-		blockchain = mocks.Blockchain{}
-		blockchain.SetLastBlock(&defaultLastBlock)
-		fetcher = mocks.Fetcher{Blockchain: &blockchain}
+		blockChain = fakes.NewMockBlockChain()
+		blockChain.SetLastBlock(&defaultLastBlock)
+		fetcher = mocks.Fetcher{BlockChain: blockChain}
 		fetcher.SetSupply(initialSupply)
 		repository = mocks.TotalSupplyRepository{}
 		repository.SetMissingBlocks([]int64{config.FirstBlock})
@@ -132,7 +133,7 @@ var _ = Describe("Everyblock transformer", func() {
 		mostRecentBlock := big.Int{}
 		mostRecentBlock.SetString(numberToString, 10)
 
-		blockchain.SetLastBlock(&mostRecentBlock)
+		blockChain.SetLastBlock(&mostRecentBlock)
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
@@ -149,13 +150,14 @@ var _ = Describe("Everyblock transformer", func() {
 		}
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("TestError"))
+		Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		Expect(err.Error()).To(ContainSubstring("fetching missing blocks"))
 	})
 
-	It("returns an error if the call to the blockchain fails", func() {
-		failureBlockchain := mocks.FailureBlockchain{}
+	It("returns an error if the call to the blockChain fails", func() {
+		failureBlockchain := fakes.NewMockBlockChain()
 		failureBlockchain.SetLastBlock(&defaultLastBlock)
+		failureBlockchain.SetFetchContractDataErr(fakes.FakeError)
 		fetcher := every_block.NewFetcher(failureBlockchain)
 		transformer = every_block.Transformer{
 			Fetcher:    &fetcher,
@@ -163,7 +165,7 @@ var _ = Describe("Everyblock transformer", func() {
 		}
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("TestError"))
+		Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		Expect(err.Error()).To(ContainSubstring("supply"))
 	})
 
@@ -178,7 +180,7 @@ var _ = Describe("Everyblock transformer", func() {
 		}
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("TestError"))
+		Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		Expect(err.Error()).To(ContainSubstring("supply"))
 	})
 })

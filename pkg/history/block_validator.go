@@ -6,12 +6,12 @@ import (
 )
 
 type BlockValidator struct {
-	blockchain      core.Blockchain
+	blockchain      core.BlockChain
 	blockRepository datastore.BlockRepository
 	windowSize      int
 }
 
-func NewBlockValidator(blockchain core.Blockchain, blockRepository datastore.BlockRepository, windowSize int) *BlockValidator {
+func NewBlockValidator(blockchain core.BlockChain, blockRepository datastore.BlockRepository, windowSize int) *BlockValidator {
 	return &BlockValidator{
 		blockchain:      blockchain,
 		blockRepository: blockRepository,
