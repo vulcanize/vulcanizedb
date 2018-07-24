@@ -1,29 +1,41 @@
 package history
 
 import (
+	"log"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"log"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 )
 
-func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) int {
+func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64, transformers []transformers.Transformer) (int, error) {
 	lastBlock := blockchain.LastBlock().Int64()
 	blockRange := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
 	log.SetPrefix("")
 	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
-	RetrieveAndUpdateHeaders(blockchain, headerRepository, blockRange)
-	return len(blockRange)
+	_, err := RetrieveAndUpdateHeaders(blockchain, headerRepository, blockRange, transformers)
+	if err != nil {
+		return 0, err
+	}
+	return len(blockRange), nil
 }
 
-func RetrieveAndUpdateHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) int {
+func RetrieveAndUpdateHeaders(chain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64, transformers []transformers.Transformer) (int, error) {
 	for _, blockNumber := range blockNumbers {
-		header, err := blockchain.GetHeaderByNumber(blockNumber)
+		header, err := chain.GetHeaderByNumber(blockNumber)
 		if err != nil {
-			log.Printf("failed to retrieve block number: %d\n", blockNumber)
-			return 0
+			return 0, err
 		}
-		// TODO: handle possible error here
-		headerRepository.CreateOrUpdateHeader(header)
+		id, err := headerRepository.CreateOrUpdateHeader(header)
+		if err != nil {
+			return 0, err
+		}
+		for _, transformer := range transformers {
+			err := transformer.Execute(header, id)
+			if err != nil {
+				return 0, err
+			}
+		}
 	}
-	return len(blockNumbers)
+	return len(blockNumbers), nil
 }

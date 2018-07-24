@@ -3,10 +3,10 @@ package fakes
 import (
 	"math/big"
 
-	. "github.com/onsi/gomega"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -18,9 +18,15 @@ type MockBlockChain struct {
 	fetchContractDataPassedMethodArg   interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
+	getLogsPassedContract              core.Contract
+	getLogsPassedStartingBlockNumber   *big.Int
+	getLogsPassedEndingBlockNumber     *big.Int
+	getLogsReturnLogs                  []core.Log
+	getLogsReturnErr                   error
 	getBlockByNumberErr                error
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
+	logQueryReturnLogs                 []types.Log
 	lastBlock                          *big.Int
 	node                               core.Node
 }
@@ -31,68 +37,85 @@ func NewMockBlockChain() *MockBlockChain {
 	}
 }
 
-func (blockChain *MockBlockChain) SetFetchContractDataErr(err error) {
-	blockChain.fetchContractDataErr = err
+func (chain *MockBlockChain) SetFetchContractDataErr(err error) {
+	chain.fetchContractDataErr = err
 }
 
-func (blockChain *MockBlockChain) SetLastBlock(blockNumber *big.Int) {
-	blockChain.lastBlock = blockNumber
+func (chain *MockBlockChain) SetLastBlock(blockNumber *big.Int) {
+	chain.lastBlock = blockNumber
 }
 
-func (blockChain *MockBlockChain) SetGetBlockByNumberErr(err error) {
-	blockChain.getBlockByNumberErr = err
+func (chain *MockBlockChain) SetGetBlockByNumberErr(err error) {
+	chain.getBlockByNumberErr = err
 }
 
-func (blockChain *MockBlockChain) SetGetLogsErr(err error) {
-	blockChain.logQueryErr = err
+func (chain *MockBlockChain) SetGetEthLogsWithCustomQueryErr(err error) {
+	chain.logQueryErr = err
+}
+
+func (chain *MockBlockChain) SetGetEthLogsWithCustomQueryReturnLogs(logs []types.Log) {
+	chain.logQueryReturnLogs = logs
+}
+
+func (chain *MockBlockChain) SetGetLogsReturnErr(err error) {
+	chain.getLogsReturnErr = err
+}
+
+func (chain *MockBlockChain) SetGetLogsReturnLogs(logs []core.Log) {
+	chain.getLogsReturnLogs = logs
+}
+
+func (chain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
+	chain.fetchContractDataPassedAbi = abiJSON
+	chain.fetchContractDataPassedAddress = address
+	chain.fetchContractDataPassedMethod = method
+	chain.fetchContractDataPassedMethodArg = methodArg
+	chain.fetchContractDataPassedResult = result
+	chain.fetchContractDataPassedBlockNumber = blockNumber
+	return chain.fetchContractDataErr
+}
+
+func (chain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
+	return core.Block{Number: blockNumber}, chain.getBlockByNumberErr
 }
 
 func (blockChain *MockBlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
 	blockChain.logQuery = query
-	return []types.Log{}, blockChain.logQueryErr
+	return blockChain.logQueryReturnLogs, blockChain.logQueryErr
 }
 
-func (blockChain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
+func (chain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
 	return core.Header{BlockNumber: blockNumber}, nil
 }
 
-func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
-	blockChain.fetchContractDataPassedAbi = abiJSON
-	blockChain.fetchContractDataPassedAddress = address
-	blockChain.fetchContractDataPassedMethod = method
-	blockChain.fetchContractDataPassedMethodArg = methodArg
-	blockChain.fetchContractDataPassedResult = result
-	blockChain.fetchContractDataPassedBlockNumber = blockNumber
-	return blockChain.fetchContractDataErr
+func (chain *MockBlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
+	chain.getLogsPassedContract = contract
+	chain.getLogsPassedStartingBlockNumber = startingBlockNumber
+	chain.getLogsPassedEndingBlockNumber = endingBlockNumber
+	return chain.getLogsReturnLogs, chain.getLogsReturnErr
 }
 
-func (blockChain *MockBlockChain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
+func (chain *MockBlockChain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (blockChain *MockBlockChain) LastBlock() *big.Int {
-	return blockChain.lastBlock
+func (chain *MockBlockChain) LastBlock() *big.Int {
+	return chain.lastBlock
 }
 
-func (blockChain *MockBlockChain) GetLogs(contract core.Contract, startingBlock *big.Int, endingBlock *big.Int) ([]core.Log, error) {
-	return []core.Log{}, nil
+func (chain *MockBlockChain) Node() core.Node {
+	return chain.node
 }
 
-func (blockChain *MockBlockChain) Node() core.Node {
-	return blockChain.node
-}
-
-func (blockChain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	return core.Block{Number: blockNumber}, blockChain.getBlockByNumberErr
-}
-
-// TODO: handle methodArg being nil (can't match nil to nil in Gomega)
-func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) {
-	Expect(blockChain.fetchContractDataPassedAbi).To(Equal(abiJSON))
-	Expect(blockChain.fetchContractDataPassedAddress).To(Equal(address))
-	Expect(blockChain.fetchContractDataPassedMethod).To(Equal(method))
-	Expect(blockChain.fetchContractDataPassedResult).To(Equal(result))
-	Expect(blockChain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
+func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) {
+	Expect(chain.fetchContractDataPassedAbi).To(Equal(abiJSON))
+	Expect(chain.fetchContractDataPassedAddress).To(Equal(address))
+	Expect(chain.fetchContractDataPassedMethod).To(Equal(method))
+	if methodArg != nil {
+		Expect(chain.fetchContractDataPassedMethodArg).To(Equal(methodArg))
+	}
+	Expect(chain.fetchContractDataPassedResult).To(Equal(result))
+	Expect(chain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
 }
 
 func (blockChain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {

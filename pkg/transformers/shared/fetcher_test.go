@@ -51,7 +51,7 @@ var _ = Describe("Fetcher", func() {
 
 		It("returns an error if fetching the logs fails", func() {
 			blockChain := fakes.NewMockBlockChain()
-			blockChain.SetGetLogsErr(fakes.FakeError)
+			blockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
 			fetcher := shared.NewFetcher(blockChain)
 
 			_, err := fetcher.FetchLogs("", [][]common.Hash{}, int64(1))
