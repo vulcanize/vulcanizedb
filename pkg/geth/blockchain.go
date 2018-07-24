@@ -53,6 +53,7 @@ func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumbe
 		FromBlock: startingBlockNumber,
 		ToBlock:   endingBlockNumber,
 		Addresses: []common.Address{contractAddress},
+		Topics:    nil,
 	}
 	gethLogs, err := blockChain.GetEthLogsWithCustomQuery(fc)
 	if err != nil {

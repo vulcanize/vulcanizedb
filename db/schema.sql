@@ -120,6 +120,38 @@ ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
 
 
 --
+-- Name: peps; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.peps (
+    id integer NOT NULL,
+    block_number bigint NOT NULL,
+    header_id integer NOT NULL,
+    usd_value numeric
+);
+
+
+--
+-- Name: peps_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.peps_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: peps_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.peps_id_seq OWNED BY maker.peps.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -506,6 +538,13 @@ ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_s
 
 
 --
+-- Name: peps id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.peps ALTER COLUMN id SET DEFAULT nextval('maker.peps_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -598,6 +637,14 @@ ALTER TABLE ONLY maker.frob
 
 ALTER TABLE ONLY maker.frob
     ADD CONSTRAINT frob_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: peps peps_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.peps
+    ADD CONSTRAINT peps_pkey PRIMARY KEY (id);
 
 
 --
@@ -745,6 +792,14 @@ ALTER TABLE ONLY maker.flip_kick
 
 ALTER TABLE ONLY maker.frob
     ADD CONSTRAINT frob_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: peps headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.peps
+    ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

@@ -112,6 +112,7 @@ var _ = Describe("Geth blockchain", func() {
 				Addresses: []common.Address{address},
 				Topics:    [][]common.Hash{{topic}},
 			}
+
 			_, err := blockChain.GetEthLogsWithCustomQuery(query)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -123,8 +124,14 @@ var _ = Describe("Geth blockchain", func() {
 			contract := vulcCore.Contract{Hash: common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex()}
 			startingBlockNumber := big.NewInt(1)
 			endingBlockNumber := big.NewInt(2)
+			query := ethereum.FilterQuery{
+				FromBlock: startingBlockNumber,
+				ToBlock:   endingBlockNumber,
+				Addresses: []common.Address{common.HexToAddress(contract.Hash)},
+				Topics:    nil,
+			}
 
-			_, err := blockChain.GetLogs(contract, startingBlockNumber, endingBlockNumber)
+			_, err := blockChain.GetEthLogsWithCustomQuery(query)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

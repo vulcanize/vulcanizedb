@@ -1,4 +1,4 @@
-// Copyright © 2018 Vulcanize
+// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,48 +32,38 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pep"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// lightSyncCmd represents the lightSync command
-var lightSyncCmd = &cobra.Command{
-	Use:   "lightSync",
-	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
-	Long: `Syncs VulcanizeDB with local ethereum node. Populates
-Postgres with block headers.
+// syncPriceFeedsCmd represents the syncPriceFeeds command
+var syncPriceFeedsCmd = &cobra.Command{
+	Use:   "syncPriceFeeds",
+	Short: "Sync block headers with price feed data",
+	Long: `Sync Ethereum block headers and price feed data. For example:
 
-./vulcanizedb lightSync --starting-block-number 0 --config public.toml
+./vulcanizedb syncPriceFeeds --config <config.toml> --starting-block-number <block-number>
 
-Expects ethereum node to be running and requires a .toml config:
-
-  [database]
-  name = "vulcanize_public"
-  hostname = "localhost"
-  port = 5432
-
-  [client]
-  ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
-`,
+Price feed data will be updated when price feed contracts log value events.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		lightSync()
+		syncPriceFeeds()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(lightSyncCmd)
-	lightSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	rootCmd.AddCommand(syncPriceFeedsCmd)
+	syncPriceFeedsCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "block number at which to start tracking price feeds")
 }
 
-func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	emptyTransformers := []transformers.Transformer{}
-	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, emptyTransformers)
+func backFillPriceFeeds(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64, transformers []transformers.Transformer) {
+	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, transformers)
 	if err != nil {
 		log.Fatal("Error populating headers: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
 
-func lightSync() {
+func syncPriceFeeds() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	rawRpcClient, err := rpc.Dial(ipc)
@@ -99,7 +89,10 @@ func lightSync() {
 	headerRepository := repositories.NewHeaderRepository(&db)
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
-	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
+	transformers := []transformers.Transformer{
+		pep.NewPepTransformer(blockChain, &db),
+	}
+	go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 
 	for {
 		select {
@@ -107,7 +100,7 @@ func lightSync() {
 			window := validator.ValidateHeaders()
 			window.Log(os.Stdout)
 		case <-missingBlocksPopulated:
-			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
+			go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 		}
 	}
 }
