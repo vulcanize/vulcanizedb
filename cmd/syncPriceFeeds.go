@@ -34,6 +34,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pep"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/rep"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -94,6 +95,7 @@ func syncPriceFeeds() {
 	transformers := []transformers.Transformer{
 		pep.NewPepTransformer(blockChain, &db),
 		pip.NewPipTransformer(blockChain, &db),
+		rep.NewRepTransformer(blockChain, &db),
 	}
 	go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 

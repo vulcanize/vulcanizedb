@@ -184,6 +184,38 @@ ALTER SEQUENCE maker.pips_id_seq OWNED BY maker.pips.id;
 
 
 --
+-- Name: reps; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.reps (
+    id integer NOT NULL,
+    block_number bigint NOT NULL,
+    header_id integer NOT NULL,
+    usd_value numeric
+);
+
+
+--
+-- Name: reps_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.reps_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: reps_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.reps_id_seq OWNED BY maker.reps.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -584,6 +616,13 @@ ALTER TABLE ONLY maker.pips ALTER COLUMN id SET DEFAULT nextval('maker.pips_id_s
 
 
 --
+-- Name: reps id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.reps ALTER COLUMN id SET DEFAULT nextval('maker.reps_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -692,6 +731,14 @@ ALTER TABLE ONLY maker.peps
 
 ALTER TABLE ONLY maker.pips
     ADD CONSTRAINT pips_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reps reps_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.reps
+    ADD CONSTRAINT reps_pkey PRIMARY KEY (id);
 
 
 --
@@ -854,6 +901,14 @@ ALTER TABLE ONLY maker.peps
 --
 
 ALTER TABLE ONLY maker.pips
+    ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reps headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.reps
     ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
