@@ -8,6 +8,7 @@ import (
 
 type MockHeaderRepository struct {
 	createOrUpdateHeaderCallCount          int
+	createOrUpdateHeaderErr                error
 	createOrUpdateHeaderPassedBlockNumbers []int64
 	createOrUpdateHeaderReturnID           int64
 	missingBlockNumbers                    []int64
@@ -21,6 +22,10 @@ func (repository *MockHeaderRepository) SetCreateOrUpdateHeaderReturnID(id int64
 	repository.createOrUpdateHeaderReturnID = id
 }
 
+func (repository *MockHeaderRepository) SetCreateOrUpdateHeaderReturnErr(err error) {
+	repository.createOrUpdateHeaderErr = err
+}
+
 func (repository *MockHeaderRepository) SetMissingBlockNumbers(blockNumbers []int64) {
 	repository.missingBlockNumbers = blockNumbers
 }
@@ -28,7 +33,7 @@ func (repository *MockHeaderRepository) SetMissingBlockNumbers(blockNumbers []in
 func (repository *MockHeaderRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
 	repository.createOrUpdateHeaderCallCount++
 	repository.createOrUpdateHeaderPassedBlockNumbers = append(repository.createOrUpdateHeaderPassedBlockNumbers, header.BlockNumber)
-	return repository.createOrUpdateHeaderReturnID, nil
+	return repository.createOrUpdateHeaderReturnID, repository.createOrUpdateHeaderErr
 }
 
 func (*MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
