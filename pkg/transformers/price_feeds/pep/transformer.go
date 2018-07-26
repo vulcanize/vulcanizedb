@@ -1,14 +1,10 @@
 package pep
 
 import (
-	"math/big"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 )
-
-var Ether = big.NewFloat(1e18)
-var Ray = big.NewFloat(1e27)
 
 type PepTransformer struct {
 	fetcher    IPepFetcher
@@ -27,7 +23,7 @@ func NewPepTransformer(chain core.BlockChain, db *postgres.DB) PepTransformer {
 func (transformer PepTransformer) Execute(header core.Header, headerID int64) error {
 	logValue, err := transformer.fetcher.FetchPepValue(header)
 	if err != nil {
-		if err == ErrNoMatchingLog {
+		if err == price_feeds.ErrNoMatchingLog {
 			return nil
 		}
 		return err
@@ -36,24 +32,12 @@ func (transformer PepTransformer) Execute(header core.Header, headerID int64) er
 	return transformer.repository.CreatePep(pep)
 }
 
-func getPep(logValue string, header core.Header, headerID int64) Pep {
-	valueInUSD := convert("wad", logValue, 15)
-	pep := Pep{
+func getPep(logValue string, header core.Header, headerID int64) price_feeds.PriceUpdate {
+	valueInUSD := price_feeds.Convert("wad", logValue, 15)
+	pep := price_feeds.PriceUpdate{
 		BlockNumber: header.BlockNumber,
 		HeaderID:    headerID,
 		UsdValue:    valueInUSD,
 	}
 	return pep
-}
-
-func convert(conversion string, value string, prec int) string {
-	var bgflt = big.NewFloat(0.0)
-	bgflt.SetString(value)
-	switch conversion {
-	case "ray":
-		bgflt.Quo(bgflt, Ray)
-	case "wad":
-		bgflt.Quo(bgflt, Ether)
-	}
-	return bgflt.Text('g', prec)
 }

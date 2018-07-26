@@ -1,6 +1,0 @@
-package pep
-
-var (
-	LogValueTopic0 = "0x296ba4ca62c6c21c95e828080cb8aec7481b71390585605300a8a76f9e95b527"
-	PepAddress     = "0x99041f808d598b782d5a3e498681c2452a31da08"
-)
