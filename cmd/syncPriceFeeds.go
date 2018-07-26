@@ -89,14 +89,13 @@ func syncPriceFeeds() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	headerRepository := repositories.NewHeaderRepository(&db)
-	// TODO: add transformers to validation so we don't miss events on new block headers
-	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
 	transformers := []transformers.Transformer{
 		pep.NewPepTransformer(blockChain, &db),
 		pip.NewPipTransformer(blockChain, &db),
 		rep.NewRepTransformer(blockChain, &db),
 	}
+	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow, transformers)
 	go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 
 	for {

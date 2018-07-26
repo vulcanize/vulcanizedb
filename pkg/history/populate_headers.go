@@ -5,6 +5,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 )
 
@@ -28,6 +29,9 @@ func RetrieveAndUpdateHeaders(chain core.BlockChain, headerRepository datastore.
 		}
 		id, err := headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {
+			if err == repositories.ErrValidHeaderExists {
+				continue
+			}
 			return 0, err
 		}
 		for _, transformer := range transformers {

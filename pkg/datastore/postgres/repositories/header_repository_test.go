@@ -13,7 +13,6 @@ import (
 
 var _ = Describe("Block header repository", func() {
 	Describe("creating or updating a header", func() {
-
 		It("adds a header", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
@@ -56,7 +55,7 @@ var _ = Describe("Block header repository", func() {
 			Expect(ethNodeFingerprint).To(Equal(db.Node.ID))
 		})
 
-		It("does not duplicate headers", func() {
+		It("returns valid header exists error if attempting duplicate headers", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
@@ -71,7 +70,8 @@ var _ = Describe("Block header repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
 
 			var dbHeaders []core.Header
 			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)

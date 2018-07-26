@@ -2,9 +2,12 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
+
+var ErrValidHeaderExists = errors.New("valid header already exists")
 
 type HeaderRepository struct {
 	database *postgres.DB
@@ -25,7 +28,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	if headerMustBeReplaced(hash, header) {
 		return repository.replaceHeader(header)
 	}
-	return 0, err
+	return 0, ErrValidHeaderExists
 }
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {

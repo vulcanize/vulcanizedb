@@ -97,7 +97,7 @@ func lightSync() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	headerRepository := repositories.NewHeaderRepository(&db)
-	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
+	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow, []transformers.Transformer{})
 	missingBlocksPopulated := make(chan int)
 	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 
