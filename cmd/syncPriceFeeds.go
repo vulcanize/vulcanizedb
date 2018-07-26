@@ -32,7 +32,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pep"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pep"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pip"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -87,10 +88,12 @@ func syncPriceFeeds() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	headerRepository := repositories.NewHeaderRepository(&db)
+	// TODO: add transformers to validation so we don't miss events on new block headers
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
 	transformers := []transformers.Transformer{
 		pep.NewPepTransformer(blockChain, &db),
+		pip.NewPipTransformer(blockChain, &db),
 	}
 	go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 

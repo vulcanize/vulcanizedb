@@ -9,12 +9,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pep"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pep"
 	"math/big"
 )
 
 var _ = Describe("Pep fetcher", func() {
-	It("calls contract to peek mkr/usd value", func() {
+	It("gets logs describing updated mkr/usd value", func() {
 		mockBlockChain := fakes.NewMockBlockChain()
 		mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{{}})
 		fetcher := pep.NewPepFetcher(mockBlockChain)
@@ -31,13 +32,13 @@ var _ = Describe("Pep fetcher", func() {
 		expectedQuery := ethereum.FilterQuery{
 			FromBlock: big.NewInt(blockNumber),
 			ToBlock:   big.NewInt(blockNumber),
-			Addresses: []common.Address{common.HexToAddress(pep.PepAddress)},
-			Topics:    [][]common.Hash{{common.HexToHash(pep.LogValueTopic0)}},
+			Addresses: []common.Address{common.HexToAddress(price_feeds.PepAddress)},
+			Topics:    [][]common.Hash{{common.HexToHash(price_feeds.PepLogTopic0)}},
 		}
 		mockBlockChain.AssertGetEthLogsWithCustomQueryCalledWith(expectedQuery)
 	})
 
-	It("returns error if contract call fails", func() {
+	It("returns error if getting logs fails", func() {
 		mockBlockChain := fakes.NewMockBlockChain()
 		mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{{}})
 		mockBlockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
@@ -56,7 +57,7 @@ var _ = Describe("Pep fetcher", func() {
 		_, err := fetcher.FetchPepValue(core.Header{})
 
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(pep.ErrNoMatchingLog))
+		Expect(err).To(MatchError(price_feeds.ErrNoMatchingLog))
 	})
 
 	It("returns error if more than one matching logs returned", func() {
@@ -67,6 +68,6 @@ var _ = Describe("Pep fetcher", func() {
 		_, err := fetcher.FetchPepValue(core.Header{})
 
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(pep.ErrMultipleLogs))
+		Expect(err).To(MatchError(price_feeds.ErrMultipleLogs))
 	})
 })

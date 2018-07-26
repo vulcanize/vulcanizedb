@@ -65,7 +65,7 @@ func (chain *MockBlockChain) SetGetLogsReturnLogs(logs []core.Log) {
 	chain.getLogsReturnLogs = logs
 }
 
-func (chain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
+func (chain *MockBlockChain) FetchContractData(abiJSON, address, method string, methodArg, result interface{}, blockNumber int64) error {
 	chain.fetchContractDataPassedAbi = abiJSON
 	chain.fetchContractDataPassedAddress = address
 	chain.fetchContractDataPassedMethod = method
@@ -114,7 +114,7 @@ func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, a
 	if methodArg != nil {
 		Expect(chain.fetchContractDataPassedMethodArg).To(Equal(methodArg))
 	}
-	Expect(chain.fetchContractDataPassedResult).To(Equal(result))
+	Expect(chain.fetchContractDataPassedResult).To(BeAssignableToTypeOf(result))
 	Expect(chain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
 }
 

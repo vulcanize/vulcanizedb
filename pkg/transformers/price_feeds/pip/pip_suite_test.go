@@ -1,4 +1,4 @@
-package pep_test
+package pip
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestPep(t *testing.T) {
+func TestPip(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pep Suite")
+	RunSpecs(t, "Pip Suite")
 }
