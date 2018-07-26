@@ -76,26 +76,10 @@ func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.H
 func lightSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
-
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
-		log.Fatal("geth initial: state sync not finished")
-	}
-	if startingBlockNumber > lastBlock {
-		log.Fatal("starting block number > current block number")
-	}
-
+	blockChain := getBlockChain()
+	validateArgs(blockChain)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
 	headerRepository := repositories.NewHeaderRepository(&db)
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow, []transformers.Transformer{})
 	missingBlocksPopulated := make(chan int)
@@ -110,4 +94,28 @@ func lightSync() {
 			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
+}
+
+func validateArgs(blockChain *geth.BlockChain) {
+	lastBlock := blockChain.LastBlock().Int64()
+	if lastBlock == 0 {
+		log.Fatal("geth initial: state sync not finished")
+	}
+	if startingBlockNumber > lastBlock {
+		log.Fatal("starting block number > current block number")
+	}
+}
+
+func getBlockChain() *geth.BlockChain {
+	rawRpcClient, err := rpc.Dial(ipc)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
+	ethClient := ethclient.NewClient(rawRpcClient)
+	client := client.NewEthClient(ethClient)
+	node := node.MakeNode(rpcClient)
+	transactionConverter := vRpc.NewRpcTransactionConverter(client)
+	blockChain := geth.NewBlockChain(client, node, transactionConverter)
+	return blockChain
 }

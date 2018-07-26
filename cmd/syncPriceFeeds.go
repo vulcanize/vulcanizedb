@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 Vulcanize
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,17 +19,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds/pep"
@@ -68,33 +62,17 @@ func backFillPriceFeeds(blockchain core.BlockChain, headerRepository datastore.H
 func syncPriceFeeds() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
-
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
-		log.Fatal("geth initial: state sync not finished")
-	}
-	if startingBlockNumber > lastBlock {
-		log.Fatal("starting block number > current block number")
-	}
-
+	blockChain := getBlockChain()
+	validateArgs(blockChain)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
+	transformers := []transformers.Transformer{
+		pep.NewPepTransformer(blockChain, &db, pepContractAddress),
+		pip.NewPipTransformer(blockChain, &db, pipContractAddress),
+		rep.NewRepTransformer(blockChain, &db, repContractAddress),
+	}
 	headerRepository := repositories.NewHeaderRepository(&db)
 	missingBlocksPopulated := make(chan int)
-	transformers := []transformers.Transformer{
-		pep.NewPepTransformer(blockChain, &db),
-		pip.NewPipTransformer(blockChain, &db),
-		rep.NewRepTransformer(blockChain, &db),
-	}
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow, transformers)
 	go backFillPriceFeeds(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber, transformers)
 

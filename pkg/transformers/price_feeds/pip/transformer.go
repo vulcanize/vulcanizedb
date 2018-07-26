@@ -11,8 +11,8 @@ type PipTransformer struct {
 	repository IPipRepository
 }
 
-func NewPipTransformer(chain core.BlockChain, db *postgres.DB) PipTransformer {
-	fetcher := NewPipFetcher(chain)
+func NewPipTransformer(chain core.BlockChain, db *postgres.DB, contractAddress string) PipTransformer {
+	fetcher := NewPipFetcher(chain, contractAddress)
 	repository := NewPipRepository(db)
 	return PipTransformer{
 		fetcher:    fetcher,
