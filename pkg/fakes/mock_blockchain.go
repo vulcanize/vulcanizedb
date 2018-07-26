@@ -18,11 +18,6 @@ type MockBlockChain struct {
 	fetchContractDataPassedMethodArg   interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
-	getLogsPassedContract              core.Contract
-	getLogsPassedStartingBlockNumber   *big.Int
-	getLogsPassedEndingBlockNumber     *big.Int
-	getLogsReturnLogs                  []core.Log
-	getLogsReturnErr                   error
 	getBlockByNumberErr                error
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
@@ -57,14 +52,6 @@ func (chain *MockBlockChain) SetGetEthLogsWithCustomQueryReturnLogs(logs []types
 	chain.logQueryReturnLogs = logs
 }
 
-func (chain *MockBlockChain) SetGetLogsReturnErr(err error) {
-	chain.getLogsReturnErr = err
-}
-
-func (chain *MockBlockChain) SetGetLogsReturnLogs(logs []core.Log) {
-	chain.getLogsReturnLogs = logs
-}
-
 func (chain *MockBlockChain) FetchContractData(abiJSON, address, method string, methodArg, result interface{}, blockNumber int64) error {
 	chain.fetchContractDataPassedAbi = abiJSON
 	chain.fetchContractDataPassedAddress = address
@@ -89,10 +76,7 @@ func (chain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, 
 }
 
 func (chain *MockBlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
-	chain.getLogsPassedContract = contract
-	chain.getLogsPassedStartingBlockNumber = startingBlockNumber
-	chain.getLogsPassedEndingBlockNumber = endingBlockNumber
-	return chain.getLogsReturnLogs, chain.getLogsReturnErr
+	return []core.Log{}, nil
 }
 
 func (chain *MockBlockChain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {

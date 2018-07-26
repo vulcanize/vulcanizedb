@@ -1,10 +1,10 @@
 package rep_test
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
@@ -17,7 +17,7 @@ var _ = Describe("Rep transformer", func() {
 	It("returns nil if no logs found", func() {
 		chain := fakes.NewMockBlockChain()
 		db := test_config.NewTestDB(core.Node{})
-		transformer := rep.NewRepTransformer(chain, db)
+		transformer := rep.NewRepTransformer(chain, db, "rep-contract-address")
 
 		err := transformer.Execute(core.Header{}, 123)
 
@@ -26,13 +26,14 @@ var _ = Describe("Rep transformer", func() {
 
 	It("creates rep row for found log", func() {
 		chain := fakes.NewMockBlockChain()
-		chain.SetGetLogsReturnLogs([]core.Log{{Data: common.ToHex([]byte{1, 2, 3, 4, 5})}})
+		chain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{{Data: []byte{1, 2, 3, 4, 5}}})
 		db := test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
 		headerRepository := repositories.NewHeaderRepository(db)
 		header := core.Header{BlockNumber: 12345}
 		headerID, err := headerRepository.CreateOrUpdateHeader(header)
 		Expect(err).NotTo(HaveOccurred())
-		transformer := rep.NewRepTransformer(chain, db)
+		transformer := rep.NewRepTransformer(chain, db, "rep-contract-address")
 
 		err = transformer.Execute(header, headerID)
 

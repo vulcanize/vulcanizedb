@@ -14,7 +14,7 @@ var _ = Describe("Pip fetcher", func() {
 	It("returns error if fetching logs fails", func() {
 		chain := fakes.NewMockBlockChain()
 		chain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
-		fetcher := pip.NewPipFetcher(chain)
+		fetcher := pip.NewPipFetcher(chain, "pip-contract-address")
 
 		_, err := fetcher.FetchPipValue(core.Header{})
 
@@ -24,7 +24,7 @@ var _ = Describe("Pip fetcher", func() {
 
 	It("returns no matching logs error if no logs returned", func() {
 		chain := fakes.NewMockBlockChain()
-		fetcher := pip.NewPipFetcher(chain)
+		fetcher := pip.NewPipFetcher(chain, "pip-contract-address")
 
 		_, err := fetcher.FetchPipValue(core.Header{})
 
@@ -37,19 +37,20 @@ var _ = Describe("Pip fetcher", func() {
 			blockNumber := uint64(12345)
 			chain := fakes.NewMockBlockChain()
 			chain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{{BlockNumber: blockNumber}})
-			fetcher := pip.NewPipFetcher(chain)
+			contractAddress := "pip-contract-address"
+			fetcher := pip.NewPipFetcher(chain, contractAddress)
 
 			_, err := fetcher.FetchPipValue(core.Header{})
 
 			Expect(err).NotTo(HaveOccurred())
-			chain.AssertFetchContractDataCalledWith(price_feeds.PipMedianizerABI, price_feeds.PipAddress, price_feeds.PeekMethodName, nil, &[]interface{}{[32]byte{}, false}, int64(blockNumber))
+			chain.AssertFetchContractDataCalledWith(price_feeds.PipMedianizerABI, contractAddress, price_feeds.PeekMethodName, nil, &[]interface{}{[32]byte{}, false}, int64(blockNumber))
 		})
 
 		It("returns error if contract call fails", func() {
 			chain := fakes.NewMockBlockChain()
 			chain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{{BlockNumber: uint64(12345)}})
 			chain.SetFetchContractDataErr(fakes.FakeError)
-			fetcher := pip.NewPipFetcher(chain)
+			fetcher := pip.NewPipFetcher(chain, "pip-contract-address")
 
 			_, err := fetcher.FetchPipValue(core.Header{})
 

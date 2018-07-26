@@ -16,12 +16,14 @@ type IPepFetcher interface {
 }
 
 type PepFetcher struct {
-	blockChain core.BlockChain
+	blockChain      core.BlockChain
+	contractAddress string
 }
 
-func NewPepFetcher(chain core.BlockChain) PepFetcher {
+func NewPepFetcher(chain core.BlockChain, contractAddress string) PepFetcher {
 	return PepFetcher{
-		blockChain: chain,
+		blockChain:      chain,
+		contractAddress: contractAddress,
 	}
 }
 
@@ -30,7 +32,7 @@ func (fetcher PepFetcher) FetchPepValue(header core.Header) (string, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: blockNumber,
 		ToBlock:   blockNumber,
-		Addresses: []common.Address{common.HexToAddress(price_feeds.PepAddress)},
+		Addresses: []common.Address{common.HexToAddress(fetcher.contractAddress)},
 		Topics:    [][]common.Hash{{common.HexToHash(price_feeds.PepLogTopic0)}},
 	}
 	logs, err := fetcher.blockChain.GetEthLogsWithCustomQuery(query)

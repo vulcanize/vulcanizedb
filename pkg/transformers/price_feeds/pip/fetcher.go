@@ -14,12 +14,14 @@ type IPipFetcher interface {
 }
 
 type PipFetcher struct {
-	blockChain core.BlockChain
+	blockChain      core.BlockChain
+	contractAddress string
 }
 
-func NewPipFetcher(chain core.BlockChain) PipFetcher {
+func NewPipFetcher(chain core.BlockChain, contractAddress string) PipFetcher {
 	return PipFetcher{
-		blockChain: chain,
+		blockChain:      chain,
+		contractAddress: contractAddress,
 	}
 }
 
@@ -28,7 +30,7 @@ func (fetcher PipFetcher) FetchPipValue(header core.Header) (string, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: blockNumber,
 		ToBlock:   blockNumber,
-		Addresses: []common.Address{common.HexToAddress(price_feeds.PipAddress)},
+		Addresses: []common.Address{common.HexToAddress(fetcher.contractAddress)},
 		Topics:    [][]common.Hash{{common.HexToHash(price_feeds.PipLogTopic0)}},
 	}
 	logs, err := fetcher.blockChain.GetEthLogsWithCustomQuery(query)
@@ -50,7 +52,7 @@ func (fetcher PipFetcher) getLogValue(logs []types.Log, err error) (string, erro
 		ret0,
 		ret1,
 	}
-	err = fetcher.blockChain.FetchContractData(price_feeds.PipMedianizerABI, price_feeds.PipAddress, price_feeds.PeekMethodName, nil, r, int64(logs[0].BlockNumber))
+	err = fetcher.blockChain.FetchContractData(price_feeds.PipMedianizerABI, fetcher.contractAddress, price_feeds.PeekMethodName, nil, r, int64(logs[0].BlockNumber))
 	if err != nil {
 		return "", err
 	}

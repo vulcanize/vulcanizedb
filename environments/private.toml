@@ -5,3 +5,6 @@ port = 5432
 
 [client]
 ipcPath = "http://127.0.0.1:7545"
+pepContractAddress = "0x99041F808D598B782D5a3e498681C2452A31da08"
+pipContractAddress = "0x729D19f657BD0614b4985Cf1D82531c67569197B"
+repContractAddress = "0xF5f94b7F9De14D43112e713835BCef2d55b76c1C"

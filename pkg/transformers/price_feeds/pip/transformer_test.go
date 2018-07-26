@@ -16,7 +16,7 @@ var _ = Describe("Pip transformer", func() {
 	It("returns nil if no logs found", func() {
 		chain := fakes.NewMockBlockChain()
 		db := test_config.NewTestDB(core.Node{})
-		transformer := pip.NewPipTransformer(chain, db)
+		transformer := pip.NewPipTransformer(chain, db, "pip-contract-address")
 
 		err := transformer.Execute(core.Header{}, 123)
 
@@ -32,7 +32,7 @@ var _ = Describe("Pip transformer", func() {
 		header := core.Header{BlockNumber: 12345}
 		headerID, err := headerRepository.CreateOrUpdateHeader(header)
 		Expect(err).NotTo(HaveOccurred())
-		transformer := pip.NewPipTransformer(chain, db)
+		transformer := pip.NewPipTransformer(chain, db, "pip-contract-address")
 
 		err = transformer.Execute(header, headerID)
 

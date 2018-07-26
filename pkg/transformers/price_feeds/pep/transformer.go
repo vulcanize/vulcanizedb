@@ -11,8 +11,8 @@ type PepTransformer struct {
 	repository IPepRepository
 }
 
-func NewPepTransformer(chain core.BlockChain, db *postgres.DB) PepTransformer {
-	fetcher := NewPepFetcher(chain)
+func NewPepTransformer(chain core.BlockChain, db *postgres.DB, contractAddress string) PepTransformer {
+	fetcher := NewPepFetcher(chain, contractAddress)
 	repository := NewPepRepository(db)
 	return PepTransformer{
 		fetcher:    fetcher,

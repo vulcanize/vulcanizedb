@@ -27,6 +27,7 @@ var _ = Describe("Rep repository", func() {
 
 	It("creates a rep when matching header exists", func() {
 		db := test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
 		repository := rep.NewRepRepository(db)
 		header := core.Header{BlockNumber: 12345}
 		headerRepository := repositories.NewHeaderRepository(db)

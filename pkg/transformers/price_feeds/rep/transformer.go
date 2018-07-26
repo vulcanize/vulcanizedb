@@ -11,8 +11,8 @@ type RepTransformer struct {
 	repository IRepRepository
 }
 
-func NewRepTransformer(chain core.BlockChain, db *postgres.DB) RepTransformer {
-	fetcher := NewRepFetcher(chain)
+func NewRepTransformer(chain core.BlockChain, db *postgres.DB, contractAddress string) RepTransformer {
+	fetcher := NewRepFetcher(chain, contractAddress)
 	repository := NewRepRepository(db)
 	return RepTransformer{
 		fetcher:    fetcher,
