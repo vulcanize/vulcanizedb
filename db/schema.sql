@@ -16,6 +16,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: maker; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA maker;
+
+
+--
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -32,6 +39,48 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET default_tablespace = '';
 
 SET default_with_oids = false;
+
+--
+-- Name: flip_kick; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.flip_kick (
+    db_id integer NOT NULL,
+    header_id integer NOT NULL,
+    id numeric NOT NULL,
+    mom character varying,
+    vat character varying,
+    ilk character varying,
+    lot numeric,
+    bid numeric,
+    guy character varying,
+    gal character varying,
+    "end" timestamp with time zone,
+    era timestamp with time zone,
+    lad character varying,
+    tab numeric
+);
+
+
+--
+-- Name: flip_kick_db_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.flip_kick_db_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: flip_kick_db_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.flip_kick_db_id_seq OWNED BY maker.flip_kick.db_id;
+
 
 --
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
@@ -406,6 +455,13 @@ CREATE VIEW public.watched_event_logs AS
 
 
 --
+-- Name: flip_kick db_id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flip_kick ALTER COLUMN db_id SET DEFAULT nextval('maker.flip_kick_db_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -466,6 +522,22 @@ ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT nextval('public.watched_contracts_contract_id_seq'::regclass);
+
+
+--
+-- Name: flip_kick flip_kick_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flip_kick
+    ADD CONSTRAINT flip_kick_id_key UNIQUE (id);
+
+
+--
+-- Name: flip_kick flip_kick_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flip_kick
+    ADD CONSTRAINT flip_kick_pkey PRIMARY KEY (db_id);
 
 
 --
@@ -597,6 +669,14 @@ CREATE INDEX tx_from_index ON public.transactions USING btree (tx_from);
 --
 
 CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
+
+
+--
+-- Name: flip_kick flip_kick_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flip_kick
+    ADD CONSTRAINT flip_kick_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

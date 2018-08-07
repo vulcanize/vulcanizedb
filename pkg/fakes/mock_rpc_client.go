@@ -8,16 +8,13 @@ import (
 )
 
 type MockRpcClient struct {
-	ipcPath  string
-	nodeType core.NodeType
+	ipcPath          string
+	nodeType         core.NodeType
+	supportedModules map[string]string
 }
 
 func NewMockRpcClient() *MockRpcClient {
 	return &MockRpcClient{}
-}
-
-func (client *MockRpcClient) SetNodeType(nodeType core.NodeType) {
-	client.nodeType = nodeType
 }
 
 func (client *MockRpcClient) SetIpcPath(ipcPath string) {
@@ -65,9 +62,9 @@ func (client *MockRpcClient) IpcPath() string {
 }
 
 func (client *MockRpcClient) SupportedModules() (map[string]string, error) {
-	result := make(map[string]string)
-	if client.nodeType == core.GETH {
-		result["admin"] = "ok"
-	}
-	return result, nil
+	return client.supportedModules, nil
+}
+
+func (client *MockRpcClient) SetSupporedModules(supportedModules map[string]string) {
+	client.supportedModules = supportedModules
 }

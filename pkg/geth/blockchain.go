@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/net/context"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
@@ -53,12 +54,20 @@ func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumbe
 		ToBlock:   endingBlockNumber,
 		Addresses: []common.Address{contractAddress},
 	}
-	gethLogs, err := blockChain.client.FilterLogs(context.Background(), fc)
+	gethLogs, err := blockChain.GetEthLogsWithCustomQuery(fc)
 	if err != nil {
 		return []core.Log{}, err
 	}
 	logs := vulcCommon.ToCoreLogs(gethLogs)
 	return logs, nil
+}
+
+func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
+	gethLogs, err := blockChain.client.FilterLogs(context.Background(), query)
+	if err != nil {
+		return []types.Log{}, err
+	}
+	return gethLogs, nil
 }
 
 func (blockChain *BlockChain) LastBlock() *big.Int {

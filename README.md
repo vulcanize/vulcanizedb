@@ -77,6 +77,16 @@ This command is useful when you want a minimal baseline from which to track targ
 2. In a separate terminal start VulcanizeDB:
     - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
 
+## Backfill Auction event logs from light sync
+Backfills auction event logs from the configured Ethereum node based on the populated block headers.
+This command requires that a light sync (see command above) has previously been run.
+
+_Since auction contracts have not yet been deployed, this command will need to be run a local blockchain at the moment. As such, a new environment file will need to be added. See `environments/local.toml.example`._
+
+1. Start Ethereum node
+1. In a separate terminal run the backfill command:
+  - `./vulcanizedb backfillAuctionLogs --config <config.toml>`
+
 ## Start full environment in docker by single command
 
 ### Geth Rinkeby

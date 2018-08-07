@@ -18,7 +18,14 @@ func NewRpcClient(client *rpc.Client, ipcPath string) RpcClient {
 }
 
 func (client RpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	return client.client.CallContext(ctx, result, method, args)
+	//If an empty interface (or other nil object) is passed to CallContext, when the JSONRPC message is created the params will
+	//be interpreted as [null]. This seems to work fine for most of the ethereum clients (which presumably ignore a null parameter.
+	//Ganache however does not ignore it, and throws an 'Incorrect number of arguments' error.
+	if args == nil {
+		return client.client.CallContext(ctx, result, method)
+	} else {
+		return client.client.CallContext(ctx, result, method, args)
+	}
 }
 
 func (client RpcClient) IpcPath() string {

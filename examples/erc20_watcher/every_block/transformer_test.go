@@ -20,7 +20,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
-	"github.com/vulcanize/vulcanizedb/examples/mocks"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 	"math/rand"

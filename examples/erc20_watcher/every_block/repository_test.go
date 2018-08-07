@@ -19,12 +19,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
-	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/rand"
+	"github.com/vulcanize/vulcanizedb/pkg/test_helpers"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 )
 
 var _ = Describe("ERC20 Token Repository", func() {
@@ -52,8 +53,8 @@ var _ = Describe("ERC20 Token Repository", func() {
 			err := repository.Create(supply)
 			Expect(err).NotTo(HaveOccurred())
 
-			dbResult := test_helpers.TokenSupplyDBRow{}
-			expectedTokenSupply := test_helpers.TokenSupplyDBRow{
+			dbResult := erc20_test_helpers.TokenSupplyDBRow{}
+			expectedTokenSupply := erc20_test_helpers.TokenSupplyDBRow{
 				Supply:       int64(100),
 				BlockID:      blockId,
 				TokenAddress: testAddress,
@@ -112,7 +113,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 			err := node2TokenSupplyRepo.Create(tokenSupply)
 			Expect(err).NotTo(HaveOccurred())
 
-			var tokenSupplies []test_helpers.TokenSupplyDBRow
+			var tokenSupplies []erc20_test_helpers.TokenSupplyDBRow
 			err = node2TokenSupplyRepo.DB.Select(&tokenSupplies, `SELECT * FROM token_supply`)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(tokenSupplies)).To(Equal(1))
