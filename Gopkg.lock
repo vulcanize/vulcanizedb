@@ -17,7 +17,10 @@
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
+    "accounts",
     "accounts/abi",
+    "accounts/abi/bind",
+    "accounts/keystore",
     "common",
     "common/hexutil",
     "common/math",
@@ -33,6 +36,7 @@
     "crypto/bn256/cloudflare",
     "crypto/bn256/google",
     "crypto/ecies",
+    "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
     "ethclient",
@@ -210,10 +214,22 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
+
+[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/rjeczalik/notify"
+  packages = ["."]
+  revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
+  version = "v0.9.0"
 
 [[projects]]
   name = "github.com/rs/cors"
@@ -282,7 +298,11 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["ripemd160"]
+  packages = [
+    "pbkdf2",
+    "ripemd160",
+    "scrypt"
+  ]
   revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
 
 [[projects]]
@@ -337,6 +357,16 @@
   revision = "be25de41fadfae372d6470bda81ca6beb55ef551"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "imports",
+    "internal/fastwalk"
+  ]
+  revision = "8cc4e8a6f4841aa92a8683fca47bc5d64b58875b"
+
+[[projects]]
   name = "gopkg.in/fatih/set.v0"
   packages = ["."]
   revision = "57907de300222151a123d29255ed17f5ed43fad3"
@@ -363,6 +393,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a69d27ddc33f08d7b39242508f04e5c339b52cc65e70596100d17a870b2183a6"
+  inputs-digest = "2122d1d04fbc67daf75d751e144926e73f0fd838d51711cccf9604eabb46b95b"
   solver-name = "gps-cdcl"
   solver-version = 1

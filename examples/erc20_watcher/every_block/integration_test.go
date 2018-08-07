@@ -20,11 +20,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
-	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/test_helpers"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 	"math/big"
 	"strconv"
 )
@@ -68,7 +69,7 @@ var _ = Describe("Everyblock transformers", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(tokenSupplyCount).To(Equal(1))
 
-		var tokenSupply test_helpers.TokenSupplyDBRow
+		var tokenSupply erc20_test_helpers.TokenSupplyDBRow
 		err = db.Get(&tokenSupply, `SELECT * from token_supply where block_id = $1`, blockId)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(tokenSupply.BlockID).To(Equal(blockId))

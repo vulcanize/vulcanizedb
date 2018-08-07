@@ -10,6 +10,7 @@ const (
 	GETH NodeType = iota
 	PARITY
 	INFURA
+	GANACHE
 )
 
 type Node struct {

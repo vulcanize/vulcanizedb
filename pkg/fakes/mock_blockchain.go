@@ -5,6 +5,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -17,6 +19,8 @@ type MockBlockChain struct {
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
 	getBlockByNumberErr                error
+	logQuery                           ethereum.FilterQuery
+	logQueryErr                        error
 	lastBlock                          *big.Int
 	node                               core.Node
 }
@@ -37,6 +41,15 @@ func (blockChain *MockBlockChain) SetLastBlock(blockNumber *big.Int) {
 
 func (blockChain *MockBlockChain) SetGetBlockByNumberErr(err error) {
 	blockChain.getBlockByNumberErr = err
+}
+
+func (blockChain *MockBlockChain) SetGetLogsErr(err error) {
+	blockChain.logQueryErr = err
+}
+
+func (blockChain *MockBlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
+	blockChain.logQuery = query
+	return []types.Log{}, blockChain.logQueryErr
 }
 
 func (blockChain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
@@ -80,4 +93,8 @@ func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON stri
 	Expect(blockChain.fetchContractDataPassedMethod).To(Equal(method))
 	Expect(blockChain.fetchContractDataPassedResult).To(Equal(result))
 	Expect(blockChain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
+}
+
+func (blockChain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {
+	Expect(blockChain.logQuery).To(Equal(query))
 }

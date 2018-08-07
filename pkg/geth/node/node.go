@@ -37,6 +37,10 @@ type InfuraClient struct {
 	PropertiesReader
 }
 
+type GanacheClient struct {
+	PropertiesReader
+}
+
 func MakeNode(rpcClient core.RpcClient) core.Node {
 	pr := makePropertiesReader(rpcClient)
 	id, name := pr.NodeInfo()
@@ -56,6 +60,8 @@ func makePropertiesReader(client core.RpcClient) IPropertiesReader {
 		return ParityClient{PropertiesReader: PropertiesReader{client: client}}
 	case core.INFURA:
 		return InfuraClient{PropertiesReader: PropertiesReader{client: client}}
+	case core.GANACHE:
+		return GanacheClient{PropertiesReader: PropertiesReader{client: client}}
 	default:
 		return PropertiesReader{client: client}
 	}
@@ -64,6 +70,9 @@ func makePropertiesReader(client core.RpcClient) IPropertiesReader {
 func getNodeType(client core.RpcClient) core.NodeType {
 	if strings.Contains(client.IpcPath(), "infura") {
 		return core.INFURA
+	}
+	if strings.Contains(client.IpcPath(), "127.0.0.1") || strings.Contains(client.IpcPath(), "localhost") {
+		return core.GANACHE
 	}
 	modules, _ := client.SupportedModules()
 	if _, ok := modules["admin"]; ok {
@@ -104,6 +113,10 @@ func (client ParityClient) NodeInfo() (string, string) {
 
 func (client InfuraClient) NodeInfo() (string, string) {
 	return "infura", "infura"
+}
+
+func (client GanacheClient) NodeInfo() (string, string) {
+	return "ganache", "ganache"
 }
 
 func (client ParityClient) parityNodeInfo() string {
