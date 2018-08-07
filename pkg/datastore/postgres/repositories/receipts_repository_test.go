@@ -24,6 +24,7 @@ var _ = Describe("Receipts Repository", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		blockRepository = repositories.NewBlockRepository(db)
 		logRepository = repositories.LogRepository{DB: db}
 		receiptRepository = repositories.ReceiptRepository{DB: db}

@@ -51,7 +51,8 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
           - Linux: `$HOME/.ethereum/geth/chaindata`
       - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
 
-- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable
+- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable.
+- Copy `environments/local.toml.example` to `environments/local.toml` to configure commands to run against a local node such as [Ganache](https://truffleframework.com/ganache) or [ganache-cli](https://github.com/trufflesuite/ganache-clihttps://github.com/trufflesuite/ganache-cli).
 
 ## Start syncing with postgres
 Syncs VulcanizeDB with the configured Ethereum node, populating blocks, transactions, receipts, and logs.

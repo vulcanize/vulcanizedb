@@ -18,8 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 )
 
 type MockLogFetcher struct {
@@ -50,18 +50,18 @@ type MockFlipKickConverter struct {
 	ConverterContract string
 	ConverterAbi      string
 	LogsToConvert     []types.Log
-	EntitiesToConvert []every_block.FlipKickEntity
+	EntitiesToConvert []flip_kick.FlipKickEntity
 	ConverterError    error
 }
 
-func (mfkc *MockFlipKickConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (*every_block.FlipKickEntity, error) {
+func (mfkc *MockFlipKickConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (*flip_kick.FlipKickEntity, error) {
 	mfkc.ConverterContract = contractAddress
 	mfkc.ConverterAbi = contractAbi
 	mfkc.LogsToConvert = append(mfkc.LogsToConvert, ethLog)
 	return &FlipKickEntity, mfkc.ConverterError
 }
 
-func (mfkc *MockFlipKickConverter) ToModel(flipKick every_block.FlipKickEntity) (every_block.FlipKickModel, error) {
+func (mfkc *MockFlipKickConverter) ToModel(flipKick flip_kick.FlipKickEntity) (flip_kick.FlipKickModel, error) {
 	mfkc.EntitiesToConvert = append(mfkc.EntitiesToConvert, flipKick)
 	return FlipKickModel, nil
 }
@@ -74,12 +74,12 @@ type MockFlipKickRepository struct {
 	HeadersToReturn     []core.Header
 	StartingBlockNumber int64
 	EndingBlockNumber   int64
-	FlipKicksCreated    []every_block.FlipKickModel
+	FlipKicksCreated    []flip_kick.FlipKickModel
 	CreateRecordError   error
 	MissingHeadersError error
 }
 
-func (mfkr *MockFlipKickRepository) Create(headerId int64, flipKick every_block.FlipKickModel) error {
+func (mfkr *MockFlipKickRepository) Create(headerId int64, flipKick flip_kick.FlipKickModel) error {
 	mfkr.HeaderIds = append(mfkr.HeaderIds, headerId)
 	mfkr.FlipKicksCreated = append(mfkr.FlipKicksCreated, flipKick)
 

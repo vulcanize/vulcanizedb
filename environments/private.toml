@@ -4,4 +4,4 @@ hostname = "localhost"
 port = 5432
 
 [client]
-ipcPath = "test_data_dir/geth.ipc"
+ipcPath = "http://127.0.0.1:7545"

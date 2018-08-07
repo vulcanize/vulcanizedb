@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block_test
+package flip_kick_test
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -21,19 +21,18 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
-	"github.com/vulcanize/vulcanizedb/libraries/maker/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Integration tests", func() {
-
 	It("Fetches FlipKickEntity event logs from a local test chain", func() {
-		ipcPath := "http://127.0.0.1:7545"
+		ipcPath := test_config.TestClient.IPCPath
 
 		rawRpcClient, err := rpc.Dial(ipcPath)
 		Expect(err).NotTo(HaveOccurred())
@@ -44,8 +43,8 @@ var _ = Describe("Integration tests", func() {
 		realNode := node.MakeNode(rpcClient)
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
-		realFetcher := every_block.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(every_block.FlipKickSignature)
+		realFetcher := flip_kick.NewFetcher(realBlockChain)
+		topic0 := common.HexToHash(flip_kick.FlipKickSignature)
 		topics := [][]common.Hash{{topic0}}
 
 		result, err := realFetcher.FetchLogs(test_data.TemporaryFlipAddress, topics, int64(10))
@@ -62,11 +61,11 @@ var _ = Describe("Integration tests", func() {
 
 	It("unpacks an event log", func() {
 		address := common.HexToAddress(test_data.TemporaryFlipAddress)
-		abi, err := geth.ParseAbi(every_block.FlipperABI)
+		abi, err := geth.ParseAbi(flip_kick.FlipperABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-		entity := &every_block.FlipKickEntity{}
+		entity := &flip_kick.FlipKickEntity{}
 
 		var eventLog = test_data.EthFlipKickLog
 

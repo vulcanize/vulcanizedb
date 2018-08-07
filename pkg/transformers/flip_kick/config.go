@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package flip_kick
 
-import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
-)
+type TransformerConfig struct {
+	ContractAddress     string
+	ContractAbi         string
+	Topics              []string
+	StartingBlockNumber int64
+	EndingBlockNumber   int64
+}
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := FlipKickConfig
-	initializer := FlipKickTransformerInitializer{Config: config}
-	return []shared.TransformerInitializer{
-		initializer.NewFlipKickTransformer,
-	}
+var FlipKickConfig = TransformerConfig{
+	ContractAddress:     "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d", //this is a temporary address deployed locally
+	ContractAbi:         FlipperABI,
+	Topics:              []string{FlipKickSignature},
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   100,
 }

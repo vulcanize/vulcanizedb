@@ -24,7 +24,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/rand"
-	"github.com/vulcanize/vulcanizedb/pkg/test_helpers"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 )
 
@@ -37,14 +36,13 @@ var _ = Describe("ERC20 Token Repository", func() {
 	testAddress := "abc"
 
 	BeforeEach(func() {
-		db = test_helpers.CreateNewDatabase()
+		node := test_config.NewTestNode()
+		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		repository = every_block.TokenSupplyRepository{DB: db}
-		_, err := db.Query(`DELETE FROM token_supply`)
-		Expect(err).NotTo(HaveOccurred())
-
 		blockRepository = *repositories.NewBlockRepository(db)
 		blockNumber = rand.Int63()
-		blockId = test_helpers.CreateBlock(blockNumber, blockRepository)
+		blockId = test_config.NewTestBlock(blockNumber, blockRepository)
 	})
 
 	Describe("Create", func() {
@@ -103,7 +101,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 			//create another block with the same number on node2
 			node2BlockRepo = repositories.NewBlockRepository(node2DB)
-			node2BlockId = test_helpers.CreateBlock(blockNumber, *node2BlockRepo)
+			node2BlockId = test_config.NewTestBlock(blockNumber, *node2BlockRepo)
 
 			tokenSupply = supplyModel(blockNumber, "abc", "100")
 			node2TokenSupplyRepo = every_block.TokenSupplyRepository{DB: node2DB}
@@ -140,7 +138,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 			createTokenSupplyFor(repository, blockNumber)
 
 			newBlockNumber := blockNumber + 1
-			test_helpers.CreateBlock(newBlockNumber, blockRepository)
+			test_config.NewTestBlock(newBlockNumber, blockRepository)
 			blocks, err := repository.MissingBlocks(blockNumber, newBlockNumber)
 
 			Expect(blocks).To(ConsistOf(newBlockNumber))
@@ -149,7 +147,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 		It("only returns blocks within the given range", func() {
 			newBlockNumber := blockNumber + 1
-			test_helpers.CreateBlock(newBlockNumber, blockRepository)
+			test_config.NewTestBlock(newBlockNumber, blockRepository)
 			blocks, err := repository.MissingBlocks(blockNumber, blockNumber)
 
 			Expect(blocks).NotTo(ConsistOf(newBlockNumber))
@@ -204,5 +202,5 @@ func createDbForAnotherNode() *postgres.DB {
 		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 	}
 
-	return test_config.NewTestDBWithoutDeletingRecords(anotherNode)
+	return test_config.NewTestDB(anotherNode)
 }

@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block_test
+package flip_kick_test
 
 import (
+	"math/big"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
-	"github.com/vulcanize/vulcanizedb/libraries/maker/test_data"
-	"time"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("FlipKickEntity Converter", func() {
 	It("converts an Eth Log to and Entity", func() {
-		converter := every_block.FlipKickConverter{}
-		entity, err := converter.ToEntity(test_data.TemporaryFlipAddress, every_block.FlipperABI, test_data.EthFlipKickLog)
+		converter := flip_kick.FlipKickConverter{}
+		entity, err := converter.ToEntity(test_data.TemporaryFlipAddress, flip_kick.FlipperABI, test_data.EthFlipKickLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(entity.Id).To(Equal(test_data.FlipKickEntity.Id))
@@ -47,14 +48,14 @@ var _ = Describe("FlipKickEntity Converter", func() {
 	})
 
 	It("returns an error if converting log to entity fails", func() {
-		converter := every_block.FlipKickConverter{}
+		converter := flip_kick.FlipKickConverter{}
 		_, err := converter.ToEntity(test_data.TemporaryFlipAddress, "error abi", test_data.EthFlipKickLog)
 
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("converts and Entity to a Model", func() {
-		converter := every_block.FlipKickConverter{}
+		converter := flip_kick.FlipKickConverter{}
 		model, err := converter.ToModel(test_data.FlipKickEntity)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.FlipKickModel))
@@ -65,8 +66,8 @@ var _ = Describe("FlipKickEntity Converter", func() {
 		emptyByteArrayHex := "0x0000000000000000000000000000000000000000000000000000000000000000"
 		emptyString := ""
 		emptyTime := time.Unix(0, 0)
-		converter := every_block.FlipKickConverter{}
-		emptyEntity := every_block.FlipKickEntity{
+		converter := flip_kick.FlipKickConverter{}
+		emptyEntity := flip_kick.FlipKickEntity{
 			Id:  big.NewInt(1),
 			Mom: common.Address{},
 			Vat: common.Address{},
@@ -99,8 +100,8 @@ var _ = Describe("FlipKickEntity Converter", func() {
 	})
 
 	It("returns an error of the flip kick event id is nil", func() {
-		converter := every_block.FlipKickConverter{}
-		emptyEntity := every_block.FlipKickEntity{}
+		converter := flip_kick.FlipKickConverter{}
+		emptyEntity := flip_kick.FlipKickEntity{}
 		_, err := converter.ToModel(emptyEntity)
 
 		Expect(err).To(HaveOccurred())

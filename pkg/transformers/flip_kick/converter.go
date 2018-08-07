@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package flip_kick
 
 import (
+	"errors"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"strings"
-	"time"
-	"math/big"
-	"errors"
 )
 
 type Converter interface {
@@ -69,7 +71,7 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	end := time.Unix(endValue, 0)
 	eraValue := convertNilToZeroTimeValue(flipKick.Era)
 	era := time.Unix(eraValue, 0)
-    lad := strings.ToLower(flipKick.Lad.String())
+	lad := strings.ToLower(flipKick.Lad.String())
 	tab := convertNilToEmptyString(flipKick.Tab.String())
 
 	return FlipKickModel{

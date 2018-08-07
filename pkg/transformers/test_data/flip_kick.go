@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"time"
 )
 
@@ -51,7 +51,7 @@ var tab, _ = new(big.Int).SetString(tabString, 10)
 
 var EthFlipKickLog = types.Log{
 	Address:     common.HexToAddress(TemporaryFlipAddress),
-	Topics:      []common.Hash{common.HexToHash(every_block.FlipKickSignature)},
+	Topics:      []common.Hash{common.HexToHash(flip_kick.FlipKickSignature)},
 	Data:        hexutil.MustDecode(TemporaryFlipKickData),
 	BlockNumber: uint64(TempBlockNumber),
 	TxHash:      common.HexToHash(TemporaryFlipKickTransaction),
@@ -61,7 +61,7 @@ var EthFlipKickLog = types.Log{
 	Removed:     false,
 }
 
-var FlipKickEntity = every_block.FlipKickEntity{
+var FlipKickEntity = flip_kick.FlipKickEntity{
 	Id:  id,
 	Mom: common.HexToAddress(mom),
 	Vat: common.HexToAddress(vat),
@@ -76,7 +76,7 @@ var FlipKickEntity = every_block.FlipKickEntity{
 	Tab: tab,
 }
 
-var FlipKickModel = every_block.FlipKickModel{
+var FlipKickModel = flip_kick.FlipKickModel{
 	Id:  idString,
 	Mom: mom,
 	Vat: vat,
@@ -94,5 +94,5 @@ var FlipKickModel = every_block.FlipKickModel{
 type FlipKickDBRow struct {
 	DbID     int64 `db:"db_id"`
 	HeaderId int64 `db:"header_id"`
-	every_block.FlipKickModel
+	flip_kick.FlipKickModel
 }

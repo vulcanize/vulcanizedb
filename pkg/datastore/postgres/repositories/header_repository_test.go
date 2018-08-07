@@ -17,6 +17,7 @@ var _ = Describe("Block header repository", func() {
 		It("adds a header", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -38,6 +39,7 @@ var _ = Describe("Block header repository", func() {
 		It("adds node data to header", func() {
 			node := core.Node{ID: "EthNodeFingerprint"}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{BlockNumber: 100}
 
@@ -57,6 +59,7 @@ var _ = Describe("Block header repository", func() {
 		It("does not duplicate headers", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -79,6 +82,7 @@ var _ = Describe("Block header repository", func() {
 		It("replaces header if hash is different", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -106,6 +110,7 @@ var _ = Describe("Block header repository", func() {
 		It("does not replace header if node fingerprint is different", func() {
 			node := core.Node{ID: "Fingerprint"}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -176,6 +181,7 @@ var _ = Describe("Block header repository", func() {
 		It("returns header if it exists", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -194,6 +200,7 @@ var _ = Describe("Block header repository", func() {
 		It("does not return header for a different node fingerprint", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
@@ -218,6 +225,7 @@ var _ = Describe("Block header repository", func() {
 		It("returns block numbers for headers not in the database", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 1})
 			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 3})
@@ -231,6 +239,7 @@ var _ = Describe("Block header repository", func() {
 		It("does not count headers created by a different node fingerprint", func() {
 			node := core.Node{ID: "NodeFingerprint"}
 			db := test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
 			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 1})
 			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 3})

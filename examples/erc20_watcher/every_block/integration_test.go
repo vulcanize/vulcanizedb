@@ -24,10 +24,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/test_helpers"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 	"math/big"
 	"strconv"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 func setLastBlockOnChain(blockChain *fakes.MockBlockChain, blockNumber int64) {
@@ -48,7 +48,9 @@ var _ = Describe("Everyblock transformers", func() {
 		blockChain = fakes.NewMockBlockChain()
 		blockNumber = erc20_watcher.DaiConfig.FirstBlock
 		lastBlockNumber := blockNumber + 1
-		db = test_helpers.CreateNewDatabase()
+		node := test_config.NewTestNode()
+		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		setLastBlockOnChain(blockChain, lastBlockNumber)
 
 		blockRepository := repositories.NewBlockRepository(db)

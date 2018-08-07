@@ -26,6 +26,7 @@ var _ = Describe("Saving blocks", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		blockRepository = repositories.NewBlockRepository(db)
 
 	})
@@ -42,6 +43,7 @@ var _ = Describe("Saving blocks", func() {
 			ClientName:   "Geth",
 		}
 		dbTwo := test_config.NewTestDB(nodeTwo)
+		test_config.CleanTestDB(dbTwo)
 		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
 		_, err := repositoryTwo.GetBlock(123)
@@ -168,6 +170,7 @@ var _ = Describe("Saving blocks", func() {
 			NetworkID:    1,
 		}
 		dbTwo := test_config.NewTestDB(nodeTwo)
+		test_config.CleanTestDB(dbTwo)
 		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
 		blockRepository.CreateOrUpdateBlock(blockOne)
