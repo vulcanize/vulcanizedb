@@ -18,7 +18,7 @@ before_install:
 before_script:
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
-  - bash ./libraries/maker/start_test_chain.sh
+  - bash ./pkg/transformers/start_test_chain.sh
 
 script:
   - make test
@@ -27,4 +27,4 @@ notifications:
   email: false
 
 after_script:
-  - bash ./libraries/maker/stop_test_chain.sh
+  - bash ./pkg/transformers/stop_test_chain.sh

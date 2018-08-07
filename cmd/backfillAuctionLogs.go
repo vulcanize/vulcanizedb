@@ -15,17 +15,19 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"log"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 )
 
 // backfillAuctionLogsCmd represents the backfillAuctionLogs command
@@ -67,7 +69,7 @@ func backfillAuctionLogs() {
 		Blockchain: blockChain,
 	}
 
-	watcher.AddTransformers(every_block.TransformerInitializers())
+	watcher.AddTransformers(transformers.TransformerInitializers())
 	watcher.Execute()
 }
 

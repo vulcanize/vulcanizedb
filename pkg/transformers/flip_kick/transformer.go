@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package flip_kick
 
 import (
 	"errors"
@@ -55,11 +55,11 @@ func (fkt *FlipKickTransformer) SetConfig(config TransformerConfig) {
 }
 
 const (
-	FetcherError     = "Error fetching FlipKick log events for block number %d: %s"
+	FetcherError       = "Error fetching FlipKick log events for block number %d: %s"
 	LogToEntityError   = "Error converting eth log to FlipKick entity for block number %d: %s"
-	EntityToModelError   = "Error converting eth log to FlipKick entity for block number %d: %s"
-	RepositoryError  = "Error creating flip_kick record for block number %d: %s"
-	TransformerError = "There has been %d error(s) transforming FlipKick event logs, see the logs for more details."
+	EntityToModelError = "Error converting eth log to FlipKick entity for block number %d: %s"
+	RepositoryError    = "Error creating flip_kick record for block number %d: %s"
+	TransformerError   = "There has been %d error(s) transforming FlipKick event logs, see the logs for more details."
 )
 
 type transformerError struct {

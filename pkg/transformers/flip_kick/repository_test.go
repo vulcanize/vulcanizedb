@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block_test
+package flip_kick_test
 
 import (
 	"math/rand"
@@ -21,25 +21,26 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
-	"github.com/vulcanize/vulcanizedb/libraries/maker/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("FlipKick Repository", func() {
 	var db *postgres.DB
-	var flipKickRepository every_block.FlipKickRepository
+	var flipKickRepository flip_kick.FlipKickRepository
 	var headerId int64
 	var blockNumber int64
 	var flipKick = test_data.FlipKickModel
 
 	BeforeEach(func() {
-		db = test_helpers.CreateNewDatabase()
-		flipKickRepository = every_block.FlipKickRepository{DB: db}
+		node := test_config.NewTestNode()
+		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
+		flipKickRepository = flip_kick.FlipKickRepository{DB: db}
 		blockNumber = rand.Int63()
 		headerId = createHeader(db, blockNumber)
 
@@ -102,7 +103,7 @@ var _ = Describe("FlipKick Repository", func() {
 
 	Describe("When there are multiple nodes", func() {
 		var db2 *postgres.DB
-		var flipKickRepository2 every_block.FlipKickRepository
+		var flipKickRepository2 flip_kick.FlipKickRepository
 		var headerId2 int64
 
 		BeforeEach(func() {
@@ -113,8 +114,8 @@ var _ = Describe("FlipKick Repository", func() {
 				ID:           "node2",
 				ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 			}
-			db2 = test_config.NewTestDBWithoutDeletingRecords(node2)
-			flipKickRepository2 = every_block.FlipKickRepository{DB: db2}
+			db2 = test_config.NewTestDB(node2)
+			flipKickRepository2 = flip_kick.FlipKickRepository{DB: db2}
 			headerId2 = createHeader(db2, blockNumber)
 
 			_, err := db2.Exec(`DELETE from maker.flip_kick;`)

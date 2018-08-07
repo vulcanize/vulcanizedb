@@ -21,6 +21,7 @@ var _ = Describe("Watched Events Repository", func() {
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
 		blocksRepository = repositories.NewBlockRepository(db)
 		filterRepository = repositories.FilterRepository{DB: db}
 		logRepository = repositories.LogRepository{DB: db}

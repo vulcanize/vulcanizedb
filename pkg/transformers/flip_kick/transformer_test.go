@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block_test
+package flip_kick_test
 
 import (
 	"math/rand"
@@ -22,18 +22,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
-	"github.com/vulcanize/vulcanizedb/libraries/maker/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("FlipKick Transformer", func() {
-	var transformer every_block.FlipKickTransformer
+	var transformer flip_kick.FlipKickTransformer
 	var fetcher test_data.MockLogFetcher
 	var converter test_data.MockFlipKickConverter
 	var repository test_data.MockFlipKickRepository
-	var testConfig every_block.TransformerConfig
+	var testConfig flip_kick.TransformerConfig
 	var blockNumber int64
 	var headerId int64
 	var headers []core.Header
@@ -43,17 +43,17 @@ var _ = Describe("FlipKick Transformer", func() {
 		fetcher = test_data.MockLogFetcher{}
 		converter = test_data.MockFlipKickConverter{}
 		repository = test_data.MockFlipKickRepository{}
-		transformer = every_block.FlipKickTransformer{
+		transformer = flip_kick.FlipKickTransformer{
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
 		}
 
 		startingBlockNumber := rand.Int63()
-		testConfig = every_block.TransformerConfig{
+		testConfig = flip_kick.TransformerConfig{
 			ContractAddress:     "0x12345",
 			ContractAbi:         "test abi",
-			Topics:              []string{every_block.FlipKickSignature},
+			Topics:              []string{flip_kick.FlipKickSignature},
 			StartingBlockNumber: startingBlockNumber,
 			EndingBlockNumber:   startingBlockNumber + 5,
 		}
@@ -75,7 +75,7 @@ var _ = Describe("FlipKick Transformer", func() {
 	})
 
 	It("fetches logs with the configured contract and topic(s) for each block", func() {
-		expectedTopics := [][]common.Hash{{common.HexToHash(every_block.FlipKickSignature)}}
+		expectedTopics := [][]common.Hash{{common.HexToHash(flip_kick.FlipKickSignature)}}
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
@@ -100,7 +100,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		Expect(converter.ConverterContract).To(Equal(testConfig.ContractAddress))
 		Expect(converter.ConverterAbi).To(Equal(testConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal(logs))
-		Expect(converter.EntitiesToConvert).To(Equal([]every_block.FlipKickEntity{test_data.FlipKickEntity}))
+		Expect(converter.EntitiesToConvert).To(Equal([]flip_kick.FlipKickEntity{test_data.FlipKickEntity}))
 	})
 
 	It("returns an error if converting the geth log fails", func() {
@@ -115,7 +115,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(repository.HeaderIds).To(Equal([]int64{headerId}))
-		Expect(repository.FlipKicksCreated).To(Equal([]every_block.FlipKickModel{test_data.FlipKickModel}))
+		Expect(repository.FlipKicksCreated).To(Equal([]flip_kick.FlipKickModel{test_data.FlipKickModel}))
 	})
 
 	It("returns an error if persisting a record fails", func() {

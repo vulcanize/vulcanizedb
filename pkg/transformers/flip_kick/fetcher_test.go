@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block_test
+package flip_kick_test
 
 import (
 	"math/big"
@@ -22,18 +22,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/maker/every_block"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 )
 
 var _ = Describe("Fetcher", func() {
 	Describe("FetchLogs", func() {
 		var blockChain *fakes.MockBlockChain
-		var fetcher every_block.Fetcher
+		var fetcher flip_kick.Fetcher
 
 		BeforeEach(func() {
 			blockChain = fakes.NewMockBlockChain()
-			fetcher = every_block.Fetcher{Blockchain: blockChain}
+			fetcher = flip_kick.Fetcher{Blockchain: blockChain}
 		})
 
 		It("fetches logs based on the given query", func() {
