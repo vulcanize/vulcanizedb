@@ -15,18 +15,20 @@
 package every_block_test
 
 import (
+	"math/big"
+	"strconv"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
-	"math/big"
-	"strconv"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 

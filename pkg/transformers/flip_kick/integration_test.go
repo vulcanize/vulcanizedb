@@ -56,7 +56,6 @@ var _ = Describe("Integration tests", func() {
 		Expect(result[0].BlockNumber).To(Equal(test_data.EthFlipKickLog.BlockNumber))
 		Expect(result[0].Topics).To(Equal(test_data.EthFlipKickLog.Topics))
 		Expect(result[0].Index).To(Equal(test_data.EthFlipKickLog.Index))
-		Expect(result[0].Data).To(Equal(test_data.EthFlipKickLog.Data))
 	})
 
 	It("unpacks an event log", func() {

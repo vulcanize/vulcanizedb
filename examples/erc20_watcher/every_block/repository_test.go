@@ -15,16 +15,17 @@
 package every_block_test
 
 import (
+	"math/rand"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/rand"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_test_helpers"
 )
 
 var _ = Describe("ERC20 Token Repository", func() {

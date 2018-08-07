@@ -104,7 +104,6 @@ var _ = Describe("FlipKick Repository", func() {
 	Describe("When there are multiple nodes", func() {
 		var db2 *postgres.DB
 		var flipKickRepository2 flip_kick.FlipKickRepository
-		var headerId2 int64
 
 		BeforeEach(func() {
 			//create database for the second node
@@ -116,7 +115,7 @@ var _ = Describe("FlipKick Repository", func() {
 			}
 			db2 = test_config.NewTestDB(node2)
 			flipKickRepository2 = flip_kick.FlipKickRepository{DB: db2}
-			headerId2 = createHeader(db2, blockNumber)
+			createHeader(db2, blockNumber)
 
 			_, err := db2.Exec(`DELETE from maker.flip_kick;`)
 			Expect(err).NotTo(HaveOccurred())
