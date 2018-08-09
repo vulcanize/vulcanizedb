@@ -30,16 +30,18 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 )
 
-// backfillAuctionLogsCmd represents the backfillAuctionLogs command
-var backfillAuctionLogsCmd = &cobra.Command{
-	Use:   "backfillAuctionLogs",
-	Short: "Backfill auction event logs",
-	Long: `Backfills auction event logs based on previously populated block Header records.
-vulcanize backfillAuctionLogs --config environments/local.toml
+// backfillMakerLogsCmd represents the backfillMakerLogs command
+var backfillMakerLogsCmd = &cobra.Command{
+	Use:   "backfillMakerLogs",
+	Short: "Backfill Maker event logs",
+	Long: `Backfills Maker event logs based on previously populated block Header records.
+This currently includes logs related to Multi-collateral Dai (frob) and Auctions (flip-kick).
+
+vulcanize backfillMakerLogs --config environments/local.toml
 
 This command expects a light sync to have been run, and the presence of header records in the Vulcanize database.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		backfillAuctionLogs()
+		backfillMakerLogs()
 	},
 }
 
@@ -57,7 +59,7 @@ func blockChain() *geth.BlockChain {
 	return geth.NewBlockChain(vdbEthClient, vdbNode, transactionConverter)
 }
 
-func backfillAuctionLogs() {
+func backfillMakerLogs() {
 	blockChain := blockChain()
 	db, err := postgres.NewDB(databaseConfig, blockChain.Node())
 	if err != nil {
@@ -74,5 +76,5 @@ func backfillAuctionLogs() {
 }
 
 func init() {
-	rootCmd.AddCommand(backfillAuctionLogsCmd)
+	rootCmd.AddCommand(backfillMakerLogsCmd)
 }

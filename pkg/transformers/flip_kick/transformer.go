@@ -21,13 +21,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type FlipKickTransformer struct {
-	Fetcher    LogFetcher
+	Fetcher    shared.LogFetcher
 	Converter  Converter
 	Repository Repository
 	Config     TransformerConfig
@@ -38,7 +38,7 @@ type FlipKickTransformerInitializer struct {
 }
 
 func (i FlipKickTransformerInitializer) NewFlipKickTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
-	fetcher := NewFetcher(blockChain)
+	fetcher := shared.NewFetcher(blockChain)
 	repository := NewFlipKickRepository(db)
 	transformer := FlipKickTransformer{
 		Fetcher:    fetcher,

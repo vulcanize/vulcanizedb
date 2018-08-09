@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package flip_kick
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"io/ioutil"
+	"log"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
-	}
+func TestFlipKick(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "FlipKick Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

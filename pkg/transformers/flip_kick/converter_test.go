@@ -28,7 +28,7 @@ import (
 )
 
 var _ = Describe("FlipKickEntity Converter", func() {
-	It("converts an Eth Log to and Entity", func() {
+	It("converts an Eth Log to an Entity", func() {
 		converter := flip_kick.FlipKickConverter{}
 		entity, err := converter.ToEntity(test_data.TemporaryFlipAddress, flip_kick.FlipperABI, test_data.EthFlipKickLog)
 

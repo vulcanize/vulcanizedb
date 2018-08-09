@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick_test
+package shared_test
 
 import (
 	"math/big"
@@ -23,38 +23,39 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var _ = Describe("Fetcher", func() {
 	Describe("FetchLogs", func() {
-		var blockChain *fakes.MockBlockChain
-		var fetcher flip_kick.Fetcher
-
-		BeforeEach(func() {
-			blockChain = fakes.NewMockBlockChain()
-			fetcher = flip_kick.Fetcher{Blockchain: blockChain}
-		})
 
 		It("fetches logs based on the given query", func() {
-			blockNumber := int64(3)
-			address := "0x4D2"
-			topicZeros := [][]common.Hash{{common.HexToHash("0x")}}
+			blockChain := fakes.NewMockBlockChain()
+			fetcher := shared.NewFetcher(blockChain)
+			blockNumber := int64(123)
+			address := "0xfakeAddress"
+			topicZeros := [][]common.Hash{{common.BytesToHash([]byte{1, 2, 3, 4, 5})}}
 
-			query := ethereum.FilterQuery{
+			_, err := fetcher.FetchLogs(address, topicZeros, blockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			expectedQuery := ethereum.FilterQuery{
 				FromBlock: big.NewInt(blockNumber),
 				ToBlock:   big.NewInt(blockNumber),
 				Addresses: []common.Address{common.HexToAddress(address)},
 				Topics:    topicZeros,
 			}
-			fetcher.FetchLogs(address, topicZeros, blockNumber)
-			blockChain.AssertGetEthLogsWithCustomQueryCalledWith(query)
+			blockChain.AssertGetEthLogsWithCustomQueryCalledWith(expectedQuery)
 
 		})
 
 		It("returns an error if fetching the logs fails", func() {
+			blockChain := fakes.NewMockBlockChain()
 			blockChain.SetGetLogsErr(fakes.FakeError)
+			fetcher := shared.NewFetcher(blockChain)
+
 			_, err := fetcher.FetchLogs("", [][]common.Hash{}, int64(1))
+
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
 		})

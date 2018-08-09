@@ -8,6 +8,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type MockTransformer struct {
@@ -23,7 +24,7 @@ func (mh *MockTransformer) Execute() error {
 	return nil
 }
 
-func fakeTransformerInitializer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
+func fakeTransformerInitializer(db *postgres.DB, blockchain core.BlockChain) shared2.Transformer {
 	return &MockTransformer{}
 }
 
@@ -31,7 +32,7 @@ var _ = Describe("Watcher", func() {
 	It("Adds transformers", func() {
 		watcher := shared.Watcher{}
 
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
 
 		Expect(len(watcher.Transformers)).To(Equal(1))
 		Expect(watcher.Transformers).To(ConsistOf(&MockTransformer{}))
@@ -40,8 +41,8 @@ var _ = Describe("Watcher", func() {
 	It("Adds transformers from multiple sources", func() {
 		watcher := shared.Watcher{}
 
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
 
 		Expect(len(watcher.Transformers)).To(Equal(2))
 	})
@@ -49,7 +50,7 @@ var _ = Describe("Watcher", func() {
 	It("Executes each transformer", func() {
 		watcher := shared.Watcher{}
 		fakeTransformer := &MockTransformer{}
-		watcher.Transformers = []shared.Transformer{fakeTransformer}
+		watcher.Transformers = []shared2.Transformer{fakeTransformer}
 
 		watcher.Execute()
 
@@ -59,7 +60,7 @@ var _ = Describe("Watcher", func() {
 	It("Returns an error if transformer returns an error", func() {
 		watcher := shared.Watcher{}
 		fakeTransformer := &MockTransformer{executeError: errors.New("Something bad happened")}
-		watcher.Transformers = []shared.Transformer{fakeTransformer}
+		watcher.Transformers = []shared2.Transformer{fakeTransformer}
 
 		err := watcher.Execute()
 

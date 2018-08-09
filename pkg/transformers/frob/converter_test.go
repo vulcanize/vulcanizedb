@@ -12,21 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transformers
+package frob_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	flipKickConfig := flip_kick.FlipKickConfig
-	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flipKickConfig}
-	frobConfig := frob.FrobConfig
-	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frobConfig}
-	return []shared.TransformerInitializer{
-		flipKickTransformerInitializer.NewFlipKickTransformer,
-		frobTransformerInitializer.NewFrobTransformer,
-	}
-}
+var _ = Describe("Frob converter", func() {
+	It("converts a log to an entity", func() {
+		converter := frob.FrobConverter{}
+
+		entity, err := converter.ToEntity(test_data.TemporaryFrobAddress, frob.FrobABI, test_data.EthFrobLog)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(entity).To(Equal(test_data.FrobEntity))
+	})
+
+	It("converts an entity to a model", func() {
+		converter := frob.FrobConverter{}
+
+		model := converter.ToModel(test_data.FrobEntity)
+
+		Expect(model).To(Equal(test_data.FrobModel))
+	})
+})

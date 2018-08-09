@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package frob
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
-	}
+type FrobEntity struct {
+	Ilk [32]byte
+	Lad common.Address
+	Gem *big.Int
+	Ink *big.Int
+	Art *big.Int
+	Era *big.Int
 }
