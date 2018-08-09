@@ -39,7 +39,7 @@ var config = testContractConfig
 
 var _ = Describe("Everyblock transformer", func() {
 	var fetcher mocks.Fetcher
-	var repository mocks.TotalSupplyRepository
+	var repository mocks.ERC20TokenRepository
 	var transformer every_block.Transformer
 	var blockChain *fakes.MockBlockChain
 	var initialSupply = "27647235749155415536952630"
@@ -53,8 +53,8 @@ var _ = Describe("Everyblock transformer", func() {
 		blockChain.SetLastBlock(&defaultLastBlock)
 		fetcher = mocks.Fetcher{BlockChain: blockChain}
 		fetcher.SetSupply(initialSupply)
-		repository = mocks.TotalSupplyRepository{}
-		repository.SetMissingBlocks([]int64{config.FirstBlock})
+		repository = mocks.ERC20TokenRepository{}
+		repository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
 		//setting the mock repository to return the first block as the missing blocks
 
 		transformer = every_block.Transformer{
@@ -89,8 +89,9 @@ var _ = Describe("Everyblock transformer", func() {
 			config.FirstBlock + 1,
 			config.FirstBlock + 2,
 		}
-		repository.SetMissingBlocks(missingBlocks)
-		transformer.Execute()
+		repository.SetMissingSupplyBlocks(missingBlocks)
+		err := transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(fetcher.FetchedBlocks)).To(Equal(3))
 		Expect(fetcher.FetchedBlocks).To(ConsistOf(config.FirstBlock, config.FirstBlock+1, config.FirstBlock+2))
@@ -104,7 +105,7 @@ var _ = Describe("Everyblock transformer", func() {
 	})
 
 	It("uses the set contract configuration", func() {
-		repository.SetMissingBlocks([]int64{testContractConfig.FirstBlock})
+		repository.SetMissingSupplyBlocks([]int64{testContractConfig.FirstBlock})
 		transformer.SetConfiguration(testContractConfig)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
@@ -143,7 +144,7 @@ var _ = Describe("Everyblock transformer", func() {
 
 	It("returns an error if the call to get missing blocks fails", func() {
 		failureRepository := mocks.FailureRepository{}
-		failureRepository.SetMissingBlocksFail(true)
+		failureRepository.SetMissingSupplyBlocksFail(true)
 		transformer = every_block.Transformer{
 			Fetcher:    &fetcher,
 			Repository: &failureRepository,
@@ -171,8 +172,8 @@ var _ = Describe("Everyblock transformer", func() {
 
 	It("returns an error if the call to save the token_supply fails", func() {
 		failureRepository := mocks.FailureRepository{}
-		failureRepository.SetMissingBlocks([]int64{config.FirstBlock})
-		failureRepository.SetCreateFail(true)
+		failureRepository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
+		failureRepository.SetCreateSupplyFail(true)
 
 		transformer = every_block.Transformer{
 			Fetcher:    &fetcher,
