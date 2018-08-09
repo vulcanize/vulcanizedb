@@ -29,6 +29,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var _ = Describe("ERC20 Fetcher", func() {
@@ -77,6 +78,98 @@ var _ = Describe("ERC20 Fetcher", func() {
 			Expect(result.String()).To(Equal("0"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("totalSupply"))
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+		})
+	})
+
+	Describe("stopped", func() {
+		It("checks whether or not the contract has been stopped", func() {
+			fakeBlockChain := fakes.NewMockBlockChain()
+			testFetcher := every_block.NewFetcher(fakeBlockChain)
+			testAbi := "testAbi"
+			testContractAddress := "testContractAddress"
+
+			_, err := testFetcher.FetchBool("stopped", testAbi, testContractAddress, blockNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			var expectedResult bool
+			expected := &expectedResult
+			fakeBlockChain.AssertFetchContractDataCalledWith(testAbi, testContractAddress, "stopped", nil, &expected, blockNumber)
+		})
+
+		It("fetches dai token's stopped status at the given block height", func() {
+			infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
+			rawRpcClient, err := rpc.Dial(infuraIPC)
+			Expect(err).NotTo(HaveOccurred())
+			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
+			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			realFetcher := every_block.NewFetcher(blockChain)
+			result, err := realFetcher.FetchBool("stopped", constants.DaiAbiString, constants.DaiContractAddress, blockNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(false))
+		})
+
+		It("returns an error if the call to the blockchain fails", func() {
+			blockChain := fakes.NewMockBlockChain()
+			blockChain.SetFetchContractDataErr(fakes.FakeError)
+			errorFetcher := every_block.NewFetcher(blockChain)
+			result, err := errorFetcher.FetchBool("stopped", "", "", 0, nil)
+
+			Expect(result).To(Equal(false))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("stopped"))
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+		})
+	})
+
+	Describe("owner", func() {
+		It("checks what the contract's owner address is", func() {
+			fakeBlockChain := fakes.NewMockBlockChain()
+			testFetcher := every_block.NewFetcher(fakeBlockChain)
+			testAbi := "testAbi"
+			testContractAddress := "testContractAddress"
+
+			_, err := testFetcher.FetchAddress("owner", testAbi, testContractAddress, blockNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			var expectedResult common.Address
+			expected := &expectedResult
+			fakeBlockChain.AssertFetchContractDataCalledWith(testAbi, testContractAddress, "owner", nil, &expected, blockNumber)
+		})
+
+		It("fetches dai token's owner address at the given block height", func() {
+			infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
+			rawRpcClient, err := rpc.Dial(infuraIPC)
+			Expect(err).NotTo(HaveOccurred())
+			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
+			ethClient := ethclient.NewClient(rawRpcClient)
+			blockChainClient := client.NewEthClient(ethClient)
+			node := node.MakeNode(rpcClient)
+			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			realFetcher := every_block.NewFetcher(blockChain)
+			result, err := realFetcher.FetchAddress("owner", constants.DaiAbiString, constants.DaiContractAddress, blockNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			expectedResult := common.HexToAddress("0x0000000000000000000000000000000000000000")
+			Expect(result).To(Equal(expectedResult))
+		})
+
+		It("returns an error if the call to the blockchain fails", func() {
+			blockChain := fakes.NewMockBlockChain()
+			blockChain.SetFetchContractDataErr(fakes.FakeError)
+			errorFetcher := every_block.NewFetcher(blockChain)
+			result, err := errorFetcher.FetchAddress("owner", "", "", 0, nil)
+
+			expectedResult :=  new(common.Address)
+			Expect(result).To(Equal(*expectedResult))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("owner"))
 			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		})
 	})
