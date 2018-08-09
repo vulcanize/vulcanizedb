@@ -14,8 +14,26 @@
 
 package every_block
 
+// Struct to hold token supply data
 type TokenSupply struct {
 	Value        string
 	TokenAddress string
 	BlockNumber  int64
+}
+
+// Struct to hold token holder address balance data
+type TokenBalance struct {
+	Value              string
+	TokenAddress       string
+	BlockNumber        int64
+	TokenHolderAddress string
+}
+
+// Struct to hold token allowance data
+type TokenAllowance struct {
+	Value               string
+	TokenAddress        string
+	BlockNumber         int64
+	TokenHolderAddress  string
+	TokenSpenderAddress string
 }

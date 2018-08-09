@@ -40,7 +40,7 @@ type TokenSupplyTransformerInitializer struct {
 
 func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
 	fetcher := NewFetcher(blockchain)
-	repository := TokenSupplyRepository{DB: db}
+	repository := ERC20TokenRepository{DB: db}
 	transformer := Transformer{
 		Fetcher:    &fetcher,
 		Repository: &repository,
@@ -83,21 +83,29 @@ func (t Transformer) Execute() error {
 		upperBoundBlock = t.Config.LastBlock
 	}
 
-	blocks, err := t.Repository.MissingBlocks(t.Config.FirstBlock, upperBoundBlock)
+	// Supply transformations:
+
+	// Fetch missing supply blocks
+	blocks, err := t.Repository.MissingSupplyBlocks(t.Config.FirstBlock, upperBoundBlock, t.Config.Address)
 
 	if err != nil {
 		return newTransformerError(err, t.Config.FirstBlock, FetchingBlocksError)
 	}
 
+	// Fetch supply for missing blocks
 	log.Printf("Fetching totalSupply for %d blocks", len(blocks))
+
+	// For each block missing total supply, create supply model and feed the missing data into the repository
 	for _, blockNumber := range blocks {
-		totalSupply, err := t.Fetcher.FetchSupplyOf(t.Config.Abi, t.Config.Address, blockNumber)
+		totalSupply, err := t.Fetcher.FetchBigInt("totalSupply", t.Config.Abi, t.Config.Address, blockNumber, nil)
 
 		if err != nil {
 			return newTransformerError(err, blockNumber, FetchingSupplyError)
 		}
+		// Create the supply model
 		model := createTokenSupplyModel(totalSupply, t.Config.Address, blockNumber)
-		err = t.Repository.Create(model)
+		// Feed it into the repository
+		err = t.Repository.CreateSupply(model)
 
 		if err != nil {
 			return newTransformerError(err, blockNumber, CreateSupplyError)

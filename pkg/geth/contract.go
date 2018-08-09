@@ -14,14 +14,14 @@ var (
 	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
-func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
+func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
 	parsed, err := ParseAbi(abiJSON)
 	if err != nil {
 		return err
 	}
 	var input []byte
-	if methodArg != nil {
-		input, err = parsed.Pack(method, methodArg)
+	if methodArgs != nil {
+		input, err = parsed.Pack(method, methodArgs...)
 	} else {
 		input, err = parsed.Pack(method)
 	}

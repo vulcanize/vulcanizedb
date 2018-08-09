@@ -12,5 +12,5 @@ type BlockChain interface {
 }
 
 type ContractDataFetcher interface {
-	FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error
+	FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
 }
