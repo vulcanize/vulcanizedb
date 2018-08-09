@@ -16,12 +16,13 @@ package every_block
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"log"
 	"math/big"
+
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Transformer struct {

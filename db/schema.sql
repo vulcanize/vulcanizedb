@@ -83,6 +83,43 @@ ALTER SEQUENCE maker.flip_kick_db_id_seq OWNED BY maker.flip_kick.db_id;
 
 
 --
+-- Name: frob; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.frob (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    tx_idx integer,
+    ilk bytea,
+    lad bytea,
+    gem numeric,
+    ink numeric,
+    art numeric,
+    era numeric
+);
+
+
+--
+-- Name: frob_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.frob_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: frob_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -462,6 +499,13 @@ ALTER TABLE ONLY maker.flip_kick ALTER COLUMN db_id SET DEFAULT nextval('maker.f
 
 
 --
+-- Name: frob id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -538,6 +582,22 @@ ALTER TABLE ONLY maker.flip_kick
 
 ALTER TABLE ONLY maker.flip_kick
     ADD CONSTRAINT flip_kick_pkey PRIMARY KEY (db_id);
+
+
+--
+-- Name: frob frob_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.frob
+    ADD CONSTRAINT frob_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: frob frob_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.frob
+    ADD CONSTRAINT frob_pkey PRIMARY KEY (id);
 
 
 --
@@ -677,6 +737,14 @@ CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
 
 ALTER TABLE ONLY maker.flip_kick
     ADD CONSTRAINT flip_kick_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: frob frob_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.frob
+    ADD CONSTRAINT frob_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

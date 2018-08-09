@@ -12,22 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package shared_test
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func TestEveryBlock(t *testing.T) {
+func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "EveryBlock Suite")
+	RunSpecs(t, "Shared Suite")
 }
-
-var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
-})

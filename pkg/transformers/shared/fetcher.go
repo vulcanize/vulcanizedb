@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package shared
 
 import (
 	"math/big"
@@ -29,24 +29,23 @@ type LogFetcher interface {
 }
 
 type Fetcher struct {
-	Blockchain core.BlockChain
+	blockChain core.BlockChain
 }
 
 func NewFetcher(blockchain core.BlockChain) Fetcher {
 	return Fetcher{
-		Blockchain: blockchain,
+		blockChain: blockchain,
 	}
 }
 
-func (f Fetcher) FetchLogs(contractAddress string, topicZeros [][]common.Hash, blockNumber int64) ([]types.Log, error) {
+func (fetcher Fetcher) FetchLogs(contractAddress string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
 	block := big.NewInt(blockNumber)
 	address := common.HexToAddress(contractAddress)
 	query := ethereum.FilterQuery{
 		FromBlock: block,
 		ToBlock:   block,
 		Addresses: []common.Address{address},
-		Topics:    topicZeros,
+		Topics:    topics,
 	}
-
-	return f.Blockchain.GetEthLogsWithCustomQuery(query)
+	return fetcher.blockChain.GetEthLogsWithCustomQuery(query)
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick_test
+package frob_test
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -21,18 +21,19 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Integration tests", func() {
-	It("Fetches FlipKickEntity event logs from a local test chain", func() {
+	It("Fetches frob event logs from a local test chain", func() {
 		ipcPath := test_config.TestClient.IPCPath
 
 		rawRpcClient, err := rpc.Dial(ipcPath)
@@ -42,48 +43,42 @@ var _ = Describe("Integration tests", func() {
 		ethClient := ethclient.NewClient(rawRpcClient)
 		blockChainClient := client.NewEthClient(ethClient)
 		realNode := node.MakeNode(rpcClient)
-		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
 		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(flip_kick.FlipKickSignature)
+		topic0 := common.HexToHash(frob.FrobEventSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(test_data.TemporaryFlipAddress, topics, int64(10))
+		result, err := realFetcher.FetchLogs(test_data.TemporaryFrobAddress, topics, int64(12))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())
-		Expect(result[0].Address).To(Equal(test_data.EthFlipKickLog.Address))
-		Expect(result[0].TxHash).To(Equal(test_data.EthFlipKickLog.TxHash))
-		Expect(result[0].BlockNumber).To(Equal(test_data.EthFlipKickLog.BlockNumber))
-		Expect(result[0].Topics).To(Equal(test_data.EthFlipKickLog.Topics))
-		Expect(result[0].Index).To(Equal(test_data.EthFlipKickLog.Index))
+		Expect(result[0].Address).To(Equal(common.HexToAddress(test_data.TemporaryFrobAddress)))
+		Expect(result[0].TxHash).To(Equal(test_data.EthFrobLog.TxHash))
+		Expect(result[0].BlockNumber).To(Equal(test_data.EthFrobLog.BlockNumber))
+		Expect(result[0].Topics).To(Equal(test_data.EthFrobLog.Topics))
+		Expect(result[0].Index).To(Equal(test_data.EthFrobLog.Index))
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(test_data.TemporaryFlipAddress)
-		abi, err := geth.ParseAbi(flip_kick.FlipperABI)
+		address := common.HexToAddress(test_data.TemporaryFrobAddress)
+		abi, err := geth.ParseAbi(frob.FrobABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-		entity := &flip_kick.FlipKickEntity{}
+		entity := &frob.FrobEntity{}
 
-		var eventLog = test_data.EthFlipKickLog
+		var eventLog = test_data.EthFrobLog
 
-		err = contract.UnpackLog(entity, "FlipKick", eventLog)
+		err = contract.UnpackLog(entity, "Frob", eventLog)
 		Expect(err).NotTo(HaveOccurred())
 
-		expectedEntity := test_data.FlipKickEntity
-		Expect(entity.Id).To(Equal(expectedEntity.Id))
-		Expect(entity.Mom).To(Equal(expectedEntity.Mom))
-		Expect(entity.Vat).To(Equal(expectedEntity.Vat))
-		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
-		Expect(entity.Lot).To(Equal(expectedEntity.Lot))
-		Expect(entity.Bid.String()).To(Equal(expectedEntity.Bid.String())) //FIXME
-		Expect(entity.Guy).To(Equal(expectedEntity.Guy))
-		Expect(entity.Gal).To(Equal(expectedEntity.Gal))
-		Expect(entity.End).To(Equal(expectedEntity.End))
+		expectedEntity := test_data.FrobEntity
+		Expect(entity.Art).To(Equal(expectedEntity.Art))
 		Expect(entity.Era).To(Equal(expectedEntity.Era))
+		Expect(entity.Gem).To(Equal(expectedEntity.Gem))
+		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
+		Expect(entity.Ink).To(Equal(expectedEntity.Ink))
 		Expect(entity.Lad).To(Equal(expectedEntity.Lad))
-		Expect(entity.Tab).To(Equal(expectedEntity.Tab))
 	})
 })

@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package shared
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
-	}
+type Transformer interface {
+	Execute() error
+}
+
+type TransformerInitializer func(db *postgres.DB, blockChain core.BlockChain) Transformer
+
+func HexToInt64(byteString string) int64 {
+	value := common.HexToHash(byteString)
+	return value.Big().Int64()
+}
+
+func HexToString(byteString string) string {
+	value := common.HexToHash(byteString)
+	return value.Big().String()
 }

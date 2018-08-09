@@ -26,13 +26,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
+	flip_kick_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/flip_kick"
 )
 
 var _ = Describe("FlipKick Transformer", func() {
 	var transformer flip_kick.FlipKickTransformer
-	var fetcher test_data.MockLogFetcher
-	var converter test_data.MockFlipKickConverter
-	var repository test_data.MockFlipKickRepository
+	var fetcher mocks.MockLogFetcher
+	var converter flip_kick_mocks.MockFlipKickConverter
+	var repository flip_kick_mocks.MockFlipKickRepository
 	var testConfig flip_kick.TransformerConfig
 	var blockNumber int64
 	var headerId int64
@@ -40,9 +42,9 @@ var _ = Describe("FlipKick Transformer", func() {
 	var logs []types.Log
 
 	BeforeEach(func() {
-		fetcher = test_data.MockLogFetcher{}
-		converter = test_data.MockFlipKickConverter{}
-		repository = test_data.MockFlipKickRepository{}
+		fetcher = mocks.MockLogFetcher{}
+		converter = flip_kick_mocks.MockFlipKickConverter{}
+		repository = flip_kick_mocks.MockFlipKickRepository{}
 		transformer = flip_kick.FlipKickTransformer{
 			Fetcher:    &fetcher,
 			Converter:  &converter,

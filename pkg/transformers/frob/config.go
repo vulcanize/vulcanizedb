@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package frob
 
-import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-)
+type TransformerConfig struct {
+	ContractAddress     string
+	ContractAbi         string
+	Topics              []string
+	StartingBlockNumber int64
+	EndingBlockNumber   int64
+}
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
-	}
+var FrobConfig = TransformerConfig{
+	ContractAddress:     "0xff3f2400f1600f3f493a9a92704a29b96795af1a", //this is a temporary address deployed locally
+	ContractAbi:         FrobABI,
+	Topics:              []string{FrobEventSignature},
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   100,
 }
