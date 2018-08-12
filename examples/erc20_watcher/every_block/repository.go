@@ -83,12 +83,14 @@ func (tsp *ERC20TokenRepository) MissingSupplyBlocks(startingBlock, highestBlock
 	err := tsp.DB.Select(
 		&blockNumbers,
 		`SELECT number FROM BLOCKS
-               LEFT JOIN token_supply ON blocks.id = block_id
+               LEFT JOIN token_supply ON blocks.id = block_id 
+			   AND token_address = $1
                WHERE block_id ISNULL
-               AND eth_node_id = $1
-               AND number >= $2
-               AND number <= $3
+               AND eth_node_id = $2
+               AND number >= $3
+               AND number <= $4
                LIMIT 20`,
+		tokenAddress,
 		tsp.NodeID,
 		startingBlock,
 		highestBlock,

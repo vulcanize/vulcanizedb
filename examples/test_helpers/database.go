@@ -24,8 +24,8 @@ import (
 )
 
 type TokenSupplyDBRow struct {
-	ID           int64
-	Supply       int64
+	ID           int64  `db:"id"`
+	Supply       int64  `db:"supply"`
 	BlockID      int64  `db:"block_id"`
 	TokenAddress string `db:"token_address"`
 }
