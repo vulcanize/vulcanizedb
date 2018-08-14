@@ -29,8 +29,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 
 ## Configuration
 - To use a local Ethereum node, copy `environments/public.toml.example` to
-  `environments/public.toml` and update the `ipcPath`, `levelDbPath`, 
-  `pipContractAddress`, `pepContractAddress`, and `repContractAddress`.
+  `environments/public.toml` and update the `ipcPath` and `levelDbPath`.
   - `ipcPath` should match the local node's IPC filepath:
       - when using geth:
         - The IPC file is called `geth.ipc`.
@@ -52,10 +51,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
           - Linux: `$HOME/.ethereum/geth/chaindata`
       - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
 
-  - `pepContractAddress`, `pipContractAddress`, and `repContractAddress` should match that medianizer
-     addresses for each pair on the chain you're tracking. See https://makerdao.com/feeds/
-     
-- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable
+- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable.
 - Copy `environments/local.toml.example` to `environments/local.toml` to configure commands to run against a local node such as [Ganache](https://truffleframework.com/ganache) or [ganache-cli](https://github.com/trufflesuite/ganache-clihttps://github.com/trufflesuite/ganache-cli).
 
 ## Start syncing with postgres
@@ -82,22 +78,17 @@ This command is useful when you want a minimal baseline from which to track targ
 1. In a separate terminal start VulcanizeDB:
     - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
 
-## Backfill Auction event logs from light sync
-Backfills auction event logs from the configured Ethereum node based on the populated block headers.
+## Backfill Maker event logs from light sync
+Backfills Maker event logs from the configured Ethereum node based on the populated block headers.
+This includes logs related to auctions, multi-collateral dai, and price feeds.
 This command requires that a light sync (see command above) has previously been run.
 
-_Since auction contracts have not yet been deployed, this command will need to be run a local blockchain at the moment. As such, a new environment file will need to be added. See `environments/local.toml.example`._
+_Since auction/mcd contracts have not yet been deployed, this command will need to be run a local blockchain at the moment. As such, a new environment file will need to be added. See `environments/local.toml.example`._
 
 1. Start Ethereum node
 1. In a separate terminal run the backfill command:
-  - `./vulcanizedb backfillAuctionLogs --config <config.toml>`
+  - `./vulcanizedb backfillMakerLogs --config <config.toml>`
   
-## Sync in light mode with MakerDAO price feeds
-Sync VulcanizeDB with the configured Ethereum node, populating block headers as well as price feeds for MKR/USD, ETH/USD, and REP/USD.
-1. Start Ethereum node
-1. In a separate terminal window start VulcanizeDB
-    - `./vulcanizedb syncPriceFeeds --config <config.toml> --starting-block-number <block-number>`
-
 ## Start full environment in docker by single command
 
 ### Geth Rinkeby

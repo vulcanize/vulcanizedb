@@ -1,10 +1,10 @@
-// Copyright 2018 Vulcanize
+// Copyright © 2018 Vulcanize
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package price_feeds_test
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"testing"
 
-var FlipKickConfig = shared.TransformerConfig{
-	ContractAddresses:   "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d", //this is a temporary address deployed locally
-	ContractAbi:         FlipperABI,
-	Topics:              []string{FlipKickSignature},
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestPriceFeeds(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "PriceFeeds Suite")
 }

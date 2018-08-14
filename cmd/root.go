@@ -29,9 +29,6 @@ var (
 	databaseConfig      config.Database
 	ipc                 string
 	levelDbPath         string
-	pepContractAddress  string
-	pipContractAddress  string
-	repContractAddress  string
 	startingBlockNumber int64
 	syncAll             bool
 	endingBlockNumber   int64
@@ -52,9 +49,6 @@ func Execute() {
 func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
-	pepContractAddress = viper.GetString("client.pepcontractaddress")
-	pipContractAddress = viper.GetString("client.pipcontractaddress")
-	repContractAddress = viper.GetString("client.repcontractaddress")
 	databaseConfig = config.Database{
 		Name:     viper.GetString("database.name"),
 		Hostname: viper.GetString("database.hostname"),
@@ -76,9 +70,6 @@ func init() {
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
-	rootCmd.PersistentFlags().String("client-pepContractAddress", "", "mkr/usd price feed contract address")
-	rootCmd.PersistentFlags().String("client-pipContractAddress", "", "eth/usd price feed contract address")
-	rootCmd.PersistentFlags().String("client-repContractAddress", "", "rep/usd price feed contract address")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -87,9 +78,6 @@ func init() {
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
-	viper.BindPFlag("client.pepContractAddress", rootCmd.PersistentFlags().Lookup("client-pepContractAddress"))
-	viper.BindPFlag("client.pipContractAddress", rootCmd.PersistentFlags().Lookup("client-pipContractAddress"))
-	viper.BindPFlag("client.repContractAddress", rootCmd.PersistentFlags().Lookup("client-repContractAddress"))
 }
 
 func initConfig() {

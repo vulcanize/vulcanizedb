@@ -15,30 +15,18 @@
 package price_feeds
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"math/big"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type LogValueEntity struct {
-	Val common.Address
-}
+type PriceFeedConverter struct{}
 
-type PriceFeedModel struct {
-	BlockNumber       uint64 `db:"block_number"`
-	HeaderID          int64  `db:"header_id"`
-	MedianizerAddress []byte `db:"medianizer_address"`
-	UsdValue          string `db:"usd_value"`
-	TransactionIndex  uint   `db:"tx_idx"`
-}
-
-func Convert(conversion string, value string, prec int) string {
-	var bgflt = big.NewFloat(0.0)
-	bgflt.SetString(value)
-	switch conversion {
-	case "ray":
-		bgflt.Quo(bgflt, Ray)
-	case "wad":
-		bgflt.Quo(bgflt, Ether)
+func (converter PriceFeedConverter) ToModel(log types.Log, headerID int64) PriceFeedModel {
+	return PriceFeedModel{
+		BlockNumber:       log.BlockNumber,
+		HeaderID:          headerID,
+		MedianizerAddress: log.Address.Bytes(),
+		UsdValue:          Convert("wad", hexutil.Encode(log.Data), 15),
+		TransactionIndex:  log.TxIndex,
 	}
-	return bgflt.Text('g', prec)
 }

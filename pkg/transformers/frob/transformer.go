@@ -23,13 +23,14 @@ import (
 )
 
 type FrobTransformer struct {
+	Config     shared.TransformerConfig
 	Converter  Converter
 	Fetcher    shared.LogFetcher
 	Repository Repository
 }
 
 type FrobTransformerInitializer struct {
-	Config TransformerConfig
+	Config shared.TransformerConfig
 }
 
 func (initializer FrobTransformerInitializer) NewFrobTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
@@ -37,6 +38,7 @@ func (initializer FrobTransformerInitializer) NewFrobTransformer(db *postgres.DB
 	fetcher := shared.NewFetcher(blockChain)
 	repository := NewFrobRepository(db)
 	return FrobTransformer{
+		Config:     initializer.Config,
 		Converter:  converter,
 		Fetcher:    fetcher,
 		Repository: repository,
@@ -44,18 +46,18 @@ func (initializer FrobTransformerInitializer) NewFrobTransformer(db *postgres.DB
 }
 
 func (transformer FrobTransformer) Execute() error {
-	missingHeaders, err := transformer.Repository.MissingHeaders(FrobConfig.StartingBlockNumber, FrobConfig.EndingBlockNumber)
+	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
 		return err
 	}
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(FrobEventSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
 		for _, log := range matchingLogs {
-			entity, err := transformer.Converter.ToEntity(FrobConfig.ContractAddress, FrobConfig.ContractAbi, log)
+			entity, err := transformer.Converter.ToEntity(FrobConfig.ContractAddresses, FrobConfig.ContractAbi, log)
 			if err != nil {
 				return err
 			}

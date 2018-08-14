@@ -35,7 +35,8 @@ var backfillMakerLogsCmd = &cobra.Command{
 	Use:   "backfillMakerLogs",
 	Short: "Backfill Maker event logs",
 	Long: `Backfills Maker event logs based on previously populated block Header records.
-This currently includes logs related to Multi-collateral Dai (frob) and Auctions (flip-kick).
+This currently includes logs related to Multi-collateral Dai (frob), Auctions (flip-kick),
+and Price Feeds (ETH/USD, MKR/USD, and REP/USD - LogValue).
 
 vulcanize backfillMakerLogs --config environments/local.toml
 

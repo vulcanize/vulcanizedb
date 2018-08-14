@@ -31,7 +31,6 @@ import (
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -65,8 +64,7 @@ func init() {
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	emptyTransformers := []transformers.Transformer{}
-	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, emptyTransformers)
+	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 	if err != nil {
 		log.Fatal("Error populating headers: ", err)
 	}
@@ -81,7 +79,7 @@ func lightSync() {
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
 	headerRepository := repositories.NewHeaderRepository(&db)
-	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow, []transformers.Transformer{})
+	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
 	go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 
