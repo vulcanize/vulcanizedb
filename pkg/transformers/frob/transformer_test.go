@@ -32,6 +32,7 @@ var _ = Describe("Frob transformer", func() {
 	It("gets missing headers for block numbers specified in config", func() {
 		repository := &frob_mocks.MockFrobRepository{}
 		transformer := frob.FrobTransformer{
+			Config:     frob.FrobConfig,
 			Fetcher:    &mocks.MockLogFetcher{},
 			Converter:  &frob_mocks.MockFrobConverter{},
 			Repository: repository,
@@ -73,7 +74,7 @@ var _ = Describe("Frob transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddress).To(Equal(frob.FrobConfig.ContractAddresses))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(frob.FrobEventSignature)}}))
 	})
 
@@ -109,7 +110,7 @@ var _ = Describe("Frob transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
+		Expect(converter.PassedContractAddress).To(Equal(frob.FrobConfig.ContractAddresses))
 		Expect(converter.PassedContractABI).To(Equal(frob.FrobConfig.ContractAbi))
 		Expect(converter.PassedLog).To(Equal(test_data.EthFrobLog))
 		Expect(converter.PassedEntity).To(Equal(test_data.FrobEntity))

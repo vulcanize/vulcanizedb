@@ -120,22 +120,24 @@ ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
 
 
 --
--- Name: peps; Type: TABLE; Schema: maker; Owner: -
+-- Name: price_feeds; Type: TABLE; Schema: maker; Owner: -
 --
 
-CREATE TABLE maker.peps (
+CREATE TABLE maker.price_feeds (
     id integer NOT NULL,
     block_number bigint NOT NULL,
     header_id integer NOT NULL,
+    medianizer_address bytea,
+    tx_idx integer NOT NULL,
     usd_value numeric
 );
 
 
 --
--- Name: peps_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+-- Name: price_feeds_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
 --
 
-CREATE SEQUENCE maker.peps_id_seq
+CREATE SEQUENCE maker.price_feeds_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -145,74 +147,10 @@ CREATE SEQUENCE maker.peps_id_seq
 
 
 --
--- Name: peps_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+-- Name: price_feeds_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
 --
 
-ALTER SEQUENCE maker.peps_id_seq OWNED BY maker.peps.id;
-
-
---
--- Name: pips; Type: TABLE; Schema: maker; Owner: -
---
-
-CREATE TABLE maker.pips (
-    id integer NOT NULL,
-    block_number bigint NOT NULL,
-    header_id integer NOT NULL,
-    usd_value numeric
-);
-
-
---
--- Name: pips_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
---
-
-CREATE SEQUENCE maker.pips_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: pips_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
---
-
-ALTER SEQUENCE maker.pips_id_seq OWNED BY maker.pips.id;
-
-
---
--- Name: reps; Type: TABLE; Schema: maker; Owner: -
---
-
-CREATE TABLE maker.reps (
-    id integer NOT NULL,
-    block_number bigint NOT NULL,
-    header_id integer NOT NULL,
-    usd_value numeric
-);
-
-
---
--- Name: reps_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
---
-
-CREATE SEQUENCE maker.reps_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: reps_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
---
-
-ALTER SEQUENCE maker.reps_id_seq OWNED BY maker.reps.id;
+ALTER SEQUENCE maker.price_feeds_id_seq OWNED BY maker.price_feeds.id;
 
 
 --
@@ -602,24 +540,10 @@ ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_s
 
 
 --
--- Name: peps id; Type: DEFAULT; Schema: maker; Owner: -
+-- Name: price_feeds id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.peps ALTER COLUMN id SET DEFAULT nextval('maker.peps_id_seq'::regclass);
-
-
---
--- Name: pips id; Type: DEFAULT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.pips ALTER COLUMN id SET DEFAULT nextval('maker.pips_id_seq'::regclass);
-
-
---
--- Name: reps id; Type: DEFAULT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.reps ALTER COLUMN id SET DEFAULT nextval('maker.reps_id_seq'::regclass);
+ALTER TABLE ONLY maker.price_feeds ALTER COLUMN id SET DEFAULT nextval('maker.price_feeds_id_seq'::regclass);
 
 
 --
@@ -718,27 +642,19 @@ ALTER TABLE ONLY maker.frob
 
 
 --
--- Name: peps peps_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: price_feeds price_feeds_header_id_medianizer_address_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.peps
-    ADD CONSTRAINT peps_pkey PRIMARY KEY (id);
-
-
---
--- Name: pips pips_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.pips
-    ADD CONSTRAINT pips_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY maker.price_feeds
+    ADD CONSTRAINT price_feeds_header_id_medianizer_address_tx_idx_key UNIQUE (header_id, medianizer_address, tx_idx);
 
 
 --
--- Name: reps reps_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: price_feeds price_feeds_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.reps
-    ADD CONSTRAINT reps_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY maker.price_feeds
+    ADD CONSTRAINT price_feeds_pkey PRIMARY KEY (id);
 
 
 --
@@ -889,26 +805,10 @@ ALTER TABLE ONLY maker.frob
 
 
 --
--- Name: peps headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
+-- Name: price_feeds headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.peps
-    ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
-
-
---
--- Name: pips headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.pips
-    ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
-
-
---
--- Name: reps headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.reps
+ALTER TABLE ONLY maker.price_feeds
     ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 

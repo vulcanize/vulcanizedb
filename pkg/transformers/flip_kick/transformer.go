@@ -30,11 +30,11 @@ type FlipKickTransformer struct {
 	Fetcher    shared.LogFetcher
 	Converter  Converter
 	Repository Repository
-	Config     TransformerConfig
+	Config     shared.TransformerConfig
 }
 
 type FlipKickTransformerInitializer struct {
-	Config TransformerConfig
+	Config shared.TransformerConfig
 }
 
 func (i FlipKickTransformerInitializer) NewFlipKickTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
@@ -50,7 +50,7 @@ func (i FlipKickTransformerInitializer) NewFlipKickTransformer(db *postgres.DB, 
 	return transformer
 }
 
-func (fkt *FlipKickTransformer) SetConfig(config TransformerConfig) {
+func (fkt *FlipKickTransformer) SetConfig(config shared.TransformerConfig) {
 	fkt.Config = config
 }
 
@@ -91,13 +91,13 @@ func (fkt FlipKickTransformer) Execute() error {
 	log.Printf("Fetching event logs for %d headers \n", len(headers))
 	var resultingErrors []error
 	for _, header := range headers {
-		ethLogs, err := fkt.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		ethLogs, err := fkt.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, FetcherError))
 		}
 
 		for _, ethLog := range ethLogs {
-			entity, err := fkt.Converter.ToEntity(config.ContractAddress, config.ContractAbi, ethLog)
+			entity, err := fkt.Converter.ToEntity(config.ContractAddresses, config.ContractAbi, ethLog)
 			if err != nil {
 				resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, LogToEntityError))
 			}

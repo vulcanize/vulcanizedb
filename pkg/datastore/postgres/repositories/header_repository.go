@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )

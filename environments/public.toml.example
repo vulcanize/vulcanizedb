@@ -6,6 +6,3 @@ port = 5432
 [client]
 ipcPath = <local node's IPC filepath>
 levelDbPath = <local node's LevelDB chaindata filepath>
-pepContractAddress = <pep medianizer's address - see https://makerdao.com/feeds/ >
-pipContractAddress = <pip medianizer's address - see https://makerdao.com/feeds/ >
-repContractAddress = <rep medianizer's address - see https://makerdao.com/feeds/ >

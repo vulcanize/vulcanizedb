@@ -27,6 +27,14 @@ type Transformer interface {
 
 type TransformerInitializer func(db *postgres.DB, blockChain core.BlockChain) Transformer
 
+type TransformerConfig struct {
+	ContractAddresses   string
+	ContractAbi         string
+	Topics              []string
+	StartingBlockNumber int64
+	EndingBlockNumber   int64
+}
+
 func HexToInt64(byteString string) int64 {
 	value := common.HexToHash(byteString)
 	return value.Big().Int64()
