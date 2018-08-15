@@ -25,7 +25,7 @@ import (
 )
 
 type Transformer struct {
-	Fetcher    ERC20FetcherInterface
+	Getter     ERC20GetterInterface
 	Repository ERC20RepositoryInterface
 	Config     erc20_watcher.ContractConfig
 }
@@ -38,11 +38,11 @@ type TokenSupplyTransformerInitializer struct {
 	Config erc20_watcher.ContractConfig
 }
 
-func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
-	fetcher := NewFetcher(blockchain)
+func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
+	getter := NewGetter(blockChain)
 	repository := ERC20TokenRepository{DB: db}
 	transformer := Transformer{
-		Fetcher:    &fetcher,
+		Getter:     &getter,
 		Repository: &repository,
 		Config:     i.Config,
 	}
@@ -51,8 +51,8 @@ func (i TokenSupplyTransformerInitializer) NewTokenSupplyTransformer(db *postgre
 }
 
 const (
-	FetchingBlocksError = "Error fetching missing blocks starting at block number %d: %s"
-	FetchingSupplyError = "Error fetching supply for block %d: %s"
+	FetchingBlocksError = "Error getting missing blocks starting at block number %d: %s"
+	GetSupplyError      = "Error getting supply for block %d: %s"
 	CreateSupplyError   = "Error inserting token_supply for block %d: %s"
 )
 
@@ -74,8 +74,8 @@ func newTransformerError(err error, blockNumber int64, msg string) error {
 
 func (t Transformer) Execute() error {
 	var upperBoundBlock int64
-	blockchain := t.Fetcher.GetBlockChain()
-	lastBlock := blockchain.LastBlock().Int64()
+	blockChain := t.Getter.GetBlockChain()
+	lastBlock := blockChain.LastBlock().Int64()
 
 	if t.Config.LastBlock == -1 {
 		upperBoundBlock = lastBlock
@@ -93,14 +93,14 @@ func (t Transformer) Execute() error {
 	}
 
 	// Fetch supply for missing blocks
-	log.Printf("Fetching totalSupply for %d blocks", len(blocks))
+	log.Printf("Gets totalSupply for %d blocks", len(blocks))
 
 	// For each block missing total supply, create supply model and feed the missing data into the repository
 	for _, blockNumber := range blocks {
-		totalSupply, err := t.Fetcher.FetchBigInt("totalSupply", t.Config.Abi, t.Config.Address, blockNumber, nil)
+		totalSupply, err := t.Getter.GetTotalSupply(t.Config.Abi, t.Config.Address, blockNumber)
 
 		if err != nil {
-			return newTransformerError(err, blockNumber, FetchingSupplyError)
+			return newTransformerError(err, blockNumber, GetSupplyError)
 		}
 		// Create the supply model
 		model := createTokenSupplyModel(totalSupply, t.Config.Address, blockNumber)
