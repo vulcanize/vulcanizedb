@@ -33,6 +33,12 @@ type Fetcher struct {
 	supply          big.Int
 	balance         map[string]*big.Int
 	allowance       map[string]map[string]*big.Int
+	owner           common.Address
+	stopped         bool
+	stringName      string
+	hashName        common.Hash
+	stringSymbol    string
+	hashSymbol      common.Hash
 }
 
 func (f *Fetcher) SetSupply(supply string) {
@@ -58,7 +64,7 @@ func (f *Fetcher) FetchBigInt(method, contractAbi, contractAddress string, block
 	}
 
 	if method == "balanceOf" {
-		rfl := reflect.ValueOf(methodArgs).Field(0)
+		rfl := reflect.ValueOf(methodArgs[0])
 		tokenHolderAddr := rfl.Interface().(string)
 		pnt := f.balance[tokenHolderAddr]
 		f.balance[tokenHolderAddr].Add(pnt, accumulator)
@@ -67,8 +73,8 @@ func (f *Fetcher) FetchBigInt(method, contractAbi, contractAddress string, block
 	}
 
 	if method == "allowance" {
-		rfl1 := reflect.ValueOf(methodArgs).Field(0)
-		rfl2 := reflect.ValueOf(methodArgs).Field(1)
+		rfl1 := reflect.ValueOf(methodArgs[0])
+		rfl2 := reflect.ValueOf(methodArgs[1])
 		tokenHolderAddr := rfl1.Interface().(string)
 		spenderAddr := rfl2.Interface().(string)
 		pnt := f.allowance[tokenHolderAddr][spenderAddr]
@@ -82,14 +88,132 @@ func (f *Fetcher) FetchBigInt(method, contractAbi, contractAddress string, block
 }
 
 func (f *Fetcher) FetchBool(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (bool, error) {
-	//TODO: this
-	return false, nil
+
+	f.Abi = contractAbi
+	f.ContractAddress = contractAddress
+	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
+
+	b := true
+
+	if method == "stopped" {
+		f.stopped = b
+
+		return f.stopped, nil
+	}
+
+	return false, errors.New("invalid method argument")
 }
 
 func (f *Fetcher) FetchAddress(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (common.Address, error) {
-	//TODO: this
-	var adr common.Address
-	return adr, nil
+
+	f.Abi = contractAbi
+	f.ContractAddress = contractAddress
+	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
+
+	adr := common.StringToAddress("test_address")
+
+	if method == "owner" {
+		f.owner = adr
+
+		return f.owner, nil
+	}
+	return common.StringToAddress(""), errors.New("invalid method argument")
+}
+
+func (f *Fetcher) FetchString(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (string, error) {
+
+	f.Abi = contractAbi
+	f.ContractAddress = contractAddress
+	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
+
+	if method == "name" {
+		f.stringName = "test_name"
+
+		return f.stringName, nil
+	}
+
+	if method == "symbol" {
+		f.stringSymbol = "test_symbol"
+
+		return f.stringSymbol, nil
+	}
+	return "", errors.New("invalid method argument")
+}
+
+func (f *Fetcher) FetchHash(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (common.Hash, error) {
+
+	f.Abi = contractAbi
+	f.ContractAddress = contractAddress
+	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
+
+	if method == "name" {
+		f.hashName = common.StringToHash("test_name")
+
+		return f.hashName, nil
+	}
+
+	if method == "symbol" {
+		f.hashSymbol = common.StringToHash("test_symbol")
+
+		return f.hashSymbol, nil
+	}
+	return common.StringToHash(""), errors.New("invalid method argument")
+}
+
+type Getter struct {
+	Fetcher Fetcher
+}
+
+func NewGetter(blockChain core.BlockChain) Getter {
+	return Getter{
+		Fetcher: Fetcher{
+			BlockChain: blockChain,
+		},
+	}
+}
+
+func (g *Getter) GetTotalSupply(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
+	return g.Fetcher.FetchBigInt("totalSupply", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetBalance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
+	return g.Fetcher.FetchBigInt("balanceOf", contractAbi, contractAddress, blockNumber, methodArgs)
+}
+
+func (g *Getter) GetAllowance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
+	return g.Fetcher.FetchBigInt("allowance", contractAbi, contractAddress, blockNumber, methodArgs)
+}
+
+func (g *Getter) GetOwner(contractAbi, contractAddress string, blockNumber int64) (common.Address, error) {
+	return g.Fetcher.FetchAddress("owner", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetStoppedStatus(contractAbi, contractAddress string, blockNumber int64) (bool, error) {
+	return g.Fetcher.FetchBool("stopped", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetStringName(contractAbi, contractAddress string, blockNumber int64) (string, error) {
+	return g.Fetcher.FetchString("name", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetHashName(contractAbi, contractAddress string, blockNumber int64) (common.Hash, error) {
+	return g.Fetcher.FetchHash("name", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetStringSymbol(contractAbi, contractAddress string, blockNumber int64) (string, error) {
+	return g.Fetcher.FetchString("symbol", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetHashSymbol(contractAbi, contractAddress string, blockNumber int64) (common.Hash, error) {
+	return g.Fetcher.FetchHash("symbol", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetDecimals(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
+	return g.Fetcher.FetchBigInt("decimals", contractAbi, contractAddress, blockNumber, nil)
+}
+
+func (g *Getter) GetBlockChain() core.BlockChain {
+	return g.Fetcher.BlockChain
 }
 
 type ERC20TokenRepository struct {

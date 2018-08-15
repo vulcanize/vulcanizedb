@@ -192,9 +192,9 @@ func supplyModel(blockNumber int64, tokenAddress, supplyValue string) every_bloc
 
 func createTokenSupplyFor(repository every_block.ERC20TokenRepository, blockNumber int64, tokenAddress string) {
 	err := repository.CreateSupply(every_block.TokenSupply{
-		BlockNumber: blockNumber,
+		BlockNumber:  blockNumber,
 		TokenAddress: tokenAddress,
-		Value: "0",
+		Value:        "0",
 	})
 	Expect(err).NotTo(HaveOccurred())
 }

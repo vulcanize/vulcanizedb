@@ -13,7 +13,7 @@ type MockBlockChain struct {
 	fetchContractDataPassedAbi         string
 	fetchContractDataPassedAddress     string
 	fetchContractDataPassedMethod      string
-	fetchContractDataPassedMethodArgs   []interface{}
+	fetchContractDataPassedMethodArgs  []interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
 	getBlockByNumberErr                error
