@@ -15,8 +15,8 @@
 package flip_kick
 
 import (
+	"encoding/json"
 	"errors"
-	"math/big"
 	"strings"
 	"time"
 
@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/utilities"
 )
 
 type Converter interface {
@@ -48,7 +49,7 @@ func (FlipKickConverter) ToEntity(contractAddress string, contractAbi string, et
 	if err != nil {
 		return entity, err
 	}
-
+	entity.Raw = ethLog
 	return entity, nil
 }
 
@@ -63,16 +64,21 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	mom := strings.ToLower(flipKick.Mom.String())
 	vat := strings.ToLower(flipKick.Vat.String())
 	ilk := strings.ToLower(common.ToHex(flipKick.Ilk[:]))
-	lot := convertNilToEmptyString(flipKick.Lot.String())
-	bid := convertNilToEmptyString(flipKick.Bid.String())
+	lot := utilities.ConvertNilToEmptyString(flipKick.Lot.String())
+	bid := utilities.ConvertNilToEmptyString(flipKick.Bid.String())
 	guy := strings.ToLower(flipKick.Guy.String())
 	gal := strings.ToLower(flipKick.Gal.String())
-	endValue := convertNilToZeroTimeValue(flipKick.End)
+	endValue := utilities.ConvertNilToZeroTimeValue(flipKick.End)
 	end := time.Unix(endValue, 0)
-	eraValue := convertNilToZeroTimeValue(flipKick.Era)
+	eraValue := utilities.ConvertNilToZeroTimeValue(flipKick.Era)
 	era := time.Unix(eraValue, 0)
 	lad := strings.ToLower(flipKick.Lad.String())
-	tab := convertNilToEmptyString(flipKick.Tab.String())
+	tab := utilities.ConvertNilToEmptyString(flipKick.Tab.String())
+	rawLogJson, err := json.Marshal(flipKick.Raw)
+	if err != nil {
+		return FlipKickModel{}, err
+	}
+	rawLogString := string(rawLogJson)
 
 	return FlipKickModel{
 		Id:  id,
@@ -87,21 +93,6 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 		Era: era,
 		Lad: lad,
 		Tab: tab,
+		Raw: rawLogString,
 	}, nil
-}
-
-func convertNilToZeroTimeValue(value *big.Int) int64 {
-	if value == nil {
-		return int64(0)
-	} else {
-		return value.Int64()
-	}
-}
-
-func convertNilToEmptyString(value string) string {
-	if value == "<nil>" {
-		return ""
-	} else {
-		return value
-	}
 }

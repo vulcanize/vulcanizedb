@@ -80,7 +80,7 @@ func newTransformerError(err error, blockNumber int64, msg string) error {
 
 func (fkt FlipKickTransformer) Execute() error {
 	config := fkt.Config
-	topics := [][]common.Hash{{common.HexToHash(FlipKickSignature)}}
+	topics := [][]common.Hash{{common.HexToHash(shared.FlipKickSignature)}}
 
 	headers, err := fkt.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
 	if err != nil {

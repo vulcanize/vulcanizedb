@@ -19,6 +19,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
@@ -28,9 +29,13 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frobConfig}
 	priceFeedConfig := price_feeds.PriceFeedConfig
 	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: priceFeedConfig}
+	tendConfig := tend.TendConfig
+	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tendConfig}
+
 	return []shared.TransformerInitializer{
 		flipKickTransformerInitializer.NewFlipKickTransformer,
 		frobTransformerInitializer.NewFrobTransformer,
 		priceFeedTransformerInitializer.NewPriceFeedTransformer,
+		tendTransformerInitializer.NewTendTransformer,
 	}
 }

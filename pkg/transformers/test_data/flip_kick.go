@@ -15,21 +15,16 @@
 package test_data
 
 import (
+	"encoding/json"
+	"math/big"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
-	"time"
-)
-
-var (
-	TemporaryFlipBlockNumber     = int64(10)
-	TemporaryFlipAddress         = "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d"
-	TemporaryFlipKickBlockHash   = "0x32f8b12023b3a1b4c73f9a46da976931b0355714ada8b8044ebcb2cd295751a9"
-	TemporaryFlipKickData        = "0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000008cb6176addcca2e1d1ffe21bee464b72ee4cd8d00000000000000000000000038219779a699d67d7e7740b8c8f43d3e2dae218266616b6520696c6b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a09200000000000000000000000007fa9ef6609ca7921112231f8f195138ebba2977000000000000000000000000000000000000000000000000000000005b69b8e7000000000000000000000000000000000000000000000000000000005b607e670000000000000000000000007340e006f4135ba6970d43bf43d88dcad4e7a8ca0000000000000000000000000000000000000000000000000000000000000032"
-	TemporaryFlipKickTransaction = "0x6b155a55fd77b751195deeebf7abfd8691ca01ee588817a920f19d5b27f65191"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var idString = "1"
@@ -48,15 +43,17 @@ var era = int64(1533050471)
 var lad = "0x7340e006f4135ba6970d43bf43d88dcad4e7a8ca"
 var tabString = "50"
 var tab, _ = new(big.Int).SetString(tabString, 10)
+var rawLogJson, _ = json.Marshal(EthFlipKickLog)
+var rawLogString = string(rawLogJson)
 
 var EthFlipKickLog = types.Log{
-	Address:     common.HexToAddress(TemporaryFlipAddress),
-	Topics:      []common.Hash{common.HexToHash(flip_kick.FlipKickSignature)},
-	Data:        hexutil.MustDecode(TemporaryFlipKickData),
-	BlockNumber: uint64(TemporaryFlipBlockNumber),
-	TxHash:      common.HexToHash(TemporaryFlipKickTransaction),
+	Address:     common.HexToAddress(FlipAddress),
+	Topics:      []common.Hash{common.HexToHash(shared.FlipKickSignature)},
+	Data:        hexutil.MustDecode(FlipKickData),
+	BlockNumber: uint64(FlipKickBlockNumber),
+	TxHash:      common.HexToHash(FlipKickTransactionHash),
 	TxIndex:     0,
-	BlockHash:   common.HexToHash(TemporaryFlipKickBlockHash),
+	BlockHash:   common.HexToHash(FlipKickBlockHash),
 	Index:       0,
 	Removed:     false,
 }
@@ -74,6 +71,7 @@ var FlipKickEntity = flip_kick.FlipKickEntity{
 	Era: big.NewInt(era),
 	Lad: common.HexToAddress(lad),
 	Tab: tab,
+	Raw: EthFlipKickLog,
 }
 
 var FlipKickModel = flip_kick.FlipKickModel{
@@ -89,6 +87,7 @@ var FlipKickModel = flip_kick.FlipKickModel{
 	Era: time.Unix(era, 0),
 	Lad: lad,
 	Tab: tabString,
+	Raw: rawLogString,
 }
 
 type FlipKickDBRow struct {

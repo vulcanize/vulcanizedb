@@ -29,4 +29,5 @@ type FlipKickModel struct {
 	Era time.Time
 	Lad string
 	Tab string
+	Raw string `db:"raw_log"`
 }

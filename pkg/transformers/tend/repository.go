@@ -12,60 +12,50 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package tend
 
 import (
-	"fmt"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type Repository interface {
-	Create(headerId int64, flipKick FlipKickModel) error
+	Create(headerId int64, tend TendModel) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
-type FlipKickRepository struct {
+type TendRepository struct {
 	DB *postgres.DB
 }
 
-func NewFlipKickRepository(db *postgres.DB) FlipKickRepository {
-	return FlipKickRepository{DB: db}
+func NewTendRepository(db *postgres.DB) TendRepository {
+	return TendRepository{DB: db}
 }
-func (fkr FlipKickRepository) Create(headerId int64, flipKick FlipKickModel) error {
-	_, err := fkr.DB.Exec(
-		`INSERT into maker.flip_kick (header_id, id, mom, vat, ilk, lot, bid, guy, gal, "end", era, lad, tab, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-		headerId, flipKick.Id, flipKick.Mom, flipKick.Vat, flipKick.Ilk, flipKick.Lot, flipKick.Bid, flipKick.Guy, flipKick.Gal, flipKick.End, flipKick.Era, flipKick.Lad, flipKick.Tab, flipKick.Raw,
+
+func (r TendRepository) Create(headerId int64, tend TendModel) error {
+	_, err := r.DB.Exec(
+		`INSERT into maker.tend (header_id, id, lot, bid, guy, tic, era, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		headerId, tend.Id, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.Era, tend.TransactionIndex, tend.Raw,
 	)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+func (r TendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := fkr.DB.Select(
+	err := r.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN maker.flip_kick on headers.id = header_id
+               LEFT JOIN maker.tend on headers.id = header_id
                WHERE header_id ISNULL
                AND headers.block_number >= $1
                AND headers.block_number <= $2
                AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		fkr.DB.Node.ID,
+		r.DB.Node.ID,
 	)
 
-	if err != nil {
-		fmt.Println("Error:", err)
-		return result, err
-	}
-
-	return result, nil
+	return result, err
 }
