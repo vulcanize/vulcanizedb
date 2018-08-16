@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package tend
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"time"
+)
 
-var FlipKickConfig = shared.TransformerConfig{
-	ContractAddresses:   "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d", //this is a temporary address deployed locally
-	ContractAbi:         shared.FlipperABI,
-	Topics:              []string{shared.FlipKickSignature},
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+type TendModel struct {
+	Id               string
+	Lot              string
+	Bid              string
+	Guy              []byte
+	Tic              string
+	Era              time.Time
+	TransactionIndex uint   `db:"tx_idx"`
+	Raw              string `db:"raw_log"`
 }

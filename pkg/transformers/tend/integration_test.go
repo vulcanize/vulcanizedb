@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick_test
+package tend_test
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -26,14 +26,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Integration tests", func() {
-	It("Fetches FlipKickEntity event logs from a local test chain", func() {
+// These test are pending either being able to emit a Tend event on a Ganache test chain or until the contracts are deployed to Kovan.
+var _ = XDescribe("Integration tests", func() {
+	It("Fetches Tend event logs from a local test chain", func() {
 		ipcPath := test_config.TestClient.IPCPath
 
 		rawRpcClient, err := rpc.Dial(ipcPath)
@@ -46,7 +47,7 @@ var _ = Describe("Integration tests", func() {
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
 		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(shared.FlipKickSignature)
+		topic0 := common.HexToHash(shared.TendSignature)
 		topics := [][]common.Hash{{topic0}}
 
 		result, err := realFetcher.FetchLogs(test_data.FlipAddress, topics, test_data.FlipKickBlockNumber)
@@ -66,25 +67,20 @@ var _ = Describe("Integration tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-		entity := &flip_kick.FlipKickEntity{}
+		entity := tend.TendEntity{}
 
-		var eventLog = test_data.EthFlipKickLog
+		var eventLog = test_data.TendLog
 
-		err = contract.UnpackLog(entity, "FlipKick", eventLog)
+		err = contract.UnpackLog(&entity, "Tend", eventLog)
 		Expect(err).NotTo(HaveOccurred())
 
-		expectedEntity := test_data.FlipKickEntity
+		expectedEntity := test_data.TendEntity
 		Expect(entity.Id).To(Equal(expectedEntity.Id))
-		Expect(entity.Mom).To(Equal(expectedEntity.Mom))
-		Expect(entity.Vat).To(Equal(expectedEntity.Vat))
-		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
 		Expect(entity.Lot).To(Equal(expectedEntity.Lot))
 		Expect(entity.Bid).To(Equal(expectedEntity.Bid))
 		Expect(entity.Guy).To(Equal(expectedEntity.Guy))
-		Expect(entity.Gal).To(Equal(expectedEntity.Gal))
-		Expect(entity.End).To(Equal(expectedEntity.End))
+		Expect(entity.Tic).To(Equal(expectedEntity.Tic))
 		Expect(entity.Era).To(Equal(expectedEntity.Era))
-		Expect(entity.Lad).To(Equal(expectedEntity.Lad))
-		Expect(entity.Tab).To(Equal(expectedEntity.Tab))
+		Expect(entity.Raw).To(Equal(expectedEntity.Raw))
 	})
 })

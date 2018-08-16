@@ -76,6 +76,7 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(dbResult.Era.Equal(flipKick.Era)).To(BeTrue())
 			Expect(dbResult.Lad).To(Equal(flipKick.Lad))
 			Expect(dbResult.Tab).To(Equal(flipKick.Tab))
+			Expect(dbResult.Raw).To(Equal(flipKick.Raw))
 		})
 
 		It("returns an error if inserting the flip_kick record fails", func() {

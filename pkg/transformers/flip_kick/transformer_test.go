@@ -56,7 +56,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		testConfig = shared.TransformerConfig{
 			ContractAddresses:   "0x12345",
 			ContractAbi:         "test abi",
-			Topics:              []string{flip_kick.FlipKickSignature},
+			Topics:              []string{shared.FlipKickSignature},
 			StartingBlockNumber: startingBlockNumber,
 			EndingBlockNumber:   startingBlockNumber + 5,
 		}
@@ -78,7 +78,7 @@ var _ = Describe("FlipKick Transformer", func() {
 	})
 
 	It("fetches logs with the configured contract and topic(s) for each block", func() {
-		expectedTopics := [][]common.Hash{{common.HexToHash(flip_kick.FlipKickSignature)}}
+		expectedTopics := [][]common.Hash{{common.HexToHash(shared.FlipKickSignature)}}
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())

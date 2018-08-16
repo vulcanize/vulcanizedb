@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flip_kick
+package tend
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"math/big"
 
-var FlipKickConfig = shared.TransformerConfig{
-	ContractAddresses:   "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d", //this is a temporary address deployed locally
-	ContractAbi:         shared.FlipperABI,
-	Topics:              []string{shared.FlipKickSignature},
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+)
+
+type TendEntity struct {
+	Id               *big.Int
+	Lot              *big.Int
+	Bid              *big.Int
+	Guy              common.Address
+	Tic              *big.Int
+	Era              *big.Int
+	TransactionIndex uint
+	Raw              types.Log
 }

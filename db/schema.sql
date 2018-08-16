@@ -58,7 +58,8 @@ CREATE TABLE maker.flip_kick (
     "end" timestamp with time zone,
     era timestamp with time zone,
     lad character varying,
-    tab numeric
+    tab numeric,
+    raw_log json
 );
 
 
@@ -151,6 +152,44 @@ CREATE SEQUENCE maker.price_feeds_id_seq
 --
 
 ALTER SEQUENCE maker.price_feeds_id_seq OWNED BY maker.price_feeds.id;
+
+
+--
+-- Name: tend; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.tend (
+    db_id integer NOT NULL,
+    header_id integer NOT NULL,
+    id numeric NOT NULL,
+    lot numeric,
+    bid numeric,
+    guy bytea,
+    tic numeric,
+    era timestamp with time zone,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: tend_db_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.tend_db_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tend_db_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.tend_db_id_seq OWNED BY maker.tend.db_id;
 
 
 --
@@ -547,6 +586,13 @@ ALTER TABLE ONLY maker.price_feeds ALTER COLUMN id SET DEFAULT nextval('maker.pr
 
 
 --
+-- Name: tend db_id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.tend ALTER COLUMN db_id SET DEFAULT nextval('maker.tend_db_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -655,6 +701,22 @@ ALTER TABLE ONLY maker.price_feeds
 
 ALTER TABLE ONLY maker.price_feeds
     ADD CONSTRAINT price_feeds_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tend tend_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.tend
+    ADD CONSTRAINT tend_id_key UNIQUE (id);
+
+
+--
+-- Name: tend tend_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.tend
+    ADD CONSTRAINT tend_pkey PRIMARY KEY (db_id);
 
 
 --
@@ -810,6 +872,14 @@ ALTER TABLE ONLY maker.frob
 
 ALTER TABLE ONLY maker.price_feeds
     ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tend tend_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.tend
+    ADD CONSTRAINT tend_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
