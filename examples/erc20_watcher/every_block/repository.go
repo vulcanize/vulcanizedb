@@ -20,38 +20,46 @@ import (
 	"log"
 )
 
+// Interface definition for a generic ERC20 token repository
 type ERC20RepositoryInterface interface {
-	Create(supply TokenSupply) error
-	MissingBlocks(startingBlock int64, highestBlock int64) ([]int64, error)
+	CreateSupply(supply TokenSupply) error
+	MissingSupplyBlocks(startingBlock, highestBlock int64, tokenAddress string) ([]int64, error)
 }
 
-type TokenSupplyRepository struct {
+// Generic ERC20 token Repo struct
+type ERC20TokenRepository struct {
 	*postgres.DB
 }
 
+// Repo error
 type repositoryError struct {
 	err         string
 	msg         string
 	blockNumber int64
 }
 
+// Repo error method
 func (re *repositoryError) Error() string {
 	return fmt.Sprintf(re.msg, re.blockNumber, re.err)
 }
 
+// Used to create a new Repo error for a given error and fetch method
 func newRepositoryError(err error, msg string, blockNumber int64) error {
 	e := repositoryError{err.Error(), msg, blockNumber}
 	log.Println(e.Error())
 	return &e
 }
 
+// Constant error definitions
 const (
 	GetBlockError          = "Error fetching block number %d: %s"
 	InsertTokenSupplyError = "Error inserting token_supply for block number %d: %s"
 	MissingBlockError      = "Error finding missing token_supply records starting at block %d: %s"
 )
 
-func (tsp *TokenSupplyRepository) Create(supply TokenSupply) error {
+// Supply methods
+// This method inserts the supply for a given token contract address at a given block height into the token_supply table
+func (tsp *ERC20TokenRepository) CreateSupply(supply TokenSupply) error {
 	var blockId int
 	err := tsp.DB.Get(&blockId, `SELECT id FROM blocks WHERE number = $1 AND eth_node_id = $2`, supply.BlockNumber, tsp.NodeID)
 	if err != nil {
@@ -68,18 +76,21 @@ func (tsp *TokenSupplyRepository) Create(supply TokenSupply) error {
 	return nil
 }
 
-func (tsp *TokenSupplyRepository) MissingBlocks(startingBlock int64, highestBlock int64) ([]int64, error) {
+// This method returns an array of blocks that are missing a token_supply entry for a given tokenAddress
+func (tsp *ERC20TokenRepository) MissingSupplyBlocks(startingBlock, highestBlock int64, tokenAddress string) ([]int64, error) {
 	blockNumbers := make([]int64, 0)
 
 	err := tsp.DB.Select(
 		&blockNumbers,
 		`SELECT number FROM BLOCKS
-               LEFT JOIN token_supply ON blocks.id = block_id
+               LEFT JOIN token_supply ON blocks.id = block_id 
+			   AND token_address = $1
                WHERE block_id ISNULL
-               AND eth_node_id = $1
-               AND number >= $2
-               AND number <= $3
+               AND eth_node_id = $2
+               AND number >= $3
+               AND number <= $4
                LIMIT 20`,
+		tokenAddress,
 		tsp.NodeID,
 		startingBlock,
 		highestBlock,

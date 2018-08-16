@@ -27,17 +27,17 @@ import (
 	"math/rand"
 )
 
-var _ = Describe("ERC20 Token Repository", func() {
+var _ = Describe("ERC20 Token Supply Repository", func() {
 	var db *postgres.DB
 	var blockId int64
 	var blockNumber int64
-	var repository every_block.TokenSupplyRepository
+	var repository every_block.ERC20TokenRepository
 	var blockRepository repositories.BlockRepository
 	testAddress := "abc"
 
 	BeforeEach(func() {
 		db = test_helpers.CreateNewDatabase()
-		repository = every_block.TokenSupplyRepository{DB: db}
+		repository = every_block.ERC20TokenRepository{DB: db}
 		_, err := db.Query(`DELETE FROM token_supply`)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -49,7 +49,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 	Describe("Create", func() {
 		It("creates a token supply record", func() {
 			supply := supplyModel(blockNumber, testAddress, "100")
-			err := repository.Create(supply)
+			err := repository.CreateSupply(supply)
 			Expect(err).NotTo(HaveOccurred())
 
 			dbResult := test_helpers.TokenSupplyDBRow{}
@@ -73,7 +73,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 		It("returns an error if fetching the block's id from the database fails", func() {
 			errorSupply := supplyModel(-1, "", "")
-			err := repository.Create(errorSupply)
+			err := repository.CreateSupply(errorSupply)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("sql"))
@@ -82,7 +82,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 		It("returns an error if inserting the token_supply fails", func() {
 			errorSupply := supplyModel(blockNumber, "", "")
-			err := repository.Create(errorSupply)
+			err := repository.CreateSupply(errorSupply)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq"))
@@ -94,7 +94,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 		var node2DB *postgres.DB
 		var node2BlockRepo *repositories.BlockRepository
 		var node2BlockId int64
-		var node2TokenSupplyRepo every_block.TokenSupplyRepository
+		var node2TokenSupplyRepo every_block.ERC20TokenRepository
 		var tokenSupply every_block.TokenSupply
 
 		BeforeEach(func() {
@@ -105,11 +105,11 @@ var _ = Describe("ERC20 Token Repository", func() {
 			node2BlockId = test_helpers.CreateBlock(blockNumber, *node2BlockRepo)
 
 			tokenSupply = supplyModel(blockNumber, "abc", "100")
-			node2TokenSupplyRepo = every_block.TokenSupplyRepository{DB: node2DB}
+			node2TokenSupplyRepo = every_block.ERC20TokenRepository{DB: node2DB}
 		})
 
 		It("only creates token_supply records for the current node (node2)", func() {
-			err := node2TokenSupplyRepo.Create(tokenSupply)
+			err := node2TokenSupplyRepo.CreateSupply(tokenSupply)
 			Expect(err).NotTo(HaveOccurred())
 
 			var tokenSupplies []test_helpers.TokenSupplyDBRow
@@ -121,14 +121,14 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 		It("only includes missing block numbers for the current node", func() {
 			//create token_supply on original node
-			err := repository.Create(tokenSupply)
+			err := repository.CreateSupply(tokenSupply)
 			Expect(err).NotTo(HaveOccurred())
 
-			originalNodeMissingBlocks, err := repository.MissingBlocks(blockNumber, blockNumber)
+			originalNodeMissingBlocks, err := repository.MissingSupplyBlocks(blockNumber, blockNumber, testAddress)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(originalNodeMissingBlocks)).To(Equal(0))
 
-			node2MissingBlocks, err := node2TokenSupplyRepo.MissingBlocks(blockNumber, blockNumber)
+			node2MissingBlocks, err := node2TokenSupplyRepo.MissingSupplyBlocks(blockNumber, blockNumber, testAddress)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(node2MissingBlocks)).To(Equal(1))
 		})
@@ -136,11 +136,11 @@ var _ = Describe("ERC20 Token Repository", func() {
 
 	Describe("MissingBlocks", func() {
 		It("returns the block numbers for which an associated TokenSupply record hasn't been created", func() {
-			createTokenSupplyFor(repository, blockNumber)
+			createTokenSupplyFor(repository, blockNumber, testAddress)
 
 			newBlockNumber := blockNumber + 1
 			test_helpers.CreateBlock(newBlockNumber, blockRepository)
-			blocks, err := repository.MissingBlocks(blockNumber, newBlockNumber)
+			blocks, err := repository.MissingSupplyBlocks(blockNumber, newBlockNumber, testAddress)
 
 			Expect(blocks).To(ConsistOf(newBlockNumber))
 			Expect(err).NotTo(HaveOccurred())
@@ -149,15 +149,15 @@ var _ = Describe("ERC20 Token Repository", func() {
 		It("only returns blocks within the given range", func() {
 			newBlockNumber := blockNumber + 1
 			test_helpers.CreateBlock(newBlockNumber, blockRepository)
-			blocks, err := repository.MissingBlocks(blockNumber, blockNumber)
+			blocks, err := repository.MissingSupplyBlocks(blockNumber, blockNumber, testAddress)
 
 			Expect(blocks).NotTo(ConsistOf(newBlockNumber))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("does not return numbers that already have an associated TokenSupply record", func() {
-			createTokenSupplyFor(repository, blockNumber)
-			blocks, err := repository.MissingBlocks(blockNumber, blockNumber)
+			createTokenSupplyFor(repository, blockNumber, testAddress)
+			blocks, err := repository.MissingSupplyBlocks(blockNumber, blockNumber, testAddress)
 
 			Expect(blocks).To(BeEmpty())
 			Expect(err).NotTo(HaveOccurred())
@@ -165,7 +165,7 @@ var _ = Describe("ERC20 Token Repository", func() {
 	})
 
 	It("deletes the token supply record when the associated block is deleted", func() {
-		err := repository.Create(every_block.TokenSupply{BlockNumber: blockNumber, Value: "0"})
+		err := repository.CreateSupply(every_block.TokenSupply{BlockNumber: blockNumber, TokenAddress: testAddress, Value: "0"})
 		Expect(err).NotTo(HaveOccurred())
 
 		var count int
@@ -182,16 +182,20 @@ var _ = Describe("ERC20 Token Repository", func() {
 	})
 })
 
-func supplyModel(blockNumber int64, tokenAddress string, supplyValue string) every_block.TokenSupply {
+func supplyModel(blockNumber int64, tokenAddress, supplyValue string) every_block.TokenSupply {
 	return every_block.TokenSupply{
 		Value:        supplyValue,
 		TokenAddress: tokenAddress,
-		BlockNumber:  int64(blockNumber),
+		BlockNumber:  blockNumber,
 	}
 }
 
-func createTokenSupplyFor(repository every_block.TokenSupplyRepository, blockNumber int64) {
-	err := repository.Create(every_block.TokenSupply{BlockNumber: blockNumber, Value: "0"})
+func createTokenSupplyFor(repository every_block.ERC20TokenRepository, blockNumber int64, tokenAddress string) {
+	err := repository.CreateSupply(every_block.TokenSupply{
+		BlockNumber:  blockNumber,
+		TokenAddress: tokenAddress,
+		Value:        "0",
+	})
 	Expect(err).NotTo(HaveOccurred())
 }
 

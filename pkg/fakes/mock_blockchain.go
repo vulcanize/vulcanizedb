@@ -13,7 +13,7 @@ type MockBlockChain struct {
 	fetchContractDataPassedAbi         string
 	fetchContractDataPassedAddress     string
 	fetchContractDataPassedMethod      string
-	fetchContractDataPassedMethodArg   interface{}
+	fetchContractDataPassedMethodArgs  []interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
 	getBlockByNumberErr                error
@@ -43,11 +43,11 @@ func (blockChain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Hea
 	return core.Header{BlockNumber: blockNumber}, nil
 }
 
-func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) error {
+func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
 	blockChain.fetchContractDataPassedAbi = abiJSON
 	blockChain.fetchContractDataPassedAddress = address
 	blockChain.fetchContractDataPassedMethod = method
-	blockChain.fetchContractDataPassedMethodArg = methodArg
+	blockChain.fetchContractDataPassedMethodArgs = methodArgs
 	blockChain.fetchContractDataPassedResult = result
 	blockChain.fetchContractDataPassedBlockNumber = blockNumber
 	return blockChain.fetchContractDataErr
@@ -74,7 +74,7 @@ func (blockChain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Bloc
 }
 
 // TODO: handle methodArg being nil (can't match nil to nil in Gomega)
-func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) {
+func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) {
 	Expect(blockChain.fetchContractDataPassedAbi).To(Equal(abiJSON))
 	Expect(blockChain.fetchContractDataPassedAddress).To(Equal(address))
 	Expect(blockChain.fetchContractDataPassedMethod).To(Equal(method))

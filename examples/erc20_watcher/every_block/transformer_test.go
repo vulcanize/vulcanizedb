@@ -38,8 +38,8 @@ var testContractConfig = erc20_watcher.ContractConfig{
 var config = testContractConfig
 
 var _ = Describe("Everyblock transformer", func() {
-	var fetcher mocks.Fetcher
-	var repository mocks.TotalSupplyRepository
+	var getter mocks.Getter
+	var repository mocks.ERC20TokenRepository
 	var transformer every_block.Transformer
 	var blockChain *fakes.MockBlockChain
 	var initialSupply = "27647235749155415536952630"
@@ -51,14 +51,14 @@ var _ = Describe("Everyblock transformer", func() {
 	BeforeEach(func() {
 		blockChain = fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(&defaultLastBlock)
-		fetcher = mocks.Fetcher{BlockChain: blockChain}
-		fetcher.SetSupply(initialSupply)
-		repository = mocks.TotalSupplyRepository{}
-		repository.SetMissingBlocks([]int64{config.FirstBlock})
+		getter = mocks.NewGetter(blockChain)
+		getter.Fetcher.SetSupply(initialSupply)
+		repository = mocks.ERC20TokenRepository{}
+		repository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
 		//setting the mock repository to return the first block as the missing blocks
 
 		transformer = every_block.Transformer{
-			Fetcher:    &fetcher,
+			Getter:     &getter,
 			Repository: &repository,
 		}
 		transformer.SetConfiguration(config)
@@ -68,10 +68,10 @@ var _ = Describe("Everyblock transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(len(fetcher.FetchedBlocks)).To(Equal(1))
-		Expect(fetcher.FetchedBlocks).To(ConsistOf(config.FirstBlock))
-		Expect(fetcher.Abi).To(Equal(config.Abi))
-		Expect(fetcher.ContractAddress).To(Equal(config.Address))
+		Expect(len(getter.Fetcher.FetchedBlocks)).To(Equal(1))
+		Expect(getter.Fetcher.FetchedBlocks).To(ConsistOf(config.FirstBlock))
+		Expect(getter.Fetcher.Abi).To(Equal(config.Abi))
+		Expect(getter.Fetcher.ContractAddress).To(Equal(config.Address))
 
 		Expect(repository.StartingBlock).To(Equal(config.FirstBlock))
 		Expect(repository.EndingBlock).To(Equal(config.LastBlock))
@@ -89,13 +89,14 @@ var _ = Describe("Everyblock transformer", func() {
 			config.FirstBlock + 1,
 			config.FirstBlock + 2,
 		}
-		repository.SetMissingBlocks(missingBlocks)
-		transformer.Execute()
+		repository.SetMissingSupplyBlocks(missingBlocks)
+		err := transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
 
-		Expect(len(fetcher.FetchedBlocks)).To(Equal(3))
-		Expect(fetcher.FetchedBlocks).To(ConsistOf(config.FirstBlock, config.FirstBlock+1, config.FirstBlock+2))
-		Expect(fetcher.Abi).To(Equal(config.Abi))
-		Expect(fetcher.ContractAddress).To(Equal(config.Address))
+		Expect(len(getter.Fetcher.FetchedBlocks)).To(Equal(3))
+		Expect(getter.Fetcher.FetchedBlocks).To(ConsistOf(config.FirstBlock, config.FirstBlock+1, config.FirstBlock+2))
+		Expect(getter.Fetcher.Abi).To(Equal(config.Abi))
+		Expect(getter.Fetcher.ContractAddress).To(Equal(config.Address))
 
 		Expect(len(repository.TotalSuppliesCreated)).To(Equal(3))
 		Expect(repository.TotalSuppliesCreated[0].Value).To(Equal(initialSupplyPlusOne))
@@ -104,14 +105,14 @@ var _ = Describe("Everyblock transformer", func() {
 	})
 
 	It("uses the set contract configuration", func() {
-		repository.SetMissingBlocks([]int64{testContractConfig.FirstBlock})
+		repository.SetMissingSupplyBlocks([]int64{testContractConfig.FirstBlock})
 		transformer.SetConfiguration(testContractConfig)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(fetcher.FetchedBlocks).To(ConsistOf(testContractConfig.FirstBlock))
-		Expect(fetcher.Abi).To(Equal(testContractConfig.Abi))
-		Expect(fetcher.ContractAddress).To(Equal(testContractConfig.Address))
+		Expect(getter.Fetcher.FetchedBlocks).To(ConsistOf(testContractConfig.FirstBlock))
+		Expect(getter.Fetcher.Abi).To(Equal(testContractConfig.Abi))
+		Expect(getter.Fetcher.ContractAddress).To(Equal(testContractConfig.Address))
 
 		Expect(repository.StartingBlock).To(Equal(testContractConfig.FirstBlock))
 		Expect(repository.EndingBlock).To(Equal(testContractConfig.LastBlock))
@@ -143,24 +144,24 @@ var _ = Describe("Everyblock transformer", func() {
 
 	It("returns an error if the call to get missing blocks fails", func() {
 		failureRepository := mocks.FailureRepository{}
-		failureRepository.SetMissingBlocksFail(true)
+		failureRepository.SetMissingSupplyBlocksFail(true)
 		transformer = every_block.Transformer{
-			Fetcher:    &fetcher,
+			Getter:     &getter,
 			Repository: &failureRepository,
 		}
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
-		Expect(err.Error()).To(ContainSubstring("fetching missing blocks"))
+		Expect(err.Error()).To(ContainSubstring("getting missing blocks"))
 	})
 
 	It("returns an error if the call to the blockChain fails", func() {
 		failureBlockchain := fakes.NewMockBlockChain()
 		failureBlockchain.SetLastBlock(&defaultLastBlock)
 		failureBlockchain.SetFetchContractDataErr(fakes.FakeError)
-		fetcher := every_block.NewFetcher(failureBlockchain)
+		getter := every_block.NewGetter(failureBlockchain)
 		transformer = every_block.Transformer{
-			Fetcher:    &fetcher,
+			Getter:     &getter,
 			Repository: &repository,
 		}
 		err := transformer.Execute()
@@ -171,11 +172,11 @@ var _ = Describe("Everyblock transformer", func() {
 
 	It("returns an error if the call to save the token_supply fails", func() {
 		failureRepository := mocks.FailureRepository{}
-		failureRepository.SetMissingBlocks([]int64{config.FirstBlock})
-		failureRepository.SetCreateFail(true)
+		failureRepository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
+		failureRepository.SetCreateSupplyFail(true)
 
 		transformer = every_block.Transformer{
-			Fetcher:    &fetcher,
+			Getter:     &getter,
 			Repository: &failureRepository,
 		}
 		err := transformer.Execute()

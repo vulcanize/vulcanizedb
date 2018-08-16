@@ -12,28 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package every_block_test
 
-// Struct to hold token supply data
-type TokenSupply struct {
-	Value        string
-	TokenAddress string
-	BlockNumber  int64
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"log"
+)
+
+func TestEveryBlock(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Generic EveryBlock Suite")
 }
 
-// Struct to hold token holder address balance data
-type TokenBalance struct {
-	Value              string
-	TokenAddress       string
-	BlockNumber        int64
-	TokenHolderAddress string
-}
-
-// Struct to hold token allowance data
-type TokenAllowance struct {
-	Value               string
-	TokenAddress        string
-	BlockNumber         int64
-	TokenHolderAddress  string
-	TokenSpenderAddress string
-}
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

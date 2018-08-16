@@ -31,25 +31,26 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
-var _ = Describe("ERC20 Fetcher", func() {
+var _ = Describe("ERC20 Getter", func() {
 	blockNumber := int64(5502914)
 
-	Describe("FetchSupplyOf", func() {
-		It("fetches data from the blockchain with the correct arguments", func() {
-			fakeBlockchain := fakes.NewMockBlockChain()
-			testFetcher := every_block.NewFetcher(fakeBlockchain)
+	Describe("totalSupply", func() {
+		It("gets total supply data from the blockchain with the correct arguments", func() {
+			fakeBlockChain := fakes.NewMockBlockChain()
+			testGetter := every_block.NewGetter(fakeBlockChain)
 			testAbi := "testAbi"
 			testContractAddress := "testContractAddress"
-			_, err := testFetcher.FetchSupplyOf(testAbi, testContractAddress, blockNumber)
+
+			_, err := testGetter.GetTotalSupply(testAbi, testContractAddress, blockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			expectedResult := big.Int{}
 			expected := &expectedResult
-			fakeBlockchain.AssertFetchContractDataCalledWith(testAbi, testContractAddress, "totalSupply", nil, &expected, blockNumber)
+			fakeBlockChain.AssertFetchContractDataCalledWith(testAbi, testContractAddress, "totalSupply", nil, &expected, blockNumber)
 		})
 
-		It("fetches a token's total supply at the given block height", func() {
-			infuraIPC := "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+		It("gets dai token's total supply at the given block height", func() {
+			infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
 			rawRpcClient, err := rpc.Dial(infuraIPC)
 			Expect(err).NotTo(HaveOccurred())
 			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
@@ -58,8 +59,8 @@ var _ = Describe("ERC20 Fetcher", func() {
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
-			realFetcher := every_block.NewFetcher(blockChain)
-			result, err := realFetcher.FetchSupplyOf(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
+			realGetter := every_block.NewGetter(blockChain)
+			result, err := realGetter.GetTotalSupply(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			expectedResult := big.Int{}
@@ -70,8 +71,8 @@ var _ = Describe("ERC20 Fetcher", func() {
 		It("returns an error if the call to the blockchain fails", func() {
 			blockChain := fakes.NewMockBlockChain()
 			blockChain.SetFetchContractDataErr(fakes.FakeError)
-			errorFetcher := every_block.NewFetcher(blockChain)
-			result, err := errorFetcher.FetchSupplyOf("", "", 0)
+			errorGetter := every_block.NewGetter(blockChain)
+			result, err := errorGetter.GetTotalSupply("", "", 0)
 
 			Expect(result.String()).To(Equal("0"))
 			Expect(err).To(HaveOccurred())

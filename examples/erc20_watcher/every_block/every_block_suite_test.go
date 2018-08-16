@@ -25,7 +25,7 @@ import (
 
 func TestEveryBlock(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "EveryBlock Suite")
+	RunSpecs(t, "ERC20 EveryBlock Suite")
 }
 
 var _ = BeforeSuite(func() {
