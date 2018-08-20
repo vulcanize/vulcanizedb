@@ -1,0 +1,9 @@
+[database]
+name = "vulcanize_public"
+hostname = "host.docker.internal"
+user = "vulcanize"
+password = "vulcanize"
+port = 5432
+
+[client]
+ipcPath = "/mnt/geth.ipc"
