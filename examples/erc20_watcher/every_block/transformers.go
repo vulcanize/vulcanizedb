@@ -21,8 +21,8 @@ import (
 
 func TransformerInitializers() []shared.TransformerInitializer {
 	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
+	initializer := ERC20TokenTransformerInitializer{config}
 	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
+		initializer.NewERC20TokenTransformer,
 	}
 }

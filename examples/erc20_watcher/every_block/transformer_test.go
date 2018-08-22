@@ -20,7 +20,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
+	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 	"math/rand"
@@ -55,11 +57,15 @@ var _ = Describe("Everyblock transformer", func() {
 		getter.Fetcher.SetSupply(initialSupply)
 		repository = mocks.ERC20TokenRepository{}
 		repository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
+		db := test_helpers.CreateNewDatabase()
+		rt := generic.NewRetriever(db, config.Address)
 		//setting the mock repository to return the first block as the missing blocks
 
 		transformer = every_block.Transformer{
 			Getter:     &getter,
 			Repository: &repository,
+			Retriever:  rt,
+			Config:     config,
 		}
 		transformer.SetConfiguration(config)
 	})
@@ -152,7 +158,7 @@ var _ = Describe("Everyblock transformer", func() {
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
-		Expect(err.Error()).To(ContainSubstring("getting missing blocks"))
+		Expect(err.Error()).To(ContainSubstring("fetching missing blocks"))
 	})
 
 	It("returns an error if the call to the blockChain fails", func() {
