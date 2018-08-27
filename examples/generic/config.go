@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package generic
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/generic"
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/vulcanize/vulcanizedb/examples/constants"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := generic.DaiConfig
-	initializer := ERC20TokenTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewERC20TokenTransformer,
-	}
+type ContractConfig struct {
+	Address    string
+	Abi        string
+	ParsedAbi  abi.ABI
+	FirstBlock int64
+	LastBlock  int64
+	Name       string
+}
+
+var DaiConfig = ContractConfig{
+	Address:    constants.DaiContractAddress,
+	Abi:        constants.DaiAbiString,
+	ParsedAbi:  constants.ParsedDaiAbi,
+	FirstBlock: int64(4752008),
+	LastBlock:  -1,
+	Name:       "Dai",
 }

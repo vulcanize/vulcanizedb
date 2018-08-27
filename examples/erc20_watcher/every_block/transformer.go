@@ -17,7 +17,6 @@ package every_block
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -30,15 +29,15 @@ type Transformer struct {
 	Getter     ERC20GetterInterface
 	Repository ERC20RepositoryInterface
 	Retriever  generic.Retriever
-	Config     erc20_watcher.ContractConfig
+	Config     generic.ContractConfig
 }
 
-func (t *Transformer) SetConfiguration(config erc20_watcher.ContractConfig) {
+func (t *Transformer) SetConfiguration(config generic.ContractConfig) {
 	t.Config = config
 }
 
 type ERC20TokenTransformerInitializer struct {
-	Config erc20_watcher.ContractConfig
+	Config generic.ContractConfig
 }
 
 func (i ERC20TokenTransformerInitializer) NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
