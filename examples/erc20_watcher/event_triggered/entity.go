@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,17 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package event_triggered
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/generic"
-	"github.com/vulcanize/vulcanizedb/libraries/shared"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	config := generic.DaiConfig
-	initializer := ERC20TokenTransformerInitializer{config}
-	return []shared.TransformerInitializer{
-		initializer.NewERC20TokenTransformer,
-	}
+type TransferEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	Src          common.Address
+	Dst          common.Address
+	Wad          *big.Int
+	Block        int64
+	TxHash       string
+}
+
+type ApprovalEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	Src          common.Address
+	Guy          common.Address
+	Wad          *big.Int
+	Block        int64
+	TxHash       string
 }

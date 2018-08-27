@@ -18,7 +18,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
@@ -29,7 +28,7 @@ import (
 	"strconv"
 )
 
-var testContractConfig = erc20_watcher.ContractConfig{
+var testContractConfig = generic.ContractConfig{
 	Address:    constants.DaiContractAddress,
 	Abi:        constants.DaiAbiString,
 	FirstBlock: int64(4752008),

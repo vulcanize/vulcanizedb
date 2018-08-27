@@ -18,8 +18,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -45,7 +45,7 @@ var _ = Describe("Everyblock transformers", func() {
 
 	BeforeEach(func() {
 		blockChain = fakes.NewMockBlockChain()
-		blockNumber = erc20_watcher.DaiConfig.FirstBlock
+		blockNumber = generic.DaiConfig.FirstBlock
 		lastBlockNumber := blockNumber + 1
 		db = test_helpers.CreateNewDatabase()
 		setLastBlockOnChain(blockChain, lastBlockNumber)
@@ -59,7 +59,7 @@ var _ = Describe("Everyblock transformers", func() {
 	})
 
 	It("creates a token_supply record for each block in the given range", func() {
-		initializer := every_block.ERC20TokenTransformerInitializer{Config: erc20_watcher.DaiConfig}
+		initializer := every_block.ERC20TokenTransformerInitializer{Config: generic.DaiConfig}
 		transformer := initializer.NewERC20TokenTransformer(db, blockChain)
 		transformer.Execute()
 
