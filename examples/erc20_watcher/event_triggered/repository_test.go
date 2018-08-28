@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -33,7 +34,7 @@ var transferEntity = event_triggered.TransferEntity{
 	TokenAddress: common.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
 	Dst:          common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
-	Wad:          &transferWad,
+	Wad:          helpers.BigFromString("1097077688018008265106216665536940668749033598146"),
 	Block:        5488076,
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
@@ -43,7 +44,7 @@ var approvalEntity = event_triggered.ApprovalEntity{
 	TokenAddress: common.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
 	Guy:          common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
-	Wad:          &approvalWad,
+	Wad:          helpers.BigFromString("1097077688018008265106216665536940668749033598146"),
 	Block:        5488076,
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
