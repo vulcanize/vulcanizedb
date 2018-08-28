@@ -25,8 +25,8 @@ import (
 // address in an attempt to generate a list of token holder addresses
 
 type RetrieverInterface interface {
-	RetrieveSendingAddresses() ([]string, error)
-	RetrieveReceivingAddresses() ([]string, error)
+	retrieveTransferEventAddresses() ([][2]string, error)
+	retrieveApprovalEventAddresses() ([][2]string, error)
 	RetrieveContractAssociatedAddresses() (map[common.Address]bool, error)
 }
 
@@ -55,8 +55,10 @@ func newRetrieverError(err error, msg string, address string) error {
 
 // Constant error definitions
 const (
-	GetSenderError   = "Error fetching addresses receiving from contract %s: %s"
-	GetReceiverError = "Error fetching addresses sending to contract %s: %s"
+	GetSendersError   = "Error fetching token senders from contract %s: %s"
+	GetReceiversError = "Error fetching token receivers from contract %s: %s"
+	GetOwnersError    = "Error fetching token owners from contract %s: %s"
+	GetSpendersError  = "Error fetching token spenders from contract %s: %s"
 )
 
 func NewRetriever(db *postgres.DB, address string) Retriever {
@@ -66,59 +68,107 @@ func NewRetriever(db *postgres.DB, address string) Retriever {
 	}
 }
 
-func (rt Retriever) RetrieveReceivingAddresses() ([]string, error) {
+func (rt Retriever) retrieveTokenSenders() ([]string, error) {
 
-	receiversFromContract := make([]string, 0)
+	senders := make([]string, 0)
 
 	err := rt.Database.DB.Select(
-		&receiversFromContract,
-		`SELECT tx_to FROM TRANSACTIONS
-               WHERE tx_from = $1
-			   LIMIT 20`,
+		&senders,
+		`SELECT from_address FROM token_transfers
+               WHERE token_address = $1`,
 		rt.ContractAddress,
 	)
 	if err != nil {
-		return []string{}, newRetrieverError(err, GetReceiverError, rt.ContractAddress)
+		return []string{}, newRetrieverError(err, GetSendersError, rt.ContractAddress)
 	}
-	return receiversFromContract, err
+	return senders, err
 }
 
-func (rt Retriever) RetrieveSendingAddresses() ([]string, error) {
+func (rt Retriever) retrieveTokenReceivers() ([]string, error) {
 
-	sendersToContract := make([]string, 0)
+	receivers := make([]string, 0)
 
 	err := rt.Database.DB.Select(
-		&sendersToContract,
-		`SELECT tx_from FROM TRANSACTIONS
-			WHERE tx_to = $1
-		    LIMIT 20`,
+		&receivers,
+		`SELECT to_address FROM token_transfers
+               WHERE token_address = $1`,
 		rt.ContractAddress,
 	)
 	if err != nil {
-		return []string{}, newRetrieverError(err, GetSenderError, rt.ContractAddress)
+		return []string{}, newRetrieverError(err, GetReceiversError, rt.ContractAddress)
 	}
-	return sendersToContract, err
+	return receivers, err
 }
 
-func (rt Retriever) RetrieveContractAssociatedAddresses() (map[common.Address]bool, error) {
+func (rt Retriever) retrieveTokenOwners() ([]string, error) {
 
-	sending, err := rt.RetrieveSendingAddresses()
+	owners := make([]string, 0)
+
+	err := rt.Database.DB.Select(
+		&owners,
+		`SELECT owner FROM token_approvals
+               WHERE token_address = $1`,
+		rt.ContractAddress,
+	)
+	if err != nil {
+		return []string{}, newRetrieverError(err, GetOwnersError, rt.ContractAddress)
+	}
+	return owners, err
+}
+
+func (rt Retriever) retrieveTokenSpenders() ([]string, error) {
+
+	spenders := make([]string, 0)
+
+	err := rt.Database.DB.Select(
+		&spenders,
+		`SELECT spender FROM token_approvals
+               WHERE token_address = $1`,
+		rt.ContractAddress,
+	)
+	if err != nil {
+		return []string{}, newRetrieverError(err, GetSpendersError, rt.ContractAddress)
+	}
+	return spenders, err
+}
+
+func (rt Retriever) RetrieveTokenHolderAddresses() (map[common.Address]bool, error) {
+
+	senders, err := rt.retrieveTokenSenders()
 	if err != nil {
 		return nil, err
 	}
 
-	receiving, err := rt.RetrieveReceivingAddresses()
+	receivers, err := rt.retrieveTokenReceivers()
+	if err != nil {
+		return nil, err
+	}
+
+	owners, err := rt.retrieveTokenOwners()
+	if err != nil {
+		return nil, err
+	}
+
+	spenders, err := rt.retrieveTokenSenders()
 	if err != nil {
 		return nil, err
 	}
 
 	contractAddresses := make(map[common.Address]bool)
 
-	for _, addr := range sending {
+	for _, addr := range senders {
 		contractAddresses[common.HexToAddress(addr)] = true
 	}
 
-	for _, addr := range receiving {
+	for _, addr := range receivers {
+		contractAddresses[common.HexToAddress(addr)] = true
+	}
+
+	for _, addr := range owners {
+		contractAddresses[common.HexToAddress(addr)] = true
+	}
+
+	for _, addr := range spenders {
 		contractAddresses[common.HexToAddress(addr)] = true
 	}
 
