@@ -33,9 +33,9 @@ func NewFrobRepository(db *postgres.DB) FrobRepository {
 }
 
 func (repository FrobRepository) Create(headerID int64, transactionIndex uint, model FrobModel) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.frob (header_id, tx_idx, art, era, gem, ilk, ink, lad)
-		VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8)`,
-		headerID, transactionIndex, model.Art, model.Era, model.Gem, model.Ilk, model.Ink, model.Lad)
+	_, err := repository.db.Exec(`INSERT INTO maker.frob (header_id, tx_idx, art, dart, dink, iart, ilk, ink, lad)
+		VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7, $8::NUMERIC, $9)`,
+		headerID, transactionIndex, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Lad)
 	return err
 }
 

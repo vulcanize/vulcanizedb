@@ -33,7 +33,7 @@ import (
 )
 
 var _ = Describe("Integration tests", func() {
-	It("Fetches FlipKickEntity event logs from a local test chain", func() {
+	XIt("Fetches FlipKickEntity event logs from a local test chain", func() {
 		ipcPath := test_config.TestClient.IPCPath
 
 		rawRpcClient, err := rpc.Dial(ipcPath)
@@ -75,7 +75,6 @@ var _ = Describe("Integration tests", func() {
 
 		expectedEntity := test_data.FlipKickEntity
 		Expect(entity.Id).To(Equal(expectedEntity.Id))
-		Expect(entity.Mom).To(Equal(expectedEntity.Mom))
 		Expect(entity.Vat).To(Equal(expectedEntity.Vat))
 		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
 		Expect(entity.Lot).To(Equal(expectedEntity.Lot))

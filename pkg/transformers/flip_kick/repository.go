@@ -35,9 +35,9 @@ func NewFlipKickRepository(db *postgres.DB) FlipKickRepository {
 }
 func (fkr FlipKickRepository) Create(headerId int64, flipKick FlipKickModel) error {
 	_, err := fkr.DB.Exec(
-		`INSERT into maker.flip_kick (header_id, id, mom, vat, ilk, lot, bid, guy, gal, "end", era, lad, tab, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-		headerId, flipKick.Id, flipKick.Mom, flipKick.Vat, flipKick.Ilk, flipKick.Lot, flipKick.Bid, flipKick.Guy, flipKick.Gal, flipKick.End, flipKick.Era, flipKick.Lad, flipKick.Tab, flipKick.Raw,
+		`INSERT into maker.flip_kick (header_id, id, vat, ilk, lot, bid, guy, gal, "end", era, lad, tab, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+		headerId, flipKick.Id, flipKick.Vat, flipKick.Ilk, flipKick.Lot, flipKick.Bid, flipKick.Guy, flipKick.Gal, flipKick.End, flipKick.Era, flipKick.Lad, flipKick.Tab, flipKick.Raw,
 	)
 
 	if err != nil {

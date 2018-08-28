@@ -15,10 +15,11 @@
 package frob
 
 type FrobModel struct {
-	Ilk []byte
-	Lad []byte
-	Gem string
-	Ink string
-	Art string
-	Era string
+	Ilk  []byte
+	Lad  []byte
+	Ink  string
+	Art  string
+	Dink string
+	Dart string
+	IArt string
 }

@@ -29,7 +29,6 @@ import (
 
 var idString = "1"
 var id, _ = new(big.Int).SetString(idString, 10)
-var mom = "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d"
 var vat = "0x38219779a699d67d7e7740b8c8f43d3e2dae2182"
 var ilk = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var lotString = "100"
@@ -38,8 +37,8 @@ var bidString = "0"
 var bid = new(big.Int).SetBytes([]byte{0})
 var guy = "0x64d922894153be9eef7b7218dc565d1d0ce2a092"
 var gal = "0x07fa9ef6609ca7921112231f8f195138ebba2977"
-var end = int64(1533655271)
-var era = int64(1533050471)
+var end = int64(1535140791)
+var era = int64(1534535991)
 var lad = "0x7340e006f4135ba6970d43bf43d88dcad4e7a8ca"
 var tabString = "50"
 var tab, _ = new(big.Int).SetString(tabString, 10)
@@ -60,7 +59,6 @@ var EthFlipKickLog = types.Log{
 
 var FlipKickEntity = flip_kick.FlipKickEntity{
 	Id:  id,
-	Mom: common.HexToAddress(mom),
 	Vat: common.HexToAddress(vat),
 	Ilk: ilk,
 	Lot: lot,
@@ -76,7 +74,6 @@ var FlipKickEntity = flip_kick.FlipKickEntity{
 
 var FlipKickModel = flip_kick.FlipKickModel{
 	Id:  idString,
-	Mom: mom,
 	Vat: vat,
 	Ilk: "0x" + common.Bytes2Hex(ilk[:]),
 	Lot: lotString,

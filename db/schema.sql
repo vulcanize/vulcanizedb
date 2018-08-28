@@ -48,7 +48,6 @@ CREATE TABLE maker.flip_kick (
     db_id integer NOT NULL,
     header_id integer NOT NULL,
     id numeric NOT NULL,
-    mom character varying,
     vat character varying,
     ilk character varying,
     lot numeric,
@@ -93,10 +92,11 @@ CREATE TABLE maker.frob (
     tx_idx integer,
     ilk bytea,
     lad bytea,
-    gem numeric,
+    dink numeric,
+    dart numeric,
     ink numeric,
     art numeric,
-    era numeric
+    iart numeric
 );
 
 
