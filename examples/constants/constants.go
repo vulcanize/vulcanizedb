@@ -59,14 +59,14 @@ var ApprovalEventSignature = helpers.GenerateSignature("Approval(address,address
 // Filters
 var DaiFilters = []filters.LogFilter{
 	{
-		Name:      "Transfers",
+		Name:      "Transfer",
 		FromBlock: 0,
 		ToBlock:   -1,
 		Address:   DaiContractAddress,
 		Topics:    core.Topics{TransferEventSignature},
 	},
 	{
-		Name:      "Approvals",
+		Name:      "Approval",
 		FromBlock: 0,
 		ToBlock:   -1,
 		Address:   DaiContractAddress,

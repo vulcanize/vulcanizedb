@@ -21,40 +21,52 @@ import (
 )
 
 type MockWatchedEventsRepository struct {
-	watchedEvents []*core.WatchedEvent
-	Names         []string
+	watchedTransferEvents []*core.WatchedEvent
+	watchedApprovalEvents []*core.WatchedEvent
+	Names                 []string
 }
 
 func (mwer *MockWatchedEventsRepository) SetWatchedEvents(watchedEvents []*core.WatchedEvent) {
-	mwer.watchedEvents = watchedEvents
+	for _, event := range watchedEvents {
+		if event.Name == "Transfer" {
+			mwer.watchedTransferEvents = append(mwer.watchedTransferEvents, event)
+		}
+		if event.Name == "Approval" {
+			mwer.watchedApprovalEvents = append(mwer.watchedApprovalEvents, event)
+		}
+	}
 }
 
 func (mwer *MockWatchedEventsRepository) GetWatchedEvents(name string) ([]*core.WatchedEvent, error) {
 	mwer.Names = append(mwer.Names, name)
-	result := mwer.watchedEvents
-	// clear watched events once returned so same events are returned for every filter while testing
-	mwer.watchedEvents = []*core.WatchedEvent{}
+	var result []*core.WatchedEvent
+	if name == "Transfer" {
+		result = mwer.watchedTransferEvents
+		// clear watched events once returned so same events are returned for every filter while testing
+		mwer.watchedTransferEvents = []*core.WatchedEvent{}
+	}
+	if name == "Approval" {
+		result = mwer.watchedApprovalEvents
+		// clear watched events once returned so same events are returned for every filter while testing
+		mwer.watchedApprovalEvents = []*core.WatchedEvent{}
+	}
 	return result, nil
 }
 
-type MockTransferRepo struct {
-	LogMakes        []event_triggered.TransferModel
+type MockEventRepo struct {
+	TransferLogs    []event_triggered.TransferModel
+	ApprovalLogs    []event_triggered.ApprovalModel
 	VulcanizeLogIDs []int64
 }
 
-func (molr *MockTransferRepo) Create(offerModel event_triggered.TransferModel, vulcanizeLogId int64) error {
-	molr.LogMakes = append(molr.LogMakes, offerModel)
+func (molr *MockEventRepo) CreateTransfer(transferModel event_triggered.TransferModel, vulcanizeLogId int64) error {
+	molr.TransferLogs = append(molr.TransferLogs, transferModel)
 	molr.VulcanizeLogIDs = append(molr.VulcanizeLogIDs, vulcanizeLogId)
 	return nil
 }
 
-type MockApprovalRepo struct {
-	LogKills        []event_triggered.ApprovalModel
-	VulcanizeLogIDs []int64
-}
-
-func (molk *MockApprovalRepo) Create(model event_triggered.ApprovalModel, vulcanizeLogID int64) error {
-	molk.LogKills = append(molk.LogKills, model)
+func (molk *MockEventRepo) CreateApproval(approvalModel event_triggered.ApprovalModel, vulcanizeLogID int64) error {
+	molk.ApprovalLogs = append(molk.ApprovalLogs, approvalModel)
 	molk.VulcanizeLogIDs = append(molk.VulcanizeLogIDs, vulcanizeLogID)
 	return nil
 }
