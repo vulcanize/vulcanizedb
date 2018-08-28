@@ -16,15 +16,14 @@ package frob
 
 import (
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type FrobEntity struct {
-	Ilk [32]byte
-	Lad common.Address
-	Gem *big.Int
-	Ink *big.Int
-	Art *big.Int
-	Era *big.Int
+	Ilk  [32]byte
+	Lad  [32]byte
+	Ink  *big.Int
+	Art  *big.Int
+	Dink *big.Int
+	Dart *big.Int
+	IArt *big.Int
 }

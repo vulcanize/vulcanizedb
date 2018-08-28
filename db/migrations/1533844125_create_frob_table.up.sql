@@ -4,9 +4,10 @@ CREATE TABLE maker.frob (
   tx_idx    INTEGER,
   ilk       bytea,
   lad       bytea,
-  gem       NUMERIC,
+  dink      NUMERIC,
+  dart      NUMERIC,
   ink       NUMERIC,
   art       NUMERIC,
-  era       NUMERIC,
+  iart       NUMERIC,
   UNIQUE (header_id, tx_idx)
 );

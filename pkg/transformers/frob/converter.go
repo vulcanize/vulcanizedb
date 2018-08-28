@@ -44,11 +44,12 @@ func (FrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog
 
 func (FrobConverter) ToModel(frob FrobEntity) FrobModel {
 	return FrobModel{
-		Ilk: frob.Ilk[:],
-		Lad: frob.Lad[:],
-		Gem: frob.Gem.String(),
-		Ink: frob.Ink.String(),
-		Art: frob.Art.String(),
-		Era: frob.Era.String(),
+		Ilk:  frob.Ilk[:],
+		Lad:  frob.Lad[:],
+		Dink: frob.Dink.String(),
+		Dart: frob.Dart.String(),
+		Ink:  frob.Ink.String(),
+		Art:  frob.Art.String(),
+		IArt: frob.IArt.String(),
 	}
 }

@@ -37,7 +37,6 @@ var _ = Describe("FlipKick Converter", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(entity.Id).To(Equal(test_data.FlipKickEntity.Id))
-			Expect(entity.Mom).To(Equal(test_data.FlipKickEntity.Mom))
 			Expect(entity.Vat).To(Equal(test_data.FlipKickEntity.Vat))
 			Expect(entity.Ilk).To(Equal(test_data.FlipKickEntity.Ilk))
 			Expect(entity.Lot).To(Equal(test_data.FlipKickEntity.Lot))
@@ -88,7 +87,6 @@ var _ = Describe("FlipKick Converter", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(model.Id).To(Equal("1"))
-			Expect(model.Mom).To(Equal(emptyAddressHex))
 			Expect(model.Vat).To(Equal(emptyAddressHex))
 			Expect(model.Ilk).To(Equal(emptyByteArrayHex))
 			Expect(model.Lot).To(Equal(emptyString))

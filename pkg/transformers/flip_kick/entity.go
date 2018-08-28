@@ -23,7 +23,6 @@ import (
 
 type FlipKickEntity struct {
 	Id  *big.Int
-	Mom common.Address
 	Vat common.Address
 	Ilk [32]byte
 	Lot *big.Int

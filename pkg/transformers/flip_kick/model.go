@@ -18,7 +18,6 @@ import "time"
 
 type FlipKickModel struct {
 	Id  string
-	Mom string
 	Vat string
 	Ilk string
 	Lot string

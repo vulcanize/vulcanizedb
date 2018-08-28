@@ -42,7 +42,7 @@ var _ = Describe("Frob repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, era, gem, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbFrob).To(Equal(test_data.FrobModel))
 		})
@@ -79,7 +79,7 @@ var _ = Describe("Frob repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, era, gem, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, iart, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

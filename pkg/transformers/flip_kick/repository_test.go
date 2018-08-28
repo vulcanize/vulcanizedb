@@ -65,7 +65,6 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.HeaderId).To(Equal(headerId))
 			Expect(dbResult.Id).To(Equal(flipKick.Id))
-			Expect(dbResult.Mom).To(Equal(flipKick.Mom))
 			Expect(dbResult.Vat).To(Equal(flipKick.Vat))
 			Expect(dbResult.Ilk).To(Equal(flipKick.Ilk))
 			Expect(dbResult.Lot).To(Equal(flipKick.Lot))

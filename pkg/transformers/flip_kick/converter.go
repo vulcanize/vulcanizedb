@@ -61,7 +61,6 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	}
 
 	id := flipKick.Id.String()
-	mom := strings.ToLower(flipKick.Mom.String())
 	vat := strings.ToLower(flipKick.Vat.String())
 	ilk := strings.ToLower(common.ToHex(flipKick.Ilk[:]))
 	lot := utilities.ConvertNilToEmptyString(flipKick.Lot.String())
@@ -82,7 +81,6 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 
 	return FlipKickModel{
 		Id:  id,
-		Mom: mom,
 		Vat: vat,
 		Ilk: ilk,
 		Lot: lot,
