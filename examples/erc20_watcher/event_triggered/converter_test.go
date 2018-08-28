@@ -88,7 +88,7 @@ var approvalEvent = core.WatchedEvent{
 	Address:     constants.DaiContractAddress,
 	TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 	Index:       110,
-	Topic0:      constants.TransferEventSignature,
+	Topic0:      constants.ApprovalEventSignature,
 	Topic1:      "0x000000000000000000000000000000000000000000000000000000000000af21",
 	Topic2:      "0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
 	Topic3:      "",

@@ -17,6 +17,8 @@ package constants
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"log"
 )
@@ -53,3 +55,21 @@ func init() {
 // Hashed event signatures
 var TransferEventSignature = helpers.GenerateSignature("Transfer(address,address,uint)")
 var ApprovalEventSignature = helpers.GenerateSignature("Approval(address,address,uint)")
+
+// Filters
+var DaiFilters = []filters.LogFilter{
+	{
+		Name:      "Transfers",
+		FromBlock: 0,
+		ToBlock:   -1,
+		Address:   DaiContractAddress,
+		Topics:    core.Topics{TransferEventSignature},
+	},
+	{
+		Name:      "Approvals",
+		FromBlock: 0,
+		ToBlock:   -1,
+		Address:   DaiContractAddress,
+		Topics:    core.Topics{ApprovalEventSignature},
+	},
+}

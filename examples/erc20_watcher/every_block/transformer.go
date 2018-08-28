@@ -125,7 +125,7 @@ func (t Transformer) Execute() error {
 
 	// Retrieve all token holder addresses for the given contract configuration
 
-	tokenHolderAddresses, err := t.Retriever.RetrieveContractAssociatedAddresses()
+	tokenHolderAddresses, err := t.Retriever.RetrieveTokenHolderAddresses()
 	if err != nil {
 		return newTransformerError(err, t.Config.FirstBlock, FetchingTokenAddressesError)
 	}
