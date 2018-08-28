@@ -22,6 +22,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// Converter converts a raw event log into its corresponding entity
+// and can subsequently convert the entity into a model
+
 type ERC20ConverterInterface interface {
 	ToTransferEntity(watchedEvent core.WatchedEvent) (*TransferEntity, error)
 	ToTransferModel(entity TransferEntity) TransferModel
