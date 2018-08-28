@@ -30,10 +30,10 @@ type Repository struct {
 func (repository Repository) CreateTransfer(transferModel TransferModel, vulcanizeLogId int64) error {
 	_, err := repository.DB.Exec(
 
-		`INSERT INTO TRANSFERS (vulcanize_log_id, token_address, to, from, tokens, block, tx)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO token_transfers (vulcanize_log_id, token_name, token_address, to_address, from_address, tokens, block, tx)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 ON CONFLICT (vulcanize_log_id) DO NOTHING`,
-		vulcanizeLogId, transferModel.TokenAddress, transferModel.To, transferModel.From, transferModel.Tokens, transferModel.Block, transferModel.TxHash)
+		vulcanizeLogId, transferModel.TokenName, transferModel.TokenAddress, transferModel.To, transferModel.From, transferModel.Tokens, transferModel.Block, transferModel.TxHash)
 
 	if err != nil {
 		return err
@@ -45,10 +45,10 @@ func (repository Repository) CreateTransfer(transferModel TransferModel, vulcani
 func (repository Repository) CreateApproval(approvalModel ApprovalModel, vulcanizeLogId int64) error {
 	_, err := repository.DB.Exec(
 
-		`INSERT INTO APPROVALS (vulcanize_log_id, token_address, token_owner, token_spender, tokens, block, tx)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO token_approvals (vulcanize_log_id, token_name, token_address, owner, spender, tokens, block, tx)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 ON CONFLICT (vulcanize_log_id) DO NOTHING`,
-		vulcanizeLogId, approvalModel.TokenAddress, approvalModel.Owner, approvalModel.Spender, approvalModel.Tokens, approvalModel.Block, approvalModel.TxHash)
+		vulcanizeLogId, approvalModel.TokenName, approvalModel.TokenAddress, approvalModel.Owner, approvalModel.Spender, approvalModel.Tokens, approvalModel.Block, approvalModel.TxHash)
 
 	if err != nil {
 		return err

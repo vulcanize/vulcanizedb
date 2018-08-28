@@ -15,21 +15,21 @@
 package event_triggered
 
 type TransferModel struct {
-	TokenName    string
-	TokenAddress string
-	To           string
-	From         string
-	Tokens       string
-	Block        int64
-	TxHash       string
+	TokenName    string `db:"token_name"`
+	TokenAddress string `db:"token_address"`
+	To           string `db:"to_address"`
+	From         string `db:"from_address"`
+	Tokens       string `db:"tokens"`
+	Block        int64  `db:"block"`
+	TxHash       string `db:"tx"`
 }
 
 type ApprovalModel struct {
-	TokenName    string
-	TokenAddress string
-	Owner        string
-	Spender      string
-	Tokens       string
-	Block        int64
-	TxHash       string
+	TokenName    string `db:"token_name"`
+	TokenAddress string `db:"token_address"`
+	Owner        string `db:"owner"`
+	Spender      string `db:"spender"`
+	Tokens       string `db:"tokens"`
+	Block        int64  `db:"block"`
+	TxHash       string `db:"tx"`
 }
