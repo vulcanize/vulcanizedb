@@ -93,7 +93,7 @@ var _ = Describe("Tend Transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterContract).To(Equal(tend.TendConfig.ContractAddresses))
+		Expect(converter.ConverterContract).To(Equal(tend.TendConfig.ContractAddress))
 		Expect(converter.ConverterAbi).To(Equal(tend.TendConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.TendLogNote}))
 	})
