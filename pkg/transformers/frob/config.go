@@ -17,7 +17,7 @@ package frob
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var FrobConfig = shared.TransformerConfig{
-	ContractAddresses:   "0xff3f2400f1600f3f493a9a92704a29b96795af1a", //this is a temporary address deployed locally
+	ContractAddress:     "0xff3f2400f1600f3f493a9a92704a29b96795af1a", //this is a temporary address deployed locally
 	ContractAbi:         FrobABI,
 	Topics:              []string{FrobEventSignature},
 	StartingBlockNumber: 0,

@@ -59,14 +59,14 @@ func (b BiteTransformer) Execute() error {
 	}
 
 	for _, header := range missingHeaders {
-		ethLogs, err := b.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
+		ethLogs, err := b.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 		if err != nil {
 			log.Println("Error fetching matching logs:", err)
 			return err
 		}
 
 		for _, ethLog := range ethLogs {
-			entity, err := b.Converter.ToEntity(config.ContractAddresses, config.ContractAbi, ethLog)
+			entity, err := b.Converter.ToEntity(config.ContractAddress, config.ContractAbi, ethLog)
 			model, err := b.Converter.ToModel(entity)
 			if err != nil {
 				log.Println("Error converting logs:", err)

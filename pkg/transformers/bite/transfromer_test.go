@@ -53,7 +53,7 @@ var _ = Describe("Bite Transformer", func() {
 		}
 
 		testConfig = shared.TransformerConfig{
-			ContractAddresses:   "0x12345",
+			ContractAddress:     "0x12345",
 			ContractAbi:         "test abi",
 			Topics:              []string{shared.BiteSignature},
 			StartingBlockNumber: blockNumber1,
@@ -85,7 +85,7 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber1, blockNumber2}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedContractAddress).To(Equal(bite.BiteConfig.ContractAddresses))
+		Expect(fetcher.FetchedContractAddress).To(Equal(bite.BiteConfig.ContractAddress))
 	})
 
 	It("returns an error if fetching logs fails", func() {
@@ -103,7 +103,7 @@ var _ = Describe("Bite Transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterContract).To(Equal(bite.BiteConfig.ContractAddresses))
+		Expect(converter.ConverterContract).To(Equal(bite.BiteConfig.ContractAddress))
 		Expect(converter.ConverterAbi).To(Equal(bite.BiteConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.EthBiteLog}))
 	})

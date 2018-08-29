@@ -1,56 +1,42 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package frob_test
+package pit_file_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	frob_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/frob"
+	pit_file_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file"
 )
 
-var _ = Describe("Frob transformer", func() {
+var _ = Describe("Pit file transformer", func() {
 	It("gets missing headers for block numbers specified in config", func() {
-		repository := &frob_mocks.MockFrobRepository{}
-		transformer := frob.FrobTransformer{
-			Config:     frob.FrobConfig,
+		repository := &pit_file_mocks.MockPitFileRepository{}
+		transformer := pit_file.PitFileTransformer{
+			Config:     pit_file.PitFileConfig,
 			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &frob_mocks.MockFrobConverter{},
+			Converter:  &pit_file_mocks.MockPitFileConverter{},
 			Repository: repository,
 		}
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(frob.FrobConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(frob.FrobConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(pit_file.PitFileConfig.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(pit_file.PitFileConfig.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &frob_mocks.MockFrobRepository{}
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &frob_mocks.MockFrobConverter{},
+			Converter:  &pit_file_mocks.MockPitFileConverter{},
 			Repository: repository,
 		}
 
@@ -62,11 +48,11 @@ var _ = Describe("Frob transformer", func() {
 
 	It("fetches logs for missing headers", func() {
 		fetcher := &mocks.MockLogFetcher{}
-		repository := &frob_mocks.MockFrobRepository{}
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
-			Converter:  &frob_mocks.MockFrobConverter{},
+			Converter:  &pit_file_mocks.MockPitFileConverter{},
 			Repository: repository,
 		}
 
@@ -74,18 +60,18 @@ var _ = Describe("Frob transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
-		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(frob.FrobEventSignature)}}))
+		Expect(fetcher.FetchedContractAddress).To(Equal(pit_file.PitFileConfig.ContractAddress))
+		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.PitFileSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
 		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &frob_mocks.MockFrobRepository{}
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
-			Converter:  &frob_mocks.MockFrobConverter{},
+			Converter:  &pit_file_mocks.MockPitFileConverter{},
 			Repository: repository,
 		}
 
@@ -96,12 +82,12 @@ var _ = Describe("Frob transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &frob_mocks.MockFrobConverter{}
+		converter := &pit_file_mocks.MockPitFileConverter{}
 		fetcher := &mocks.MockLogFetcher{}
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
-		repository := &frob_mocks.MockFrobRepository{}
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileLog})
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
 			Converter:  converter,
 			Repository: repository,
@@ -110,20 +96,19 @@ var _ = Describe("Frob transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
-		Expect(converter.PassedContractABI).To(Equal(frob.FrobConfig.ContractAbi))
-		Expect(converter.PassedLog).To(Equal(test_data.EthFrobLog))
-		Expect(converter.PassedEntity).To(Equal(test_data.FrobEntity))
+		Expect(converter.PassedContractAddress).To(Equal(pit_file.PitFileConfig.ContractAddress))
+		Expect(converter.PassedContractABI).To(Equal(pit_file.PitFileConfig.ContractAbi))
+		Expect(converter.PassedLog).To(Equal(test_data.EthPitFileLog))
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &frob_mocks.MockFrobConverter{}
+		converter := &pit_file_mocks.MockPitFileConverter{}
 		converter.SetConverterError(fakes.FakeError)
 		fetcher := &mocks.MockLogFetcher{}
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
-		repository := &frob_mocks.MockFrobRepository{}
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileLog})
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
 			Converter:  converter,
 			Repository: repository,
@@ -135,14 +120,14 @@ var _ = Describe("Frob transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("persists frob model", func() {
-		converter := &frob_mocks.MockFrobConverter{}
+	It("persists pit file model", func() {
+		converter := &pit_file_mocks.MockPitFileConverter{}
 		fetcher := &mocks.MockLogFetcher{}
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
-		repository := &frob_mocks.MockFrobRepository{}
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileLog})
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
 		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
 			Converter:  converter,
 			Repository: repository,
@@ -152,18 +137,18 @@ var _ = Describe("Frob transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedTransactionIndex).To(Equal(test_data.EthFrobLog.TxIndex))
-		Expect(repository.PassedFrobModel).To(Equal(test_data.FrobModel))
+		Expect(repository.PassedTransactionIndex).To(Equal(test_data.EthPitFileLog.TxIndex))
+		Expect(repository.PassedModel).To(Equal(test_data.PitFileModel))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &frob_mocks.MockFrobConverter{}
+		converter := &pit_file_mocks.MockPitFileConverter{}
 		fetcher := &mocks.MockLogFetcher{}
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
-		repository := &frob_mocks.MockFrobRepository{}
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileLog})
+		repository := &pit_file_mocks.MockPitFileRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := frob.FrobTransformer{
+		transformer := pit_file.PitFileTransformer{
 			Fetcher:    fetcher,
 			Converter:  converter,
 			Repository: repository,

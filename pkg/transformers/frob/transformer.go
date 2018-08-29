@@ -52,12 +52,12 @@ func (transformer FrobTransformer) Execute() error {
 	}
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(FrobEventSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddresses, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddress, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
 		for _, log := range matchingLogs {
-			entity, err := transformer.Converter.ToEntity(FrobConfig.ContractAddresses, FrobConfig.ContractAbi, log)
+			entity, err := transformer.Converter.ToEntity(FrobConfig.ContractAddress, FrobConfig.ContractAbi, log)
 			if err != nil {
 				return err
 			}
