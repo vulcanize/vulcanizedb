@@ -124,14 +124,15 @@ ALTER SEQUENCE maker.flip_kick_db_id_seq OWNED BY maker.flip_kick.db_id;
 CREATE TABLE maker.frob (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    tx_idx integer,
     ilk bytea,
-    lad bytea,
+    urn bytea,
     dink numeric,
     dart numeric,
     ink numeric,
     art numeric,
-    iart numeric
+    iart numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
 );
 
 

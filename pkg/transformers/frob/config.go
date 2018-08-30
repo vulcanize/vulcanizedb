@@ -18,8 +18,8 @@ import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var FrobConfig = shared.TransformerConfig{
 	ContractAddress:     "0xff3f2400f1600f3f493a9a92704a29b96795af1a", //this is a temporary address deployed locally
-	ContractAbi:         FrobABI,
-	Topics:              []string{FrobEventSignature},
+	ContractAbi:         shared.PitABI,
+	Topics:              []string{shared.FrobSignature},
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   100,
 }

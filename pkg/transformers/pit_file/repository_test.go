@@ -31,7 +31,6 @@ var _ = Describe("Pit file repository", func() {
 			Expect(dbPitFile.What).To(Equal(test_data.PitFileModel.What))
 			Expect(dbPitFile.Risk).To(Equal(test_data.PitFileModel.Risk))
 			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.PitFileModel.TransactionIndex))
-			// The raw bytes scanned out of the DB are compressed (missing whitespace), such that they don't strictly equal the input bytes
 			Expect(dbPitFile.Raw).To(MatchJSON(test_data.PitFileModel.Raw))
 		})
 

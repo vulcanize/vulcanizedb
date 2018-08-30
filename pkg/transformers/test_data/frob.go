@@ -15,6 +15,7 @@
 package test_data
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -59,21 +60,26 @@ var EthFrobLog = types.Log{
 }
 
 var FrobEntity = frob.FrobEntity{
-	Ilk:  ilk,
-	Lad:  frobLad,
-	Dink: dink,
-	Dart: dart,
-	Ink:  ink,
-	Art:  art,
-	IArt: iArt,
+	Ilk:              ilk,
+	Urn:              frobLad,
+	Ink:              ink,
+	Art:              art,
+	Dink:             dink,
+	Dart:             dart,
+	IArt:             iArt,
+	TransactionIndex: EthFrobLog.TxIndex,
+	Raw:              EthFrobLog,
 }
 
+var rawFrobLog, _ = json.Marshal(EthFrobLog)
 var FrobModel = frob.FrobModel{
-	Ilk:  ilk[:],
-	Lad:  frobLad[:],
-	Dink: dink.String(),
-	Dart: dart.String(),
-	Ink:  ink.String(),
-	Art:  art.String(),
-	IArt: iArt.String(),
+	Ilk:              ilk[:],
+	Urn:              frobLad[:],
+	Ink:              ink.String(),
+	Art:              art.String(),
+	Dink:             dink.String(),
+	Dart:             dart.String(),
+	IArt:             iArt.String(),
+	TransactionIndex: EthFrobLog.TxIndex,
+	Raw:              rawFrobLog,
 }
