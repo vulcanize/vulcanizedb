@@ -48,6 +48,7 @@ func (BiteConverter) ToEntity(contractAddress string, contractAbi string, ethLog
 	}
 
 	entity.Raw = ethLog
+	entity.TransactionIndex = ethLog.TxIndex
 
 	return entity, nil
 }

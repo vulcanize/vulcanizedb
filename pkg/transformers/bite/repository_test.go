@@ -64,7 +64,20 @@ var _ = Describe("Bite repository", func() {
 			err = biteRepository.Create(headerID, test_data.BiteModel)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = biteRepository.Create(headerID, test_data.BiteModel)
+			var anotherBiteModel = bite.BiteModel{
+				Id:  			  "11",
+				Ilk:              test_data.BiteModel.Ilk,
+				Lad:              test_data.BiteModel.Lad,
+				Ink:              test_data.BiteModel.Ink,
+				Art:              test_data.BiteModel.Art,
+				Tab:              test_data.BiteModel.Tab,
+				Flip:             test_data.BiteModel.Flip,
+				IArt:             test_data.BiteModel.IArt,
+				TransactionIndex: test_data.BiteModel.TransactionIndex,
+				Raw:              test_data.BiteModel.Raw,
+			}
+
+			err = biteRepository.Create(headerID, anotherBiteModel)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
