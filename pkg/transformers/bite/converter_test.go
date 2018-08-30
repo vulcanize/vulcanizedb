@@ -53,16 +53,9 @@ var _ = Describe("Bite Converter", func() {
 
 	Describe("ToModel", func() {
 		var emptyEntity = bite.BiteEntity{}
-		var emptyRawLog string
 
 		BeforeEach(func() {
 			emptyEntity.Id = big.NewInt(1)
-			var emptyRawLogJson, err = json.Marshal(types.Log{})
-			Expect(err).NotTo(HaveOccurred())
-
-			emptyRawLogJson, err = json.Marshal(types.Log{})
-			Expect(err).NotTo(HaveOccurred())
-			emptyRawLog = string(emptyRawLogJson)
 		})
 
 		It("converts an Entity to a Model", func() {
