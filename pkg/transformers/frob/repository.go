@@ -20,7 +20,7 @@ import (
 )
 
 type Repository interface {
-	Create(headerID int64, transactionIndex uint, model FrobModel) error
+	Create(headerID int64, model FrobModel) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
@@ -32,10 +32,10 @@ func NewFrobRepository(db *postgres.DB) FrobRepository {
 	return FrobRepository{db: db}
 }
 
-func (repository FrobRepository) Create(headerID int64, transactionIndex uint, model FrobModel) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.frob (header_id, tx_idx, art, dart, dink, iart, ilk, ink, lad)
-		VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7, $8::NUMERIC, $9)`,
-		headerID, transactionIndex, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Lad)
+func (repository FrobRepository) Create(headerID int64, model FrobModel) error {
+	_, err := repository.db.Exec(`INSERT INTO maker.frob (header_id, art, dart, dink, iart, ilk, ink, urn, raw_log, tx_idx)
+		VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8, $9, $10)`,
+		headerID, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Urn, model.Raw, model.TransactionIndex)
 	return err
 }
 

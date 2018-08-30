@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
@@ -26,7 +27,7 @@ var _ = Describe("Frob converter", func() {
 	It("converts a log to an entity", func() {
 		converter := frob.FrobConverter{}
 
-		entity, err := converter.ToEntity(test_data.TemporaryFrobAddress, frob.FrobABI, test_data.EthFrobLog)
+		entity, err := converter.ToEntity(test_data.TemporaryFrobAddress, shared.PitABI, test_data.EthFrobLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(entity).To(Equal(test_data.FrobEntity))
@@ -35,8 +36,9 @@ var _ = Describe("Frob converter", func() {
 	It("converts an entity to a model", func() {
 		converter := frob.FrobConverter{}
 
-		model := converter.ToModel(test_data.FrobEntity)
+		model, err := converter.ToModel(test_data.FrobEntity)
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.FrobModel))
 	})
 })

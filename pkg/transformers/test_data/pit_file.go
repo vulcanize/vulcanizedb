@@ -30,12 +30,11 @@ var EthPitFileLog = types.Log{
 	Removed:     false,
 }
 
-var raw, _ = json.Marshal(EthPitFileLog)
-
+var rawPitFileLog, _ = json.Marshal(EthPitFileLog)
 var PitFileModel = pit_file.PitFileModel{
 	Ilk:              "fake ilk",
 	What:             "spot",
 	Risk:             big.NewInt(123).String(),
 	TransactionIndex: EthPitFileLog.TxIndex,
-	Raw:              raw,
+	Raw:              rawPitFileLog,
 }

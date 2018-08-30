@@ -51,7 +51,7 @@ func (transformer FrobTransformer) Execute() error {
 		return err
 	}
 	for _, header := range missingHeaders {
-		topics := [][]common.Hash{{common.HexToHash(FrobEventSignature)}}
+		topics := [][]common.Hash{{common.HexToHash(shared.FrobSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddress, topics, header.BlockNumber)
 		if err != nil {
 			return err
@@ -61,8 +61,11 @@ func (transformer FrobTransformer) Execute() error {
 			if err != nil {
 				return err
 			}
-			model := transformer.Converter.ToModel(entity)
-			err = transformer.Repository.Create(header.Id, log.TxIndex, model)
+			model, err := transformer.Converter.ToModel(entity)
+			if err != nil {
+				return err
+			}
+			err = transformer.Repository.Create(header.Id, model)
 			if err != nil {
 				return err
 			}

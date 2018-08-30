@@ -30,56 +30,61 @@ import (
 var _ = Describe("Frob repository", func() {
 	Describe("Create", func() {
 		It("adds a frob", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
 			frobRepository := frob.NewFrobRepository(db)
 
-			err = frobRepository.Create(headerID, 123, test_data.FrobModel)
+			err = frobRepository.Create(headerID, test_data.FrobModel)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, urn, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbFrob).To(Equal(test_data.FrobModel))
+			Expect(dbFrob.Ilk).To(Equal(test_data.FrobModel.Ilk))
+			Expect(dbFrob.Urn).To(Equal(test_data.FrobModel.Urn))
+			Expect(dbFrob.Ink).To(Equal(test_data.FrobModel.Ink))
+			Expect(dbFrob.Art).To(Equal(test_data.FrobModel.Art))
+			Expect(dbFrob.Dink).To(Equal(test_data.FrobModel.Dink))
+			Expect(dbFrob.Dart).To(Equal(test_data.FrobModel.Dart))
+			Expect(dbFrob.IArt).To(Equal(test_data.FrobModel.IArt))
+			Expect(dbFrob.TransactionIndex).To(Equal(test_data.FrobModel.TransactionIndex))
+			Expect(dbFrob.Raw).To(MatchJSON(test_data.FrobModel.Raw))
 		})
 
 		It("does not duplicate frob events", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
 			frobRepository := frob.NewFrobRepository(db)
-			err = frobRepository.Create(headerID, 123, test_data.FrobModel)
+			err = frobRepository.Create(headerID, test_data.FrobModel)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = frobRepository.Create(headerID, 123, test_data.FrobModel)
+			err = frobRepository.Create(headerID, test_data.FrobModel)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes frob if corresponding header is deleted", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
 			frobRepository := frob.NewFrobRepository(db)
-			err = frobRepository.Create(headerID, 123, test_data.FrobModel)
+			err = frobRepository.Create(headerID, test_data.FrobModel)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, iart, ilk, ink, lad FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, iart, ilk, ink, urn, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
@@ -87,8 +92,7 @@ var _ = Describe("Frob repository", func() {
 
 	Describe("MissingHeaders", func() {
 		It("returns headers with no associated frob event", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			startingBlockNumber := int64(1)
@@ -102,7 +106,7 @@ var _ = Describe("Frob repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 			frobRepository := frob.NewFrobRepository(db)
-			err := frobRepository.Create(headerIDs[1], 123, test_data.FrobModel)
+			err := frobRepository.Create(headerIDs[1], test_data.FrobModel)
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := frobRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
@@ -114,13 +118,11 @@ var _ = Describe("Frob repository", func() {
 		})
 
 		It("only returns headers associated with the current node", func() {
-			nodeOne := core.Node{}
-			db := test_config.NewTestDB(nodeOne)
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			blockNumbers := []int64{1, 2, 3}
 			headerRepository := repositories.NewHeaderRepository(db)
-			nodeTwo := core.Node{ID: "second"}
-			dbTwo := test_config.NewTestDB(nodeTwo)
+			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			var headerIDs []int64
 			for _, n := range blockNumbers {
@@ -132,7 +134,7 @@ var _ = Describe("Frob repository", func() {
 			}
 			frobRepository := frob.NewFrobRepository(db)
 			frobRepositoryTwo := frob.NewFrobRepository(dbTwo)
-			err := frobRepository.Create(headerIDs[0], 0, test_data.FrobModel)
+			err := frobRepository.Create(headerIDs[0], test_data.FrobModel)
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := frobRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
