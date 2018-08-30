@@ -17,14 +17,15 @@
 package bite_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	"math/big"
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"math/big"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Bite Converter", func() {
@@ -42,6 +43,8 @@ var _ = Describe("Bite Converter", func() {
 			Expect(entity.Tab).To(Equal(test_data.BiteEntity.Tab))
 			Expect(entity.Flip).To(Equal(test_data.BiteEntity.Flip))
 			Expect(entity.IArt).To(Equal(test_data.BiteEntity.IArt))
+			Expect(entity.TransactionIndex).To(Equal(test_data.BiteEntity.TransactionIndex))
+			Expect(entity.Raw).To(Equal(test_data.BiteEntity.Raw))
 		})
 
 		It("returns an error if converting log to entity fails", func() {
@@ -63,10 +66,10 @@ var _ = Describe("Bite Converter", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(model).To(Equal(test_data.BiteModel))
+			Expect(model.TransactionIndex).To(Equal(test_data.BiteModel.TransactionIndex))
 		})
 
 		It("handles nil values", func() {
-			emptyEntity.Id = big.NewInt(1)
 			emptyLog, err := json.Marshal(types.Log{})
 			Expect(err).NotTo(HaveOccurred())
 			expectedModel := bite.BiteModel{

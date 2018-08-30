@@ -702,6 +702,14 @@ ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT n
 
 
 --
+-- Name: bite bite_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.bite
+    ADD CONSTRAINT bite_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
 -- Name: bite bite_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
