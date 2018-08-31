@@ -17,8 +17,8 @@
 package bite_test
 
 import (
-	"math/big"
 	"encoding/json"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
