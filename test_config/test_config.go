@@ -2,10 +2,10 @@ package test_config
 
 import (
 	"log"
-
 	"os"
 
 	"github.com/spf13/viper"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"

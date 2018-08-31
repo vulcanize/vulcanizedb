@@ -15,8 +15,12 @@
 package every_block_test
 
 import (
+	"math/big"
+	"strconv"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
@@ -25,8 +29,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"math/big"
-	"strconv"
 )
 
 func setLastBlockOnChain(blockChain *fakes.MockBlockChain, blockNumber int64) {

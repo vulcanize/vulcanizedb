@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
@@ -27,7 +28,7 @@ import (
 
 var expectedTransferModel = event_triggered.TransferModel{
 	TokenName:    "Dai",
-	TokenAddress: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+	TokenAddress: constants.DaiContractAddress,
 	To:           "0x09BbBBE21a5975cAc061D82f7b843bCE061BA391",
 	From:         "0x000000000000000000000000000000000000Af21",
 	Tokens:       "1097077688018008265106216665536940668749033598146",
@@ -37,7 +38,7 @@ var expectedTransferModel = event_triggered.TransferModel{
 
 var expectedTransferEntity = event_triggered.TransferEntity{
 	TokenName:    "Dai",
-	TokenAddress: common.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"),
+	TokenAddress: common.HexToAddress(constants.DaiContractAddress),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
 	Dst:          common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
 	Wad:          helpers.BigFromString("1097077688018008265106216665536940668749033598146"),
@@ -47,7 +48,7 @@ var expectedTransferEntity = event_triggered.TransferEntity{
 
 var expectedApprovalModel = event_triggered.ApprovalModel{
 	TokenName:    "Dai",
-	TokenAddress: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+	TokenAddress: constants.DaiContractAddress,
 	Owner:        "0x000000000000000000000000000000000000Af21",
 	Spender:      "0x09BbBBE21a5975cAc061D82f7b843bCE061BA391",
 	Tokens:       "1097077688018008265106216665536940668749033598146",
@@ -57,7 +58,7 @@ var expectedApprovalModel = event_triggered.ApprovalModel{
 
 var expectedApprovalEntity = event_triggered.ApprovalEntity{
 	TokenName:    "Dai",
-	TokenAddress: common.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"),
+	TokenAddress: common.HexToAddress(constants.DaiContractAddress),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
 	Guy:          common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
 	Wad:          helpers.BigFromString("1097077688018008265106216665536940668749033598146"),
@@ -67,12 +68,12 @@ var expectedApprovalEntity = event_triggered.ApprovalEntity{
 
 var transferEvent = core.WatchedEvent{
 	LogID:       1,
-	Name:        "Transfer",
+	Name:        constants.TransferEvent.String(),
 	BlockNumber: 5488076,
 	Address:     constants.DaiContractAddress,
 	TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 	Index:       110,
-	Topic0:      constants.TransferEventSignature,
+	Topic0:      constants.TransferEvent.Signature(),
 	Topic1:      "0x000000000000000000000000000000000000000000000000000000000000af21",
 	Topic2:      "0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
 	Topic3:      "",
@@ -81,12 +82,12 @@ var transferEvent = core.WatchedEvent{
 
 var approvalEvent = core.WatchedEvent{
 	LogID:       1,
-	Name:        "Approval",
+	Name:        constants.ApprovalEvent.String(),
 	BlockNumber: 5488076,
 	Address:     constants.DaiContractAddress,
 	TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 	Index:       110,
-	Topic0:      constants.ApprovalEventSignature,
+	Topic0:      constants.ApprovalEvent.Signature(),
 	Topic1:      "0x000000000000000000000000000000000000000000000000000000000000af21",
 	Topic2:      "0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
 	Topic3:      "",
@@ -95,20 +96,19 @@ var approvalEvent = core.WatchedEvent{
 
 var _ = Describe("Transfer Converter", func() {
 
-	daiConverter := event_triggered.NewERC20Converter(generic.DaiConfig)
+	var daiConverter *event_triggered.ERC20Converter
+	var err error
+
+	BeforeEach(func() {
+		daiConverter, err = event_triggered.NewERC20Converter(generic.DaiConfig)
+		Expect(err).NotTo(HaveOccurred())
+	})
 
 	It("converts a watched transfer event into a TransferEntity", func() {
 
 		result, err := daiConverter.ToTransferEntity(transferEvent)
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(result.TokenName).To(Equal(expectedTransferEntity.TokenName))
-		Expect(result.TokenAddress).To(Equal(expectedTransferEntity.TokenAddress))
-		Expect(result.Dst).To(Equal(expectedTransferEntity.Dst))
-		Expect(result.Src).To(Equal(expectedTransferEntity.Src))
-		Expect(result.Wad).To(Equal(expectedTransferEntity.Wad))
-		Expect(result.Block).To(Equal(expectedTransferEntity.Block))
-		Expect(result.TxHash).To(Equal(expectedTransferEntity.TxHash))
+		Expect(result).To(Equal(&expectedTransferEntity))
 	})
 
 	It("converts a TransferEntity to an TransferModel", func() {
@@ -116,35 +116,27 @@ var _ = Describe("Transfer Converter", func() {
 		result, err := daiConverter.ToTransferEntity(transferEvent)
 		Expect(err).NotTo(HaveOccurred())
 
-		model := daiConverter.ToTransferModel(*result)
-
-		Expect(model.TokenName).To(Equal(expectedTransferModel.TokenName))
-		Expect(model.TokenAddress).To(Equal(expectedTransferModel.TokenAddress))
-		Expect(model.To).To(Equal(expectedTransferModel.To))
-		Expect(model.From).To(Equal(expectedTransferModel.From))
-		Expect(model.Tokens).To(Equal(expectedTransferModel.Tokens))
-		Expect(model.Block).To(Equal(expectedTransferModel.Block))
-		Expect(model.TxHash).To(Equal(expectedTransferModel.TxHash))
+		model := daiConverter.ToTransferModel(result)
+		Expect(model).To(Equal(&expectedTransferModel))
 	})
 
 })
 
 var _ = Describe("Approval Converter", func() {
 
-	daiConverter := event_triggered.NewERC20Converter(generic.DaiConfig)
+	var daiConverter *event_triggered.ERC20Converter
+	var err error
+
+	BeforeEach(func() {
+		daiConverter, err = event_triggered.NewERC20Converter(generic.DaiConfig)
+		Expect(err).NotTo(HaveOccurred())
+	})
 
 	It("converts a watched approval event into a ApprovalEntity", func() {
 
 		result, err := daiConverter.ToApprovalEntity(approvalEvent)
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(result.TokenName).To(Equal(expectedApprovalEntity.TokenName))
-		Expect(result.TokenAddress).To(Equal(expectedApprovalEntity.TokenAddress))
-		Expect(result.Src).To(Equal(expectedApprovalEntity.Src))
-		Expect(result.Guy).To(Equal(expectedApprovalEntity.Guy))
-		Expect(result.Wad).To(Equal(expectedApprovalEntity.Wad))
-		Expect(result.Block).To(Equal(expectedApprovalEntity.Block))
-		Expect(result.TxHash).To(Equal(expectedApprovalEntity.TxHash))
+		Expect(result).To(Equal(&expectedApprovalEntity))
 	})
 
 	It("converts a ApprovalEntity to an ApprovalModel", func() {
@@ -152,15 +144,8 @@ var _ = Describe("Approval Converter", func() {
 		result, err := daiConverter.ToApprovalEntity(approvalEvent)
 		Expect(err).NotTo(HaveOccurred())
 
-		model := daiConverter.ToApprovalModel(*result)
-
-		Expect(model.TokenName).To(Equal(expectedApprovalModel.TokenName))
-		Expect(model.TokenAddress).To(Equal(expectedApprovalModel.TokenAddress))
-		Expect(model.Owner).To(Equal(expectedApprovalModel.Owner))
-		Expect(model.Spender).To(Equal(expectedApprovalModel.Spender))
-		Expect(model.Tokens).To(Equal(expectedApprovalModel.Tokens))
-		Expect(model.Block).To(Equal(expectedApprovalModel.Block))
-		Expect(model.TxHash).To(Equal(expectedApprovalModel.TxHash))
+		model := daiConverter.ToApprovalModel(result)
+		Expect(model).To(Equal(&expectedApprovalModel))
 	})
 
 })

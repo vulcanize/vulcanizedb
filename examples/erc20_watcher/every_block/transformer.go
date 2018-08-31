@@ -16,23 +16,25 @@ package every_block
 
 import (
 	"fmt"
+	"log"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"log"
-	"math/big"
 )
 
-type Transformer struct {
+type ERC20Transformer struct {
 	Getter     ERC20GetterInterface
-	Repository ERC20RepositoryInterface
-	Retriever  generic.Retriever
+	Repository ERC20TokenDatastore
+	Retriever  generic.TokenHolderRetriever
 	Config     generic.ContractConfig
 }
 
-func (t *Transformer) SetConfiguration(config generic.ContractConfig) {
+func (t *ERC20Transformer) SetConfiguration(config generic.ContractConfig) {
 	t.Config = config
 }
 
@@ -43,8 +45,8 @@ type ERC20TokenTransformerInitializer struct {
 func (i ERC20TokenTransformerInitializer) NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
 	getter := NewGetter(blockchain)
 	repository := ERC20TokenRepository{DB: db}
-	retriever := generic.NewRetriever(db, i.Config.Address)
-	transformer := Transformer{
+	retriever := generic.NewTokenHolderRetriever(db, i.Config.Address)
+	transformer := ERC20Transformer{
 		Getter:     &getter,
 		Repository: &repository,
 		Retriever:  retriever,
@@ -81,7 +83,7 @@ func newTransformerError(err error, blockNumber int64, msg string) error {
 	return &e
 }
 
-func (t Transformer) Execute() error {
+func (t ERC20Transformer) Execute() error {
 	var upperBoundBlock int64
 	blockchain := t.Getter.GetBlockChain()
 	lastBlock := blockchain.LastBlock().Int64()

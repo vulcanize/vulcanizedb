@@ -15,8 +15,12 @@
 package test_helpers
 
 import (
+	"math/rand"
+	"time"
+
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -73,4 +77,53 @@ func CreateBlock(blockNumber int64, repository repositories.BlockRepository) (bl
 	Expect(err).NotTo(HaveOccurred())
 
 	return blockId
+}
+
+func SetupIntegrationDB(db *postgres.DB, logs []core.Log) *postgres.DB {
+
+	rand.Seed(time.Now().UnixNano())
+
+	db, err := postgres.NewDB(config.Database{
+		Hostname: "localhost",
+		Name:     "vulcanize_private",
+		Port:     5432,
+	}, core.Node{})
+	Expect(err).NotTo(HaveOccurred())
+
+	receiptRepository := repositories.ReceiptRepository{DB: db}
+	blockRepository := *repositories.NewBlockRepository(db)
+
+	blockNumber := rand.Int63()
+	blockId := CreateBlock(blockNumber, blockRepository)
+
+	receipt := core.Receipt{
+		Logs: logs,
+	}
+	receipts := []core.Receipt{receipt}
+
+	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
+	Expect(err).NotTo(HaveOccurred())
+
+	var vulcanizeLogIds []int64
+	err = db.Select(&vulcanizeLogIds, `SELECT id FROM logs`)
+	Expect(err).NotTo(HaveOccurred())
+
+	return db
+}
+
+func TearDownIntegrationDB(db *postgres.DB) *postgres.DB {
+
+	_, err := db.Exec(`DELETE FROM token_transfers`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = db.Exec(`DELETE FROM token_approvals`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = db.Exec(`DELETE FROM log_filters`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = db.Exec(`DELETE FROM logs`)
+	Expect(err).NotTo(HaveOccurred())
+
+	return db
 }

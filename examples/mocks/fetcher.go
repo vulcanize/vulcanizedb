@@ -17,10 +17,11 @@ package mocks
 import (
 	"errors"
 	"math/big"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"reflect"
 )
 
 type Fetcher struct {
