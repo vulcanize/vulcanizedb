@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
@@ -32,12 +32,12 @@ var logID2 = int64(100)
 var fakeWatchedEvents = []*core.WatchedEvent{
 	{
 		LogID:       logID1,
-		Name:        constants.TransferEvent.String(),
+		Name:        constants.BurnEvent.String(),
 		BlockNumber: blockID1,
-		Address:     constants.DaiContractAddress,
+		Address:     constants.TusdContractAddress,
 		TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 		Index:       110,
-		Topic0:      constants.TransferEvent.Signature(),
+		Topic0:      constants.BurnEvent.Signature(),
 		Topic1:      "0x000000000000000000000000000000000000000000000000000000000000af21",
 		Topic2:      "0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
 		Topic3:      "",
@@ -45,12 +45,12 @@ var fakeWatchedEvents = []*core.WatchedEvent{
 	},
 	{
 		LogID:       logID2,
-		Name:        constants.ApprovalEvent.String(),
+		Name:        constants.MintEvent.String(),
 		BlockNumber: blockID2,
-		Address:     constants.DaiContractAddress,
+		Address:     constants.TusdContractAddress,
 		TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 		Index:       110,
-		Topic0:      constants.ApprovalEvent.Signature(),
+		Topic0:      constants.MintEvent.Signature(),
 		Topic1:      "0x000000000000000000000000000000000000000000000000000000000000af21",
 		Topic2:      "0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
 		Topic3:      "",
@@ -63,7 +63,7 @@ var _ = Describe("Mock ERC20 transformer", func() {
 	var watchedEventsRepo mocks.MockWatchedEventsRepository
 	var mockEventRepo mocks.MockEventRepo
 	var filterRepo mocks.MockFilterRepository
-	var transformer event_triggered.ERC20EventTransformer
+	var transformer event_triggered.GenericTransformer
 
 	BeforeEach(func() {
 		mockERC20Converter = mocks.MockERC20Converter{}
@@ -72,7 +72,7 @@ var _ = Describe("Mock ERC20 transformer", func() {
 		mockEventRepo = mocks.MockEventRepo{}
 		filterRepo = mocks.MockFilterRepository{}
 
-		transformer = event_triggered.ERC20EventTransformer{
+		transformer = event_triggered.GenericTransformer{
 			Converter:              &mockERC20Converter,
 			WatchedEventRepository: &watchedEventsRepo,
 			FilterRepository:       filterRepo,
@@ -83,7 +83,7 @@ var _ = Describe("Mock ERC20 transformer", func() {
 	It("calls the watched events repo with correct filter", func() {
 		transformer.Execute()
 		Expect(len(watchedEventsRepo.Names)).To(Equal(2))
-		Expect(watchedEventsRepo.Names).To(ConsistOf([]string{constants.TransferEvent.String(), constants.ApprovalEvent.String()}))
+		Expect(watchedEventsRepo.Names).To(ConsistOf([]string{constants.BurnEvent.String(), constants.MintEvent.String()}))
 	})
 
 	It("calls the mock ERC20 converter with the watched events", func() {
@@ -92,19 +92,19 @@ var _ = Describe("Mock ERC20 transformer", func() {
 		Expect(mockERC20Converter.WatchedEvents).To(ConsistOf(fakeWatchedEvents))
 	})
 
-	It("converts a Transfer and Approval entity to their models", func() {
+	It("converts a Burn and Mint entity to their models", func() {
 		transformer.Execute()
-		Expect(len(mockERC20Converter.TransfersToConvert)).To(Equal(1))
-		Expect(mockERC20Converter.TransfersToConvert[0].Block).To(Equal(blockID1))
+		Expect(len(mockERC20Converter.BurnsToConvert)).To(Equal(1))
+		Expect(mockERC20Converter.BurnsToConvert[0].Block).To(Equal(blockID1))
 
-		Expect(len(mockERC20Converter.ApprovalsToConvert)).To(Equal(1))
-		Expect(mockERC20Converter.ApprovalsToConvert[0].Block).To(Equal(blockID2))
+		Expect(len(mockERC20Converter.MintsToConvert)).To(Equal(1))
+		Expect(mockERC20Converter.MintsToConvert[0].Block).To(Equal(blockID2))
 	})
 
-	It("persists Transfer and Approval data for each watched Transfer or Approval event", func() {
+	It("persists Burn and Mint data for each watched Burn or Mint event", func() {
 		transformer.Execute()
-		Expect(len(mockEventRepo.TransferLogs)).To(Equal(1))
-		Expect(len(mockEventRepo.ApprovalLogs)).To(Equal(1))
+		Expect(len(mockEventRepo.BurnLogs)).To(Equal(1))
+		Expect(len(mockEventRepo.MintLogs)).To(Equal(1))
 		Expect(mockEventRepo.VulcanizeLogIDs).To(ConsistOf(logID1, logID2))
 	})
 

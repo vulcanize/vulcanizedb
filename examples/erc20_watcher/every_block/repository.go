@@ -16,12 +16,13 @@ package every_block
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"log"
+
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 // Interface definition for a generic ERC20 token repository
-type ERC20RepositoryInterface interface {
+type ERC20TokenDatastore interface {
 	CreateSupply(supply TokenSupply) error
 	CreateBalance(balance TokenBalance) error
 	CreateAllowance(allowance TokenAllowance) error

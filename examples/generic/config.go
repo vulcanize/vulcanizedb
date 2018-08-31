@@ -21,6 +21,7 @@ import (
 
 type ContractConfig struct {
 	Address    string
+	Owner      string
 	Abi        string
 	ParsedAbi  abi.ABI
 	FirstBlock int64
@@ -30,9 +31,18 @@ type ContractConfig struct {
 
 var DaiConfig = ContractConfig{
 	Address:    constants.DaiContractAddress,
+	Owner:      constants.DaiContractOwner,
 	Abi:        constants.DaiAbiString,
-	ParsedAbi:  constants.ParsedDaiAbi,
 	FirstBlock: int64(4752008),
 	LastBlock:  -1,
 	Name:       "Dai",
+}
+
+var TusdConfig = ContractConfig{
+	Address:    constants.TusdContractAddress,
+	Owner:      constants.TusdContractOwner,
+	Abi:        constants.TusdAbiString,
+	FirstBlock: int64(5197514),
+	LastBlock:  -1,
+	Name:       "Tusd",
 }

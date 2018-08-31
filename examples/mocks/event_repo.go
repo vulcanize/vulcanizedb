@@ -15,7 +15,8 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	et1 "github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	et2 "github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
@@ -23,6 +24,8 @@ import (
 type MockWatchedEventsRepository struct {
 	watchedTransferEvents []*core.WatchedEvent
 	watchedApprovalEvents []*core.WatchedEvent
+	watchedBurnEvents     []*core.WatchedEvent
+	watchedMintEvents     []*core.WatchedEvent
 	Names                 []string
 }
 
@@ -33,6 +36,12 @@ func (mwer *MockWatchedEventsRepository) SetWatchedEvents(watchedEvents []*core.
 		}
 		if event.Name == "Approval" {
 			mwer.watchedApprovalEvents = append(mwer.watchedApprovalEvents, event)
+		}
+		if event.Name == "Burn" {
+			mwer.watchedBurnEvents = append(mwer.watchedBurnEvents, event)
+		}
+		if event.Name == "Mint" {
+			mwer.watchedMintEvents = append(mwer.watchedMintEvents, event)
 		}
 	}
 }
@@ -50,23 +59,47 @@ func (mwer *MockWatchedEventsRepository) GetWatchedEvents(name string) ([]*core.
 		// clear watched events once returned so same events are returned for every filter while testing
 		mwer.watchedApprovalEvents = []*core.WatchedEvent{}
 	}
+	if name == "Burn" {
+		result = mwer.watchedBurnEvents
+		// clear watched events once returned so same events are returned for every filter while testing
+		mwer.watchedBurnEvents = []*core.WatchedEvent{}
+	}
+	if name == "Mint" {
+		result = mwer.watchedMintEvents
+		// clear watched events once returned so same events are returned for every filter while testing
+		mwer.watchedMintEvents = []*core.WatchedEvent{}
+	}
 	return result, nil
 }
 
 type MockEventRepo struct {
-	TransferLogs    []event_triggered.TransferModel
-	ApprovalLogs    []event_triggered.ApprovalModel
+	TransferLogs    []et1.TransferModel
+	ApprovalLogs    []et1.ApprovalModel
+	BurnLogs        []et2.BurnModel
+	MintLogs        []et2.MintModel
 	VulcanizeLogIDs []int64
 }
 
-func (molr *MockEventRepo) CreateTransfer(transferModel event_triggered.TransferModel, vulcanizeLogId int64) error {
-	molr.TransferLogs = append(molr.TransferLogs, transferModel)
+func (molr *MockEventRepo) CreateTransfer(transferModel *et1.TransferModel, vulcanizeLogId int64) error {
+	molr.TransferLogs = append(molr.TransferLogs, *transferModel)
 	molr.VulcanizeLogIDs = append(molr.VulcanizeLogIDs, vulcanizeLogId)
 	return nil
 }
 
-func (molk *MockEventRepo) CreateApproval(approvalModel event_triggered.ApprovalModel, vulcanizeLogID int64) error {
-	molk.ApprovalLogs = append(molk.ApprovalLogs, approvalModel)
+func (molk *MockEventRepo) CreateApproval(approvalModel *et1.ApprovalModel, vulcanizeLogID int64) error {
+	molk.ApprovalLogs = append(molk.ApprovalLogs, *approvalModel)
+	molk.VulcanizeLogIDs = append(molk.VulcanizeLogIDs, vulcanizeLogID)
+	return nil
+}
+
+func (molr *MockEventRepo) CreateBurn(burnModel *et2.BurnModel, vulcanizeLogId int64) error {
+	molr.BurnLogs = append(molr.BurnLogs, *burnModel)
+	molr.VulcanizeLogIDs = append(molr.VulcanizeLogIDs, vulcanizeLogId)
+	return nil
+}
+
+func (molk *MockEventRepo) CreateMint(mintModel *et2.MintModel, vulcanizeLogID int64) error {
+	molk.MintLogs = append(molk.MintLogs, *mintModel)
 	molk.VulcanizeLogIDs = append(molk.VulcanizeLogIDs, vulcanizeLogID)
 	return nil
 }

@@ -15,12 +15,12 @@
 package every_block_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
-	"log"
 )
 
 func TestEveryBlock(t *testing.T) {
