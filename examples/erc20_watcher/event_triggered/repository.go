@@ -18,16 +18,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Datastore interface {
-	CreateTransfer(model TransferModel, vulcanizeLogId int64) error
-	CreateApproval(model ApprovalModel, vulcanizeLogId int64) error
+type ERC20EventDatastore interface {
+	CreateTransfer(model *TransferModel, vulcanizeLogId int64) error
+	CreateApproval(model *ApprovalModel, vulcanizeLogId int64) error
 }
 
-type Repository struct {
+type ERC20EventRepository struct {
 	*postgres.DB
 }
 
-func (repository Repository) CreateTransfer(transferModel TransferModel, vulcanizeLogId int64) error {
+func (repository ERC20EventRepository) CreateTransfer(transferModel *TransferModel, vulcanizeLogId int64) error {
 	_, err := repository.DB.Exec(
 
 		`INSERT INTO token_transfers (vulcanize_log_id, token_name, token_address, to_address, from_address, tokens, block, tx)
@@ -35,14 +35,10 @@ func (repository Repository) CreateTransfer(transferModel TransferModel, vulcani
                 ON CONFLICT (vulcanize_log_id) DO NOTHING`,
 		vulcanizeLogId, transferModel.TokenName, transferModel.TokenAddress, transferModel.To, transferModel.From, transferModel.Tokens, transferModel.Block, transferModel.TxHash)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (repository Repository) CreateApproval(approvalModel ApprovalModel, vulcanizeLogId int64) error {
+func (repository ERC20EventRepository) CreateApproval(approvalModel *ApprovalModel, vulcanizeLogId int64) error {
 	_, err := repository.DB.Exec(
 
 		`INSERT INTO token_approvals (vulcanize_log_id, token_name, token_address, owner, spender, tokens, block, tx)
@@ -50,9 +46,5 @@ func (repository Repository) CreateApproval(approvalModel ApprovalModel, vulcani
                 ON CONFLICT (vulcanize_log_id) DO NOTHING`,
 		vulcanizeLogId, approvalModel.TokenName, approvalModel.TokenAddress, approvalModel.Owner, approvalModel.Spender, approvalModel.Tokens, approvalModel.Block, approvalModel.TxHash)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

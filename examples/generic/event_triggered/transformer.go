@@ -26,60 +26,60 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-type ERC20EventTransformer struct {
-	Converter              ERC20ConverterInterface
+type GenericTransformer struct {
+	Converter              GenericConverterInterface
 	WatchedEventRepository datastore.WatchedEventRepository
 	FilterRepository       datastore.FilterRepository
-	Repository             ERC20EventDatastore
+	Repository             GenericEventDatastore
 }
 
 func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Transformer, error) {
 	var transformer shared.Transformer
 
-	cnvtr, err := NewERC20Converter(config)
+	cnvtr, err := NewGenericConverter(config)
 	if err != nil {
 		return transformer, err
 	}
 
 	wer := repositories.WatchedEventRepository{DB: db}
 	fr := repositories.FilterRepository{DB: db}
-	lkr := ERC20EventRepository{DB: db}
-	transformer = ERC20EventTransformer{
+	lkr := GenericEventRepository{DB: db}
+	transformer = GenericTransformer{
 		Converter:              cnvtr,
 		WatchedEventRepository: wer,
 		FilterRepository:       fr,
 		Repository:             lkr,
 	}
 
-	for _, filter := range constants.DaiERC20Filters {
+	for _, filter := range constants.TusdGenericFilters {
 		fr.CreateFilter(filter)
 	}
 	return transformer, nil
 }
 
-func (tr ERC20EventTransformer) Execute() error {
-	for _, filter := range constants.DaiERC20Filters {
+func (tr GenericTransformer) Execute() error {
+	for _, filter := range constants.TusdGenericFilters {
 		watchedEvents, err := tr.WatchedEventRepository.GetWatchedEvents(filter.Name)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error fetching events for %s:", filter.Name), err)
 			return err
 		}
 		for _, we := range watchedEvents {
-			if filter.Name == constants.TransferEvent.String() {
-				entity, err := tr.Converter.ToTransferEntity(*we)
-				model := tr.Converter.ToTransferModel(entity)
+			if filter.Name == constants.BurnEvent.String() {
+				entity, err := tr.Converter.ToBurnEntity(*we)
+				model := tr.Converter.ToBurnModel(entity)
 				if err != nil {
-					log.Printf("Error persisting data for Dai Transfers (watchedEvent.LogID %d):\n %s", we.LogID, err)
+					log.Printf("Error persisting data for Dai Burns (watchedEvent.LogID %d):\n %s", we.LogID, err)
 				}
-				tr.Repository.CreateTransfer(model, we.LogID)
+				tr.Repository.CreateBurn(model, we.LogID)
 			}
-			if filter.Name == constants.ApprovalEvent.String() {
-				entity, err := tr.Converter.ToApprovalEntity(*we)
-				model := tr.Converter.ToApprovalModel(entity)
+			if filter.Name == constants.MintEvent.String() {
+				entity, err := tr.Converter.ToMintEntity(*we)
+				model := tr.Converter.ToMintModel(entity)
 				if err != nil {
-					log.Printf("Error persisting data for Dai Approvals (watchedEvent.LogID %d):\n %s", we.LogID, err)
+					log.Printf("Error persisting data for Dai Mints (watchedEvent.LogID %d):\n %s", we.LogID, err)
 				}
-				tr.Repository.CreateApproval(model, we.LogID)
+				tr.Repository.CreateMint(model, we.LogID)
 			}
 		}
 	}

@@ -19,36 +19,36 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-var transferLog = core.Log{
+var burnLog = core.Log{
 	BlockNumber: 5488076,
-	Address:     constants.DaiContractAddress,
+	Address:     constants.TusdContractAddress,
 	TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 	Index:       110,
 	Topics: [4]string{
-		constants.TransferEvent.Signature(),
-		"0x000000000000000000000000000000000000000000000000000000000000af21",
+		constants.BurnEvent.Signature(),
 		"0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
+		"",
 		"",
 	},
 	Data: "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe",
 }
 
-var approvalLog = core.Log{
+var mintLog = core.Log{
 	BlockNumber: 5488076,
-	Address:     constants.DaiContractAddress,
+	Address:     constants.TusdContractAddress,
 	TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 	Index:       110,
 	Topics: [4]string{
-		constants.ApprovalEvent.Signature(),
-		"0x000000000000000000000000000000000000000000000000000000000000af21",
+		constants.MintEvent.Signature(),
 		"0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391",
+		"",
 		"",
 	},
 	Data: "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe",
@@ -56,8 +56,8 @@ var approvalLog = core.Log{
 
 //converted transfer to assert against
 var logs = []core.Log{
-	transferLog,
-	approvalLog,
+	burnLog,
+	mintLog,
 	{
 		BlockNumber: 0,
 		TxHash:      "",
@@ -79,56 +79,55 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 		db = test_helpers.TearDownIntegrationDB(db)
 	})
 
-	It("creates token_transfers entry for each Transfer event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.DaiConfig)
+	It("creates token_burns entry for each Burn event received", func() {
+		transformer, err := event_triggered.NewTransformer(db, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
 
 		var count int
-		err = db.QueryRow(`SELECT COUNT(*) FROM token_transfers`).Scan(&count)
+		err = db.QueryRow(`SELECT COUNT(*) FROM token_burns`).Scan(&count)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(count).To(Equal(1))
 
-		transfer := event_triggered.TransferModel{}
+		burn := event_triggered.BurnModel{}
 
-		err = db.Get(&transfer, `SELECT 
+		err = db.Get(&burn, `SELECT 
 										token_name,
 										token_address,
-										to_address,
-										from_address,
+										burner,
 										tokens,
 										block,
 										tx
-										FROM token_transfers WHERE block=$1`, logs[0].BlockNumber)
+										FROM token_burns WHERE block=$1`, logs[0].BlockNumber)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(transfer).To(Equal(expectedTransferModel))
+		Expect(burn).To(Equal(expectedBurnModel))
 	})
 
-	It("creates token_approvals entry for each Approval event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.DaiConfig)
+	It("creates token_mints entry for each Mint event received", func() {
+		transformer, err := event_triggered.NewTransformer(db, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
 
 		var count int
-		err = db.QueryRow(`SELECT COUNT(*) FROM token_approvals`).Scan(&count)
+		err = db.QueryRow(`SELECT COUNT(*) FROM token_mints`).Scan(&count)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(count).To(Equal(1))
 
-		approval := event_triggered.ApprovalModel{}
+		mint := event_triggered.MintModel{}
 
-		err = db.Get(&approval, `SELECT 
+		err = db.Get(&mint, `SELECT 
 										token_name,
 										token_address,
-										owner,
-										spender,
+										minter,
+										mintee,
 										tokens,
 										block,
 										tx
-										FROM token_approvals WHERE block=$1`, logs[0].BlockNumber)
+										FROM token_mints WHERE block=$1`, logs[0].BlockNumber)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(approval).To(Equal(expectedApprovalModel))
+		Expect(mint).To(Equal(expectedMintModel))
 	})
 
 })

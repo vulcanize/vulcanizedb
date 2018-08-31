@@ -2,12 +2,9 @@ package utils
 
 import (
 	"log"
-
-	"path/filepath"
-
 	"math/big"
-
 	"os"
+	"path/filepath"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"

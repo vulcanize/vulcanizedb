@@ -14,28 +14,21 @@
 
 package event_triggered
 
-import (
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-)
-
-type TransferEntity struct {
-	TokenName    string
-	TokenAddress common.Address
-	Src          common.Address
-	Dst          common.Address
-	Wad          *big.Int
-	Block        int64
-	TxHash       string
+type BurnModel struct {
+	TokenName    string `db:"token_name"`
+	TokenAddress string `db:"token_address"`
+	Burner       string `db:"burner"`
+	Tokens       string `db:"tokens"`
+	Block        int64  `db:"block"`
+	TxHash       string `db:"tx"`
 }
 
-type ApprovalEntity struct {
-	TokenName    string
-	TokenAddress common.Address
-	Src          common.Address
-	Guy          common.Address
-	Wad          *big.Int
-	Block        int64
-	TxHash       string
+type MintModel struct {
+	TokenName    string `db:"token_name"`
+	TokenAddress string `db:"token_address"`
+	Mintee       string `db:"mintee"`
+	Minter       string `db:"minter"`
+	Tokens       string `db:"tokens"`
+	Block        int64  `db:"block"`
+	TxHash       string `db:"tx"`
 }

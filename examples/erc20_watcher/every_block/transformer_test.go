@@ -15,17 +15,19 @@
 package every_block_test
 
 import (
+	"math/big"
+	"math/rand"
+	"strconv"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"math/big"
-	"math/rand"
-	"strconv"
 )
 
 var testContractConfig = generic.ContractConfig{
@@ -41,7 +43,7 @@ var config = testContractConfig
 var _ = Describe("Everyblock transformer", func() {
 	var getter mocks.Getter
 	var repository mocks.ERC20TokenRepository
-	var transformer every_block.Transformer
+	var transformer every_block.ERC20Transformer
 	var blockChain *fakes.MockBlockChain
 	var initialSupply = "27647235749155415536952630"
 	var initialSupplyPlusOne = "27647235749155415536952631"
@@ -57,10 +59,10 @@ var _ = Describe("Everyblock transformer", func() {
 		repository = mocks.ERC20TokenRepository{}
 		repository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
 		db := test_helpers.CreateNewDatabase()
-		rt := generic.NewRetriever(db, config.Address)
+		rt := generic.NewTokenHolderRetriever(db, config.Address)
 		//setting the mock repository to return the first block as the missing blocks
 
-		transformer = every_block.Transformer{
+		transformer = every_block.ERC20Transformer{
 			Getter:     &getter,
 			Repository: &repository,
 			Retriever:  rt,
@@ -150,7 +152,7 @@ var _ = Describe("Everyblock transformer", func() {
 	It("returns an error if the call to get missing blocks fails", func() {
 		failureRepository := mocks.FailureRepository{}
 		failureRepository.SetMissingSupplyBlocksFail(true)
-		transformer = every_block.Transformer{
+		transformer = every_block.ERC20Transformer{
 			Getter:     &getter,
 			Repository: &failureRepository,
 		}
@@ -165,7 +167,7 @@ var _ = Describe("Everyblock transformer", func() {
 		failureBlockchain.SetLastBlock(&defaultLastBlock)
 		failureBlockchain.SetFetchContractDataErr(fakes.FakeError)
 		getter := every_block.NewGetter(failureBlockchain)
-		transformer = every_block.Transformer{
+		transformer = every_block.ERC20Transformer{
 			Getter:     &getter,
 			Repository: &repository,
 		}
@@ -180,7 +182,7 @@ var _ = Describe("Everyblock transformer", func() {
 		failureRepository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
 		failureRepository.SetCreateSupplyFail(true)
 
-		transformer = every_block.Transformer{
+		transformer = every_block.ERC20Transformer{
 			Getter:     &getter,
 			Repository: &failureRepository,
 		}
