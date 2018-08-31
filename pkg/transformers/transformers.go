@@ -15,6 +15,7 @@
 package transformers
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
@@ -31,8 +32,10 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: priceFeedConfig}
 	tendConfig := tend.TendConfig
 	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tendConfig}
+	biteTransformerInitializer := bite.BiteTransformerInitializer{Config: bite.BiteConfig}
 
 	return []shared.TransformerInitializer{
+		biteTransformerInitializer.NewBiteTransformer,
 		flipKickTransformerInitializer.NewFlipKickTransformer,
 		frobTransformerInitializer.NewFrobTransformer,
 		priceFeedTransformerInitializer.NewPriceFeedTransformer,

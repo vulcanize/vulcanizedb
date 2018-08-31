@@ -65,7 +65,7 @@ var _ = Describe("Bite repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			var anotherBiteModel = bite.BiteModel{
-				Id:  			  "11",
+				Id:               "11",
 				Ilk:              test_data.BiteModel.Ilk,
 				Lad:              test_data.BiteModel.Lad,
 				Ink:              test_data.BiteModel.Ink,
