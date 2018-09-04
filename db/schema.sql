@@ -368,6 +368,39 @@ ALTER SEQUENCE maker.tend_db_id_seq OWNED BY maker.tend.db_id;
 
 
 --
+-- Name: vat_init; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_init (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_init_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_init_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_init_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_init_id_seq OWNED BY maker.vat_init.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -803,6 +836,13 @@ ALTER TABLE ONLY maker.tend ALTER COLUMN db_id SET DEFAULT nextval('maker.tend_d
 
 
 --
+-- Name: vat_init id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_init ALTER COLUMN id SET DEFAULT nextval('maker.vat_init_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1010,6 +1050,22 @@ ALTER TABLE ONLY maker.tend
 
 
 --
+-- Name: vat_init vat_init_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_init
+    ADD CONSTRAINT vat_init_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_init vat_init_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_init
+    ADD CONSTRAINT vat_init_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1210,6 +1266,14 @@ ALTER TABLE ONLY maker.pit_file_stability_fee
 
 ALTER TABLE ONLY maker.tend
     ADD CONSTRAINT tend_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_init vat_init_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_init
+    ADD CONSTRAINT vat_init_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

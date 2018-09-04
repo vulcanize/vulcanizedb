@@ -26,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
@@ -39,6 +40,8 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	pitFileStabilityFeeTransformerInitializer := stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}
 	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}
 	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tend.TendConfig}
+	vatInitConfig := vat_init.VatInitConfig
+	vatInitTransformerInitializer := vat_init.VatInitTransformerInitializer{Config: vatInitConfig}
 
 	return []shared.TransformerInitializer{
 		biteTransformerInitializer.NewBiteTransformer,
@@ -50,5 +53,6 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		pitFileStabilityFeeTransformerInitializer.NewPitFileStabilityFeeTransformer,
 		priceFeedTransformerInitializer.NewPriceFeedTransformer,
 		tendTransformerInitializer.NewTendTransformer,
+		vatInitTransformerInitializer.NewVatInitTransformer,
 	}
 }

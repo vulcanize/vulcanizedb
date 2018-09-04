@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/vulcanize/vulcanizedb/cmd"
 
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"github.com/spf13/viper"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 func main() {
