@@ -15,11 +15,13 @@
 package shared
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"fmt"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 func GetEventSignature(solidityMethodSignature string) string {

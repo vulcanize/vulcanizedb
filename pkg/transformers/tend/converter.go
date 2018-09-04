@@ -21,14 +21,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
 )
 
 type Converter interface {
 	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
 }
 
-type TendConverter struct {}
+type TendConverter struct{}
 
 func NewTendConverter() TendConverter {
 	return TendConverter{}

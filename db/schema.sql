@@ -117,6 +117,109 @@ ALTER SEQUENCE maker.dent_db_id_seq OWNED BY maker.dent.db_id;
 
 
 --
+-- Name: drip_file_ilk; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.drip_file_ilk (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    vow text,
+    tax numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: drip_file_ilk_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.drip_file_ilk_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: drip_file_ilk_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.drip_file_ilk_id_seq OWNED BY maker.drip_file_ilk.id;
+
+
+--
+-- Name: drip_file_repo; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.drip_file_repo (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    what text,
+    data numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: drip_file_repo_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.drip_file_repo_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: drip_file_repo_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.drip_file_repo_id_seq OWNED BY maker.drip_file_repo.id;
+
+
+--
+-- Name: drip_file_vow; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.drip_file_vow (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    what text,
+    data text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: drip_file_vow_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.drip_file_vow_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: drip_file_vow_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.drip_file_vow_id_seq OWNED BY maker.drip_file_vow.id;
+
+
+--
 -- Name: flip_kick; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -787,6 +890,27 @@ ALTER TABLE ONLY maker.dent ALTER COLUMN db_id SET DEFAULT nextval('maker.dent_d
 
 
 --
+-- Name: drip_file_ilk id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_ilk ALTER COLUMN id SET DEFAULT nextval('maker.drip_file_ilk_id_seq'::regclass);
+
+
+--
+-- Name: drip_file_repo id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_repo ALTER COLUMN id SET DEFAULT nextval('maker.drip_file_repo_id_seq'::regclass);
+
+
+--
+-- Name: drip_file_vow id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_vow ALTER COLUMN id SET DEFAULT nextval('maker.drip_file_vow_id_seq'::regclass);
+
+
+--
 -- Name: flip_kick db_id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -935,6 +1059,54 @@ ALTER TABLE ONLY maker.dent
 
 ALTER TABLE ONLY maker.dent
     ADD CONSTRAINT dent_pkey PRIMARY KEY (db_id);
+
+
+--
+-- Name: drip_file_ilk drip_file_ilk_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_ilk
+    ADD CONSTRAINT drip_file_ilk_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: drip_file_ilk drip_file_ilk_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_ilk
+    ADD CONSTRAINT drip_file_ilk_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: drip_file_repo drip_file_repo_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_repo
+    ADD CONSTRAINT drip_file_repo_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: drip_file_repo drip_file_repo_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_repo
+    ADD CONSTRAINT drip_file_repo_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: drip_file_vow drip_file_vow_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_vow
+    ADD CONSTRAINT drip_file_vow_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: drip_file_vow drip_file_vow_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_vow
+    ADD CONSTRAINT drip_file_vow_pkey PRIMARY KEY (id);
 
 
 --
@@ -1210,6 +1382,30 @@ ALTER TABLE ONLY maker.bite
 
 ALTER TABLE ONLY maker.dent
     ADD CONSTRAINT dent_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: drip_file_ilk drip_file_ilk_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_ilk
+    ADD CONSTRAINT drip_file_ilk_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: drip_file_repo drip_file_repo_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_repo
+    ADD CONSTRAINT drip_file_repo_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: drip_file_vow drip_file_vow_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_vow
+    ADD CONSTRAINT drip_file_vow_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

@@ -12,33 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stability_fee_test
+package vow_test
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-var _ = Describe("Pit file stability fee converter", func() {
-	It("returns err if log is missing topics", func() {
-		converter := stability_fee.PitFileStabilityFeeConverter{}
-		badLog := types.Log{}
+var _ = Describe("Drip file repo converter", func() {
+	It("returns err if log missing topics", func() {
+		converter := vow.DripFileVowConverter{}
+		badLog := types.Log{
+			Topics: []common.Hash{{}},
+			Data:   []byte{1, 1, 1, 1, 1},
+		}
 
 		_, err := converter.ToModel(badLog)
 
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("converts a log to an model", func() {
-		converter := stability_fee.PitFileStabilityFeeConverter{}
+	It("converts a log to a model", func() {
+		converter := vow.DripFileVowConverter{}
 
-		model, err := converter.ToModel(test_data.EthPitFileStabilityFeeLog)
+		model, err := converter.ToModel(test_data.EthDripFileVowLog)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.PitFileStabilityFeeModel))
+		Expect(model).To(Equal(test_data.DripFileVowModel))
 	})
 })
