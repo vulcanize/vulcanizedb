@@ -17,7 +17,6 @@ package flip_kick
 import (
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -45,7 +44,7 @@ func (FlipKickConverter) ToEntity(contractAddress string, contractAbi string, et
 
 	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
 
-	err = contract.UnpackLog(entity, "FlipKick", ethLog)
+	err = contract.UnpackLog(entity, "Kick", ethLog)
 	if err != nil {
 		return entity, err
 	}
@@ -54,24 +53,17 @@ func (FlipKickConverter) ToEntity(contractAddress string, contractAbi string, et
 }
 
 func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error) {
-	//TODO: Confirm if the following values can be/ever will be nil
-
 	if flipKick.Id == nil {
 		return FlipKickModel{}, errors.New("FlipKick log ID cannot be nil.")
 	}
 
 	id := flipKick.Id.String()
-	vat := strings.ToLower(flipKick.Vat.String())
-	ilk := strings.ToLower(common.ToHex(flipKick.Ilk[:]))
 	lot := utilities.ConvertNilToEmptyString(flipKick.Lot.String())
 	bid := utilities.ConvertNilToEmptyString(flipKick.Bid.String())
-	guy := strings.ToLower(flipKick.Guy.String())
-	gal := strings.ToLower(flipKick.Gal.String())
+	gal := flipKick.Gal.String()
 	endValue := utilities.ConvertNilToZeroTimeValue(flipKick.End)
 	end := time.Unix(endValue, 0)
-	eraValue := utilities.ConvertNilToZeroTimeValue(flipKick.Era)
-	era := time.Unix(eraValue, 0)
-	lad := strings.ToLower(flipKick.Lad.String())
+	urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
 	tab := utilities.ConvertNilToEmptyString(flipKick.Tab.String())
 	rawLogJson, err := json.Marshal(flipKick.Raw)
 	if err != nil {
@@ -81,15 +73,11 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 
 	return FlipKickModel{
 		Id:  id,
-		Vat: vat,
-		Ilk: ilk,
 		Lot: lot,
 		Bid: bid,
-		Guy: guy,
 		Gal: gal,
 		End: end,
-		Era: era,
-		Lad: lad,
+		Urn: urn,
 		Tab: tab,
 		Raw: rawLogString,
 	}, nil

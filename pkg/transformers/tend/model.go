@@ -14,17 +14,12 @@
 
 package tend
 
-import (
-	"time"
-)
-
 type TendModel struct {
-	Id               string
+	BidId            string `db:"bid_id"`
 	Lot              string
 	Bid              string
-	Guy              []byte
+	Guy              string
 	Tic              string
-	Era              time.Time
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              string `db:"raw_log"`
 }

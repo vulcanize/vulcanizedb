@@ -34,9 +34,9 @@ func NewTendRepository(db *postgres.DB) TendRepository {
 
 func (r TendRepository) Create(headerId int64, tend TendModel) error {
 	_, err := r.DB.Exec(
-		`INSERT into maker.tend (header_id, id, lot, bid, guy, tic, era, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		headerId, tend.Id, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.Era, tend.TransactionIndex, tend.Raw,
+		`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+		headerId, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.TransactionIndex, tend.Raw,
 	)
 
 	return err

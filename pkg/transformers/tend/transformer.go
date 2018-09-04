@@ -50,7 +50,7 @@ func (i TendTransformerInitializer) NewTendTransformer(db *postgres.DB, blockCha
 
 func (t TendTransformer) Execute() error {
 	config := t.Config
-	topics := [][]common.Hash{{common.HexToHash(shared.TendSignature)}}
+	topics := [][]common.Hash{{common.HexToHash(shared.TendFunctionSignature)}}
 
 	missingHeaders, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
 	if err != nil {
@@ -66,8 +66,7 @@ func (t TendTransformer) Execute() error {
 		}
 
 		for _, ethLog := range ethLogs {
-			entity, err := t.Converter.ToEntity(config.ContractAddresses, config.ContractAbi, ethLog)
-			model, err := t.Converter.ToModel(entity)
+			model, err := t.Converter.Convert(config.ContractAddresses, config.ContractAbi, ethLog)
 			if err != nil {
 				log.Println("Error converting logs:", err)
 				return err

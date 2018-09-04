@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"math/big"
 	"strconv"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -28,45 +27,41 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
-var tendLot = big.NewInt(100)
-var tendBid = big.NewInt(50)
-var tendGuy = common.HexToAddress("0x64d922894153be9eef7b7218dc565d1d0ce2a092")
-var tic = new(big.Int).SetBytes([]byte{0})
-var tendEra = big.NewInt(1533916180)
-var RawJson, _ = json.Marshal(TendLog)
-var rawString = string(RawJson)
+var (
+	tendId              = int64(10)
+	tendLot             = "85000000000000000000"
+	tendBid             = "1000000000000000000"
+	tendGuy             = "0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6"
+	tic                 = new(big.Int).SetBytes([]byte{0})
+	tendData            = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000644b43ed12000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000049b9ca9a6943400000000000000000000000000000000000000000000000000000de0b6b3a7640000"
+	tendTransactionHash = "0x7909c8793ded2b8348f5db623044fbc26bb7ab78ad5792897abdf68ddc1df63d"
+	tendBlockHash       = "0xa8ea87147c0a68daeb6b1d9f8c0937ba975a650809cab80d19c969e8d0df452c"
+)
 
-var TendLog = types.Log{
-	Address:     common.HexToAddress(FlipAddress),
-	Topics:      []common.Hash{common.HexToHash(shared.TendSignature)},
-	Data:        hexutil.MustDecode(TendData),
-	BlockNumber: uint64(TendBlockNumber),
-	TxHash:      common.HexToHash(TendTransactionHash),
-	TxIndex:     1,
-	BlockHash:   common.HexToHash(TendBlockHash),
-	Index:       0,
+var TendLogNote = types.Log{
+	Address: common.StringToAddress(shared.FlipperContractAddress),
+	Topics: []common.Hash{
+		common.HexToHash("0x4b43ed1200000000000000000000000000000000000000000000000000000000"), //abbreviated tend function signature
+		common.HexToHash("0x0000000000000000000000007d7bee5fcfd8028cf7b00876c5b1421c800561a6"), //msg caller address
+		common.HexToHash("0x000000000000000000000000000000000000000000000000000000000000000a"), //first param of the function called (i.e. flip kick id)
+		common.HexToHash("0x0000000000000000000000000000000000000000000000049b9ca9a694340000"), //second param of the function called (i.e. lot)
+	},
+	Data:        hexutil.MustDecode(tendData),
+	BlockNumber: 11,
+	TxHash:      common.HexToHash(tendTransactionHash),
+	TxIndex:     10,
+	BlockHash:   common.HexToHash(tendBlockHash),
+	Index:       1,
 	Removed:     false,
 }
+var RawLogNoteJson, _ = json.Marshal(TendLogNote)
 
-var tendId = int64(1)
-var TendEntity = tend.TendEntity{
-	Id:               big.NewInt(tendId),
+var TendModel = tend.TendModel{
+	BidId:            strconv.FormatInt(tendId, 10),
 	Lot:              tendLot,
 	Bid:              tendBid,
 	Guy:              tendGuy,
-	Tic:              tic,
-	Era:              tendEra,
-	TransactionIndex: TendLog.TxIndex,
-	Raw:              TendLog,
-}
-
-var TendModel = tend.TendModel{
-	Id:               strconv.FormatInt(tendId, 10),
-	Lot:              tendLot.String(),
-	Bid:              tendBid.String(),
-	Guy:              tendGuy[:],
 	Tic:              tic.String(),
-	Era:              time.Unix(tendEra.Int64(), 0),
-	TransactionIndex: TendLog.TxIndex,
-	Raw:              rawString,
+	TransactionIndex: TendLogNote.TxIndex,
+	Raw:              string(RawLogNoteJson),
 }
