@@ -36,7 +36,7 @@ func (transformer PitFileTransformer) Execute() error {
 		return err
 	}
 	for _, header := range missingHeaders {
-		topics := [][]common.Hash{{common.HexToHash(shared.PitFileSignature)}}
+		topics := [][]common.Hash{{common.HexToHash(shared.PitFileSignatureOne)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(PitFileConfig.ContractAddress, topics, header.BlockNumber)
 		if err != nil {
 			return err
