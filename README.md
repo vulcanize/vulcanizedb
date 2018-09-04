@@ -27,6 +27,9 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 
     * See below for configuring additional environments
 
+## Create a migration file (up and down)
+1. ./script/create_migrate create_bite_table
+
 ## Configuration
 - To use a local Ethereum node, copy `environments/public.toml.example` to
   `environments/public.toml` and update the `ipcPath` and `levelDbPath`.
