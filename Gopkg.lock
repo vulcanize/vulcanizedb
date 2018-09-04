@@ -226,6 +226,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/philhofer/fwd"
+  packages = ["."]
+  revision = "bb6d471dc95d4fe11e432687f8b70ff496cf3136"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/rjeczalik/notify"
   packages = ["."]
   revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
@@ -296,6 +302,12 @@
   revision = "adf24ef3f94bd13ec4163060b21a5678f22b429b"
 
 [[projects]]
+  name = "github.com/tinylib/msgp"
+  packages = ["msgp"]
+  revision = "b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1"
+  version = "1.0.2"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -326,7 +338,10 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows"
+  ]
   revision = "a0f4589a76f1f83070cb9e5613809e1d07b97c13"
 
 [[projects]]
@@ -367,6 +382,17 @@
   revision = "8cc4e8a6f4841aa92a8683fca47bc5d64b58875b"
 
 [[projects]]
+  name = "gopkg.in/DataDog/dd-trace-go.v1"
+  packages = [
+    "ddtrace",
+    "ddtrace/ext",
+    "ddtrace/internal",
+    "ddtrace/tracer"
+  ]
+  revision = "8efc9a798f2db99a9e00c7e57f45fc13611214e0"
+  version = "v1.2.3"
+
+[[projects]]
   name = "gopkg.in/fatih/set.v0"
   packages = ["."]
   revision = "57907de300222151a123d29255ed17f5ed43fad3"
@@ -393,6 +419,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2122d1d04fbc67daf75d751e144926e73f0fd838d51711cccf9604eabb46b95b"
+  inputs-digest = "7a913c984013e026536456baa75bd95e261bbb0d294b7de77785819ac182b465"
   solver-name = "gps-cdcl"
   solver-version = 1

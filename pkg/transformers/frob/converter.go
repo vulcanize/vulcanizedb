@@ -28,8 +28,7 @@ type Converter interface {
 	ToModel(flipKick FrobEntity) (FrobModel, error)
 }
 
-type FrobConverter struct {
-}
+type FrobConverter struct{}
 
 func (FrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (FrobEntity, error) {
 	entity := FrobEntity{}

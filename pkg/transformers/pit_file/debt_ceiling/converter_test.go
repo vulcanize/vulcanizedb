@@ -16,10 +16,6 @@ var _ = Describe("", func() {
 		model, err := converter.ToModel(test_data.PitAddress, shared.PitABI, test_data.EthPitFileDebtCeilingLog)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model.What).To(Equal(test_data.PitFileDebtCeilingModel.What))
-		Expect(model.Data).To(Equal(test_data.PitFileDebtCeilingModel.Data))
-		Expect(model.TransactionIndex).To(Equal(test_data.PitFileDebtCeilingModel.TransactionIndex))
-		Expect(model.Raw).To(Equal(test_data.PitFileDebtCeilingModel.Raw))
 		Expect(model).To(Equal(test_data.PitFileDebtCeilingModel))
 	})
 })
