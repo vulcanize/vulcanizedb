@@ -22,8 +22,8 @@ import (
 
 var BiteConfig = shared.TransformerConfig{
 	ContractAddress:     "0xe0f0fa6982c59d8aa4ae0134bfe048327bd788cacf758b643ca41f055ffce76c", //this is a temporary address deployed locally
-	ContractAbi:         BiteABI,
-	Topics:              []string{BiteSignature},
+	ContractAbi:         shared.CatABI,
+	Topics:              []string{shared.BiteSignature},
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   100,
 }

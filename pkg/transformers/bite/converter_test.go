@@ -26,6 +26,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var _ = Describe("Bite Converter", func() {
@@ -33,7 +34,7 @@ var _ = Describe("Bite Converter", func() {
 
 	Describe("ToEntity", func() {
 		It("converts an eth log to a bite entity", func() {
-			entity, err := converter.ToEntity(test_data.TemporaryBiteAddress, bite.BiteABI, test_data.EthBiteLog)
+			entity, err := converter.ToEntity(test_data.TemporaryBiteAddress, shared.CatABI, test_data.EthBiteLog)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(entity.Ilk).To(Equal(test_data.BiteEntity.Ilk))

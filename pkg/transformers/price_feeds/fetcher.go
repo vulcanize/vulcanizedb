@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
 )
 
@@ -48,7 +49,7 @@ func (fetcher PriceFeedFetcher) FetchLogValues(blockNumber int64) ([]types.Log, 
 		FromBlock: n,
 		ToBlock:   n,
 		Addresses: addresses,
-		Topics:    [][]common.Hash{{common.HexToHash(LogValueTopic0)}},
+		Topics:    [][]common.Hash{{common.HexToHash(shared.LogValueSignature)}},
 	}
 	return fetcher.blockChain.GetEthLogsWithCustomQuery(query)
 }
