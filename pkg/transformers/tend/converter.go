@@ -16,61 +16,37 @@ package tend
 
 import (
 	"encoding/json"
-	"errors"
-	"time"
+	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/utilities"
 )
 
 type Converter interface {
-	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (TendEntity, error)
-	ToModel(entity TendEntity) (TendModel, error)
+	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
 }
 
 type TendConverter struct{}
 
-func (c TendConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (TendEntity, error) {
-	entity := TendEntity{}
-	address := common.HexToAddress(contractAddress)
-	abi, err := geth.ParseAbi(contractAbi)
+func (c TendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error) {
+	entity := TendModel{}
+	entity.Guy = common.HexToAddress(ethLog.Topics[1].Hex()).String()
+	entity.BidId = ethLog.Topics[2].Big().String()
+	entity.Lot = ethLog.Topics[3].Big().String()
 
-	if err != nil {
-		return entity, err
-	}
+	itemByteLength := 32
+	lastDataItemStartIndex := len(ethLog.Data) - itemByteLength
+	lastItem := ethLog.Data[lastDataItemStartIndex:]
+	last := big.NewInt(0).SetBytes(lastItem)
+	entity.Bid = last.String()
 
-	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-	err = contract.UnpackLog(&entity, "Tend", ethLog)
-	if err != nil {
-		return entity, err
-	}
+	entity.Tic = "0" //TODO: how do we get the bid tic?
 	entity.TransactionIndex = ethLog.TxIndex
-	entity.Raw = ethLog
-	return entity, nil
-}
-
-func (c TendConverter) ToModel(entity TendEntity) (TendModel, error) {
-	if entity.Id == nil {
-		return TendModel{}, errors.New("Tend log ID cannot be nil.")
-	}
-
-	rawJson, err := json.Marshal(entity.Raw)
+	rawJson, err := json.Marshal(ethLog)
 	if err != nil {
 		return TendModel{}, err
 	}
-	era := utilities.ConvertNilToZeroTimeValue(entity.Era)
-	return TendModel{
-		Id:               utilities.ConvertNilToEmptyString(entity.Id.String()),
-		Lot:              utilities.ConvertNilToEmptyString(entity.Lot.String()),
-		Bid:              utilities.ConvertNilToEmptyString(entity.Bid.String()),
-		Guy:              entity.Guy[:],
-		Tic:              utilities.ConvertNilToEmptyString(entity.Tic.String()),
-		Era:              time.Unix(era, 0),
-		TransactionIndex: entity.TransactionIndex,
-		Raw:              string(rawJson),
-	}, nil
+
+	entity.Raw = string(rawJson)
+	return entity, err
 }

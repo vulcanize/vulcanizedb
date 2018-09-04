@@ -69,13 +69,13 @@ var _ = Describe("Tend Transformer", func() {
 
 	It("fetches eth logs for each missing header", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1}, {BlockNumber: blockNumber2}})
-		expectedTopics := [][]common.Hash{{common.HexToHash(shared.TendSignature)}}
+		expectedTopics := [][]common.Hash{{common.HexToHash(shared.TendFunctionSignature)}}
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber1, blockNumber2}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedContractAddress).To(Equal(test_data.FlipAddress))
+		Expect(fetcher.FetchedContractAddress).To(Equal(shared.FlipperContractAddress))
 	})
 
 	It("returns an error if fetching logs fails", func() {
@@ -87,40 +87,30 @@ var _ = Describe("Tend Transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("converts an eth log to an Entity", func() {
+	It("converts an eth log to an Model", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.TendLog})
+		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ConverterContract).To(Equal(tend.TendConfig.ContractAddresses))
 		Expect(converter.ConverterAbi).To(Equal(tend.TendConfig.ContractAbi))
-		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.TendLog}))
+		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.TendLogNote}))
 	})
 
 	It("returns an error if converter fails", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.TendLog})
+		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		converter.SetConverterError(fakes.FakeError)
 		err := transformer.Execute()
-
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
-	It("returns an error if converter fails", func() {
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.TendLog})
-		err := transformer.Execute()
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.EntitiesToConvert).To(ContainElement(test_data.TendEntity))
 	})
 
 	It("persists the tend record", func() {
 		headerId := int64(1)
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1, Id: headerId}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.TendLog})
+		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 
 		err := transformer.Execute()
 
@@ -131,7 +121,7 @@ var _ = Describe("Tend Transformer", func() {
 
 	It("returns error if persisting tend record fails", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.TendLog})
+		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		repository.SetCreateError(fakes.FakeError)
 		err := transformer.Execute()
 

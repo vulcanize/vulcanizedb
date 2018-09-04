@@ -58,17 +58,16 @@ var _ = Describe("TendRepository", func() {
 			Expect(count).To(Equal(1))
 
 			dbResult := tend.TendModel{}
-			err = db.Get(&dbResult, `SELECT id, lot, bid, guy, tic, era, tx_idx, raw_log FROM maker.tend WHERE header_id = $1`, headerId)
+			err = db.Get(&dbResult, `SELECT bid_id, lot, bid, guy, tic, tx_idx, raw_log FROM maker.tend WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(dbResult.Id).To(Equal(test_data.TendModel.Id))
+			Expect(dbResult.BidId).To(Equal(test_data.TendModel.BidId))
 			Expect(dbResult.Lot).To(Equal(test_data.TendModel.Lot))
 			Expect(dbResult.Bid).To(Equal(test_data.TendModel.Bid))
 			Expect(dbResult.Guy).To(Equal(test_data.TendModel.Guy))
 			Expect(dbResult.Tic).To(Equal(test_data.TendModel.Tic))
-			Expect(dbResult.Era.Equal(test_data.TendModel.Era)).To(BeTrue())
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.TendModel.TransactionIndex))
-			Expect(dbResult.Raw).To(MatchJSON(test_data.RawJson))
+			Expect(dbResult.Raw).To(MatchJSON(test_data.RawLogNoteJson))
 		})
 
 		It("returns an error if inserting a tend record fails", func() {
@@ -111,7 +110,7 @@ var _ = Describe("TendRepository", func() {
 			outOfRangeBlockNumber = tendBlockNumber + 2
 		})
 
-		It("returns headers for which there isn't an associated flip_kick record", func() {
+		It("returns headers for which there isn't an associated tend record", func() {
 			var headerIds []int64
 
 			for _, number := range []int64{startingBlockNumber, tendBlockNumber, endingBlockNumber, outOfRangeBlockNumber} {

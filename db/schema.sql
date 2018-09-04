@@ -87,17 +87,13 @@ CREATE TABLE maker.flip_kick (
     db_id integer NOT NULL,
     header_id integer NOT NULL,
     id numeric NOT NULL,
-    vat character varying,
-    ilk character varying,
     lot numeric,
     bid numeric,
-    guy character varying,
     gal character varying,
     "end" timestamp with time zone,
-    era timestamp with time zone,
-    lad character varying,
+    urn character varying,
     tab numeric,
-    raw_log json
+    raw_log jsonb
 );
 
 
@@ -200,12 +196,11 @@ ALTER SEQUENCE maker.price_feeds_id_seq OWNED BY maker.price_feeds.id;
 CREATE TABLE maker.tend (
     db_id integer NOT NULL,
     header_id integer NOT NULL,
-    id numeric NOT NULL,
+    bid_id numeric NOT NULL,
     lot numeric,
     bid numeric,
-    guy bytea,
+    guy character varying,
     tic numeric,
-    era timestamp with time zone,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -766,11 +761,11 @@ ALTER TABLE ONLY maker.price_feeds
 
 
 --
--- Name: tend tend_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: tend tend_bid_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.tend
-    ADD CONSTRAINT tend_id_key UNIQUE (id);
+    ADD CONSTRAINT tend_bid_id_key UNIQUE (bid_id);
 
 
 --

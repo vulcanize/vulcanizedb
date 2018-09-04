@@ -33,25 +33,21 @@ var _ = Describe("FlipKick Converter", func() {
 
 	Describe("ToEntity", func() {
 		It("converts an Eth Log to a FlipKickEntity", func() {
-			entity, err := converter.ToEntity(test_data.FlipAddress, shared.FlipperABI, test_data.EthFlipKickLog)
+			entity, err := converter.ToEntity(shared.FlipperContractAddress, shared.FlipperABI, test_data.EthFlipKickLog)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(entity.Id).To(Equal(test_data.FlipKickEntity.Id))
-			Expect(entity.Vat).To(Equal(test_data.FlipKickEntity.Vat))
-			Expect(entity.Ilk).To(Equal(test_data.FlipKickEntity.Ilk))
 			Expect(entity.Lot).To(Equal(test_data.FlipKickEntity.Lot))
 			Expect(entity.Bid).To(Equal(test_data.FlipKickEntity.Bid))
-			Expect(entity.Guy).To(Equal(test_data.FlipKickEntity.Guy))
 			Expect(entity.Gal).To(Equal(test_data.FlipKickEntity.Gal))
 			Expect(entity.End).To(Equal(test_data.FlipKickEntity.End))
-			Expect(entity.Era).To(Equal(test_data.FlipKickEntity.Era))
-			Expect(entity.Lad).To(Equal(test_data.FlipKickEntity.Lad))
+			Expect(entity.Urn).To(Equal(test_data.FlipKickEntity.Urn))
 			Expect(entity.Tab).To(Equal(test_data.FlipKickEntity.Tab))
 			Expect(entity.Raw).To(Equal(test_data.FlipKickEntity.Raw))
 		})
 
 		It("returns an error if converting log to entity fails", func() {
-			_, err := converter.ToEntity(test_data.FlipAddress, "error abi", test_data.EthFlipKickLog)
+			_, err := converter.ToEntity(shared.FlipperContractAddress, "error abi", test_data.EthFlipKickLog)
 
 			Expect(err).To(HaveOccurred())
 		})
@@ -59,7 +55,6 @@ var _ = Describe("FlipKick Converter", func() {
 
 	Describe("ToModel", func() {
 		var emptyAddressHex = "0x0000000000000000000000000000000000000000"
-		var emptyByteArrayHex = "0x0000000000000000000000000000000000000000000000000000000000000000"
 		var emptyString = ""
 		var emptyTime = time.Unix(0, 0)
 		var emptyEntity = flip_kick.FlipKickEntity{}
@@ -87,15 +82,11 @@ var _ = Describe("FlipKick Converter", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(model.Id).To(Equal("1"))
-			Expect(model.Vat).To(Equal(emptyAddressHex))
-			Expect(model.Ilk).To(Equal(emptyByteArrayHex))
 			Expect(model.Lot).To(Equal(emptyString))
 			Expect(model.Bid).To(Equal(emptyString))
-			Expect(model.Guy).To(Equal(emptyAddressHex))
 			Expect(model.Gal).To(Equal(emptyAddressHex))
 			Expect(model.End).To(Equal(emptyTime))
-			Expect(model.Era).To(Equal(emptyTime))
-			Expect(model.Lad).To(Equal(emptyAddressHex))
+			Expect(model.Urn).To(Equal(emptyAddressHex))
 			Expect(model.Tab).To(Equal(emptyString))
 			Expect(model.Raw).To(Equal(emptyRawLog))
 		})

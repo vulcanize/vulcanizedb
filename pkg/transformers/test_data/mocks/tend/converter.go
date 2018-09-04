@@ -25,19 +25,13 @@ type MockTendConverter struct {
 	ConverterContract string
 	ConverterAbi      string
 	LogsToConvert     []types.Log
-	EntitiesToConvert []tend.TendEntity
 	ConverterError    error
 }
 
-func (c *MockTendConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (tend.TendEntity, error) {
+func (c *MockTendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (tend.TendModel, error) {
 	c.ConverterContract = contractAddress
 	c.ConverterAbi = contractAbi
 	c.LogsToConvert = append(c.LogsToConvert, ethLog)
-	return test_data.TendEntity, c.ConverterError
-}
-
-func (c *MockTendConverter) ToModel(entity tend.TendEntity) (tend.TendModel, error) {
-	c.EntitiesToConvert = append(c.EntitiesToConvert, entity)
 	return test_data.TendModel, c.ConverterError
 }
 
