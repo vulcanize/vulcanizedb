@@ -12,39 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ilk
+package repo
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"math/big"
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (PitFileIlkModel, error)
+	ToModel(ethLog types.Log) (DripFileRepoModel, error)
 }
 
-type PitFileIlkConverter struct{}
+type DripFileRepoConverter struct{}
 
-func (PitFileIlkConverter) ToModel(ethLog types.Log) (PitFileIlkModel, error) {
+func (DripFileRepoConverter) ToModel(ethLog types.Log) (DripFileRepoModel, error) {
 	err := verifyLog(ethLog)
 	if err != nil {
-		return PitFileIlkModel{}, err
+		return DripFileRepoModel{}, err
 	}
-	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-	riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
-	risk := big.NewInt(0).SetBytes(riskBytes).String()
-
+	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+	data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 	raw, err := json.Marshal(ethLog)
-	return PitFileIlkModel{
-		Ilk:              ilk,
+	return DripFileRepoModel{
 		What:             what,
-		Data:             risk,
+		Data:             data,
 		TransactionIndex: ethLog.TxIndex,
 		Raw:              raw,
 	}, err
@@ -53,9 +47,6 @@ func (PitFileIlkConverter) ToModel(ethLog types.Log) (PitFileIlkModel, error) {
 func verifyLog(log types.Log) error {
 	if len(log.Topics) < 4 {
 		return errors.New("log missing topics")
-	}
-	if len(log.Data) < shared.DataItemLength {
-		return errors.New("log missing data")
 	}
 	return nil
 }
