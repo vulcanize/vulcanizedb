@@ -14,6 +14,12 @@
   revision = "2e60448ffcc6bf78332d1fe590260095f554dd78"
 
 [[projects]]
+  name = "github.com/deckarep/golang-set"
+  packages = ["."]
+  revision = "1d4478f51bed434f1dadf96dcd9b43aabac66795"
+  version = "v1.7"
+
+[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -25,6 +31,7 @@
     "consensus",
     "consensus/misc",
     "core",
+    "core/rawdb",
     "core/state",
     "core/types",
     "core/vm",
@@ -50,8 +57,8 @@
     "rpc",
     "trie"
   ]
-  revision = "b8b9f7f4476a30a0aaf6077daade6ae77f969960"
-  version = "v1.8.2"
+  revision = "89451f7c382ad2185987ee369f16416f89c28a7d"
+  version = "v1.8.15"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -306,8 +313,11 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "a0f4589a76f1f83070cb9e5613809e1d07b97c13"
+  packages = [
+    "cpu",
+    "unix"
+  ]
+  revision = "ebe1bf3edb3325c393447059974de898d5133eb8"
 
 [[projects]]
   branch = "master"
@@ -337,12 +347,6 @@
   revision = "be25de41fadfae372d6470bda81ca6beb55ef551"
 
 [[projects]]
-  name = "gopkg.in/fatih/set.v0"
-  packages = ["."]
-  revision = "57907de300222151a123d29255ed17f5ed43fad3"
-  version = "v0.1.0"
-
-[[projects]]
   branch = "v2"
   name = "gopkg.in/karalabe/cookiejar.v2"
   packages = ["collections/prque"]
@@ -363,6 +367,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8e609f758d10041b1746db11078eca9cad29a7dbf9939d14e49d70ee172dfd2e"
+  inputs-digest = "34994e34998de3e6d2089a9b798e11292050fa0e390b5b5a30036999c5399824"
   solver-name = "gps-cdcl"
   solver-version = 1
