@@ -19,6 +19,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
@@ -30,7 +32,8 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	frobConfig := frob.FrobConfig
 	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frobConfig}
 	pitFileConfig := pit_file.PitFileConfig
-	pitFileTransformerInitializer := pit_file.PitFileTransformerInitializer{Config: pitFileConfig}
+	pitFileIlkTransformerInitializer := ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}
+	pitFileStabilityFeeTransformerInitializer := stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}
 	priceFeedConfig := price_feeds.PriceFeedConfig
 	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: priceFeedConfig}
 	tendConfig := tend.TendConfig
@@ -41,7 +44,8 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		biteTransformerInitializer.NewBiteTransformer,
 		flipKickTransformerInitializer.NewFlipKickTransformer,
 		frobTransformerInitializer.NewFrobTransformer,
-		pitFileTransformerInitializer.NewPitFileTransformer,
+		pitFileIlkTransformerInitializer.NewPitFileIlkTransformer,
+		pitFileStabilityFeeTransformerInitializer.NewPitFileStabilityFeeTransformer,
 		priceFeedTransformerInitializer.NewPriceFeedTransformer,
 		tendTransformerInitializer.NewTendTransformer,
 	}

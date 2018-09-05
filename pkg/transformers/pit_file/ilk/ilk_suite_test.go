@@ -1,4 +1,4 @@
-package pit_file_test
+package ilk_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestPitFile(t *testing.T) {
+func TestIlk(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PitFile Suite")
+	RunSpecs(t, "Ilk Suite")
 }

@@ -1,9 +1,8 @@
-package pit_file
+package stability_fee
 
-type PitFileModel struct {
-	Ilk              string
+type PitFileStabilityFeeModel struct {
 	What             string
-	Risk             string
+	Data             string
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              []byte `db:"raw_log"`
 }

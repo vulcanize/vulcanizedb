@@ -1,4 +1,4 @@
-package pit_file
+package ilk
 
 import (
 	"bytes"
@@ -8,13 +8,12 @@ import (
 )
 
 type Converter interface {
-	ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileModel, error)
+	ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileIlkModel, error)
 }
 
-type PitFileConverter struct {
-}
+type PitFileIlkConverter struct{}
 
-func (PitFileConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (entity PitFileModel, err error) {
+func (PitFileIlkConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (entity PitFileIlkModel, err error) {
 	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 	what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
 	itemByteLength := 32
@@ -22,10 +21,10 @@ func (PitFileConverter) ToModel(contractAddress string, contractAbi string, ethL
 	risk := big.NewInt(0).SetBytes(riskBytes).String()
 
 	raw, err := json.Marshal(ethLog)
-	return PitFileModel{
+	return PitFileIlkModel{
 		Ilk:              ilk,
 		What:             what,
-		Risk:             risk,
+		Data:             risk,
 		TransactionIndex: ethLog.TxIndex,
 		Raw:              raw,
 	}, err
