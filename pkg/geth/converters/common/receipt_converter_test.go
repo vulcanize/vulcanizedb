@@ -54,7 +54,7 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			CumulativeGasUsed: uint64(7996119),
 			GasUsed:           uint64(21000),
 			Logs:              []*types.Log{},
-			Status:            uint(1),
+			Status:            uint64(1),
 			TxHash:            common.HexToHash("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223"),
 		}
 

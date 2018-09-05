@@ -9,6 +9,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/types"
@@ -26,15 +27,22 @@ import (
 
 // flags
 var (
-	depsFlag = flag.Bool("deps", false, "show dependencies too")
-	testFlag = flag.Bool("test", false, "include any tests implied by the patterns")
-	mode     = flag.String("mode", "imports", "mode (one of files, imports, types, syntax, allsyntax)")
-	private  = flag.Bool("private", false, "show non-exported declarations too")
+	depsFlag  = flag.Bool("deps", false, "show dependencies too")
+	testFlag  = flag.Bool("test", false, "include any tests implied by the patterns")
+	mode      = flag.String("mode", "imports", "mode (one of files, imports, types, syntax, allsyntax)")
+	private   = flag.Bool("private", false, "show non-exported declarations too")
+	printJSON = flag.Bool("json", false, "print package in JSON form")
 
 	cpuprofile = flag.String("cpuprofile", "", "write CPU profile to this file")
 	memprofile = flag.String("memprofile", "", "write memory profile to this file")
 	traceFlag  = flag.String("trace", "", "write trace log to this file")
+
+	buildFlags stringListValue
 )
+
+func init() {
+	flag.Var(&buildFlags, "buildflag", "pass argument to underlying build system (may be repeated)")
+}
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `Usage: gopackages [-deps] [-cgo] [-mode=...] [-private] package...
@@ -104,9 +112,9 @@ func main() {
 
 	// Load, parse, and type-check the packages named on the command line.
 	cfg := &packages.Config{
-		Mode:  packages.LoadSyntax,
-		Error: func(error) {}, // we'll take responsibility for printing errors
-		Tests: *testFlag,
+		Mode:       packages.LoadSyntax,
+		Tests:      *testFlag,
+		BuildFlags: buildFlags,
 	}
 
 	// -mode flag
@@ -166,6 +174,11 @@ func main() {
 }
 
 func print(lpkg *packages.Package) {
+	if *printJSON {
+		data, _ := json.MarshalIndent(lpkg, "", "\t")
+		os.Stdout.Write(data)
+		return
+	}
 	// title
 	var kind string
 	// TODO(matloob): If IsTest is added back print "test command" or
@@ -242,3 +255,18 @@ func print(lpkg *packages.Package) {
 
 	fmt.Println()
 }
+
+// stringListValue is a flag.Value that accumulates strings.
+// e.g. --flag=one --flag=two would produce []string{"one", "two"}.
+type stringListValue []string
+
+func newStringListValue(val []string, p *[]string) *stringListValue {
+	*p = val
+	return (*stringListValue)(p)
+}
+
+func (ss *stringListValue) Get() interface{} { return []string(*ss) }
+
+func (ss *stringListValue) String() string { return fmt.Sprintf("%q", *ss) }
+
+func (ss *stringListValue) Set(s string) error { *ss = append(*ss, s); return nil }

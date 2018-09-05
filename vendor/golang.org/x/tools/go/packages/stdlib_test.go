@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build go1.11
-
 package packages_test
 
 import (
@@ -32,7 +30,8 @@ func TestStdlibMetadata(t *testing.T) {
 	alloc := memstats.Alloc
 
 	// Load, parse and type-check the program.
-	pkgs, err := packages.Load(nil, "std")
+	cfg := &packages.Config{Mode: packages.LoadAllSyntax}
+	pkgs, err := packages.Load(cfg, "std")
 	if err != nil {
 		t.Fatalf("failed to load metadata: %v", err)
 	}
@@ -94,10 +93,7 @@ func TestCgoOption(t *testing.T) {
 		{"net", "cgoLookupHost", "cgo_stub.go"},
 		{"os/user", "current", "lookup_stubs.go"},
 	} {
-		cfg := &packages.Config{
-			Mode:  packages.LoadSyntax,
-			Error: func(error) {},
-		}
+		cfg := &packages.Config{Mode: packages.LoadSyntax}
 		pkgs, err := packages.Load(cfg, test.pkg)
 		if err != nil {
 			t.Errorf("Load failed: %v", err)

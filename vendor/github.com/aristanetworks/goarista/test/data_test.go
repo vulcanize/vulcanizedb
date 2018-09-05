@@ -5,7 +5,6 @@
 package test
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/aristanetworks/goarista/key"
@@ -357,21 +356,21 @@ func getDeepEqualTests(t *testing.T) []deepEqualTestCase {
 		b: complexCompare{},
 	}, {
 		a: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "foo"}: 42}},
+			m: map[builtinCompare]int8{{1, "foo"}: 42}},
 		b: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "foo"}: 42}},
+			m: map[builtinCompare]int8{{1, "foo"}: 42}},
 	}, {
 		a: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "foo"}: 42}},
+			m: map[builtinCompare]int8{{1, "foo"}: 42}},
 		b: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "foo"}: 51}},
+			m: map[builtinCompare]int8{{1, "foo"}: 51}},
 		diff: `attributes "m" are different: for key test.builtinCompare{a:uint32(1),` +
 			` b:"foo"} in map, values are different: int8(42) != int8(51)`,
 	}, {
 		a: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "foo"}: 42}},
+			m: map[builtinCompare]int8{{1, "foo"}: 42}},
 		b: complexCompare{
-			m: map[builtinCompare]int8{builtinCompare{1, "bar"}: 42}},
+			m: map[builtinCompare]int8{{1, "bar"}: 42}},
 		diff: `attributes "m" are different: key test.builtinCompare{a:uint32(1),` +
 			` b:"foo"} in map is missing in the actual map`,
 	}, {
@@ -404,16 +403,16 @@ func getDeepEqualTests(t *testing.T) []deepEqualTestCase {
 		a: partialCompare{a: 42, b: "foo"},
 		b: partialCompare{a: 42, b: "bar"},
 	}, {
-		a: map[*builtinCompare]uint32{&builtinCompare{1, "foo"}: 42},
-		b: map[*builtinCompare]uint32{&builtinCompare{1, "foo"}: 42},
+		a: map[*builtinCompare]uint32{{1, "foo"}: 42},
+		b: map[*builtinCompare]uint32{{1, "foo"}: 42},
 	}, {
-		a: map[*builtinCompare]uint32{&builtinCompare{1, "foo"}: 42},
-		b: map[*builtinCompare]uint32{&builtinCompare{2, "foo"}: 42},
+		a: map[*builtinCompare]uint32{{1, "foo"}: 42},
+		b: map[*builtinCompare]uint32{{2, "foo"}: 42},
 		diff: `complex key *test.builtinCompare{a:uint32(1), b:"foo"}` +
 			` in map is missing in the actual map`,
 	}, {
-		a: map[*builtinCompare]uint32{&builtinCompare{1, "foo"}: 42},
-		b: map[*builtinCompare]uint32{&builtinCompare{1, "foo"}: 51},
+		a: map[*builtinCompare]uint32{{1, "foo"}: 42},
+		b: map[*builtinCompare]uint32{{1, "foo"}: 51},
 		diff: `for complex key *test.builtinCompare{a:uint32(1), b:"foo"}` +
 			` in map, values are different: uint32(42) != uint32(51)`,
 	}, {
@@ -436,10 +435,11 @@ func getDeepEqualTests(t *testing.T) []deepEqualTestCase {
 		b: key.New(map[string]interface{}{
 			"a": map[key.Key]interface{}{key.New(map[string]interface{}{"k": 51}): true}}),
 		diff: `Comparable types are different: ` +
-			`key.composite{sentinel:uintptr(18379810577513696751), m:map[string]interface {}` +
-			`{"a":map[key.Key]interface {}{<max_depth>:<max_depth>}}} vs` +
-			` key.composite{sentinel:uintptr(18379810577513696751), m:map[string]interface {}` +
-			`{"a":map[key.Key]interface {}{<max_depth>:<max_depth>}}}`,
+			`key.compositeKey{sentinel:uintptr(18379810577513696751), m:map[string]interface {}` +
+			`{"a":map[key.Key]interface {}{<max_depth>:<max_depth>}}, s:[]interface {}{}}` +
+			` vs key.compositeKey{sentinel:uintptr(18379810577513696751), ` +
+			`m:map[string]interface {}{"a":map[key.Key]interface {}` +
+			`{<max_depth>:<max_depth>}}, s:[]interface {}{}}`,
 	}, {
 		a: code(42),
 		b: code(42),
@@ -464,8 +464,5 @@ func getDeepEqualTests(t *testing.T) []deepEqualTestCase {
 	}, {
 		a: embedder{builtinCompare: builtinCompare{}},
 		b: embedder{builtinCompare: builtinCompare{}},
-	}, {
-		a: regexp.MustCompile("foo.*bar"),
-		b: regexp.MustCompile("foo.*bar"),
 	}}
 }

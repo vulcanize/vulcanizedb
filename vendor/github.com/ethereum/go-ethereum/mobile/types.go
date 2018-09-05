@@ -80,7 +80,7 @@ func (h *Header) EncodeRLP() ([]byte, error) {
 	return rlp.EncodeToBytes(h.header)
 }
 
-// NewHeaderFromJSON parses a header from an JSON data dump.
+// NewHeaderFromJSON parses a header from a JSON data dump.
 func NewHeaderFromJSON(data string) (*Header, error) {
 	h := &Header{
 		header: new(types.Header),
@@ -91,16 +91,10 @@ func NewHeaderFromJSON(data string) (*Header, error) {
 	return h, nil
 }
 
-// EncodeJSON encodes a header into an JSON data dump.
+// EncodeJSON encodes a header into a JSON data dump.
 func (h *Header) EncodeJSON() (string, error) {
 	data, err := json.Marshal(h.header)
 	return string(data), err
-}
-
-// String implements the fmt.Stringer interface to print some semi-meaningful
-// data dump of the header for debugging purposes.
-func (h *Header) String() string {
-	return h.header.String()
 }
 
 func (h *Header) GetParentHash() *Hash   { return &Hash{h.header.ParentHash} }
@@ -157,7 +151,7 @@ func (b *Block) EncodeRLP() ([]byte, error) {
 	return rlp.EncodeToBytes(b.block)
 }
 
-// NewBlockFromJSON parses a block from an JSON data dump.
+// NewBlockFromJSON parses a block from a JSON data dump.
 func NewBlockFromJSON(data string) (*Block, error) {
 	b := &Block{
 		block: new(types.Block),
@@ -168,37 +162,28 @@ func NewBlockFromJSON(data string) (*Block, error) {
 	return b, nil
 }
 
-// EncodeJSON encodes a block into an JSON data dump.
+// EncodeJSON encodes a block into a JSON data dump.
 func (b *Block) EncodeJSON() (string, error) {
 	data, err := json.Marshal(b.block)
 	return string(data), err
 }
 
-// String implements the fmt.Stringer interface to print some semi-meaningful
-// data dump of the block for debugging purposes.
-func (b *Block) String() string {
-	return b.block.String()
-}
-
-func (b *Block) GetParentHash() *Hash   { return &Hash{b.block.ParentHash()} }
-func (b *Block) GetUncleHash() *Hash    { return &Hash{b.block.UncleHash()} }
-func (b *Block) GetCoinbase() *Address  { return &Address{b.block.Coinbase()} }
-func (b *Block) GetRoot() *Hash         { return &Hash{b.block.Root()} }
-func (b *Block) GetTxHash() *Hash       { return &Hash{b.block.TxHash()} }
-func (b *Block) GetReceiptHash() *Hash  { return &Hash{b.block.ReceiptHash()} }
-func (b *Block) GetBloom() *Bloom       { return &Bloom{b.block.Bloom()} }
-func (b *Block) GetDifficulty() *BigInt { return &BigInt{b.block.Difficulty()} }
-func (b *Block) GetNumber() int64       { return b.block.Number().Int64() }
-func (b *Block) GetGasLimit() int64     { return int64(b.block.GasLimit()) }
-func (b *Block) GetGasUsed() int64      { return int64(b.block.GasUsed()) }
-func (b *Block) GetTime() int64         { return b.block.Time().Int64() }
-func (b *Block) GetExtra() []byte       { return b.block.Extra() }
-func (b *Block) GetMixDigest() *Hash    { return &Hash{b.block.MixDigest()} }
-func (b *Block) GetNonce() int64        { return int64(b.block.Nonce()) }
-
-func (b *Block) GetHash() *Hash        { return &Hash{b.block.Hash()} }
-func (b *Block) GetHashNoNonce() *Hash { return &Hash{b.block.HashNoNonce()} }
-
+func (b *Block) GetParentHash() *Hash           { return &Hash{b.block.ParentHash()} }
+func (b *Block) GetUncleHash() *Hash            { return &Hash{b.block.UncleHash()} }
+func (b *Block) GetCoinbase() *Address          { return &Address{b.block.Coinbase()} }
+func (b *Block) GetRoot() *Hash                 { return &Hash{b.block.Root()} }
+func (b *Block) GetTxHash() *Hash               { return &Hash{b.block.TxHash()} }
+func (b *Block) GetReceiptHash() *Hash          { return &Hash{b.block.ReceiptHash()} }
+func (b *Block) GetBloom() *Bloom               { return &Bloom{b.block.Bloom()} }
+func (b *Block) GetDifficulty() *BigInt         { return &BigInt{b.block.Difficulty()} }
+func (b *Block) GetNumber() int64               { return b.block.Number().Int64() }
+func (b *Block) GetGasLimit() int64             { return int64(b.block.GasLimit()) }
+func (b *Block) GetGasUsed() int64              { return int64(b.block.GasUsed()) }
+func (b *Block) GetTime() int64                 { return b.block.Time().Int64() }
+func (b *Block) GetExtra() []byte               { return b.block.Extra() }
+func (b *Block) GetMixDigest() *Hash            { return &Hash{b.block.MixDigest()} }
+func (b *Block) GetNonce() int64                { return int64(b.block.Nonce()) }
+func (b *Block) GetHash() *Hash                 { return &Hash{b.block.Hash()} }
 func (b *Block) GetHeader() *Header             { return &Header{b.block.Header()} }
 func (b *Block) GetUncles() *Headers            { return &Headers{b.block.Uncles()} }
 func (b *Block) GetTransactions() *Transactions { return &Transactions{b.block.Transactions()} }
@@ -232,7 +217,7 @@ func (tx *Transaction) EncodeRLP() ([]byte, error) {
 	return rlp.EncodeToBytes(tx.tx)
 }
 
-// NewTransactionFromJSON parses a transaction from an JSON data dump.
+// NewTransactionFromJSON parses a transaction from a JSON data dump.
 func NewTransactionFromJSON(data string) (*Transaction, error) {
 	tx := &Transaction{
 		tx: new(types.Transaction),
@@ -243,16 +228,10 @@ func NewTransactionFromJSON(data string) (*Transaction, error) {
 	return tx, nil
 }
 
-// EncodeJSON encodes a transaction into an JSON data dump.
+// EncodeJSON encodes a transaction into a JSON data dump.
 func (tx *Transaction) EncodeJSON() (string, error) {
 	data, err := json.Marshal(tx.tx)
 	return string(data), err
-}
-
-// String implements the fmt.Stringer interface to print some semi-meaningful
-// data dump of the transaction for debugging purposes.
-func (tx *Transaction) String() string {
-	return tx.tx.String()
 }
 
 func (tx *Transaction) GetData() []byte      { return tx.tx.Data() }
@@ -330,7 +309,7 @@ func (r *Receipt) EncodeRLP() ([]byte, error) {
 	return rlp.EncodeToBytes(r.receipt)
 }
 
-// NewReceiptFromJSON parses a transaction receipt from an JSON data dump.
+// NewReceiptFromJSON parses a transaction receipt from a JSON data dump.
 func NewReceiptFromJSON(data string) (*Receipt, error) {
 	r := &Receipt{
 		receipt: new(types.Receipt),
@@ -341,18 +320,13 @@ func NewReceiptFromJSON(data string) (*Receipt, error) {
 	return r, nil
 }
 
-// EncodeJSON encodes a transaction receipt into an JSON data dump.
+// EncodeJSON encodes a transaction receipt into a JSON data dump.
 func (r *Receipt) EncodeJSON() (string, error) {
 	data, err := rlp.EncodeToBytes(r.receipt)
 	return string(data), err
 }
 
-// String implements the fmt.Stringer interface to print some semi-meaningful
-// data dump of the transaction receipt for debugging purposes.
-func (r *Receipt) String() string {
-	return r.receipt.String()
-}
-
+func (r *Receipt) GetStatus() int               { return int(r.receipt.Status) }
 func (r *Receipt) GetPostState() []byte         { return r.receipt.PostState }
 func (r *Receipt) GetCumulativeGasUsed() int64  { return int64(r.receipt.CumulativeGasUsed) }
 func (r *Receipt) GetBloom() *Bloom             { return &Bloom{r.receipt.Bloom} }
