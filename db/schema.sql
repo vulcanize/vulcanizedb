@@ -157,25 +157,25 @@ ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
 
 
 --
--- Name: pit_file; Type: TABLE; Schema: maker; Owner: -
+-- Name: pit_file_ilk; Type: TABLE; Schema: maker; Owner: -
 --
 
-CREATE TABLE maker.pit_file (
+CREATE TABLE maker.pit_file_ilk (
     id integer NOT NULL,
     header_id integer NOT NULL,
     ilk text,
     what text,
-    risk numeric,
+    data numeric,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
 
 
 --
--- Name: pit_file_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+-- Name: pit_file_ilk_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
 --
 
-CREATE SEQUENCE maker.pit_file_id_seq
+CREATE SEQUENCE maker.pit_file_ilk_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -185,10 +185,44 @@ CREATE SEQUENCE maker.pit_file_id_seq
 
 
 --
--- Name: pit_file_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+-- Name: pit_file_ilk_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
 --
 
-ALTER SEQUENCE maker.pit_file_id_seq OWNED BY maker.pit_file.id;
+ALTER SEQUENCE maker.pit_file_ilk_id_seq OWNED BY maker.pit_file_ilk.id;
+
+
+--
+-- Name: pit_file_stability_fee; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_file_stability_fee (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    what text,
+    data text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: pit_file_stability_fee_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_file_stability_fee_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_file_stability_fee_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_file_stability_fee_id_seq OWNED BY maker.pit_file_stability_fee.id;
 
 
 --
@@ -656,10 +690,17 @@ ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_s
 
 
 --
--- Name: pit_file id; Type: DEFAULT; Schema: maker; Owner: -
+-- Name: pit_file_ilk id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.pit_file ALTER COLUMN id SET DEFAULT nextval('maker.pit_file_id_seq'::regclass);
+ALTER TABLE ONLY maker.pit_file_ilk ALTER COLUMN id SET DEFAULT nextval('maker.pit_file_ilk_id_seq'::regclass);
+
+
+--
+-- Name: pit_file_stability_fee id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_file_stability_fee ALTER COLUMN id SET DEFAULT nextval('maker.pit_file_stability_fee_id_seq'::regclass);
 
 
 --
@@ -788,19 +829,35 @@ ALTER TABLE ONLY maker.frob
 
 
 --
--- Name: pit_file pit_file_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_ilk pit_file_ilk_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.pit_file
-    ADD CONSTRAINT pit_file_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+ALTER TABLE ONLY maker.pit_file_ilk
+    ADD CONSTRAINT pit_file_ilk_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
 
 
 --
--- Name: pit_file pit_file_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_ilk pit_file_ilk_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.pit_file
-    ADD CONSTRAINT pit_file_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY maker.pit_file_ilk
+    ADD CONSTRAINT pit_file_ilk_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_file_stability_fee pit_file_stability_fee_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_file_stability_fee
+    ADD CONSTRAINT pit_file_stability_fee_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: pit_file_stability_fee pit_file_stability_fee_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_file_stability_fee
+    ADD CONSTRAINT pit_file_stability_fee_pkey PRIMARY KEY (id);
 
 
 --
@@ -999,11 +1056,19 @@ ALTER TABLE ONLY maker.price_feeds
 
 
 --
--- Name: pit_file pit_file_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_ilk pit_file_ilk_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.pit_file
-    ADD CONSTRAINT pit_file_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+ALTER TABLE ONLY maker.pit_file_ilk
+    ADD CONSTRAINT pit_file_ilk_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: pit_file_stability_fee pit_file_stability_fee_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_file_stability_fee
+    ADD CONSTRAINT pit_file_stability_fee_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
