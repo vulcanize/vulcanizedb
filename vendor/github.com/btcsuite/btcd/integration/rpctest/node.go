@@ -44,7 +44,7 @@ type nodeConfig struct {
 func newConfig(prefix, certFile, keyFile string, extra []string) (*nodeConfig, error) {
 	btcdPath, err := btcdExecutablePath()
 	if err != nil {
-		return nil, err
+		btcdPath = "btcd"
 	}
 
 	a := &nodeConfig{
@@ -115,10 +115,6 @@ func (n *nodeConfig) arguments() []string {
 	args = append(args, fmt.Sprintf("--rpccert=%s", n.certFile))
 	// --rpckey
 	args = append(args, fmt.Sprintf("--rpckey=%s", n.keyFile))
-	// --txindex
-	args = append(args, "--txindex")
-	// --addrindex
-	args = append(args, "--addrindex")
 	if n.dataDir != "" {
 		// --datadir
 		args = append(args, fmt.Sprintf("--datadir=%s", n.dataDir))

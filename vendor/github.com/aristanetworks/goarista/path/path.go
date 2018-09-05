@@ -2,109 +2,167 @@
 // Use of this source code is governed by the Apache License 2.0
 // that can be found in the COPYING file.
 
-// Package path provides functionality for dealing with absolute paths elementally.
+// Package path contains methods for dealing with key.Paths.
 package path
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
 
 	"github.com/aristanetworks/goarista/key"
 )
 
-// Path is an absolute path broken down into elements where each element is a key.Key.
-type Path []key.Key
-
-func copyElements(path Path, elements ...interface{}) {
-	for i, element := range elements {
-		switch val := element.(type) {
-		case string:
-			path[i] = key.New(val)
-		case key.Key:
-			path[i] = val
-		default:
-			panic(fmt.Errorf("unsupported type: %T", element))
-		}
-	}
+// New constructs a path from a variable number of elements.
+// Each element may either be a key.Key or a value that can
+// be wrapped by a key.Key.
+func New(elements ...interface{}) key.Path {
+	result := make(key.Path, len(elements))
+	copyElements(result, elements...)
+	return result
 }
 
-// New constructs a Path from a variable number of elements.
-// Each element may either be a string or a key.Key.
-func New(elements ...interface{}) Path {
-	path := make(Path, len(elements))
-	copyElements(path, elements...)
-	return path
-}
-
-// FromString constructs a Path from the elements resulting
-// from a split of the input string by "/". The string MUST
-// begin with a '/' character unless it is the empty string
-// in which case an empty Path is returned.
-func FromString(str string) Path {
-	if str == "" {
-		return Path{}
-	} else if str[0] != '/' {
-		panic(fmt.Errorf("not an absolute path: %q", str))
-	}
-	elements := strings.Split(str, "/")[1:]
-	path := make(Path, len(elements))
-	for i, element := range elements {
-		path[i] = key.New(element)
-	}
-	return path
-}
-
-// Append appends a variable number of elements to a Path.
-// Each element may either be a string or a key.Key.
-func Append(path Path, elements ...interface{}) Path {
+// Append appends a variable number of elements to a path.
+// Each element may either be a key.Key or a value that can
+// be wrapped by a key.Key. Note that calling Append on a
+// single path returns that same path, whereas in all other
+// cases a new path is returned.
+func Append(path key.Path, elements ...interface{}) key.Path {
 	if len(elements) == 0 {
 		return path
 	}
 	n := len(path)
-	p := make(Path, n+len(elements))
-	copy(p, path)
-	copyElements(p[n:], elements...)
-	return p
+	result := make(key.Path, n+len(elements))
+	copy(result, path)
+	copyElements(result[n:], elements...)
+	return result
 }
 
-// String returns the Path as a string.
-func (p Path) String() string {
-	if len(p) == 0 {
-		return ""
+// Join joins a variable number of paths together. Each path
+// in the joining is treated as a subpath of its predecessor.
+// Calling Join with no or only empty paths returns nil.
+func Join(paths ...key.Path) key.Path {
+	n := 0
+	for _, path := range paths {
+		n += len(path)
 	}
-	var buf bytes.Buffer
-	for _, element := range p {
-		buf.WriteByte('/')
-		buf.WriteString(element.String())
+	if n == 0 {
+		return nil
 	}
-	return buf.String()
+	result, i := make(key.Path, n), 0
+	for _, path := range paths {
+		i += copy(result[i:], path)
+	}
+	return result
 }
 
-// Equal returns whether the Path contains the same elements as the other Path.
-// This method implements key.Comparable.
-func (p Path) Equal(other interface{}) bool {
-	o, ok := other.(Path)
-	if !ok {
-		return false
+// Parent returns all but the last element of the path. If
+// the path is empty, Parent returns nil.
+func Parent(path key.Path) key.Path {
+	if len(path) > 0 {
+		return path[:len(path)-1]
 	}
-	if len(o) != len(p) {
-		return false
-	}
-	return o.hasPrefix(p)
+	return nil
 }
 
-// HasPrefix returns whether the Path is prefixed by the other Path.
-func (p Path) HasPrefix(prefix Path) bool {
-	if len(prefix) > len(p) {
-		return false
+// Base returns the last element of the path. If the path is
+// empty, Base returns nil.
+func Base(path key.Path) key.Key {
+	if len(path) > 0 {
+		return path[len(path)-1]
 	}
-	return p.hasPrefix(prefix)
+	return nil
 }
 
-func (p Path) hasPrefix(prefix Path) bool {
-	for i := range prefix {
-		if !prefix[i].Equal(p[i]) {
+// Clone returns a new path with the same elements as in the
+// provided path.
+func Clone(path key.Path) key.Path {
+	result := make(key.Path, len(path))
+	copy(result, path)
+	return result
+}
+
+// Equal returns whether path a and path b are the same
+// length and whether each element in b corresponds to the
+// same element in a.
+func Equal(a, b key.Path) bool {
+	return len(a) == len(b) && hasPrefix(a, b)
+}
+
+// HasElement returns whether element b exists in path a.
+func HasElement(a key.Path, b key.Key) bool {
+	for _, element := range a {
+		if element.Equal(b) {
+			return true
+		}
+	}
+	return false
+}
+
+// HasPrefix returns whether path b is a prefix of path a.
+// It checks that b is at most the length of path a and
+// whether each element in b corresponds to the same element
+// in a from the first element.
+func HasPrefix(a, b key.Path) bool {
+	return len(a) >= len(b) && hasPrefix(a, b)
+}
+
+// Match returns whether path a and path b are the same
+// length and whether each element in b corresponds to the
+// same element or a wildcard in a.
+func Match(a, b key.Path) bool {
+	return len(a) == len(b) && matchPrefix(a, b)
+}
+
+// MatchPrefix returns whether path b is a prefix of path a
+// where path a may contain wildcards.
+// It checks that b is at most the length of path a and
+// whether each element in b corresponds to the same element
+// or a wildcard in a from the first element.
+func MatchPrefix(a, b key.Path) bool {
+	return len(a) >= len(b) && matchPrefix(a, b)
+}
+
+// FromString constructs a path from the elements resulting
+// from a split of the input string by "/". Strings that do
+// not lead with a '/' are accepted but not reconstructable
+// with key.Path.String. Both "" and "/" are treated as a
+// key.Path{}.
+func FromString(str string) key.Path {
+	if str == "" || str == "/" {
+		return key.Path{}
+	} else if str[0] == '/' {
+		str = str[1:]
+	}
+	elements := strings.Split(str, "/")
+	result := make(key.Path, len(elements))
+	for i, element := range elements {
+		result[i] = key.New(element)
+	}
+	return result
+}
+
+func copyElements(dest key.Path, elements ...interface{}) {
+	for i, element := range elements {
+		switch val := element.(type) {
+		case key.Key:
+			dest[i] = val
+		default:
+			dest[i] = key.New(val)
+		}
+	}
+}
+
+func hasPrefix(a, b key.Path) bool {
+	for i := range b {
+		if !b[i].Equal(a[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func matchPrefix(a, b key.Path) bool {
+	for i := range b {
+		if !a[i].Equal(Wildcard) && !b[i].Equal(a[i]) {
 			return false
 		}
 	}

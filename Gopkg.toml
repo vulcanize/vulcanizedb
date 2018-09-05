@@ -21,6 +21,10 @@
 #  version = "2.4.0"
 
 
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "gopkg.in/fsnotify/fsnotify.v1"
+
 [[constraint]]
   name = "github.com/onsi/ginkgo"
   version = "1.4.0"
@@ -39,4 +43,4 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  version = "1.8"
+  version = "1.8.15"

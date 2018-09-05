@@ -236,6 +236,7 @@ func TestPeerConnection(t *testing.T) {
 		ChainParams:       &chaincfg.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
+		TrickleInterval:   time.Second * 10,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -244,6 +245,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &chaincfg.MainNetParams,
 		Services:          wire.SFNodeNetwork | wire.SFNodeWitness,
+		TrickleInterval:   time.Second * 10,
 	}
 
 	wantStats1 := peerStats{
@@ -399,6 +401,21 @@ func TestPeerListeners(t *testing.T) {
 			OnGetHeaders: func(p *peer.Peer, msg *wire.MsgGetHeaders) {
 				ok <- msg
 			},
+			OnGetCFilters: func(p *peer.Peer, msg *wire.MsgGetCFilters) {
+				ok <- msg
+			},
+			OnGetCFHeaders: func(p *peer.Peer, msg *wire.MsgGetCFHeaders) {
+				ok <- msg
+			},
+			OnGetCFCheckpt: func(p *peer.Peer, msg *wire.MsgGetCFCheckpt) {
+				ok <- msg
+			},
+			OnCFilter: func(p *peer.Peer, msg *wire.MsgCFilter) {
+				ok <- msg
+			},
+			OnCFHeaders: func(p *peer.Peer, msg *wire.MsgCFHeaders) {
+				ok <- msg
+			},
 			OnFeeFilter: func(p *peer.Peer, msg *wire.MsgFeeFilter) {
 				ok <- msg
 			},
@@ -432,6 +449,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &chaincfg.MainNetParams,
 		Services:          wire.SFNodeBloom,
+		TrickleInterval:   time.Second * 10,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -523,6 +541,27 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgGetHeaders(),
 		},
 		{
+			"OnGetCFilters",
+			wire.NewMsgGetCFilters(wire.GCSFilterRegular, 0, &chainhash.Hash{}),
+		},
+		{
+			"OnGetCFHeaders",
+			wire.NewMsgGetCFHeaders(wire.GCSFilterRegular, 0, &chainhash.Hash{}),
+		},
+		{
+			"OnGetCFCheckpt",
+			wire.NewMsgGetCFCheckpt(wire.GCSFilterRegular, &chainhash.Hash{}),
+		},
+		{
+			"OnCFilter",
+			wire.NewMsgCFilter(wire.GCSFilterRegular, &chainhash.Hash{},
+				[]byte("payload")),
+		},
+		{
+			"OnCFHeaders",
+			wire.NewMsgCFHeaders(),
+		},
+		{
 			"OnFeeFilter",
 			wire.NewMsgFeeFilter(15000),
 		},
@@ -581,6 +620,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &chaincfg.MainNetParams,
 		Services:          0,
+		TrickleInterval:   time.Second * 10,
 	}
 
 	r, w := io.Pipe()
@@ -721,6 +761,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &chaincfg.MainNetParams,
 		Services:          0,
+		TrickleInterval:   time.Second * 10,
 	}
 
 	localNA := wire.NewNetAddressIPPort(

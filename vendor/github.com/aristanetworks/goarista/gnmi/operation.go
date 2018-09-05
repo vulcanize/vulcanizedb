@@ -5,14 +5,22 @@
 package gnmi
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/aristanetworks/glog"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"google.golang.org/grpc/codes"
 )
@@ -28,9 +36,10 @@ func Get(ctx context.Context, client pb.GNMIClient, paths [][]string) error {
 		return err
 	}
 	for _, notif := range resp.Notification {
+		prefix := StrPath(notif.Prefix)
 		for _, update := range notif.Update {
-			fmt.Printf("%s:\n", StrPath(update.Path))
-			fmt.Println(strUpdateVal(update))
+			fmt.Printf("%s:\n", path.Join(prefix, StrPath(update.Path)))
+			fmt.Println(StrUpdateVal(update))
 		}
 	}
 	return nil
@@ -55,49 +64,104 @@ func Capabilities(ctx context.Context, client pb.GNMIClient) error {
 // val may be a path to a file or it may be json. First see if it is a
 // file, if so return its contents, otherwise return val
 func extractJSON(val string) []byte {
-	jsonBytes, err := ioutil.ReadFile(val)
-	if err != nil {
-		jsonBytes = []byte(val)
+	if jsonBytes, err := ioutil.ReadFile(val); err == nil {
+		return jsonBytes
 	}
-	return jsonBytes
+	// Best effort check if the value might a string literal, in which
+	// case wrap it in quotes. This is to allow a user to do:
+	//   gnmi update ../hostname host1234
+	//   gnmi update ../description 'This is a description'
+	// instead of forcing them to quote the string:
+	//   gnmi update ../hostname '"host1234"'
+	//   gnmi update ../description '"This is a description"'
+	maybeUnquotedStringLiteral := func(s string) bool {
+		if s == "true" || s == "false" || s == "null" || // JSON reserved words
+			strings.ContainsAny(s, `"'{}[]`) { // Already quoted or is a JSON object or array
+			return false
+		} else if _, err := strconv.ParseInt(s, 0, 32); err == nil {
+			// Integer. Using byte size of 32 because larger integer
+			// types are supposed to be sent as strings in JSON.
+			return false
+		} else if _, err := strconv.ParseFloat(s, 64); err == nil {
+			// Float
+			return false
+		}
+
+		return true
+	}
+	if maybeUnquotedStringLiteral(val) {
+		out := make([]byte, len(val)+2)
+		out[0] = '"'
+		copy(out[1:], val)
+		out[len(out)-1] = '"'
+		return out
+	}
+	return []byte(val)
 }
 
-// strUpdateVal will return a string representing the value within the supplied update
-func strUpdateVal(u *pb.Update) string {
+// StrUpdateVal will return a string representing the value within the supplied update
+func StrUpdateVal(u *pb.Update) string {
 	if u.Value != nil {
-		return string(u.Value.Value) // Backwards compatibility with pre-v0.4 gnmi
+		// Backwards compatibility with pre-v0.4 gnmi
+		switch u.Value.Type {
+		case pb.Encoding_JSON, pb.Encoding_JSON_IETF:
+			return strJSON(u.Value.Value)
+		case pb.Encoding_BYTES, pb.Encoding_PROTO:
+			return base64.StdEncoding.EncodeToString(u.Value.Value)
+		case pb.Encoding_ASCII:
+			return string(u.Value.Value)
+		default:
+			return string(u.Value.Value)
+		}
 	}
-	return strVal(u.Val)
+	return StrVal(u.Val)
 }
 
-// strVal will return a string representing the supplied value
-func strVal(val *pb.TypedValue) string {
+// StrVal will return a string representing the supplied value
+func StrVal(val *pb.TypedValue) string {
 	switch v := val.GetValue().(type) {
 	case *pb.TypedValue_StringVal:
 		return v.StringVal
 	case *pb.TypedValue_JsonIetfVal:
-		return string(v.JsonIetfVal)
+		return strJSON(v.JsonIetfVal)
+	case *pb.TypedValue_JsonVal:
+		return strJSON(v.JsonVal)
 	case *pb.TypedValue_IntVal:
-		return fmt.Sprintf("%v", v.IntVal)
+		return strconv.FormatInt(v.IntVal, 10)
 	case *pb.TypedValue_UintVal:
-		return fmt.Sprintf("%v", v.UintVal)
+		return strconv.FormatUint(v.UintVal, 10)
 	case *pb.TypedValue_BoolVal:
-		return fmt.Sprintf("%v", v.BoolVal)
+		return strconv.FormatBool(v.BoolVal)
 	case *pb.TypedValue_BytesVal:
-		return string(v.BytesVal)
+		return base64.StdEncoding.EncodeToString(v.BytesVal)
 	case *pb.TypedValue_DecimalVal:
 		return strDecimal64(v.DecimalVal)
+	case *pb.TypedValue_FloatVal:
+		return strconv.FormatFloat(float64(v.FloatVal), 'g', -1, 32)
 	case *pb.TypedValue_LeaflistVal:
 		return strLeaflist(v.LeaflistVal)
+	case *pb.TypedValue_AsciiVal:
+		return v.AsciiVal
+	case *pb.TypedValue_AnyVal:
+		return v.AnyVal.String()
 	default:
 		panic(v)
 	}
 }
 
+func strJSON(inJSON []byte) string {
+	var out bytes.Buffer
+	err := json.Indent(&out, inJSON, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("(error unmarshalling json: %s)\n", err) + string(inJSON)
+	}
+	return out.String()
+}
+
 func strDecimal64(d *pb.Decimal64) string {
-	var i, frac uint64
+	var i, frac int64
 	if d.Precision > 0 {
-		div := uint64(10)
+		div := int64(10)
 		it := d.Precision - 1
 		for it > 0 {
 			div *= 10
@@ -108,32 +172,25 @@ func strDecimal64(d *pb.Decimal64) string {
 	} else {
 		i = d.Digits
 	}
+	if frac < 0 {
+		frac = -frac
+	}
 	return fmt.Sprintf("%d.%d", i, frac)
 }
 
-// strLeafList builds a human-readable form of a leaf-list. e.g. [1,2,3] or [a,b,c]
+// strLeafList builds a human-readable form of a leaf-list. e.g. [1, 2, 3] or [a, b, c]
 func strLeaflist(v *pb.ScalarArray) string {
-	s := make([]string, 0, len(v.Element))
-	sz := 2 // []
+	var buf bytes.Buffer
+	buf.WriteByte('[')
 
-	// convert arbitrary TypedValues to string form
-	for _, elm := range v.Element {
-		str := strVal(elm)
-		s = append(s, str)
-		sz += len(str) + 1 // %v + ,
-	}
-
-	b := make([]byte, sz)
-	buf := bytes.NewBuffer(b)
-
-	buf.WriteRune('[')
-	for i := range v.Element {
-		buf.WriteString(s[i])
+	for i, elm := range v.Element {
+		buf.WriteString(StrVal(elm))
 		if i < len(v.Element)-1 {
-			buf.WriteRune(',')
+			buf.WriteString(", ")
 		}
 	}
-	buf.WriteRune(']')
+
+	buf.WriteByte(']')
 	return buf.String()
 }
 
@@ -143,9 +200,16 @@ func update(p *pb.Path, val string) *pb.Update {
 	case "":
 		v = &pb.TypedValue{
 			Value: &pb.TypedValue_JsonIetfVal{JsonIetfVal: extractJSON(val)}}
-	case "cli":
+	case "cli", "test-regen-cli":
 		v = &pb.TypedValue{
 			Value: &pb.TypedValue_AsciiVal{AsciiVal: val}}
+	case "p4_config":
+		b, err := ioutil.ReadFile(val)
+		if err != nil {
+			glog.Fatalf("Cannot read p4 file: %s", err)
+		}
+		v = &pb.TypedValue{
+			Value: &pb.TypedValue_ProtoBytes{ProtoBytes: b}}
 	default:
 		panic(fmt.Errorf("unexpected origin: %q", p.Origin))
 	}
@@ -155,9 +219,10 @@ func update(p *pb.Path, val string) *pb.Update {
 
 // Operation describes an gNMI operation.
 type Operation struct {
-	Type string
-	Path []string
-	Val  string
+	Type   string
+	Origin string
+	Path   []string
+	Val    string
 }
 
 func newSetRequest(setOps []*Operation) (*pb.SetRequest, error) {
@@ -167,6 +232,7 @@ func newSetRequest(setOps []*Operation) (*pb.SetRequest, error) {
 		if err != nil {
 			return nil, err
 		}
+		p.Origin = op.Origin
 
 		switch op.Type {
 		case "delete":
@@ -199,16 +265,18 @@ func Set(ctx context.Context, client pb.GNMIClient, setOps []*Operation) error {
 }
 
 // Subscribe sends a SubscribeRequest to the given client.
-func Subscribe(ctx context.Context, client pb.GNMIClient, paths [][]string,
+func Subscribe(ctx context.Context, client pb.GNMIClient, subscribeOptions *SubscribeOptions,
 	respChan chan<- *pb.SubscribeResponse, errChan chan<- error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	defer close(respChan)
+
 	stream, err := client.Subscribe(ctx)
 	if err != nil {
 		errChan <- err
 		return
 	}
-	req, err := NewSubscribeRequest(paths)
+	req, err := NewSubscribeRequest(subscribeOptions)
 	if err != nil {
 		errChan <- err
 		return
@@ -228,6 +296,26 @@ func Subscribe(ctx context.Context, client pb.GNMIClient, paths [][]string,
 			return
 		}
 		respChan <- resp
+
+		// For POLL subscriptions, initiate a poll request by pressing ENTER
+		if subscribeOptions.Mode == "poll" {
+			switch resp.Response.(type) {
+			case *pb.SubscribeResponse_SyncResponse:
+				fmt.Print("Press ENTER to send a poll request: ")
+				reader := bufio.NewReader(os.Stdin)
+				reader.ReadString('\n')
+
+				pollReq := &pb.SubscribeRequest{
+					Request: &pb.SubscribeRequest_Poll{
+						Poll: &pb.Poll{},
+					},
+				}
+				if err := stream.Send(pollReq); err != nil {
+					errChan <- err
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -241,10 +329,16 @@ func LogSubscribeResponse(response *pb.SubscribeResponse) error {
 			return errors.New("initial sync failed")
 		}
 	case *pb.SubscribeResponse_Update:
+		t := time.Unix(0, resp.Update.Timestamp).UTC()
 		prefix := StrPath(resp.Update.Prefix)
 		for _, update := range resp.Update.Update {
-			fmt.Printf("%s = %s\n", path.Join(prefix, StrPath(update.Path)),
-				strUpdateVal(update))
+			fmt.Printf("[%s] %s = %s\n", t.Format(time.RFC3339Nano),
+				path.Join(prefix, StrPath(update.Path)),
+				StrUpdateVal(update))
+		}
+		for _, del := range resp.Update.Delete {
+			fmt.Printf("[%s] Deleted %s\n", t.Format(time.RFC3339Nano),
+				path.Join(prefix, StrPath(del)))
 		}
 	}
 	return nil
