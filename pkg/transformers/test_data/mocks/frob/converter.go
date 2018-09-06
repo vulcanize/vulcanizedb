@@ -16,6 +16,7 @@ package frob
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )

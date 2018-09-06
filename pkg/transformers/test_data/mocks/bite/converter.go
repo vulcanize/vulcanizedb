@@ -16,6 +16,7 @@ package bite
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
+
 	. "github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
