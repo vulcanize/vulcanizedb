@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var _ = Describe("Price feed converter", func() {
@@ -31,7 +32,7 @@ var _ = Describe("Price feed converter", func() {
 		// https://etherscan.io/tx/0xa51a50a2adbfba4e2ab3d72dfd67a21c769f1bc8d2b180663a15500a56cde58f
 		log := types.Log{
 			Address:     medianizerAddress,
-			Topics:      []common.Hash{common.HexToHash(price_feeds.LogValueTopic0)},
+			Topics:      []common.Hash{common.HexToHash(shared.LogValueSignature)},
 			Data:        common.FromHex("00000000000000000000000000000000000000000000001486f658319fb0c100"),
 			BlockNumber: blockNumber,
 			TxHash:      common.HexToHash("0xa51a50a2adbfba4e2ab3d72dfd67a21c769f1bc8d2b180663a15500a56cde58f"),
