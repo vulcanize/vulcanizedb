@@ -12,6 +12,7 @@ import {
   PostgraphileMiddleware,
   PostgraphileOptions
 } from '../adapters/postgraphile';
+import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 
 export interface DatabaseConfig {
   host: string;
@@ -31,4 +32,5 @@ export interface ServerUtilities {
   httpServerFactory: CreateHttpServerCallback;
   passport: StaticPassportProvider;
   postgraphile: PostgraphileInitCallback;
+  pluginHook: PluginHookFn
 }

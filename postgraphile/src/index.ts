@@ -1,5 +1,5 @@
 import { createServer } from 'http';
-import { postgraphile } from 'postgraphile';
+import { postgraphile, makePluginHook } from 'postgraphile';
 import { readFileSync } from 'fs';
 
 import express = require('express');
@@ -11,6 +11,7 @@ const {
   default: PostGraphileSupporter,
   enhanceHttpServerWithSubscriptions,
 } = require('@graphile/plugin-supporter');
+const pluginHook = makePluginHook([PostGraphileSupporter]);
 
 import { ServerUtilities } from './server/interface';
 import { bootServer } from './server/runtime';
@@ -31,7 +32,8 @@ const serverUtilities: ServerUtilities = {
   expressSession: session,
   httpServerFactory: createServer,
   passport,
-  postgraphile
+  postgraphile,
+  pluginHook
 };
 
 const databaseConfig = parseConfig(readFileSync, toml.parse, configPath);

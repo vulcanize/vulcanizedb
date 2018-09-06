@@ -22,9 +22,12 @@ export function buildServerConfig(
   const expressSessionHandler = utilities.expressSession();
   const passportInitializer = utilities.passport.initialize();
   const passportSessionHandler = utilities.passport.session();
+  const pluginHook = utilities.pluginHook;
 
   const options: PostgraphileOptions = {
+    pluginHook: pluginHook,
     simpleSubscriptions: true,
+    graphiql: true,
     webSocketMiddlewares: [
       expressSessionHandler,
       passportInitializer,
@@ -33,7 +36,10 @@ export function buildServerConfig(
   };
 
   const middleware: PostgraphileMiddleware = utilities.postgraphile(
-    databaseConfig.host, databaseConfig.database, options);
+    `${databaseConfig.host}/${databaseConfig.database}`,
+    ["public", "maker"],
+    options
+  );
 
   return { middleware, options, port: parseInt(port, 10) };
 }

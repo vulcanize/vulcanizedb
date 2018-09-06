@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import { Server } from 'http';
+import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 
 // NOTE (jchristie@8thlight.com) Shape of the middleware is not
 // currently important to this application, but if a need arises,
@@ -8,7 +9,9 @@ import { Server } from 'http';
 export interface PostgraphileMiddleware extends RequestHandler {}
 
 export interface PostgraphileOptions {
+  pluginHook: PluginHookFn,
   simpleSubscriptions: boolean;
+  graphiql: boolean;
   // NOTE (jchristie@8thlight.com) Shape of the middlewares is not
   // currently important to this application, but if a need arises,
   // any needed shape can be assigned from a custom type here.
@@ -17,7 +20,7 @@ export interface PostgraphileOptions {
 
 export type PostgraphileInitCallback = (
   databaseUrl: string,
-  databaseName: string,
+  schemas: string[],
   options: PostgraphileOptions
 ) => PostgraphileMiddleware;
 
