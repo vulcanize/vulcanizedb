@@ -25,6 +25,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var _ = Describe("Price fetcher", func() {
@@ -46,7 +47,7 @@ var _ = Describe("Price fetcher", func() {
 			FromBlock: big.NewInt(blockNumber),
 			ToBlock:   big.NewInt(blockNumber),
 			Addresses: expectedAddresses,
-			Topics:    [][]common.Hash{{common.HexToHash(price_feeds.LogValueTopic0)}},
+			Topics:    [][]common.Hash{{common.HexToHash(shared.LogValueSignature)}},
 		}
 		mockBlockChain.AssertGetEthLogsWithCustomQueryCalledWith(expectedQuery)
 	})

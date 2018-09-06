@@ -19,9 +19,15 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"log"
 )
 
 func TestBite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Bite Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

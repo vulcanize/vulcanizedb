@@ -59,14 +59,14 @@ func (t TendTransformer) Execute() error {
 	}
 
 	for _, header := range missingHeaders {
-		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
+		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 		if err != nil {
 			log.Println("Error fetching matching logs:", err)
 			return err
 		}
 
 		for _, ethLog := range ethLogs {
-			model, err := t.Converter.Convert(config.ContractAddresses, config.ContractAbi, ethLog)
+			model, err := t.Converter.Convert(config.ContractAddress, config.ContractAbi, ethLog)
 			if err != nil {
 				log.Println("Error converting logs:", err)
 				return err

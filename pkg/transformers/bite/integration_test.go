@@ -48,7 +48,7 @@ var _ = Describe("Integration tests", func() {
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
 		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(bite.BiteSignature)
+		topic0 := common.HexToHash(shared.BiteSignature)
 		topics := [][]common.Hash{{topic0}}
 
 		result, err := realFetcher.FetchLogs(test_data.TemporaryBiteAddress, topics, int64(26))
@@ -64,7 +64,7 @@ var _ = Describe("Integration tests", func() {
 
 	It("unpacks an event log", func() {
 		address := common.HexToAddress(test_data.TemporaryBiteAddress)
-		abi, err := geth.ParseAbi(bite.BiteABI)
+		abi, err := geth.ParseAbi(shared.CatABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

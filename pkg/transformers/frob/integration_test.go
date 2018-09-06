@@ -46,7 +46,7 @@ var _ = Describe("Integration tests", func() {
 		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
 		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(frob.FrobEventSignature)
+		topic0 := common.HexToHash(shared.FrobSignature)
 		topics := [][]common.Hash{{topic0}}
 
 		result, err := realFetcher.FetchLogs(test_data.TemporaryFrobAddress, topics, int64(12))
@@ -62,7 +62,7 @@ var _ = Describe("Integration tests", func() {
 
 	It("unpacks an event log", func() {
 		address := common.HexToAddress(test_data.TemporaryFrobAddress)
-		abi, err := geth.ParseAbi(frob.FrobABI)
+		abi, err := geth.ParseAbi(shared.PitABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
@@ -78,6 +78,6 @@ var _ = Describe("Integration tests", func() {
 		Expect(entity.IArt).To(Equal(expectedEntity.IArt))
 		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
 		Expect(entity.Ink).To(Equal(expectedEntity.Ink))
-		Expect(entity.Lad).To(Equal(expectedEntity.Lad))
+		Expect(entity.Urn).To(Equal(expectedEntity.Urn))
 	})
 })
