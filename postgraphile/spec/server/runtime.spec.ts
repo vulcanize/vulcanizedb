@@ -14,6 +14,7 @@ describe('bootServer', () => {
 
   beforeEach(() => {
     serverUtilities = {
+      pluginHook: jasmine.createSpy('pluginHook'),
       enableSubscriptions: jasmine.createSpy('enableSubscriptions'),
       express: jasmine.createSpy('express'),
       expressSession: jasmine.createSpy('expressSession'),
@@ -24,7 +25,11 @@ describe('bootServer', () => {
 
     serverConfig = {
       middleware: jasmine.createSpyObj<PostgraphileMiddleware>(['call']),
-      options: { simpleSubscriptions: true, webSocketMiddlewares: [] },
+      options: { 
+        pluginHook: jasmine.createSpy('pluginHook'),
+        simpleSubscriptions: true,
+        graphiql: true,
+        webSocketMiddlewares: [] },
       port: 5678
     };
 

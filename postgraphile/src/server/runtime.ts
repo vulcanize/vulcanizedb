@@ -13,6 +13,6 @@ export function bootServer(
     httpServer,
     config.middleware,
     config.options);
-
+  
   httpServer.listen(config.port);
 }

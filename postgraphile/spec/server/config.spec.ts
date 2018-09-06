@@ -27,6 +27,7 @@ describe('buildServerConfig', () => {
       .createSpyObj<PostgraphileMiddleware>(['call']),
 
     serverUtilities = {
+      pluginHook: jasmine.createSpy('pluginHook'),
       enableSubscriptions: jasmine.createSpy('enableSubscriptions'),
       express: jasmine.createSpy('express'),
       expressSession: jasmine.createSpy('expressSession'),
@@ -82,8 +83,8 @@ describe('buildServerConfig', () => {
 
   it('provides the database config to Postgraphile', () => {
     expect(serverUtilities.postgraphile).toHaveBeenCalledWith(
-      databaseConfig.host,
-      databaseConfig.database,
+      `${databaseConfig.host}/${databaseConfig.database}`,
+      ["public", "maker"],
       jasmine.any(Object));
   });
 
