@@ -49,6 +49,7 @@ func (FlipKickConverter) ToEntity(contractAddress string, contractAbi string, et
 		return entity, err
 	}
 	entity.Raw = ethLog
+	entity.TransactionIndex = ethLog.TxIndex
 	return entity, nil
 }
 
@@ -72,13 +73,14 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	rawLogString := string(rawLogJson)
 
 	return FlipKickModel{
-		Id:  id,
-		Lot: lot,
-		Bid: bid,
-		Gal: gal,
-		End: end,
-		Urn: urn,
-		Tab: tab,
-		Raw: rawLogString,
+		Id:               id,
+		Lot:              lot,
+		Bid:              bid,
+		Gal:              gal,
+		End:              end,
+		Urn:              urn,
+		Tab:              tab,
+		TransactionIndex: flipKick.TransactionIndex,
+		Raw:              rawLogString,
 	}, nil
 }

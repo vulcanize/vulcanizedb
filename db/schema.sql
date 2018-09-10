@@ -233,6 +233,7 @@ CREATE TABLE maker.flip_kick (
     "end" timestamp with time zone,
     urn character varying,
     tab numeric,
+    tx_idx integer NOT NULL,
     raw_log jsonb
 );
 
