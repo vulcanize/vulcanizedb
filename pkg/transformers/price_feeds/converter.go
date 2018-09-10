@@ -15,18 +15,24 @@
 package price_feeds
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+type Converter interface {
+	ToModel(log types.Log, headerID int64) (PriceFeedModel, error)
+}
+
 type PriceFeedConverter struct{}
 
-func (converter PriceFeedConverter) ToModel(log types.Log, headerID int64) PriceFeedModel {
+func (converter PriceFeedConverter) ToModel(log types.Log, headerID int64) (PriceFeedModel, error) {
+	raw, err := json.Marshal(log)
 	return PriceFeedModel{
 		BlockNumber:       log.BlockNumber,
-		HeaderID:          headerID,
 		MedianizerAddress: log.Address.Bytes(),
 		UsdValue:          Convert("wad", hexutil.Encode(log.Data), 15),
 		TransactionIndex:  log.TxIndex,
-	}
+		Raw:               raw,
+	}, err
 }

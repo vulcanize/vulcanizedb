@@ -409,8 +409,9 @@ CREATE TABLE maker.price_feeds (
     block_number bigint NOT NULL,
     header_id integer NOT NULL,
     medianizer_address bytea,
+    usd_value numeric,
     tx_idx integer NOT NULL,
-    usd_value numeric
+    raw_log jsonb
 );
 
 
@@ -1426,14 +1427,6 @@ ALTER TABLE ONLY maker.frob
 
 
 --
--- Name: price_feeds headers_fk; Type: FK CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.price_feeds
-    ADD CONSTRAINT headers_fk FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
-
-
---
 -- Name: pit_file_debt_ceiling pit_file_debt_ceiling_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -1455,6 +1448,14 @@ ALTER TABLE ONLY maker.pit_file_ilk
 
 ALTER TABLE ONLY maker.pit_file_stability_fee
     ADD CONSTRAINT pit_file_stability_fee_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: price_feeds price_feeds_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.price_feeds
+    ADD CONSTRAINT price_feeds_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
