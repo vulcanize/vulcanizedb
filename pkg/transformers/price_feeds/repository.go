@@ -20,7 +20,7 @@ import (
 )
 
 type IPriceFeedRepository interface {
-	Create(model PriceFeedModel) error
+	Create(headerID int64, model PriceFeedModel) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
@@ -32,9 +32,9 @@ func NewPriceFeedRepository(db *postgres.DB) PriceFeedRepository {
 	return PriceFeedRepository{db: db}
 }
 
-func (repository PriceFeedRepository) Create(model PriceFeedModel) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, tx_idx)
-		VALUES ($1, $2, $3, $4::NUMERIC, $5)`, model.BlockNumber, model.HeaderID, model.MedianizerAddress, model.UsdValue, model.TransactionIndex)
+func (repository PriceFeedRepository) Create(headerID int64, model PriceFeedModel) error {
+	_, err := repository.db.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, tx_idx, raw_log)
+		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.TransactionIndex, model.Raw)
 	return err
 }
 

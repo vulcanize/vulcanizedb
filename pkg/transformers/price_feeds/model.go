@@ -26,10 +26,10 @@ type LogValueEntity struct {
 
 type PriceFeedModel struct {
 	BlockNumber       uint64 `db:"block_number"`
-	HeaderID          int64  `db:"header_id"`
 	MedianizerAddress []byte `db:"medianizer_address"`
 	UsdValue          string `db:"usd_value"`
 	TransactionIndex  uint   `db:"tx_idx"`
+	Raw               []byte `db:"raw_log"`
 }
 
 func Convert(conversion string, value string, prec int) string {

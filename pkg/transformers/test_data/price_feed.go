@@ -47,4 +47,5 @@ var PriceFeedModel = price_feeds.PriceFeedModel{
 	MedianizerAddress: EthPriceFeedLog.Address[:],
 	UsdValue:          "378.6599388897",
 	TransactionIndex:  EthPriceFeedLog.TxIndex,
+	Raw:               rawPriceFeedLog,
 }

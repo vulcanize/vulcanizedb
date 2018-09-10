@@ -30,7 +30,7 @@ func (initializer PriceFeedTransformerInitializer) NewPriceFeedTransformer(db *p
 	repository := NewPriceFeedRepository(db)
 	return PriceFeedTransformer{
 		Config:     initializer.Config,
-		converter:  converter,
+		Converter:  converter,
 		Fetcher:    fetcher,
 		Repository: repository,
 	}
@@ -38,7 +38,7 @@ func (initializer PriceFeedTransformerInitializer) NewPriceFeedTransformer(db *p
 
 type PriceFeedTransformer struct {
 	Config     IPriceFeedConfig
-	converter  PriceFeedConverter
+	Converter  Converter
 	Fetcher    IPriceFeedFetcher
 	Repository IPriceFeedRepository
 }
@@ -54,8 +54,11 @@ func (transformer PriceFeedTransformer) Execute() error {
 			return err
 		}
 		for _, log := range logs {
-			model := transformer.converter.ToModel(log, header.Id)
-			err = transformer.Repository.Create(model)
+			model, err := transformer.Converter.ToModel(log, header.Id)
+			if err != nil {
+				return err
+			}
+			err = transformer.Repository.Create(header.Id, model)
 			if err != nil {
 				return err
 			}

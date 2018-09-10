@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -30,26 +31,21 @@ var _ = Describe("Price feeds repository", func() {
 			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
-			blockNumber := uint64(12345)
-			header := core.Header{BlockNumber: int64(blockNumber)}
-			headerID, err := headerRepository.CreateOrUpdateHeader(header)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
-			priceFeedUpdate := price_feeds.PriceFeedModel{
-				BlockNumber:       blockNumber,
-				HeaderID:          headerID,
-				MedianizerAddress: []byte{1, 2, 3, 4, 5},
-				UsdValue:          "123.45",
-				TransactionIndex:  1,
-			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
 
-			err = priceFeedRepository.Create(priceFeedUpdate)
+			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPriceFeedUpdate price_feeds.PriceFeedModel
-			err = db.Get(&dbPriceFeedUpdate, `SELECT block_number, header_id, medianizer_address, usd_value, tx_idx FROM maker.price_feeds WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPriceFeedUpdate, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbPriceFeedUpdate).To(Equal(priceFeedUpdate))
+			Expect(dbPriceFeedUpdate.BlockNumber).To(Equal(test_data.PriceFeedModel.BlockNumber))
+			Expect(dbPriceFeedUpdate.MedianizerAddress).To(Equal(test_data.PriceFeedModel.MedianizerAddress))
+			Expect(dbPriceFeedUpdate.UsdValue).To(Equal(test_data.PriceFeedModel.UsdValue))
+			Expect(dbPriceFeedUpdate.TransactionIndex).To(Equal(test_data.PriceFeedModel.TransactionIndex))
+			Expect(dbPriceFeedUpdate.Raw).To(MatchJSON(test_data.PriceFeedModel.Raw))
 		})
 
 		It("does not duplicate price feed updates", func() {
@@ -60,18 +56,11 @@ var _ = Describe("Price feeds repository", func() {
 			header := core.Header{BlockNumber: int64(blockNumber)}
 			headerID, err := headerRepository.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
-			priceFeedUpdate := price_feeds.PriceFeedModel{
-				BlockNumber:       blockNumber,
-				HeaderID:          headerID,
-				MedianizerAddress: []byte{1, 2, 3, 4, 5},
-				UsdValue:          "123.45",
-				TransactionIndex:  1,
-			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
-			err = priceFeedRepository.Create(priceFeedUpdate)
+			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = priceFeedRepository.Create(priceFeedUpdate)
+			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
 
 			Expect(err).To(HaveOccurred())
 		})
@@ -94,12 +83,7 @@ var _ = Describe("Price feeds repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
-			priceFeedUpdate := price_feeds.PriceFeedModel{
-				BlockNumber: uint64(blockNumbers[1]),
-				HeaderID:    headerIDs[1],
-				UsdValue:    "123.45",
-			}
-			err := priceFeedRepository.Create(priceFeedUpdate)
+			err := priceFeedRepository.Create(headerIDs[1], test_data.PriceFeedModel)
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := priceFeedRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
@@ -129,10 +113,7 @@ var _ = Describe("Price feeds repository", func() {
 			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
 			priceFeedRepositoryTwo := price_feeds.NewPriceFeedRepository(dbTwo)
-			err := priceFeedRepository.Create(price_feeds.PriceFeedModel{
-				HeaderID: headerIDs[0],
-				UsdValue: "123.45",
-			})
+			err := priceFeedRepository.Create(headerIDs[0], test_data.PriceFeedModel)
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := priceFeedRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
