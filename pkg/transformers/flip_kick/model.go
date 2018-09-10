@@ -17,12 +17,13 @@ package flip_kick
 import "time"
 
 type FlipKickModel struct {
-	Id  string
-	Lot string
-	Bid string
-	Gal string
-	End time.Time
-	Urn string
-	Tab string
-	Raw string `db:"raw_log"`
+	Id               string
+	Lot              string
+	Bid              string
+	Gal              string
+	End              time.Time
+	Urn              string
+	Tab              string
+	TransactionIndex uint   `db:"tx_idx"`
+	Raw              string `db:"raw_log"`
 }

@@ -71,6 +71,7 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(dbResult.End.Equal(flipKick.End)).To(BeTrue())
 			Expect(dbResult.Urn).To(Equal(flipKick.Urn))
 			Expect(dbResult.Tab).To(Equal(flipKick.Tab))
+			Expect(dbResult.TransactionIndex).To(Equal(flipKick.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(flipKick.Raw))
 		})
 

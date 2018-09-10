@@ -61,32 +61,34 @@ var EthFlipKickLog = types.Log{
 	Data:        hexutil.MustDecode(flipKickData),
 	BlockNumber: uint64(FlipKickBlockNumber),
 	TxHash:      common.HexToHash(flipKickTransactionHash),
-	TxIndex:     0,
+	TxIndex:     999,
 	BlockHash:   common.HexToHash(flipKickBlockHash),
 	Index:       0,
 	Removed:     false,
 }
 
 var FlipKickEntity = flip_kick.FlipKickEntity{
-	Id:  id,
-	Lot: lot,
-	Bid: bid,
-	Gal: common.HexToAddress(gal),
-	End: big.NewInt(end),
-	Urn: urn,
-	Tab: tab,
-	Raw: EthFlipKickLog,
+	Id:               id,
+	Lot:              lot,
+	Bid:              bid,
+	Gal:              common.HexToAddress(gal),
+	End:              big.NewInt(end),
+	Urn:              urn,
+	Tab:              tab,
+	TransactionIndex: EthFlipKickLog.TxIndex,
+	Raw:              EthFlipKickLog,
 }
 
 var FlipKickModel = flip_kick.FlipKickModel{
-	Id:  idString,
-	Lot: lotString,
-	Bid: bidString,
-	Gal: gal,
-	End: time.Unix(end, 0),
-	Urn: urnString,
-	Tab: tabString,
-	Raw: rawLogString,
+	Id:               idString,
+	Lot:              lotString,
+	Bid:              bidString,
+	Gal:              gal,
+	End:              time.Unix(end, 0),
+	Urn:              urnString,
+	Tab:              tabString,
+	TransactionIndex: EthFlipKickLog.TxIndex,
+	Raw:              rawLogString,
 }
 
 type FlipKickDBRow struct {

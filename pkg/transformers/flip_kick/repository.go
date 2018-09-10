@@ -35,16 +35,11 @@ func NewFlipKickRepository(db *postgres.DB) FlipKickRepository {
 }
 func (fkr FlipKickRepository) Create(headerId int64, flipKick FlipKickModel) error {
 	_, err := fkr.DB.Exec(
-		`INSERT into maker.flip_kick (header_id, id, lot, bid, gal, "end", urn, tab, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		headerId, flipKick.Id, flipKick.Lot, flipKick.Bid, flipKick.Gal, flipKick.End, flipKick.Urn, flipKick.Tab, flipKick.Raw,
+		`INSERT into maker.flip_kick (header_id, id, lot, bid, gal, "end", urn, tab, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		headerId, flipKick.Id, flipKick.Lot, flipKick.Bid, flipKick.Gal, flipKick.End, flipKick.Urn, flipKick.Tab, flipKick.TransactionIndex, flipKick.Raw,
 	)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {

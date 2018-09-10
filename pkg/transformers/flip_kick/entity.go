@@ -22,12 +22,13 @@ import (
 )
 
 type FlipKickEntity struct {
-	Id  *big.Int
-	Lot *big.Int
-	Bid *big.Int
-	Gal common.Address
-	End *big.Int
-	Urn [32]byte
-	Tab *big.Int
-	Raw types.Log
+	Id               *big.Int
+	Lot              *big.Int
+	Bid              *big.Int
+	Gal              common.Address
+	End              *big.Int
+	Urn              [32]byte
+	Tab              *big.Int
+	TransactionIndex uint
+	Raw              types.Log
 }
