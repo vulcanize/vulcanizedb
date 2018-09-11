@@ -15,6 +15,8 @@
 package shared
 
 var (
+	DataItemLength = 32
+
 	biteMethod                = "Bite(bytes32,bytes32,uint256,uint256,uint256,uint256,uint256)"
 	dentMethod                = "dent(uint256,uint256,uint256)"
 	flipKickMethod            = "Kick(uint256,uint256,uint256,address,uint48,bytes32,uint256)"

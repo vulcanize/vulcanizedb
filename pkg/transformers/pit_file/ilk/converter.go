@@ -19,20 +19,25 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
-	ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileIlkModel, error)
+	ToModel(ethLog types.Log) (PitFileIlkModel, error)
 }
 
 type PitFileIlkConverter struct{}
 
-func (PitFileIlkConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (entity PitFileIlkModel, err error) {
+func (PitFileIlkConverter) ToModel(ethLog types.Log) (PitFileIlkModel, error) {
+	err := verifyLog(ethLog)
+	if err != nil {
+		return PitFileIlkModel{}, err
+	}
 	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 	what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-	itemByteLength := 32
-	riskBytes := ethLog.Data[len(ethLog.Data)-itemByteLength:]
+	riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
 	risk := big.NewInt(0).SetBytes(riskBytes).String()
 
 	raw, err := json.Marshal(ethLog)
@@ -43,4 +48,14 @@ func (PitFileIlkConverter) ToModel(contractAddress string, contractAbi string, e
 		TransactionIndex: ethLog.TxIndex,
 		Raw:              raw,
 	}, err
+}
+
+func verifyLog(log types.Log) error {
+	if len(log.Topics) < 4 {
+		return errors.New("log missing topics")
+	}
+	if len(log.Data) < shared.DataItemLength {
+		return errors.New("log missing data")
+	}
+	return nil
 }

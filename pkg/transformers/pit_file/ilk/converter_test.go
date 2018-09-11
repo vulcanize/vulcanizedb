@@ -18,16 +18,39 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("Pit file ilk converter", func() {
+	It("returns err if log is missing topics", func() {
+		converter := ilk.PitFileIlkConverter{}
+		badLog := types.Log{
+			Data: []byte{1, 1, 1, 1, 1},
+		}
+
+		_, err := converter.ToModel(badLog)
+
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("returns err if log is missing data", func() {
+		converter := ilk.PitFileIlkConverter{}
+		badLog := types.Log{
+			Topics: []common.Hash{{}, {}, {}, {}},
+		}
+
+		_, err := converter.ToModel(badLog)
+
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("converts a log to an model", func() {
 		converter := ilk.PitFileIlkConverter{}
 
-		model, err := converter.ToModel(shared.PitContractAddress, shared.PitABI, test_data.EthPitFileIlkLog)
+		model, err := converter.ToModel(test_data.EthPitFileIlkLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.PitFileIlkModel))

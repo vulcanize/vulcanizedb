@@ -18,16 +18,25 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("Pit file stability fee converter", func() {
+	It("returns err if log is missing topics", func() {
+		converter := stability_fee.PitFileStabilityFeeConverter{}
+		badLog := types.Log{}
+
+		_, err := converter.ToModel(badLog)
+
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("converts a log to an model", func() {
 		converter := stability_fee.PitFileStabilityFeeConverter{}
 
-		model, err := converter.ToModel(shared.PitContractAddress, shared.PitABI, test_data.EthPitFileStabilityFeeLog)
+		model, err := converter.ToModel(test_data.EthPitFileStabilityFeeLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.PitFileStabilityFeeModel))

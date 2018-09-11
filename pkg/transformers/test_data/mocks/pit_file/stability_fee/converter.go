@@ -22,15 +22,11 @@ import (
 )
 
 type MockPitFileStabilityFeeConverter struct {
-	converterErr          error
-	PassedContractAddress string
-	PassedContractABI     string
-	PassedLog             types.Log
+	converterErr error
+	PassedLog    types.Log
 }
 
-func (converter *MockPitFileStabilityFeeConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (stability_fee.PitFileStabilityFeeModel, error) {
-	converter.PassedContractAddress = contractAddress
-	converter.PassedContractABI = contractAbi
+func (converter *MockPitFileStabilityFeeConverter) ToModel(ethLog types.Log) (stability_fee.PitFileStabilityFeeModel, error) {
 	converter.PassedLog = ethLog
 	return test_data.PitFileStabilityFeeModel, converter.converterErr
 }
