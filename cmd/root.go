@@ -70,6 +70,7 @@ func init() {
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
+	rootCmd.PersistentFlags().String("datadog-name", "vulcanize-test", "datadog service name")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -78,6 +79,7 @@ func init() {
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
+	viper.BindPFlag("datadog.name", rootCmd.PersistentFlags().Lookup("datadog-name"))
 }
 
 func initConfig() {
