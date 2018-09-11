@@ -16,6 +16,7 @@ package shared
 
 var (
 	biteMethod                = "Bite(bytes32,bytes32,uint256,uint256,uint256,uint256,uint256)"
+	dentMethod                = "dent(uint256,uint256,uint256)"
 	flipKickMethod            = "Kick(uint256,uint256,uint256,address,uint48,bytes32,uint256)"
 	frobMethod                = "Frob(bytes32,bytes32,uint256,uint256,int256,int256,uint256)"
 	pitFileDebtCeilingMethod  = "file(bytes32,uint256)"
@@ -31,6 +32,7 @@ var (
 	FlipperContractAddress = "0x6b59c42097e2fff7cad96cb08ceefd601081ad9c" //this is a temporary address deployed locally
 
 	BiteSignature                = GetEventSignature(biteMethod)
+	DentFunctionSignature        = GetLogNoteSignature(dentMethod)
 	FlipKickSignature            = GetEventSignature(flipKickMethod)
 	FrobSignature                = GetEventSignature(frobMethod)
 	LogValueSignature            = GetEventSignature("")

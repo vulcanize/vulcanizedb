@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utilities
+package shared
 
-import "math/big"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
+)
 
-func ConvertNilToZeroTimeValue(value *big.Int) int64 {
-	if value == nil {
-		return int64(0)
-	} else {
-		return value.Int64()
-	}
-}
-
-func ConvertNilToEmptyString(value string) string {
-	if value == "<nil>" {
-		return ""
-	} else {
-		return value
-	}
+type Bid struct {
+	Bid *big.Int
+	Lot *big.Int
+	Guy common.Address
+	Tic *big.Int
+	End *big.Int
+	Lad [32]byte
+	Gal common.Address
+	Tab *big.Int
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tend
+package dent
 
 import (
 	"encoding/json"
@@ -21,48 +21,40 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
-	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
+	Convert(contractAddress string, contractAbi string, ethLog types.Log) (DentModel, error)
 }
 
-type TendConverter struct {
-	BidFetcher shared.IBidFetcher
+type DentConverter struct{}
+
+func NewDentConverter() DentConverter {
+	return DentConverter{}
 }
 
-func NewTendConverter() TendConverter {
-	return TendConverter{}
-}
-
-func (c TendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error) {
+func (c DentConverter) Convert(contractAddress, contractAbi string, ethLog types.Log) (DentModel, error) {
 	err := validateLog(ethLog)
 	if err != nil {
-		return TendModel{}, err
+		return DentModel{}, err
 	}
 
 	bidId := ethLog.Topics[2].Big()
-	guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
 	lot := ethLog.Topics[3].Big().String()
-
-	lastDataItemStartIndex := len(ethLog.Data) - 32
-	lastItem := ethLog.Data[lastDataItemStartIndex:]
-	last := big.NewInt(0).SetBytes(lastItem)
-	bidValue := last.String()
+	bidValue := getBidValue(ethLog)
+	guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
 	tic := "0"
 	//TODO: it is likely that the tic value will need to be added to an emitted event,
 	//so this will need to be updated at that point
+
 	transactionIndex := ethLog.TxIndex
 
-	rawJson, err := json.Marshal(ethLog)
+	raw, err := json.Marshal(ethLog)
 	if err != nil {
-		return TendModel{}, err
+		return DentModel{}, err
 	}
-	raw := string(rawJson)
 
-	return TendModel{
+	return DentModel{
 		BidId:            bidId.String(),
 		Lot:              lot,
 		Bid:              bidValue,
@@ -75,12 +67,21 @@ func (c TendConverter) Convert(contractAddress string, contractAbi string, ethLo
 
 func validateLog(ethLog types.Log) error {
 	if len(ethLog.Data) <= 0 {
-		return errors.New("tend log note data is empty")
+		return errors.New("dent log data is empty")
 	}
 
 	if len(ethLog.Topics) < 4 {
-		return errors.New("tend log does not contain expected topics")
+		return errors.New("dent log does not contain expected topics")
 	}
 
 	return nil
+}
+
+func getBidValue(ethLog types.Log) string {
+	itemByteLength := 32
+	lastDataItemStartIndex := len(ethLog.Data) - itemByteLength
+	lastItem := ethLog.Data[lastDataItemStartIndex:]
+	lastValue := big.NewInt(0).SetBytes(lastItem)
+
+	return lastValue.String()
 }

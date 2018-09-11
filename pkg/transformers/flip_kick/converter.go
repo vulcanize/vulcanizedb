@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/utilities"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
@@ -58,13 +58,13 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	}
 
 	id := flipKick.Id.String()
-	lot := utilities.ConvertNilToEmptyString(flipKick.Lot.String())
-	bid := utilities.ConvertNilToEmptyString(flipKick.Bid.String())
+	lot := shared.ConvertNilToEmptyString(flipKick.Lot.String())
+	bid := shared.ConvertNilToEmptyString(flipKick.Bid.String())
 	gal := flipKick.Gal.String()
-	endValue := utilities.ConvertNilToZeroTimeValue(flipKick.End)
+	endValue := shared.ConvertNilToZeroTimeValue(flipKick.End)
 	end := time.Unix(endValue, 0)
 	urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
-	tab := utilities.ConvertNilToEmptyString(flipKick.Tab.String())
+	tab := shared.ConvertNilToEmptyString(flipKick.Tab.String())
 	rawLogJson, err := json.Marshal(flipKick.Raw)
 	if err != nil {
 		return FlipKickModel{}, err
