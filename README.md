@@ -17,6 +17,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 
 ## Installation
 `go get github.com/vulcanize/vulcanizedb`
+`go get gopkg.in/DataDog/dd-trace-go.v1/ddtrace`
 
 ## Setting up the Database
 1. Install Postgres

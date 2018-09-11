@@ -7,3 +7,6 @@ port = 5432
 
 [client]
 ipcPath = "/mnt/geth.ipc"
+
+[datadog]
+name = "maker_vdb_staging"
