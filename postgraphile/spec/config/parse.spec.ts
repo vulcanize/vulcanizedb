@@ -16,7 +16,9 @@ describe('parseConfig', () => {
       database: {
         hostname: 'example.com',
         name: 'example_database',
-        port: '1234'
+        port: '1234',
+        user: 'user',
+        password: 'password'
       }
     };
 
@@ -31,7 +33,7 @@ describe('parseConfig', () => {
     const databaseConfig = parseConfig(
       readCallback, tomlParseCallback, configPath);
 
-    expect(databaseConfig.host).toEqual('postgres://example.com:1234');
+    expect(databaseConfig.host).toEqual('postgres://user:password@example.com:1234');
   });
 
   it('provides the database name', () => {
