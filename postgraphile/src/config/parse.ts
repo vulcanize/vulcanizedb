@@ -24,6 +24,8 @@ export function parseConfig(
   const host = parsedToml['database']['hostname'];
   const port = parsedToml['database']['port'];
   const database = parsedToml['database']['name'];
+  const user = parsedToml['database']['user'] || '';
+  const password = parsedToml['database']['password'] || '';
 
   if (!host || host.length < 1) {
     throw new Error(MISSING_HOST_MESSAGE);
@@ -33,5 +35,5 @@ export function parseConfig(
     throw new Error(MISSING_DATABASE_MESSAGE);
   }
 
-  return { host: `postgres://${host}:${port}`, database };
+  return { host: `postgres://${user}:${password}@${host}:${port}`, database };
 }
