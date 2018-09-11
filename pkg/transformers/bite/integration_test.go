@@ -51,11 +51,11 @@ var _ = Describe("Integration tests", func() {
 		topic0 := common.HexToHash(shared.BiteSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(test_data.TemporaryBiteAddress, topics, int64(26))
+		result, err := realFetcher.FetchLogs(shared.CatContractAddress, topics, int64(26))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())
-		Expect(result[0].Address).To(Equal(common.HexToAddress(test_data.TemporaryBiteAddress)))
+		Expect(result[0].Address).To(Equal(common.HexToAddress(shared.CatContractAddress)))
 		Expect(result[0].TxHash).To(Equal(test_data.EthBiteLog.TxHash))
 		Expect(result[0].BlockNumber).To(Equal(test_data.EthBiteLog.BlockNumber))
 		Expect(result[0].Topics).To(Equal(test_data.EthBiteLog.Topics))
@@ -63,7 +63,7 @@ var _ = Describe("Integration tests", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(test_data.TemporaryBiteAddress)
+		address := common.HexToAddress(shared.CatContractAddress)
 		abi, err := geth.ParseAbi(shared.CatABI)
 		Expect(err).NotTo(HaveOccurred())
 

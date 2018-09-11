@@ -27,7 +27,7 @@ var _ = Describe("Pit file stability fee converter", func() {
 	It("converts a log to an model", func() {
 		converter := stability_fee.PitFileStabilityFeeConverter{}
 
-		model, err := converter.ToModel(test_data.PitAddress, shared.PitABI, test_data.EthPitFileStabilityFeeLog)
+		model, err := converter.ToModel(shared.PitContractAddress, shared.PitABI, test_data.EthPitFileStabilityFeeLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.PitFileStabilityFeeModel))

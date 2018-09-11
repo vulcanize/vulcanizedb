@@ -19,7 +19,7 @@ import (
 )
 
 var PitFileConfig = shared.TransformerConfig{
-	ContractAddress:     "0xff3f2400f1600f3f493a9a92704a29b96795af1a", // temporary address from Ganache deploy
+	ContractAddress:     shared.PitContractAddress,
 	ContractAbi:         shared.PitABI,
 	Topics:              []string{shared.PitFileIlkSignature, shared.PitFileDebtCeilingSignature, shared.PitFileStabilityFeeSignature},
 	StartingBlockNumber: 0,

@@ -49,11 +49,11 @@ var _ = Describe("Integration tests", func() {
 		topic0 := common.HexToHash(shared.FrobSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(test_data.TemporaryFrobAddress, topics, int64(12))
+		result, err := realFetcher.FetchLogs(shared.PitContractAddress, topics, int64(12))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())
-		Expect(result[0].Address).To(Equal(common.HexToAddress(test_data.TemporaryFrobAddress)))
+		Expect(result[0].Address).To(Equal(common.HexToAddress(shared.PitContractAddress)))
 		Expect(result[0].TxHash).To(Equal(test_data.EthFrobLog.TxHash))
 		Expect(result[0].BlockNumber).To(Equal(test_data.EthFrobLog.BlockNumber))
 		Expect(result[0].Topics).To(Equal(test_data.EthFrobLog.Topics))
@@ -61,7 +61,7 @@ var _ = Describe("Integration tests", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(test_data.TemporaryFrobAddress)
+		address := common.HexToAddress(shared.PitContractAddress)
 		abi, err := geth.ParseAbi(shared.PitABI)
 		Expect(err).NotTo(HaveOccurred())
 

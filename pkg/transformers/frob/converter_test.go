@@ -27,7 +27,7 @@ var _ = Describe("Frob converter", func() {
 	It("converts a log to an entity", func() {
 		converter := frob.FrobConverter{}
 
-		entity, err := converter.ToEntity(test_data.TemporaryFrobAddress, shared.PitABI, test_data.EthFrobLog)
+		entity, err := converter.ToEntity(shared.PitContractAddress, shared.PitABI, test_data.EthFrobLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(entity).To(Equal(test_data.FrobEntity))

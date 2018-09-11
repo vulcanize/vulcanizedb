@@ -27,7 +27,7 @@ var _ = Describe("", func() {
 	It("converts a log to an model", func() {
 		converter := debt_ceiling.PitFileDebtCeilingConverter{}
 
-		model, err := converter.ToModel(test_data.PitAddress, shared.PitABI, test_data.EthPitFileDebtCeilingLog)
+		model, err := converter.ToModel(shared.PitContractAddress, shared.PitABI, test_data.EthPitFileDebtCeilingLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.PitFileDebtCeilingModel))

@@ -19,7 +19,7 @@ import (
 )
 
 var VatInitConfig = shared.TransformerConfig{
-	ContractAddress:     "0x239E6f0AB02713f1F8AA90ebeDeD9FC66Dc96CD6", // temporary address from Ganache deploy
+	ContractAddress:     shared.VatContractAddress,
 	ContractAbi:         shared.VatABI,
 	Topics:              []string{shared.VatInitSignature},
 	StartingBlockNumber: 0,

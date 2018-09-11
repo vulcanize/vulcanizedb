@@ -14,11 +14,9 @@
 
 package price_feeds
 
-var (
-	PepAddress = "0x99041F808D598B782D5a3e498681C2452A31da08"
-	PipAddress = "0x729D19f657BD0614b4985Cf1D82531c67569197B"
-	RepAddress = "0xF5f94b7F9De14D43112e713835BCef2d55b76c1C"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+
+var ()
 
 type IPriceFeedConfig struct {
 	ContractAddresses   []string
@@ -28,9 +26,9 @@ type IPriceFeedConfig struct {
 
 var PriceFeedConfig = IPriceFeedConfig{
 	ContractAddresses: []string{
-		PepAddress,
-		PipAddress,
-		RepAddress,
+		shared.PepContractAddress,
+		shared.PipContractAddress,
+		shared.RepContractAddress,
 	},
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   100,
