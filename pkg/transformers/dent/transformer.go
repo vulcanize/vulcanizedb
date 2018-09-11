@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tend
+package dent
 
 import (
 	"log"
@@ -24,60 +24,57 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type TendTransformer struct {
-	Repository Repository
-	Fetcher    shared.LogFetcher
-	Converter  Converter
+type DentTransformer struct {
 	Config     shared.TransformerConfig
+	Converter  Converter
+	Fetcher    shared.LogFetcher
+	Repository Repository
 }
 
-type TendTransformerInitializer struct {
+type DentTransformerInitializer struct {
 	Config shared.TransformerConfig
 }
 
-func (i TendTransformerInitializer) NewTendTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
-	converter := NewTendConverter()
+func (i DentTransformerInitializer) NewDentTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
+	converter := NewDentConverter()
 	fetcher := shared.NewFetcher(blockChain)
-	repository := NewTendRepository(db)
-	return TendTransformer{
+	repository := NewDentRepository(db)
+	return DentTransformer{
+		Config:     i.Config,
+		Converter:  converter,
 		Fetcher:    fetcher,
 		Repository: repository,
-		Converter:  converter,
-		Config:     i.Config,
 	}
 }
 
-func (t TendTransformer) Execute() error {
+func (t DentTransformer) Execute() error {
 	config := t.Config
-	topics := [][]common.Hash{{common.HexToHash(shared.TendFunctionSignature)}}
-
-	missingHeaders, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
-	if err != nil {
-		log.Println("Error fetching missing headers:", err)
-		return err
-	}
-
-	for _, header := range missingHeaders {
+	topics := [][]common.Hash{{common.HexToHash(shared.DentFunctionSignature)}}
+	headers, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
+	for _, header := range headers {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+
 		if err != nil {
-			log.Println("Error fetching matching logs:", err)
+			log.Println("Error fetching dent logs:", err)
 			return err
 		}
 
 		for _, ethLog := range ethLogs {
 			model, err := t.Converter.Convert(config.ContractAddress, config.ContractAbi, ethLog)
+
 			if err != nil {
-				log.Println("Error converting logs:", err)
+				log.Println("Error converting dent log", err)
 				return err
 			}
 
 			err = t.Repository.Create(header.Id, model)
+
 			if err != nil {
-				log.Println("Error persisting tend record:", err)
+				log.Println("Error persisting dent record", err)
 				return err
 			}
 		}
 	}
 
-	return nil
+	return err
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/utilities"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
@@ -70,14 +70,14 @@ func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 	}
 
 	return BiteModel{
-		Id:               utilities.ConvertNilToEmptyString(id),
+		Id:               shared.ConvertNilToEmptyString(id),
 		Ilk:              ilk,
 		Lad:              lad,
-		Ink:              utilities.ConvertNilToEmptyString(ink),
-		Art:              utilities.ConvertNilToEmptyString(art),
-		IArt:             utilities.ConvertNilToEmptyString(iArt),
-		Tab:              utilities.ConvertNilToEmptyString(tab),
-		Flip:             utilities.ConvertNilToEmptyString(flip),
+		Ink:              shared.ConvertNilToEmptyString(ink),
+		Art:              shared.ConvertNilToEmptyString(art),
+		IArt:             shared.ConvertNilToEmptyString(iArt),
+		Tab:              shared.ConvertNilToEmptyString(tab),
+		Flip:             shared.ConvertNilToEmptyString(flip),
 		TransactionIndex: txIdx,
 		Raw:              rawLogString,
 	}, nil

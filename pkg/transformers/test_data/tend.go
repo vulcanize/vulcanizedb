@@ -16,7 +16,6 @@ package test_data
 
 import (
 	"encoding/json"
-	"math/big"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,14 +27,14 @@ import (
 )
 
 var (
-	tendId              = int64(10)
+	tendBidId           = int64(10)
 	tendLot             = "85000000000000000000"
 	tendBid             = "1000000000000000000"
 	tendGuy             = "0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6"
-	tic                 = new(big.Int).SetBytes([]byte{0})
 	tendData            = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000644b43ed12000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000049b9ca9a6943400000000000000000000000000000000000000000000000000000de0b6b3a7640000"
 	tendTransactionHash = "0x7909c8793ded2b8348f5db623044fbc26bb7ab78ad5792897abdf68ddc1df63d"
 	tendBlockHash       = "0xa8ea87147c0a68daeb6b1d9f8c0937ba975a650809cab80d19c969e8d0df452c"
+	TendTic             = "0"
 )
 
 var TendLogNote = types.Log{
@@ -57,11 +56,11 @@ var TendLogNote = types.Log{
 var RawLogNoteJson, _ = json.Marshal(TendLogNote)
 
 var TendModel = tend.TendModel{
-	BidId:            strconv.FormatInt(tendId, 10),
+	BidId:            strconv.FormatInt(tendBidId, 10),
 	Lot:              tendLot,
 	Bid:              tendBid,
 	Guy:              tendGuy,
-	Tic:              tic.String(),
+	Tic:              TendTic,
 	TransactionIndex: TendLogNote.TxIndex,
 	Raw:              string(RawLogNoteJson),
 }
