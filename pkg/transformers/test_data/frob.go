@@ -20,11 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
 )
 
 var (
-	TemporaryFrobAddress     = "0xff3f2400f1600f3f493a9a92704a29b96795af1a"
 	TemporaryFrobBlockHash   = common.HexToHash("0x67ae45eace52de052a0fc58598974b101733f823fc191329ace7aded9a72b84b")
 	TemporaryFrobBlockNumber = int64(13)
 	TemporaryFrobData        = "0x000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000019"
@@ -44,7 +44,7 @@ var (
 )
 
 var EthFrobLog = types.Log{
-	Address: common.HexToAddress(TemporaryFrobAddress),
+	Address: common.HexToAddress(shared.PitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

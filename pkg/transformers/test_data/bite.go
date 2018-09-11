@@ -20,12 +20,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
 	"strconv"
 )
 
 var (
-	TemporaryBiteAddress     = "0x4ac9588a53dc6008058c86eed71a5c91da793a07"
 	TemporaryBiteBlockHash   = common.HexToHash("0xd130caaccc9203ca63eb149faeb013aed21f0317ce23489c0486da2f9adcd0eb")
 	TemporaryBiteBlockNumber = int64(26)
 	TemporaryBiteData        = "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000005"
@@ -46,7 +46,7 @@ var (
 )
 
 var EthBiteLog = types.Log{
-	Address: common.HexToAddress(TemporaryBiteAddress),
+	Address: common.HexToAddress(shared.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

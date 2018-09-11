@@ -27,7 +27,7 @@ var _ = Describe("Pit file ilk converter", func() {
 	It("converts a log to an model", func() {
 		converter := ilk.PitFileIlkConverter{}
 
-		model, err := converter.ToModel(test_data.PitAddress, shared.PitABI, test_data.EthPitFileIlkLog)
+		model, err := converter.ToModel(shared.PitContractAddress, shared.PitABI, test_data.EthPitFileIlkLog)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model).To(Equal(test_data.PitFileIlkModel))
