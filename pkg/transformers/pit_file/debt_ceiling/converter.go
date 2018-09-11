@@ -18,20 +18,25 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
-	ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileDebtCeilingModel, error)
+	ToModel(ethLog types.Log) (PitFileDebtCeilingModel, error)
 }
 
 type PitFileDebtCeilingConverter struct{}
 
-func (PitFileDebtCeilingConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileDebtCeilingModel, error) {
+func (PitFileDebtCeilingConverter) ToModel(ethLog types.Log) (PitFileDebtCeilingModel, error) {
+	err := verifyLog(ethLog)
+	if err != nil {
+		return PitFileDebtCeilingModel{}, err
+	}
 	what := common.HexToAddress(ethLog.Topics[1].String()).String()
-	itemByteLength := 32
-	riskBytes := ethLog.Data[len(ethLog.Data)-itemByteLength:]
+	riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
 	data := big.NewInt(0).SetBytes(riskBytes).String()
 
 	raw, err := json.Marshal(ethLog)
@@ -41,4 +46,14 @@ func (PitFileDebtCeilingConverter) ToModel(contractAddress string, contractAbi s
 		TransactionIndex: ethLog.TxIndex,
 		Raw:              raw,
 	}, err
+}
+
+func verifyLog(log types.Log) error {
+	if len(log.Topics) < 2 {
+		return errors.New("log missing topics")
+	}
+	if len(log.Data) < shared.DataItemLength {
+		return errors.New("log missing data")
+	}
+	return nil
 }

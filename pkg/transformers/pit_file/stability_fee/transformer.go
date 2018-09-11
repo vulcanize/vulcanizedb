@@ -58,7 +58,7 @@ func (transformer PitFileStabilityFeeTransformer) Execute() error {
 			return err
 		}
 		for _, log := range matchingLogs {
-			model, err := transformer.Converter.ToModel(pit_file.PitFileConfig.ContractAddress, shared.PitABI, log)
+			model, err := transformer.Converter.ToModel(log)
 			if err != nil {
 				return err
 			}

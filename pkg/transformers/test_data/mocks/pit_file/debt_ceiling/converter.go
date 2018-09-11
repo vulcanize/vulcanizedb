@@ -22,15 +22,11 @@ import (
 )
 
 type MockPitFileDebtCeilingConverter struct {
-	converterErr          error
-	PassedContractAddress string
-	PassedContractABI     string
-	PassedLog             types.Log
+	converterErr error
+	PassedLog    types.Log
 }
 
-func (converter *MockPitFileDebtCeilingConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (debt_ceiling.PitFileDebtCeilingModel, error) {
-	converter.PassedContractAddress = contractAddress
-	converter.PassedContractABI = contractAbi
+func (converter *MockPitFileDebtCeilingConverter) ToModel(ethLog types.Log) (debt_ceiling.PitFileDebtCeilingModel, error) {
 	converter.PassedLog = ethLog
 	return test_data.PitFileDebtCeilingModel, converter.converterErr
 }

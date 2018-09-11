@@ -112,8 +112,6 @@ var _ = Describe("Pit file ilk transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(pit_file.PitFileConfig.ContractAddress))
-		Expect(converter.PassedContractABI).To(Equal(pit_file.PitFileConfig.ContractAbi))
 		Expect(converter.PassedLog).To(Equal(test_data.EthPitFileIlkLog))
 	})
 

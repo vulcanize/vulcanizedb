@@ -18,17 +18,22 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type Converter interface {
-	ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileStabilityFeeModel, error)
+	ToModel(ethLog types.Log) (PitFileStabilityFeeModel, error)
 }
 
 type PitFileStabilityFeeConverter struct{}
 
-func (PitFileStabilityFeeConverter) ToModel(contractAddress string, contractAbi string, ethLog types.Log) (PitFileStabilityFeeModel, error) {
+func (PitFileStabilityFeeConverter) ToModel(ethLog types.Log) (PitFileStabilityFeeModel, error) {
+	err := verifyLog(ethLog)
+	if err != nil {
+		return PitFileStabilityFeeModel{}, err
+	}
 	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 	data := common.HexToAddress(ethLog.Topics[1].String()).Hex()
 
@@ -39,4 +44,11 @@ func (PitFileStabilityFeeConverter) ToModel(contractAddress string, contractAbi 
 		TransactionIndex: ethLog.TxIndex,
 		Raw:              raw,
 	}, err
+}
+
+func verifyLog(log types.Log) error {
+	if len(log.Topics) < 3 {
+		return errors.New("log missing topics")
+	}
+	return nil
 }
