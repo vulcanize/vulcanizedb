@@ -15,11 +15,13 @@
 package frob
 
 type FrobModel struct {
-	Ilk  []byte
-	Lad  []byte
-	Ink  string
-	Art  string
-	Dink string
-	Dart string
-	IArt string
+	Ilk              []byte
+	Urn              []byte
+	Ink              string
+	Art              string
+	Dink             string
+	Dart             string
+	IArt             string
+	TransactionIndex uint   `db:"tx_idx"`
+	Raw              []byte `db:"raw_log"`
 }

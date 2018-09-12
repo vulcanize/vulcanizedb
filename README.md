@@ -17,6 +17,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 
 ## Installation
 `go get github.com/vulcanize/vulcanizedb`
+`go get gopkg.in/DataDog/dd-trace-go.v1/ddtrace`
 
 ## Setting up the Database
 1. Install Postgres
@@ -26,6 +27,9 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
 
     * See below for configuring additional environments
+
+## Create a migration file (up and down)
+1. ./script/create_migrate create_bite_table
 
 ## Configuration
 - To use a local Ethereum node, copy `environments/public.toml.example` to

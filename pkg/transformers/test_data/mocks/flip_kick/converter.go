@@ -16,6 +16,7 @@ package flip_kick
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )

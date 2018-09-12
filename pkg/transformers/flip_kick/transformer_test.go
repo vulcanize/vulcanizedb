@@ -54,7 +54,7 @@ var _ = Describe("FlipKick Transformer", func() {
 
 		startingBlockNumber := rand.Int63()
 		testConfig = shared.TransformerConfig{
-			ContractAddresses:   "0x12345",
+			ContractAddress:     "0x12345",
 			ContractAbi:         "test abi",
 			Topics:              []string{shared.FlipKickSignature},
 			StartingBlockNumber: startingBlockNumber,
@@ -83,7 +83,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(fetcher.FetchedContractAddress).To(Equal(testConfig.ContractAddresses))
+		Expect(fetcher.FetchedContractAddress).To(Equal(testConfig.ContractAddress))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber}))
 	})
@@ -100,7 +100,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(converter.ConverterContract).To(Equal(testConfig.ContractAddresses))
+		Expect(converter.ConverterContract).To(Equal(testConfig.ContractAddress))
 		Expect(converter.ConverterAbi).To(Equal(testConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal(logs))
 		Expect(converter.EntitiesToConvert).To(Equal([]flip_kick.FlipKickEntity{test_data.FlipKickEntity}))

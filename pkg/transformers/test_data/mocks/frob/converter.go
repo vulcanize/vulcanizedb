@@ -16,6 +16,7 @@ package frob
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
@@ -25,21 +26,26 @@ type MockFrobConverter struct {
 	PassedContractABI     string
 	PassedLog             types.Log
 	PassedEntity          frob.FrobEntity
-	converterError        error
+	toEntityError         error
+	toModelError          error
 }
 
-func (converter *MockFrobConverter) SetConverterError(err error) {
-	converter.converterError = err
+func (converter *MockFrobConverter) SetToEntityError(err error) {
+	converter.toEntityError = err
+}
+
+func (converter *MockFrobConverter) SetToModelError(err error) {
+	converter.toModelError = err
 }
 
 func (converter *MockFrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (frob.FrobEntity, error) {
 	converter.PassedContractAddress = contractAddress
 	converter.PassedContractABI = contractAbi
 	converter.PassedLog = ethLog
-	return test_data.FrobEntity, converter.converterError
+	return test_data.FrobEntity, converter.toEntityError
 }
 
-func (converter *MockFrobConverter) ToModel(frobEntity frob.FrobEntity) frob.FrobModel {
+func (converter *MockFrobConverter) ToModel(frobEntity frob.FrobEntity) (frob.FrobModel, error) {
 	converter.PassedEntity = frobEntity
-	return test_data.FrobModel
+	return test_data.FrobModel, converter.toModelError
 }

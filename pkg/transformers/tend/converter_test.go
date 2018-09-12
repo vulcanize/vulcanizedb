@@ -15,14 +15,10 @@
 package tend_test
 
 import (
-	"encoding/json"
-	"math/big"
-	"time"
-
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -30,73 +26,35 @@ import (
 
 var _ = Describe("Tend TendConverter", func() {
 	var converter tend.TendConverter
-	var emptyEntity tend.TendEntity
-	var testEntity tend.TendEntity
 
 	BeforeEach(func() {
-		converter = tend.TendConverter{}
-		emptyEntity = tend.TendEntity{}
-		testEntity = test_data.TendEntity
+		converter = tend.NewTendConverter()
 	})
 
-	Describe("ToEntity", func() {
-		It("converts a log to an entity", func() {
-			entity, err := converter.ToEntity(test_data.FlipAddress, shared.FlipperABI, test_data.TendLog)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(entity).To(Equal(testEntity))
-		})
-
-		It("returns an error if there is a failure in parsing the abi", func() {
-			malformedAbi := "bad"
-			entity, err := converter.ToEntity(test_data.FlipAddress, malformedAbi, test_data.TendLog)
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("invalid abi"))
-			Expect(entity).To(Equal(emptyEntity))
-		})
-
-		It("returns an error if there is a failure unpacking the log", func() {
-			incompleteAbi := "[{}]"
-			entity, err := converter.ToEntity(test_data.FlipAddress, incompleteAbi, test_data.TendLog)
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("abi: could not locate"))
-			Expect(entity).To(Equal(emptyEntity))
-		})
-	})
-
-	Describe("ToModel", func() {
-		It("converts an entity to a model", func() {
-			model, err := converter.ToModel(testEntity)
+	Describe("Convert", func() {
+		It("converts an eth log to a db model", func() {
+			model, err := converter.Convert(shared.FlipperContractAddress, shared.FlipperABI, test_data.TendLogNote)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(model).To(Equal(test_data.TendModel))
 		})
 
-		It("handles nil values", func() {
-			emptyEntity.Id = big.NewInt(1)
-			emptyLog, err := json.Marshal(types.Log{})
-			Expect(err).NotTo(HaveOccurred())
-			expectedModel := tend.TendModel{
-				Id:  "1",
-				Lot: "",
-				Bid: "",
-				Guy: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Tic: "",
-				Era: time.Unix(0, 0),
-				Raw: string(emptyLog),
-			}
-			model, err := converter.ToModel(emptyEntity)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(model).To(Equal(expectedModel))
-		})
-
-		It("returns an error if the log Id is nil", func() {
-			model, err := converter.ToModel(emptyEntity)
+		It("returns an error if the log data is empty", func() {
+			emptyDataLog := test_data.TendLogNote
+			emptyDataLog.Data = []byte{}
+			model, err := converter.Convert(shared.FlipperContractAddress, shared.FlipperABI, emptyDataLog)
 
 			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("tend log note data is empty"))
+			Expect(model).To(Equal(tend.TendModel{}))
+		})
+
+		It("returns an error if the expected amount of topics aren't in the log", func() {
+			invalidLog := test_data.TendLogNote
+			invalidLog.Topics = []common.Hash{}
+			model, err := converter.Convert(shared.FlipperContractAddress, shared.FlipperABI, invalidLog)
+
+			Expect(err).To(MatchError("tend log does not contain expected topics"))
 			Expect(model).To(Equal(tend.TendModel{}))
 		})
 	})

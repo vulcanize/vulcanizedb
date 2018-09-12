@@ -16,23 +16,25 @@ package price_feeds_test
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
-	price_feeds2 "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/price_feeds"
-	"math/big"
+	price_feeds_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/price_feeds"
 )
 
 var _ = Describe("Price feed transformer", func() {
 	It("gets missing headers for price feeds", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		transformer := price_feeds.PriceFeedTransformer{
 			Config:     price_feeds.PriceFeedConfig,
-			Fetcher:    &price_feeds2.MockPriceFeedFetcher{},
+			Fetcher:    &price_feeds_mocks.MockPriceFeedFetcher{},
 			Repository: mockRepository,
 		}
 
@@ -43,10 +45,10 @@ var _ = Describe("Price feed transformer", func() {
 	})
 
 	It("returns error is missing headers call returns err", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		mockRepository.SetMissingHeadersErr(fakes.FakeError)
 		transformer := price_feeds.PriceFeedTransformer{
-			Fetcher:    &price_feeds2.MockPriceFeedFetcher{},
+			Fetcher:    &price_feeds_mocks.MockPriceFeedFetcher{},
 			Repository: mockRepository,
 		}
 
@@ -57,11 +59,11 @@ var _ = Describe("Price feed transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		blockNumberOne := int64(1)
 		blockNumberTwo := int64(2)
 		mockRepository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumberOne}, {BlockNumber: blockNumberTwo}})
-		mockFetcher := &price_feeds2.MockPriceFeedFetcher{}
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
 		transformer := price_feeds.PriceFeedTransformer{
 			Fetcher:    mockFetcher,
 			Repository: mockRepository,
@@ -74,9 +76,9 @@ var _ = Describe("Price feed transformer", func() {
 	})
 
 	It("returns err if fetcher returns err", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		mockRepository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		mockFetcher := &price_feeds2.MockPriceFeedFetcher{}
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
 		mockFetcher.SetReturnErr(fakes.FakeError)
 		transformer := price_feeds.PriceFeedTransformer{
 			Fetcher:    mockFetcher,
@@ -90,10 +92,10 @@ var _ = Describe("Price feed transformer", func() {
 	})
 
 	It("persists model converted from log", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		headerID := int64(11111)
 		mockRepository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: headerID}})
-		mockFetcher := &price_feeds2.MockPriceFeedFetcher{}
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
 		blockNumber := uint64(22222)
 		txIndex := uint(33333)
 		usdValue := int64(44444)
@@ -132,10 +134,10 @@ var _ = Describe("Price feed transformer", func() {
 	})
 
 	It("returns error if creating price feed update returns error", func() {
-		mockRepository := &price_feeds2.MockPriceFeedRepository{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
 		mockRepository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
 		mockRepository.SetCreateErr(fakes.FakeError)
-		mockFetcher := &price_feeds2.MockPriceFeedFetcher{}
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
 		mockFetcher.SetReturnLogs([]types.Log{{}})
 		transformer := price_feeds.PriceFeedTransformer{
 			Fetcher:    mockFetcher,

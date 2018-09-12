@@ -18,15 +18,11 @@ import "time"
 
 type FlipKickModel struct {
 	Id  string
-	Vat string
-	Ilk string
 	Lot string
 	Bid string
-	Guy string
 	Gal string
 	End time.Time
-	Era time.Time
-	Lad string
+	Urn string
 	Tab string
 	Raw string `db:"raw_log"`
 }

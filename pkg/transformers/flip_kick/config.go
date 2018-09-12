@@ -17,7 +17,7 @@ package flip_kick
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var FlipKickConfig = shared.TransformerConfig{
-	ContractAddresses:   "0x08cb6176addcca2e1d1ffe21bee464b72ee4cd8d", //this is a temporary address deployed locally
+	ContractAddress:     shared.FlipperContractAddress,
 	ContractAbi:         shared.FlipperABI,
 	Topics:              []string{shared.FlipKickSignature},
 	StartingBlockNumber: 0,

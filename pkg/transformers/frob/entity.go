@@ -16,14 +16,18 @@ package frob
 
 import (
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type FrobEntity struct {
-	Ilk  [32]byte
-	Lad  [32]byte
-	Ink  *big.Int
-	Art  *big.Int
-	Dink *big.Int
-	Dart *big.Int
-	IArt *big.Int
+	Ilk              [32]byte
+	Urn              [32]byte
+	Ink              *big.Int
+	Art              *big.Int
+	Dink             *big.Int
+	Dart             *big.Int
+	IArt             *big.Int
+	TransactionIndex uint
+	Raw              types.Log
 }

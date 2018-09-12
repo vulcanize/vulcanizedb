@@ -19,16 +19,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"encoding/json"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 type Converter interface {
 	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (FrobEntity, error)
-	ToModel(flipKick FrobEntity) FrobModel
+	ToModel(flipKick FrobEntity) (FrobModel, error)
 }
 
-type FrobConverter struct {
-}
+type FrobConverter struct{}
 
 func (FrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (FrobEntity, error) {
 	entity := FrobEntity{}
@@ -39,17 +39,25 @@ func (FrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog
 	}
 	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
 	err = contract.UnpackLog(&entity, "Frob", ethLog)
+	entity.TransactionIndex = ethLog.TxIndex
+	entity.Raw = ethLog
 	return entity, err
 }
 
-func (FrobConverter) ToModel(frob FrobEntity) FrobModel {
-	return FrobModel{
-		Ilk:  frob.Ilk[:],
-		Lad:  frob.Lad[:],
-		Dink: frob.Dink.String(),
-		Dart: frob.Dart.String(),
-		Ink:  frob.Ink.String(),
-		Art:  frob.Art.String(),
-		IArt: frob.IArt.String(),
+func (FrobConverter) ToModel(frob FrobEntity) (FrobModel, error) {
+	rawLog, err := json.Marshal(frob.Raw)
+	if err != nil {
+		return FrobModel{}, err
 	}
+	return FrobModel{
+		Ilk:              frob.Ilk[:],
+		Urn:              frob.Urn[:],
+		Ink:              frob.Ink.String(),
+		Art:              frob.Art.String(),
+		Dink:             frob.Dink.String(),
+		Dart:             frob.Dart.String(),
+		IArt:             frob.IArt.String(),
+		TransactionIndex: frob.TransactionIndex,
+		Raw:              rawLog,
+	}, nil
 }

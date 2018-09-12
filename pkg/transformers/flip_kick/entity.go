@@ -23,15 +23,11 @@ import (
 
 type FlipKickEntity struct {
 	Id  *big.Int
-	Vat common.Address
-	Ilk [32]byte
 	Lot *big.Int
 	Bid *big.Int
-	Guy common.Address
 	Gal common.Address
 	End *big.Int
-	Era *big.Int
-	Lad common.Address
+	Urn [32]byte
 	Tab *big.Int
 	Raw types.Log
 }
