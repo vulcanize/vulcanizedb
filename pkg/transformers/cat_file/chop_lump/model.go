@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bite
+package chop_lump
 
-type BiteModel struct {
-	Id               string
-	Ilk              []byte
-	Urn              []byte
-	Ink              string
-	Art              string
-	IArt             string
-	Tab              string
-	Flip             string
+type CatFileChopLumpModel struct {
+	Ilk              string
+	What             string
+	Data             string
 	TransactionIndex uint   `db:"tx_idx"`
-	Raw              string `db:"raw_log"`
+	Raw              []byte `db:"raw_log"`
 }

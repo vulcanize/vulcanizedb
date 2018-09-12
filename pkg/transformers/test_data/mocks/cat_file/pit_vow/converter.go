@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bite
+package pit_vow
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-type BiteEntity struct {
-	Id               *big.Int
-	Ilk              [32]byte
-	Urn              [32]byte
-	Ink              *big.Int
-	Art              *big.Int
-	Tab              *big.Int
-	Flip             *big.Int
-	IArt             *big.Int
-	TransactionIndex uint
-	Raw              types.Log
+type MockCatFilePitVowConverter struct {
+	err        error
+	PassedLogs []types.Log
+}
+
+func (converter *MockCatFilePitVowConverter) ToModels(ethLogs []types.Log) ([]pit_vow.CatFilePitVowModel, error) {
+	converter.PassedLogs = ethLogs
+	return []pit_vow.CatFilePitVowModel{test_data.CatFilePitVowModel}, converter.err
+}
+
+func (converter *MockCatFilePitVowConverter) SetConverterError(e error) {
+	converter.err = e
 }

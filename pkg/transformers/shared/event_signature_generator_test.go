@@ -84,6 +84,13 @@ var _ = Describe("Event signature generator", func() {
 
 	Describe("getting the solidity method/event signature from the abi", func() {
 		Describe("it handles methods", func() {
+			It("gets the cat file method signature", func() {
+				expected := "file(bytes32,bytes32,address)"
+				actual := shared.GetSolidityMethodSignature(shared.CatABI, "file")
+
+				Expect(expected).To(Equal(actual))
+			})
+
 			It("gets the flip dent method signature", func() {
 				expected := "dent(uint256,uint256,uint256)"
 				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "dent")

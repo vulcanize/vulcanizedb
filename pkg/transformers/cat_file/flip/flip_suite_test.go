@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bite
+package flip_test
 
-type BiteModel struct {
-	Id               string
-	Ilk              []byte
-	Urn              []byte
-	Ink              string
-	Art              string
-	IArt             string
-	Tab              string
-	Flip             string
-	TransactionIndex uint   `db:"tx_idx"`
-	Raw              string `db:"raw_log"`
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestFlip(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Flip Suite")
 }
