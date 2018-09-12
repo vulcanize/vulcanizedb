@@ -81,4 +81,68 @@ var _ = Describe("Event signature generator", func() {
 			Expect(expected).To(Equal(actual))
 		})
 	})
+
+	Describe("getting the solidity method/event signature from the abi", func() {
+		Describe("it handles methods", func() {
+			It("gets the flip dent method signature", func() {
+				expected := "dent(uint256,uint256,uint256)"
+				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "dent")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the flip tend method signature", func() {
+				expected := "tend(uint256,uint256,uint256)"
+				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "tend")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the pit file deb ceiling method signature", func() {
+				expected := "file(bytes32,address)"
+				actual := shared.GetSolidityMethodSignature(shared.PitABI, "file")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the vat init method signature", func() {
+				expected := "init(bytes32)"
+				actual := shared.GetSolidityMethodSignature(shared.VatABI, "init")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+		})
+
+		Describe("it handles events", func() {
+			It("gets the Bite event signature", func() {
+				expected := "Bite(bytes32,bytes32,uint256,uint256,uint256,uint256,uint256)"
+				actual := shared.GetSolidityMethodSignature(shared.CatABI, "Bite")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the flip Kick event signature", func() {
+				expected := "Kick(uint256,uint256,uint256,address,uint48,bytes32,uint256)"
+				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "Kick")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the pit frob event signature", func() {
+				expected := "Frob(bytes32,bytes32,uint256,uint256,int256,int256,uint256)"
+				actual := shared.GetSolidityMethodSignature(shared.PitABI, "Frob")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the log value method signature", func() {
+				expected := "LogValue(bytes32)"
+				actual := shared.GetSolidityMethodSignature(shared.MedianizerABI, "LogValue")
+
+				Expect(expected).To(Equal(actual))
+
+			})
+		})
+	})
 })

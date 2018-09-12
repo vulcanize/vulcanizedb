@@ -22,16 +22,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
 	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
 }
 
-type TendConverter struct {
-	BidFetcher shared.IBidFetcher
-}
+type TendConverter struct {}
 
 func NewTendConverter() TendConverter {
 	return TendConverter{}

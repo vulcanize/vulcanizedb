@@ -14,7 +14,13 @@
 
 package shared
 
-import "github.com/ethereum/go-ethereum/crypto"
+import (
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"fmt"
+	"strings"
+)
 
 func GetEventSignature(solidityMethodSignature string) string {
 	eventSignature := []byte(solidityMethodSignature)
@@ -25,4 +31,26 @@ func GetEventSignature(solidityMethodSignature string) string {
 func GetLogNoteSignature(solidityMethodSignature string) string {
 	rawSignature := GetEventSignature(solidityMethodSignature)
 	return rawSignature[:10] + "00000000000000000000000000000000000000000000000000000000"
+}
+
+func GetSolidityMethodSignature(abi, name string) string {
+	parsedAbi, _ := geth.ParseAbi(abi)
+
+	if method, ok := parsedAbi.Methods[name]; ok {
+		return method.Sig()
+	} else if event, ok := parsedAbi.Events[name]; ok {
+		return getEventSignature(event)
+	}
+	return ""
+
+}
+
+func getEventSignature(event abi.Event) string {
+	types := make([]string, len(event.Inputs))
+	for i, input := range event.Inputs {
+		types[i] = input.Type.String()
+		i++
+	}
+
+	return fmt.Sprintf("%v(%v)", event.Name, strings.Join(types, ","))
 }
