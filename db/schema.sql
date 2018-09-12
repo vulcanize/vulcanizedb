@@ -36,6 +36,22 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
+--
+-- Name: notify_pricefeed(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.notify_pricefeed() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  PERFORM pg_notify(
+    CAST('postgraphile:price_feed' AS text),
+    row_to_json(NEW)::text);
+  RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
@@ -848,6 +864,13 @@ CREATE INDEX tx_from_index ON public.transactions USING btree (tx_from);
 --
 
 CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
+
+
+--
+-- Name: price_feeds notify_pricefeeds; Type: TRIGGER; Schema: maker; Owner: -
+--
+
+CREATE TRIGGER notify_pricefeeds AFTER INSERT ON maker.price_feeds FOR EACH ROW EXECUTE PROCEDURE public.notify_pricefeed();
 
 
 --
