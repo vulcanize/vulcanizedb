@@ -150,6 +150,39 @@ ALTER SEQUENCE maker.dent_db_id_seq OWNED BY maker.dent.db_id;
 
 
 --
+-- Name: drip_drip; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.drip_drip (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: drip_drip_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.drip_drip_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: drip_drip_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.drip_drip_id_seq OWNED BY maker.drip_drip.id;
+
+
+--
 -- Name: drip_file_ilk; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -932,6 +965,13 @@ ALTER TABLE ONLY maker.dent ALTER COLUMN db_id SET DEFAULT nextval('maker.dent_d
 
 
 --
+-- Name: drip_drip id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_drip ALTER COLUMN id SET DEFAULT nextval('maker.drip_drip_id_seq'::regclass);
+
+
+--
 -- Name: drip_file_ilk id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1117,6 +1157,22 @@ ALTER TABLE ONLY maker.dent
 
 ALTER TABLE ONLY maker.dent
     ADD CONSTRAINT dent_pkey PRIMARY KEY (db_id);
+
+
+--
+-- Name: drip_drip drip_drip_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_drip
+    ADD CONSTRAINT drip_drip_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: drip_drip drip_drip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_drip
+    ADD CONSTRAINT drip_drip_pkey PRIMARY KEY (id);
 
 
 --
@@ -1448,6 +1504,14 @@ ALTER TABLE ONLY maker.deal
 
 ALTER TABLE ONLY maker.dent
     ADD CONSTRAINT dent_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: drip_drip drip_drip_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_drip
+    ADD CONSTRAINT drip_drip_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
