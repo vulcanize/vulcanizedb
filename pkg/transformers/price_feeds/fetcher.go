@@ -15,11 +15,14 @@
 package price_feeds
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"math/big"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type IPriceFeedFetcher interface {
@@ -48,7 +51,7 @@ func (fetcher PriceFeedFetcher) FetchLogValues(blockNumber int64) ([]types.Log, 
 		FromBlock: n,
 		ToBlock:   n,
 		Addresses: addresses,
-		Topics:    [][]common.Hash{{common.HexToHash(LogValueTopic0)}},
+		Topics:    [][]common.Hash{{common.HexToHash(shared.LogValueSignature)}},
 	}
 	return fetcher.blockChain.GetEthLogsWithCustomQuery(query)
 }

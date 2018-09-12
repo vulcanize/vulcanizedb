@@ -17,60 +17,67 @@ package tend
 import (
 	"encoding/json"
 	"errors"
-	"time"
+	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/utilities"
 )
 
 type Converter interface {
-	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (TendEntity, error)
-	ToModel(entity TendEntity) (TendModel, error)
+	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
 }
 
-type TendConverter struct{}
+type TendConverter struct {}
 
-func (c TendConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (TendEntity, error) {
-	entity := TendEntity{}
-	address := common.HexToAddress(contractAddress)
-	abi, err := geth.ParseAbi(contractAbi)
-
-	if err != nil {
-		return entity, err
-	}
-
-	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-	err = contract.UnpackLog(&entity, "Tend", ethLog)
-	if err != nil {
-		return entity, err
-	}
-	entity.TransactionIndex = ethLog.TxIndex
-	entity.Raw = ethLog
-	return entity, nil
+func NewTendConverter() TendConverter {
+	return TendConverter{}
 }
 
-func (c TendConverter) ToModel(entity TendEntity) (TendModel, error) {
-	if entity.Id == nil {
-		return TendModel{}, errors.New("Tend log ID cannot be nil.")
-	}
-
-	rawJson, err := json.Marshal(entity.Raw)
+func (c TendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error) {
+	err := validateLog(ethLog)
 	if err != nil {
 		return TendModel{}, err
 	}
-	era := utilities.ConvertNilToZeroTimeValue(entity.Era)
+
+	bidId := ethLog.Topics[2].Big()
+	guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
+	lot := ethLog.Topics[3].Big().String()
+
+	lastDataItemStartIndex := len(ethLog.Data) - 32
+	lastItem := ethLog.Data[lastDataItemStartIndex:]
+	last := big.NewInt(0).SetBytes(lastItem)
+	bidValue := last.String()
+	tic := "0"
+	//TODO: it is likely that the tic value will need to be added to an emitted event,
+	//so this will need to be updated at that point
+	transactionIndex := ethLog.TxIndex
+
+	rawJson, err := json.Marshal(ethLog)
+	if err != nil {
+		return TendModel{}, err
+	}
+	raw := string(rawJson)
+
 	return TendModel{
-		Id:               utilities.ConvertNilToEmptyString(entity.Id.String()),
-		Lot:              utilities.ConvertNilToEmptyString(entity.Lot.String()),
-		Bid:              utilities.ConvertNilToEmptyString(entity.Bid.String()),
-		Guy:              entity.Guy[:],
-		Tic:              utilities.ConvertNilToEmptyString(entity.Tic.String()),
-		Era:              time.Unix(era, 0),
-		TransactionIndex: entity.TransactionIndex,
-		Raw:              string(rawJson),
+		BidId:            bidId.String(),
+		Lot:              lot,
+		Bid:              bidValue,
+		Guy:              guy,
+		Tic:              tic,
+		TransactionIndex: transactionIndex,
+		Raw:              raw,
 	}, nil
+}
+
+func validateLog(ethLog types.Log) error {
+	if len(ethLog.Data) <= 0 {
+		return errors.New("tend log note data is empty")
+	}
+
+	if len(ethLog.Topics) < 4 {
+		return errors.New("tend log does not contain expected topics")
+	}
+
+	return nil
 }

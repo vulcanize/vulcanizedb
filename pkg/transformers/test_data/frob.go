@@ -15,15 +15,16 @@
 package test_data
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
 )
 
 var (
-	TemporaryFrobAddress     = "0xff3f2400f1600f3f493a9a92704a29b96795af1a"
 	TemporaryFrobBlockHash   = common.HexToHash("0x67ae45eace52de052a0fc58598974b101733f823fc191329ace7aded9a72b84b")
 	TemporaryFrobBlockNumber = int64(13)
 	TemporaryFrobData        = "0x000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000019"
@@ -39,10 +40,11 @@ var (
 	frobLad = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 217, 34, 137, 65, 83, 190, 158, 239, 123, 114, 24, 220, 86, 93, 29, 12, 226, 160, 146}
 	gem, _  = big.NewInt(0).SetString("115792089237316195423570985008687907853269984665640564039457584007913129639926", 10)
 	ink     = big.NewInt(15)
+	ilk     = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 )
 
 var EthFrobLog = types.Log{
-	Address: common.HexToAddress(TemporaryFrobAddress),
+	Address: common.HexToAddress(shared.PitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),
@@ -58,21 +60,26 @@ var EthFrobLog = types.Log{
 }
 
 var FrobEntity = frob.FrobEntity{
-	Ilk:  ilk,
-	Lad:  frobLad,
-	Dink: dink,
-	Dart: dart,
-	Ink:  ink,
-	Art:  art,
-	IArt: iArt,
+	Ilk:              ilk,
+	Urn:              frobLad,
+	Ink:              ink,
+	Art:              art,
+	Dink:             dink,
+	Dart:             dart,
+	IArt:             iArt,
+	TransactionIndex: EthFrobLog.TxIndex,
+	Raw:              EthFrobLog,
 }
 
+var rawFrobLog, _ = json.Marshal(EthFrobLog)
 var FrobModel = frob.FrobModel{
-	Ilk:  ilk[:],
-	Lad:  frobLad[:],
-	Dink: dink.String(),
-	Dart: dart.String(),
-	Ink:  ink.String(),
-	Art:  art.String(),
-	IArt: iArt.String(),
+	Ilk:              ilk[:],
+	Urn:              frobLad[:],
+	Ink:              ink.String(),
+	Art:              art.String(),
+	Dink:             dink.String(),
+	Dart:             dart.String(),
+	IArt:             iArt.String(),
+	TransactionIndex: EthFrobLog.TxIndex,
+	Raw:              rawFrobLog,
 }

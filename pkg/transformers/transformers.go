@@ -15,27 +15,44 @@
 package transformers
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
-	flipKickConfig := flip_kick.FlipKickConfig
-	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flipKickConfig}
-	frobConfig := frob.FrobConfig
-	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frobConfig}
-	priceFeedConfig := price_feeds.PriceFeedConfig
-	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: priceFeedConfig}
-	tendConfig := tend.TendConfig
-	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tendConfig}
+	biteTransformerInitializer := bite.BiteTransformerInitializer{Config: bite.BiteConfig}
+	dentTransformerInitializer := dent.DentTransformerInitializer{Config: dent.DentConfig}
+	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}
+	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frob.FrobConfig}
+	pitFileConfig := pit_file.PitFileConfig
+	pitFileDebtCeilingTransformerInitializer := debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}
+	pitFileIlkTransformerInitializer := ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}
+	pitFileStabilityFeeTransformerInitializer := stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}
+	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}
+	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tend.TendConfig}
+	vatInitConfig := vat_init.VatInitConfig
+	vatInitTransformerInitializer := vat_init.VatInitTransformerInitializer{Config: vatInitConfig}
 
 	return []shared.TransformerInitializer{
+		biteTransformerInitializer.NewBiteTransformer,
+		dentTransformerInitializer.NewDentTransformer,
 		flipKickTransformerInitializer.NewFlipKickTransformer,
 		frobTransformerInitializer.NewFrobTransformer,
+		pitFileDebtCeilingTransformerInitializer.NewPitFileDebtCeilingTransformer,
+		pitFileIlkTransformerInitializer.NewPitFileIlkTransformer,
+		pitFileStabilityFeeTransformerInitializer.NewPitFileStabilityFeeTransformer,
 		priceFeedTransformerInitializer.NewPriceFeedTransformer,
 		tendTransformerInitializer.NewTendTransformer,
+		vatInitTransformerInitializer.NewVatInitTransformer,
 	}
 }

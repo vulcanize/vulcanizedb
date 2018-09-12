@@ -15,7 +15,6 @@
 package tend_test
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -27,14 +26,13 @@ import (
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-// These test are pending either being able to emit a Tend event on a Ganache test chain or until the contracts are deployed to Kovan.
-var _ = XDescribe("Integration tests", func() {
-	It("Fetches Tend event logs from a local test chain", func() {
+// These test are marked as pending until the Flip contract is deployed to Kovan.
+var _ = Describe("Integration tests", func() {
+	XIt("Fetches Tend event logs from a local test chain", func() {
 		ipcPath := test_config.TestClient.IPCPath
 
 		rawRpcClient, err := rpc.Dial(ipcPath)
@@ -47,10 +45,10 @@ var _ = XDescribe("Integration tests", func() {
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 		realBlockChain := geth.NewBlockChain(blockChainClient, realNode, transactionConverter)
 		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(shared.TendSignature)
+		topic0 := common.HexToHash(shared.TendFunctionSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(test_data.FlipAddress, topics, test_data.FlipKickBlockNumber)
+		result, err := realFetcher.FetchLogs(shared.FlipperContractAddress, topics, test_data.FlipKickBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())
@@ -59,28 +57,5 @@ var _ = XDescribe("Integration tests", func() {
 		Expect(result[0].BlockNumber).To(Equal(test_data.EthFlipKickLog.BlockNumber))
 		Expect(result[0].Topics).To(Equal(test_data.EthFlipKickLog.Topics))
 		Expect(result[0].Index).To(Equal(test_data.EthFlipKickLog.Index))
-	})
-
-	It("unpacks an event log", func() {
-		address := common.HexToAddress(test_data.FlipAddress)
-		abi, err := geth.ParseAbi(shared.FlipperABI)
-		Expect(err).NotTo(HaveOccurred())
-
-		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-		entity := tend.TendEntity{}
-
-		var eventLog = test_data.TendLog
-
-		err = contract.UnpackLog(&entity, "Tend", eventLog)
-		Expect(err).NotTo(HaveOccurred())
-
-		expectedEntity := test_data.TendEntity
-		Expect(entity.Id).To(Equal(expectedEntity.Id))
-		Expect(entity.Lot).To(Equal(expectedEntity.Lot))
-		Expect(entity.Bid).To(Equal(expectedEntity.Bid))
-		Expect(entity.Guy).To(Equal(expectedEntity.Guy))
-		Expect(entity.Tic).To(Equal(expectedEntity.Tic))
-		Expect(entity.Era).To(Equal(expectedEntity.Era))
-		Expect(entity.Raw).To(Equal(expectedEntity.Raw))
 	})
 })

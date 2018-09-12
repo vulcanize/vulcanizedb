@@ -25,7 +25,6 @@ type MockFrobRepository struct {
 	PassedFrobModel           frob.FrobModel
 	PassedHeaderID            int64
 	PassedStartingBlockNumber int64
-	PassedTransactionIndex    uint
 	missingHeaders            []core.Header
 	missingHeadersErr         error
 }
@@ -42,9 +41,8 @@ func (repository *MockFrobRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
 
-func (repository *MockFrobRepository) Create(headerID int64, transactionIndex uint, model frob.FrobModel) error {
+func (repository *MockFrobRepository) Create(headerID int64, model frob.FrobModel) error {
 	repository.PassedHeaderID = headerID
-	repository.PassedTransactionIndex = transactionIndex
 	repository.PassedFrobModel = model
 	return repository.createError
 }
