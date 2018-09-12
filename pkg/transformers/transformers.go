@@ -18,6 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
@@ -37,6 +38,7 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	biteTransformerInitializer := bite.BiteTransformerInitializer{Config: bite.BiteConfig}
 	dealTransformerInitializer := deal.DealTransformerInitializer{Config: deal.Config}
 	dentTransformerInitializer := dent.DentTransformerInitializer{Config: dent.DentConfig}
+	dripDripTransformerInitializer := drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}
 	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}
 	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frob.FrobConfig}
 	dripFileConfig := drip_file.DripFileConfig
@@ -56,6 +58,7 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		dentTransformerInitializer.NewDentTransformer,
 		dripFileIlkTransformerInitializer.NewDripFileIlkTransformer,
 		dripFileRepoTransformerInitializer.NewDripFileRepoTransformer,
+		dripDripTransformerInitializer.NewDripDripTransformer,
 		flipKickTransformerInitializer.NewFlipKickTransformer,
 		frobTransformerInitializer.NewFrobTransformer,
 		pitFileDebtCeilingTransformerInitializer.NewPitFileDebtCeilingTransformer,
