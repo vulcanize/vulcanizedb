@@ -16,6 +16,10 @@ package transformers
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
@@ -38,6 +42,10 @@ import (
 
 var (
 	BiteTransformerInitializer                = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
+	catFileConfig                             = cat_file.CatFileConfig
+	CatFileChopLumpTransformerInitializer     = chop_lump.CatFileChopLumpTransformerInitializer{Config: catFileConfig}.NewCatFileChopLumpTransformer
+	CatFileFlipTransformerInitializer         = flip.CatFileFlipTransformerInitializer{Config: catFileConfig}.NewCatFileFlipTransformer
+	CatFilePitVowTransformerInitializer       = pit_vow.CatFilePitVowTransformerInitializer{Config: catFileConfig}.NewCatFilePitVowTransformer
 	DealTransformerInitializer                = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
 	DentTransformerInitializer                = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
 	DripDripTransformerInitializer            = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
@@ -60,6 +68,9 @@ var (
 func TransformerInitializers() []shared.TransformerInitializer {
 	return []shared.TransformerInitializer{
 		BiteTransformerInitializer,
+		CatFileChopLumpTransformerInitializer,
+		CatFileFlipTransformerInitializer,
+		CatFilePitVowTransformerInitializer,
 		DealTransformerInitializer,
 		DentTransformerInitializer,
 		DripDripTransformerInitializer,

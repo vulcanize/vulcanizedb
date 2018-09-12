@@ -64,7 +64,7 @@ var EthBiteLog = types.Log{
 var BiteEntity = bite.BiteEntity{
 	Id:               big.NewInt(biteId),
 	Ilk:              biteIlk,
-	Lad:              biteLad,
+	Urn:              biteLad,
 	Ink:              biteInk,
 	Art:              biteArt,
 	Tab:              biteTab,
@@ -77,7 +77,7 @@ var BiteEntity = bite.BiteEntity{
 var BiteModel = bite.BiteModel{
 	Id:               strconv.FormatInt(biteId, 10),
 	Ilk:              biteIlk[:],
-	Lad:              biteLad[:],
+	Urn:              biteLad[:],
 	Ink:              biteInk.String(),
 	Art:              biteArt.String(),
 	Tab:              biteTab.String(),

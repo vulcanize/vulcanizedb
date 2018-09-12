@@ -65,7 +65,7 @@ CREATE TABLE maker.bite (
     id integer NOT NULL,
     header_id integer NOT NULL,
     ilk bytea,
-    lad bytea,
+    urn bytea,
     ink character varying,
     art character varying,
     iart character varying,
@@ -94,6 +94,110 @@ CREATE SEQUENCE maker.bite_id_seq
 --
 
 ALTER SEQUENCE maker.bite_id_seq OWNED BY maker.bite.id;
+
+
+--
+-- Name: cat_file_chop_lump; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_file_chop_lump (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    what text,
+    data numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: cat_file_chop_lump_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_file_chop_lump_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_file_chop_lump_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_file_chop_lump_id_seq OWNED BY maker.cat_file_chop_lump.id;
+
+
+--
+-- Name: cat_file_flip; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_file_flip (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    what text,
+    flip text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: cat_file_flip_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_file_flip_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_file_flip_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_file_flip_id_seq OWNED BY maker.cat_file_flip.id;
+
+
+--
+-- Name: cat_file_pit_vow; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_file_pit_vow (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    what text,
+    data text,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: cat_file_pit_vow_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_file_pit_vow_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_file_pit_vow_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_file_pit_vow_id_seq OWNED BY maker.cat_file_pit_vow.id;
 
 
 --
@@ -713,7 +817,10 @@ CREATE TABLE public.checked_headers (
     deal_checked boolean DEFAULT false NOT NULL,
     dent_checked boolean DEFAULT false NOT NULL,
     flip_kick_checked boolean DEFAULT false NOT NULL,
-    tend_checked boolean DEFAULT false NOT NULL
+    tend_checked boolean DEFAULT false NOT NULL,
+    cat_file_chop_lump_checked boolean DEFAULT false NOT NULL,
+    cat_file_flip_checked boolean DEFAULT false NOT NULL,
+    cat_file_pit_vow_checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -1042,6 +1149,27 @@ ALTER TABLE ONLY maker.bite ALTER COLUMN id SET DEFAULT nextval('maker.bite_id_s
 
 
 --
+-- Name: cat_file_chop_lump id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_chop_lump ALTER COLUMN id SET DEFAULT nextval('maker.cat_file_chop_lump_id_seq'::regclass);
+
+
+--
+-- Name: cat_file_flip id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_flip ALTER COLUMN id SET DEFAULT nextval('maker.cat_file_flip_id_seq'::regclass);
+
+
+--
+-- Name: cat_file_pit_vow id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_pit_vow ALTER COLUMN id SET DEFAULT nextval('maker.cat_file_pit_vow_id_seq'::regclass);
+
+
+--
 -- Name: deal id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1230,6 +1358,54 @@ ALTER TABLE ONLY maker.bite
 
 ALTER TABLE ONLY maker.bite
     ADD CONSTRAINT bite_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_file_chop_lump cat_file_chop_lump_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_chop_lump
+    ADD CONSTRAINT cat_file_chop_lump_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: cat_file_chop_lump cat_file_chop_lump_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_chop_lump
+    ADD CONSTRAINT cat_file_chop_lump_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_file_flip cat_file_flip_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_flip
+    ADD CONSTRAINT cat_file_flip_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: cat_file_flip cat_file_flip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_flip
+    ADD CONSTRAINT cat_file_flip_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_file_pit_vow cat_file_pit_vow_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_pit_vow
+    ADD CONSTRAINT cat_file_pit_vow_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: cat_file_pit_vow cat_file_pit_vow_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_pit_vow
+    ADD CONSTRAINT cat_file_pit_vow_pkey PRIMARY KEY (id);
 
 
 --
@@ -1648,6 +1824,30 @@ CREATE TRIGGER notify_pricefeeds AFTER INSERT ON maker.price_feeds FOR EACH ROW 
 
 ALTER TABLE ONLY maker.bite
     ADD CONSTRAINT bite_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cat_file_chop_lump cat_file_chop_lump_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_chop_lump
+    ADD CONSTRAINT cat_file_chop_lump_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cat_file_flip cat_file_flip_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_flip
+    ADD CONSTRAINT cat_file_flip_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cat_file_pit_vow cat_file_pit_vow_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_pit_vow
+    ADD CONSTRAINT cat_file_pit_vow_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

@@ -56,7 +56,7 @@ func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 
 	id := entity.Id
 	ilk := entity.Ilk[:]
-	lad := entity.Lad[:]
+	urn := entity.Urn[:]
 	ink := entity.Ink
 	art := entity.Art
 	iArt := entity.IArt
@@ -72,7 +72,7 @@ func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 	return BiteModel{
 		Id:               shared.BigIntToString(id),
 		Ilk:              ilk,
-		Lad:              lad,
+		Urn:              urn,
 		Ink:              shared.BigIntToString(ink),
 		Art:              shared.BigIntToString(art),
 		IArt:             shared.BigIntToString(iArt),

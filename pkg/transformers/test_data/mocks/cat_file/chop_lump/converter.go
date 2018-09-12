@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bite
+package chop_lump
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-type BiteEntity struct {
-	Id               *big.Int
-	Ilk              [32]byte
-	Urn              [32]byte
-	Ink              *big.Int
-	Art              *big.Int
-	Tab              *big.Int
-	Flip             *big.Int
-	IArt             *big.Int
-	TransactionIndex uint
-	Raw              types.Log
+type MockCatFileChopLumpConverter struct {
+	Err        error
+	PassedLogs []types.Log
+}
+
+func (converter *MockCatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]chop_lump.CatFileChopLumpModel, error) {
+	converter.PassedLogs = ethLogs
+	return []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel}, converter.Err
+}
+
+func (converter *MockCatFileChopLumpConverter) SetConverterError(e error) {
+	converter.Err = e
 }

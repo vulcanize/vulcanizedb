@@ -38,7 +38,7 @@ var _ = Describe("Bite Converter", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(entity.Ilk).To(Equal(test_data.BiteEntity.Ilk))
-			Expect(entity.Lad).To(Equal(test_data.BiteEntity.Lad))
+			Expect(entity.Urn).To(Equal(test_data.BiteEntity.Urn))
 			Expect(entity.Ink).To(Equal(test_data.BiteEntity.Ink))
 			Expect(entity.Art).To(Equal(test_data.BiteEntity.Art))
 			Expect(entity.Tab).To(Equal(test_data.BiteEntity.Tab))
@@ -76,7 +76,7 @@ var _ = Describe("Bite Converter", func() {
 			expectedModel := bite.BiteModel{
 				Id:               "1",
 				Ilk:              []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Lad:              []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Urn:              []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 				Ink:              "",
 				Art:              "",
 				IArt:             "",

@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bite
+package cat_file
 
-type BiteModel struct {
-	Id               string
-	Ilk              []byte
-	Urn              []byte
-	Ink              string
-	Art              string
-	IArt             string
-	Tab              string
-	Flip             string
-	TransactionIndex uint   `db:"tx_idx"`
-	Raw              string `db:"raw_log"`
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+
+var CatFileConfig = shared.TransformerConfig{
+	ContractAddresses:   []string{shared.CatContractAddress},
+	ContractAbi:         shared.CatABI,
+	Topics:              []string{shared.CatFileChopLumpSignature, shared.CatFileFlipSignature, shared.CatFilePitVowSignature},
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }

@@ -34,9 +34,9 @@ func NewBiteRepository(db *postgres.DB) Repository {
 
 func (repository BiteRepository) Create(headerID int64, model BiteModel) error {
 	_, err := repository.db.Exec(
-		`INSERT into maker.bite (header_id, id, ilk, lad, ink, art, iart, tab, flip, tx_idx, raw_log)
+		`INSERT into maker.bite (header_id, id, ilk, urn, ink, art, iart, tab, flip, tx_idx, raw_log)
         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-		headerID, model.Id, model.Ilk, model.Lad, model.Ink, model.Art, model.IArt, model.Tab, model.Flip, model.TransactionIndex, model.Raw,
+		headerID, model.Id, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.Flip, model.TransactionIndex, model.Raw,
 	)
 
 	if err != nil {
