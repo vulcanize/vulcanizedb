@@ -22,17 +22,23 @@ import (
 )
 
 type MockPriceFeedRepository struct {
-	createErr                 error
-	missingHeaders            []core.Header
-	missingHeadersErr         error
-	passedEndingBlockNumber   int64
-	passedHeaderID            int64
-	passedModel               price_feeds.PriceFeedModel
-	passedStartingBlockNumber int64
+	createErr                       error
+	createPassedHeaderID            int64
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderID int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
+	passedEndingBlockNumber         int64
+	passedModel                     price_feeds.PriceFeedModel
+	passedStartingBlockNumber       int64
 }
 
 func (repository *MockPriceFeedRepository) SetCreateErr(err error) {
 	repository.createErr = err
+}
+
+func (repository *MockPriceFeedRepository) SetMarkHeaderCheckedErr(err error) {
+	repository.markHeaderCheckedErr = err
 }
 
 func (repository *MockPriceFeedRepository) SetMissingHeadersErr(err error) {
@@ -44,9 +50,14 @@ func (repository *MockPriceFeedRepository) SetMissingHeaders(headers []core.Head
 }
 
 func (repository *MockPriceFeedRepository) Create(headerID int64, model price_feeds.PriceFeedModel) error {
-	repository.passedHeaderID = headerID
+	repository.createPassedHeaderID = headerID
 	repository.passedModel = model
 	return repository.createErr
+}
+
+func (repository *MockPriceFeedRepository) MarkHeaderChecked(headerID int64) error {
+	repository.markHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
 }
 
 func (repository *MockPriceFeedRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
@@ -56,8 +67,12 @@ func (repository *MockPriceFeedRepository) MissingHeaders(startingBlockNumber, e
 }
 
 func (repository *MockPriceFeedRepository) AssertCreateCalledWith(headerID int64, model price_feeds.PriceFeedModel) {
-	Expect(repository.passedHeaderID).To(Equal(headerID))
+	Expect(repository.createPassedHeaderID).To(Equal(headerID))
 	Expect(repository.passedModel).To(Equal(model))
+}
+
+func (repository *MockPriceFeedRepository) AssertMarkHeaderCheckedCalledWith(headerID int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(headerID))
 }
 
 func (repository *MockPriceFeedRepository) AssertMissingHeadersCalledwith(startingBlockNumber, endingBlockNumber int64) {

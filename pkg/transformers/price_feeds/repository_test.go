@@ -48,12 +48,28 @@ var _ = Describe("Price feeds repository", func() {
 			Expect(dbPriceFeedUpdate.Raw).To(MatchJSON(test_data.PriceFeedModel.Raw))
 		})
 
+		It("marks headerID as checked for price feed logs", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
+
+			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
 		It("does not duplicate price feed updates", func() {
 			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
-			blockNumber := uint64(12345)
-			header := core.Header{BlockNumber: int64(blockNumber)}
+			header := core.Header{BlockNumber: int64(uint64(12345))}
 			headerID, err := headerRepository.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
@@ -66,10 +82,46 @@ var _ = Describe("Price feeds repository", func() {
 		})
 	})
 
+	Describe("MarkHeaderChecked", func() {
+		It("creates a row for a new headerID", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
+
+			err = priceFeedRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates row when headerID already exists", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+
+			err = priceFeedRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+	})
+
 	Describe("MissingHeaders", func() {
-		It("returns headers with no associated price feed event", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+		It("returns headers that haven't been checked", func() {
+			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			startingBlockNumber := int64(1)
@@ -83,7 +135,7 @@ var _ = Describe("Price feeds repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
-			err := priceFeedRepository.Create(headerIDs[1], test_data.PriceFeedModel)
+			err := priceFeedRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := priceFeedRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
@@ -92,6 +144,33 @@ var _ = Describe("Price feeds repository", func() {
 			Expect(len(headers)).To(Equal(2))
 			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
 			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+		})
+
+		It("only treats headers as checked if price feeds have been checked", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			startingBlockNumber := int64(1)
+			priceFeedBlockNumber := int64(2)
+			endingBlockNumber := int64(3)
+			blockNumbers := []int64{startingBlockNumber, priceFeedBlockNumber, endingBlockNumber, endingBlockNumber + 1}
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := priceFeedRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(priceFeedBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(priceFeedBlockNumber)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(priceFeedBlockNumber)))
 		})
 
 		It("only returns headers associated with the current node", func() {
@@ -113,7 +192,7 @@ var _ = Describe("Price feeds repository", func() {
 			}
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
 			priceFeedRepositoryTwo := price_feeds.NewPriceFeedRepository(dbTwo)
-			err := priceFeedRepository.Create(headerIDs[0], test_data.PriceFeedModel)
+			err := priceFeedRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := priceFeedRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])

@@ -663,6 +663,37 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 
 --
+-- Name: checked_headers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.checked_headers (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    price_feeds_checked boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: checked_headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.checked_headers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: checked_headers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
+
+
+--
 -- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1072,6 +1103,13 @@ ALTER TABLE ONLY public.blocks ALTER COLUMN id SET DEFAULT nextval('public.block
 
 
 --
+-- Name: checked_headers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('public.checked_headers_id_seq'::regclass);
+
+
+--
 -- Name: eth_nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1376,6 +1414,22 @@ ALTER TABLE ONLY public.blocks
 
 
 --
+-- Name: checked_headers checked_headers_header_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_header_id_key UNIQUE (header_id);
+
+
+--
+-- Name: checked_headers checked_headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: watched_contracts contract_hash_uc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1647,6 +1701,14 @@ ALTER TABLE ONLY public.receipts
 
 ALTER TABLE ONLY public.token_supply
     ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: checked_headers checked_headers_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

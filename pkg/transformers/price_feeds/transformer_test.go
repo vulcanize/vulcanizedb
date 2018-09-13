@@ -96,6 +96,42 @@ var _ = Describe("Price feed transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &price_feeds_mocks.MockPriceFeedConverter{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
+		transformer := price_feeds.PriceFeedTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &price_feeds_mocks.MockPriceFeedConverter{}
+		mockRepository := &price_feeds_mocks.MockPriceFeedRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}
+		transformer := price_feeds.PriceFeedTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts log to a model", func() {
 		mockConverter := &price_feeds_mocks.MockPriceFeedConverter{}
 		mockFetcher := &price_feeds_mocks.MockPriceFeedFetcher{}

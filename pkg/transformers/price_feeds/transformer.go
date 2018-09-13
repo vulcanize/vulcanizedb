@@ -53,6 +53,12 @@ func (transformer PriceFeedTransformer) Execute() error {
 		if err != nil {
 			return err
 		}
+		if len(logs) < 1 {
+			err := transformer.Repository.MarkHeaderChecked(header.Id)
+			if err != nil {
+				return err
+			}
+		}
 		for _, log := range logs {
 			model, err := transformer.Converter.ToModel(log, header.Id)
 			if err != nil {
