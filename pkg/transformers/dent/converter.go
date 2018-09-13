@@ -24,7 +24,7 @@ import (
 )
 
 type Converter interface {
-	Convert(contractAddress string, contractAbi string, ethLog types.Log) (DentModel, error)
+	ToModel(ethLog types.Log) (DentModel, error)
 }
 
 type DentConverter struct{}
@@ -33,7 +33,7 @@ func NewDentConverter() DentConverter {
 	return DentConverter{}
 }
 
-func (c DentConverter) Convert(contractAddress, contractAbi string, ethLog types.Log) (DentModel, error) {
+func (c DentConverter) ToModel(ethLog types.Log) (DentModel, error) {
 	err := validateLog(ethLog)
 	if err != nil {
 		return DentModel{}, err

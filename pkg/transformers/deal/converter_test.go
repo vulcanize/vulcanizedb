@@ -12,46 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dent_test
+package deal_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-var _ = Describe("Dent Converter", func() {
-	var converter dent.DentConverter
+var _ = Describe("Flip Deal Converter", func() {
+	It("converts a log to a model", func() {
+		converter := deal.DealConverter{}
 
-	BeforeEach(func() {
-		converter = dent.NewDentConverter()
-	})
-
-	It("converts an eth log to a db model", func() {
-		model, err := converter.ToModel(test_data.DentLog)
+		model, err := converter.ToModel(test_data.DealLogNote)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.DentModel))
+		Expect(model).To(Equal(test_data.DealModel))
 	})
 
 	It("returns an error if the expected amount of topics aren't in the log", func() {
-		invalidLog := test_data.DentLog
+		converter := deal.DealConverter{}
+		invalidLog := test_data.DealLogNote
 		invalidLog.Topics = []common.Hash{}
 		model, err := converter.ToModel(invalidLog)
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError("dent log does not contain expected topics"))
-		Expect(model).To(Equal(dent.DentModel{}))
-	})
-
-	It("returns an error if the log data is empty", func() {
-		emptyDataLog := test_data.DentLog
-		emptyDataLog.Data = []byte{}
-		model, err := converter.ToModel(emptyDataLog)
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError("dent log data is empty"))
-		Expect(model).To(Equal(dent.DentModel{}))
+		Expect(err).To(MatchError("deal log does not contain expected topics"))
+		Expect(model).To(Equal(deal.DealModel{}))
 	})
 })

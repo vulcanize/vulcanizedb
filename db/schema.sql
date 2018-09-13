@@ -80,6 +80,39 @@ ALTER SEQUENCE maker.bite_id_seq OWNED BY maker.bite.id;
 
 
 --
+-- Name: deal; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.deal (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    bid_id numeric NOT NULL,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: deal_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.deal_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: deal_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.deal_id_seq OWNED BY maker.deal.id;
+
+
+--
 -- Name: dent; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -885,6 +918,13 @@ ALTER TABLE ONLY maker.bite ALTER COLUMN id SET DEFAULT nextval('maker.bite_id_s
 
 
 --
+-- Name: deal id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.deal ALTER COLUMN id SET DEFAULT nextval('maker.deal_id_seq'::regclass);
+
+
+--
 -- Name: dent db_id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1045,6 +1085,22 @@ ALTER TABLE ONLY maker.bite
 
 ALTER TABLE ONLY maker.bite
     ADD CONSTRAINT bite_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: deal deal_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.deal
+    ADD CONSTRAINT deal_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: deal deal_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.deal
+    ADD CONSTRAINT deal_pkey PRIMARY KEY (id);
 
 
 --
@@ -1376,6 +1432,14 @@ CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
 
 ALTER TABLE ONLY maker.bite
     ADD CONSTRAINT bite_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: deal deal_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.deal
+    ADD CONSTRAINT deal_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

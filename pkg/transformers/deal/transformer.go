@@ -12,34 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dent
+package deal
 
 import (
-	"log"
-
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"log"
 )
 
-type DentTransformer struct {
+type DealTransformer struct {
 	Config     shared.TransformerConfig
 	Converter  Converter
 	Fetcher    shared.LogFetcher
 	Repository Repository
 }
 
-type DentTransformerInitializer struct {
+type DealTransformerInitializer struct {
 	Config shared.TransformerConfig
 }
 
-func (i DentTransformerInitializer) NewDentTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
-	converter := NewDentConverter()
+func (i DealTransformerInitializer) NewDealTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
+	converter := NewDealConverter()
 	fetcher := shared.NewFetcher(blockChain)
-	repository := NewDentRepository(db)
-	return DentTransformer{
+	repository := NewDealRepository(db)
+	return DealTransformer{
 		Config:     i.Config,
 		Converter:  converter,
 		Fetcher:    fetcher,
@@ -47,34 +45,33 @@ func (i DentTransformerInitializer) NewDentTransformer(db *postgres.DB, blockCha
 	}
 }
 
-func (t DentTransformer) Execute() error {
+func (t DealTransformer) Execute() error {
 	config := t.Config
-	topics := [][]common.Hash{{common.HexToHash(shared.DentFunctionSignature)}}
+	topics := [][]common.Hash{{common.HexToHash(shared.DealSignature)}}
+
 	headers, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
+	if err != nil {
+		return err
+	}
+
 	for _, header := range headers {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
-
 		if err != nil {
-			log.Println("Error fetching dent logs:", err)
+			log.Println("Error fetching deal logs:", err)
 			return err
 		}
-
 		for _, ethLog := range ethLogs {
 			model, err := t.Converter.ToModel(ethLog)
-
 			if err != nil {
-				log.Println("Error converting dent log", err)
+				log.Println("Error converting deal log", err)
 				return err
 			}
-
 			err = t.Repository.Create(header.Id, model)
-
 			if err != nil {
-				log.Println("Error persisting dent record", err)
+				log.Println("Error persisting deal record", err)
 				return err
 			}
 		}
 	}
-
 	return err
 }
