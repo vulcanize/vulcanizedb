@@ -16,6 +16,7 @@ package transformers
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
@@ -34,6 +35,7 @@ import (
 
 func TransformerInitializers() []shared.TransformerInitializer {
 	biteTransformerInitializer := bite.BiteTransformerInitializer{Config: bite.BiteConfig}
+	dealTransformerInitializer := deal.DealTransformerInitializer{Config: deal.Config}
 	dentTransformerInitializer := dent.DentTransformerInitializer{Config: dent.DentConfig}
 	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}
 	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frob.FrobConfig}
@@ -46,11 +48,11 @@ func TransformerInitializers() []shared.TransformerInitializer {
 	pitFileStabilityFeeTransformerInitializer := stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}
 	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}
 	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tend.TendConfig}
-	vatInitConfig := vat_init.VatInitConfig
-	vatInitTransformerInitializer := vat_init.VatInitTransformerInitializer{Config: vatInitConfig}
+	vatInitTransformerInitializer := vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}
 
 	return []shared.TransformerInitializer{
 		biteTransformerInitializer.NewBiteTransformer,
+		dealTransformerInitializer.NewDealTransformer,
 		dentTransformerInitializer.NewDentTransformer,
 		dripFileIlkTransformerInitializer.NewDripFileIlkTransformer,
 		dripFileRepoTransformerInitializer.NewDripFileRepoTransformer,

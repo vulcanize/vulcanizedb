@@ -12,38 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dent_test
+package deal_test
 
 import (
-	"math/rand"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	dent_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/dent"
+	deal_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/deal"
+	"math/rand"
 )
 
-var _ = Describe("DentTransformer", func() {
-	var config = dent.DentConfig
-	var dentRepository dent_mocks.MockDentRepository
+var _ = Describe("DealTransformer", func() {
+	var config = deal.Config
+	var dealRepository deal_mocks.MockDealRepository
 	var fetcher mocks.MockLogFetcher
-	var converter dent_mocks.MockDentConverter
-	var transformer dent.DentTransformer
+	var converter deal_mocks.MockDealConverter
+	var transformer deal.DealTransformer
 
 	BeforeEach(func() {
-		dentRepository = dent_mocks.MockDentRepository{}
+		dealRepository = deal_mocks.MockDealRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = dent_mocks.MockDentConverter{}
-		transformer = dent.DentTransformer{
-			Repository: &dentRepository,
+		converter = deal_mocks.MockDealConverter{}
+		transformer = deal.DealTransformer{
+			Repository: &dealRepository,
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
@@ -52,78 +51,70 @@ var _ = Describe("DentTransformer", func() {
 
 	It("gets missing headers", func() {
 		err := transformer.Execute()
-
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dentRepository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
-		Expect(dentRepository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
+		Expect(dealRepository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(dealRepository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns an error if fetching the missing headers fails", func() {
-		dentRepository.SetMissingHeadersError(fakes.FakeError)
+		dealRepository.SetMissingHeadersErr(fakes.FakeError)
 		err := transformer.Execute()
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("fetches logs for each missing header", func() {
 		header1 := core.Header{BlockNumber: rand.Int63()}
 		header2 := core.Header{BlockNumber: rand.Int63()}
-		dentRepository.SetMissingHeaders([]core.Header{header1, header2})
+		dealRepository.SetMissingHeaders([]core.Header{header1, header2})
 		err := transformer.Execute()
-
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedContractAddress).To(Equal(config.ContractAddress))
-		expectedTopics := [][]common.Hash{{common.HexToHash(shared.DentFunctionSignature)}}
+		expectedTopics := [][]common.Hash{{common.HexToHash(shared.DealSignature)}}
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{header1.BlockNumber, header2.BlockNumber}))
 	})
 
 	It("returns an error if fetching logs fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
+		dealRepository.SetMissingHeaders([]core.Header{{}})
 		fetcher.SetFetcherError(fakes.FakeError)
 		err := transformer.Execute()
-
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("converts each eth log to a Model", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
+		dealRepository.SetMissingHeaders([]core.Header{{}})
+		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
 		err := transformer.Execute()
-
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.DentLog}))
+		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.DealLogNote}))
 	})
 
 	It("returns an error if converting the eth log fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
-		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
+		dealRepository.SetMissingHeaders([]core.Header{{}})
+		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
 		converter.SetConverterError(fakes.FakeError)
 		err := transformer.Execute()
-
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("persists each model as a Dent record", func() {
+	It("persists each model as a Deal record", func() {
 		header1 := core.Header{Id: rand.Int63()}
 		header2 := core.Header{Id: rand.Int63()}
-		dentRepository.SetMissingHeaders([]core.Header{header1, header2})
-		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
+		dealRepository.SetMissingHeaders([]core.Header{header1, header2})
+		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
 		err := transformer.Execute()
-
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dentRepository.PassedDentModels).To(Equal([]dent.DentModel{test_data.DentModel, test_data.DentModel}))
-		Expect(dentRepository.PassedHeaderIds).To(Equal([]int64{header1.Id, header2.Id}))
+		Expect(dealRepository.PassedDealModels).To(Equal([]deal.DealModel{test_data.DealModel, test_data.DealModel}))
+		Expect(dealRepository.PassedHeaderIDs).To(Equal([]int64{header1.Id, header2.Id}))
 	})
 
-	It("returns an error if persisting dent record fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
-		dentRepository.SetCreateError(fakes.FakeError)
-		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
+	It("returns an error if persisting deal record fails", func() {
+		dealRepository.SetMissingHeaders([]core.Header{{}})
+		dealRepository.SetCreateError(fakes.FakeError)
+		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
 		err := transformer.Execute()
-
 		Expect(err).To(HaveOccurred())
 	})
 })

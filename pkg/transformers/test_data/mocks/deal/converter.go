@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dent
+package deal
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-type MockDentConverter struct {
-	converterError        error
-	PassedContractAddress string
-	PassedContractAbi     string
-	LogsToConvert         []types.Log
+type MockDealConverter struct {
+	ConverterContract string
+	ConverterAbi      string
+	LogsToConvert     []types.Log
+	ConverterError    error
 }
 
-func (c *MockDentConverter) ToModel(ethLog types.Log) (dent.DentModel, error) {
+func (c *MockDealConverter) ToModel(ethLog types.Log) (deal.DealModel, error) {
 	c.LogsToConvert = append(c.LogsToConvert, ethLog)
-	return test_data.DentModel, c.converterError
+	return test_data.DealModel, c.ConverterError
 }
 
-func (c *MockDentConverter) SetConverterError(err error) {
-	c.converterError = err
+func (c *MockDealConverter) SetConverterError(err error) {
+	c.ConverterError = err
 }

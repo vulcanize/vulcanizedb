@@ -36,6 +36,7 @@ var (
 
 	//TODO: get pit and drip file method signatures directly from the ABI
 	biteMethod                = GetSolidityMethodSignature(CatABI, "Bite")
+	dealMethod                = GetSolidityMethodSignature(FlipperABI, "deal")
 	dentMethod                = GetSolidityMethodSignature(FlipperABI, "dent")
 	dripFileIlkMethod         = "file(bytes32,bytes32,uint256)"
 	dripFileRepoMethod        = GetSolidityMethodSignature(DripABI, "file")
@@ -50,6 +51,7 @@ var (
 	vatInitMethod             = GetSolidityMethodSignature(VatABI, "init")
 
 	BiteSignature                = GetEventSignature(biteMethod)
+	DealSignature                = GetLogNoteSignature(dealMethod)
 	DentFunctionSignature        = GetLogNoteSignature(dentMethod)
 	DripFileIlkSignature         = GetLogNoteSignature(dripFileIlkMethod)
 	DripFileRepoSignature        = GetLogNoteSignature(dripFileRepoMethod)
