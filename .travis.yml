@@ -16,6 +16,7 @@ before_install:
   - npm install -g ganache-cli
 
 before_script:
+  - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
   - bash ./pkg/transformers/start_test_chain.sh
