@@ -44,3 +44,7 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
   version = "1.8.15"
+
+[[constraint]]
+  name = "github.com/pressly/sup"
+  version = "0.5.3"

@@ -1,0 +1,53 @@
+---
+version: 0.5
+
+networks:
+  staging:
+    env:
+      VDB_PATH: /root/go_projects/src/github.com/8thlight/vulcanizedb
+      VDB_PG_USER: vulcanize
+      VDB_PG_PW: vulcanize
+    hosts:
+      - root@147.75.96.51
+
+targets:
+  deploy:
+    - remove
+    - transfer
+    - migrate
+    - buildPostgraphile
+    - buildVDB
+    - lightSync
+    - postgraphile
+
+commands:
+  remove:
+    desc: remove old vulcanizedb
+    run: rm -rf $VDB_PATH && rm -rf /usr/local/vulcanizedb
+  transfer:
+    desc: transfer build to remote server
+    local: rsync -r . root@147.75.96.51:$VDB_PATH
+  migrate:
+    desc: run migration
+    run: >
+      cd $VDB_PATH &&
+      /root/go_projects/bin/migrate -database postgresql://$VDB_PG_USER:$VDB_PG_PW@127.0.0.1:5432/vulcanize_public?sslmode=disable -path ./db/migrations up
+  buildPostgraphile:
+    desc: build postgraphile express app
+    run: >
+      cd $VDB_PATH/postgraphile && 
+      yarn install &&
+      tsc
+  buildVDB:
+    desc: build vulcanizedb
+    run: >
+      cd $VDB_PATH &&
+      GOPATH=$HOME/go_projects go get &&
+      GOPATH=$HOME/go_projects go build &&
+      cp -r . /usr/local/vulcanizedb
+  lightSync:
+    desc: start vdb light sync
+    run: systemctl daemon-reload && sudo systemctl restart vulcanizedb.service
+  postgraphile:
+    desc: start postgraphile
+    run: systemctl daemon-reload && sudo systemctl restart postgraphile.service
