@@ -6,7 +6,7 @@ password = "vulcanize"
 port = 5432
 
 [client]
-ipcPath = "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+ipcPath = "https://covan.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
 
 [datadog]
 name = "maker_vdb_staging"
