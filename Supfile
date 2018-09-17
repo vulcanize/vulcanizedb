@@ -25,7 +25,7 @@ commands:
     desc: remove old vulcanizedb
     run: rm -rf $VDB_PATH && rm -rf /usr/local/vulcanizedb
   transfer:
-    desc: transfer build to remote server
+    desc: transfer repo to remote server
     local: rsync -r . root@147.75.96.51:$VDB_PATH
   migrate:
     desc: run migration
