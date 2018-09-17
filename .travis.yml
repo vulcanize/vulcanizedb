@@ -6,6 +6,8 @@ services:
   - postgresql
 addons:
   postgresql: "9.6"
+  ssh_known_hosts:
+    - 147.75.96.51
 
 go_import_path: github.com/vulcanize/vulcanizedb
 
@@ -29,7 +31,4 @@ notifications:
 
 after_script:
   - bash ./pkg/transformers/stop_test_chain.sh
-  - eval "$(ssh-agent -s)"
-  - chmod 600 .travis/id_rsa
-  - ssh-add .travis/id_rsa
   - sup --debug staging deploy
