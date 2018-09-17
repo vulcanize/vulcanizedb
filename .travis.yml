@@ -28,3 +28,4 @@ notifications:
 
 after_script:
   - bash ./pkg/transformers/stop_test_chain.sh
+  - sup --debug staging deploy
