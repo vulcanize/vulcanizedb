@@ -64,7 +64,7 @@ var _ = Describe("FlipKick Repository", func() {
 			err = flipKickRepository.DB.QueryRowx(`SELECT * FROM maker.flip_kick`).StructScan(&dbResult)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.HeaderId).To(Equal(headerId))
-			Expect(dbResult.Id).To(Equal(flipKick.Id))
+			Expect(dbResult.BidId).To(Equal(flipKick.BidId))
 			Expect(dbResult.Lot).To(Equal(flipKick.Lot))
 			Expect(dbResult.Bid).To(Equal(flipKick.Bid))
 			Expect(dbResult.Gal).To(Equal(flipKick.Gal))

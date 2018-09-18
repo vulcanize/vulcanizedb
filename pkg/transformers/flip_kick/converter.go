@@ -73,7 +73,7 @@ func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
 	rawLogString := string(rawLogJson)
 
 	return FlipKickModel{
-		Id:               id,
+		BidId:            id,
 		Lot:              lot,
 		Bid:              bid,
 		Gal:              gal,
