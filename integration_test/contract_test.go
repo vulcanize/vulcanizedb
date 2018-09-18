@@ -39,7 +39,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			contract := testing.SampleContract()
 
 			logs, err := blockChain.GetLogs(contract, big.NewInt(4703824), nil)
@@ -57,7 +57,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 			logs, err := blockChain.GetLogs(core.Contract{Hash: "0x123"}, big.NewInt(4703824), nil)
 
@@ -75,7 +75,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 			contract := testing.SampleContract()
 			var balance = new(big.Int)

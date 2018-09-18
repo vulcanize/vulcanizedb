@@ -128,5 +128,5 @@ func getBlockChain() *geth.BlockChain {
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
 	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	return geth.NewBlockChain(vdbEthClient, vdbNode, transactionConverter)
+	return geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }

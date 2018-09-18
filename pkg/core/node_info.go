@@ -13,6 +13,10 @@ const (
 	GANACHE
 )
 
+const (
+	KOVAN_NETWORK_ID = 42
+)
+
 type Node struct {
 	GenesisBlock string
 	NetworkID    float64

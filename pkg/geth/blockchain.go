@@ -7,29 +7,32 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/net/context"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
 
 type BlockChain struct {
-	client          core.EthClient
 	blockConverter  vulcCommon.BlockConverter
+	ethClient       core.EthClient
 	headerConverter vulcCommon.HeaderConverter
 	node            core.Node
+	rpcClient       core.RpcClient
 }
 
-func NewBlockChain(client core.EthClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
+func NewBlockChain(ethClient core.EthClient, rpcClient core.RpcClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
 	return &BlockChain{
-		client:          client,
 		blockConverter:  vulcCommon.NewBlockConverter(converter),
+		ethClient:       ethClient,
 		headerConverter: vulcCommon.HeaderConverter{},
 		node:            node,
+		rpcClient:       rpcClient,
 	}
 }
 
 func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Block, err error) {
-	gethBlock, err := blockChain.client.BlockByNumber(context.Background(), big.NewInt(blockNumber))
+	gethBlock, err := blockChain.ethClient.BlockByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return block, err
 	}
@@ -37,11 +40,43 @@ func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Bl
 }
 
 func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.Header, err error) {
-	gethHeader, err := blockChain.client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
+	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
+		return blockChain.getPOAHeader(blockNumber)
+	}
+	return blockChain.getPOWHeader(blockNumber)
+}
+
+func (blockChain *BlockChain) getPOWHeader(blockNumber int64) (header core.Header, err error) {
+	gethHeader, err := blockChain.ethClient.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return header, err
 	}
 	return blockChain.headerConverter.Convert(gethHeader)
+}
+
+func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Header, err error) {
+	var POAHeader core.POAHeader
+	blockNumberArg := hexutil.EncodeBig(big.NewInt(blockNumber))
+	includeTransactions := false
+	err = blockChain.rpcClient.CallContext(context.Background(), &POAHeader, "eth_getBlockByNumber", blockNumberArg, includeTransactions)
+	if err != nil {
+		return header, err
+	}
+	return blockChain.headerConverter.Convert(&types.Header{
+		ParentHash:  POAHeader.ParentHash,
+		UncleHash:   POAHeader.UncleHash,
+		Coinbase:    POAHeader.Coinbase,
+		Root:        POAHeader.Root,
+		TxHash:      POAHeader.TxHash,
+		ReceiptHash: POAHeader.ReceiptHash,
+		Bloom:       POAHeader.Bloom,
+		Difficulty:  POAHeader.Difficulty.ToInt(),
+		Number:      POAHeader.Number.ToInt(),
+		GasLimit:    uint64(POAHeader.GasLimit),
+		GasUsed:     uint64(POAHeader.GasUsed),
+		Time:        POAHeader.Time.ToInt(),
+		Extra:       POAHeader.Extra,
+	})
 }
 
 func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
@@ -64,7 +99,7 @@ func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumbe
 }
 
 func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
-	gethLogs, err := blockChain.client.FilterLogs(context.Background(), query)
+	gethLogs, err := blockChain.ethClient.FilterLogs(context.Background(), query)
 	if err != nil {
 		return []types.Log{}, err
 	}
@@ -72,7 +107,7 @@ func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQue
 }
 
 func (blockChain *BlockChain) LastBlock() *big.Int {
-	block, _ := blockChain.client.HeaderByNumber(context.Background(), nil)
+	block, _ := blockChain.ethClient.HeaderByNumber(context.Background(), nil)
 	return block.Number
 }
 
