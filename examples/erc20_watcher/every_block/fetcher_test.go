@@ -57,7 +57,7 @@ var _ = Describe("ERC20 Fetcher", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realFetcher := every_block.NewFetcher(blockChain)
 			result, err := realFetcher.FetchSupplyOf(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 

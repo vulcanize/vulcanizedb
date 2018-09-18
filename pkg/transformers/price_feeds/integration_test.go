@@ -2,9 +2,7 @@ package price_feeds_test
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
@@ -97,23 +95,6 @@ var _ = Describe("Price feeds transformer", func() {
 	})
 })
 
-type POAHeader struct {
-	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
-	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
-	Coinbase    common.Address `json:"miner"            gencodec:"required"`
-	Root        common.Hash    `json:"stateRoot"        gencodec:"required"`
-	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"`
-	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"`
-	Bloom       types.Bloom    `json:"logsBloom"        gencodec:"required"`
-	Difficulty  *hexutil.Big   `json:"difficulty"       gencodec:"required"`
-	Number      *hexutil.Big   `json:"number"           gencodec:"required"`
-	GasLimit    hexutil.Uint64 `json:"gasLimit"         gencodec:"required"`
-	GasUsed     hexutil.Uint64 `json:"gasUsed"          gencodec:"required"`
-	Time        *hexutil.Big   `json:"timestamp"        gencodec:"required"`
-	Extra       hexutil.Bytes  `json:"extraData"        gencodec:"required"`
-	Hash        common.Hash    `json:"hash"`
-}
-
 func getClients(ipc string) (client.RpcClient, *ethclient.Client, error) {
 	raw, err := rpc.Dial(ipc)
 	if err != nil {
@@ -126,12 +107,12 @@ func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (cor
 	client := client.NewEthClient(ethClient)
 	node := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
+	blockChain := geth.NewBlockChain(client, rpcClient, node, transactionConverter)
 	return blockChain, nil
 }
 
 func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int64) error {
-	var poaHeader POAHeader
+	var poaHeader core.POAHeader
 	blockNumberArg := hexutil.EncodeBig(big.NewInt(int64(blockNumber)))
 	err := rpcClient.CallContext(context.Background(), &poaHeader, "eth_getBlockByNumber", blockNumberArg, false)
 	if err != nil {

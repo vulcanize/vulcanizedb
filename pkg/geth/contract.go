@@ -38,5 +38,5 @@ func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, 
 func (blockChain *BlockChain) callContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {
 	to := common.HexToAddress(contractHash)
 	msg := ethereum.CallMsg{To: &to, Data: input}
-	return blockChain.client.CallContract(context.Background(), msg, blockNumber)
+	return blockChain.ethClient.CallContract(context.Background(), msg, blockNumber)
 }
