@@ -21,5 +21,5 @@ var FrobConfig = shared.TransformerConfig{
 	ContractAbi:         shared.PitABI,
 	Topics:              []string{shared.FrobSignature},
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+	EndingBlockNumber:   10000000,
 }

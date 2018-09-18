@@ -23,5 +23,5 @@ var PitFileConfig = shared.TransformerConfig{
 	ContractAbi:         shared.PitABI,
 	Topics:              []string{shared.PitFileIlkSignature, shared.PitFileDebtCeilingSignature, shared.PitFileStabilityFeeSignature},
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+	EndingBlockNumber:   10000000,
 }
