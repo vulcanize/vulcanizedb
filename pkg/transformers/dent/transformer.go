@@ -51,6 +51,7 @@ func (t DentTransformer) Execute() error {
 	config := t.Config
 	topics := [][]common.Hash{{common.HexToHash(shared.DentFunctionSignature)}}
 	headers, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
+	log.Printf("Fetching dent event logs for %d headers \n", len(headers))
 	for _, header := range headers {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 

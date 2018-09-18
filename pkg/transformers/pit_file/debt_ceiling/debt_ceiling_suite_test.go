@@ -15,6 +15,8 @@
 package debt_ceiling_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestDebtCeiling(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "DebtCeiling Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

@@ -88,7 +88,7 @@ func (fkt FlipKickTransformer) Execute() error {
 		return err
 	}
 
-	log.Printf("Fetching event logs for %d headers \n", len(headers))
+	log.Printf("Fetching flip kick event logs for %d headers \n", len(headers))
 	var resultingErrors []error
 	for _, header := range headers {
 		ethLogs, err := fkt.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)

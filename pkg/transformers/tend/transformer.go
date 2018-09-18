@@ -57,6 +57,7 @@ func (t TendTransformer) Execute() error {
 		return err
 	}
 
+	log.Printf("Fetching tend event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 		if err != nil {

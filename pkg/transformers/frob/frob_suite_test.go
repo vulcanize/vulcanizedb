@@ -15,6 +15,8 @@
 package frob_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestFrob(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Frob Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

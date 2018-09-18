@@ -15,6 +15,8 @@
 package ilk
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -51,6 +53,7 @@ func (transformer PitFileIlkTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Fetching pit file ilk event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.PitFileIlkSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(pit_file.PitFileConfig.ContractAddress, topics, header.BlockNumber)

@@ -15,6 +15,8 @@
 package vat_init_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestVatInit(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "VatInit Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

@@ -15,7 +15,10 @@
 package ilk
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
@@ -50,6 +53,7 @@ func (transformer DripFileIlkTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Fetching drip file ilk event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.DripFileIlkSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(drip_file.DripFileConfig.ContractAddress, topics, header.BlockNumber)

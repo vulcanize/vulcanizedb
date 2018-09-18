@@ -15,6 +15,8 @@
 package drip_drip_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestDripDrip(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "DripDrip Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})
