@@ -21,5 +21,5 @@ var DentConfig = shared.TransformerConfig{
 	ContractAbi:         shared.FlipperABI,
 	Topics:              []string{shared.DentFunctionSignature},
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   100,
+	EndingBlockNumber:   10000000,
 }
