@@ -133,7 +133,7 @@ ALTER SEQUENCE maker.deal_id_seq OWNED BY maker.deal.id;
 --
 
 CREATE TABLE maker.dent (
-    db_id integer NOT NULL,
+    id integer NOT NULL,
     header_id integer NOT NULL,
     bid_id numeric NOT NULL,
     lot numeric,
@@ -146,10 +146,10 @@ CREATE TABLE maker.dent (
 
 
 --
--- Name: dent_db_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+-- Name: dent_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
 --
 
-CREATE SEQUENCE maker.dent_db_id_seq
+CREATE SEQUENCE maker.dent_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -159,10 +159,10 @@ CREATE SEQUENCE maker.dent_db_id_seq
 
 
 --
--- Name: dent_db_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+-- Name: dent_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
 --
 
-ALTER SEQUENCE maker.dent_db_id_seq OWNED BY maker.dent.db_id;
+ALTER SEQUENCE maker.dent_id_seq OWNED BY maker.dent.id;
 
 
 --
@@ -306,9 +306,9 @@ ALTER SEQUENCE maker.drip_file_vow_id_seq OWNED BY maker.drip_file_vow.id;
 --
 
 CREATE TABLE maker.flip_kick (
-    db_id integer NOT NULL,
+    id integer NOT NULL,
     header_id integer NOT NULL,
-    id numeric NOT NULL,
+    bid_id numeric NOT NULL,
     lot numeric,
     bid numeric,
     gal character varying,
@@ -321,10 +321,10 @@ CREATE TABLE maker.flip_kick (
 
 
 --
--- Name: flip_kick_db_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+-- Name: flip_kick_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
 --
 
-CREATE SEQUENCE maker.flip_kick_db_id_seq
+CREATE SEQUENCE maker.flip_kick_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -334,10 +334,10 @@ CREATE SEQUENCE maker.flip_kick_db_id_seq
 
 
 --
--- Name: flip_kick_db_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+-- Name: flip_kick_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
 --
 
-ALTER SEQUENCE maker.flip_kick_db_id_seq OWNED BY maker.flip_kick.db_id;
+ALTER SEQUENCE maker.flip_kick_id_seq OWNED BY maker.flip_kick.id;
 
 
 --
@@ -522,7 +522,7 @@ ALTER SEQUENCE maker.price_feeds_id_seq OWNED BY maker.price_feeds.id;
 --
 
 CREATE TABLE maker.tend (
-    db_id integer NOT NULL,
+    id integer NOT NULL,
     header_id integer NOT NULL,
     bid_id numeric NOT NULL,
     lot numeric,
@@ -535,10 +535,10 @@ CREATE TABLE maker.tend (
 
 
 --
--- Name: tend_db_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+-- Name: tend_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
 --
 
-CREATE SEQUENCE maker.tend_db_id_seq
+CREATE SEQUENCE maker.tend_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -548,10 +548,10 @@ CREATE SEQUENCE maker.tend_db_id_seq
 
 
 --
--- Name: tend_db_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+-- Name: tend_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
 --
 
-ALTER SEQUENCE maker.tend_db_id_seq OWNED BY maker.tend.db_id;
+ALTER SEQUENCE maker.tend_id_seq OWNED BY maker.tend.id;
 
 
 --
@@ -1005,10 +1005,10 @@ ALTER TABLE ONLY maker.deal ALTER COLUMN id SET DEFAULT nextval('maker.deal_id_s
 
 
 --
--- Name: dent db_id; Type: DEFAULT; Schema: maker; Owner: -
+-- Name: dent id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.dent ALTER COLUMN db_id SET DEFAULT nextval('maker.dent_db_id_seq'::regclass);
+ALTER TABLE ONLY maker.dent ALTER COLUMN id SET DEFAULT nextval('maker.dent_id_seq'::regclass);
 
 
 --
@@ -1040,10 +1040,10 @@ ALTER TABLE ONLY maker.drip_file_vow ALTER COLUMN id SET DEFAULT nextval('maker.
 
 
 --
--- Name: flip_kick db_id; Type: DEFAULT; Schema: maker; Owner: -
+-- Name: flip_kick id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.flip_kick ALTER COLUMN db_id SET DEFAULT nextval('maker.flip_kick_db_id_seq'::regclass);
+ALTER TABLE ONLY maker.flip_kick ALTER COLUMN id SET DEFAULT nextval('maker.flip_kick_id_seq'::regclass);
 
 
 --
@@ -1082,10 +1082,10 @@ ALTER TABLE ONLY maker.price_feeds ALTER COLUMN id SET DEFAULT nextval('maker.pr
 
 
 --
--- Name: tend db_id; Type: DEFAULT; Schema: maker; Owner: -
+-- Name: tend id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
-ALTER TABLE ONLY maker.tend ALTER COLUMN db_id SET DEFAULT nextval('maker.tend_db_id_seq'::regclass);
+ALTER TABLE ONLY maker.tend ALTER COLUMN id SET DEFAULT nextval('maker.tend_id_seq'::regclass);
 
 
 --
@@ -1206,11 +1206,19 @@ ALTER TABLE ONLY maker.dent
 
 
 --
+-- Name: dent dent_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.dent
+    ADD CONSTRAINT dent_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
 -- Name: dent dent_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.dent
-    ADD CONSTRAINT dent_pkey PRIMARY KEY (db_id);
+    ADD CONSTRAINT dent_pkey PRIMARY KEY (id);
 
 
 --
@@ -1278,11 +1286,11 @@ ALTER TABLE ONLY maker.drip_file_vow
 
 
 --
--- Name: flip_kick flip_kick_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: flip_kick flip_kick_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.flip_kick
-    ADD CONSTRAINT flip_kick_id_key UNIQUE (id);
+    ADD CONSTRAINT flip_kick_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
 
 
 --
@@ -1290,7 +1298,7 @@ ALTER TABLE ONLY maker.flip_kick
 --
 
 ALTER TABLE ONLY maker.flip_kick
-    ADD CONSTRAINT flip_kick_pkey PRIMARY KEY (db_id);
+    ADD CONSTRAINT flip_kick_pkey PRIMARY KEY (id);
 
 
 --
@@ -1382,11 +1390,19 @@ ALTER TABLE ONLY maker.tend
 
 
 --
+-- Name: tend tend_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.tend
+    ADD CONSTRAINT tend_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
 -- Name: tend tend_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.tend
-    ADD CONSTRAINT tend_pkey PRIMARY KEY (db_id);
+    ADD CONSTRAINT tend_pkey PRIMARY KEY (id);
 
 
 --

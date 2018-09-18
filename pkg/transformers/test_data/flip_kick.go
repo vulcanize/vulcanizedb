@@ -80,7 +80,7 @@ var FlipKickEntity = flip_kick.FlipKickEntity{
 }
 
 var FlipKickModel = flip_kick.FlipKickModel{
-	Id:               idString,
+	BidId:            idString,
 	Lot:              lotString,
 	Bid:              bidString,
 	Gal:              gal,
@@ -92,7 +92,7 @@ var FlipKickModel = flip_kick.FlipKickModel{
 }
 
 type FlipKickDBRow struct {
-	DbID     int64 `db:"db_id"`
+	ID       int64
 	HeaderId int64 `db:"header_id"`
 	flip_kick.FlipKickModel
 }

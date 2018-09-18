@@ -81,7 +81,7 @@ var _ = Describe("FlipKick Converter", func() {
 			model, err := converter.ToModel(emptyEntity)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(model.Id).To(Equal("1"))
+			Expect(model.BidId).To(Equal("1"))
 			Expect(model.Lot).To(Equal(emptyString))
 			Expect(model.Bid).To(Equal(emptyString))
 			Expect(model.Gal).To(Equal(emptyAddressHex))

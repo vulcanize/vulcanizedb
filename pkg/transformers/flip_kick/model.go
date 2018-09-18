@@ -17,7 +17,7 @@ package flip_kick
 import "time"
 
 type FlipKickModel struct {
-	Id               string
+	BidId            string `db:"bid_id"`
 	Lot              string
 	Bid              string
 	Gal              string
