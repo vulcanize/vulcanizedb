@@ -24,7 +24,7 @@ func (client RpcClient) CallContext(ctx context.Context, result interface{}, met
 	if args == nil {
 		return client.client.CallContext(ctx, result, method)
 	} else {
-		return client.client.CallContext(ctx, result, method, args)
+		return client.client.CallContext(ctx, result, method, args...)
 	}
 }
 
