@@ -15,6 +15,8 @@
 package vow_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestVow(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Vow Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

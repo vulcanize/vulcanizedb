@@ -15,6 +15,8 @@
 package frob
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -50,6 +52,7 @@ func (transformer FrobTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Fetching frob event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.FrobSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(FrobConfig.ContractAddress, topics, header.BlockNumber)

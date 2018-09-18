@@ -15,6 +15,8 @@
 package repo_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestRepo(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Repo Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

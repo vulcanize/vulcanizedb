@@ -15,6 +15,8 @@
 package price_feeds
 
 import (
+	"log"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -48,6 +50,7 @@ func (transformer PriceFeedTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Fetching price feed event logs for %d headers \n", len(headers))
 	for _, header := range headers {
 		logs, err := transformer.Fetcher.FetchLogValues(header.BlockNumber)
 		if err != nil {

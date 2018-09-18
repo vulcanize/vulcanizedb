@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
@@ -42,6 +43,7 @@ var (
 	dripFileConfig                            = drip_file.DripFileConfig
 	DripFileIlkTransformerInitializer         = ilk2.DripFileIlkTransformerInitializer{Config: dripFileConfig}.NewDripFileIlkTransformer
 	DripFileRepoTransformerInitializer        = repo.DripFileRepoTransformerInitializer{Config: dripFileConfig}.NewDripFileRepoTransformer
+	DripFileVowTransfromerInitializer         = vow.DripFileVowTransformerInitializer{Config: dripFileConfig}.NewDripFileVowTransformer
 	FlipKickTransformerInitializer            = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
 	FrobTransformerInitializer                = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
 	pitFileConfig                             = pit_file.PitFileConfig

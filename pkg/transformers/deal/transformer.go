@@ -15,11 +15,13 @@
 package deal
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"log"
 )
 
 type DealTransformer struct {
@@ -54,6 +56,7 @@ func (t DealTransformer) Execute() error {
 		return err
 	}
 
+	log.Printf("Fetching deal event logs for %d headers \n", len(headers))
 	for _, header := range headers {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 		if err != nil {

@@ -17,11 +17,13 @@
 package bite
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"log"
 )
 
 type BiteTransformer struct {
@@ -58,6 +60,7 @@ func (b BiteTransformer) Execute() error {
 		return err
 	}
 
+	log.Printf("Fetching bite event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		ethLogs, err := b.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
 		if err != nil {

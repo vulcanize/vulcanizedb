@@ -15,6 +15,8 @@
 package vat_init
 
 import (
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -50,6 +52,7 @@ func (transformer VatInitTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Fetching vat init event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.VatInitSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(VatInitConfig.ContractAddress, topics, header.BlockNumber)
