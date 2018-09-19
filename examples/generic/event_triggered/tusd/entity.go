@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,22 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package erc20_watcher
+package tusd
 
-import "github.com/vulcanize/vulcanizedb/examples/constants"
+import (
+	"math/big"
 
-type ContractConfig struct {
-	Address    string
-	Abi        string
-	FirstBlock int64
-	LastBlock  int64
-	Name       string
+	"github.com/ethereum/go-ethereum/common"
+)
+
+type BurnEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	Burner       common.Address
+	Value        *big.Int
+	Block        int64
+	TxHash       string
 }
 
-var DaiConfig = ContractConfig{
-	Address:    constants.DaiContractAddress,
-	Abi:        constants.DaiAbiString,
-	FirstBlock: int64(4752008),
-	LastBlock:  -1,
-	Name:       "Dai",
+type MintEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	To           common.Address
+	Amount       *big.Int
+	Block        int64
+	TxHash       string
 }

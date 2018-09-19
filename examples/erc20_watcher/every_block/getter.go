@@ -32,13 +32,13 @@ type ERC20GetterInterface interface {
 }
 
 // Getter struct
-type Getter struct {
+type ERC20Getter struct {
 	fetcher generic.Fetcher
 }
 
 // Initializes and returns a Getter with the given blockchain
-func NewGetter(blockChain core.BlockChain) Getter {
-	return Getter{
+func NewGetter(blockChain core.BlockChain) ERC20Getter {
+	return ERC20Getter{
 		fetcher: generic.Fetcher{
 			BlockChain: blockChain,
 		},
@@ -46,19 +46,19 @@ func NewGetter(blockChain core.BlockChain) Getter {
 }
 
 // Public getter methods for calling contract methods
-func (g Getter) GetTotalSupply(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
+func (g ERC20Getter) GetTotalSupply(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
 	return g.fetcher.FetchBigInt("totalSupply", contractAbi, contractAddress, blockNumber, nil)
 }
 
-func (g Getter) GetBalance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
+func (g ERC20Getter) GetBalance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
 	return g.fetcher.FetchBigInt("balanceOf", contractAbi, contractAddress, blockNumber, methodArgs)
 }
 
-func (g Getter) GetAllowance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
+func (g ERC20Getter) GetAllowance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
 	return g.fetcher.FetchBigInt("allowance", contractAbi, contractAddress, blockNumber, methodArgs)
 }
 
 // Method to retrieve the Getter's blockchain
-func (g Getter) GetBlockChain() core.BlockChain {
+func (g ERC20Getter) GetBlockChain() core.BlockChain {
 	return g.fetcher.BlockChain
 }

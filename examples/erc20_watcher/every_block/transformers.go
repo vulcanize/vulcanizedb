@@ -15,14 +15,14 @@
 package every_block
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
-	config := erc20_watcher.DaiConfig
-	initializer := TokenSupplyTransformerInitializer{config}
+	config := generic.DaiConfig
+	initializer := ERC20TokenTransformerInitializer{config}
 	return []shared.TransformerInitializer{
-		initializer.NewTokenSupplyTransformer,
+		initializer.NewERC20TokenTransformer,
 	}
 }
