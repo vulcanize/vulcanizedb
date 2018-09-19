@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package tusd_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered/tusd"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
@@ -35,7 +36,7 @@ var expectedBurnModel = event_triggered.BurnModel{
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
 
-var expectedBurnEntity = event_triggered.BurnEntity{
+var expectedBurnEntity = tusd.BurnEntity{
 	TokenName:    "Tusd",
 	TokenAddress: common.HexToAddress(constants.TusdContractAddress),
 	Burner:       common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
@@ -54,7 +55,7 @@ var expectedMintModel = event_triggered.MintModel{
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
 
-var expectedMintEntity = event_triggered.MintEntity{
+var expectedMintEntity = tusd.MintEntity{
 	TokenName:    "Tusd",
 	TokenAddress: common.HexToAddress(constants.TusdContractAddress),
 	To:           common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"),
@@ -93,11 +94,11 @@ var mintEvent = core.WatchedEvent{
 
 var _ = Describe("Transfer Converter", func() {
 
-	var converter *event_triggered.GenericConverter
+	var converter *tusd.GenericConverter
 	var err error
 
 	BeforeEach(func() {
-		converter, err = event_triggered.NewGenericConverter(generic.TusdConfig)
+		converter, err = tusd.NewGenericConverter(generic.TusdConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -121,11 +122,11 @@ var _ = Describe("Transfer Converter", func() {
 
 var _ = Describe("Approval Converter", func() {
 
-	var converter *event_triggered.GenericConverter
+	var converter *tusd.GenericConverter
 	var err error
 
 	BeforeEach(func() {
-		converter, err = event_triggered.NewGenericConverter(generic.TusdConfig)
+		converter, err = tusd.NewGenericConverter(generic.TusdConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

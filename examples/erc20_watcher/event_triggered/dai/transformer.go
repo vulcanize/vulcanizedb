@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered
+package dai
 
 import (
 	"fmt"
 	"log"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -30,7 +31,7 @@ type ERC20EventTransformer struct {
 	Converter              ERC20ConverterInterface
 	WatchedEventRepository datastore.WatchedEventRepository
 	FilterRepository       datastore.FilterRepository
-	Repository             ERC20EventDatastore
+	Repository             event_triggered.ERC20EventDatastore
 }
 
 func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Transformer, error) {
@@ -43,7 +44,7 @@ func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Tran
 
 	wer := repositories.WatchedEventRepository{DB: db}
 	fr := repositories.FilterRepository{DB: db}
-	lkr := ERC20EventRepository{DB: db}
+	lkr := event_triggered.ERC20EventRepository{DB: db}
 	transformer = ERC20EventTransformer{
 		Converter:              cnvtr,
 		WatchedEventRepository: wer,
