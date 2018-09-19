@@ -31,5 +31,5 @@ notifications:
 
 after_script:
   - bash ./pkg/transformers/stop_test_chain.sh
-  if: branch = master
+  if: branch = staging
   - sup --debug staging deploy

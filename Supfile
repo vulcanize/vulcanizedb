@@ -4,7 +4,7 @@ version: 0.5
 networks:
   staging:
     env:
-      VDB_PATH: /root/go_projects/src/github.com/8thlight/vulcanizedb
+      VDB_PATH: /root/go_projects/src/github.com/vulcanize/vulcanizedb
       VDB_PG_USER: vulcanize
       VDB_PG_PW: vulcanize
     hosts:
@@ -23,7 +23,7 @@ targets:
 commands:
   remove:
     desc: remove old vulcanizedb
-    run: rm -rf $VDB_PATH && rm -rf /usr/local/vulcanizedb
+    run: rm -rf $VDB_PATH && rm -rf /usr/local/vulcanizedb && mkdir $VDB_PATH
   transfer:
     desc: transfer repo to remote server
     local: rsync -r . root@147.75.96.51:$VDB_PATH
@@ -35,7 +35,7 @@ commands:
   buildPostgraphile:
     desc: build postgraphile express app
     run: >
-      cd $VDB_PATH/postgraphile && 
+      cd $VDB_PATH/postgraphile &&
       yarn install &&
       tsc
   buildVDB:
