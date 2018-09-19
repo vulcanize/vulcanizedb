@@ -33,7 +33,7 @@ commands:
       cd $VDB_PATH &&
       /root/go_projects/bin/migrate -database postgresql://$VDB_PG_USER:$VDB_PG_PW@127.0.0.1:5432/vulcanize_public?sslmode=disable -path ./db/migrations up
   buildPostgraphile:
-    desc: build postgraphile express app
+    desc: build postgraphile app
     run: >
       cd $VDB_PATH/postgraphile &&
       yarn install &&
