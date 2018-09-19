@@ -28,9 +28,9 @@ type MockDealConverter struct {
 	ConverterError    error
 }
 
-func (c *MockDealConverter) ToModel(ethLog types.Log) (deal.DealModel, error) {
-	c.LogsToConvert = append(c.LogsToConvert, ethLog)
-	return test_data.DealModel, c.ConverterError
+func (c *MockDealConverter) ToModels(ethLogs []types.Log) ([]deal.DealModel, error) {
+	c.LogsToConvert = append(c.LogsToConvert, ethLogs...)
+	return []deal.DealModel{test_data.DealModel}, c.ConverterError
 }
 
 func (c *MockDealConverter) SetConverterError(err error) {
