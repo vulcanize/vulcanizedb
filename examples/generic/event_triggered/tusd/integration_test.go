@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package tusd_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered/tusd"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -80,7 +81,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_burns entry for each Burn event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.TusdConfig)
+		transformer, err := tusd.NewTransformer(db, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
@@ -105,7 +106,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_mints entry for each Mint event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.TusdConfig)
+		transformer, err := tusd.NewTransformer(db, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()

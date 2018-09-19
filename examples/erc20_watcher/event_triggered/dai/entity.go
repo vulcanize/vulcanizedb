@@ -12,16 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package dai
 
 import (
-	"testing"
+	"math/big"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/ethereum/go-ethereum/common"
 )
 
-func TestLogKill(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ERC20 Event Triggered test Suite")
+type TransferEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	Src          common.Address
+	Dst          common.Address
+	Wad          *big.Int
+	Block        int64
+	TxHash       string
+}
+
+type ApprovalEntity struct {
+	TokenName    string
+	TokenAddress common.Address
+	Src          common.Address
+	Guy          common.Address
+	Wad          *big.Int
+	Block        int64
+	TxHash       string
 }

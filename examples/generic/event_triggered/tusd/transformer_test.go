@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package tusd_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered/tusd"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
@@ -63,7 +63,7 @@ var _ = Describe("Mock ERC20 transformer", func() {
 	var watchedEventsRepo mocks.MockWatchedEventsRepository
 	var mockEventRepo mocks.MockEventRepo
 	var filterRepo mocks.MockFilterRepository
-	var transformer event_triggered.GenericTransformer
+	var transformer tusd.GenericTransformer
 
 	BeforeEach(func() {
 		mockERC20Converter = mocks.MockERC20Converter{}
@@ -72,7 +72,7 @@ var _ = Describe("Mock ERC20 transformer", func() {
 		mockEventRepo = mocks.MockEventRepo{}
 		filterRepo = mocks.MockFilterRepository{}
 
-		transformer = event_triggered.GenericTransformer{
+		transformer = tusd.GenericTransformer{
 			Converter:              &mockERC20Converter,
 			WatchedEventRepository: &watchedEventsRepo,
 			FilterRepository:       filterRepo,
