@@ -19,17 +19,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -102,18 +97,4 @@ func validateArgs(blockChain *geth.BlockChain) {
 	if startingBlockNumber > lastBlock {
 		log.Fatal("starting block number > current block number")
 	}
-}
-
-func getBlockChain() *geth.BlockChain {
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
-	return blockChain
 }
