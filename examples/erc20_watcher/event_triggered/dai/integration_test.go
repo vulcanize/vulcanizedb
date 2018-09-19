@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package dai_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered/dai"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -80,7 +81,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_transfers entry for each Transfer event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.DaiConfig)
+		transformer, err := dai.NewTransformer(db, generic.DaiConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
@@ -106,7 +107,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_approvals entry for each Approval event received", func() {
-		transformer, err := event_triggered.NewTransformer(db, generic.DaiConfig)
+		transformer, err := dai.NewTransformer(db, generic.DaiConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()

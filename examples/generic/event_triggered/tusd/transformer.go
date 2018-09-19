@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered
+package tusd
 
 import (
 	"fmt"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
+	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -30,7 +31,7 @@ type GenericTransformer struct {
 	Converter              GenericConverterInterface
 	WatchedEventRepository datastore.WatchedEventRepository
 	FilterRepository       datastore.FilterRepository
-	Repository             GenericEventDatastore
+	Repository             event_triggered.GenericEventDatastore
 }
 
 func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Transformer, error) {
@@ -43,7 +44,7 @@ func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Tran
 
 	wer := repositories.WatchedEventRepository{DB: db}
 	fr := repositories.FilterRepository{DB: db}
-	lkr := GenericEventRepository{DB: db}
+	lkr := event_triggered.GenericEventRepository{DB: db}
 	transformer = GenericTransformer{
 		Converter:              cnvtr,
 		WatchedEventRepository: wer,

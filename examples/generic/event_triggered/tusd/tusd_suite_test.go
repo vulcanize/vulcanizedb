@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package tusd_test
 
 import (
 	"testing"
@@ -23,5 +23,5 @@ import (
 
 func TestLogKill(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ERC20 Event Triggered test Suite")
+	RunSpecs(t, "Tusd Generic Event Triggered Test Suite")
 }

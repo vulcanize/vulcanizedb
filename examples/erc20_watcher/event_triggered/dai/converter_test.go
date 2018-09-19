@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered_test
+package dai_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -21,6 +21,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered/dai"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -36,7 +37,7 @@ var expectedTransferModel = event_triggered.TransferModel{
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
 
-var expectedTransferEntity = event_triggered.TransferEntity{
+var expectedTransferEntity = dai.TransferEntity{
 	TokenName:    "Dai",
 	TokenAddress: common.HexToAddress(constants.DaiContractAddress),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
@@ -56,7 +57,7 @@ var expectedApprovalModel = event_triggered.ApprovalModel{
 	TxHash:       "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 }
 
-var expectedApprovalEntity = event_triggered.ApprovalEntity{
+var expectedApprovalEntity = dai.ApprovalEntity{
 	TokenName:    "Dai",
 	TokenAddress: common.HexToAddress(constants.DaiContractAddress),
 	Src:          common.HexToAddress("0x000000000000000000000000000000000000Af21"),
@@ -96,11 +97,11 @@ var approvalEvent = core.WatchedEvent{
 
 var _ = Describe("Transfer Converter", func() {
 
-	var daiConverter *event_triggered.ERC20Converter
+	var daiConverter *dai.ERC20Converter
 	var err error
 
 	BeforeEach(func() {
-		daiConverter, err = event_triggered.NewERC20Converter(generic.DaiConfig)
+		daiConverter, err = dai.NewERC20Converter(generic.DaiConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -124,11 +125,11 @@ var _ = Describe("Transfer Converter", func() {
 
 var _ = Describe("Approval Converter", func() {
 
-	var daiConverter *event_triggered.ERC20Converter
+	var daiConverter *dai.ERC20Converter
 	var err error
 
 	BeforeEach(func() {
-		daiConverter, err = event_triggered.NewERC20Converter(generic.DaiConfig)
+		daiConverter, err = dai.NewERC20Converter(generic.DaiConfig)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

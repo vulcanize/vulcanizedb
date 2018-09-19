@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package event_triggered
+package dai
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -28,18 +29,18 @@ import (
 // Converter converts a raw event log into its corresponding entity
 // and can subsequently convert the entity into a model
 
-type GenericConverterInterface interface {
-	ToBurnEntity(watchedEvent core.WatchedEvent) (*BurnEntity, error)
-	ToBurnModel(entity *BurnEntity) *BurnModel
-	ToMintEntity(watchedEvent core.WatchedEvent) (*MintEntity, error)
-	ToMintModel(entity *MintEntity) *MintModel
+type ERC20ConverterInterface interface {
+	ToTransferEntity(watchedEvent core.WatchedEvent) (*TransferEntity, error)
+	ToTransferModel(entity *TransferEntity) *event_triggered.TransferModel
+	ToApprovalEntity(watchedEvent core.WatchedEvent) (*ApprovalEntity, error)
+	ToApprovalModel(entity *ApprovalEntity) *event_triggered.ApprovalModel
 }
 
-type GenericConverter struct {
+type ERC20Converter struct {
 	config generic.ContractConfig
 }
 
-func NewGenericConverter(config generic.ContractConfig) (*GenericConverter, error) {
+func NewERC20Converter(config generic.ContractConfig) (*ERC20Converter, error) {
 	var err error
 
 	config.ParsedAbi, err = geth.ParseAbi(config.Abi)
@@ -47,18 +48,18 @@ func NewGenericConverter(config generic.ContractConfig) (*GenericConverter, erro
 		return nil, err
 	}
 
-	converter := &GenericConverter{
+	converter := &ERC20Converter{
 		config: config,
 	}
 
 	return converter, nil
 }
 
-func (c GenericConverter) ToBurnEntity(watchedEvent core.WatchedEvent) (*BurnEntity, error) {
-	result := &BurnEntity{}
+func (c ERC20Converter) ToTransferEntity(watchedEvent core.WatchedEvent) (*TransferEntity, error) {
+	result := &TransferEntity{}
 	contract := bind.NewBoundContract(common.HexToAddress(c.config.Address), c.config.ParsedAbi, nil, nil, nil)
 	event := helpers.ConvertToLog(watchedEvent)
-	err := contract.UnpackLog(result, constants.BurnEvent.String(), event)
+	err := contract.UnpackLog(result, constants.TransferEvent.String(), event)
 	if err != nil {
 		return result, err
 	}
@@ -70,25 +71,27 @@ func (c GenericConverter) ToBurnEntity(watchedEvent core.WatchedEvent) (*BurnEnt
 	return result, nil
 }
 
-func (c GenericConverter) ToBurnModel(entity *BurnEntity) *BurnModel {
-	burner := entity.Burner.String()
-	tokens := entity.Value.String()
+func (c ERC20Converter) ToTransferModel(entity *TransferEntity) *event_triggered.TransferModel {
+	to := entity.Dst.String()
+	from := entity.Src.String()
+	tokens := entity.Wad.String()
 
-	return &BurnModel{
+	return &event_triggered.TransferModel{
 		TokenName:    c.config.Name,
 		TokenAddress: c.config.Address,
-		Burner:       burner,
+		To:           to,
+		From:         from,
 		Tokens:       tokens,
 		Block:        entity.Block,
 		TxHash:       entity.TxHash,
 	}
 }
 
-func (c GenericConverter) ToMintEntity(watchedEvent core.WatchedEvent) (*MintEntity, error) {
-	result := &MintEntity{}
+func (c ERC20Converter) ToApprovalEntity(watchedEvent core.WatchedEvent) (*ApprovalEntity, error) {
+	result := &ApprovalEntity{}
 	contract := bind.NewBoundContract(common.HexToAddress(c.config.Address), c.config.ParsedAbi, nil, nil, nil)
 	event := helpers.ConvertToLog(watchedEvent)
-	err := contract.UnpackLog(result, constants.MintEvent.String(), event)
+	err := contract.UnpackLog(result, constants.ApprovalEvent.String(), event)
 	if err != nil {
 		return result, err
 	}
@@ -100,16 +103,16 @@ func (c GenericConverter) ToMintEntity(watchedEvent core.WatchedEvent) (*MintEnt
 	return result, nil
 }
 
-func (c GenericConverter) ToMintModel(entity *MintEntity) *MintModel {
-	mintee := entity.To.String()
-	minter := c.config.Owner
-	tokens := entity.Amount.String()
+func (c ERC20Converter) ToApprovalModel(entity *ApprovalEntity) *event_triggered.ApprovalModel {
+	tokenOwner := entity.Src.String()
+	spender := entity.Guy.String()
+	tokens := entity.Wad.String()
 
-	return &MintModel{
+	return &event_triggered.ApprovalModel{
 		TokenName:    c.config.Name,
 		TokenAddress: c.config.Address,
-		Mintee:       mintee,
-		Minter:       minter,
+		Owner:        tokenOwner,
+		Spender:      spender,
 		Tokens:       tokens,
 		Block:        entity.Block,
 		TxHash:       entity.TxHash,
