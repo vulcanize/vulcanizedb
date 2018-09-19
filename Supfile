@@ -47,7 +47,7 @@ commands:
       cp -r . /usr/local/vulcanizedb
   lightSync:
     desc: start vdb light sync
-    run: systemctl daemon-reload && sudo systemctl restart vulcanizedb.service
+    run: systemctl daemon-reload && sudo systemctl restart vulcanizedb_light_sync.service && sudo systemctl restart vulcanizedb_log_sync.service
   postgraphile:
     desc: start postgraphile
     run: systemctl daemon-reload && sudo systemctl restart postgraphile.service
