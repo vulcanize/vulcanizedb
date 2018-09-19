@@ -63,17 +63,21 @@ func (t DealTransformer) Execute() error {
 			log.Println("Error fetching deal logs:", err)
 			return err
 		}
-		for _, ethLog := range ethLogs {
-			model, err := t.Converter.ToModel(ethLog)
+		if len(ethLogs) < 1 {
+			err := t.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
-				log.Println("Error converting deal log", err)
 				return err
 			}
-			err = t.Repository.Create(header.Id, model)
-			if err != nil {
-				log.Println("Error persisting deal record", err)
-				return err
-			}
+		}
+		models, err := t.Converter.ToModels(ethLogs)
+		if err != nil {
+			log.Println("Error converting deal log", err)
+			return err
+		}
+		err = t.Repository.Create(header.Id, models)
+		if err != nil {
+			log.Println("Error persisting deal record", err)
+			return err
 		}
 	}
 	return err

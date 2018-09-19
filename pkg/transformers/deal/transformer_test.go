@@ -82,6 +82,42 @@ var _ = Describe("DealTransformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &deal_mocks.MockDealConverter{}
+		mockRepository := &deal_mocks.MockDealRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := deal.DealTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &deal_mocks.MockDealConverter{}
+		mockRepository := &deal_mocks.MockDealRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := deal.DealTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts each eth log to a Model", func() {
 		dealRepository.SetMissingHeaders([]core.Header{{}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})

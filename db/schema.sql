@@ -669,7 +669,8 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 CREATE TABLE public.checked_headers (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    price_feeds_checked boolean DEFAULT false NOT NULL
+    price_feeds_checked boolean DEFAULT false NOT NULL,
+    deal_checked boolean DEFAULT false NOT NULL
 );
 
 

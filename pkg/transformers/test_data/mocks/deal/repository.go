@@ -15,28 +15,36 @@
 package deal
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 )
 
 type MockDealRepository struct {
-	createError               error
-	PassedEndingBlockNumber   int64
-	PassedHeaderIDs           []int64
-	PassedStartingBlockNumber int64
-	PassedDealModels          []deal.DealModel
-	missingHeaders            []core.Header
-	missingHeadersErr         error
+	createError                     error
+	PassedEndingBlockNumber         int64
+	PassedHeaderIDs                 []int64
+	PassedStartingBlockNumber       int64
+	PassedDealModels                []deal.DealModel
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderID int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
 }
 
-func (repository *MockDealRepository) Create(headerId int64, deal deal.DealModel) error {
+func (repository *MockDealRepository) Create(headerId int64, deals []deal.DealModel) error {
 	repository.PassedHeaderIDs = append(repository.PassedHeaderIDs, headerId)
-	repository.PassedDealModels = append(repository.PassedDealModels, deal)
+	repository.PassedDealModels = append(repository.PassedDealModels, deals...)
 	return repository.createError
 }
 
 func (repository *MockDealRepository) SetCreateError(err error) {
 	repository.createError = err
+}
+
+func (repository *MockDealRepository) SetMarkHeaderCheckedErr(err error) {
+	repository.markHeaderCheckedErr = err
 }
 
 func (repository *MockDealRepository) SetMissingHeadersErr(err error) {
@@ -47,8 +55,17 @@ func (repository *MockDealRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
 
+func (repository *MockDealRepository) MarkHeaderChecked(headerID int64) error {
+	repository.markHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
+}
+
 func (repository *MockDealRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockDealRepository) AssertMarkHeaderCheckedCalledWith(headerID int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(headerID))
 }

@@ -22,7 +22,7 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (DealModel, error)
+	ToModels(ethLog []types.Log) ([]DealModel, error)
 }
 
 type DealConverter struct{}
@@ -31,23 +31,27 @@ func NewDealConverter() DealConverter {
 	return DealConverter{}
 }
 
-func (DealConverter) ToModel(ethLog types.Log) (DealModel, error) {
-	err := validateLog(ethLog)
-	if err != nil {
-		return DealModel{}, err
-	}
+func (DealConverter) ToModels(ethLogs []types.Log) (result []DealModel, err error) {
+	for _, log := range ethLogs {
+		err := validateLog(log)
+		if err != nil {
+			return nil, err
+		}
 
-	bidId := ethLog.Topics[2].Big()
-	raw, err := json.Marshal(ethLog)
-	if err != nil {
-		return DealModel{}, err
-	}
+		bidId := log.Topics[2].Big()
+		raw, err := json.Marshal(log)
+		if err != nil {
+			return nil, err
+		}
 
-	return DealModel{
-		BidId:            bidId.String(),
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, nil
+		model := DealModel{
+			BidId:            bidId.String(),
+			TransactionIndex: log.TxIndex,
+			Raw:              raw,
+		}
+		result = append(result, model)
+	}
+	return result, nil
 }
 
 func validateLog(ethLog types.Log) error {
