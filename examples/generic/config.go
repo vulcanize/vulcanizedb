@@ -15,34 +15,25 @@
 package generic
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
-type ContractConfig struct {
-	Address    string
-	Owner      string
-	Abi        string
-	ParsedAbi  abi.ABI
-	FirstBlock int64
-	LastBlock  int64
-	Name       string
-}
-
-var DaiConfig = ContractConfig{
+var DaiConfig = shared.ContractConfig{
 	Address:    constants.DaiContractAddress,
-	Owner:      constants.DaiContractOwner,
 	Abi:        constants.DaiAbiString,
 	FirstBlock: int64(4752008),
 	LastBlock:  -1,
 	Name:       "Dai",
+	Filters:    constants.DaiERC20Filters,
 }
 
-var TusdConfig = ContractConfig{
+var TusdConfig = shared.ContractConfig{
 	Address:    constants.TusdContractAddress,
 	Owner:      constants.TusdContractOwner,
 	Abi:        constants.TusdAbiString,
 	FirstBlock: int64(5197514),
 	LastBlock:  -1,
 	Name:       "Tusd",
+	Filters:    constants.TusdGenericFilters,
 }
