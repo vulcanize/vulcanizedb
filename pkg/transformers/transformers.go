@@ -34,38 +34,40 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
-func TransformerInitializers() []shared.TransformerInitializer {
-	biteTransformerInitializer := bite.BiteTransformerInitializer{Config: bite.BiteConfig}
-	dealTransformerInitializer := deal.DealTransformerInitializer{Config: deal.Config}
-	dentTransformerInitializer := dent.DentTransformerInitializer{Config: dent.DentConfig}
-	dripDripTransformerInitializer := drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}
-	flipKickTransformerInitializer := flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}
-	frobTransformerInitializer := frob.FrobTransformerInitializer{Config: frob.FrobConfig}
-	dripFileConfig := drip_file.DripFileConfig
-	dripFileIlkTransformerInitializer := ilk2.DripFileIlkTransformerInitializer{Config: dripFileConfig}
-	dripFileRepoTransformerInitializer := repo.DripFileRepoTransformerInitializer{Config: dripFileConfig}
-	pitFileConfig := pit_file.PitFileConfig
-	pitFileDebtCeilingTransformerInitializer := debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}
-	pitFileIlkTransformerInitializer := ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}
-	pitFileStabilityFeeTransformerInitializer := stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}
-	priceFeedTransformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}
-	tendTransformerInitializer := tend.TendTransformerInitializer{Config: tend.TendConfig}
-	vatInitTransformerInitializer := vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}
+var (
+	BiteTransformerInitializer                = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
+	DealTransformerInitializer                = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
+	DentTransformerInitializer                = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
+	DripDripTransformerInitializer            = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
+	dripFileConfig                            = drip_file.DripFileConfig
+	DripFileIlkTransformerInitializer         = ilk2.DripFileIlkTransformerInitializer{Config: dripFileConfig}.NewDripFileIlkTransformer
+	DripFileRepoTransformerInitializer        = repo.DripFileRepoTransformerInitializer{Config: dripFileConfig}.NewDripFileRepoTransformer
+	FlipKickTransformerInitializer            = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
+	FrobTransformerInitializer                = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
+	pitFileConfig                             = pit_file.PitFileConfig
+	PitFileDebtCeilingTransformerInitializer  = debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}.NewPitFileDebtCeilingTransformer
+	PitFileIlkTransformerInitializer          = ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}.NewPitFileIlkTransformer
+	PitFileStabilityFeeTransformerInitializer = stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}.NewPitFileStabilityFeeTransformer
+	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
+	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
+	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
+)
 
+func TransformerInitializers() []shared.TransformerInitializer {
 	return []shared.TransformerInitializer{
-		biteTransformerInitializer.NewBiteTransformer,
-		dealTransformerInitializer.NewDealTransformer,
-		dentTransformerInitializer.NewDentTransformer,
-		dripFileIlkTransformerInitializer.NewDripFileIlkTransformer,
-		dripFileRepoTransformerInitializer.NewDripFileRepoTransformer,
-		dripDripTransformerInitializer.NewDripDripTransformer,
-		flipKickTransformerInitializer.NewFlipKickTransformer,
-		frobTransformerInitializer.NewFrobTransformer,
-		pitFileDebtCeilingTransformerInitializer.NewPitFileDebtCeilingTransformer,
-		pitFileIlkTransformerInitializer.NewPitFileIlkTransformer,
-		pitFileStabilityFeeTransformerInitializer.NewPitFileStabilityFeeTransformer,
-		priceFeedTransformerInitializer.NewPriceFeedTransformer,
-		tendTransformerInitializer.NewTendTransformer,
-		vatInitTransformerInitializer.NewVatInitTransformer,
+		BiteTransformerInitializer,
+		DealTransformerInitializer,
+		DentTransformerInitializer,
+		DripDripTransformerInitializer,
+		DripFileIlkTransformerInitializer,
+		DripFileRepoTransformerInitializer,
+		FlipKickTransformerInitializer,
+		FrobTransformerInitializer,
+		PitFileDebtCeilingTransformerInitializer,
+		PitFileIlkTransformerInitializer,
+		PitFileStabilityFeeTransformerInitializer,
+		PriceFeedTransformerInitializer,
+		TendTransformerInitializer,
+		VatInitTransformerInitializer,
 	}
 }

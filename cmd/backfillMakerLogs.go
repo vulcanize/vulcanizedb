@@ -17,16 +17,10 @@ package cmd
 import (
 	"log"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 )
 
@@ -38,7 +32,7 @@ var backfillMakerLogsCmd = &cobra.Command{
 This currently includes logs related to Multi-collateral Dai (frob), Auctions (flip-kick),
 and Price Feeds (ETH/USD, MKR/USD, and REP/USD - LogValue).
 
-vulcanize backfillMakerLogs --config environments/local.toml
+vulcanizedb backfillMakerLogs --config environments/local.toml
 
 This command expects a light sync to have been run, and the presence of header records in the Vulcanize database.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -46,22 +40,8 @@ This command expects a light sync to have been run, and the presence of header r
 	},
 }
 
-func blockChain() *geth.BlockChain {
-	rawRpcClient, err := rpc.Dial(ipc)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	vdbEthClient := client.NewEthClient(ethClient)
-	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	return geth.NewBlockChain(vdbEthClient, vdbNode, transactionConverter)
-}
-
 func backfillMakerLogs() {
-	blockChain := blockChain()
+	blockChain := getBlockChain()
 	db, err := postgres.NewDB(databaseConfig, blockChain.Node())
 	if err != nil {
 		log.Fatal("Failed to initialize database.")

@@ -18,17 +18,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
 // erc20Cmd represents the erc20 command
@@ -56,16 +50,7 @@ Expects an ethereum node to be running and requires a .toml config file:
 func watchERC20s() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
+	blockChain := getBlockChain()
 	db, err := postgres.NewDB(databaseConfig, blockChain.Node())
 	if err != nil {
 		log.Fatal("Failed to initialize database.")
