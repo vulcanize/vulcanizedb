@@ -61,8 +61,7 @@ var _ = Describe("Everyblock transformers", func() {
 	})
 
 	It("creates a token_supply record for each block in the given range", func() {
-		initializer := every_block.ERC20TokenTransformerInitializer{Config: generic.DaiConfig}
-		transformer := initializer.NewERC20TokenTransformer(db, blockChain)
+		transformer := every_block.NewERC20TokenTransformer(db, blockChain, generic.DaiConfig)
 		transformer.Execute()
 
 		var tokenSupplyCount int

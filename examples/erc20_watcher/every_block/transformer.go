@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/examples/generic"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -30,27 +30,24 @@ import (
 type ERC20Transformer struct {
 	Getter     ERC20GetterInterface
 	Repository ERC20TokenDatastore
-	Retriever  generic.TokenHolderRetriever
-	Config     generic.ContractConfig
+	Retriever  erc20_watcher.TokenHolderRetriever
+	Config     shared.ContractConfig
 }
 
-func (t *ERC20Transformer) SetConfiguration(config generic.ContractConfig) {
+func (t *ERC20Transformer) SetConfiguration(config shared.ContractConfig) {
 	t.Config = config
 }
 
-type ERC20TokenTransformerInitializer struct {
-	Config generic.ContractConfig
-}
-
-func (i ERC20TokenTransformerInitializer) NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain) shared.Transformer {
+func NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
 	getter := NewGetter(blockchain)
 	repository := ERC20TokenRepository{DB: db}
-	retriever := generic.NewTokenHolderRetriever(db, i.Config.Address)
+	retriever := erc20_watcher.NewTokenHolderRetriever(db, con.Address)
+
 	transformer := ERC20Transformer{
 		Getter:     &getter,
 		Repository: &repository,
 		Retriever:  retriever,
-		Config:     i.Config,
+		Config:     con,
 	}
 
 	return transformer

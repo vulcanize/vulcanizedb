@@ -20,11 +20,12 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
 type ERC20EventTransformer struct {
@@ -32,34 +33,38 @@ type ERC20EventTransformer struct {
 	WatchedEventRepository datastore.WatchedEventRepository
 	FilterRepository       datastore.FilterRepository
 	Repository             event_triggered.ERC20EventDatastore
+	Filters                []filters.LogFilter
 }
 
-func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Transformer, error) {
+func NewTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
 	var transformer shared.Transformer
 
-	cnvtr, err := NewERC20Converter(config)
+	cnvtr, err := NewERC20Converter(con)
 	if err != nil {
-		return transformer, err
+		log.Fatal(err)
 	}
 
 	wer := repositories.WatchedEventRepository{DB: db}
 	fr := repositories.FilterRepository{DB: db}
 	lkr := event_triggered.ERC20EventRepository{DB: db}
+
 	transformer = ERC20EventTransformer{
 		Converter:              cnvtr,
 		WatchedEventRepository: wer,
 		FilterRepository:       fr,
 		Repository:             lkr,
+		Filters:                con.Filters,
 	}
 
-	for _, filter := range constants.DaiERC20Filters {
+	for _, filter := range con.Filters {
 		fr.CreateFilter(filter)
 	}
-	return transformer, nil
+
+	return transformer
 }
 
 func (tr ERC20EventTransformer) Execute() error {
-	for _, filter := range constants.DaiERC20Filters {
+	for _, filter := range tr.Filters {
 		watchedEvents, err := tr.WatchedEventRepository.GetWatchedEvents(filter.Name)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error fetching events for %s:", filter.Name), err)
@@ -84,5 +89,6 @@ func (tr ERC20EventTransformer) Execute() error {
 			}
 		}
 	}
+
 	return nil
 }

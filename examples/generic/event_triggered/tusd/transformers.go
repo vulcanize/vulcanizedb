@@ -12,28 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package generic
+package tusd
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
-var DaiConfig = shared.ContractConfig{
-	Address:    constants.DaiContractAddress,
-	Abi:        constants.DaiAbiString,
-	FirstBlock: int64(4752008),
-	LastBlock:  -1,
-	Name:       "Dai",
-	Filters:    constants.DaiERC20Filters,
-}
-
-var TusdConfig = shared.ContractConfig{
-	Address:    constants.TusdContractAddress,
-	Owner:      constants.TusdContractOwner,
-	Abi:        constants.TusdAbiString,
-	FirstBlock: int64(5197514),
-	LastBlock:  -1,
-	Name:       "Tusd",
-	Filters:    constants.TusdGenericFilters,
+func TusdEventTriggeredTransformerInitializers() []shared.TransformerInitializer {
+	return []shared.TransformerInitializer{
+		NewTransformer,
+	}
 }

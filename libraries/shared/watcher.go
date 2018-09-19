@@ -9,11 +9,12 @@ type Watcher struct {
 	Transformers []Transformer
 	DB           postgres.DB
 	Blockchain   core.BlockChain
+	Config       ContractConfig
 }
 
 func (watcher *Watcher) AddTransformers(us []TransformerInitializer) {
 	for _, transformerInitializer := range us {
-		transformer := transformerInitializer(&watcher.DB, watcher.Blockchain)
+		transformer := transformerInitializer(&watcher.DB, watcher.Blockchain, watcher.Config)
 		watcher.Transformers = append(watcher.Transformers, transformer)
 	}
 }

@@ -19,12 +19,13 @@ import (
 	"log"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
 type GenericTransformer struct {
@@ -32,34 +33,38 @@ type GenericTransformer struct {
 	WatchedEventRepository datastore.WatchedEventRepository
 	FilterRepository       datastore.FilterRepository
 	Repository             event_triggered.GenericEventDatastore
+	Filters                []filters.LogFilter
 }
 
-func NewTransformer(db *postgres.DB, config generic.ContractConfig) (shared.Transformer, error) {
+func NewTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
 	var transformer shared.Transformer
 
-	cnvtr, err := NewGenericConverter(config)
+	cnvtr, err := NewGenericConverter(con)
 	if err != nil {
-		return transformer, err
+		log.Fatal(err)
 	}
 
 	wer := repositories.WatchedEventRepository{DB: db}
 	fr := repositories.FilterRepository{DB: db}
 	lkr := event_triggered.GenericEventRepository{DB: db}
+
 	transformer = GenericTransformer{
 		Converter:              cnvtr,
 		WatchedEventRepository: wer,
 		FilterRepository:       fr,
 		Repository:             lkr,
+		Filters:                con.Filters,
 	}
 
-	for _, filter := range constants.TusdGenericFilters {
+	for _, filter := range con.Filters {
 		fr.CreateFilter(filter)
 	}
-	return transformer, nil
+
+	return transformer
 }
 
 func (tr GenericTransformer) Execute() error {
-	for _, filter := range constants.TusdGenericFilters {
+	for _, filter := range tr.Filters {
 		watchedEvents, err := tr.WatchedEventRepository.GetWatchedEvents(filter.Name)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error fetching events for %s:", filter.Name), err)
@@ -70,7 +75,7 @@ func (tr GenericTransformer) Execute() error {
 				entity, err := tr.Converter.ToBurnEntity(*we)
 				model := tr.Converter.ToBurnModel(entity)
 				if err != nil {
-					log.Printf("Error persisting data for Dai Burns (watchedEvent.LogID %d):\n %s", we.LogID, err)
+					log.Printf("Error persisting data for TrueUSD Burns (watchedEvent.LogID %d):\n %s", we.LogID, err)
 				}
 				tr.Repository.CreateBurn(model, we.LogID)
 			}
@@ -78,11 +83,12 @@ func (tr GenericTransformer) Execute() error {
 				entity, err := tr.Converter.ToMintEntity(*we)
 				model := tr.Converter.ToMintModel(entity)
 				if err != nil {
-					log.Printf("Error persisting data for Dai Mints (watchedEvent.LogID %d):\n %s", we.LogID, err)
+					log.Printf("Error persisting data for TrueUSD Mints (watchedEvent.LogID %d):\n %s", we.LogID, err)
 				}
 				tr.Repository.CreateMint(model, we.LogID)
 			}
 		}
 	}
+
 	return nil
 }

@@ -20,8 +20,8 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered"
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
@@ -37,10 +37,10 @@ type ERC20ConverterInterface interface {
 }
 
 type ERC20Converter struct {
-	config generic.ContractConfig
+	config shared.ContractConfig
 }
 
-func NewERC20Converter(config generic.ContractConfig) (*ERC20Converter, error) {
+func NewERC20Converter(config shared.ContractConfig) (*ERC20Converter, error) {
 	var err error
 
 	config.ParsedAbi, err = geth.ParseAbi(config.Abi)
