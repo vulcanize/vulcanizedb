@@ -63,6 +63,7 @@ var _ = Describe("DentTransformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("fetches logs for each missing header", func() {
@@ -81,6 +82,42 @@ var _ = Describe("DentTransformer", func() {
 	It("returns an error if fetching logs fails", func() {
 		dentRepository.SetMissingHeaders([]core.Header{{}})
 		fetcher.SetFetcherError(fakes.FakeError)
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &dent_mocks.MockDentConverter{}
+		mockRepository := &dent_mocks.MockDentRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := dent.DentTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &dent_mocks.MockDentConverter{}
+		mockRepository := &dent_mocks.MockDentRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := dent.DentTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())

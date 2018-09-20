@@ -28,9 +28,9 @@ type MockDentConverter struct {
 	LogsToConvert         []types.Log
 }
 
-func (c *MockDentConverter) ToModel(ethLog types.Log) (dent.DentModel, error) {
-	c.LogsToConvert = append(c.LogsToConvert, ethLog)
-	return test_data.DentModel, c.converterError
+func (c *MockDentConverter) ToModels(ethLogs []types.Log) ([]dent.DentModel, error) {
+	c.LogsToConvert = append(c.LogsToConvert, ethLogs...)
+	return []dent.DentModel{test_data.DentModel}, c.converterError
 }
 
 func (c *MockDentConverter) SetConverterError(err error) {
