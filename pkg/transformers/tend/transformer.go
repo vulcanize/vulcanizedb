@@ -64,19 +64,23 @@ func (t TendTransformer) Execute() error {
 			log.Println("Error fetching matching logs:", err)
 			return err
 		}
-
-		for _, ethLog := range ethLogs {
-			model, err := t.Converter.Convert(config.ContractAddress, config.ContractAbi, ethLog)
+		if len(ethLogs) < 1 {
+			err := t.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
-				log.Println("Error converting logs:", err)
 				return err
 			}
+		}
 
-			err = t.Repository.Create(header.Id, model)
-			if err != nil {
-				log.Println("Error persisting tend record:", err)
-				return err
-			}
+		models, err := t.Converter.Convert(ethLogs)
+		if err != nil {
+			log.Println("Error converting logs:", err)
+			return err
+		}
+
+		err = t.Repository.Create(header.Id, models)
+		if err != nil {
+			log.Println("Error persisting tend record:", err)
+			return err
 		}
 	}
 

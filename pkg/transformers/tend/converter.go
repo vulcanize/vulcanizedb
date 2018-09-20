@@ -24,7 +24,7 @@ import (
 )
 
 type Converter interface {
-	Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error)
+	Convert(ethLogs []types.Log) ([]TendModel, error)
 }
 
 type TendConverter struct{}
@@ -33,40 +33,44 @@ func NewTendConverter() TendConverter {
 	return TendConverter{}
 }
 
-func (c TendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (TendModel, error) {
-	err := validateLog(ethLog)
-	if err != nil {
-		return TendModel{}, err
+func (c TendConverter) Convert(ethLogs []types.Log) (results []TendModel, err error) {
+	for _, ethLog := range ethLogs {
+		err := validateLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+
+		bidId := ethLog.Topics[2].Big()
+		guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
+		lot := ethLog.Topics[3].Big().String()
+
+		lastDataItemStartIndex := len(ethLog.Data) - 32
+		lastItem := ethLog.Data[lastDataItemStartIndex:]
+		last := big.NewInt(0).SetBytes(lastItem)
+		bidValue := last.String()
+		tic := "0"
+		//TODO: it is likely that the tic value will need to be added to an emitted event,
+		//so this will need to be updated at that point
+		transactionIndex := ethLog.TxIndex
+
+		rawJson, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		raw := string(rawJson)
+
+		model := TendModel{
+			BidId:            bidId.String(),
+			Lot:              lot,
+			Bid:              bidValue,
+			Guy:              guy,
+			Tic:              tic,
+			TransactionIndex: transactionIndex,
+			Raw:              raw,
+		}
+		results = append(results, model)
 	}
-
-	bidId := ethLog.Topics[2].Big()
-	guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
-	lot := ethLog.Topics[3].Big().String()
-
-	lastDataItemStartIndex := len(ethLog.Data) - 32
-	lastItem := ethLog.Data[lastDataItemStartIndex:]
-	last := big.NewInt(0).SetBytes(lastItem)
-	bidValue := last.String()
-	tic := "0"
-	//TODO: it is likely that the tic value will need to be added to an emitted event,
-	//so this will need to be updated at that point
-	transactionIndex := ethLog.TxIndex
-
-	rawJson, err := json.Marshal(ethLog)
-	if err != nil {
-		return TendModel{}, err
-	}
-	raw := string(rawJson)
-
-	return TendModel{
-		BidId:            bidId.String(),
-		Lot:              lot,
-		Bid:              bidValue,
-		Guy:              guy,
-		Tic:              tic,
-		TransactionIndex: transactionIndex,
-		Raw:              raw,
-	}, nil
+	return results, err
 }
 
 func validateLog(ethLog types.Log) error {

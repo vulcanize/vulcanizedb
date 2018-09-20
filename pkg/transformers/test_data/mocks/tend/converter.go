@@ -22,17 +22,13 @@ import (
 )
 
 type MockTendConverter struct {
-	ConverterContract string
-	ConverterAbi      string
-	LogsToConvert     []types.Log
-	ConverterError    error
+	LogsToConvert  []types.Log
+	ConverterError error
 }
 
-func (c *MockTendConverter) Convert(contractAddress string, contractAbi string, ethLog types.Log) (tend.TendModel, error) {
-	c.ConverterContract = contractAddress
-	c.ConverterAbi = contractAbi
-	c.LogsToConvert = append(c.LogsToConvert, ethLog)
-	return test_data.TendModel, c.ConverterError
+func (c *MockTendConverter) Convert(ethLogs []types.Log) ([]tend.TendModel, error) {
+	c.LogsToConvert = append(c.LogsToConvert, ethLogs...)
+	return []tend.TendModel{test_data.TendModel}, c.ConverterError
 }
 
 func (c *MockTendConverter) SetConverterError(err error) {

@@ -672,7 +672,8 @@ CREATE TABLE public.checked_headers (
     price_feeds_checked boolean DEFAULT false NOT NULL,
     deal_checked boolean DEFAULT false NOT NULL,
     dent_checked boolean DEFAULT false NOT NULL,
-    flip_kick_checked boolean DEFAULT false NOT NULL
+    flip_kick_checked boolean DEFAULT false NOT NULL,
+    tend_checked boolean DEFAULT false NOT NULL
 );
 
 

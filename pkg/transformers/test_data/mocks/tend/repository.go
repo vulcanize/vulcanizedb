@@ -15,28 +15,36 @@
 package tend
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
 type MockTendRepository struct {
-	createError               error
-	PassedEndingBlockNumber   int64
-	PassedHeaderID            int64
-	PassedStartingBlockNumber int64
-	PassedTendModel           tend.TendModel
-	missingHeaders            []core.Header
-	missingHeadersErr         error
+	createError                     error
+	PassedEndingBlockNumber         int64
+	PassedHeaderID                  int64
+	PassedStartingBlockNumber       int64
+	PassedTendModel                 tend.TendModel
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderId int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
 }
 
-func (repository *MockTendRepository) Create(headerId int64, tend tend.TendModel) error {
+func (repository *MockTendRepository) Create(headerId int64, tend []tend.TendModel) error {
 	repository.PassedHeaderID = headerId
-	repository.PassedTendModel = tend
+	repository.PassedTendModel = tend[0]
 	return repository.createError
 }
 
 func (repository *MockTendRepository) SetCreateError(err error) {
 	repository.createError = err
+}
+
+func (repository *MockTendRepository) SetMarkHeaderCheckedErr(err error) {
+	repository.markHeaderCheckedErr = err
 }
 
 func (repository *MockTendRepository) SetMissingHeadersErr(err error) {
@@ -47,8 +55,17 @@ func (repository *MockTendRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
 
+func (repository *MockTendRepository) MarkHeaderChecked(headerId int64) error {
+	repository.markHeaderCheckedPassedHeaderId = headerId
+	return repository.markHeaderCheckedErr
+}
+
 func (repository *MockTendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockTendRepository) AssertMarkHeaderCheckedCalledWith(headerId int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderId).To(Equal(headerId))
 }
