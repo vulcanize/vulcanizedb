@@ -21,18 +21,25 @@ import (
 )
 
 type Converter interface {
-	ToModel(log types.Log, headerID int64) (PriceFeedModel, error)
+	ToModels(logs []types.Log, headerID int64) ([]PriceFeedModel, error)
 }
 
 type PriceFeedConverter struct{}
 
-func (converter PriceFeedConverter) ToModel(log types.Log, headerID int64) (PriceFeedModel, error) {
-	raw, err := json.Marshal(log)
-	return PriceFeedModel{
-		BlockNumber:       log.BlockNumber,
-		MedianizerAddress: log.Address.Bytes(),
-		UsdValue:          Convert("wad", hexutil.Encode(log.Data), 15),
-		TransactionIndex:  log.TxIndex,
-		Raw:               raw,
-	}, err
+func (converter PriceFeedConverter) ToModels(logs []types.Log, headerID int64) (results []PriceFeedModel, err error) {
+	for _, log := range logs {
+		raw, err := json.Marshal(log)
+		if err != nil {
+			return nil, err
+		}
+		model := PriceFeedModel{
+			BlockNumber:       log.BlockNumber,
+			MedianizerAddress: log.Address.Bytes(),
+			UsdValue:          Convert("wad", hexutil.Encode(log.Data), 15),
+			TransactionIndex:  log.TxIndex,
+			Raw:               raw,
+		}
+		results = append(results, model)
+	}
+	return results, err
 }

@@ -35,7 +35,7 @@ var _ = Describe("Price feeds repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
 
-			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPriceFeedUpdate price_feeds.PriceFeedModel
@@ -56,7 +56,7 @@ var _ = Describe("Price feeds repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
 
-			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -73,10 +73,10 @@ var _ = Describe("Price feeds repository", func() {
 			headerID, err := headerRepository.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			priceFeedRepository := price_feeds.NewPriceFeedRepository(db)
-			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = priceFeedRepository.Create(headerID, test_data.PriceFeedModel)
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 
 			Expect(err).To(HaveOccurred())
 		})

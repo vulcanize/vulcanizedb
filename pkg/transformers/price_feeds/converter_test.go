@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
@@ -27,9 +28,10 @@ var _ = Describe("Price feed Converter", func() {
 		converter := price_feeds.PriceFeedConverter{}
 		headerID := int64(123)
 
-		model, err := converter.ToModel(test_data.EthPriceFeedLog, headerID)
+		models, err := converter.ToModels([]types.Log{test_data.EthPriceFeedLog}, headerID)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.PriceFeedModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.PriceFeedModel))
 	})
 })

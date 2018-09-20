@@ -62,15 +62,13 @@ func (transformer PriceFeedTransformer) Execute() error {
 				return err
 			}
 		}
-		for _, log := range logs {
-			model, err := transformer.Converter.ToModel(log, header.Id)
-			if err != nil {
-				return err
-			}
-			err = transformer.Repository.Create(header.Id, model)
-			if err != nil {
-				return err
-			}
+		models, err := transformer.Converter.ToModels(logs, header.Id)
+		if err != nil {
+			return err
+		}
+		err = transformer.Repository.Create(header.Id, models)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
