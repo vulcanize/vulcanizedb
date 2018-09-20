@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	. "github.com/onsi/gomega"
@@ -19,6 +18,7 @@ type MockRpcClient struct {
 	passedContext    context.Context
 	passedMethod     string
 	passedResult     interface{}
+	returnPOAHeader  core.POAHeader
 	supportedModules map[string]string
 }
 
@@ -45,8 +45,7 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 			*p = types.Header{Number: big.NewInt(123)}
 		}
 		if p, ok := result.(*core.POAHeader); ok {
-			n := hexutil.Big(*big.NewInt(123))
-			*p = core.POAHeader{Number: &n}
+			*p = client.returnPOAHeader
 		}
 		if client.callContextErr != nil {
 			return client.callContextErr
@@ -89,6 +88,10 @@ func (client *MockRpcClient) SetSupporedModules(supportedModules map[string]stri
 
 func (client *MockRpcClient) SetCallContextErr(err error) {
 	client.callContextErr = err
+}
+
+func (client *MockRpcClient) SetReturnPOAHeader(header core.POAHeader) {
+	client.returnPOAHeader = header
 }
 
 func (client *MockRpcClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
