@@ -96,6 +96,42 @@ var _ = Describe("FlipKick Transformer", func() {
 		Expect(err.Error()).To(ContainSubstring("error(s) transforming FlipKick event logs"))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &flip_kick_mocks.MockFlipKickConverter{}
+		mockRepository := &flip_kick_mocks.MockFlipKickRepository{}
+		headerID := int64(123)
+		mockRepository.SetHeadersToReturn([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := flip_kick.FlipKickTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &flip_kick_mocks.MockFlipKickConverter{}
+		mockRepository := &flip_kick_mocks.MockFlipKickRepository{}
+		mockRepository.SetHeadersToReturn([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := flip_kick.FlipKickTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts the logs", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())

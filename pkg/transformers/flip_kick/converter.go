@@ -28,59 +28,67 @@ import (
 )
 
 type Converter interface {
-	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (*FlipKickEntity, error)
-	ToModel(flipKick FlipKickEntity) (FlipKickModel, error)
+	ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) ([]FlipKickEntity, error)
+	ToModels(flipKicks []FlipKickEntity) ([]FlipKickModel, error)
 }
 
 type FlipKickConverter struct{}
 
-func (FlipKickConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (*FlipKickEntity, error) {
-	entity := &FlipKickEntity{}
-	address := common.HexToAddress(contractAddress)
-	abi, err := geth.ParseAbi(contractAbi)
-	if err != nil {
-		return entity, err
+func (FlipKickConverter) ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) (results []FlipKickEntity, err error) {
+	for _, ethLog := range ethLogs {
+		entity := &FlipKickEntity{}
+		address := common.HexToAddress(contractAddress)
+		abi, err := geth.ParseAbi(contractAbi)
+		if err != nil {
+			return nil, err
+		}
+
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+
+		err = contract.UnpackLog(entity, "Kick", ethLog)
+		if err != nil {
+			return nil, err
+		}
+		entity.Raw = ethLog
+		entity.TransactionIndex = ethLog.TxIndex
+		results = append(results, *entity)
 	}
 
-	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-
-	err = contract.UnpackLog(entity, "Kick", ethLog)
-	if err != nil {
-		return entity, err
-	}
-	entity.Raw = ethLog
-	entity.TransactionIndex = ethLog.TxIndex
-	return entity, nil
+	return results, nil
 }
 
-func (FlipKickConverter) ToModel(flipKick FlipKickEntity) (FlipKickModel, error) {
-	if flipKick.Id == nil {
-		return FlipKickModel{}, errors.New("FlipKick log ID cannot be nil.")
-	}
+func (FlipKickConverter) ToModels(flipKicks []FlipKickEntity) (results []FlipKickModel, err error) {
+	for _, flipKick := range flipKicks {
+		if flipKick.Id == nil {
+			return nil, errors.New("FlipKick log ID cannot be nil.")
+		}
 
-	id := flipKick.Id.String()
-	lot := shared.ConvertNilToEmptyString(flipKick.Lot.String())
-	bid := shared.ConvertNilToEmptyString(flipKick.Bid.String())
-	gal := flipKick.Gal.String()
-	endValue := shared.ConvertNilToZeroTimeValue(flipKick.End)
-	end := time.Unix(endValue, 0)
-	urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
-	tab := shared.ConvertNilToEmptyString(flipKick.Tab.String())
-	rawLogJson, err := json.Marshal(flipKick.Raw)
-	if err != nil {
-		return FlipKickModel{}, err
-	}
-	rawLogString := string(rawLogJson)
+		id := flipKick.Id.String()
+		lot := shared.ConvertNilToEmptyString(flipKick.Lot.String())
+		bid := shared.ConvertNilToEmptyString(flipKick.Bid.String())
+		gal := flipKick.Gal.String()
+		endValue := shared.ConvertNilToZeroTimeValue(flipKick.End)
+		end := time.Unix(endValue, 0)
+		urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
+		tab := shared.ConvertNilToEmptyString(flipKick.Tab.String())
+		rawLogJson, err := json.Marshal(flipKick.Raw)
+		if err != nil {
+			return nil, err
+		}
+		rawLogString := string(rawLogJson)
 
-	return FlipKickModel{
-		BidId:            id,
-		Lot:              lot,
-		Bid:              bid,
-		Gal:              gal,
-		End:              end,
-		Urn:              urn,
-		Tab:              tab,
-		TransactionIndex: flipKick.TransactionIndex,
-		Raw:              rawLogString,
-	}, nil
+		model := FlipKickModel{
+			BidId:            id,
+			Lot:              lot,
+			Bid:              bid,
+			Gal:              gal,
+			End:              end,
+			Urn:              urn,
+			Tab:              tab,
+			TransactionIndex: flipKick.TransactionIndex,
+			Raw:              rawLogString,
+		}
+		results = append(results, model)
+	}
+	return results, err
 }

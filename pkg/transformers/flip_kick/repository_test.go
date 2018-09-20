@@ -54,8 +54,8 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("persists a flip_kick record", func() {
-			err := flipKickRepository.Create(headerId, flipKick)
+		It("persists flip_kick records", func() {
+			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
 			assertDBRecordCount(db, "maker.flip_kick", 1)
@@ -75,17 +75,27 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(dbResult.Raw).To(MatchJSON(flipKick.Raw))
 		})
 
-		It("returns an error if inserting the flip_kick record fails", func() {
-			err := flipKickRepository.Create(headerId, test_data.FlipKickModel)
+		It("marks header checked", func() {
+			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = flipKickRepository.Create(headerId, test_data.FlipKickModel)
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT flip_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("returns an error if inserting the flip_kick record fails", func() {
+			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("deletes the flip_kick records if its corresponding header record is deleted", func() {
-			err := flipKickRepository.Create(headerId, test_data.FlipKickModel)
+			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 			assertDBRecordCount(db, "maker.flip_kick", 1)
 			assertDBRecordCount(db, "headers", 1)
@@ -95,6 +105,31 @@ var _ = Describe("FlipKick Repository", func() {
 
 			assertDBRecordCount(db, "headers", 0)
 			assertDBRecordCount(db, "maker.flip_kick", 0)
+		})
+	})
+
+	Describe("MarkHeaderChecked", func() {
+		It("creates a row for a new headerID", func() {
+			err := flipKickRepository.MarkHeaderChecked(headerId)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT flip_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates row when headerID already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = flipKickRepository.MarkHeaderChecked(headerId)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT flip_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
 		})
 	})
 
@@ -130,11 +165,10 @@ var _ = Describe("FlipKick Repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers for which there isn't an associated flip_kick record", func() {
+		It("returns headers that haven't been marked as checked", func() {
 			startingBlock := blockNumber - 3
 			endingBlock := blockNumber + 3
-
-			err := flipKickRepository.Create(headerId, test_data.FlipKickModel)
+			err := flipKickRepository.MarkHeaderChecked(headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			newBlockNumber := blockNumber + 3

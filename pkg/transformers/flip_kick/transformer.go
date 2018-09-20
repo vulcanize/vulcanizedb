@@ -95,21 +95,25 @@ func (fkt FlipKickTransformer) Execute() error {
 		if err != nil {
 			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, FetcherError))
 		}
+		if len(ethLogs) < 1 {
+			err := fkt.Repository.MarkHeaderChecked(header.Id)
+			if err != nil {
+				return err
+			}
+		}
 
-		for _, ethLog := range ethLogs {
-			entity, err := fkt.Converter.ToEntity(config.ContractAddress, config.ContractAbi, ethLog)
-			if err != nil {
-				resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, LogToEntityError))
-			}
-			model, err := fkt.Converter.ToModel(*entity)
-			if err != nil {
-				resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, EntityToModelError))
-			}
+		entities, err := fkt.Converter.ToEntities(config.ContractAddress, config.ContractAbi, ethLogs)
+		if err != nil {
+			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, LogToEntityError))
+		}
+		models, err := fkt.Converter.ToModels(entities)
+		if err != nil {
+			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, EntityToModelError))
+		}
 
-			err = fkt.Repository.Create(header.Id, model)
-			if err != nil {
-				resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, RepositoryError))
-			}
+		err = fkt.Repository.Create(header.Id, models)
+		if err != nil {
+			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, RepositoryError))
 		}
 	}
 
