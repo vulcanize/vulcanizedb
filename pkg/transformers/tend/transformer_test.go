@@ -87,14 +87,48 @@ var _ = Describe("Tend Transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("converts an eth log to an Model", func() {
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &tend_mocks.MockTendConverter{}
+		mockRepository := &tend_mocks.MockTendRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := tend.TendTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &tend_mocks.MockTendConverter{}
+		mockRepository := &tend_mocks.MockTendRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := tend.TendTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("converts an eth log to a Model", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterContract).To(Equal(tend.TendConfig.ContractAddress))
-		Expect(converter.ConverterAbi).To(Equal(tend.TendConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.TendLogNote}))
 	})
 
