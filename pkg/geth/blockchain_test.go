@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	vulcCore "github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -75,6 +76,8 @@ var _ = Describe("Geth blockchain", func() {
 		Describe("POA/Kovan", func() {
 			It("fetches header from rpcClient", func() {
 				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				blockNumber := hexutil.Big(*big.NewInt(123))
+				mockRpcClient.SetReturnPOAHeader(vulcCore.POAHeader{Number: &blockNumber})
 				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, cold_db.NewColdDbTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
@@ -92,6 +95,16 @@ var _ = Describe("Geth blockchain", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
+			})
+
+			It("returns error if returned header is empty", func() {
+				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, cold_db.NewColdDbTransactionConverter())
+
+				_, err := blockChain.GetHeaderByNumber(100)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(geth.ErrEmptyHeader))
 			})
 		})
 	})

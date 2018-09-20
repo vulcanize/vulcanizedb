@@ -9,9 +9,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
+
+var ErrEmptyHeader = errors.New("empty header returned over RPC")
 
 type BlockChain struct {
 	blockConverter  vulcCommon.BlockConverter
@@ -61,6 +64,9 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 	err = blockChain.rpcClient.CallContext(context.Background(), &POAHeader, "eth_getBlockByNumber", blockNumberArg, includeTransactions)
 	if err != nil {
 		return header, err
+	}
+	if POAHeader.Number == nil {
+		return header, ErrEmptyHeader
 	}
 	return blockChain.headerConverter.Convert(&types.Header{
 		ParentHash:  POAHeader.ParentHash,
