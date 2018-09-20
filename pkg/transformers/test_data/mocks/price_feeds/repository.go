@@ -29,7 +29,7 @@ type MockPriceFeedRepository struct {
 	missingHeaders                  []core.Header
 	missingHeadersErr               error
 	passedEndingBlockNumber         int64
-	passedModel                     price_feeds.PriceFeedModel
+	passedModels                    []price_feeds.PriceFeedModel
 	passedStartingBlockNumber       int64
 }
 
@@ -49,9 +49,9 @@ func (repository *MockPriceFeedRepository) SetMissingHeaders(headers []core.Head
 	repository.missingHeaders = headers
 }
 
-func (repository *MockPriceFeedRepository) Create(headerID int64, model price_feeds.PriceFeedModel) error {
+func (repository *MockPriceFeedRepository) Create(headerID int64, models []price_feeds.PriceFeedModel) error {
 	repository.createPassedHeaderID = headerID
-	repository.passedModel = model
+	repository.passedModels = models
 	return repository.createErr
 }
 
@@ -66,9 +66,9 @@ func (repository *MockPriceFeedRepository) MissingHeaders(startingBlockNumber, e
 	return repository.missingHeaders, repository.missingHeadersErr
 }
 
-func (repository *MockPriceFeedRepository) AssertCreateCalledWith(headerID int64, model price_feeds.PriceFeedModel) {
+func (repository *MockPriceFeedRepository) AssertCreateCalledWith(headerID int64, models []price_feeds.PriceFeedModel) {
 	Expect(repository.createPassedHeaderID).To(Equal(headerID))
-	Expect(repository.passedModel).To(Equal(model))
+	Expect(repository.passedModels).To(Equal(models))
 }
 
 func (repository *MockPriceFeedRepository) AssertMarkHeaderCheckedCalledWith(headerID int64) {

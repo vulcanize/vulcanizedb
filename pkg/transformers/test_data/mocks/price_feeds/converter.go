@@ -22,14 +22,14 @@ import (
 
 type MockPriceFeedConverter struct {
 	converterErr   error
-	PassedLog      types.Log
+	PassedLogs     []types.Log
 	PassedHeaderID int64
 }
 
-func (converter *MockPriceFeedConverter) ToModel(log types.Log, headerID int64) (price_feeds.PriceFeedModel, error) {
-	converter.PassedLog = log
+func (converter *MockPriceFeedConverter) ToModels(logs []types.Log, headerID int64) ([]price_feeds.PriceFeedModel, error) {
+	converter.PassedLogs = logs
 	converter.PassedHeaderID = headerID
-	return test_data.PriceFeedModel, converter.converterErr
+	return []price_feeds.PriceFeedModel{test_data.PriceFeedModel}, converter.converterErr
 }
 
 func (converter *MockPriceFeedConverter) SetConverterErr(e error) {

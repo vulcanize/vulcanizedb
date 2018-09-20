@@ -20,7 +20,7 @@ import (
 )
 
 type IPriceFeedRepository interface {
-	Create(headerID int64, model PriceFeedModel) error
+	Create(headerID int64, models []PriceFeedModel) error
 	MarkHeaderChecked(headerID int64) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
@@ -33,13 +33,18 @@ func NewPriceFeedRepository(db *postgres.DB) PriceFeedRepository {
 	return PriceFeedRepository{db: db}
 }
 
-func (repository PriceFeedRepository) Create(headerID int64, model PriceFeedModel) error {
+func (repository PriceFeedRepository) Create(headerID int64, models []PriceFeedModel) error {
 	tx, err := repository.db.Begin()
-	_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, tx_idx, raw_log)
-		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.TransactionIndex, model.Raw)
 	if err != nil {
-		tx.Rollback()
 		return err
+	}
+	for _, model := range models {
+		_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, tx_idx, raw_log)
+		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.TransactionIndex, model.Raw)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, price_feeds_checked)
 		VALUES ($1, $2) 
@@ -49,8 +54,7 @@ func (repository PriceFeedRepository) Create(headerID int64, model PriceFeedMode
 		tx.Rollback()
 		return err
 	}
-	tx.Commit()
-	return nil
+	return tx.Commit()
 }
 
 func (repository PriceFeedRepository) MarkHeaderChecked(headerID int64) error {

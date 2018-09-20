@@ -149,7 +149,7 @@ var _ = Describe("Price feed transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(mockConverter.PassedHeaderID).To(Equal(headerID))
-		Expect(mockConverter.PassedLog).To(Equal(test_data.EthPriceFeedLog))
+		Expect(mockConverter.PassedLogs).To(Equal([]types.Log{test_data.EthPriceFeedLog}))
 	})
 
 	It("returns err if converter returns err", func() {
@@ -188,7 +188,7 @@ var _ = Describe("Price feed transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertCreateCalledWith(headerID, test_data.PriceFeedModel)
+		mockRepository.AssertCreateCalledWith(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 	})
 
 	It("returns error if creating price feed update returns error", func() {
