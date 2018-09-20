@@ -15,25 +15,34 @@
 package dent
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 )
 
 type MockDentRepository struct {
-	PassedStartingBlockNumber int64
-	PassedEndingBlockNumber   int64
-	PassedDentModels          []dent.DentModel
-	PassedHeaderIds           []int64
-	missingHeaders            []core.Header
-	missingHeadersError       error
-	createError               error
+	PassedStartingBlockNumber       int64
+	PassedEndingBlockNumber         int64
+	PassedDentModels                []dent.DentModel
+	PassedHeaderIds                 []int64
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderId int64
+	missingHeaders                  []core.Header
+	missingHeadersError             error
+	createError                     error
 }
 
-func (r *MockDentRepository) Create(headerId int64, model dent.DentModel) error {
+func (r *MockDentRepository) Create(headerId int64, models []dent.DentModel) error {
 	r.PassedHeaderIds = append(r.PassedHeaderIds, headerId)
-	r.PassedDentModels = append(r.PassedDentModels, model)
+	r.PassedDentModels = append(r.PassedDentModels, models...)
 
 	return r.createError
+}
+
+func (r *MockDentRepository) MarkHeaderChecked(headerId int64) error {
+	r.markHeaderCheckedPassedHeaderId = headerId
+	return r.markHeaderCheckedErr
 }
 
 func (r *MockDentRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
@@ -41,6 +50,10 @@ func (r *MockDentRepository) MissingHeaders(startingBlockNumber, endingBlockNumb
 	r.PassedEndingBlockNumber = endingBlockNumber
 
 	return r.missingHeaders, r.missingHeadersError
+}
+
+func (r *MockDentRepository) SetMarkHeaderCheckedErr(err error) {
+	r.markHeaderCheckedErr = err
 }
 
 func (r *MockDentRepository) SetMissingHeadersError(err error) {
@@ -53,4 +66,8 @@ func (r *MockDentRepository) SetMissingHeaders(headers []core.Header) {
 
 func (r *MockDentRepository) SetCreateError(err error) {
 	r.createError = err
+}
+
+func (r *MockDentRepository) AssertMarkHeaderCheckedCalledWith(headerId int64) {
+	Expect(r.markHeaderCheckedPassedHeaderId).To(Equal(headerId))
 }

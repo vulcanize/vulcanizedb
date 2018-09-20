@@ -24,7 +24,7 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (DentModel, error)
+	ToModels(ethLogs []types.Log) ([]DentModel, error)
 }
 
 type DentConverter struct{}
@@ -33,36 +33,40 @@ func NewDentConverter() DentConverter {
 	return DentConverter{}
 }
 
-func (c DentConverter) ToModel(ethLog types.Log) (DentModel, error) {
-	err := validateLog(ethLog)
-	if err != nil {
-		return DentModel{}, err
+func (c DentConverter) ToModels(ethLogs []types.Log) (result []DentModel, err error) {
+	for _, log := range ethLogs {
+		err := validateLog(log)
+		if err != nil {
+			return nil, err
+		}
+
+		bidId := log.Topics[2].Big()
+		lot := log.Topics[3].Big().String()
+		bidValue := getBidValue(log)
+		guy := common.HexToAddress(log.Topics[1].Hex()).String()
+		tic := "0"
+		//TODO: it is likely that the tic value will need to be added to an emitted event,
+		//so this will need to be updated at that point
+
+		transactionIndex := log.TxIndex
+
+		raw, err := json.Marshal(log)
+		if err != nil {
+			return nil, err
+		}
+
+		model := DentModel{
+			BidId:            bidId.String(),
+			Lot:              lot,
+			Bid:              bidValue,
+			Guy:              guy,
+			Tic:              tic,
+			TransactionIndex: transactionIndex,
+			Raw:              raw,
+		}
+		result = append(result, model)
 	}
-
-	bidId := ethLog.Topics[2].Big()
-	lot := ethLog.Topics[3].Big().String()
-	bidValue := getBidValue(ethLog)
-	guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
-	tic := "0"
-	//TODO: it is likely that the tic value will need to be added to an emitted event,
-	//so this will need to be updated at that point
-
-	transactionIndex := ethLog.TxIndex
-
-	raw, err := json.Marshal(ethLog)
-	if err != nil {
-		return DentModel{}, err
-	}
-
-	return DentModel{
-		BidId:            bidId.String(),
-		Lot:              lot,
-		Bid:              bidValue,
-		Guy:              guy,
-		Tic:              tic,
-		TransactionIndex: transactionIndex,
-		Raw:              raw,
-	}, nil
+	return result, err
 }
 
 func validateLog(ethLog types.Log) error {

@@ -670,7 +670,8 @@ CREATE TABLE public.checked_headers (
     id integer NOT NULL,
     header_id integer NOT NULL,
     price_feeds_checked boolean DEFAULT false NOT NULL,
-    deal_checked boolean DEFAULT false NOT NULL
+    deal_checked boolean DEFAULT false NOT NULL,
+    dent_checked boolean DEFAULT false NOT NULL
 );
 
 

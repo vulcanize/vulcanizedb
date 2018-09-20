@@ -49,7 +49,7 @@ var _ = Describe("Dent Repository", func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
 
-			err := dentRepository.Create(headerId, test_data.DentModel)
+			err := dentRepository.Create(headerId, []dent.DentModel{test_data.DentModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -70,8 +70,15 @@ var _ = Describe("Dent Repository", func() {
 			Expect(dbResult.Raw).To(MatchJSON(test_data.DentModel.Raw))
 		})
 
+		It("marks header as checked for logs", func() {
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
 		It("returns an error if inserting a dent record fails", func() {
-			err = dentRepository.Create(headerId, test_data.DentModel)
+			err = dentRepository.Create(headerId, []dent.DentModel{test_data.DentModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -88,6 +95,36 @@ var _ = Describe("Dent Repository", func() {
 			err = db.QueryRow(`SELECT count(*) from maker.dent`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(0))
+		})
+	})
+
+	Describe("MarkHeaderChecked", func() {
+		BeforeEach(func() {
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates a row for a new headerId", func() {
+			err = dentRepository.MarkHeaderChecked(headerId)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates row when headerId already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dentRepository.MarkHeaderChecked(headerId)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
 		})
 	})
 
@@ -112,16 +149,39 @@ var _ = Describe("Dent Repository", func() {
 				headerIds = append(headerIds, headerId)
 			}
 
-			dentRepository.Create(headerIds[1], test_data.DentModel)
+			dentRepository.MarkHeaderChecked(headerIds[1])
 		})
 
-		It("returns header records that don't have a corresponding dents", func() {
+		It("returns header records that haven't been checked", func() {
 			missingHeaders, err := dentRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 			Expect(missingHeaders[0].BlockNumber).To(Equal(startingBlockNumber))
 			Expect(missingHeaders[1].BlockNumber).To(Equal(endingBlockNumber))
+		})
+
+		It("only treats headers as checked if deal have been checked", func() {
+			startingBlockNumber := int64(1)
+			dentBlockNumber := int64(2)
+			endingBlockNumber := int64(3)
+			blockNumbers := []int64{startingBlockNumber, dentBlockNumber, endingBlockNumber, endingBlockNumber + 1}
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, price_feeds_checked) VALUES ($1, $2)`, headerIDs[1], true)
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := dentRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
 		})
 
 		It("only returns missing headers for the given node", func() {

@@ -54,26 +54,27 @@ func (t DentTransformer) Execute() error {
 	log.Printf("Fetching dent event logs for %d headers \n", len(headers))
 	for _, header := range headers {
 		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
-
 		if err != nil {
 			log.Println("Error fetching dent logs:", err)
 			return err
 		}
-
-		for _, ethLog := range ethLogs {
-			model, err := t.Converter.ToModel(ethLog)
-
+		if len(ethLogs) < 1 {
+			err := t.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
-				log.Println("Error converting dent log", err)
 				return err
 			}
+		}
 
-			err = t.Repository.Create(header.Id, model)
+		models, err := t.Converter.ToModels(ethLogs)
+		if err != nil {
+			log.Println("Error converting dent log", err)
+			return err
+		}
 
-			if err != nil {
-				log.Println("Error persisting dent record", err)
-				return err
-			}
+		err = t.Repository.Create(header.Id, models)
+		if err != nil {
+			log.Println("Error persisting dent record", err)
+			return err
 		}
 	}
 
