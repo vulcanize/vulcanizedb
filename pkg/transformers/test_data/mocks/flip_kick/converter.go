@@ -29,17 +29,18 @@ type MockFlipKickConverter struct {
 	ConverterError    error
 }
 
-func (mfkc *MockFlipKickConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (*flip_kick.FlipKickEntity, error) {
+func (mfkc *MockFlipKickConverter) ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) ([]flip_kick.FlipKickEntity, error) {
 	mfkc.ConverterContract = contractAddress
 	mfkc.ConverterAbi = contractAbi
-	mfkc.LogsToConvert = append(mfkc.LogsToConvert, ethLog)
-	return &test_data.FlipKickEntity, mfkc.ConverterError
+	mfkc.LogsToConvert = append(mfkc.LogsToConvert, ethLogs...)
+	return []flip_kick.FlipKickEntity{test_data.FlipKickEntity}, mfkc.ConverterError
 }
 
-func (mfkc *MockFlipKickConverter) ToModel(flipKickEntity flip_kick.FlipKickEntity) (flip_kick.FlipKickModel, error) {
-	mfkc.EntitiesToConvert = append(mfkc.EntitiesToConvert, flipKickEntity)
-	return test_data.FlipKickModel, nil
+func (mfkc *MockFlipKickConverter) ToModels(flipKickEntities []flip_kick.FlipKickEntity) ([]flip_kick.FlipKickModel, error) {
+	mfkc.EntitiesToConvert = append(mfkc.EntitiesToConvert, flipKickEntities...)
+	return []flip_kick.FlipKickModel{test_data.FlipKickModel}, nil
 }
+
 func (mfkc *MockFlipKickConverter) SetConverterError(err error) {
 	mfkc.ConverterError = err
 }
