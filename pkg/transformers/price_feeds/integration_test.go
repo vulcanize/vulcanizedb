@@ -17,6 +17,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/big"
+	"time"
 )
 
 var _ = Describe("Price feeds transformer", func() {
@@ -51,11 +52,13 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		Expect(err).NotTo(HaveOccurred())
-		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(model.UsdValue).To(Equal("207.314891143"))
+		time.AfterFunc(3*time.Second, func() {
+			Expect(err).NotTo(HaveOccurred())
+			var model price_feeds.PriceFeedModel
+			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(model.UsdValue).To(Equal("207.314891143"))
+		})
 	})
 
 	It("persists a MKR/USD price feed event", func() {
@@ -69,11 +72,13 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		Expect(err).NotTo(HaveOccurred())
-		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(model.UsdValue).To(Equal("391.803979212"))
+		time.AfterFunc(3*time.Second, func() {
+			Expect(err).NotTo(HaveOccurred())
+			var model price_feeds.PriceFeedModel
+			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(model.UsdValue).To(Equal("391.803979212"))
+		})
 	})
 
 	It("persists a REP/USD price feed event", func() {
@@ -87,11 +92,13 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		Expect(err).NotTo(HaveOccurred())
-		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(model.UsdValue).To(Equal("12.8169284827"))
+		time.AfterFunc(3*time.Second, func() {
+			Expect(err).NotTo(HaveOccurred())
+			var model price_feeds.PriceFeedModel
+			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(model.UsdValue).To(Equal("12.8169284827"))
+		})
 	})
 })
 
