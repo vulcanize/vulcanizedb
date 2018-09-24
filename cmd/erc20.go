@@ -80,11 +80,18 @@ func watchERC20s() {
 	watcher := shared.Watcher{
 		DB:         *db,
 		Blockchain: blockChain,
-		Config:     con,
 	}
 
-	watcher.AddTransformers(dai.DaiEventTriggeredTransformerInitializer())
-	watcher.AddTransformers(every_block.ERC20EveryBlockTransformerInitializers())
+	// It is important that the event transformer is executed before the every_block transformer
+	// because the events are used to generate the token holder address list that is used to
+	// collect balances and allowances at every block
+	transformers := append(dai.DaiEventTriggeredTransformerInitializer(), every_block.ERC20EveryBlockTransformerInitializer()...)
+
+	err = watcher.AddTransformers(transformers, con)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for range ticker.C {
 		watcher.Execute()
 	}

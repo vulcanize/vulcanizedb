@@ -38,7 +38,7 @@ func (t *ERC20Transformer) SetConfiguration(config shared.ContractConfig) {
 	t.Config = config
 }
 
-func NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
+func NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) (shared.Transformer, error) {
 	getter := NewGetter(blockchain)
 	repository := ERC20TokenRepository{DB: db}
 	retriever := erc20_watcher.NewTokenHolderRetriever(db, con.Address)
@@ -50,7 +50,7 @@ func NewERC20TokenTransformer(db *postgres.DB, blockchain core.BlockChain, con s
 		Config:     con,
 	}
 
-	return transformer
+	return transformer, nil
 }
 
 const (

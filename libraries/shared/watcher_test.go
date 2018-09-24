@@ -23,15 +23,16 @@ func (mh *MockTransformer) Execute() error {
 	return nil
 }
 
-func fakeTransformerInitializer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
-	return &MockTransformer{}
+func fakeTransformerInitializer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) (shared.Transformer, error) {
+	return &MockTransformer{}, nil
 }
 
 var _ = Describe("Watcher", func() {
 	It("Adds transformers", func() {
 		watcher := shared.Watcher{}
+		con := shared.ContractConfig{}
 
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer}, con)
 
 		Expect(len(watcher.Transformers)).To(Equal(1))
 		Expect(watcher.Transformers).To(ConsistOf(&MockTransformer{}))
@@ -39,9 +40,10 @@ var _ = Describe("Watcher", func() {
 
 	It("Adds transformers from multiple sources", func() {
 		watcher := shared.Watcher{}
+		con := shared.ContractConfig{}
 
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
-		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer}, con)
+		watcher.AddTransformers([]shared.TransformerInitializer{fakeTransformerInitializer}, con)
 
 		Expect(len(watcher.Transformers)).To(Equal(2))
 	})

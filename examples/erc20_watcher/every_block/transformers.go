@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
-func ERC20EveryBlockTransformerInitializers() []shared.TransformerInitializer {
+func ERC20EveryBlockTransformerInitializer() []shared.TransformerInitializer {
 	return []shared.TransformerInitializer{
 		NewERC20TokenTransformer,
 	}

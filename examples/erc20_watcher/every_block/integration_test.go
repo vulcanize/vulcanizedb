@@ -61,11 +61,12 @@ var _ = Describe("Everyblock transformers", func() {
 	})
 
 	It("creates a token_supply record for each block in the given range", func() {
-		transformer := every_block.NewERC20TokenTransformer(db, blockChain, generic.DaiConfig)
+		transformer, err := every_block.NewERC20TokenTransformer(db, blockChain, generic.DaiConfig)
+		Expect(err).ToNot(HaveOccurred())
 		transformer.Execute()
 
 		var tokenSupplyCount int
-		err := db.QueryRow(`SELECT COUNT(*) FROM token_supply where block_id = $1`, blockId).Scan(&tokenSupplyCount)
+		err = db.QueryRow(`SELECT COUNT(*) FROM token_supply where block_id = $1`, blockId).Scan(&tokenSupplyCount)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(tokenSupplyCount).To(Equal(1))
 

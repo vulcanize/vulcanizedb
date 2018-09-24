@@ -36,12 +36,12 @@ type GenericTransformer struct {
 	Filters                []filters.LogFilter
 }
 
-func NewTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) shared.Transformer {
+func NewTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.ContractConfig) (shared.Transformer, error) {
 	var transformer shared.Transformer
 
 	cnvtr, err := NewGenericConverter(con)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	wer := repositories.WatchedEventRepository{DB: db}
@@ -60,7 +60,7 @@ func NewTransformer(db *postgres.DB, blockchain core.BlockChain, con shared.Cont
 		fr.CreateFilter(filter)
 	}
 
-	return transformer
+	return transformer, nil
 }
 
 func (tr GenericTransformer) Execute() error {

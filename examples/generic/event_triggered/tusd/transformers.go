@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
-func TusdEventTriggeredTransformerInitializers() []shared.TransformerInitializer {
+func TusdEventTriggeredTransformerInitializer() []shared.TransformerInitializer {
 	return []shared.TransformerInitializer{
 		NewTransformer,
 	}

@@ -10,7 +10,7 @@ type Transformer interface {
 	Execute() error
 }
 
-type TransformerInitializer func(db *postgres.DB, blockchain core.BlockChain, con ContractConfig) Transformer
+type TransformerInitializer func(db *postgres.DB, blockchain core.BlockChain, con ContractConfig) (Transformer, error)
 
 func HexToInt64(byteString string) int64 {
 	value := common.HexToHash(byteString)

@@ -71,7 +71,6 @@ var logs = []core.Log{
 
 var _ = Describe("Integration test with vulcanizedb", func() {
 	var db *postgres.DB
-	var err error
 	var blk core.BlockChain
 
 	BeforeEach(func() {
@@ -83,7 +82,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_transfers entry for each Transfer event received", func() {
-		transformer := dai.NewTransformer(db, blk, generic.DaiConfig)
+		transformer, err := dai.NewTransformer(db, blk, generic.DaiConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
@@ -109,7 +108,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_approvals entry for each Approval event received", func() {
-		transformer := dai.NewTransformer(db, blk, generic.DaiConfig)
+		transformer, err := dai.NewTransformer(db, blk, generic.DaiConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
