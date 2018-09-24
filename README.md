@@ -82,6 +82,19 @@ This command is useful when you want a minimal baseline from which to track targ
 1. In a separate terminal start VulcanizeDB:
     - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
 
+## Continuously sync Maker event logs from light sync
+Continuously syncs Maker event logs from the configured Ethereum node based on the populated block headers.
+This includes logs related to auctions, multi-collateral dai, and price feeds.
+This command requires that the `lightSync` process is also being run so as to be able to sync in real time.
+
+1. Start Ethereum node (or plan to configure the commands to point to a remote IPC path).
+1. In a separate terminal run the lightSync command (see above).
+1. In another terminal window run the continuousLogSync command:
+  - `./vulcanizedb continuousLogSync --config <config.toml>`
+  - An option `--transformers` flag may be passed to the command to specific which transformers to execute, this will default to all transformers if the flag is not passed.
+    - `./vulcanizedb continuousLogSync --config environments/private.toml --transformers="priceFeed"`
+    - see the `buildTransformerInitializerMap` method in `cmd/continuousLogSync.go` for available transformers
+
 ## Backfill Maker event logs from light sync
 Backfills Maker event logs from the configured Ethereum node based on the populated block headers.
 This includes logs related to auctions, multi-collateral dai, and price feeds.
