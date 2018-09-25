@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Pit file debt ceiling converter", func() {
 	It("returns err if log is missing topics", func() {
 		converter := debt_ceiling.PitFileDebtCeilingConverter{}
 		badLog := types.Log{
