@@ -30,7 +30,7 @@ import (
 	stability_fee_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/stability_fee"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Pit file stability fee transformer", func() {
 	It("gets missing headers for block numbers specified in config", func() {
 		repository := &stability_fee_mocks.MockPitFileStabilityFeeRepository{}
 		transformer := stability_fee.PitFileStabilityFeeTransformer{

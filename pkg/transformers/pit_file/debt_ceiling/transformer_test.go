@@ -30,7 +30,7 @@ import (
 	debt_ceiling_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/debt_ceiling"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Pit file debt ceiling transformer", func() {
 	It("gets missing headers for block numbers specified in config", func() {
 		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
 		transformer := debt_ceiling.PitFileDebtCeilingTransformer{

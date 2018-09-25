@@ -27,7 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Pit file debt ceiling repository", func() {
 	Describe("Create", func() {
 		It("adds a pit file debt ceiling event", func() {
 			db := test_config.NewTestDB(core.Node{})
