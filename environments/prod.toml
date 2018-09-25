@@ -1,0 +1,12 @@
+[database]
+name = "vulcanize_public"
+hostname = "localhost"
+user = "vulcanize"
+password = "vulcanize"
+port = 5432
+
+[client]
+ipcPath = "https://kovan.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+
+[datadog]
+name = "maker_vdb_prod"
