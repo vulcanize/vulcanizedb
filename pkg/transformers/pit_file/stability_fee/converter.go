@@ -35,7 +35,7 @@ func (PitFileStabilityFeeConverter) ToModel(ethLog types.Log) (PitFileStabilityF
 		return PitFileStabilityFeeModel{}, err
 	}
 	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	data := common.HexToAddress(ethLog.Topics[1].String()).Hex()
+	data := common.HexToAddress(ethLog.Topics[3].String()).Hex()
 
 	raw, err := json.Marshal(ethLog)
 	return PitFileStabilityFeeModel{

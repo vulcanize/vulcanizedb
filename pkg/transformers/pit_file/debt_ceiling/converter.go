@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"bytes"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
@@ -35,9 +35,8 @@ func (PitFileDebtCeilingConverter) ToModel(ethLog types.Log) (PitFileDebtCeiling
 	if err != nil {
 		return PitFileDebtCeilingModel{}, err
 	}
-	what := common.HexToAddress(ethLog.Topics[1].String()).String()
-	riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
-	data := big.NewInt(0).SetBytes(riskBytes).String()
+	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+	data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 
 	raw, err := json.Marshal(ethLog)
 	return PitFileDebtCeilingModel{
