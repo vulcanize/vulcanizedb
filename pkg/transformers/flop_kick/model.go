@@ -12,23 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package flop_kick
 
-import "math/big"
+import "time"
 
-func BigIntToInt64(value *big.Int) int64 {
-	if value == nil {
-		return int64(0)
-	} else {
-		return value.Int64()
-	}
-}
-
-func BigIntToString(value *big.Int) string {
-	result := value.String()
-	if result == "<nil>" {
-		return ""
-	} else {
-		return result
-	}
+type Model struct {
+	BidId            string `db:"bid_id"`
+	Lot              string
+	Bid              string
+	Gal              string
+	End              time.Time
+	TransactionIndex uint   `db:"tx_idx"`
+	Raw              []byte `db:"raw_log"`
 }

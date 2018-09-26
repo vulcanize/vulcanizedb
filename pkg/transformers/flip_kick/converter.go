@@ -64,13 +64,13 @@ func (FlipKickConverter) ToModels(flipKicks []FlipKickEntity) (results []FlipKic
 		}
 
 		id := flipKick.Id.String()
-		lot := shared.ConvertNilToEmptyString(flipKick.Lot.String())
-		bid := shared.ConvertNilToEmptyString(flipKick.Bid.String())
+		lot := shared.BigIntToString(flipKick.Lot)
+		bid := shared.BigIntToString(flipKick.Bid)
 		gal := flipKick.Gal.String()
-		endValue := shared.ConvertNilToZeroTimeValue(flipKick.End)
+		endValue := shared.BigIntToInt64(flipKick.End)
 		end := time.Unix(endValue, 0)
 		urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
-		tab := shared.ConvertNilToEmptyString(flipKick.Tab.String())
+		tab := shared.BigIntToString(flipKick.Tab)
 		rawLogJson, err := json.Marshal(flipKick.Raw)
 		if err != nil {
 			return nil, err
