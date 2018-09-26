@@ -54,14 +54,14 @@ func (BiteConverter) ToEntity(contractAddress string, contractAbi string, ethLog
 }
 func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 
-	id := entity.Id.String()
+	id := entity.Id
 	ilk := entity.Ilk[:]
 	lad := entity.Lad[:]
-	ink := entity.Ink.String()
-	art := entity.Art.String()
-	iArt := entity.IArt.String()
-	tab := entity.Tab.String()
-	flip := entity.Flip.String()
+	ink := entity.Ink
+	art := entity.Art
+	iArt := entity.IArt
+	tab := entity.Tab
+	flip := entity.Flip
 	txIdx := entity.TransactionIndex
 	rawLogJson, err := json.Marshal(entity.Raw)
 	rawLogString := string(rawLogJson)
@@ -70,14 +70,14 @@ func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 	}
 
 	return BiteModel{
-		Id:               shared.ConvertNilToEmptyString(id),
+		Id:               shared.BigIntToString(id),
 		Ilk:              ilk,
 		Lad:              lad,
-		Ink:              shared.ConvertNilToEmptyString(ink),
-		Art:              shared.ConvertNilToEmptyString(art),
-		IArt:             shared.ConvertNilToEmptyString(iArt),
-		Tab:              shared.ConvertNilToEmptyString(tab),
-		Flip:             shared.ConvertNilToEmptyString(flip),
+		Ink:              shared.BigIntToString(ink),
+		Art:              shared.BigIntToString(art),
+		IArt:             shared.BigIntToString(iArt),
+		Tab:              shared.BigIntToString(tab),
+		Flip:             shared.BigIntToString(flip),
 		TransactionIndex: txIdx,
 		Raw:              rawLogString,
 	}, nil

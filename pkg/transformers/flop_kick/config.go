@@ -12,23 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package flop_kick
 
-import "math/big"
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-func BigIntToInt64(value *big.Int) int64 {
-	if value == nil {
-		return int64(0)
-	} else {
-		return value.Int64()
-	}
-}
-
-func BigIntToString(value *big.Int) string {
-	result := value.String()
-	if result == "<nil>" {
-		return ""
-	} else {
-		return result
-	}
+var Config = shared.TransformerConfig{
+	ContractAddress:     shared.FlopperContractAddress,
+	ContractAbi:         shared.FlopperABI,
+	Topics:              []string{shared.FlopKickSignature},
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }

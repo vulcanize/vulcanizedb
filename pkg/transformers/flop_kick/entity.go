@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package shared
+package flop_kick
 
-import "math/big"
+import (
+	"math/big"
 
-func BigIntToInt64(value *big.Int) int64 {
-	if value == nil {
-		return int64(0)
-	} else {
-		return value.Int64()
-	}
-}
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+)
 
-func BigIntToString(value *big.Int) string {
-	result := value.String()
-	if result == "<nil>" {
-		return ""
-	} else {
-		return result
-	}
+type Entity struct {
+	Id               *big.Int
+	Lot              *big.Int
+	Bid              *big.Int
+	Gal              common.Address
+	End              *big.Int
+	TransactionIndex uint
+	Raw              types.Log
 }

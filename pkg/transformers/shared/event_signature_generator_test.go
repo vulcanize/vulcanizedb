@@ -135,6 +135,13 @@ var _ = Describe("Event signature generator", func() {
 				Expect(expected).To(Equal(actual))
 			})
 
+			It("gets the flop Kick event signature", func() {
+				expected := "Kick(uint256,uint256,uint256,address,uint48)"
+				actual := shared.GetSolidityMethodSignature(shared.FlopperABI, "Kick")
+
+				Expect(expected).To(Equal(actual))
+			})
+
 			It("gets the pit frob event signature", func() {
 				expected := "Frob(bytes32,bytes32,uint256,uint256,int256,int256,uint256)"
 				actual := shared.GetSolidityMethodSignature(shared.PitABI, "Frob")

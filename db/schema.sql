@@ -341,6 +341,43 @@ ALTER SEQUENCE maker.flip_kick_id_seq OWNED BY maker.flip_kick.id;
 
 
 --
+-- Name: flop_kick; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.flop_kick (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    bid_id numeric NOT NULL,
+    lot numeric NOT NULL,
+    bid numeric NOT NULL,
+    gal character varying,
+    "end" timestamp with time zone,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: flop_kick_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.flop_kick_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: flop_kick_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.flop_kick_id_seq OWNED BY maker.flop_kick.id;
+
+
+--
 -- Name: frob; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -670,6 +707,7 @@ CREATE TABLE public.checked_headers (
     id integer NOT NULL,
     header_id integer NOT NULL,
     price_feeds_checked boolean DEFAULT false NOT NULL,
+    flop_kick_checked boolean DEFAULT false NOT NULL,
     deal_checked boolean DEFAULT false NOT NULL,
     dent_checked boolean DEFAULT false NOT NULL,
     flip_kick_checked boolean DEFAULT false NOT NULL,
@@ -1051,6 +1089,13 @@ ALTER TABLE ONLY maker.flip_kick ALTER COLUMN id SET DEFAULT nextval('maker.flip
 
 
 --
+-- Name: flop_kick id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flop_kick ALTER COLUMN id SET DEFAULT nextval('maker.flop_kick_id_seq'::regclass);
+
+
+--
 -- Name: frob id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1303,6 +1348,22 @@ ALTER TABLE ONLY maker.flip_kick
 
 ALTER TABLE ONLY maker.flip_kick
     ADD CONSTRAINT flip_kick_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flop_kick flop_kick_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flop_kick
+    ADD CONSTRAINT flop_kick_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: flop_kick flop_kick_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flop_kick
+    ADD CONSTRAINT flop_kick_pkey PRIMARY KEY (id);
 
 
 --
@@ -1641,6 +1702,14 @@ ALTER TABLE ONLY maker.drip_file_vow
 
 ALTER TABLE ONLY maker.flip_kick
     ADD CONSTRAINT flip_kick_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: flop_kick flop_kick_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flop_kick
+    ADD CONSTRAINT flop_kick_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

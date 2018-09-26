@@ -9,9 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
+	"errors"
 )
 
 var ErrEmptyHeader = errors.New("empty header returned over RPC")
