@@ -71,6 +71,7 @@ var logs = []core.Log{
 
 var _ = Describe("Integration test with vulcanizedb", func() {
 	var db *postgres.DB
+	var blk core.BlockChain
 
 	BeforeEach(func() {
 		db = test_helpers.SetupIntegrationDB(db, logs)
@@ -81,7 +82,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_burns entry for each Burn event received", func() {
-		transformer, err := tusd.NewTransformer(db, generic.TusdConfig)
+		transformer, err := tusd.NewTransformer(db, blk, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()
@@ -106,7 +107,7 @@ var _ = Describe("Integration test with vulcanizedb", func() {
 	})
 
 	It("creates token_mints entry for each Mint event received", func() {
-		transformer, err := tusd.NewTransformer(db, generic.TusdConfig)
+		transformer, err := tusd.NewTransformer(db, blk, generic.TusdConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		transformer.Execute()

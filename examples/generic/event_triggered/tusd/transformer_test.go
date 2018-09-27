@@ -71,12 +71,14 @@ var _ = Describe("Mock ERC20 transformer", func() {
 		watchedEventsRepo.SetWatchedEvents(fakeWatchedEvents)
 		mockEventRepo = mocks.MockEventRepo{}
 		filterRepo = mocks.MockFilterRepository{}
+		filters := constants.TusdGenericFilters
 
 		transformer = tusd.GenericTransformer{
 			Converter:              &mockERC20Converter,
 			WatchedEventRepository: &watchedEventsRepo,
 			FilterRepository:       filterRepo,
 			Repository:             &mockEventRepo,
+			Filters:                filters,
 		}
 	})
 

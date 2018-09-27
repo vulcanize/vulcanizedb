@@ -11,11 +11,16 @@ type Watcher struct {
 	Blockchain   core.BlockChain
 }
 
-func (watcher *Watcher) AddTransformers(us []TransformerInitializer) {
+func (watcher *Watcher) AddTransformers(us []TransformerInitializer, con ContractConfig) error {
 	for _, transformerInitializer := range us {
-		transformer := transformerInitializer(&watcher.DB, watcher.Blockchain)
+		transformer, err := transformerInitializer(&watcher.DB, watcher.Blockchain, con)
+		if err != nil {
+			return err
+		}
 		watcher.Transformers = append(watcher.Transformers, transformer)
 	}
+
+	return nil
 }
 
 func (watcher *Watcher) Execute() error {

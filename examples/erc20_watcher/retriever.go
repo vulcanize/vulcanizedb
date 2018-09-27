@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package generic
+package erc20_watcher
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Generic retriever is used to iterate over addresses involved in token
-// transfers, approvals, mints, and burns to generate a list of token holder addresses
+// ERC20 retriever is used to iterate over addresses involved in token
+// transfers and approvals to generate a list of token holder addresses
 
 type TokenHolderRetrieverInterface interface {
 	RetrieveTokenHolderAddresses() (map[common.Address]bool, error)
@@ -32,8 +32,6 @@ type TokenHolderRetrieverInterface interface {
 	retrieveTokenReceivers() ([]string, error)
 	retrieveTokenOwners() ([]string, error)
 	retrieveTokenSpenders() ([]string, error)
-	retrieveTokenMintees() ([]string, error)
-	retrieveTokenBurners() ([]string, error)
 }
 
 type TokenHolderRetriever struct {
@@ -65,8 +63,6 @@ const (
 	GetReceiversError = "Error fetching token receivers from contract %s: %s"
 	GetOwnersError    = "Error fetching token owners from contract %s: %s"
 	GetSpendersError  = "Error fetching token spenders from contract %s: %s"
-	GetMinteesError   = "Error fetching token mintees from contract %s: %s"
-	GetBurnersError   = "Error fetching token burners from contract %s: %s"
 )
 
 func NewTokenHolderRetriever(db *postgres.DB, address string) TokenHolderRetriever {
@@ -107,40 +103,6 @@ func (rt TokenHolderRetriever) retrieveTokenReceivers() ([]string, error) {
 		return []string{}, newRetrieverError(err, GetReceiversError, rt.ContractAddress)
 	}
 	return receivers, err
-}
-
-func (rt TokenHolderRetriever) retrieveTokenMintees() ([]string, error) {
-
-	mintees := make([]string, 0)
-
-	err := rt.Database.DB.Select(
-		&mintees,
-		`SELECT mintee FROM token_mints
-               WHERE token_address = $1`,
-		rt.ContractAddress,
-	)
-	if err != nil {
-		return []string{}, newRetrieverError(err, GetMinteesError, rt.ContractAddress)
-	}
-
-	return mintees, nil
-}
-
-func (rt TokenHolderRetriever) retrieveTokenBurners() ([]string, error) {
-
-	burners := make([]string, 0)
-
-	err := rt.Database.DB.Select(
-		&burners,
-		`SELECT burner FROM token_burns
-               WHERE token_address = $1`,
-		rt.ContractAddress,
-	)
-	if err != nil {
-		return []string{}, newRetrieverError(err, GetBurnersError, rt.ContractAddress)
-	}
-
-	return burners, nil
 }
 
 func (rt TokenHolderRetriever) retrieveTokenOwners() ([]string, error) {
@@ -189,16 +151,6 @@ func (rt TokenHolderRetriever) RetrieveTokenHolderAddresses() (map[common.Addres
 		return nil, err
 	}
 
-	mintees, err := rt.retrieveTokenMintees()
-	if err != nil {
-		return nil, err
-	}
-
-	burners, err := rt.retrieveTokenBurners()
-	if err != nil {
-		return nil, err
-	}
-
 	owners, err := rt.retrieveTokenOwners()
 	if err != nil {
 		return nil, err
@@ -216,14 +168,6 @@ func (rt TokenHolderRetriever) RetrieveTokenHolderAddresses() (map[common.Addres
 	}
 
 	for _, addr := range receivers {
-		contractAddresses[common.HexToAddress(addr)] = true
-	}
-
-	for _, addr := range mintees {
-		contractAddresses[common.HexToAddress(addr)] = true
-	}
-
-	for _, addr := range burners {
 		contractAddresses[common.HexToAddress(addr)] = true
 	}
 

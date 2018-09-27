@@ -22,7 +22,10 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
+	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered/dai"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -35,7 +38,8 @@ import (
 var erc20Cmd = &cobra.Command{
 	Use:   "erc20",
 	Short: "Fetches and persists token supply",
-	Long: `Fetches the totalSupply for the configured token from each block and persists it in Vulcanize DB.
+	Long: `Fetches transfer and approval events, totalSupply, allowances, and 
+balances for the configured token from each block and persists it in Vulcanize DB.
 vulcanizedb erc20 --config environments/public
 
 Expects an ethereum node to be running and requires a .toml config file:
@@ -70,12 +74,24 @@ func watchERC20s() {
 	if err != nil {
 		log.Fatal("Failed to initialize database.")
 	}
+
+	con := generic.DaiConfig
+	con.Filters = constants.DaiERC20Filters
 	watcher := shared.Watcher{
 		DB:         *db,
 		Blockchain: blockChain,
 	}
 
-	watcher.AddTransformers(every_block.TransformerInitializers())
+	// It is important that the event transformer is executed before the every_block transformer
+	// because the events are used to generate the token holder address list that is used to
+	// collect balances and allowances at every block
+	transformers := append(dai.DaiEventTriggeredTransformerInitializer(), every_block.ERC20EveryBlockTransformerInitializer()...)
+
+	err = watcher.AddTransformers(transformers, con)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for range ticker.C {
 		watcher.Execute()
 	}

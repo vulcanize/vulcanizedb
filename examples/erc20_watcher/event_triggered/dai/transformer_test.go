@@ -71,12 +71,14 @@ var _ = Describe("Mock ERC20 transformer", func() {
 		watchedEventsRepo.SetWatchedEvents(fakeWatchedEvents)
 		mockEventRepo = mocks.MockEventRepo{}
 		filterRepo = mocks.MockFilterRepository{}
+		filters := constants.DaiERC20Filters
 
 		transformer = dai.ERC20EventTransformer{
 			Converter:              &mockERC20Converter,
 			WatchedEventRepository: &watchedEventsRepo,
 			FilterRepository:       filterRepo,
 			Repository:             &mockEventRepo,
+			Filters:                filters,
 		}
 	})
 

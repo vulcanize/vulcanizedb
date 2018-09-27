@@ -19,9 +19,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
@@ -37,10 +37,10 @@ type GenericConverterInterface interface {
 }
 
 type GenericConverter struct {
-	config generic.ContractConfig
+	config shared.ContractConfig
 }
 
-func NewGenericConverter(config generic.ContractConfig) (*GenericConverter, error) {
+func NewGenericConverter(config shared.ContractConfig) (*GenericConverter, error) {
 	var err error
 
 	config.ParsedAbi, err = geth.ParseAbi(config.Abi)

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package every_block
+package dai
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 )
 
-func ERC20EveryBlockTransformerInitializer() []shared.TransformerInitializer {
+func DaiEventTriggeredTransformerInitializer() []shared.TransformerInitializer {
 	return []shared.TransformerInitializer{
-		NewERC20TokenTransformer,
+		NewTransformer,
 	}
 }

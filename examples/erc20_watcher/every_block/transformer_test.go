@@ -23,14 +23,15 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/examples/constants"
+	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
-var testContractConfig = generic.ContractConfig{
+var testContractConfig = shared.ContractConfig{
 	Address:    constants.DaiContractAddress,
 	Abi:        constants.DaiAbiString,
 	FirstBlock: int64(4752008),
@@ -59,7 +60,7 @@ var _ = Describe("Everyblock transformer", func() {
 		repository = mocks.ERC20TokenRepository{}
 		repository.SetMissingSupplyBlocks([]int64{config.FirstBlock})
 		db := test_helpers.CreateNewDatabase()
-		rt := generic.NewTokenHolderRetriever(db, config.Address)
+		rt := erc20_watcher.NewTokenHolderRetriever(db, config.Address)
 		//setting the mock repository to return the first block as the missing blocks
 
 		transformer = every_block.ERC20Transformer{
