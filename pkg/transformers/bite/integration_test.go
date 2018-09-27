@@ -51,7 +51,7 @@ var _ = Describe("Integration tests", func() {
 		topic0 := common.HexToHash(shared.BiteSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(shared.CatContractAddress, topics, int64(26))
+		result, err := realFetcher.FetchLogs(bite.BiteConfig.ContractAddresses, topics, int64(26))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())

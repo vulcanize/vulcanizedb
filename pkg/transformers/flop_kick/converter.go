@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -27,17 +26,17 @@ import (
 )
 
 type Converter interface {
-	ToEntities(contractAddress, contractAbi string, ethLogs []types.Log) ([]Entity, error)
+	ToEntities(contractAbi string, ethLogs []types.Log) ([]Entity, error)
 	ToModels(entities []Entity) ([]Model, error)
 }
 
 type FlopKickConverter struct{}
 
-func (FlopKickConverter) ToEntities(contractAddress, contractAbi string, ethLogs []types.Log) ([]Entity, error) {
+func (FlopKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Entity, error) {
 	var results []Entity
 	for _, ethLog := range ethLogs {
 		entity := Entity{}
-		address := common.HexToAddress(contractAddress)
+		address := ethLog.Address
 		abi, err := geth.ParseAbi(contractAbi)
 		if err != nil {
 			return nil, err

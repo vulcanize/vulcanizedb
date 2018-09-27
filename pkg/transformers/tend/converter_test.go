@@ -31,9 +31,9 @@ var _ = Describe("Tend TendConverter", func() {
 		converter = tend.NewTendConverter()
 	})
 
-	Describe("Convert", func() {
+	Describe("ToModels", func() {
 		It("converts an eth log to a db model", func() {
-			models, err := converter.Convert([]types.Log{test_data.TendLogNote})
+			models, err := converter.ToModels([]types.Log{test_data.TendLogNote})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(models)).To(Equal(1))
@@ -43,7 +43,7 @@ var _ = Describe("Tend TendConverter", func() {
 		It("returns an error if the log data is empty", func() {
 			emptyDataLog := test_data.TendLogNote
 			emptyDataLog.Data = []byte{}
-			_, err := converter.Convert([]types.Log{emptyDataLog})
+			_, err := converter.ToModels([]types.Log{emptyDataLog})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("tend log note data is empty"))
@@ -52,7 +52,7 @@ var _ = Describe("Tend TendConverter", func() {
 		It("returns an error if the expected amount of topics aren't in the log", func() {
 			invalidLog := test_data.TendLogNote
 			invalidLog.Topics = []common.Hash{}
-			_, err := converter.Convert([]types.Log{invalidLog})
+			_, err := converter.ToModels([]types.Log{invalidLog})
 
 			Expect(err).To(MatchError("tend log does not contain expected topics"))
 		})

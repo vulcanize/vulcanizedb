@@ -38,9 +38,9 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.deal (header_id, bid_id, tx_idx, raw_log)
-         VALUES($1, $2, $3, $4)`,
-			headerId, model.BidId, model.TransactionIndex, model.Raw,
+			`INSERT into maker.deal (header_id, bid_id, contract_address, tx_idx, raw_log)
+					 VALUES($1, $2, $3, $4, $5)`,
+			headerId, model.BidId, model.ContractAddress, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -48,7 +48,7 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, deal_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET deal_checked = $2`, headerId, true)
 	if err != nil {
@@ -60,7 +60,7 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 
 func (r DealRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, deal_checked)
-		VALUES ($1, $2) 
+		VALUES ($1, $2)
 	ON CONFLICT (header_id) DO
 		UPDATE SET deal_checked = $2`, headerID, true)
 	return err

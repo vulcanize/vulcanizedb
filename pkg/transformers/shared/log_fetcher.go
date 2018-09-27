@@ -25,7 +25,7 @@ import (
 )
 
 type LogFetcher interface {
-	FetchLogs(contractAddress string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error)
+	FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error)
 }
 
 type Fetcher struct {
@@ -38,14 +38,24 @@ func NewFetcher(blockchain core.BlockChain) Fetcher {
 	}
 }
 
-func (fetcher Fetcher) FetchLogs(contractAddress string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
+func (fetcher Fetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
 	block := big.NewInt(blockNumber)
-	address := common.HexToAddress(contractAddress)
+	addresses := hexStringsToAddresses(contractAddresses)
 	query := ethereum.FilterQuery{
 		FromBlock: block,
 		ToBlock:   block,
-		Addresses: []common.Address{address},
+		Addresses: addresses,
 		Topics:    topics,
 	}
 	return fetcher.blockChain.GetEthLogsWithCustomQuery(query)
+}
+
+func hexStringsToAddresses(hexStrings []string) []common.Address {
+	var addresses []common.Address
+	for _, hexString := range hexStrings {
+		address := common.HexToAddress(hexString)
+		addresses = append(addresses, address)
+	}
+
+	return addresses
 }

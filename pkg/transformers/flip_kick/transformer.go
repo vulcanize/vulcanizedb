@@ -91,10 +91,11 @@ func (fkt FlipKickTransformer) Execute() error {
 	log.Printf("Fetching flip kick event logs for %d headers \n", len(headers))
 	var resultingErrors []error
 	for _, header := range headers {
-		ethLogs, err := fkt.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		ethLogs, err := fkt.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, FetcherError))
 		}
+
 		if len(ethLogs) < 1 {
 			err := fkt.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
@@ -102,7 +103,7 @@ func (fkt FlipKickTransformer) Execute() error {
 			}
 		}
 
-		entities, err := fkt.Converter.ToEntities(config.ContractAddress, config.ContractAbi, ethLogs)
+		entities, err := fkt.Converter.ToEntities(config.ContractAbi, ethLogs)
 		if err != nil {
 			resultingErrors = append(resultingErrors, newTransformerError(err, header.BlockNumber, LogToEntityError))
 		}

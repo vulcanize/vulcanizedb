@@ -76,7 +76,7 @@ var _ = Describe("Drip drip transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(drip_drip.DripDripConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{drip_drip.DripDripConfig.ContractAddresses, drip_drip.DripDripConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.DripDripSignature)}}))
 	})
 

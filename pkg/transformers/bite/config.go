@@ -21,7 +21,7 @@ import (
 )
 
 var BiteConfig = shared.TransformerConfig{
-	ContractAddress:     shared.CatContractAddress,
+	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,
 	Topics:              []string{shared.BiteSignature},
 	StartingBlockNumber: 0,

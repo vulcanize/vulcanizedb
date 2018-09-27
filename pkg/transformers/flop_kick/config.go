@@ -17,7 +17,7 @@ package flop_kick
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var Config = shared.TransformerConfig{
-	ContractAddress:     shared.FlopperContractAddress,
+	ContractAddresses:   []string{shared.FlopperContractAddress},
 	ContractAbi:         shared.FlopperABI,
 	Topics:              []string{shared.FlopKickSignature},
 	StartingBlockNumber: 0,

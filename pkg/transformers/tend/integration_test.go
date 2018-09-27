@@ -28,6 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
 // These test are marked as pending until the Flip contract is deployed to Kovan.
@@ -48,7 +49,7 @@ var _ = Describe("Integration tests", func() {
 		topic0 := common.HexToHash(shared.TendFunctionSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(shared.FlipperContractAddress, topics, test_data.FlipKickBlockNumber)
+		result, err := realFetcher.FetchLogs(tend.TendConfig.ContractAddresses, topics, test_data.FlipKickBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())

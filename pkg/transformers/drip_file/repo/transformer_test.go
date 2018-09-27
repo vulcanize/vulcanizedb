@@ -76,7 +76,7 @@ var _ = Describe("Drip file repo transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(drip_file.DripFileConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{drip_file.DripFileConfig.ContractAddresses, drip_file.DripFileConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.DripFileRepoSignature)}}))
 	})
 

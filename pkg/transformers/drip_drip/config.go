@@ -17,7 +17,7 @@ package drip_drip
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var DripDripConfig = shared.TransformerConfig{
-	ContractAddress:     shared.DripContractAddress,
+	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,
 	Topics:              []string{shared.DripDripSignature},
 	StartingBlockNumber: 0,

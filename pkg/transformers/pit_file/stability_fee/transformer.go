@@ -56,7 +56,7 @@ func (transformer PitFileStabilityFeeTransformer) Execute() error {
 	log.Printf("Fetching pit file stability fee event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.PitFileStabilityFeeSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(pit_file.PitFileConfig.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(pit_file.PitFileConfig.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}

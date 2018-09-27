@@ -51,7 +51,7 @@ func (t Transformer) Execute() error {
 
 	for _, header := range headers {
 		topics := [][]common.Hash{{common.HexToHash(shared.FlopKickSignature)}}
-		matchingLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := t.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (t Transformer) Execute() error {
 			}
 		}
 
-		entities, err := t.Converter.ToEntities(config.ContractAddress, config.ContractAbi, matchingLogs)
+		entities, err := t.Converter.ToEntities(config.ContractAbi, matchingLogs)
 		if err != nil {
 			return err
 		}

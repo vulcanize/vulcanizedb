@@ -68,7 +68,7 @@ var _ = Describe("DealTransformer", func() {
 		dealRepository.SetMissingHeaders([]core.Header{header1, header2})
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedContractAddress).To(Equal(config.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		expectedTopics := [][]common.Hash{{common.HexToHash(shared.DealSignature)}}
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{header1.BlockNumber, header2.BlockNumber}))

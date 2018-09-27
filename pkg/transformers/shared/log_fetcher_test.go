@@ -28,25 +28,25 @@ import (
 
 var _ = Describe("Fetcher", func() {
 	Describe("FetchLogs", func() {
-
 		It("fetches logs based on the given query", func() {
 			blockChain := fakes.NewMockBlockChain()
 			fetcher := shared.NewFetcher(blockChain)
 			blockNumber := int64(123)
-			address := "0xfakeAddress"
+			addresses := []string{"0xfakeAddress", "0xanotherFakeAddress"}
 			topicZeros := [][]common.Hash{{common.BytesToHash([]byte{1, 2, 3, 4, 5})}}
 
-			_, err := fetcher.FetchLogs(address, topicZeros, blockNumber)
+			_, err := fetcher.FetchLogs(addresses, topicZeros, blockNumber)
 
+			address1 := common.HexToAddress("0xfakeAddress")
+			address2 := common.HexToAddress("0xanotherFakeAddress")
 			Expect(err).NotTo(HaveOccurred())
 			expectedQuery := ethereum.FilterQuery{
 				FromBlock: big.NewInt(blockNumber),
 				ToBlock:   big.NewInt(blockNumber),
-				Addresses: []common.Address{common.HexToAddress(address)},
+				Addresses: []common.Address{address1, address2},
 				Topics:    topicZeros,
 			}
 			blockChain.AssertGetEthLogsWithCustomQueryCalledWith(expectedQuery)
-
 		})
 
 		It("returns an error if fetching the logs fails", func() {
@@ -54,7 +54,7 @@ var _ = Describe("Fetcher", func() {
 			blockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
 			fetcher := shared.NewFetcher(blockChain)
 
-			_, err := fetcher.FetchLogs("", [][]common.Hash{}, int64(1))
+			_, err := fetcher.FetchLogs([]string{}, [][]common.Hash{}, int64(1))
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

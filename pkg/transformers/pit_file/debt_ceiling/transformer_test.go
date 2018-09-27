@@ -76,7 +76,7 @@ var _ = Describe("", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(pit_file.PitFileConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{pit_file.PitFileConfig.ContractAddresses, pit_file.PitFileConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.PitFileDebtCeilingSignature)}}))
 	})
 

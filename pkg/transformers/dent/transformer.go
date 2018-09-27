@@ -53,7 +53,8 @@ func (t DentTransformer) Execute() error {
 	headers, err := t.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
 	log.Printf("Fetching dent event logs for %d headers \n", len(headers))
 	for _, header := range headers {
-		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
+
 		if err != nil {
 			log.Println("Error fetching dent logs:", err)
 			return err

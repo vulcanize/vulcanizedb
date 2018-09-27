@@ -38,7 +38,6 @@ var _ = Describe("Bite Transformer", func() {
 	var transformer bite.BiteTransformer
 	var blockNumber1 = rand.Int63()
 	var blockNumber2 = rand.Int63()
-	var testConfig shared.TransformerConfig
 
 	BeforeEach(func() {
 		repository = bite_mocks.MockBiteRepository{}
@@ -52,14 +51,7 @@ var _ = Describe("Bite Transformer", func() {
 			Config:     bite.BiteConfig,
 		}
 
-		testConfig = shared.TransformerConfig{
-			ContractAddress:     "0x12345",
-			ContractAbi:         "test abi",
-			Topics:              []string{shared.BiteSignature},
-			StartingBlockNumber: blockNumber1,
-			EndingBlockNumber:   blockNumber2,
-		}
-		transformer.SetConfig(testConfig)
+		transformer.SetConfig(bite.BiteConfig)
 	})
 
 	It("gets missing headers for blocks in the configured range", func() {
@@ -85,7 +77,7 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber1, blockNumber2}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedContractAddress).To(Equal(bite.BiteConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{bite.BiteConfig.ContractAddresses, bite.BiteConfig.ContractAddresses}))
 	})
 
 	It("returns an error if fetching logs fails", func() {
@@ -103,7 +95,7 @@ var _ = Describe("Bite Transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterContract).To(Equal(bite.BiteConfig.ContractAddress))
+		Expect(converter.ConverterContract).To(Equal(test_data.EthBiteLog.Address.Hex()))
 		Expect(converter.ConverterAbi).To(Equal(bite.BiteConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.EthBiteLog}))
 	})

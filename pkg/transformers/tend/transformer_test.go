@@ -75,7 +75,7 @@ var _ = Describe("Tend Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber1, blockNumber2}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedContractAddress).To(Equal(shared.FlipperContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{tend.TendConfig.ContractAddresses, tend.TendConfig.ContractAddresses}))
 	})
 
 	It("returns an error if fetching logs fails", func() {

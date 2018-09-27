@@ -55,7 +55,7 @@ func (transformer DripDripTransformer) Execute() error {
 	log.Printf("Fetching drip drip event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.DripDripSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}

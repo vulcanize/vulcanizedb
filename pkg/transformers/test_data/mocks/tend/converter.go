@@ -26,7 +26,7 @@ type MockTendConverter struct {
 	ConverterError error
 }
 
-func (c *MockTendConverter) Convert(ethLogs []types.Log) ([]tend.TendModel, error) {
+func (c *MockTendConverter) ToModels(ethLogs []types.Log) ([]tend.TendModel, error) {
 	c.LogsToConvert = append(c.LogsToConvert, ethLogs...)
 	return []tend.TendModel{test_data.TendModel}, c.ConverterError
 }

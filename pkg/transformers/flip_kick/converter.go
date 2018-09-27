@@ -28,16 +28,16 @@ import (
 )
 
 type Converter interface {
-	ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) ([]FlipKickEntity, error)
+	ToEntities(contractAbi string, ethLogs []types.Log) ([]FlipKickEntity, error)
 	ToModels(flipKicks []FlipKickEntity) ([]FlipKickModel, error)
 }
 
 type FlipKickConverter struct{}
 
-func (FlipKickConverter) ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) (results []FlipKickEntity, err error) {
+func (FlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) (results []FlipKickEntity, err error) {
 	for _, ethLog := range ethLogs {
 		entity := &FlipKickEntity{}
-		address := common.HexToAddress(contractAddress)
+		address := ethLog.Address
 		abi, err := geth.ParseAbi(contractAbi)
 		if err != nil {
 			return nil, err

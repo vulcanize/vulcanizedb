@@ -56,7 +56,7 @@ func (transformer DripFileIlkTransformer) Execute() error {
 	log.Printf("Fetching drip file ilk event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.DripFileIlkSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(drip_file.DripFileConfig.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(drip_file.DripFileConfig.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
