@@ -30,7 +30,7 @@ var _ = Describe("FlopKick Converter", func() {
 	Describe("ToEntities", func() {
 		It("converts a log to a FlopKick entity", func() {
 			converter := flop_kick.FlopKickConverter{}
-			entities, err := converter.ToEntities(shared.FlopperContractAddress, shared.FlopperABI, []types.Log{test_data.FlopKickLog})
+			entities, err := converter.ToEntities(shared.FlopperABI, []types.Log{test_data.FlopKickLog})
 
 			Expect(err).NotTo(HaveOccurred())
 			entity := entities[0]
@@ -45,7 +45,7 @@ var _ = Describe("FlopKick Converter", func() {
 
 		It("returns an error if converting the log to an entity fails", func() {
 			converter := flop_kick.FlopKickConverter{}
-			entities, err := converter.ToEntities(shared.FlopperContractAddress, "error abi", []types.Log{test_data.FlopKickLog})
+			entities, err := converter.ToEntities("error abi", []types.Log{test_data.FlopKickLog})
 
 			Expect(err).To(HaveOccurred())
 			Expect(entities).To(BeNil())

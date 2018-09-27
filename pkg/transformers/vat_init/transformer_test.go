@@ -75,7 +75,7 @@ var _ = Describe("Vat init transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(vat_init.VatInitConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{vat_init.VatInitConfig.ContractAddresses, vat_init.VatInitConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VatInitSignature)}}))
 	})
 

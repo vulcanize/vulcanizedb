@@ -17,7 +17,7 @@ package tend
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var TendConfig = shared.TransformerConfig{
-	ContractAddress:     shared.FlipperContractAddress,
+	ContractAddresses:   []string{shared.FlipperContractAddress},
 	ContractAbi:         shared.FlipperABI,
 	Topics:              []string{shared.TendFunctionSignature},
 	StartingBlockNumber: 0,

@@ -87,7 +87,7 @@ var _ = Describe("FlopKick Transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(flop_kick.Config.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{flop_kick.Config.ContractAddresses, flop_kick.Config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.FlopKickSignature)}}))
 	})
 
@@ -154,7 +154,7 @@ var _ = Describe("FlopKick Transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(flop_kick.Config.ContractAddress))
+		Expect(converter.PassedContractAddresses).To(Equal(flop_kick.Config.ContractAddresses))
 		Expect(converter.PassedContractABI).To(Equal(flop_kick.Config.ContractAbi))
 		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.FlopKickLog}))
 	})

@@ -21,16 +21,18 @@ import (
 )
 
 type MockConverter struct {
-	PassedContractAddress string
-	PassedContractABI     string
-	PassedLogs            []types.Log
-	PassedEntities        []flop_kick.Entity
-	entityConverterError  error
-	modelConverterError   error
+	PassedContractAddresses []string
+	PassedContractABI       string
+	PassedLogs              []types.Log
+	PassedEntities          []flop_kick.Entity
+	entityConverterError    error
+	modelConverterError     error
 }
 
-func (c *MockConverter) ToEntities(contractAddress, contractAbi string, ethLogs []types.Log) ([]flop_kick.Entity, error) {
-	c.PassedContractAddress = contractAddress
+func (c *MockConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]flop_kick.Entity, error) {
+	for _, log := range ethLogs {
+		c.PassedContractAddresses = append(c.PassedContractAddresses, log.Address.Hex())
+	}
 	c.PassedContractABI = contractAbi
 	c.PassedLogs = ethLogs
 

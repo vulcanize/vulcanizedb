@@ -49,7 +49,7 @@ var _ = Describe("Integration tests", func() {
 		topic0 := common.HexToHash(shared.FrobSignature)
 		topics := [][]common.Hash{{topic0}}
 
-		result, err := realFetcher.FetchLogs(shared.PitContractAddress, topics, int64(12))
+		result, err := realFetcher.FetchLogs(frob.FrobConfig.ContractAddresses, topics, int64(12))
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(result) > 0).To(BeTrue())

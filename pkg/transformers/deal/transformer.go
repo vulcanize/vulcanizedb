@@ -58,7 +58,7 @@ func (t DealTransformer) Execute() error {
 
 	log.Printf("Fetching deal event logs for %d headers \n", len(headers))
 	for _, header := range headers {
-		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			log.Println("Error fetching deal logs:", err)
 			return err

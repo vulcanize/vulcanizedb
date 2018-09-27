@@ -22,15 +22,17 @@ import (
 )
 
 type MockFlipKickConverter struct {
-	ConverterContract string
-	ConverterAbi      string
-	LogsToConvert     []types.Log
-	EntitiesToConvert []flip_kick.FlipKickEntity
-	ConverterError    error
+	ConverterContracts []string
+	ConverterAbi       string
+	LogsToConvert      []types.Log
+	EntitiesToConvert  []flip_kick.FlipKickEntity
+	ConverterError     error
 }
 
-func (mfkc *MockFlipKickConverter) ToEntities(contractAddress string, contractAbi string, ethLogs []types.Log) ([]flip_kick.FlipKickEntity, error) {
-	mfkc.ConverterContract = contractAddress
+func (mfkc *MockFlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]flip_kick.FlipKickEntity, error) {
+	for _, log := range ethLogs {
+		mfkc.ConverterContracts = append(mfkc.ConverterContracts, log.Address.Hex())
+	}
 	mfkc.ConverterAbi = contractAbi
 	mfkc.LogsToConvert = append(mfkc.LogsToConvert, ethLogs...)
 	return []flip_kick.FlipKickEntity{test_data.FlipKickEntity}, mfkc.ConverterError

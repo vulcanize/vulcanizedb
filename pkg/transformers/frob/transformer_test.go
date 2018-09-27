@@ -75,7 +75,7 @@ var _ = Describe("Frob transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{frob.FrobConfig.ContractAddresses, frob.FrobConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.FrobSignature)}}))
 	})
 
@@ -111,7 +111,7 @@ var _ = Describe("Frob transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(frob.FrobConfig.ContractAddress))
+		Expect(converter.PassedContractAddress).To(Equal(test_data.EthFrobLog.Address.Hex()))
 		Expect(converter.PassedContractABI).To(Equal(frob.FrobConfig.ContractAbi))
 		Expect(converter.PassedLog).To(Equal(test_data.EthFrobLog))
 	})

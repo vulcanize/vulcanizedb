@@ -105,7 +105,8 @@ CREATE TABLE maker.deal (
     header_id integer NOT NULL,
     bid_id numeric NOT NULL,
     tx_idx integer NOT NULL,
-    raw_log jsonb
+    raw_log jsonb,
+    contract_address character varying
 );
 
 

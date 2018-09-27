@@ -20,15 +20,15 @@ import (
 )
 
 type MockLogFetcher struct {
-	FetchedContractAddress string
-	FetchedTopics          [][]common.Hash
-	FetchedBlocks          []int64
-	fetcherError           error
-	FetchedLogs            []types.Log
+	FetchedContractAddresses [][]string
+	FetchedTopics            [][]common.Hash
+	FetchedBlocks            []int64
+	fetcherError             error
+	FetchedLogs              []types.Log
 }
 
-func (mlf *MockLogFetcher) FetchLogs(contractAddress string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
-	mlf.FetchedContractAddress = contractAddress
+func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
+	mlf.FetchedContractAddresses = append(mlf.FetchedContractAddresses, contractAddresses)
 	mlf.FetchedTopics = topics
 	mlf.FetchedBlocks = append(mlf.FetchedBlocks, blockNumber)
 

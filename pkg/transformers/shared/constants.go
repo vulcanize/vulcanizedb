@@ -28,8 +28,8 @@ var (
 	// temporary addresses from Kovan deployment
 	CatContractAddress     = "0x2f34f22a00ee4b7a8f8bbc4eaee1658774c624e0"
 	DripContractAddress    = "0x891c04639a5edcae088e546fa125b5d7fb6a2b9d"
-	FlipperContractAddress = "0x32d496ad866d110060866b7125981c73642cc509" // ETH FLIP Contract
-	FlopperContractAddress = "0x6191c9b0086c2ebf92300cc507009b53996fbffa" // MCD FLOP Contract
+	FlipperContractAddress = "0x32D496Ad866D110060866B7125981C73642cc509" // ETH FLIP Contract
+	FlopperContractAddress = "0x6191C9b0086c2eBF92300cC507009b53996FbFFa" // MCD FLOP Contract
 	PepContractAddress     = "0xB1997239Cfc3d15578A3a09730f7f84A90BB4975"
 	PipContractAddress     = "0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"
 	PitContractAddress     = "0xe7cf3198787c9a4daac73371a38f29aaeeced87e"

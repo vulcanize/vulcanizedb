@@ -36,7 +36,6 @@ var _ = Describe("FlipKick Transformer", func() {
 	var fetcher mocks.MockLogFetcher
 	var converter flip_kick_mocks.MockFlipKickConverter
 	var repository flip_kick_mocks.MockFlipKickRepository
-	var testConfig shared.TransformerConfig
 	var blockNumber int64
 	var headerId int64
 	var headers []core.Header
@@ -51,16 +50,7 @@ var _ = Describe("FlipKick Transformer", func() {
 			Converter:  &converter,
 			Repository: &repository,
 		}
-
-		startingBlockNumber := rand.Int63()
-		testConfig = shared.TransformerConfig{
-			ContractAddress:     "0x12345",
-			ContractAbi:         "test abi",
-			Topics:              []string{shared.FlipKickSignature},
-			StartingBlockNumber: startingBlockNumber,
-			EndingBlockNumber:   startingBlockNumber + 5,
-		}
-		transformer.SetConfig(testConfig)
+		transformer.SetConfig(flip_kick.FlipKickConfig)
 
 		blockNumber = rand.Int63()
 		headerId = rand.Int63()
@@ -83,7 +73,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(fetcher.FetchedContractAddress).To(Equal(testConfig.ContractAddress))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{flip_kick.FlipKickConfig.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber}))
 	})
@@ -136,8 +126,8 @@ var _ = Describe("FlipKick Transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(converter.ConverterContract).To(Equal(testConfig.ContractAddress))
-		Expect(converter.ConverterAbi).To(Equal(testConfig.ContractAbi))
+		Expect(converter.ConverterContracts).To(Equal(flip_kick.FlipKickConfig.ContractAddresses))
+		Expect(converter.ConverterAbi).To(Equal(flip_kick.FlipKickConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal(logs))
 		Expect(converter.EntitiesToConvert).To(Equal([]flip_kick.FlipKickEntity{test_data.FlipKickEntity}))
 	})
@@ -175,7 +165,7 @@ var _ = Describe("FlipKick Transformer", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(repository.StartingBlockNumber).To(Equal(testConfig.StartingBlockNumber))
-		Expect(repository.EndingBlockNumber).To(Equal(testConfig.EndingBlockNumber))
+		Expect(repository.StartingBlockNumber).To(Equal(flip_kick.FlipKickConfig.StartingBlockNumber))
+		Expect(repository.EndingBlockNumber).To(Equal(flip_kick.FlipKickConfig.EndingBlockNumber))
 	})
 })

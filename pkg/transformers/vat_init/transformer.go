@@ -55,7 +55,7 @@ func (transformer VatInitTransformer) Execute() error {
 	log.Printf("Fetching vat init event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.VatInitSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(VatInitConfig.ContractAddress, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(VatInitConfig.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}

@@ -57,9 +57,10 @@ var _ = Describe("Deal Repository", func() {
 			db.QueryRow(`SELECT count(*) FROM maker.deal`).Scan(&count)
 			Expect(count).To(Equal(1))
 			var dbResult deal.DealModel
-			err = db.Get(&dbResult, `SELECT bid_id, tx_idx, raw_log FROM maker.deal WHERE header_id = $1`, headerId)
+			err = db.Get(&dbResult, `SELECT bid_id, contract_address, tx_idx, raw_log FROM maker.deal WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.BidId).To(Equal(test_data.DealModel.BidId))
+			Expect(dbResult.ContractAddress).To(Equal(test_data.DealModel.ContractAddress))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.DealModel.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.DealModel.Raw))
 		})

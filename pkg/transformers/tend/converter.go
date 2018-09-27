@@ -24,7 +24,7 @@ import (
 )
 
 type Converter interface {
-	Convert(ethLogs []types.Log) ([]TendModel, error)
+	ToModels(ethLogs []types.Log) ([]TendModel, error)
 }
 
 type TendConverter struct{}
@@ -33,7 +33,7 @@ func NewTendConverter() TendConverter {
 	return TendConverter{}
 }
 
-func (c TendConverter) Convert(ethLogs []types.Log) (results []TendModel, err error) {
+func (c TendConverter) ToModels(ethLogs []types.Log) (results []TendModel, err error) {
 	for _, ethLog := range ethLogs {
 		err := validateLog(ethLog)
 		if err != nil {

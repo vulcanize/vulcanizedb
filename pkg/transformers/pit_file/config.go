@@ -19,7 +19,7 @@ import (
 )
 
 var PitFileConfig = shared.TransformerConfig{
-	ContractAddress:     shared.PitContractAddress,
+	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
 	Topics:              []string{shared.PitFileIlkSignature, shared.PitFileDebtCeilingSignature, shared.PitFileStabilityFeeSignature},
 	StartingBlockNumber: 0,

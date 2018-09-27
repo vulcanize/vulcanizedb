@@ -59,7 +59,7 @@ func (t TendTransformer) Execute() error {
 
 	log.Printf("Fetching tend event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
-		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddress, topics, header.BlockNumber)
+		ethLogs, err := t.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			log.Println("Error fetching matching logs:", err)
 			return err
@@ -71,7 +71,7 @@ func (t TendTransformer) Execute() error {
 			}
 		}
 
-		models, err := t.Converter.Convert(ethLogs)
+		models, err := t.Converter.ToModels(ethLogs)
 		if err != nil {
 			log.Println("Error converting logs:", err)
 			return err

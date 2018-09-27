@@ -43,6 +43,7 @@ var dealRawJson, _ = json.Marshal(DealLogNote)
 
 var DealModel = deal.DealModel{
 	BidId:            "123",
+	ContractAddress:  shared.FlipperContractAddress,
 	TransactionIndex: 74,
 	Raw:              dealRawJson,
 }

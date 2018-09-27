@@ -33,7 +33,7 @@ var _ = Describe("FlipKick Converter", func() {
 
 	Describe("ToEntity", func() {
 		It("converts an Eth Log to a FlipKickEntity", func() {
-			entities, err := converter.ToEntities(shared.FlipperContractAddress, shared.FlipperABI, []types.Log{test_data.EthFlipKickLog})
+			entities, err := converter.ToEntities(shared.FlipperABI, []types.Log{test_data.EthFlipKickLog})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(entities)).To(Equal(1))
@@ -49,7 +49,7 @@ var _ = Describe("FlipKick Converter", func() {
 		})
 
 		It("returns an error if converting log to entity fails", func() {
-			_, err := converter.ToEntities(shared.FlipperContractAddress, "error abi", []types.Log{test_data.EthFlipKickLog})
+			_, err := converter.ToEntities("error abi", []types.Log{test_data.EthFlipKickLog})
 
 			Expect(err).To(HaveOccurred())
 		})
