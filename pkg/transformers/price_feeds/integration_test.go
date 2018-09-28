@@ -2,6 +2,9 @@ package price_feeds_test
 
 import (
 	"context"
+	"math/big"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -16,8 +19,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/big"
-	"time"
 )
 
 var _ = Describe("Price feeds transformer", func() {
@@ -52,7 +53,8 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		time.AfterFunc(3*time.Second, func() {
+		time.AfterFunc(5*time.Second, func() {
+			defer GinkgoRecover()
 			Expect(err).NotTo(HaveOccurred())
 			var model price_feeds.PriceFeedModel
 			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
@@ -72,7 +74,8 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		time.AfterFunc(3*time.Second, func() {
+		time.AfterFunc(5*time.Second, func() {
+			defer GinkgoRecover()
 			Expect(err).NotTo(HaveOccurred())
 			var model price_feeds.PriceFeedModel
 			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
@@ -92,7 +95,8 @@ var _ = Describe("Price feeds transformer", func() {
 
 		err := transformer.Execute()
 
-		time.AfterFunc(3*time.Second, func() {
+		time.AfterFunc(5*time.Second, func() {
+			defer GinkgoRecover()
 			Expect(err).NotTo(HaveOccurred())
 			var model price_feeds.PriceFeedModel
 			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
