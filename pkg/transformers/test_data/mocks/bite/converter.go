@@ -22,24 +22,23 @@ import (
 )
 
 type MockBiteConverter struct {
-	ConverterContract string
 	ConverterAbi      string
 	LogsToConvert     []types.Log
 	EntitiesToConvert []BiteEntity
 	ConverterError    error
 }
 
-func (mbc *MockBiteConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (BiteEntity, error) {
-	mbc.ConverterContract = contractAddress
+func (mbc *MockBiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error) {
 	mbc.ConverterAbi = contractAbi
-	mbc.LogsToConvert = append(mbc.LogsToConvert, ethLog)
-	return test_data.BiteEntity, mbc.ConverterError
+	mbc.LogsToConvert = append(mbc.LogsToConvert, ethLogs...)
+	return []BiteEntity{test_data.BiteEntity}, mbc.ConverterError
 }
 
-func (mbc *MockBiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
-	mbc.EntitiesToConvert = append(mbc.EntitiesToConvert, entity)
-	return test_data.BiteModel, mbc.ConverterError
+func (mbc *MockBiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, error) {
+	mbc.EntitiesToConvert = append(mbc.EntitiesToConvert, entities...)
+	return []BiteModel{test_data.BiteModel}, mbc.ConverterError
 }
+
 func (mbc *MockBiteConverter) SetConverterError(err error) {
 	mbc.ConverterError = err
 }

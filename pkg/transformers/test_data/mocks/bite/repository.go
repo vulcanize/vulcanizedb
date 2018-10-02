@@ -15,19 +15,23 @@
 package bite
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 )
 
 type MockBiteRepository struct {
-	createError               error
-	PassedEndingBlockNumber   int64
-	PassedBiteModel           bite.BiteModel
-	PassedHeaderID            int64
-	PassedStartingBlockNumber int64
-	PassedTransactionIndex    uint
-	missingHeaders            []core.Header
-	missingHeadersErr         error
+	createError                     error
+	PassedEndingBlockNumber         int64
+	PassedBiteModels                []bite.BiteModel
+	PassedHeaderID                  int64
+	PassedStartingBlockNumber       int64
+	PassedTransactionIndex          uint
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderID int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
 }
 
 func (repository *MockBiteRepository) SetCreateError(err error) {
@@ -42,14 +46,27 @@ func (repository *MockBiteRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
 
-func (repository *MockBiteRepository) Create(headerID int64, model bite.BiteModel) error {
+func (repository *MockBiteRepository) Create(headerID int64, models []bite.BiteModel) error {
 	repository.PassedHeaderID = headerID
-	repository.PassedBiteModel = model
+	repository.PassedBiteModels = models
 	return repository.createError
+}
+
+func (repository *MockBiteRepository) MarkHeaderChecked(headerID int64) error {
+	repository.markHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
 }
 
 func (repository *MockBiteRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockBiteRepository) SetMarkHeaderCheckedErr(e error) {
+	repository.markHeaderCheckedErr = e
+}
+
+func (repository *MockBiteRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }

@@ -96,6 +96,42 @@ var _ = Describe("Frob transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &frob_mocks.MockFrobConverter{}
+		mockRepository := &frob_mocks.MockFrobRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := frob.FrobTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &frob_mocks.MockFrobConverter{}
+		mockRepository := &frob_mocks.MockFrobRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := frob.FrobTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts matching logs to entity", func() {
 		converter := &frob_mocks.MockFrobConverter{}
 		fetcher := &mocks.MockLogFetcher{}
@@ -111,14 +147,13 @@ var _ = Describe("Frob transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedContractAddress).To(Equal(test_data.EthFrobLog.Address.Hex()))
 		Expect(converter.PassedContractABI).To(Equal(frob.FrobConfig.ContractAbi))
-		Expect(converter.PassedLog).To(Equal(test_data.EthFrobLog))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthFrobLog}))
 	})
 
 	It("returns error if converting to entity returns error", func() {
 		converter := &frob_mocks.MockFrobConverter{}
-		converter.SetToEntityError(fakes.FakeError)
+		converter.SetToEntitiesError(fakes.FakeError)
 		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
 		repository := &frob_mocks.MockFrobRepository{}
@@ -150,12 +185,12 @@ var _ = Describe("Frob transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedEntity).To(Equal(test_data.FrobEntity))
+		Expect(converter.PassedEntities).To(Equal([]frob.FrobEntity{test_data.FrobEntity}))
 	})
 
 	It("returns error if converting to model returns error", func() {
 		converter := &frob_mocks.MockFrobConverter{}
-		converter.SetToModelError(fakes.FakeError)
+		converter.SetToModelsError(fakes.FakeError)
 		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthFrobLog})
 		repository := &frob_mocks.MockFrobRepository{}
@@ -189,7 +224,7 @@ var _ = Describe("Frob transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedFrobModel).To(Equal(test_data.FrobModel))
+		Expect(repository.PassedModels).To(Equal([]frob.FrobModel{test_data.FrobModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {

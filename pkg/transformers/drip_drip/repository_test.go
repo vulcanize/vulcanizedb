@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -29,15 +30,24 @@ import (
 
 var _ = Describe("Drip drip repository", func() {
 	Describe("Create", func() {
-		It("adds a drip drip event", func() {
-			db := test_config.NewTestDB(core.Node{})
+		var (
+			db                 *postgres.DB
+			dripDripRepository drip_drip.Repository
+			err                error
+			headerID           int64
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
-			dripDripRepository := drip_drip.NewDripDripRepository(db)
+			dripDripRepository = drip_drip.NewDripDripRepository(db)
+		})
 
-			err = dripDripRepository.Create(headerID, test_data.DripDripModel)
+		It("adds a drip drip event", func() {
+			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile drip_drip.DripDripModel
@@ -48,30 +58,28 @@ var _ = Describe("Drip drip repository", func() {
 			Expect(dbPitFile.Raw).To(MatchJSON(test_data.DripDripModel.Raw))
 		})
 
-		It("does not duplicate drip drip events", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+		It("marks header as checked for logs", func() {
+			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
+
 			Expect(err).NotTo(HaveOccurred())
-			dripDripRepository := drip_drip.NewDripDripRepository(db)
-			err = dripDripRepository.Create(headerID, test_data.DripDripModel)
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("does not duplicate drip drip events", func() {
+			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dripDripRepository.Create(headerID, test_data.DripDripModel)
+			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes drip drip if corresponding header is deleted", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			dripDripRepository := drip_drip.NewDripDripRepository(db)
-			err = dripDripRepository.Create(headerID, test_data.DripDripModel)
+			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -84,8 +92,48 @@ var _ = Describe("Drip drip repository", func() {
 		})
 	})
 
+	Describe("MarkHeaderChecked", func() {
+		var (
+			db                 *postgres.DB
+			dripDripRepository drip_drip.Repository
+			err                error
+			headerID           int64
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			dripDripRepository = drip_drip.NewDripDripRepository(db)
+		})
+
+		It("creates a row for a new headerID", func() {
+			err = dripDripRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates row when headerID already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+
+			err = dripDripRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+	})
+
 	Describe("MissingHeaders", func() {
-		It("returns headers with no associated drip drip event", func() {
+		It("returns headers that haven't been checked", func() {
 			db := test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
@@ -100,7 +148,7 @@ var _ = Describe("Drip drip repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 			dripDripRepository := drip_drip.NewDripDripRepository(db)
-			err := dripDripRepository.Create(headerIDs[1], test_data.DripDripModel)
+			err := dripDripRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := dripDripRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
@@ -109,6 +157,33 @@ var _ = Describe("Drip drip repository", func() {
 			Expect(len(headers)).To(Equal(2))
 			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
 			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+		})
+
+		It("only treats headers as checked if drip drip logs have been checked", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			startingBlockNumber := int64(1)
+			dripDripBlockNumber := int64(2)
+			endingBlockNumber := int64(3)
+			blockNumbers := []int64{startingBlockNumber, dripDripBlockNumber, endingBlockNumber, endingBlockNumber + 1}
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			dripDripRepository := drip_drip.NewDripDripRepository(db)
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := dripDripRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dripDripBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dripDripBlockNumber)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dripDripBlockNumber)))
 		})
 
 		It("only returns headers associated with the current node", func() {
@@ -128,7 +203,7 @@ var _ = Describe("Drip drip repository", func() {
 			}
 			dripDripRepository := drip_drip.NewDripDripRepository(db)
 			dripDripRepositoryTwo := drip_drip.NewDripDripRepository(dbTwo)
-			err := dripDripRepository.Create(headerIDs[0], test_data.DripDripModel)
+			err := dripDripRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := dripDripRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])

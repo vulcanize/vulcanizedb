@@ -32,7 +32,7 @@ var _ = Describe("Drip file repo converter", func() {
 			Data:   []byte{1, 1, 1, 1, 1},
 		}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -40,9 +40,10 @@ var _ = Describe("Drip file repo converter", func() {
 	It("converts a log to a model", func() {
 		converter := vow.DripFileVowConverter{}
 
-		model, err := converter.ToModel(test_data.EthDripFileVowLog)
+		models, err := converter.ToModels([]types.Log{test_data.EthDripFileVowLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.DripFileVowModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.DripFileVowModel))
 	})
 })

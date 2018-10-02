@@ -28,7 +28,7 @@ var _ = Describe("Vat init converter", func() {
 		converter := vat_init.VatInitConverter{}
 		badLog := types.Log{}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -36,9 +36,10 @@ var _ = Describe("Vat init converter", func() {
 	It("converts a log to an model", func() {
 		converter := vat_init.VatInitConverter{}
 
-		model, err := converter.ToModel(test_data.EthVatInitLog)
+		models, err := converter.ToModels([]types.Log{test_data.EthVatInitLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.VatInitModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.VatInitModel))
 	})
 })

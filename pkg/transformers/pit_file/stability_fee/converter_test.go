@@ -28,7 +28,7 @@ var _ = Describe("Pit file stability fee converter", func() {
 		converter := stability_fee.PitFileStabilityFeeConverter{}
 		badLog := types.Log{}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -36,9 +36,10 @@ var _ = Describe("Pit file stability fee converter", func() {
 	It("converts a log to an model", func() {
 		converter := stability_fee.PitFileStabilityFeeConverter{}
 
-		model, err := converter.ToModel(test_data.EthPitFileStabilityFeeLog)
+		models, err := converter.ToModels([]types.Log{test_data.EthPitFileStabilityFeeLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.PitFileStabilityFeeModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.PitFileStabilityFeeModel))
 	})
 })

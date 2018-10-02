@@ -23,12 +23,12 @@ import (
 
 type MockPitFileDebtCeilingConverter struct {
 	converterErr error
-	PassedLog    types.Log
+	PassedLogs   []types.Log
 }
 
-func (converter *MockPitFileDebtCeilingConverter) ToModel(ethLog types.Log) (debt_ceiling.PitFileDebtCeilingModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.PitFileDebtCeilingModel, converter.converterErr
+func (converter *MockPitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]debt_ceiling.PitFileDebtCeilingModel, error) {
+	converter.PassedLogs = ethLogs
+	return []debt_ceiling.PitFileDebtCeilingModel{test_data.PitFileDebtCeilingModel}, converter.converterErr
 }
 
 func (converter *MockPitFileDebtCeilingConverter) SetConverterError(e error) {

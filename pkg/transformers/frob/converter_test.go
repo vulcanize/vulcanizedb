@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -27,18 +28,20 @@ var _ = Describe("Frob converter", func() {
 	It("converts a log to an entity", func() {
 		converter := frob.FrobConverter{}
 
-		entity, err := converter.ToEntity(shared.PitContractAddress, shared.PitABI, test_data.EthFrobLog)
+		entities, err := converter.ToEntities(shared.PitABI, []types.Log{test_data.EthFrobLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(entity).To(Equal(test_data.FrobEntity))
+		Expect(len(entities)).To(Equal(1))
+		Expect(entities[0]).To(Equal(test_data.FrobEntity))
 	})
 
 	It("converts an entity to a model", func() {
 		converter := frob.FrobConverter{}
 
-		model, err := converter.ToModel(test_data.FrobEntity)
+		models, err := converter.ToModels([]frob.FrobEntity{test_data.FrobEntity})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.FrobModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.FrobModel))
 	})
 })
