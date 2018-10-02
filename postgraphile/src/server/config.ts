@@ -27,6 +27,7 @@ export function buildServerConfig(
   const options: PostgraphileOptions = {
     pluginHook: pluginHook,
     simpleSubscriptions: true,
+    watchPg: true,
     graphiql: true,
     webSocketMiddlewares: [
       expressSessionHandler,
