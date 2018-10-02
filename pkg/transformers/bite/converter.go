@@ -19,66 +19,75 @@ package bite
 import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
-	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (BiteEntity, error)
-	ToModel(flipKick BiteEntity) (BiteModel, error)
+	ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error)
+	ToModels(biteEntities []BiteEntity) ([]BiteModel, error)
 }
 
 type BiteConverter struct{}
 
-func (BiteConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (BiteEntity, error) {
-	entity := BiteEntity{}
-	address := common.HexToAddress(contractAddress)
-	abi, err := geth.ParseAbi(contractAbi)
-	if err != nil {
-		return entity, err
+func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error) {
+	var entities []BiteEntity
+	for _, ethLog := range ethLogs {
+		entity := BiteEntity{}
+		address := ethLog.Address
+		abi, err := geth.ParseAbi(contractAbi)
+		if err != nil {
+			return nil, err
+		}
+
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+
+		err = contract.UnpackLog(&entity, "Bite", ethLog)
+		if err != nil {
+			return nil, err
+		}
+
+		entity.Raw = ethLog
+		entity.TransactionIndex = ethLog.TxIndex
+
+		entities = append(entities, entity)
 	}
 
-	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-
-	err = contract.UnpackLog(&entity, "Bite", ethLog)
-	if err != nil {
-		return entity, err
-	}
-
-	entity.Raw = ethLog
-	entity.TransactionIndex = ethLog.TxIndex
-
-	return entity, nil
+	return entities, nil
 }
-func (converter BiteConverter) ToModel(entity BiteEntity) (BiteModel, error) {
 
-	id := entity.Id
-	ilk := entity.Ilk[:]
-	urn := entity.Urn[:]
-	ink := entity.Ink
-	art := entity.Art
-	iArt := entity.IArt
-	tab := entity.Tab
-	flip := entity.Flip
-	txIdx := entity.TransactionIndex
-	rawLogJson, err := json.Marshal(entity.Raw)
-	rawLogString := string(rawLogJson)
-	if err != nil {
-		return BiteModel{}, err
+func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, error) {
+	var models []BiteModel
+	for _, entity := range entities {
+		id := entity.Id
+		ilk := entity.Ilk[:]
+		urn := entity.Urn[:]
+		ink := entity.Ink
+		art := entity.Art
+		iArt := entity.IArt
+		tab := entity.Tab
+		flip := entity.Flip
+		txIdx := entity.TransactionIndex
+		rawLogJson, err := json.Marshal(entity.Raw)
+		rawLogString := string(rawLogJson)
+		if err != nil {
+			return nil, err
+		}
+
+		model := BiteModel{
+			Id:               shared.BigIntToString(id),
+			Ilk:              ilk,
+			Urn:              urn,
+			Ink:              shared.BigIntToString(ink),
+			Art:              shared.BigIntToString(art),
+			IArt:             shared.BigIntToString(iArt),
+			Tab:              shared.BigIntToString(tab),
+			Flip:             shared.BigIntToString(flip),
+			TransactionIndex: txIdx,
+			Raw:              rawLogString,
+		}
+		models = append(models, model)
 	}
-
-	return BiteModel{
-		Id:               shared.BigIntToString(id),
-		Ilk:              ilk,
-		Urn:              urn,
-		Ink:              shared.BigIntToString(ink),
-		Art:              shared.BigIntToString(art),
-		IArt:             shared.BigIntToString(iArt),
-		Tab:              shared.BigIntToString(tab),
-		Flip:             shared.BigIntToString(flip),
-		TransactionIndex: txIdx,
-		Raw:              rawLogString,
-	}, nil
+	return models, nil
 }

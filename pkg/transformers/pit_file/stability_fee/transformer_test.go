@@ -97,6 +97,42 @@ var _ = Describe("Pit file stability fee transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &stability_fee_mocks.MockPitFileStabilityFeeConverter{}
+		mockRepository := &stability_fee_mocks.MockPitFileStabilityFeeRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := stability_fee.PitFileStabilityFeeTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &stability_fee_mocks.MockPitFileStabilityFeeConverter{}
+		mockRepository := &stability_fee_mocks.MockPitFileStabilityFeeRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := stability_fee.PitFileStabilityFeeTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts matching logs", func() {
 		converter := &stability_fee_mocks.MockPitFileStabilityFeeConverter{}
 		fetcher := &mocks.MockLogFetcher{}
@@ -112,7 +148,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedLog).To(Equal(test_data.EthPitFileStabilityFeeLog))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthPitFileStabilityFeeLog}))
 	})
 
 	It("returns error if converter returns error", func() {
@@ -151,7 +187,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModel).To(Equal(test_data.PitFileStabilityFeeModel))
+		Expect(repository.PassedModels).To(Equal([]stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {

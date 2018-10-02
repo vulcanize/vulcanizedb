@@ -15,24 +15,33 @@
 package stability_fee
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 )
 
 type MockPitFileStabilityFeeRepository struct {
-	createErr                 error
-	missingHeaders            []core.Header
-	missingHeadersErr         error
-	PassedStartingBlockNumber int64
-	PassedEndingBlockNumber   int64
-	PassedHeaderID            int64
-	PassedModel               stability_fee.PitFileStabilityFeeModel
+	createErr                       error
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderID int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
+	PassedStartingBlockNumber       int64
+	PassedEndingBlockNumber         int64
+	PassedHeaderID                  int64
+	PassedModels                    []stability_fee.PitFileStabilityFeeModel
 }
 
-func (repository *MockPitFileStabilityFeeRepository) Create(headerID int64, model stability_fee.PitFileStabilityFeeModel) error {
-	repository.PassedModel = model
+func (repository *MockPitFileStabilityFeeRepository) Create(headerID int64, models []stability_fee.PitFileStabilityFeeModel) error {
+	repository.PassedModels = models
 	repository.PassedHeaderID = headerID
 	return repository.createErr
+}
+
+func (repository *MockPitFileStabilityFeeRepository) MarkHeaderChecked(headerID int64) error {
+	repository.markHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
 }
 
 func (repository *MockPitFileStabilityFeeRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
@@ -41,12 +50,22 @@ func (repository *MockPitFileStabilityFeeRepository) MissingHeaders(startingBloc
 	return repository.missingHeaders, repository.missingHeadersErr
 }
 
+func (repository *MockPitFileStabilityFeeRepository) SetMarkHeaderCheckedErr(e error) {
+	repository.markHeaderCheckedErr = e
+}
+
 func (repository *MockPitFileStabilityFeeRepository) SetMissingHeadersErr(e error) {
 	repository.missingHeadersErr = e
 }
+
 func (repository *MockPitFileStabilityFeeRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
+
 func (repository *MockPitFileStabilityFeeRepository) SetCreateError(e error) {
 	repository.createErr = e
+}
+
+func (repository *MockPitFileStabilityFeeRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }

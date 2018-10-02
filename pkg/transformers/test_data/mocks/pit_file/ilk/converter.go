@@ -22,7 +22,7 @@ import (
 )
 
 type MockPitFileIlkConverter struct {
-	PassedLog      types.Log
+	PassedLogs     []types.Log
 	converterError error
 }
 
@@ -30,7 +30,7 @@ func (converter *MockPitFileIlkConverter) SetConverterError(err error) {
 	converter.converterError = err
 }
 
-func (converter *MockPitFileIlkConverter) ToModel(ethLog types.Log) (ilk.PitFileIlkModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.PitFileIlkModel, converter.converterError
+func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]ilk.PitFileIlkModel, error) {
+	converter.PassedLogs = ethLogs
+	return []ilk.PitFileIlkModel{test_data.PitFileIlkModel}, converter.converterError
 }

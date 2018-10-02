@@ -23,23 +23,31 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (VatInitModel, error)
+	ToModels(ethLogs []types.Log) ([]VatInitModel, error)
 }
 
 type VatInitConverter struct{}
 
-func (VatInitConverter) ToModel(ethLog types.Log) (VatInitModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return VatInitModel{}, err
+func (VatInitConverter) ToModels(ethLogs []types.Log) ([]VatInitModel, error) {
+	var models []VatInitModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := VatInitModel{
+			Ilk:              ilk,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
 	}
-	ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
-	raw, err := json.Marshal(ethLog)
-	return VatInitModel{
-		Ilk:              ilk,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

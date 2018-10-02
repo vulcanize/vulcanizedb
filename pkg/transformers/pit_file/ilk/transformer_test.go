@@ -97,6 +97,42 @@ var _ = Describe("Pit file ilk transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &pit_file_ilk_mocks.MockPitFileIlkConverter{}
+		mockRepository := &pit_file_ilk_mocks.MockPitFileIlkRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := ilk.PitFileIlkTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &pit_file_ilk_mocks.MockPitFileIlkConverter{}
+		mockRepository := &pit_file_ilk_mocks.MockPitFileIlkRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := ilk.PitFileIlkTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts matching logs", func() {
 		converter := &pit_file_ilk_mocks.MockPitFileIlkConverter{}
 		fetcher := &mocks.MockLogFetcher{}
@@ -112,7 +148,7 @@ var _ = Describe("Pit file ilk transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedLog).To(Equal(test_data.EthPitFileIlkLog))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthPitFileIlkLog}))
 	})
 
 	It("returns error if converter returns error", func() {
@@ -151,7 +187,7 @@ var _ = Describe("Pit file ilk transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModel).To(Equal(test_data.PitFileIlkModel))
+		Expect(repository.PassedModels).To(Equal([]ilk.PitFileIlkModel{test_data.PitFileIlkModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {

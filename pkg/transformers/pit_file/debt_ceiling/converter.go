@@ -25,26 +25,34 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (PitFileDebtCeilingModel, error)
+	ToModels(ethLogs []types.Log) ([]PitFileDebtCeilingModel, error)
 }
 
 type PitFileDebtCeilingConverter struct{}
 
-func (PitFileDebtCeilingConverter) ToModel(ethLog types.Log) (PitFileDebtCeilingModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return PitFileDebtCeilingModel{}, err
-	}
-	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
+func (PitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]PitFileDebtCeilingModel, error) {
+	var models []PitFileDebtCeilingModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 
-	raw, err := json.Marshal(ethLog)
-	return PitFileDebtCeilingModel{
-		What:             what,
-		Data:             data,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := PitFileDebtCeilingModel{
+			What:             what,
+			Data:             data,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
+	}
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

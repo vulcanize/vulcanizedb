@@ -32,7 +32,7 @@ var _ = Describe("Drip file ilk converter", func() {
 			Data:   []byte{1, 1, 1, 1, 1},
 		}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -43,7 +43,7 @@ var _ = Describe("Drip file ilk converter", func() {
 			Topics: []common.Hash{{}, {}, {}, {}},
 		}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 
@@ -52,9 +52,10 @@ var _ = Describe("Drip file ilk converter", func() {
 	It("converts a log to a model", func() {
 		converter := ilk.DripFileIlkConverter{}
 
-		model, err := converter.ToModel(test_data.EthDripFileIlkLog)
+		models, err := converter.ToModels([]types.Log{test_data.EthDripFileIlkLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.DripFileIlkModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.DripFileIlkModel))
 	})
 })

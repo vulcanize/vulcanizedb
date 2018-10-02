@@ -20,7 +20,8 @@ import (
 )
 
 type Repository interface {
-	Create(headerID int64, model DripFileIlkModel) error
+	Create(headerID int64, models []DripFileIlkModel) error
+	MarkHeaderChecked(headerID int64) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
@@ -32,12 +33,38 @@ func NewDripFileIlkRepository(db *postgres.DB) DripFileIlkRepository {
 	return DripFileIlkRepository{db: db}
 }
 
-func (repository DripFileIlkRepository) Create(headerID int64, model DripFileIlkModel) error {
-	_, err := repository.db.Exec(
-		`INSERT into maker.drip_file_ilk (header_id, ilk, vow, tax, tx_idx, raw_log)
+func (repository DripFileIlkRepository) Create(headerID int64, models []DripFileIlkModel) error {
+	tx, err := repository.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, model := range models {
+		_, err = tx.Exec(
+			`INSERT into maker.drip_file_ilk (header_id, ilk, vow, tax, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-		headerID, model.Ilk, model.Vow, model.Tax, model.TransactionIndex, model.Raw,
-	)
+			headerID, model.Ilk, model.Vow, model.Tax, model.TransactionIndex, model.Raw,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_ilk_checked)
+		VALUES ($1, $2) 
+	ON CONFLICT (header_id) DO
+		UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func (repository DripFileIlkRepository) MarkHeaderChecked(headerID int64) error {
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_ilk_checked)
+		VALUES ($1, $2) 
+	ON CONFLICT (header_id) DO
+		UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
 	return err
 }
 
@@ -46,8 +73,8 @@ func (repository DripFileIlkRepository) MissingHeaders(startingBlockNumber, endi
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN maker.drip_file_ilk on headers.id = header_id
-               WHERE header_id ISNULL
+               LEFT JOIN checked_headers on headers.id = header_id
+               WHERE (header_id ISNULL OR drip_file_ilk_checked IS FALSE)
                AND headers.block_number >= $1
                AND headers.block_number <= $2
                AND headers.eth_node_fingerprint = $3`,

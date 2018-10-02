@@ -22,30 +22,28 @@ import (
 )
 
 type MockFrobConverter struct {
-	PassedContractAddress string
-	PassedContractABI     string
-	PassedLog             types.Log
-	PassedEntity          frob.FrobEntity
-	toEntityError         error
-	toModelError          error
+	PassedContractABI string
+	PassedLogs        []types.Log
+	PassedEntities    []frob.FrobEntity
+	toEntityError     error
+	toModelError      error
 }
 
-func (converter *MockFrobConverter) SetToEntityError(err error) {
+func (converter *MockFrobConverter) SetToEntitiesError(err error) {
 	converter.toEntityError = err
 }
 
-func (converter *MockFrobConverter) SetToModelError(err error) {
+func (converter *MockFrobConverter) SetToModelsError(err error) {
 	converter.toModelError = err
 }
 
-func (converter *MockFrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (frob.FrobEntity, error) {
-	converter.PassedContractAddress = contractAddress
+func (converter *MockFrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]frob.FrobEntity, error) {
 	converter.PassedContractABI = contractAbi
-	converter.PassedLog = ethLog
-	return test_data.FrobEntity, converter.toEntityError
+	converter.PassedLogs = ethLogs
+	return []frob.FrobEntity{test_data.FrobEntity}, converter.toEntityError
 }
 
-func (converter *MockFrobConverter) ToModel(frobEntity frob.FrobEntity) (frob.FrobModel, error) {
-	converter.PassedEntity = frobEntity
-	return test_data.FrobModel, converter.toModelError
+func (converter *MockFrobConverter) ToModels(frobEntities []frob.FrobEntity) ([]frob.FrobModel, error) {
+	converter.PassedEntities = frobEntities
+	return []frob.FrobModel{test_data.FrobModel}, converter.toModelError
 }
