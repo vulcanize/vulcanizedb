@@ -53,5 +53,10 @@ func verifyLog(log types.Log) error {
 		return errors.New("log missing topics")
 	}
 
+	sig := log.Topics[0].String()
+	if sig != shared.VatFoldSignature {
+		return errors.New("log is not a Vat.fold event")
+	}
+
 	return nil
 }
