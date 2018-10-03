@@ -6,11 +6,11 @@ Transformers fetch logs from Ethereum, convert/decode them into usable data, and
 
 A transformer consists of:
 
-- A fetcher -> Fetches raw logs from the blockchain encoded as go datatypes
-- A converter -> Converts this raw data into a representation suitable for consumption in the API
+- A fetcher -> Fetches raw logs from the blockchain and encodes them as go datatypes
+- A converter -> Converts this raw data into a human friendly representation suitable for consumption in the API
 - A repository -> Abstracts the database
 
-For Maker, vulcanize will be run in `lightSync` mode, so it will store all headers, and then fetchers make RPC calls to pull th
+For Maker, vulcanize will be run in `lightSync` mode, so it will store all headers, and then fetchers pull relevant logs by making RPC calls.
 
 ## Event Types
 
