@@ -15,7 +15,6 @@
 package test_data
 
 import (
-	"bytes"
 	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -35,19 +34,19 @@ var EthVatFoldLog = types.Log{
 		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002"),
 	},
 	Data:        hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000064e6a6a64d45544800000000000000000000000000000000000000000000000000000000000000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d10000000000000000000000000000000000000000000000000000000000000000"),
-	BlockNumber: 72,
-	TxHash:      common.HexToHash("0xe8f39fbb7fea3621f543868f19b1114e305aff6a063a30d32835ff1012526f91"),
+	BlockNumber: 8940380,
+	TxHash:      common.HexToHash("0xfb37b7a88aa8ad14538d1e244a55939fa07c1828e5ca8168bf4edd56f5fc4d57"),
 	TxIndex:     8,
-	BlockHash:   common.HexToHash("0xe3dd2e05bd8b92833e20ed83e2171bbc06a9ec823232eca1730a807bd8f5edc0"),
+	BlockHash:   common.HexToHash("0xf43ab2fd3cf0a7e08fcc16ec17bbc7f67417a37a4cd978d1d7ca32130c7f64be"),
 	Index:       5,
 	Removed:     false,
 }
 
 var rawVatFoldLog, _ = json.Marshal(EthVatFoldLog)
 var VatFoldModel = vat_fold.VatFoldModel{
-	Ilk:              string(bytes.Trim(EthVatFoldLog.Topics[1].Bytes(), "\x00")),
-	Urn:              string(bytes.Trim(EthVatFoldLog.Topics[2].Bytes(), "\x00")),
-	Rate:             string(bytes.Trim(EthVatFoldLog.Topics[3].Bytes(), "\x00")),
+	Ilk:              "REP",
+	Urn:              "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1",
+	Rate:             "2",
 	TransactionIndex: EthVatFoldLog.TxIndex,
 	Raw:              rawVatFoldLog,
 }
