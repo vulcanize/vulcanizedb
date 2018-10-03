@@ -18,8 +18,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Converter interface {
@@ -35,8 +38,8 @@ func (VatFoldConverter) ToModel(ethLog types.Log) (VatFoldModel, error) {
 	}
 
 	ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
-	urn := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	rate := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
+	urn := common.HexToAddress(ethLog.Topics[2].String()).String()
+	rate := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 	raw, err := json.Marshal(ethLog)
 
 	return VatFoldModel{
