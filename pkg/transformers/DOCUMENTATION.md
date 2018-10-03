@@ -32,7 +32,7 @@ The transformer process for each of these different log types is the same, excep
 
 1. Fetch the logs from the chain based on the example event's topic zero:
 
-   - The topic zero is based on the keccak-256 hash of the log event's method signature. These are located in `pkg/transformers/shared/constants.go`.
+   - The topic zero is based on the keccak-256 hash of the log event's method signature. These are located in [`pkg/transformers/shared/constants.go`](./shared/constants.go).
    - Most transformers use `shared.LogFetcher` to fetch all logs that match the given topic zero for that log event.
    - Since there are multiple price feed contract address that all use the same `LogValue` event, we have a special implementation of a fetcher specifically for price feeds that can query using all of the contract addresses at once, thus only needing to make one call to the blockchain.
 
@@ -58,7 +58,7 @@ The transformer process for each of these different log types is the same, excep
             }
         ```
       - Using go-ethereum's `contract.UnpackLog` method we can unpack the raw log into the FlopperKick struct (which we're referring to as the `entity`).
-        - See the `ToEntity` method in `pkg/transformers/flop_kick/converter`.
+        - See the `ToEntity` method in [`pkg/transformers/flop_kick/converter.go`](./flop_kick/converter.go).
   1.  Convert the entity into a database model. See the `ToModel` method in `pkg/transformers/flop_kick/converter`.
 
 - **Converting Price Feed custom events**
