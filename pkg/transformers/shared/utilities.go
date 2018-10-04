@@ -32,3 +32,15 @@ func BigIntToString(value *big.Int) string {
 		return result
 	}
 }
+
+func GetDataBytesAtIndex(n int, logData []byte) []byte {
+	switch {
+	case n == -1:
+		return logData[len(logData)-DataItemLength:]
+	case n == -2:
+		return logData[len(logData)-(2*DataItemLength) : len(logData)-DataItemLength]
+	case n == -3:
+		return logData[len(logData)-(3*DataItemLength) : len(logData)-(2*DataItemLength)]
+	}
+	return []byte{}
+}
