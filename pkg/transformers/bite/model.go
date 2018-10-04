@@ -16,8 +16,8 @@ package bite
 
 type BiteModel struct {
 	Id               string
-	Ilk              []byte
-	Urn              []byte
+	Ilk              string
+	Urn              string
 	Ink              string
 	Art              string
 	IArt             string
