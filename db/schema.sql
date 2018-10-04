@@ -704,8 +704,8 @@ ALTER SEQUENCE maker.tend_id_seq OWNED BY maker.tend.id;
 CREATE TABLE maker.vat_fold (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk bytea,
-    urn bytea,
+    ilk text,
+    urn text,
     rate numeric,
     tx_idx integer NOT NULL,
     raw_log jsonb
