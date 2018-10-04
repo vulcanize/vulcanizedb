@@ -38,6 +38,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 )
 
 var (
@@ -63,6 +64,7 @@ var (
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
 	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
 	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
+	VatTollTransformerInitializer             = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
@@ -86,5 +88,6 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		PriceFeedTransformerInitializer,
 		TendTransformerInitializer,
 		VatInitTransformerInitializer,
+		VatTollTransformerInitializer,
 	}
 }

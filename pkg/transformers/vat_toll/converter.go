@@ -1,0 +1,51 @@
+package vat_toll
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+)
+
+type Converter interface {
+	ToModels(ethLogs []types.Log) ([]VatTollModel, error)
+}
+
+type VatTollConverter struct{}
+
+func (VatTollConverter) ToModels(ethLogs []types.Log) ([]VatTollModel, error) {
+	var models []VatTollModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
+		take := ethLog.Topics[3].Big()
+
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := VatTollModel{
+			Ilk:              ilk,
+			Urn:              urn.String(),
+			Take:             take.String(),
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
+	}
+	return models, nil
+}
+
+func verifyLog(log types.Log) error {
+	numTopicInValidLog := 4
+	if len(log.Topics) < numTopicInValidLog {
+		return errors.New("log missing topics")
+	}
+	return nil
+}
