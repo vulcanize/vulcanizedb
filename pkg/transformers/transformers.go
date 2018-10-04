@@ -64,7 +64,7 @@ var (
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
 	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
 	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
-	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatInitConfig}.NewVatFoldTransformer
+	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
