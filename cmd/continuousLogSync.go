@@ -100,6 +100,7 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap["priceFeed"] = transformers.PriceFeedTransformerInitializer
 	transformerInitializerMap["tend"] = transformers.TendTransformerInitializer
 	transformerInitializerMap["vatInit"] = transformers.VatInitTransformerInitializer
+	transformerInitializerMap["vatFold"] = transformers.VatFoldTransformerInitializer
 
 	return transformerInitializerMap
 }
