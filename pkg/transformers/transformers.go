@@ -39,6 +39,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 )
 
 var (
@@ -65,6 +66,7 @@ var (
 	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
 	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
 	VatTollTransformerInitializer             = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
+	VatTuneTransformerInitializer             = vat_tune.VatTuneTransformerInitializer{Config: vat_tune.VatTuneConfig}.NewVatTuneTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
@@ -89,5 +91,6 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		TendTransformerInitializer,
 		VatInitTransformerInitializer,
 		VatTollTransformerInitializer,
+		VatTuneTransformerInitializer,
 	}
 }
