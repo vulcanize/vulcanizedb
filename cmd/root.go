@@ -64,9 +64,9 @@ func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	databaseConfig = config.Database{
-		Name:     viper.GetString("database.name"),
-		Hostname: viper.GetString("database.hostname"),
-		Port:     viper.GetInt("database.port"),
+		Name:     "vulcanize_public",
+		Hostname: "localhost",
+		Port:     5432,
 		User:     viper.GetString("database.user"),
 		Password: viper.GetString("database.password"),
 	}
