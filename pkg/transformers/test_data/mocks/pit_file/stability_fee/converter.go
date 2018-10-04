@@ -23,13 +23,14 @@ import (
 
 type MockPitFileStabilityFeeConverter struct {
 	converterErr error
-	PassedLog    types.Log
+	PassedLogs   []types.Log
 }
 
-func (converter *MockPitFileStabilityFeeConverter) ToModel(ethLog types.Log) (stability_fee.PitFileStabilityFeeModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.PitFileStabilityFeeModel, converter.converterErr
+func (converter *MockPitFileStabilityFeeConverter) ToModels(ethLogs []types.Log) ([]stability_fee.PitFileStabilityFeeModel, error) {
+	converter.PassedLogs = ethLogs
+	return []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel}, converter.converterErr
 }
+
 func (converter *MockPitFileStabilityFeeConverter) SetConverterError(e error) {
 	converter.converterErr = e
 }

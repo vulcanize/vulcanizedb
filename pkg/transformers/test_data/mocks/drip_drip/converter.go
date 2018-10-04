@@ -21,13 +21,13 @@ import (
 )
 
 type MockDripDripConverter struct {
-	Err       error
-	PassedLog types.Log
+	Err        error
+	PassedLogs []types.Log
 }
 
-func (converter *MockDripDripConverter) ToModel(ethLog types.Log) (drip_drip.DripDripModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.DripDripModel, converter.Err
+func (converter *MockDripDripConverter) ToModels(ethLogs []types.Log) ([]drip_drip.DripDripModel, error) {
+	converter.PassedLogs = ethLogs
+	return []drip_drip.DripDripModel{test_data.DripDripModel}, converter.Err
 }
 
 func (converter *MockDripDripConverter) SetConverterError(e error) {

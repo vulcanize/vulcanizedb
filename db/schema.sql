@@ -856,6 +856,16 @@ CREATE TABLE public.checked_headers (
     cat_file_chop_lump_checked boolean DEFAULT false NOT NULL,
     cat_file_flip_checked boolean DEFAULT false NOT NULL,
     cat_file_pit_vow_checked boolean DEFAULT false NOT NULL,
+    bite_checked boolean DEFAULT false NOT NULL,
+    drip_drip_checked boolean DEFAULT false NOT NULL,
+    drip_file_ilk_checked boolean DEFAULT false NOT NULL,
+    drip_file_repo_checked boolean DEFAULT false NOT NULL,
+    drip_file_vow_checked boolean DEFAULT false NOT NULL,
+    frob_checked boolean DEFAULT false NOT NULL,
+    pit_file_debt_ceiling_checked boolean DEFAULT false NOT NULL,
+    pit_file_ilk_checked boolean DEFAULT false NOT NULL,
+    pit_file_stability_fee_checked boolean DEFAULT false NOT NULL,
+    vat_init_checked boolean DEFAULT false NOT NULL,
     vat_fold_checked boolean DEFAULT false NOT NULL
 );
 

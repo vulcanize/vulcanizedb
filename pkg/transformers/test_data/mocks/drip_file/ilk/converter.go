@@ -22,12 +22,12 @@ import (
 
 type MockDripFileIlkConverter struct {
 	converterErr error
-	PassedLog    types.Log
+	PassedLogs   []types.Log
 }
 
-func (converter *MockDripFileIlkConverter) ToModel(ethLog types.Log) (ilk.DripFileIlkModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.DripFileIlkModel, converter.converterErr
+func (converter *MockDripFileIlkConverter) ToModels(ethLogs []types.Log) ([]ilk.DripFileIlkModel, error) {
+	converter.PassedLogs = ethLogs
+	return []ilk.DripFileIlkModel{test_data.DripFileIlkModel}, converter.converterErr
 }
 
 func (converter *MockDripFileIlkConverter) SetConverterError(e error) {

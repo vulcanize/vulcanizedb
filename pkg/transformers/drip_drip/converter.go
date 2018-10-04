@@ -22,23 +22,31 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (DripDripModel, error)
+	ToModels(ethLogs []types.Log) ([]DripDripModel, error)
 }
 
 type DripDripConverter struct{}
 
-func (DripDripConverter) ToModel(ethLog types.Log) (DripDripModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return DripDripModel{}, err
+func (DripDripConverter) ToModels(ethLogs []types.Log) ([]DripDripModel, error) {
+	var models []DripDripModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := DripDripModel{
+			Ilk:              ilk,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
 	}
-	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	raw, err := json.Marshal(ethLog)
-	return DripDripModel{
-		Ilk:              ilk,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

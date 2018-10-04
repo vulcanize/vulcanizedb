@@ -31,7 +31,7 @@ var _ = Describe("Pit file ilk converter", func() {
 			Data: []byte{1, 1, 1, 1, 1},
 		}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -42,7 +42,7 @@ var _ = Describe("Pit file ilk converter", func() {
 			Topics: []common.Hash{{}, {}, {}, {}},
 		}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -50,9 +50,10 @@ var _ = Describe("Pit file ilk converter", func() {
 	It("converts a log to an model", func() {
 		converter := ilk.PitFileIlkConverter{}
 
-		model, err := converter.ToModel(test_data.EthPitFileIlkLog)
+		models, err := converter.ToModels([]types.Log{test_data.EthPitFileIlkLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.PitFileIlkModel))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.PitFileIlkModel))
 	})
 })

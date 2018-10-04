@@ -28,7 +28,7 @@ var _ = Describe("Drip drip converter", func() {
 		converter := drip_drip.DripDripConverter{}
 		badLog := types.Log{}
 
-		_, err := converter.ToModel(badLog)
+		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -36,9 +36,9 @@ var _ = Describe("Drip drip converter", func() {
 	It("converts a log to an model", func() {
 		converter := drip_drip.DripDripConverter{}
 
-		model, err := converter.ToModel(test_data.EthDripDripLog)
+		model, err := converter.ToModels([]types.Log{test_data.EthDripDripLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal(test_data.DripDripModel))
+		Expect(model).To(Equal([]drip_drip.DripDripModel{test_data.DripDripModel}))
 	})
 })

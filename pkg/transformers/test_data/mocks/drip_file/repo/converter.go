@@ -22,12 +22,12 @@ import (
 
 type MockDripFileRepoConverter struct {
 	converterErr error
-	PassedLog    types.Log
+	PassedLogs   []types.Log
 }
 
-func (converter *MockDripFileRepoConverter) ToModel(ethLog types.Log) (repo.DripFileRepoModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.DripFileRepoModel, converter.converterErr
+func (converter *MockDripFileRepoConverter) ToModels(ethLogs []types.Log) ([]repo.DripFileRepoModel, error) {
+	converter.PassedLogs = ethLogs
+	return []repo.DripFileRepoModel{test_data.DripFileRepoModel}, converter.converterErr
 }
 
 func (converter *MockDripFileRepoConverter) SetConverterError(e error) {

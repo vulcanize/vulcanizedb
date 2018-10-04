@@ -22,25 +22,33 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (DripFileVowModel, error)
+	ToModels(ethLogs []types.Log) ([]DripFileVowModel, error)
 }
 
 type DripFileVowConverter struct{}
 
-func (DripFileVowConverter) ToModel(ethLog types.Log) (DripFileVowModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return DripFileVowModel{}, err
+func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]DripFileVowModel, error) {
+	var models []DripFileVowModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		data := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := DripFileVowModel{
+			What:             what,
+			Data:             data,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
 	}
-	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	data := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-	raw, err := json.Marshal(ethLog)
-	return DripFileVowModel{
-		What:             what,
-		Data:             data,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

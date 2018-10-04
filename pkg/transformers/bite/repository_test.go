@@ -20,6 +20,7 @@ import (
 
 	"database/sql"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -28,16 +29,24 @@ import (
 
 var _ = Describe("Bite repository", func() {
 	Describe("Create", func() {
-		It("persists a bite record", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
+		var (
+			biteRepository bite.Repository
+			db             *postgres.DB
+			err            error
+			headerID       int64
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(core.Node{})
 			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
 			Expect(err).NotTo(HaveOccurred())
-			biteRepository := bite.NewBiteRepository(db)
+			biteRepository = bite.NewBiteRepository(db)
+		})
 
-			err = biteRepository.Create(headerID, test_data.BiteModel)
+		It("persists a bite record", func() {
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbBite bite.BiteModel
@@ -53,15 +62,18 @@ var _ = Describe("Bite repository", func() {
 			Expect(dbBite.Raw).To(MatchJSON(test_data.BiteModel.Raw))
 		})
 
-		It("does not duplicate bite events", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+		It("marks header as checked for logs", func() {
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
+
 			Expect(err).NotTo(HaveOccurred())
-			biteRepository := bite.NewBiteRepository(db)
-			err = biteRepository.Create(headerID, test_data.BiteModel)
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT bite_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("does not duplicate bite events", func() {
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var anotherBiteModel = bite.BiteModel{
@@ -77,21 +89,14 @@ var _ = Describe("Bite repository", func() {
 				Raw:              test_data.BiteModel.Raw,
 			}
 
-			err = biteRepository.Create(headerID, anotherBiteModel)
+			err = biteRepository.Create(headerID, []bite.BiteModel{anotherBiteModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes bite if corresponding header is deleted", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			biteRepository := bite.NewBiteRepository(db)
-			err = biteRepository.Create(headerID, test_data.BiteModel)
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -104,8 +109,45 @@ var _ = Describe("Bite repository", func() {
 		})
 	})
 
+	Describe("MarkHeaderChecked", func() {
+		It("creates a row for a new headerID", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			biteRepository := bite.NewBiteRepository(db)
+
+			err = biteRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT bite_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates row when headerID already exists", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			biteRepository := bite.NewBiteRepository(db)
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+
+			err = biteRepository.MarkHeaderChecked(headerID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT bite_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+	})
+
 	Describe("MissingHeaders", func() {
-		It("returns headers with no associated bite event", func() {
+		It("returns headers that haven't been checked", func() {
 			node := core.Node{}
 			db := test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
@@ -121,7 +163,7 @@ var _ = Describe("Bite repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 			biteRepository := bite.NewBiteRepository(db)
-			err := biteRepository.Create(headerIDs[1], test_data.BiteModel)
+			err := biteRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := biteRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)

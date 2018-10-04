@@ -17,10 +17,13 @@
 package bite_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
@@ -28,7 +31,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	bite_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/bite"
-	"math/rand"
 )
 
 var _ = Describe("Bite Transformer", func() {
@@ -89,13 +91,32 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		headerID := int64(123)
+		repository.SetMissingHeaders([]core.Header{{Id: headerID}})
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		repository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		repository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts an eth log to an Entity", func() {
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthBiteLog})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterContract).To(Equal(test_data.EthBiteLog.Address.Hex()))
 		Expect(converter.ConverterAbi).To(Equal(bite.BiteConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.EthBiteLog}))
 	})
@@ -121,7 +142,7 @@ var _ = Describe("Bite Transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(headerId))
-		Expect(repository.PassedBiteModel).To(Equal(test_data.BiteModel))
+		Expect(repository.PassedBiteModels).To(Equal([]bite.BiteModel{test_data.BiteModel}))
 	})
 
 	It("returns error if persisting bite record fails", func() {
