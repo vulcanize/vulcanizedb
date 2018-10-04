@@ -1,8 +1,8 @@
 CREATE TABLE maker.vat_fold (
   id            SERIAL PRIMARY KEY,
   header_id     INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-  ilk bytea,
-  urn bytea,
+  ilk text,
+  urn text,
   rate numeric,
   tx_idx        INTEGER NOT NULL,
   raw_log       JSONB,
