@@ -16,7 +16,6 @@ package frob
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"encoding/json"
@@ -24,40 +23,50 @@ import (
 )
 
 type Converter interface {
-	ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (FrobEntity, error)
-	ToModel(flipKick FrobEntity) (FrobModel, error)
+	ToEntities(contractAbi string, ethLogs []types.Log) ([]FrobEntity, error)
+	ToModels(entities []FrobEntity) ([]FrobModel, error)
 }
 
 type FrobConverter struct{}
 
-func (FrobConverter) ToEntity(contractAddress string, contractAbi string, ethLog types.Log) (FrobEntity, error) {
-	entity := FrobEntity{}
-	address := common.HexToAddress(contractAddress)
-	abi, err := geth.ParseAbi(contractAbi)
-	if err != nil {
-		return entity, err
+func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]FrobEntity, error) {
+	var entities []FrobEntity
+	for _, ethLog := range ethLogs {
+		entity := FrobEntity{}
+		address := ethLog.Address
+		abi, err := geth.ParseAbi(contractAbi)
+		if err != nil {
+			return nil, err
+		}
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+		err = contract.UnpackLog(&entity, "Frob", ethLog)
+		entity.TransactionIndex = ethLog.TxIndex
+		entity.Raw = ethLog
+		entities = append(entities, entity)
 	}
-	contract := bind.NewBoundContract(address, abi, nil, nil, nil)
-	err = contract.UnpackLog(&entity, "Frob", ethLog)
-	entity.TransactionIndex = ethLog.TxIndex
-	entity.Raw = ethLog
-	return entity, err
+
+	return entities, nil
 }
 
-func (FrobConverter) ToModel(frob FrobEntity) (FrobModel, error) {
-	rawLog, err := json.Marshal(frob.Raw)
-	if err != nil {
-		return FrobModel{}, err
+func (FrobConverter) ToModels(entities []FrobEntity) ([]FrobModel, error) {
+	var models []FrobModel
+	for _, entity := range entities {
+		rawLog, err := json.Marshal(entity.Raw)
+		if err != nil {
+			return nil, err
+		}
+		model := FrobModel{
+			Ilk:              entity.Ilk[:],
+			Urn:              entity.Urn[:],
+			Ink:              entity.Ink.String(),
+			Art:              entity.Art.String(),
+			Dink:             entity.Dink.String(),
+			Dart:             entity.Dart.String(),
+			IArt:             entity.IArt.String(),
+			TransactionIndex: entity.TransactionIndex,
+			Raw:              rawLog,
+		}
+		models = append(models, model)
 	}
-	return FrobModel{
-		Ilk:              frob.Ilk[:],
-		Urn:              frob.Urn[:],
-		Ink:              frob.Ink.String(),
-		Art:              frob.Art.String(),
-		Dink:             frob.Dink.String(),
-		Dart:             frob.Dart.String(),
-		IArt:             frob.IArt.String(),
-		TransactionIndex: frob.TransactionIndex,
-		Raw:              rawLog,
-	}, nil
+	return models, nil
 }

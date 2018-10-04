@@ -34,9 +34,11 @@ var _ = Describe("Bite Converter", func() {
 
 	Describe("ToEntity", func() {
 		It("converts an eth log to a bite entity", func() {
-			entity, err := converter.ToEntity(shared.CatContractAddress, shared.CatABI, test_data.EthBiteLog)
+			entities, err := converter.ToEntities(shared.CatABI, []types.Log{test_data.EthBiteLog})
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(len(entities)).To(Equal(1))
+			entity := entities[0]
 			Expect(entity.Ilk).To(Equal(test_data.BiteEntity.Ilk))
 			Expect(entity.Urn).To(Equal(test_data.BiteEntity.Urn))
 			Expect(entity.Ink).To(Equal(test_data.BiteEntity.Ink))
@@ -49,7 +51,7 @@ var _ = Describe("Bite Converter", func() {
 		})
 
 		It("returns an error if converting log to entity fails", func() {
-			_, err := converter.ToEntity(shared.CatContractAddress, "error abi", test_data.EthBiteLog)
+			_, err := converter.ToEntities("error abi", []types.Log{test_data.EthBiteLog})
 
 			Expect(err).To(HaveOccurred())
 		})
@@ -63,9 +65,11 @@ var _ = Describe("Bite Converter", func() {
 		})
 
 		It("converts an Entity to a Model", func() {
-			model, err := converter.ToModel(test_data.BiteEntity)
+			models, err := converter.ToModels([]bite.BiteEntity{test_data.BiteEntity})
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(len(models)).To(Equal(1))
+			model := models[0]
 			Expect(model).To(Equal(test_data.BiteModel))
 			Expect(model.TransactionIndex).To(Equal(test_data.BiteModel.TransactionIndex))
 		})
@@ -85,9 +89,11 @@ var _ = Describe("Bite Converter", func() {
 				TransactionIndex: 0,
 				Raw:              string(emptyLog),
 			}
-			model, err := converter.ToModel(emptyEntity)
+			models, err := converter.ToModels([]bite.BiteEntity{emptyEntity})
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(len(models)).To(Equal(1))
+			model := models[0]
 			Expect(model).To(Equal(expectedModel))
 		})
 	})

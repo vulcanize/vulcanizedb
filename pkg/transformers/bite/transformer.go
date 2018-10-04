@@ -67,20 +67,26 @@ func (b BiteTransformer) Execute() error {
 			log.Println("Error fetching matching logs:", err)
 			return err
 		}
-
-		for _, ethLog := range ethLogs {
-			entity, err := b.Converter.ToEntity(ethLog.Address.Hex(), config.ContractAbi, ethLog)
-			model, err := b.Converter.ToModel(entity)
+		if len(ethLogs) < 1 {
+			err = b.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
-				log.Println("Error converting logs:", err)
 				return err
 			}
+		}
+		entities, err := b.Converter.ToEntities(config.ContractAbi, ethLogs)
+		if err != nil {
+			return err
+		}
+		model, err := b.Converter.ToModels(entities)
+		if err != nil {
+			log.Println("Error converting logs:", err)
+			return err
+		}
 
-			err = b.Repository.Create(header.Id, model)
-			if err != nil {
-				log.Println("Error persisting bite record:", err)
-				return err
-			}
+		err = b.Repository.Create(header.Id, model)
+		if err != nil {
+			log.Println("Error persisting bite record:", err)
+			return err
 		}
 	}
 

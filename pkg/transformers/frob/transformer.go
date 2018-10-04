@@ -59,19 +59,23 @@ func (transformer FrobTransformer) Execute() error {
 		if err != nil {
 			return err
 		}
-		for _, log := range matchingLogs {
-			entity, err := transformer.Converter.ToEntity(log.Address.Hex(), FrobConfig.ContractAbi, log)
+		if len(matchingLogs) < 1 {
+			err = transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
 				return err
 			}
-			model, err := transformer.Converter.ToModel(entity)
-			if err != nil {
-				return err
-			}
-			err = transformer.Repository.Create(header.Id, model)
-			if err != nil {
-				return err
-			}
+		}
+		entities, err := transformer.Converter.ToEntities(FrobConfig.ContractAbi, matchingLogs)
+		if err != nil {
+			return err
+		}
+		models, err := transformer.Converter.ToModels(entities)
+		if err != nil {
+			return err
+		}
+		err = transformer.Repository.Create(header.Id, models)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

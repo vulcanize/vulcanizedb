@@ -24,26 +24,34 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (PitFileStabilityFeeModel, error)
+	ToModels(ethLogs []types.Log) ([]PitFileStabilityFeeModel, error)
 }
 
 type PitFileStabilityFeeConverter struct{}
 
-func (PitFileStabilityFeeConverter) ToModel(ethLog types.Log) (PitFileStabilityFeeModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return PitFileStabilityFeeModel{}, err
-	}
-	what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	data := common.HexToAddress(ethLog.Topics[3].String()).Hex()
+func (PitFileStabilityFeeConverter) ToModels(ethLogs []types.Log) ([]PitFileStabilityFeeModel, error) {
+	var models []PitFileStabilityFeeModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		data := common.HexToAddress(ethLog.Topics[3].String()).Hex()
 
-	raw, err := json.Marshal(ethLog)
-	return PitFileStabilityFeeModel{
-		What:             what,
-		Data:             data,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := PitFileStabilityFeeModel{
+			What:             what,
+			Data:             data,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
+	}
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

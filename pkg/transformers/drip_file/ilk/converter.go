@@ -25,28 +25,36 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (DripFileIlkModel, error)
+	ToModels(ethLogs []types.Log) ([]DripFileIlkModel, error)
 }
 
 type DripFileIlkConverter struct{}
 
-func (DripFileIlkConverter) ToModel(ethLog types.Log) (DripFileIlkModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return DripFileIlkModel{}, err
+func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]DripFileIlkModel, error) {
+	var models []DripFileIlkModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		vow := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
+		taxBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
+		tax := big.NewInt(0).SetBytes(taxBytes).String()
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := DripFileIlkModel{
+			Ilk:              ilk,
+			Vow:              vow,
+			Tax:              tax,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
 	}
-	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	vow := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-	taxBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
-	tax := big.NewInt(0).SetBytes(taxBytes).String()
-	raw, err := json.Marshal(ethLog)
-	return DripFileIlkModel{
-		Ilk:              ilk,
-		Vow:              vow,
-		Tax:              tax,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

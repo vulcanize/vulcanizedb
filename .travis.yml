@@ -16,14 +16,20 @@ before_install:
   - make installtools
   - bash ./scripts/install-postgres-10.sh
   - npm install -g ganache-cli
+  - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  - sudo apt-get update && sudo apt-get install yarn
 
 before_script:
   - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
   - bash ./pkg/transformers/start_test_chain.sh
+  - cd postgraphile && yarn
 
 script:
+  - yarn test
+  - cd ../
   - make test
 
 notifications:

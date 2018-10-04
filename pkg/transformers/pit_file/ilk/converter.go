@@ -25,29 +25,37 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (PitFileIlkModel, error)
+	ToModels(ethLogs []types.Log) ([]PitFileIlkModel, error)
 }
 
 type PitFileIlkConverter struct{}
 
-func (PitFileIlkConverter) ToModel(ethLog types.Log) (PitFileIlkModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return PitFileIlkModel{}, err
-	}
-	ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-	what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-	riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
-	risk := big.NewInt(0).SetBytes(riskBytes).String()
+func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]PitFileIlkModel, error) {
+	var models []PitFileIlkModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
+		riskBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
+		risk := big.NewInt(0).SetBytes(riskBytes).String()
 
-	raw, err := json.Marshal(ethLog)
-	return PitFileIlkModel{
-		Ilk:              ilk,
-		What:             what,
-		Data:             risk,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+		raw, err := json.Marshal(ethLog)
+		if err != nil {
+			return nil, err
+		}
+		model := PitFileIlkModel{
+			Ilk:              ilk,
+			What:             what,
+			Data:             risk,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+		models = append(models, model)
+	}
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

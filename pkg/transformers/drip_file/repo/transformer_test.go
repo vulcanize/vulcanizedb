@@ -97,6 +97,42 @@ var _ = Describe("Drip file repo transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
+	It("marks header checked if no logs returned", func() {
+		mockConverter := &repo_mocks.MockDripFileRepoConverter{}
+		mockRepository := &repo_mocks.MockDripFileRepoRepository{}
+		headerID := int64(123)
+		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := repo.DripFileRepoTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		mockConverter := &repo_mocks.MockDripFileRepoConverter{}
+		mockRepository := &repo_mocks.MockDripFileRepoRepository{}
+		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
+		transformer := repo.DripFileRepoTransformer{
+			Converter:  mockConverter,
+			Fetcher:    mockFetcher,
+			Repository: mockRepository,
+		}
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
 	It("converts matching logs", func() {
 		converter := &repo_mocks.MockDripFileRepoConverter{}
 		fetcher := &mocks.MockLogFetcher{}
@@ -112,7 +148,7 @@ var _ = Describe("Drip file repo transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedLog).To(Equal(test_data.EthDripFileRepoLog))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthDripFileRepoLog}))
 	})
 
 	It("returns error if converter returns error", func() {
@@ -151,7 +187,7 @@ var _ = Describe("Drip file repo transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModel).To(Equal(test_data.DripFileRepoModel))
+		Expect(repository.PassedModels).To(Equal([]repo.DripFileRepoModel{test_data.DripFileRepoModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {

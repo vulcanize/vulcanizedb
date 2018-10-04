@@ -20,7 +20,8 @@ import (
 )
 
 type Repository interface {
-	Create(headerID int64, model BiteModel) error
+	Create(headerID int64, models []BiteModel) error
+	MarkHeaderChecked(headerID int64) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
@@ -32,26 +33,48 @@ func NewBiteRepository(db *postgres.DB) Repository {
 	return BiteRepository{db: db}
 }
 
-func (repository BiteRepository) Create(headerID int64, model BiteModel) error {
-	_, err := repository.db.Exec(
-		`INSERT into maker.bite (header_id, id, ilk, urn, ink, art, iart, tab, flip, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-		headerID, model.Id, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.Flip, model.TransactionIndex, model.Raw,
-	)
-
+func (repository BiteRepository) Create(headerID int64, models []BiteModel) error {
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
-
-	return nil
+	for _, model := range models {
+		_, err := tx.Exec(
+			`INSERT into maker.bite (header_id, id, ilk, urn, ink, art, iart, tab, flip, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+			headerID, model.Id, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.Flip, model.TransactionIndex, model.Raw,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, bite_checked)
+		VALUES ($1, $2) 
+	ON CONFLICT (header_id) DO
+		UPDATE SET bite_checked = $2`, headerID, true)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
+
+func (repository BiteRepository) MarkHeaderChecked(headerID int64) error {
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, bite_checked)
+		VALUES ($1, $2) 
+	ON CONFLICT (header_id) DO
+		UPDATE SET bite_checked = $2`, headerID, true)
+	return err
+}
+
 func (repository BiteRepository) MissingHeaders(startingBlockNumber int64, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN maker.bite on headers.id = header_id
-               WHERE header_id ISNULL
+               LEFT JOIN checked_headers on headers.id = header_id
+               WHERE (header_id ISNULL OR bite_checked IS FALSE)
                AND headers.block_number >= $1
                AND headers.block_number <= $2
                AND headers.eth_node_fingerprint = $3`,

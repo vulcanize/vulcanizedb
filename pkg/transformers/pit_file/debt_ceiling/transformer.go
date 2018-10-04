@@ -60,15 +60,19 @@ func (transformer PitFileDebtCeilingTransformer) Execute() error {
 		if err != nil {
 			return err
 		}
-		for _, log := range matchingLogs {
-			model, err := transformer.Converter.ToModel(log)
+		if len(matchingLogs) < 1 {
+			err = transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
 				return err
 			}
-			err = transformer.Repository.Create(header.Id, model)
-			if err != nil {
-				return err
-			}
+		}
+		model, err := transformer.Converter.ToModels(matchingLogs)
+		if err != nil {
+			return err
+		}
+		err = transformer.Repository.Create(header.Id, model)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
