@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.3
--- Dumped by pg_dump version 10.3
+-- Dumped from database version 10.4
+-- Dumped by pg_dump version 10.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -64,8 +64,8 @@ SET default_with_oids = false;
 CREATE TABLE maker.bite (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk bytea,
-    urn bytea,
+    ilk text,
+    urn text,
     ink character varying,
     art character varying,
     iart character varying,
@@ -490,8 +490,8 @@ ALTER SEQUENCE maker.flop_kick_id_seq OWNED BY maker.flop_kick.id;
 CREATE TABLE maker.frob (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk bytea,
-    urn bytea,
+    ilk text,
+    urn text,
     dink numeric,
     dart numeric,
     ink numeric,
