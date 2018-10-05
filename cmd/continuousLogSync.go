@@ -87,12 +87,17 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap := make(map[string]shared2.TransformerInitializer)
 
 	transformerInitializerMap["bite"] = transformers.BiteTransformerInitializer
+	transformerInitializerMap["catFileChopLump"] = transformers.CatFileChopLumpTransformerInitializer
+	transformerInitializerMap["catFileFlip"] = transformers.CatFileFlipTransformerInitializer
+	transformerInitializerMap["catFilePitVow"] = transformers.CatFilePitVowTransformerInitializer
 	transformerInitializerMap["deal"] = transformers.DealTransformerInitializer
 	transformerInitializerMap["dent"] = transformers.DentTransformerInitializer
 	transformerInitializerMap["dripDrip"] = transformers.DripDripTransformerInitializer
 	transformerInitializerMap["dripFileIlk"] = transformers.DripFileIlkTransformerInitializer
 	transformerInitializerMap["dripFileRepo"] = transformers.DripFileRepoTransformerInitializer
+	transformerInitializerMap["dripFileVow"] = transformers.DripFileVowTransfromerInitializer
 	transformerInitializerMap["flipKick"] = transformers.FlipKickTransformerInitializer
+	transformerInitializerMap["flopKick"] = transformers.FlopKickTransformerInitializer
 	transformerInitializerMap["frob"] = transformers.FrobTransformerInitializer
 	transformerInitializerMap["pitFileDebtCeiling"] = transformers.PitFileDebtCeilingTransformerInitializer
 	transformerInitializerMap["pitFileIlk"] = transformers.PitFileIlkTransformerInitializer
