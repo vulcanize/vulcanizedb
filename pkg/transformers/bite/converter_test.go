@@ -79,8 +79,8 @@ var _ = Describe("Bite Converter", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expectedModel := bite.BiteModel{
 				Id:               "1",
-				Ilk:              "",
-				Urn:              "",
+				Ilk:              "0x0000000000000000000000000000000000000000",
+				Urn:              "0x0000000000000000000000000000000000000000",
 				Ink:              "",
 				Art:              "",
 				IArt:             "",
