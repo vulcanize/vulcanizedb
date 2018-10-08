@@ -1,0 +1,7 @@
+ALTER TABLE maker.bite
+  ALTER COLUMN ilk SET DATA TYPE bytea,
+  ALTER COLUMN urn SET DATA TYPE bytea;
+
+ALTER TABLE maker.frob
+  ALTER COLUMN ilk SET DATA TYPE bytea,
+  ALTER COLUMN urn SET DATA TYPE bytea;

@@ -21,8 +21,8 @@ import (
 
 type BiteEntity struct {
 	Id               *big.Int
-	Ilk              string
-	Urn              string
+	Ilk              [32]byte
+	Urn              [32]byte
 	Ink              *big.Int
 	Art              *big.Int
 	Tab              *big.Int
