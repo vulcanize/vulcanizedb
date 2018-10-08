@@ -104,6 +104,7 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap["pitFileStabilityFee"] = transformers.PitFileStabilityFeeTransformerInitializer
 	transformerInitializerMap["priceFeed"] = transformers.PriceFeedTransformerInitializer
 	transformerInitializerMap["tend"] = transformers.TendTransformerInitializer
+	transformerInitializerMap["vatGrab"] = transformers.VatGrabTransformerInitializer
 	transformerInitializerMap["vatInit"] = transformers.VatInitTransformerInitializer
 	transformerInitializerMap["vatToll"] = transformers.VatTollTransformerInitializer
 	transformerInitializerMap["vatTune"] = transformers.VatTuneTransformerInitializer

@@ -698,6 +698,44 @@ ALTER SEQUENCE maker.tend_id_seq OWNED BY maker.tend.id;
 
 
 --
+-- Name: vat_grab; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_grab (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    urn text,
+    v text,
+    w text,
+    dink numeric,
+    dart numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_grab_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_grab_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_grab_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_grab_id_seq OWNED BY maker.vat_grab.id;
+
+
+--
 -- Name: vat_init; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -905,7 +943,8 @@ CREATE TABLE public.checked_headers (
     pit_file_stability_fee_checked boolean DEFAULT false NOT NULL,
     vat_init_checked boolean DEFAULT false NOT NULL,
     vat_toll_checked boolean DEFAULT false NOT NULL,
-    vat_tune_checked boolean DEFAULT false NOT NULL
+    vat_tune_checked boolean DEFAULT false NOT NULL,
+    vat_grab_checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -1353,6 +1392,13 @@ ALTER TABLE ONLY maker.tend ALTER COLUMN id SET DEFAULT nextval('maker.tend_id_s
 
 
 --
+-- Name: vat_grab id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_grab ALTER COLUMN id SET DEFAULT nextval('maker.vat_grab_id_seq'::regclass);
+
+
+--
 -- Name: vat_init id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1732,6 +1778,22 @@ ALTER TABLE ONLY maker.tend
 
 
 --
+-- Name: vat_grab vat_grab_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_grab
+    ADD CONSTRAINT vat_grab_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_grab vat_grab_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_grab
+    ADD CONSTRAINT vat_grab_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: vat_init vat_init_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -2075,6 +2137,14 @@ ALTER TABLE ONLY maker.price_feeds
 
 ALTER TABLE ONLY maker.tend
     ADD CONSTRAINT tend_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_grab vat_grab_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_grab
+    ADD CONSTRAINT vat_grab_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
