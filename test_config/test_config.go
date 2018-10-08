@@ -89,6 +89,7 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM maker.pit_file_stability_fee")
 	db.MustExec("DELETE FROM maker.price_feeds")
 	db.MustExec("DELETE FROM maker.tend")
+	db.MustExec("DELETE FROM maker.vat_grab")
 	db.MustExec("DELETE FROM maker.vat_init")
 	db.MustExec("DELETE FROM maker.vat_toll")
 	db.MustExec("DELETE FROM maker.vat_tune")
