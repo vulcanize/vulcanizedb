@@ -1478,14 +1478,6 @@ ALTER TABLE ONLY maker.deal
 
 
 --
--- Name: dent dent_bid_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.dent
-    ADD CONSTRAINT dent_bid_id_key UNIQUE (bid_id);
-
-
---
 -- Name: dent dent_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -1675,14 +1667,6 @@ ALTER TABLE ONLY maker.price_feeds
 
 ALTER TABLE ONLY maker.price_feeds
     ADD CONSTRAINT price_feeds_pkey PRIMARY KEY (id);
-
-
---
--- Name: tend tend_bid_id_key; Type: CONSTRAINT; Schema: maker; Owner: -
---
-
-ALTER TABLE ONLY maker.tend
-    ADD CONSTRAINT tend_bid_id_key UNIQUE (bid_id);
 
 
 --
