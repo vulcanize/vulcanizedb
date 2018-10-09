@@ -33,14 +33,16 @@ var (
 
 var (
 	// need to set bytes as 0 or else the big Int 0 evaluates differently from the one unpacked by the abi
-	art     = big.NewInt(20)
-	dink    = big.NewInt(10)
-	dart    = big.NewInt(0).SetBytes([]byte{0})
-	iArt    = big.NewInt(25)
-	frobLad = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 217, 34, 137, 65, 83, 190, 158, 239, 123, 114, 24, 220, 86, 93, 29, 12, 226, 160, 146}
-	gem, _  = big.NewInt(0).SetString("115792089237316195423570985008687907853269984665640564039457584007913129639926", 10)
-	ink     = big.NewInt(15)
-	ilk     = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	art           = big.NewInt(20)
+	dink          = big.NewInt(10)
+	dart          = big.NewInt(0).SetBytes([]byte{0})
+	iArt          = big.NewInt(25)
+	frobLad       = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 217, 34, 137, 65, 83, 190, 158, 239, 123, 114, 24, 220, 86, 93, 29, 12, 226, 160, 146}
+	gem, _        = big.NewInt(0).SetString("115792089237316195423570985008687907853269984665640564039457584007913129639926", 10)
+	ink           = big.NewInt(15)
+	ilk           = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	frobIlkString = "0x66616b6520696c6B000000000000000000000000"
+	frobUrnString = "0x00000000000000000000000064D922894153BE9E"
 )
 
 var EthFrobLog = types.Log{
@@ -73,8 +75,8 @@ var FrobEntity = frob.FrobEntity{
 
 var rawFrobLog, _ = json.Marshal(EthFrobLog)
 var FrobModel = frob.FrobModel{
-	Ilk:              ilk[:],
-	Urn:              frobLad[:],
+	Ilk:              frobIlkString,
+	Urn:              frobUrnString,
 	Ink:              ink.String(),
 	Art:              art.String(),
 	Dink:             dink.String(),

@@ -19,6 +19,7 @@ package bite
 import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -34,7 +35,7 @@ type BiteConverter struct{}
 func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error) {
 	var entities []BiteEntity
 	for _, ethLog := range ethLogs {
-		entity := BiteEntity{}
+		entity := &BiteEntity{}
 		address := ethLog.Address
 		abi, err := geth.ParseAbi(contractAbi)
 		if err != nil {
@@ -43,7 +44,7 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
 
-		err = contract.UnpackLog(&entity, "Bite", ethLog)
+		err = contract.UnpackLog(entity, "Bite", ethLog)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +52,7 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 		entity.Raw = ethLog
 		entity.TransactionIndex = ethLog.TxIndex
 
-		entities = append(entities, entity)
+		entities = append(entities, *entity)
 	}
 
 	return entities, nil
@@ -61,8 +62,8 @@ func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, err
 	var models []BiteModel
 	for _, entity := range entities {
 		id := entity.Id
-		ilk := entity.Ilk[:]
-		urn := entity.Urn[:]
+		ilk := common.BytesToAddress(entity.Ilk[:common.AddressLength]).String()
+		urn := common.BytesToAddress(entity.Urn[:common.AddressLength]).String()
 		ink := entity.Ink
 		art := entity.Art
 		iArt := entity.IArt
