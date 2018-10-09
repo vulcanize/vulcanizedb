@@ -42,6 +42,8 @@ var (
 	biteRawString  = string(biteRawJson)
 	biteIlk        = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	biteLad        = [32]byte{102, 97, 107, 101, 32, 108, 97, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	biteIlkString  = "0x66616b6520696c6B000000000000000000000000"
+	biteLadString  = "0x66616B65206c6164000000000000000000000000"
 	biteId         = int64(1)
 )
 
@@ -76,8 +78,8 @@ var BiteEntity = bite.BiteEntity{
 
 var BiteModel = bite.BiteModel{
 	Id:               strconv.FormatInt(biteId, 10),
-	Ilk:              biteIlk[:],
-	Urn:              biteLad[:],
+	Ilk:              biteIlkString,
+	Urn:              biteLadString,
 	Ink:              biteInk.String(),
 	Art:              biteArt.String(),
 	Tab:              biteTab.String(),

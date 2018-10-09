@@ -1,0 +1,7 @@
+ALTER TABLE maker.bite
+  ALTER COLUMN ilk SET DATA TYPE text,
+  ALTER COLUMN urn SET DATA TYPE text;
+
+ALTER TABLE maker.frob
+  ALTER COLUMN ilk SET DATA TYPE text,
+  ALTER COLUMN urn SET DATA TYPE text;

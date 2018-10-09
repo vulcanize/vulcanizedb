@@ -15,8 +15,8 @@
 package frob
 
 type FrobModel struct {
-	Ilk              []byte
-	Urn              []byte
+	Ilk              string
+	Urn              string
 	Ink              string
 	Art              string
 	Dink             string
