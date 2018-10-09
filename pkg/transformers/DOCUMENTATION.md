@@ -23,6 +23,22 @@ The transformer process for each of these different log types is the same, excep
 
 ## Creating a Transformer
 
+1. Pull an example event (from kovan / ganache etc.)
+1. Add event sig to [`constants.go`](./shared/constants.go)
+1. Write a test for the event sig in [`event_signature_generator_test.go`](./shared/event_signature_generator_test.go)
+1. Create DB table (using [`create_migration`](../../scripts/create_migration))
+1. Create columns in `checked_headers` in the _same_ migration
+1. Add a line to clean the new table `CleanTestDB` (in [`test_config.go`](../../test_config/test_config.go))
+1. Define `model.go`
+1. Create test event in [`test_data`](./test_data)
+1. Write converter + converter tests
+1. Write repository + repository tests
+1. Create converter + repository mocks
+1. Create transformer + transformer tests
+1. Wire up transformer in [`transformers.go`](./transformers.go)
+1. Wire up transformer in [`continuousLogSync.go`](../../cmd/continuousLogSync.go)
+1. Manually trigger an event and check that it gets persisted to postgres
+
 **Fetching Logs**
 
 1. Generate an example raw log event, by either:
