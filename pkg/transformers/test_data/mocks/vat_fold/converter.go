@@ -23,12 +23,12 @@ import (
 
 type MockVatFoldConverter struct {
 	converterErr error
-	PassedLog    types.Log
+	PassedLogs   []types.Log
 }
 
-func (converter *MockVatFoldConverter) ToModel(ethLog types.Log) (vat_fold.VatFoldModel, error) {
-	converter.PassedLog = ethLog
-	return test_data.VatFoldModel, converter.converterErr
+func (converter *MockVatFoldConverter) ToModels(ethLogs []types.Log) ([]vat_fold.VatFoldModel, error) {
+	converter.PassedLogs = ethLogs
+	return []vat_fold.VatFoldModel{test_data.VatFoldModel}, converter.converterErr
 }
 
 func (converter *MockVatFoldConverter) SetConverterError(e error) {

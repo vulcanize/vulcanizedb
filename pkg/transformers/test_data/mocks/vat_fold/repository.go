@@ -15,30 +15,43 @@
 package vat_fold
 
 import (
+	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
 )
 
 type MockVatFoldRepository struct {
-	createErr                 error
-	missingHeaders            []core.Header
-	missingHeadersErr         error
-	PassedStartingBlockNumber int64
-	PassedEndingBlockNumber   int64
-	PassedHeaderID            int64
-	PassedModel               vat_fold.VatFoldModel
+	createErr                       error
+	markHeaderCheckedErr            error
+	markHeaderCheckedPassedHeaderID int64
+	missingHeaders                  []core.Header
+	missingHeadersErr               error
+	PassedStartingBlockNumber       int64
+	PassedEndingBlockNumber         int64
+	PassedHeaderID                  int64
+	PassedModels                    []vat_fold.VatFoldModel
 }
 
-func (repository *MockVatFoldRepository) Create(headerID int64, model vat_fold.VatFoldModel) error {
+func (repository *MockVatFoldRepository) Create(headerID int64, models []vat_fold.VatFoldModel) error {
 	repository.PassedHeaderID = headerID
-	repository.PassedModel = model
+	repository.PassedModels = models
 	return repository.createErr
+}
+
+func (repository *MockVatFoldRepository) MarkHeaderChecked(headerID int64) error {
+	repository.markHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
 }
 
 func (repository *MockVatFoldRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockVatFoldRepository) SetMarkHeaderCheckedErr(e error) {
+	repository.markHeaderCheckedErr = e
 }
 
 func (repository *MockVatFoldRepository) SetMissingHeadersErr(e error) {
@@ -51,4 +64,8 @@ func (repository *MockVatFoldRepository) SetMissingHeaders(headers []core.Header
 
 func (repository *MockVatFoldRepository) SetCreateError(e error) {
 	repository.createErr = e
+}
+
+func (repository *MockVatFoldRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
+	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }

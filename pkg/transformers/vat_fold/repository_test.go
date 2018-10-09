@@ -46,7 +46,7 @@ var _ = Describe("", func() {
 			headerID = id
 
 			vatFoldRepository = vat_fold.NewVatFoldRepository(db)
-			err = vatFoldRepository.Create(headerID, test_data.VatFoldModel)
+			err = vatFoldRepository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -63,7 +63,7 @@ var _ = Describe("", func() {
 		})
 
 		It("does not duplicate vat events", func() {
-			err := vatFoldRepository.Create(headerID, test_data.VatFoldModel)
+			err := vatFoldRepository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -164,7 +164,10 @@ func initRepository(options repositoryOptions) vat_fold.VatFoldRepository {
 	}
 
 	if options.storeEvent {
-		err := vatfoldRepository.Create(headerIDs[options.storedEventBlockNumber], test_data.VatFoldModel)
+		err := vatfoldRepository.Create(
+			headerIDs[options.storedEventBlockNumber],
+			[]vat_fold.VatFoldModel{test_data.VatFoldModel},
+		)
 		Expect(err).NotTo(HaveOccurred())
 	}
 
