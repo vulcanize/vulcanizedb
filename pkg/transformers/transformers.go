@@ -27,6 +27,7 @@ import (
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
@@ -72,7 +73,12 @@ var (
 	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
 	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
 	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
-	VatMoveTransformerInitializer             = vat_move.VatMoveTransformerInitializer{Config: vat_move.VatMoveConfig}.NewVatMoveTransformer
+	VatMoveTransformerInitializer             = factories.Transformer{
+		Config: 	vat_move.VatMoveConfig,
+		Converter:	&vat_move.VatMoveConverter{},
+		Repository: &vat_move.VatMoveRepository{},
+		Fetcher:	&shared.Fetcher{},
+	}.NewTransformer
 	VatHealTransformerInitializer             = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
 	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
 	VatSlipTransformerInitializer             = vat_slip.VatSlipTransformerInitializer{Config: vat_slip.VatSlipConfig}.NewVatSlipTransformer

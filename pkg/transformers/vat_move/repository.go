@@ -19,29 +19,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerID int64, models []VatMoveModel) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-	MarkHeaderChecked(headerID int64) error
-}
-
 type VatMoveRepository struct {
-	db *postgres.DB
+	DB *postgres.DB
 }
 
-func NewVatMoveRepository(db *postgres.DB) VatMoveRepository {
-	return VatMoveRepository{
-		db: db,
-	}
-}
-
-func (repository VatMoveRepository) Create(headerID int64, models []VatMoveModel) error {
-	tx, err := repository.db.Begin()
+func (repository VatMoveRepository) Create(headerID int64, models []interface{}) error {
+	tx, err := repository.DB.Begin()
 	if err != nil {
 		return err
 	}
 
-	for _, vatMove := range models {
+	var vatMove VatMoveModel
+	for _, model := range models {
+		vatMove = model.(VatMoveModel)
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_move (header_id, src, dst, rad, tx_idx, raw_log)
         	VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`,
@@ -71,7 +61,7 @@ func (repository VatMoveRepository) Create(headerID int64, models []VatMoveModel
 
 func (repository VatMoveRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := repository.db.Select(
+	err := repository.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
                LEFT JOIN checked_headers on headers.id = header_id
@@ -81,16 +71,20 @@ func (repository VatMoveRepository) MissingHeaders(startingBlockNumber, endingBl
                AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		repository.db.Node.ID,
+		repository.DB.Node.ID,
 	)
 
 	return result, err
 }
 
 func (repository VatMoveRepository) MarkHeaderChecked(headerID int64) error {
-	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vat_move_checked)
+	_, err := repository.DB.Exec(`INSERT INTO public.checked_headers (header_id, vat_move_checked)
 		VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET vat_move_checked = $2`, headerID, true)
 	return err
+}
+
+func (repository *VatMoveRepository) SetDB(db *postgres.DB) {
+	repository.DB = db
 }
