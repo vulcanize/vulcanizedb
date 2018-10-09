@@ -82,94 +82,86 @@ var _ = Describe("", func() {
 
 	Describe("MissingHeaders", func() {
 
-		It("returns headers with no associated vat event", func() {
-			startBlock := int64(1)
-			eventBlock := int64(2)
-			finalBlock := int64(3)
-			blockNumbers := []int64{startBlock, eventBlock, finalBlock, finalBlock + 1}
+		It("returns headers that haven't been checked", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			startingBlockNumber := int64(1)
+			vatGrabBlockNumber := int64(2)
+			endingBlockNumber := int64(3)
+			blockNumbers := []int64{startingBlockNumber, vatGrabBlockNumber, endingBlockNumber, endingBlockNumber + 1}
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			vatFoldRepository := vat_fold.NewVatFoldRepository(db)
+			err := vatFoldRepository.MarkHeaderChecked(headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
 
-			repository := initRepository(
-				repositoryOptions{
-					cleanDB:                true,
-					blockNumbers:           blockNumbers,
-					storeEvent:             true,
-					storedEventBlockNumber: 1,
-				},
-			)
-
-			headers, err := repository.MissingHeaders(startBlock, finalBlock)
+			headers, err := vatFoldRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startBlock), Equal(finalBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startBlock), Equal(finalBlock)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+		})
+
+		It("only treats headers as checked if vat fold logs have been checked", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			startingBlockNumber := int64(1)
+			vatGrabdBlockNumber := int64(2)
+			endingBlockNumber := int64(3)
+			blockNumbers := []int64{startingBlockNumber, vatGrabdBlockNumber, endingBlockNumber, endingBlockNumber + 1}
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			vatFoldRepository := vat_fold.NewVatFoldRepository(db)
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := vatFoldRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatGrabdBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatGrabdBlockNumber)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatGrabdBlockNumber)))
 		})
 
 		It("only returns headers associated with the current node", func() {
+			db := test_config.NewTestDB(core.Node{})
+			test_config.CleanTestDB(db)
 			blockNumbers := []int64{1, 2, 3}
+			headerRepository := repositories.NewHeaderRepository(db)
+			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
+			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
+			var headerIDs []int64
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				Expect(err).NotTo(HaveOccurred())
+				headerIDs = append(headerIDs, headerID)
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				Expect(err).NotTo(HaveOccurred())
+			}
+			vatFoldRepository := vat_fold.NewVatFoldRepository(db)
+			vatFoldRepositoryTwo := vat_fold.NewVatFoldRepository(dbTwo)
+			err := vatFoldRepository.MarkHeaderChecked(headerIDs[0])
+			Expect(err).NotTo(HaveOccurred())
 
-			repositoryOne := initRepository(
-				repositoryOptions{
-					blockNumbers: blockNumbers,
-					nodeID:       "first",
-					cleanDB:      true,
-					storeEvent:   true,
-				},
-			)
-
-			repositoryTwo := initRepository(
-				repositoryOptions{
-					blockNumbers: blockNumbers,
-					nodeID:       "second",
-					cleanDB:      false,
-					storeEvent:   false,
-				},
-			)
-
-			nodeOneMissingHeaders, err := repositoryOne.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			nodeOneMissingHeaders, err := vatFoldRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
 
-			nodeTwoMissingHeaders, err := repositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			nodeTwoMissingHeaders, err := vatFoldRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
 		})
 	})
 })
-
-// -------------------------------------------------------------------------------------------
-
-type repositoryOptions struct {
-	blockNumbers           []int64
-	nodeID                 string
-	cleanDB                bool
-	storeEvent             bool
-	storedEventBlockNumber int64
-}
-
-func initRepository(options repositoryOptions) vat_fold.VatFoldRepository {
-	db := test_config.NewTestDB(core.Node{ID: options.nodeID})
-	if options.cleanDB {
-		test_config.CleanTestDB(db)
-	}
-
-	headerRepository := repositories.NewHeaderRepository(db)
-	vatfoldRepository := vat_fold.NewVatFoldRepository(db)
-
-	var headerIDs []int64
-	for _, n := range options.blockNumbers {
-		headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-		headerIDs = append(headerIDs, headerID)
-		Expect(err).NotTo(HaveOccurred())
-	}
-
-	if options.storeEvent {
-		err := vatfoldRepository.Create(
-			headerIDs[options.storedEventBlockNumber],
-			[]vat_fold.VatFoldModel{test_data.VatFoldModel},
-		)
-		Expect(err).NotTo(HaveOccurred())
-	}
-
-	return vatfoldRepository
-}
