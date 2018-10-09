@@ -38,7 +38,7 @@ var _ = Describe("Vat Move", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		vatMoveRepository = vat_move.NewVatMoveRepository(db)
+		vatMoveRepository = vat_move.VatMoveRepository{DB: db}
 	})
 
 	Describe("Create", func() {
@@ -48,7 +48,7 @@ var _ = Describe("Vat Move", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err = vatMoveRepository.Create(headerID, []vat_move.VatMoveModel{test_data.VatMoveModel})
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -71,7 +71,7 @@ var _ = Describe("Vat Move", func() {
 		})
 
 		It("returns an error if insertion fails", func() {
-			err = vatMoveRepository.Create(headerID, []vat_move.VatMoveModel{test_data.VatMoveModel})
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -145,8 +145,8 @@ var _ = Describe("Vat Move", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatMoveRepositoryTwo := vat_move.NewVatMoveRepository(dbTwo)
-			err := vatMoveRepository.Create(headerIDs[0], []vat_move.VatMoveModel{test_data.VatMoveModel})
+			vatMoveRepositoryTwo := vat_move.VatMoveRepository{DB: dbTwo}
+			err := vatMoveRepository.Create(headerIDs[0], []interface{}{test_data.VatMoveModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := vatMoveRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
@@ -157,7 +157,6 @@ var _ = Describe("Vat Move", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
 		})
-
 	})
 
 	Describe("MarkHeaderChecked", func() {
