@@ -28,8 +28,17 @@ type LogFetcher interface {
 	FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error)
 }
 
+type SettableLogFetcher interface {
+	LogFetcher
+	SetBC(bc core.BlockChain)
+}
+
 type Fetcher struct {
 	blockChain core.BlockChain
+}
+
+func (fetcher *Fetcher) SetBC(bc core.BlockChain) {
+	fetcher.blockChain = bc
 }
 
 func NewFetcher(blockchain core.BlockChain) Fetcher {
