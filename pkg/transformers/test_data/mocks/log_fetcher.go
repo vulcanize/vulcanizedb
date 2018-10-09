@@ -17,6 +17,7 @@ package mocks
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type MockLogFetcher struct {
@@ -34,6 +35,8 @@ func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]comm
 
 	return mlf.FetchedLogs, mlf.fetcherError
 }
+
+func (mlf *MockLogFetcher) SetBC(_ core.BlockChain) {}
 
 func (mlf *MockLogFetcher) SetFetcherError(err error) {
 	mlf.fetcherError = err
