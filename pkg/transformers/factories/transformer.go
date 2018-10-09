@@ -57,13 +57,19 @@ func (transformer Transformer) Execute() error {
 
 	log.Printf("Fetching vat move event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
-		// TODO Needs signature in config
-		topics := [][]common.Hash{{common.HexToHash(shared.VatMoveSignature)}}
+		// Grab topics from config
+		var topics [][]common.Hash
+		for _, topic := range transformer.Config.Topics {
+			topics = append(topics, []common.Hash{common.HexToHash(topic)})
+		}
+
+		// Fetch the missing logs for a given header
 		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
 
+		// No matching logs, mark the header as checked for this type of logs
 		if len(matchingLogs) < 1 {
 			err := transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
@@ -76,7 +82,8 @@ func (transformer Transformer) Execute() error {
 			return err
 		}
 
-		// Can't assert the whole collection, need to wash types individually
+		// Can't assert a whole collection, wash types individually for Create,
+		// which needs interface{}
 		var typelessModels []interface{}
 		for _, m := range models {
 			typelessModels = append(typelessModels, m.(interface{}))
