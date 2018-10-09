@@ -20,7 +20,8 @@ import (
 )
 
 type Repository interface {
-	Create(headerID int64, model VatFoldModel) error
+	Create(headerID int64, models []VatFoldModel) error
+	MarkHeaderChecked(headerID int64) error
 	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 }
 
@@ -34,10 +35,31 @@ func NewVatFoldRepository(db *postgres.DB) VatFoldRepository {
 	}
 }
 
-func (repository VatFoldRepository) Create(headerID int64, model VatFoldModel) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.vat_fold (header_id, ilk, urn, rate, raw_log, tx_idx)
-		VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-		headerID, model.Ilk, model.Urn, model.Rate, model.Raw, model.TransactionIndex)
+func (repository VatFoldRepository) Create(headerID int64, models []VatFoldModel) error {
+	tx, err := repository.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, model := range models {
+		_, err = tx.Exec(
+			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
+			headerID, model.Ilk, model.Urn, model.Rate, model.TransactionIndex, model.Raw,
+		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (repository VatFoldRepository) MarkHeaderChecked(headerID int64) error {
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vat_fold_checked)
+		VALUES ($1, $2) 
+	ON CONFLICT (header_id) DO
+		UPDATE SET vat_fold_checked = $2`, headerID, true)
 	return err
 }
 
@@ -46,8 +68,8 @@ func (repository VatFoldRepository) MissingHeaders(startingBlockNumber, endingBl
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN maker.vat_fold on headers.id = header_id
-               WHERE header_id ISNULL
+               LEFT JOIN checked_headers on headers.id = header_id
+               WHERE (header_id ISNULL OR vat_fold_checked IS FALSE)
                AND headers.block_number >= $1
                AND headers.block_number <= $2
                AND headers.eth_node_fingerprint = $3`,
@@ -55,6 +77,5 @@ func (repository VatFoldRepository) MissingHeaders(startingBlockNumber, endingBl
 		endingBlockNumber,
 		repository.db.Node.ID,
 	)
-
 	return result, err
 }

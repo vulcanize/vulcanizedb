@@ -26,29 +26,35 @@ import (
 )
 
 type Converter interface {
-	ToModel(ethLog types.Log) (VatFoldModel, error)
+	ToModels(ethLogs []types.Log) ([]VatFoldModel, error)
 }
 
 type VatFoldConverter struct{}
 
-func (VatFoldConverter) ToModel(ethLog types.Log) (VatFoldModel, error) {
-	err := verifyLog(ethLog)
-	if err != nil {
-		return VatFoldModel{}, err
+func (VatFoldConverter) ToModels(ethLogs []types.Log) ([]VatFoldModel, error) {
+	var models []VatFoldModel
+	for _, ethLog := range ethLogs {
+		err := verifyLog(ethLog)
+		if err != nil {
+			return nil, err
+		}
+
+		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()).String()
+		rate := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
+		raw, err := json.Marshal(ethLog)
+
+		model := VatFoldModel{
+			Ilk:              ilk,
+			Urn:              urn,
+			Rate:             rate,
+			TransactionIndex: ethLog.TxIndex,
+			Raw:              raw,
+		}
+
+		models = append(models, model)
 	}
-
-	ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
-	urn := common.HexToAddress(ethLog.Topics[2].String()).String()
-	rate := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
-	raw, err := json.Marshal(ethLog)
-
-	return VatFoldModel{
-		Ilk:              ilk,
-		Urn:              urn,
-		Rate:             rate,
-		TransactionIndex: ethLog.TxIndex,
-		Raw:              raw,
-	}, err
+	return models, nil
 }
 
 func verifyLog(log types.Log) error {

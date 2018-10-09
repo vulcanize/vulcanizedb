@@ -134,7 +134,7 @@ var _ = Describe("Vat fold transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedLog).To(Equal(test_data.EthVatFoldLog))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthVatFoldLog}))
 	})
 
 	It("returns error if converter returns error", func() {
@@ -161,7 +161,7 @@ var _ = Describe("Vat fold transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModel).To(Equal(test_data.VatFoldModel))
+		Expect(repository.PassedModels).To(Equal([]vat_fold.VatFoldModel{test_data.VatFoldModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
