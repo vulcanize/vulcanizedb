@@ -119,6 +119,13 @@ var _ = Describe("Event signature generator", func() {
 				Expect(expected).To(Equal(actual))
 			})
 
+			It("gets the vat heal method signature", func() {
+				expected := "heal(bytes32,bytes32,int256)"
+				actual := shared.GetSolidityMethodSignature(shared.VatABI, "heal")
+
+				Expect(expected).To(Equal(actual))
+			})
+
 			It("gets the vat init method signature", func() {
 				expected := "fold(bytes32,bytes32,int256)"
 				actual := shared.GetSolidityMethodSignature(shared.VatABI, "fold")

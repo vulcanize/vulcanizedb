@@ -29,15 +29,25 @@ import (
 )
 
 var _ = Describe("Vat init repository", func() {
+	var (
+		db                *postgres.DB
+		vatInitRepository vat_init.Repository
+		headerRepository  repositories.HeaderRepository
+		err               error
+		headerID          int64
+	)
+
+	BeforeEach(func() {
+		db = test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
+		vatInitRepository = vat_init.NewVatInitRepository(db)
+		headerRepository = repositories.NewHeaderRepository(db)
+		headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Describe("Create", func() {
 		It("adds a vat event", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			vatInitRepository := vat_init.NewVatInitRepository(db)
-
 			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -50,12 +60,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("does not duplicate vat events", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			vatInitRepository := vat_init.NewVatInitRepository(db)
 			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -66,12 +70,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("removes vat if corresponding header is deleted", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			vatInitRepository := vat_init.NewVatInitRepository(db)
 			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -83,25 +81,19 @@ var _ = Describe("Vat init repository", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
+
+		It("marks the header as checked for vat init logs", func() {
+			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_init_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var (
-			db                *postgres.DB
-			vatInitRepository vat_init.Repository
-			err               error
-			headerID          int64
-		)
-
-		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			vatInitRepository = vat_init.NewVatInitRepository(db)
-		})
-
 		It("creates a row for a new headerID", func() {
 			err = vatInitRepository.MarkHeaderChecked(headerID)
 
@@ -127,9 +119,6 @@ var _ = Describe("Vat init repository", func() {
 
 	Describe("MissingHeaders", func() {
 		It("returns headers that haven't been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
 			startingBlockNumber := int64(1)
 			vatInitBlockNumber := int64(2)
 			endingBlockNumber := int64(3)
@@ -153,8 +142,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("only treats headers as checked if drip drip logs have been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
 			headerRepository := repositories.NewHeaderRepository(db)
 			startingBlockNumber := int64(1)
 			vatInitBlockNumber := int64(2)
@@ -166,11 +153,10 @@ var _ = Describe("Vat init repository", func() {
 				headerIDs = append(headerIDs, headerID)
 				Expect(err).NotTo(HaveOccurred())
 			}
-			VatInitRepository := vat_init.NewVatInitRepository(db)
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := VatInitRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := vatInitRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
@@ -180,10 +166,7 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("only returns headers associated with the current node", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
 			blockNumbers := []int64{1, 2, 3}
-			headerRepository := repositories.NewHeaderRepository(db)
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			var headerIDs []int64
@@ -194,7 +177,6 @@ var _ = Describe("Vat init repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatInitRepository := vat_init.NewVatInitRepository(db)
 			vatInitRepositoryTwo := vat_init.NewVatInitRepository(dbTwo)
 			err := vatInitRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())

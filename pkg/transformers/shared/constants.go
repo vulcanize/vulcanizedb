@@ -55,6 +55,7 @@ var (
 	pitFileIlkMethod          = "file(bytes32,bytes32,uint256)"
 	pitFileStabilityFeeMethod = GetSolidityMethodSignature(PitABI, "file")
 	tendMethod                = GetSolidityMethodSignature(FlipperABI, "tend")
+	vatHealMethod             = GetSolidityMethodSignature(VatABI, "heal")
 	vatGrabMethod             = GetSolidityMethodSignature(VatABI, "grab")
 	vatInitMethod             = GetSolidityMethodSignature(VatABI, "init")
 	vatFoldMethod             = GetSolidityMethodSignature(VatABI, "fold")
@@ -79,6 +80,7 @@ var (
 	PitFileIlkSignature          = GetLogNoteSignature(pitFileIlkMethod)
 	PitFileStabilityFeeSignature = GetLogNoteSignature(pitFileStabilityFeeMethod)
 	TendFunctionSignature        = GetLogNoteSignature(tendMethod)
+	VatHealSignature             = GetLogNoteSignature(vatHealMethod)
 	VatGrabSignature             = GetLogNoteSignature(vatGrabMethod)
 	VatInitSignature             = GetLogNoteSignature(vatInitMethod)
 	VatFoldSignature             = GetLogNoteSignature(vatFoldMethod)

@@ -51,6 +51,14 @@ func (repository VatInitRepository) Create(headerID int64, models []VatInitModel
 			return err
 		}
 	}
+	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, vat_init_checked)
+			VALUES($1, $2)
+		ON CONFLICT (header_id) DO
+			UPDATE SET vat_heal_checked = $2`, headerID, true)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	return tx.Commit()
 }

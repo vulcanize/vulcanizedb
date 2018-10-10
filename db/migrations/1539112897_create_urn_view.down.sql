@@ -1,0 +1,4 @@
+DROP TYPE ilkObject CASCADE;
+DROP TYPE frobObject CASCADE;
+DROP TYPE biteObject CASCADE;
+DROP TYPE customUrn CASCADE;

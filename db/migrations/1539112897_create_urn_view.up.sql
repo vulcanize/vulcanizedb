@@ -1,0 +1,172 @@
+-- ALTER TABLE maker.bite
+--   ALTER COLUMN ink SET DATA TYPE numeric USING ink::numeric,
+--   ALTER COLUMN art SET DATA TYPE numeric USING art::numeric;
+--
+-- CREATE VIEW maker.urn AS (
+--   WITH urn_state AS (
+--     SELECT
+--       ilk, --text
+--       urn, -- text
+--       ink, -- numeric
+--       art, -- numeric`
+--       dink, -- numeric
+--       dart, -- numeric
+--       tx_idx
+--     FROM maker.frob
+--     UNION ALL
+--     SELECT
+--       ilk, -- text
+--       urn, -- text
+--       ink, -- varchar
+--       art, -- varchar
+--       0 AS dink,
+--       0 AS dart,
+--       tx_idx
+--     FROM maker.bite
+--     ORDER BY tx_idx DESC
+--   )
+--   SELECT DISTINCT ON (urn, ilk)
+--     urn_state.ilk,
+--     --     us.ilk, --SELECT the ilk record FROM the ilk view
+--     urn_state.art,
+--     urn_state.ink,
+--     urn_state.dink,
+--     urn_state.dart,
+--     urn_state.urn,
+--     urn_state.tx_idx
+-- --     urn_state.frobs,
+-- --     urn_state.bites,
+--
+--   FROM urn_state
+--   --   ORDER BY id, block DESC, TIME DESC
+-- );
+--
+-- ------------------------
+--
+--
+-- --creating ilk view, and records to populate urns and ilk
+--
+-- create view maker.ilk as (
+-- select distinct on (id)
+-- maker.vat_init.ilk as id,
+-- maker.cat_file_chop_lump.data as chop,
+-- maker.cat_file_chop_lump.data as lump,
+-- maker.cat_file_flip.flip,
+-- maker.drip_file_ilk.vow,
+-- maker.drip_file_ilk.tax
+-- from maker.vat_init
+--
+-- join maker.cat_file_chop_lump on maker.cat_file_chop_lump.ilk = maker.vat_init.ilk
+-- join maker.cat_file_flip on maker.cat_file_flip.ilk = maker.vat_init.ilk
+-- join maker.drip_file_ilk on maker.drip_file_ilk.ilk = maker.vat_init.ilk
+-- );
+--
+-- insert into headers (block_number) values(1);
+-- insert into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx) values(1, 'fake ilk', 'lump', 1, 0);
+-- insert into maker.vat_init (header_id, ilk, tx_idx) values(1, 'fake ilk', 1);
+-- insert into maker.vat_init (header_id, ilk, tx_idx) values(1, 'another fake ilk', 2);
+-- insert into maker.frob (header_id, ilk, urn, dink, dart, ink, art, iart, tx_idx) values(1, 'fake ilk', 'urn1', 1, 2, 3, 4, 5, 2);
+-- insert into maker.frob (header_id, ilk, urn, dink, dart, ink, art, iart, tx_idx) values(1, 'another fake ilk', 'urn1', 1, 2, 3, 4, 5, 3);
+-- insert into maker.bite (header_id, ilk, urn, ink, art, iart, tab, flip, tx_idx) values(1, 'another fake ilk', 'urn1', 1, 2, 3, 4, '5', 4);
+-- insert into maker.bite (header_id, ilk, urn, ink, art, iart, tab, flip, tx_idx) values(1, 'fake ilk', 'urn1', 1, 2, 3, 4, '5', 8);
+--
+-- insert into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx) values (1, 'fake ilk', 'lump', 1, 5);
+-- insert into maker.cat_file_flip (header_id, ilk, flip, tx_idx) values (1, 'fake ilk', 3, 6);
+-- insert into maker.drip_file_ilk (header_id, ilk, vow, tax, tx_idx) values (1, 'fake ilk', 5, 6, 7);
+-- -----------------------------------
+-- CREATE TYPE ilkObject AS ( --this will need to change depending on what the actual Ilk view looks like
+--   ilkId text,
+--   chop numeric,
+--   lump numeric,
+--   tax numeric
+-- );
+--
+-- CREATE OR REPLACE FUNCTION get_ilk ()
+--   RETURNS ilkObject AS
+-- $$
+-- SELECT
+--   id AS ilkId,
+--   chop,
+--   lump,
+--   tax
+-- FROM
+--   maker.ilk
+-- LIMIT 1;
+-- $$
+-- LANGUAGE SQL STABLE;
+--
+-- -----------------------------------
+-- CREATE TYPE frobObject AS (
+--   dink numeric
+-- );
+--
+-- -----------------------------------
+-- CREATE OR REPLACE FUNCTION get_frobs() RETURNS SETOF frobObject AS $$
+-- SELECT
+--   dink
+-- FROM
+--   maker.frob
+-- $$
+-- LANGUAGE SQL STABLE;
+--
+--  -----------------------------------
+--  CREATE TYPE biteObject AS (
+--    id integer,
+--    header_id integer,
+--    ilk text,
+--    ink numeric
+--  );
+--
+--  CREATE OR REPLACE FUNCTION get_bites() RETURNS SETOF biteObject AS $$
+--  SELECT
+--    id,
+--    header_id,
+--    ilk,
+--    ink
+--  FROM
+--    maker.bite
+--  $$
+--  LANGUAGE SQL STABLE;
+--
+-- -- -----------------------------------
+-- -- CREATE TYPE customUrn AS (
+-- --   ilkName text,
+-- --   art numeric,
+-- --   ink numeric,
+-- --   urn text,
+-- --   ilkObj ilkObject,
+-- --   frobs frobObject,
+-- --   bites biteObject
+-- -- );
+-- --
+-- -- -----------------------------------
+-- -- CREATE FUNCTION get_urn () RETURNS customUrn AS $$
+-- -- DECLARE result customUrn;
+-- -- BEGIN
+-- --   WITH u AS (
+-- --       SELECT * FROM maker.urn
+-- --   ),
+-- --       i AS (
+-- --         SELECT * FROM get_ilk() LIMIT 1
+-- --     ),
+-- --       f AS (
+-- --         SELECT * FROM get_frobs()
+-- --     ),
+-- --     b AS (
+-- --       SELECT * from get_bites()
+-- --     )
+-- --
+-- --   SELECT
+-- --     u.ilk::text AS ilkName,
+-- --     u.art::numeric AS art,
+-- --     u.ink::numeric AS ink,
+-- --     u.urn::text AS urn,
+-- --     i AS ilkObj,
+-- --     f AS frobs,
+-- --     b AS bites
+-- --   FROM u, i, f, b
+-- --   into result;
+-- --
+-- --   RETURN result;
+-- -- END;
+-- -- $$ LANGUAGE plpgsql STABLE;
