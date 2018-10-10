@@ -46,6 +46,10 @@ func (repository VatFoldRepository) Create(headerID int64, models []VatFoldModel
 				VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
 			headerID, model.Ilk, model.Urn, model.Rate, model.TransactionIndex, model.Raw,
 		)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 		_, err = tx.Exec(
 			`INSERT INTO public.checked_headers (header_id, vat_fold_checked) 
 				VALUES($1, $2)
