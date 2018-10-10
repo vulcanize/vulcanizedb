@@ -57,6 +57,7 @@ var (
 	tendMethod                = GetSolidityMethodSignature(FlipperABI, "tend")
 	vatGrabMethod             = GetSolidityMethodSignature(VatABI, "grab")
 	vatInitMethod             = GetSolidityMethodSignature(VatABI, "init")
+	vatFoldMethod             = GetSolidityMethodSignature(VatABI, "fold")
 	vatTollMethod             = GetSolidityMethodSignature(VatABI, "toll")
 	vatTuneMethod             = GetSolidityMethodSignature(VatABI, "tune")
 
@@ -80,6 +81,7 @@ var (
 	TendFunctionSignature        = GetLogNoteSignature(tendMethod)
 	VatGrabSignature             = GetLogNoteSignature(vatGrabMethod)
 	VatInitSignature             = GetLogNoteSignature(vatInitMethod)
+	VatFoldSignature             = GetLogNoteSignature(vatFoldMethod)
 	VatTollSignature             = GetLogNoteSignature(vatTollMethod)
 	VatTuneSignature             = GetLogNoteSignature(vatTuneMethod)
 )

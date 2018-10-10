@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.3
--- Dumped by pg_dump version 10.3
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -698,6 +698,41 @@ ALTER SEQUENCE maker.tend_id_seq OWNED BY maker.tend.id;
 
 
 --
+-- Name: vat_fold; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_fold (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    urn text,
+    rate numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_fold_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_fold_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_fold_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_fold_id_seq OWNED BY maker.vat_fold.id;
+
+
+--
 -- Name: vat_grab; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -942,6 +977,7 @@ CREATE TABLE public.checked_headers (
     pit_file_ilk_checked boolean DEFAULT false NOT NULL,
     pit_file_stability_fee_checked boolean DEFAULT false NOT NULL,
     vat_init_checked boolean DEFAULT false NOT NULL,
+    vat_fold_checked boolean DEFAULT false NOT NULL,
     vat_toll_checked boolean DEFAULT false NOT NULL,
     vat_tune_checked boolean DEFAULT false NOT NULL,
     vat_grab_checked boolean DEFAULT false NOT NULL
@@ -1392,6 +1428,13 @@ ALTER TABLE ONLY maker.tend ALTER COLUMN id SET DEFAULT nextval('maker.tend_id_s
 
 
 --
+-- Name: vat_fold id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_fold ALTER COLUMN id SET DEFAULT nextval('maker.vat_fold_id_seq'::regclass);
+
+
+--
 -- Name: vat_grab id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1778,6 +1821,22 @@ ALTER TABLE ONLY maker.tend
 
 
 --
+-- Name: vat_fold vat_fold_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_fold
+    ADD CONSTRAINT vat_fold_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_fold vat_fold_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_fold
+    ADD CONSTRAINT vat_fold_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: vat_grab vat_grab_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -2137,6 +2196,14 @@ ALTER TABLE ONLY maker.price_feeds
 
 ALTER TABLE ONLY maker.tend
     ADD CONSTRAINT tend_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_fold vat_fold_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_fold
+    ADD CONSTRAINT vat_fold_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
