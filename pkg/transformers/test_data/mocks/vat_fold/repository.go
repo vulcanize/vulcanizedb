@@ -24,7 +24,7 @@ import (
 type MockVatFoldRepository struct {
 	createErr                       error
 	markHeaderCheckedErr            error
-	markHeaderCheckedPassedHeaderID int64
+	MarkHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
 	missingHeadersErr               error
 	PassedStartingBlockNumber       int64
@@ -40,7 +40,7 @@ func (repository *MockVatFoldRepository) Create(headerID int64, models []vat_fol
 }
 
 func (repository *MockVatFoldRepository) MarkHeaderChecked(headerID int64) error {
-	repository.markHeaderCheckedPassedHeaderID = headerID
+	repository.MarkHeaderCheckedPassedHeaderID = headerID
 	return repository.markHeaderCheckedErr
 }
 
@@ -67,5 +67,5 @@ func (repository *MockVatFoldRepository) SetCreateError(e error) {
 }
 
 func (repository *MockVatFoldRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
-	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+	Expect(repository.MarkHeaderCheckedPassedHeaderID).To(Equal(i))
 }

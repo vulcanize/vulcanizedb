@@ -28,7 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("", func() {
+var _ = Describe("Vat.fold repository", func() {
 
 	Describe("Create", func() {
 
@@ -77,6 +77,58 @@ var _ = Describe("", func() {
 			err = db.Get(&dbVatFold, `SELECT ilk, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+	})
+
+	Describe("MarkHeaderChecked", func() {
+		var db *postgres.DB
+		var headerID int64
+		var repository vat_fold.VatFoldRepository
+
+		type CheckedHeaderResult struct {
+			VatFoldChecked bool `db:"vat_fold_checked"`
+		}
+
+		BeforeEach(func() {
+			node := test_config.NewTestNode()
+
+			db = test_config.NewTestDB(node)
+			test_config.CleanTestDB(db)
+
+			headerRepository := repositories.NewHeaderRepository(db)
+			id, err := headerRepository.CreateOrUpdateHeader(core.Header{})
+			Expect(err).NotTo(HaveOccurred())
+			headerID = id
+
+			repository = vat_fold.NewVatFoldRepository(db)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates a new checked header record", func() {
+			err := repository.MarkHeaderChecked(headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			var checkedHeaderResult = CheckedHeaderResult{}
+			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(checkedHeaderResult.VatFoldChecked).To(BeTrue())
+		})
+
+		It("updates an existing checked header", func() {
+			_, err := repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			var checkedHeaderResult CheckedHeaderResult
+			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(checkedHeaderResult.VatFoldChecked).To(BeFalse())
+
+			err = repository.MarkHeaderChecked(headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(checkedHeaderResult.VatFoldChecked).To(BeTrue())
 		})
 	})
 
