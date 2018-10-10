@@ -64,6 +64,7 @@ func (transformer VatFoldTransformer) Execute() error {
 			if err != nil {
 				return err
 			}
+			continue
 		}
 		models, err := transformer.Converter.ToModels(matchingLogs)
 		if err != nil {
