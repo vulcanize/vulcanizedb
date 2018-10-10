@@ -1,3 +1,3 @@
-DROP TABLE maker.flop_kick;
+DROP TABLE maker.vat_fold;
 ALTER TABLE public.checked_headers
-  DROP COLUMN flop_kick_checked;
+  DROP COLUMN vat_fold_checked;
