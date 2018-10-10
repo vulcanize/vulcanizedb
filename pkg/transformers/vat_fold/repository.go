@@ -26,25 +26,32 @@ type Repository interface {
 }
 
 type VatFoldRepository struct {
-	db *postgres.DB
+	DB *postgres.DB
 }
 
 func NewVatFoldRepository(db *postgres.DB) VatFoldRepository {
 	return VatFoldRepository{
-		db: db,
+		DB: db,
 	}
 }
 
 func (repository VatFoldRepository) Create(headerID int64, models []VatFoldModel) error {
-	tx, err := repository.db.Begin()
+	tx, err := repository.DB.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
 			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
+				VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
 			headerID, model.Ilk, model.Urn, model.Rate, model.TransactionIndex, model.Raw,
+		)
+		_, err = tx.Exec(
+			`INSERT INTO public.checked_headers (header_id, vat_fold_checked) 
+				VALUES($1, $2)
+			ON CONFLICT (header_id) DO 
+				UPDATE SET vat_fold_checked = $2`,
+			headerID, true,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -56,16 +63,19 @@ func (repository VatFoldRepository) Create(headerID int64, models []VatFoldModel
 }
 
 func (repository VatFoldRepository) MarkHeaderChecked(headerID int64) error {
-	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vat_fold_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET vat_fold_checked = $2`, headerID, true)
+	_, err := repository.DB.Exec(
+		`INSERT INTO public.checked_headers (header_id, vat_fold_checked)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET vat_fold_checked = $2`,
+		headerID, true,
+	)
 	return err
 }
 
 func (repository VatFoldRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := repository.db.Select(
+	err := repository.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
                LEFT JOIN checked_headers on headers.id = header_id
@@ -75,7 +85,7 @@ func (repository VatFoldRepository) MissingHeaders(startingBlockNumber, endingBl
                AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		repository.db.Node.ID,
+		repository.DB.Node.ID,
 	)
 	return result, err
 }
