@@ -771,6 +771,41 @@ ALTER SEQUENCE maker.vat_grab_id_seq OWNED BY maker.vat_grab.id;
 
 
 --
+-- Name: vat_heal; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_heal (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    urn character varying,
+    v character varying,
+    rad integer,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_heal_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_heal_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_heal_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_heal_id_seq OWNED BY maker.vat_heal.id;
+
+
+--
 -- Name: vat_init; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -978,6 +1013,7 @@ CREATE TABLE public.checked_headers (
     pit_file_stability_fee_checked boolean DEFAULT false NOT NULL,
     vat_init_checked boolean DEFAULT false NOT NULL,
     vat_fold_checked boolean DEFAULT false NOT NULL,
+    vat_heal_checked boolean DEFAULT false NOT NULL,
     vat_toll_checked boolean DEFAULT false NOT NULL,
     vat_tune_checked boolean DEFAULT false NOT NULL,
     vat_grab_checked boolean DEFAULT false NOT NULL
@@ -1442,6 +1478,13 @@ ALTER TABLE ONLY maker.vat_grab ALTER COLUMN id SET DEFAULT nextval('maker.vat_g
 
 
 --
+-- Name: vat_heal id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_heal ALTER COLUMN id SET DEFAULT nextval('maker.vat_heal_id_seq'::regclass);
+
+
+--
 -- Name: vat_init id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1853,6 +1896,22 @@ ALTER TABLE ONLY maker.vat_grab
 
 
 --
+-- Name: vat_heal vat_heal_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_heal
+    ADD CONSTRAINT vat_heal_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_heal vat_heal_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_heal
+    ADD CONSTRAINT vat_heal_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: vat_init vat_init_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -2212,6 +2271,14 @@ ALTER TABLE ONLY maker.vat_fold
 
 ALTER TABLE ONLY maker.vat_grab
     ADD CONSTRAINT vat_grab_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_heal vat_heal_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_heal
+    ADD CONSTRAINT vat_heal_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
