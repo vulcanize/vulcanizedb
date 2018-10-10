@@ -44,6 +44,10 @@ func (VatFoldConverter) ToModels(ethLogs []types.Log) ([]VatFoldModel, error) {
 		rate := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 		raw, err := json.Marshal(ethLog)
 
+		if err != nil {
+			return models, err
+		}
+
 		model := VatFoldModel{
 			Ilk:              ilk,
 			Urn:              urn,
