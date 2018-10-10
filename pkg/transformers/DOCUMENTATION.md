@@ -35,6 +35,7 @@ The transformer process for each of these different log types is the same, excep
 1. Write converter + converter tests
 1. Write repository + repository tests
 1. Create converter + repository mocks
+1. Create an config object [`shared.TransformerConfig`](./shared/transformer.go) in `config.go`
 1. Create transformer + transformer tests
 1. Wire up transformer in [`transformers.go`](./transformers.go)
 1. Wire up transformer in [`continuousLogSync.go`](../../cmd/continuousLogSync.go)
