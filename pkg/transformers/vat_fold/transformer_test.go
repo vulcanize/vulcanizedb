@@ -176,4 +176,40 @@ var _ = Describe("Vat fold transformer", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
+
+	It("marks the header as checked when there are no logs", func() {
+		header := core.Header{Id: GinkgoRandomSeed()}
+		transformer, _, _, repository := setup(setupOptions{
+			missingHeaders: []core.Header{header},
+		})
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.MarkHeaderCheckedPassedHeaderID).To(Equal(header.Id))
+	})
+
+	It("doesn't call MarkHeaderChecked when there are logs", func() {
+		transformer, _, _, repository := setup(setupOptions{
+			missingHeaders: []core.Header{{Id: GinkgoRandomSeed()}},
+			fetchedLogs:    []types.Log{test_data.EthVatFoldLog},
+		})
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.MarkHeaderCheckedPassedHeaderID).To(Equal(int64(0)))
+	})
+
+	It("returns an error if MarkHeaderChecked fails", func() {
+		transformer, _, _, _ := setup(setupOptions{
+			missingHeaders:         []core.Header{{Id: GinkgoRandomSeed()}},
+			setMissingHeadersError: true,
+		})
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
 })
