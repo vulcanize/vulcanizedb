@@ -132,6 +132,13 @@ var _ = Describe("Event signature generator", func() {
 
 				Expect(expected).To(Equal(actual))
 			})
+
+			It("gets the vat grab method signature", func() {
+				expected := "grab(bytes32,bytes32,bytes32,bytes32,int256,int256)"
+				actual := shared.GetSolidityMethodSignature(shared.VatABI, "grab")
+
+				Expect(expected).To(Equal(actual))
+			})
 		})
 
 		Describe("it handles events", func() {
