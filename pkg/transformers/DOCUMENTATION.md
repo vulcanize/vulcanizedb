@@ -17,7 +17,8 @@ For Maker, vulcanize will be run in `lightSync` mode, so it will store all heade
 For Maker there are two main types of log events that we're tracking:
 
 1. Custom events that are defined in the contract solidity code.
-1. LogNote events which utilize the [DSNote library](https://github.com/dapphub/ds-note).
+1. `LogNote` events which utilize the [DSNote library](https://github.com/dapphub/ds-note).
+1. `Note` events in the `Vat`
 
 The transformer process for each of these different log types is the same, except for the converting process, as denoted below.
 
