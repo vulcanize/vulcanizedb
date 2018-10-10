@@ -75,6 +75,7 @@ func NewTestDB(node core.Node) *postgres.DB {
 func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM blocks")
 	db.MustExec("DELETE FROM headers")
+	db.MustExec("DELETE FROM checked_headers")
 	db.MustExec("DELETE FROM log_filters")
 	db.MustExec("DELETE FROM logs")
 	db.MustExec("DELETE FROM maker.bite")
