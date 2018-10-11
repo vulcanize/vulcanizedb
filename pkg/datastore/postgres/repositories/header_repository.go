@@ -69,8 +69,8 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 func (repository HeaderRepository) insertHeader(header core.Header) (int64, error) {
 	var headerId int64
 	err := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, raw, eth_node_id, eth_node_fingerprint) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		header.BlockNumber, header.Hash, header.Raw, repository.database.NodeID, repository.database.Node.ID).Scan(&headerId)
+		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint) VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) RETURNING id`,
+		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID).Scan(&headerId)
 	return headerId, err
 }
 

@@ -16,33 +16,29 @@ package vat_move_test
 
 import (
 	"database/sql"
-	"encoding/json"
-	"github.com/ethereum/go-ethereum/core/types"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/rand"
 )
 
 var _ = Describe("Vat Move", func() {
 	var db *postgres.DB
 	var headerRepository repositories.HeaderRepository
 	var vatMoveRepository vat_move.VatMoveRepository
-	var rawHeader []byte
-	var err error
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		vatMoveRepository = vat_move.NewVatMoveRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
@@ -50,7 +46,7 @@ var _ = Describe("Vat Move", func() {
 		var err error
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 			err = vatMoveRepository.Create(headerID, []vat_move.VatMoveModel{test_data.VatMoveModel})
 			Expect(err).NotTo(HaveOccurred())
@@ -92,7 +88,7 @@ var _ = Describe("Vat Move", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		var eventBlockNumber = rand.Int63()
+		var eventBlockNumber = GinkgoRandomSeed()
 		var startingBlockNumber = eventBlockNumber - 1
 		var endingBlockNumber = eventBlockNumber + 1
 		var outOfRangeBlockNumber = eventBlockNumber + 2
@@ -101,7 +97,7 @@ var _ = Describe("Vat Move", func() {
 			var headerIds []int64
 
 			for _, number := range []int64{startingBlockNumber, eventBlockNumber, endingBlockNumber, outOfRangeBlockNumber} {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -119,7 +115,7 @@ var _ = Describe("Vat Move", func() {
 		It("only treats headers as checked if vat_move has been checked", func() {
 			var headerIds []int64
 			for _, number := range []int64{startingBlockNumber, eventBlockNumber, endingBlockNumber, outOfRangeBlockNumber} {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -143,10 +139,10 @@ var _ = Describe("Vat Move", func() {
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			var headerIDs []int64
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIDs = append(headerIDs, headerID)
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 			vatMoveRepositoryTwo := vat_move.NewVatMoveRepository(dbTwo)
@@ -169,7 +165,7 @@ var _ = Describe("Vat Move", func() {
 		var err error
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

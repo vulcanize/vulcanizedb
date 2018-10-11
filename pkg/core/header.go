@@ -11,6 +11,7 @@ type Header struct {
 	BlockNumber int64 `db:"block_number"`
 	Hash        string
 	Raw         []byte
+	Timestamp   string `db:"block_timestamp"`
 }
 
 type POAHeader struct {

@@ -15,15 +15,13 @@
 package vat_heal_test
 
 import (
-	"encoding/json"
-
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -35,7 +33,6 @@ var _ = Describe("VatHeal Repository", func() {
 		repository       vat_heal.VatHealRepository
 		headerRepository repositories.HeaderRepository
 		err              error
-		rawHeader        []byte
 	)
 
 	BeforeEach(func() {
@@ -43,8 +40,6 @@ var _ = Describe("VatHeal Repository", func() {
 		test_config.CleanTestDB(db)
 		repository = vat_heal.VatHealRepository{DB: db}
 		headerRepository = repositories.NewHeaderRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	type VatHealDBResult struct {
@@ -61,7 +56,7 @@ var _ = Describe("VatHeal Repository", func() {
 		var headerId int64
 
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -138,7 +133,7 @@ var _ = Describe("VatHeal Repository", func() {
 			headerIds = []int64{}
 			blockNumbers = []int64{startingBlock, vatHealBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -175,7 +170,7 @@ var _ = Describe("VatHeal Repository", func() {
 			repository2 := vat_heal.NewVatHealRepository(db2)
 
 			for _, n := range blockNumbers {
-				_, err = headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -196,7 +191,7 @@ var _ = Describe("VatHeal Repository", func() {
 		var headerId int64
 
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
