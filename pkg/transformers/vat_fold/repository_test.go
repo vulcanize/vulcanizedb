@@ -16,15 +16,14 @@ package vat_fold_test
 
 import (
 	"database/sql"
-	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -36,7 +35,6 @@ var _ = Describe("Vat.fold repository", func() {
 		repository       vat_fold.VatFoldRepository
 		headerRepository repositories.HeaderRepository
 		err              error
-		rawHeader        []byte
 	)
 
 	BeforeEach(func() {
@@ -45,15 +43,13 @@ var _ = Describe("Vat.fold repository", func() {
 		test_config.CleanTestDB(db)
 		repository = vat_fold.NewVatFoldRepository(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
@@ -101,7 +97,7 @@ var _ = Describe("Vat.fold repository", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -152,7 +148,7 @@ var _ = Describe("Vat.fold repository", func() {
 
 			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIDs = append(headerIDs, headerID)
 			}
@@ -188,7 +184,7 @@ var _ = Describe("Vat.fold repository", func() {
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 
 			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 

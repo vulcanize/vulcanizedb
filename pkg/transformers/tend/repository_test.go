@@ -15,15 +15,13 @@
 package tend_test
 
 import (
-	"encoding/json"
-
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -35,7 +33,6 @@ var _ = Describe("TendRepository", func() {
 		tendRepository   tend.TendRepository
 		headerRepository repositories.HeaderRepository
 		err              error
-		rawHeader        []byte
 	)
 
 	BeforeEach(func() {
@@ -44,15 +41,13 @@ var _ = Describe("TendRepository", func() {
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		tendRepository = tend.NewTendRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
 		var headerId int64
 
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
@@ -111,7 +106,7 @@ var _ = Describe("TendRepository", func() {
 		var headerId int64
 
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -152,7 +147,7 @@ var _ = Describe("TendRepository", func() {
 
 			headerIds = []int64{}
 			for _, number := range []int64{startingBlock, tendBlock, endingBlock, outOfRangeBlock} {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -190,7 +185,7 @@ var _ = Describe("TendRepository", func() {
 			tendRepository2 := tend.NewTendRepository(db2)
 
 			for _, number := range []int64{startingBlock, tendBlock, endingBlock} {
-				headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
+				headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
 				Expect(err).NotTo(HaveOccurred())
 			}
 

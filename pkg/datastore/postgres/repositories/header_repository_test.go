@@ -11,15 +11,20 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/big"
 )
 
 var _ = Describe("Block header repository", func() {
-	var rawHeader []byte
-	var err error
+	var (
+		rawHeader []byte
+		err       error
+		timestamp string
+	)
 
 	BeforeEach(func() {
 		rawHeader, err = json.Marshal(types.Header{})
 		Expect(err).NotTo(HaveOccurred())
+		timestamp = big.NewInt(123456789).String()
 	})
 
 	Describe("creating or updating a header", func() {
@@ -32,17 +37,19 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbHeader core.Header
-			err = db.Get(&dbHeader, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			err = db.Get(&dbHeader, `SELECT block_number, hash, raw, block_timestamp FROM public.headers WHERE block_number = $1`, header.BlockNumber)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
 			Expect(dbHeader.Hash).To(Equal(header.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
+			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
 		It("adds node data to header", func() {
@@ -53,6 +60,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
@@ -77,6 +85,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
@@ -101,6 +110,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
@@ -108,6 +118,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err = repo.CreateOrUpdateHeader(headerTwo)
@@ -129,6 +140,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
@@ -139,6 +151,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
@@ -158,6 +171,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
@@ -168,12 +182,14 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
 			headerThree := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{1, 1, 1, 1, 1}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 
 			_, err = repoTwo.CreateOrUpdateHeader(headerThree)
@@ -200,6 +216,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
@@ -221,6 +238,7 @@ var _ = Describe("Block header repository", func() {
 				BlockNumber: 100,
 				Hash:        common.BytesToHash(rawHeader).Hex(),
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
@@ -245,14 +263,17 @@ var _ = Describe("Block header repository", func() {
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 
 			missingBlockNumbers := repo.MissingBlockNumbers(1, 5, node.ID)
@@ -268,14 +289,17 @@ var _ = Describe("Block header repository", func() {
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 			repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
+				Timestamp:   timestamp,
 			})
 			nodeTwo := core.Node{ID: "NodeFingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)

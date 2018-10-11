@@ -1098,6 +1098,7 @@ CREATE TABLE public.headers (
     hash character varying(66),
     block_number bigint,
     raw jsonb,
+    block_timestamp numeric,
     eth_node_id integer,
     eth_node_fingerprint character varying(128)
 );

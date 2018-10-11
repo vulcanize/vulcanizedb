@@ -2,15 +2,16 @@ package price_feeds_test
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 	"time"
 
-	"encoding/json"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -139,6 +140,7 @@ func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int6
 		BlockNumber: poaHeader.Number.ToInt().Int64(),
 		Hash:        poaHeader.Hash.String(),
 		Raw:         rawHeader,
+		Timestamp:   poaHeader.Time.ToInt().String(),
 	})
 	return err
 }

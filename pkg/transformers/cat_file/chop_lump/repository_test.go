@@ -16,9 +16,7 @@ package chop_lump_test
 
 import (
 	"database/sql"
-	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -37,15 +36,12 @@ var _ = Describe("Cat file chop lump repository", func() {
 		db                *postgres.DB
 		err               error
 		headerRepository  datastore.HeaderRepository
-		rawHeader         []byte
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 		catFileRepository = chop_lump.NewCatFileChopLumpRepository(db)
 	})
 
@@ -53,7 +49,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
@@ -100,7 +96,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -142,7 +138,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 
 			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				headerIDs = append(headerIDs, headerID)
 				Expect(err).NotTo(HaveOccurred())
 			}
@@ -179,7 +175,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 			catFileRepositoryTwo := chop_lump.NewCatFileChopLumpRepository(dbTwo)

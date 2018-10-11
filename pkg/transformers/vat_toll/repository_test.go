@@ -2,9 +2,7 @@ package vat_toll_test
 
 import (
 	"database/sql"
-	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -12,6 +10,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -23,7 +22,6 @@ var _ = Describe("Vat toll repository", func() {
 		vatTollRepository vat_toll.Repository
 		err               error
 		headerRepository  datastore.HeaderRepository
-		rawHeader         []byte
 	)
 
 	BeforeEach(func() {
@@ -31,15 +29,13 @@ var _ = Describe("Vat toll repository", func() {
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		vatTollRepository = vat_toll.NewVatTollRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
@@ -86,7 +82,7 @@ var _ = Describe("Vat toll repository", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -128,7 +124,7 @@ var _ = Describe("Vat toll repository", func() {
 
 			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIDs = append(headerIDs, headerID)
 			}
@@ -163,7 +159,7 @@ var _ = Describe("Vat toll repository", func() {
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 			vatTollRepositoryTwo := vat_toll.NewVatTollRepository(dbTwo)

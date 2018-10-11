@@ -15,15 +15,13 @@
 package flip_kick_test
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"encoding/json"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -191,18 +189,11 @@ func assertDBRecordCount(db *postgres.DB, dbTable string, expectedCount int) {
 
 func createHeader(db *postgres.DB, blockNumber int64) (headerId int64) {
 	headerRepository := repositories.NewHeaderRepository(db)
-	rawHeader, err := json.Marshal(types.Header{})
-	Expect(err).NotTo(HaveOccurred())
-	header := core.Header{
-		BlockNumber: blockNumber,
-		Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-		Raw:         rawHeader,
-	}
-	_, err = headerRepository.CreateOrUpdateHeader(header)
+	_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(blockNumber))
 	Expect(err).NotTo(HaveOccurred())
 
 	var dbHeader core.Header
-	err = db.Get(&dbHeader, `SELECT id, block_number, hash, raw FROM public.headers WHERE block_number = $1 AND eth_node_id = $2`, header.BlockNumber, db.NodeID)
+	err = db.Get(&dbHeader, `SELECT id, block_number, hash, raw FROM public.headers WHERE block_number = $1 AND eth_node_id = $2`, blockNumber, db.NodeID)
 	Expect(err).NotTo(HaveOccurred())
 	return dbHeader.Id
 }

@@ -16,9 +16,7 @@ package price_feeds_test
 
 import (
 	"database/sql"
-	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -37,7 +36,6 @@ var _ = Describe("Price feeds repository", func() {
 		err                 error
 		headerRepository    datastore.HeaderRepository
 		priceFeedRepository price_feeds.IPriceFeedRepository
-		rawHeader           []byte
 	)
 
 	BeforeEach(func() {
@@ -45,15 +43,13 @@ var _ = Describe("Price feeds repository", func() {
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		priceFeedRepository = price_feeds.NewPriceFeedRepository(db)
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
@@ -100,7 +96,7 @@ var _ = Describe("Price feeds repository", func() {
 		var headerID int64
 
 		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -142,7 +138,7 @@ var _ = Describe("Price feeds repository", func() {
 
 			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIDs = append(headerIDs, headerID)
 			}
@@ -178,7 +174,7 @@ var _ = Describe("Price feeds repository", func() {
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 			priceFeedRepositoryTwo := price_feeds.NewPriceFeedRepository(dbTwo)
