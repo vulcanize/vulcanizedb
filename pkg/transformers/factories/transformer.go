@@ -55,7 +55,7 @@ func (transformer Transformer) Execute() error {
 		return err
 	}
 
-	log.Printf("Fetching vat move event logs for %d headers \n", len(missingHeaders))
+	log.Printf("Fetching %v event logs for %d headers \n", transformer.Config.TransformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
 		// Grab topics from config
 		var topics [][]common.Hash

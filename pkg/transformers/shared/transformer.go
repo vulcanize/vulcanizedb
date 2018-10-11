@@ -28,6 +28,7 @@ type Transformer interface {
 type TransformerInitializer func(db *postgres.DB, blockChain core.BlockChain) Transformer
 
 type TransformerConfig struct {
+	TransformerName     string
 	ContractAddresses   []string
 	ContractAbi         string
 	Topics              []string
