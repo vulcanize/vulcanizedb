@@ -47,10 +47,10 @@ var _ = Describe("Vat move transformer", func() {
 
 	It("gets missing headers for block numbers specified in config", func() {
 		transformer := factories.Transformer{
-			Config:     vat_move.VatMoveConfig,
+			Config:     config,
 			Converter:  &converter,
 			Repository: &repository,
-			Fetcher: 	&fetcher,
+			Fetcher:    &fetcher,
 		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
