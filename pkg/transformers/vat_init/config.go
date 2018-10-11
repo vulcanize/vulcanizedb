@@ -19,6 +19,7 @@ import (
 )
 
 var VatInitConfig = shared.TransformerConfig{
+	TransformerName:     "vat init",
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,
 	Topics:              []string{shared.VatInitSignature},
