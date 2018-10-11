@@ -2,7 +2,9 @@ package repositories_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -12,6 +14,14 @@ import (
 )
 
 var _ = Describe("Block header repository", func() {
+	var rawHeader []byte
+	var err error
+
+	BeforeEach(func() {
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Describe("creating or updating a header", func() {
 		It("adds a header", func() {
 			node := core.Node{}
@@ -21,7 +31,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
@@ -32,7 +42,7 @@ var _ = Describe("Block header repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
 			Expect(dbHeader.Hash).To(Equal(header.Hash))
-			Expect(dbHeader.Raw).To(Equal(header.Raw))
+			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
 		})
 
 		It("adds node data to header", func() {
@@ -40,7 +50,10 @@ var _ = Describe("Block header repository", func() {
 			db := test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{BlockNumber: 100}
+			header := core.Header{
+				BlockNumber: 100,
+				Raw:         rawHeader,
+			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
 
@@ -63,7 +76,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 
 			_, err := repo.CreateOrUpdateHeader(header)
@@ -87,14 +100,14 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
-				Raw:         []byte{5, 4, 3, 2, 1},
+				Raw:         rawHeader,
 			}
 
 			_, err = repo.CreateOrUpdateHeader(headerTwo)
@@ -104,7 +117,7 @@ var _ = Describe("Block header repository", func() {
 			err = db.Get(&dbHeader, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbHeader.Hash).To(Equal(headerTwo.Hash))
-			Expect(dbHeader.Raw).To(Equal(headerTwo.Raw))
+			Expect(dbHeader.Raw).To(MatchJSON(headerTwo.Raw))
 		})
 
 		It("does not replace header if node fingerprint is different", func() {
@@ -115,7 +128,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
@@ -125,7 +138,7 @@ var _ = Describe("Block header repository", func() {
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
-				Raw:         []byte{5, 4, 3, 2, 1},
+				Raw:         rawHeader,
 			}
 
 			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
@@ -144,7 +157,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
@@ -154,13 +167,13 @@ var _ = Describe("Block header repository", func() {
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
-				Raw:         []byte{5, 4, 3, 2, 1},
+				Raw:         rawHeader,
 			}
 			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
 			headerThree := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{1, 1, 1, 1, 1}).Hex(),
-				Raw:         []byte{1, 1, 1, 1, 1},
+				Raw:         rawHeader,
 			}
 
 			_, err = repoTwo.CreateOrUpdateHeader(headerThree)
@@ -172,8 +185,8 @@ var _ = Describe("Block header repository", func() {
 			Expect(len(dbHeaders)).To(Equal(2))
 			Expect(dbHeaders[0].Hash).To(Or(Equal(header.Hash), Equal(headerThree.Hash)))
 			Expect(dbHeaders[1].Hash).To(Or(Equal(header.Hash), Equal(headerThree.Hash)))
-			Expect(dbHeaders[0].Raw).To(Or(Equal(header.Raw), Equal(headerThree.Raw)))
-			Expect(dbHeaders[1].Raw).To(Or(Equal(header.Raw), Equal(headerThree.Raw)))
+			Expect(dbHeaders[0].Raw).To(Or(MatchJSON(header.Raw), MatchJSON(headerThree.Raw)))
+			Expect(dbHeaders[1].Raw).To(Or(MatchJSON(header.Raw), MatchJSON(headerThree.Raw)))
 		})
 	})
 
@@ -186,7 +199,7 @@ var _ = Describe("Block header repository", func() {
 			header := core.Header{
 				BlockNumber: 100,
 				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Raw:         rawHeader,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
@@ -194,7 +207,9 @@ var _ = Describe("Block header repository", func() {
 			dbHeader, err := repo.GetHeader(header.BlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbHeader).To(Equal(header))
+			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
+			Expect(dbHeader.Hash).To(Equal(header.Hash))
+			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
 		})
 
 		It("does not return header for a different node fingerprint", func() {
@@ -204,8 +219,8 @@ var _ = Describe("Block header repository", func() {
 			repo := repositories.NewHeaderRepository(db)
 			header := core.Header{
 				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         []byte{1, 2, 3, 4, 5},
+				Hash:        common.BytesToHash(rawHeader).Hex(),
+				Raw:         rawHeader,
 			}
 			_, err := repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
@@ -227,9 +242,18 @@ var _ = Describe("Block header repository", func() {
 			db := test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 1})
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 3})
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 5})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 1,
+				Raw:         rawHeader,
+			})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 3,
+				Raw:         rawHeader,
+			})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 5,
+				Raw:         rawHeader,
+			})
 
 			missingBlockNumbers := repo.MissingBlockNumbers(1, 5, node.ID)
 
@@ -241,9 +265,18 @@ var _ = Describe("Block header repository", func() {
 			db := test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
 			repo := repositories.NewHeaderRepository(db)
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 1})
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 3})
-			repo.CreateOrUpdateHeader(core.Header{BlockNumber: 5})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 1,
+				Raw:         rawHeader,
+			})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 3,
+				Raw:         rawHeader,
+			})
+			repo.CreateOrUpdateHeader(core.Header{
+				BlockNumber: 5,
+				Raw:         rawHeader,
+			})
 			nodeTwo := core.Node{ID: "NodeFingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())

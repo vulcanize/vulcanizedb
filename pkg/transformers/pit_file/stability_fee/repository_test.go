@@ -16,11 +16,14 @@ package stability_fee_test
 
 import (
 	"database/sql"
+	"encoding/json"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
@@ -29,27 +32,35 @@ import (
 )
 
 var _ = Describe("Pit file stability fee repository", func() {
+	var (
+		db                *postgres.DB
+		pitFileRepository stability_fee.Repository
+		err               error
+		headerRepository  datastore.HeaderRepository
+		rawHeader         []byte
+	)
+
+	BeforeEach(func() {
+		db = test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
+		headerRepository = repositories.NewHeaderRepository(db)
+		pitFileRepository = stability_fee.NewPitFileStabilityFeeRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Describe("Create", func() {
-		var (
-			db                            *postgres.DB
-			pitFileStabilityFeeRepository stability_fee.Repository
-			err                           error
-			headerID                      int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			pitFileStabilityFeeRepository = stability_fee.NewPitFileStabilityFeeRepository(db)
+
+			err = pitFileRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a pit file stability fee event", func() {
-			err = pitFileStabilityFeeRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile stability_fee.PitFileStabilityFeeModel
 			err = db.Get(&dbPitFile, `SELECT what, data, tx_idx, raw_log FROM maker.pit_file_stability_fee WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -60,9 +71,6 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = pitFileStabilityFeeRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT pit_file_stability_fee_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -70,19 +78,13 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("does not duplicate pit file events", func() {
-			err = pitFileStabilityFeeRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = pitFileStabilityFeeRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
+			err = pitFileRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes pit file if corresponding header is deleted", func() {
-			err = pitFileStabilityFeeRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -94,24 +96,15 @@ var _ = Describe("Pit file stability fee repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var (
-			db                            *postgres.DB
-			pitFileStabilityFeeRepository stability_fee.Repository
-			err                           error
-			headerID                      int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			pitFileStabilityFeeRepository = stability_fee.NewPitFileStabilityFeeRepository(db)
 		})
 
 		It("creates a row for a new headerID", func() {
-			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerID)
+			err = pitFileRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -123,7 +116,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 		It("updates row when headerID already exists", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 
-			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerID)
+			err = pitFileRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -134,75 +127,58 @@ var _ = Describe("Pit file stability fee repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			pitFileBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, pitFileBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
+		var (
+			startingBlock, pitFileBlock, endingBlock int64
+			blockNumbers, headerIDs                  []int64
+		)
+
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			pitFileBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+
+			blockNumbers = []int64{startingBlock, pitFileBlock, endingBlock, endingBlock + 1}
+
+			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
+				headerIDs = append(headerIDs, headerID)
 			}
-			pitFileRepository := stability_fee.NewPitFileStabilityFeeRepository(db)
+		})
+
+		It("returns headers that haven't been checked", func() {
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if pit file stability fee logs have been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			pitFileStabilityFeedBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, pitFileStabilityFeedBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-			pitFileStabilityFeeRepository := stability_fee.NewPitFileStabilityFeeRepository(db)
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileStabilityFeeRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(pitFileStabilityFeedBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(pitFileStabilityFeedBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(pitFileStabilityFeedBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(pitFileBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(pitFileBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(pitFileBlock)))
 		})
 
 		It("only returns headers associated with the current node", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			blockNumbers := []int64{1, 2, 3}
-			headerRepository := repositories.NewHeaderRepository(db)
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			var headerIDs []int64
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepository := stability_fee.NewPitFileStabilityFeeRepository(db)
 			pitFileRepositoryTwo := stability_fee.NewPitFileStabilityFeeRepository(dbTwo)
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())

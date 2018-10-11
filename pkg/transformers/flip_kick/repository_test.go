@@ -15,12 +15,12 @@
 package flip_kick_test
 
 import (
-	"math/rand"
-
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -37,11 +37,10 @@ var _ = Describe("FlipKick Repository", func() {
 	var flipKick = test_data.FlipKickModel
 
 	BeforeEach(func() {
-		node := test_config.NewTestNode()
-		db = test_config.NewTestDB(node)
+		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		flipKickRepository = flip_kick.FlipKickRepository{DB: db}
-		blockNumber = rand.Int63()
+		blockNumber = GinkgoRandomSeed()
 		headerId = createHeader(db, blockNumber)
 
 		_, err := db.Exec(`DELETE from maker.flip_kick;`)
@@ -192,12 +191,14 @@ func assertDBRecordCount(db *postgres.DB, dbTable string, expectedCount int) {
 
 func createHeader(db *postgres.DB, blockNumber int64) (headerId int64) {
 	headerRepository := repositories.NewHeaderRepository(db)
+	rawHeader, err := json.Marshal(types.Header{})
+	Expect(err).NotTo(HaveOccurred())
 	header := core.Header{
 		BlockNumber: blockNumber,
 		Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-		Raw:         []byte{1, 2, 3, 4, 5},
+		Raw:         rawHeader,
 	}
-	_, err := headerRepository.CreateOrUpdateHeader(header)
+	_, err = headerRepository.CreateOrUpdateHeader(header)
 	Expect(err).NotTo(HaveOccurred())
 
 	var dbHeader core.Header

@@ -15,8 +15,9 @@
 package tend_test
 
 import (
-	"math/rand"
+	"encoding/json"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,29 +30,36 @@ import (
 )
 
 var _ = Describe("TendRepository", func() {
-	var db *postgres.DB
-	var tendRepository tend.TendRepository
-	var headerRepository repositories.HeaderRepository
-	var headerId int64
-	var err error
+	var (
+		db               *postgres.DB
+		tendRepository   tend.TendRepository
+		headerRepository repositories.HeaderRepository
+		err              error
+		rawHeader        []byte
+	)
 
 	BeforeEach(func() {
 		node := test_config.NewTestNode()
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
-
 		headerRepository = repositories.NewHeaderRepository(db)
-		headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
-		Expect(err).NotTo(HaveOccurred())
-
 		tendRepository = tend.NewTendRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
-		It("persists a tend record", func() {
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+		var headerId int64
+
+		BeforeEach(func() {
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
 
+			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("persists a tend record", func() {
 			var count int
 			err = db.QueryRow(`SELECT count(*) from maker.tend`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
@@ -71,9 +79,6 @@ var _ = Describe("TendRepository", func() {
 		})
 
 		It("marks header as checked", func() {
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT tend_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -81,18 +86,13 @@ var _ = Describe("TendRepository", func() {
 		})
 
 		It("returns an error if inserting a tend record fails", func() {
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			err = tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("deletes the tend record if its corresponding header record is deleted", func() {
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			var count int
 			err = db.QueryRow(`SELECT count(*) from maker.tend`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
@@ -108,6 +108,13 @@ var _ = Describe("TendRepository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
+		var headerId int64
+
+		BeforeEach(func() {
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("creates a row for a new headerID", func() {
 			err = tendRepository.MarkHeaderChecked(headerId)
 
@@ -132,88 +139,69 @@ var _ = Describe("TendRepository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		var tendBlockNumber int64
-		var startingBlockNumber int64
-		var endingBlockNumber int64
-		var outOfRangeBlockNumber int64
+		var (
+			tendBlock, startingBlock, endingBlock, outOfRangeBlock int64
+			headerIds                                              []int64
+		)
 
 		BeforeEach(func() {
-			tendBlockNumber = rand.Int63()
-			startingBlockNumber = tendBlockNumber - 1
-			endingBlockNumber = tendBlockNumber + 1
-			outOfRangeBlockNumber = tendBlockNumber + 2
-		})
+			tendBlock = GinkgoRandomSeed()
+			startingBlock = tendBlock - 1
+			endingBlock = tendBlock + 1
+			outOfRangeBlock = tendBlock + 2
 
-		It("returns headers for which there isn't an associated tend record", func() {
-			var headerIds []int64
-
-			for _, number := range []int64{startingBlockNumber, tendBlockNumber, endingBlockNumber, outOfRangeBlockNumber} {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number})
+			headerIds = []int64{}
+			for _, number := range []int64{startingBlock, tendBlock, endingBlock, outOfRangeBlock} {
+				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
+		})
 
+		It("returns headers for which there isn't an associated tend record", func() {
 			err = tendRepository.MarkHeaderChecked(headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := tendRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := tendRepository.MissingHeaders(startingBlock, endingBlock)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if deal have been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			dentBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, dentBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-			dentRepository := tend.NewTendRepository(db)
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, price_feeds_checked) VALUES ($1, $2)`, headerIDs[1], true)
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := dentRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := tendRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dentBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(tendBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(tendBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(tendBlock)))
 		})
 
 		It("only returns missing headers for the current node", func() {
-			var headerIds []int64
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
 			tendRepository2 := tend.NewTendRepository(db2)
 
-			for _, number := range []int64{startingBlockNumber, tendBlockNumber, endingBlockNumber} {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number})
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-
-				headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: number})
+			for _, number := range []int64{startingBlock, tendBlock, endingBlock} {
+				headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			err = tendRepository.MarkHeaderChecked(headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			node1MissingHeaders, err := tendRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			node1MissingHeaders, err := tendRepository.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(node1MissingHeaders)).To(Equal(2))
 
-			node2MissingHeaders, err := tendRepository2.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			node2MissingHeaders, err := tendRepository2.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(node2MissingHeaders)).To(Equal(3))
 		})

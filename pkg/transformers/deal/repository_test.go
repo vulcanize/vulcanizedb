@@ -15,8 +15,9 @@
 package deal_test
 
 import (
-	"math/rand"
+	"encoding/json"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,24 +30,28 @@ import (
 )
 
 var _ = Describe("Deal Repository", func() {
-	var node core.Node
-	var db *postgres.DB
-	var dealRepository deal.DealRepository
-	var headerRepository repositories.HeaderRepository
-	var headerId int64
-	var err error
+	var (
+		db               *postgres.DB
+		dealRepository   deal.DealRepository
+		headerRepository repositories.HeaderRepository
+		err              error
+		rawHeader        []byte
+	)
 
 	BeforeEach(func() {
-		node = test_config.NewTestNode()
-		db = test_config.NewTestDB(node)
+		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		dealRepository = deal.NewDealRepository(db)
 		headerRepository = repositories.NewHeaderRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
+		var headerId int64
+
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
 			err := dealRepository.Create(headerId, []deal.DealModel{test_data.DealModel})
 			Expect(err).NotTo(HaveOccurred())
@@ -92,8 +97,10 @@ var _ = Describe("Deal Repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
+		var headerId int64
+
 		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -121,79 +128,78 @@ var _ = Describe("Deal Repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		var dealBlockNumber int64
-		var startingBlockNumber int64
-		var endingBlockNumber int64
-		var blockNumbers []int64
+		var (
+			dealBlock, startingBlock, endingBlock int64
+			blockNumbers, headerIds               []int64
+		)
 
 		BeforeEach(func() {
-			dealBlockNumber = rand.Int63()
-			startingBlockNumber = dealBlockNumber - 1
-			endingBlockNumber = dealBlockNumber + 1
-			outOfRangeBlockNumber := dealBlockNumber + 2
-			blockNumbers = []int64{startingBlockNumber, dealBlockNumber, endingBlockNumber, outOfRangeBlockNumber}
-			var headerIds []int64
+			dealBlock = GinkgoRandomSeed()
+			startingBlock = dealBlock - 1
+			endingBlock = dealBlock + 1
+			outOfRangeBlockNumber := dealBlock + 2
+
+			blockNumbers = []int64{startingBlock, dealBlock, endingBlock, outOfRangeBlockNumber}
+
+			headerIds = []int64{}
 			for _, number := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number})
+				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
-			dealRepository.MarkHeaderChecked(headerIds[1])
 		})
 
 		It("returns header records that don't have a corresponding deals", func() {
-			missingHeaders, err := dealRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			err = dealRepository.MarkHeaderChecked(headerIds[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			missingHeaders, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(startingBlockNumber))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(endingBlockNumber))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(startingBlock))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(endingBlock))
 		})
 
 		It("only treats headers as checked if deal have been checked", func() {
-			startingBlockNumber := int64(1)
-			dealBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, dealBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, price_feeds_checked) VALUES ($1, $2)`, headerIDs[1], true)
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := dealRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dealBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dealBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(dealBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
 		})
 
 		It("only returns missing headers for the given node", func() {
+			err = dealRepository.MarkHeaderChecked(headerIds[1])
+			Expect(err).NotTo(HaveOccurred())
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			dealRepository2 := deal.NewDealRepository(db2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
 			var node2HeaderIds []int64
 			for _, number := range blockNumbers {
-				id, err := headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: number})
+				id, err := headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: number, Raw: rawHeader})
 				node2HeaderIds = append(node2HeaderIds, id)
 				Expect(err).NotTo(HaveOccurred())
 			}
-			missingHeadersNode1, err := dealRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+
+			missingHeadersNode1, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeadersNode1)).To(Equal(2))
-			Expect(missingHeadersNode1[0].BlockNumber).To(Equal(startingBlockNumber))
-			Expect(missingHeadersNode1[1].BlockNumber).To(Equal(endingBlockNumber))
-			missingHeadersNode2, err := dealRepository2.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			Expect(missingHeadersNode1[0].BlockNumber).To(Equal(startingBlock))
+			Expect(missingHeadersNode1[1].BlockNumber).To(Equal(endingBlock))
+
+			missingHeadersNode2, err := dealRepository2.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeadersNode2)).To(Equal(3))
-			Expect(missingHeadersNode2[0].BlockNumber).To(Equal(startingBlockNumber))
-			Expect(missingHeadersNode2[1].BlockNumber).To(Equal(dealBlockNumber))
-			Expect(missingHeadersNode2[2].BlockNumber).To(Equal(endingBlockNumber))
+			Expect(missingHeadersNode2[0].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
+			Expect(missingHeadersNode2[1].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
+			Expect(missingHeadersNode2[2].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
 		})
 	})
 })

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
--- Dumped by pg_dump version 10.5
+-- Dumped from database version 10.3
+-- Dumped by pg_dump version 10.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1097,7 +1097,7 @@ CREATE TABLE public.headers (
     id integer NOT NULL,
     hash character varying(66),
     block_number bigint,
-    raw bytea,
+    raw jsonb,
     eth_node_id integer,
     eth_node_fingerprint character varying(128)
 );

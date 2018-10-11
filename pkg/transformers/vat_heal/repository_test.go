@@ -15,8 +15,12 @@
 package vat_heal_test
 
 import (
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -26,19 +30,20 @@ import (
 )
 
 var _ = Describe("VatHeal Repository", func() {
-	var db *postgres.DB
-	var repository vat_heal.VatHealRepository
-	var headerRepository repositories.HeaderRepository
-	var headerId int64
-	var err error
+	var (
+		db               *postgres.DB
+		repository       vat_heal.VatHealRepository
+		headerRepository repositories.HeaderRepository
+		err              error
+		rawHeader        []byte
+	)
 
 	BeforeEach(func() {
-		node := test_config.NewTestNode()
-		db = test_config.NewTestDB(node)
+		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repository = vat_heal.VatHealRepository{DB: db}
 		headerRepository = repositories.NewHeaderRepository(db)
-		headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+		rawHeader, err = json.Marshal(types.Header{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -53,6 +58,13 @@ var _ = Describe("VatHeal Repository", func() {
 	}
 
 	Describe("Create", func() {
+		var headerId int64
+
+		BeforeEach(func() {
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("persists vat heal records", func() {
 			anotherVatHeal := test_data.VatHealModel
 			anotherVatHeal.TransactionIndex = test_data.VatHealModel.TransactionIndex + 1
@@ -112,24 +124,32 @@ var _ = Describe("VatHeal Repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatHealBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
+		var (
+			startingBlock, vatHealBlock, endingBlock, outsideRangeBlock int64
+			blockNumbers, headerIds                                     []int64
+		)
 
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatHealBlock, endingBlock, outsideRangeBlock}
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			vatHealBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+			outsideRangeBlock = startingBlock + 3
+
+			headerIds = []int64{}
+			blockNumbers = []int64{startingBlock, vatHealBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
+		})
 
+		It("returns headers that haven't been checked", func() {
 			err = repository.MarkCheckedHeader(headerIds[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headers[0].Id).To(Or(Equal(headerIds[1]), Equal(headerIds[2])))
 			Expect(headers[1].Id).To(Or(Equal(headerIds[1]), Equal(headerIds[2])))
@@ -137,24 +157,12 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("returns header ids when checked_headers.vat_heal is false", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatHealBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
-
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatHealBlock, endingBlock, outsideRangeBlock}
-			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-			}
-
 			err = repository.MarkCheckedHeader(headerIds[0])
 			_, err = repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES ($1)`, headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headers[0].Id).To(Or(Equal(headerIds[1]), Equal(headerIds[2])))
 			Expect(headers[1].Id).To(Or(Equal(headerIds[1]), Equal(headerIds[2])))
@@ -162,22 +170,12 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("only returns header ids for the current node", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatHealBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
 			db2 := test_config.NewTestDB(core.Node{ID: "second node"})
 			headerRepository2 := repositories.NewHeaderRepository(db2)
 			repository2 := vat_heal.NewVatHealRepository(db2)
 
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatHealBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-
-				_, err = headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				_, err = headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -195,6 +193,13 @@ var _ = Describe("VatHeal Repository", func() {
 	})
 
 	Describe("MarkCheckedHeader", func() {
+		var headerId int64
+
+		BeforeEach(func() {
+			headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("creates a new checked_header record", func() {
 			err := repository.MarkCheckedHeader(headerId)
 			Expect(err).NotTo(HaveOccurred())

@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -129,10 +130,15 @@ func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int6
 	if err != nil {
 		return err
 	}
+	rawHeader, err := json.Marshal(poaHeader)
+	if err != nil {
+		return err
+	}
 	headerRepository := repositories.NewHeaderRepository(db)
 	_, err = headerRepository.CreateOrUpdateHeader(core.Header{
 		BlockNumber: poaHeader.Number.ToInt().Int64(),
 		Hash:        poaHeader.Hash.String(),
+		Raw:         rawHeader,
 	})
 	return err
 }
