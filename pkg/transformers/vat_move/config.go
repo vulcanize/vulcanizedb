@@ -19,6 +19,7 @@ import (
 )
 
 var VatMoveConfig = shared.TransformerConfig{
+	TransformerName:     "vat move",
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,
 	Topics:              []string{shared.VatMoveSignature},

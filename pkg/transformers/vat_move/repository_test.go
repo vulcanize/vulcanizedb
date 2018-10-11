@@ -190,4 +190,13 @@ var _ = Describe("Vat Move", func() {
 			Expect(headerChecked).To(BeTrue())
 		})
 	})
+
+	Describe("SetDB", func() {
+		It("sets the repository db", func() {
+			vatMoveRepository.DB = nil
+			Expect(vatMoveRepository.DB).To(BeNil())
+			vatMoveRepository.SetDB(db)
+			Expect(vatMoveRepository.DB).To(Equal(db))
+		})
+	})
 })

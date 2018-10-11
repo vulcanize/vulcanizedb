@@ -64,6 +64,4 @@ func (repository *MockVatMoveRepository) SetCheckedHeaderError(e error) {
 	repository.CheckedHeaderError = e
 }
 
-func (repository *MockVatMoveRepository) SetDB(db *postgres.DB) {
-	// TODO Implement passed DB
-}
+func (repository *MockVatMoveRepository) SetDB(db *postgres.DB) {}
