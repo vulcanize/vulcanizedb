@@ -15,11 +15,15 @@
 package bite_test
 
 import (
+	"database/sql"
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"database/sql"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
@@ -28,27 +32,35 @@ import (
 )
 
 var _ = Describe("Bite repository", func() {
+	var (
+		biteRepository   bite.Repository
+		db               *postgres.DB
+		err              error
+		headerRepository datastore.HeaderRepository
+		rawHeader        []byte
+	)
+
+	BeforeEach(func() {
+		db = test_config.NewTestDB(test_config.NewTestNode())
+		test_config.CleanTestDB(db)
+		headerRepository = repositories.NewHeaderRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
+		biteRepository = bite.NewBiteRepository(db)
+	})
+
 	Describe("Create", func() {
-		var (
-			biteRepository bite.Repository
-			db             *postgres.DB
-			err            error
-			headerID       int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			biteRepository = bite.NewBiteRepository(db)
+
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("persists a bite record", func() {
-			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var dbBite bite.BiteModel
 			err = db.Get(&dbBite, `SELECT id, ilk, urn, ink, art, tab, flip, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -63,9 +75,6 @@ var _ = Describe("Bite repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT bite_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -73,9 +82,6 @@ var _ = Describe("Bite repository", func() {
 		})
 
 		It("does not duplicate bite events", func() {
-			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			var anotherBiteModel = bite.BiteModel{
 				Id:               "11",
 				Ilk:              test_data.BiteModel.Ilk,
@@ -96,9 +102,6 @@ var _ = Describe("Bite repository", func() {
 		})
 
 		It("removes bite if corresponding header is deleted", func() {
-			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -110,14 +113,14 @@ var _ = Describe("Bite repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		It("creates a row for a new headerID", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			biteRepository := bite.NewBiteRepository(db)
+		var headerID int64
 
+		BeforeEach(func() {
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates a row for a new headerID", func() {
 			err = biteRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -128,12 +131,6 @@ var _ = Describe("Bite repository", func() {
 		})
 
 		It("updates row when headerID already exists", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			biteRepository := bite.NewBiteRepository(db)
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 
 			err = biteRepository.MarkHeaderChecked(headerID)
@@ -147,31 +144,69 @@ var _ = Describe("Bite repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			biteBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, biteBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
+		var (
+			startingBlock, endingBlock, biteBlock int64
+			blockNumbers, headerIDs               []int64
+		)
+
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			biteBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+
+			blockNumbers = []int64{startingBlock, biteBlock, endingBlock, endingBlock + 1}
+
+			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
+				headerIDs = append(headerIDs, headerID)
 			}
-			biteRepository := bite.NewBiteRepository(db)
+		})
+
+		It("returns headers that haven't been checked", func() {
 			err := biteRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := biteRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := biteRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+		})
+
+		It("only treats headers as checked if bite logs have been checked", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := biteRepository.MissingHeaders(startingBlock, endingBlock)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(biteBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(biteBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(biteBlock)))
+		})
+
+		It("only returns headers associated with the current node", func() {
+			err := biteRepository.MarkHeaderChecked(headerIDs[0])
+			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
+			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
+			for _, n := range blockNumbers {
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				Expect(err).NotTo(HaveOccurred())
+			}
+			biteRepositoryTwo := bite.NewBiteRepository(dbTwo)
+
+			nodeOneMissingHeaders, err := biteRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
+
+			nodeTwoMissingHeaders, err := biteRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
 		})
 	})
 })

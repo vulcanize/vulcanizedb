@@ -16,11 +16,14 @@ package chop_lump_test
 
 import (
 	"database/sql"
+	"encoding/json"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
@@ -29,39 +32,46 @@ import (
 )
 
 var _ = Describe("Cat file chop lump repository", func() {
+	var (
+		catFileRepository chop_lump.CatFileChopLumpRepository
+		db                *postgres.DB
+		err               error
+		headerRepository  datastore.HeaderRepository
+		rawHeader         []byte
+	)
+
+	BeforeEach(func() {
+		db = test_config.NewTestDB(test_config.NewTestNode())
+		test_config.CleanTestDB(db)
+		headerRepository = repositories.NewHeaderRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
+		catFileRepository = chop_lump.NewCatFileChopLumpRepository(db)
+	})
+
 	Describe("Create", func() {
-		var catFileRepository chop_lump.CatFileChopLumpRepository
-		var db *postgres.DB
-		var err error
 		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			catFileRepository = chop_lump.NewCatFileChopLumpRepository(db)
+
+			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a cat file chop lump event", func() {
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
-
+			var dbResult chop_lump.CatFileChopLumpModel
+			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			var dbPitFile chop_lump.CatFileChopLumpModel
-			err = db.Get(&dbPitFile, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(dbPitFile.Ilk).To(Equal(test_data.CatFileChopLumpModel.Ilk))
-			Expect(dbPitFile.What).To(Equal(test_data.CatFileChopLumpModel.What))
-			Expect(dbPitFile.Data).To(Equal(test_data.CatFileChopLumpModel.Data))
-			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.CatFileChopLumpModel.TransactionIndex))
-			Expect(dbPitFile.Raw).To(MatchJSON(test_data.CatFileChopLumpModel.Raw))
+			Expect(dbResult.Ilk).To(Equal(test_data.CatFileChopLumpModel.Ilk))
+			Expect(dbResult.What).To(Equal(test_data.CatFileChopLumpModel.What))
+			Expect(dbResult.Data).To(Equal(test_data.CatFileChopLumpModel.Data))
+			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileChopLumpModel.TransactionIndex))
+			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileChopLumpModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT cat_file_chop_lump_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -70,37 +80,31 @@ var _ = Describe("Cat file chop lump repository", func() {
 
 		It("does not duplicate cat file chop lump events", func() {
 			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes cat file chop lump if corresponding header is deleted", func() {
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
-			var dbPitFile chop_lump.CatFileChopLumpModel
-			err = db.Get(&dbPitFile, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
+			var dbResult chop_lump.CatFileChopLumpModel
+			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		It("creates a row for a new headerID", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			catFileRepository := chop_lump.NewCatFileChopLumpRepository(db)
+		var headerID int64
 
+		BeforeEach(func() {
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates a row for a new headerID", func() {
 			err = catFileRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -111,12 +115,6 @@ var _ = Describe("Cat file chop lump repository", func() {
 		})
 
 		It("updates row when headerID already exists", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{})
-			Expect(err).NotTo(HaveOccurred())
-			catFileRepository := chop_lump.NewCatFileChopLumpRepository(db)
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 
 			err = catFileRepository.MarkHeaderChecked(headerID)
@@ -130,78 +128,61 @@ var _ = Describe("Cat file chop lump repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			catFileBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, catFileBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
+		var (
+			startingBlock, endingBlock, catFileBlock int64
+			blockNumbers, headerIDs                  []int64
+		)
+
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			catFileBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+
+			blockNumbers = []int64{startingBlock, catFileBlock, endingBlock, endingBlock + 1}
+
+			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				headerIDs = append(headerIDs, headerID)
 				Expect(err).NotTo(HaveOccurred())
 			}
-			catFileRepository := chop_lump.NewCatFileChopLumpRepository(db)
+		})
+
+		It("returns headers that haven't been checked", func() {
 			err := catFileRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := catFileRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := catFileRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if cat file chop lump logs have been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			catFiledBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, catFiledBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-			catFiledRepository := chop_lump.NewCatFileChopLumpRepository(db)
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := catFiledRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := catFileRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(catFiledBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(catFiledBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(catFiledBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
 		})
 
 		It("only returns headers associated with the current node", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			blockNumbers := []int64{1, 2, 3}
-			headerRepository := repositories.NewHeaderRepository(db)
-			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
-			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-			}
-			catFileRepository := chop_lump.NewCatFileChopLumpRepository(db)
-			catFileRepositoryTwo := chop_lump.NewCatFileChopLumpRepository(dbTwo)
 			err := catFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
+			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
+			for _, n := range blockNumbers {
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
+				Expect(err).NotTo(HaveOccurred())
+			}
+			catFileRepositoryTwo := chop_lump.NewCatFileChopLumpRepository(dbTwo)
 
 			nodeOneMissingHeaders, err := catFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())

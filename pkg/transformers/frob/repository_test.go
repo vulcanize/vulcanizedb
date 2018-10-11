@@ -16,11 +16,14 @@ package frob_test
 
 import (
 	"database/sql"
+	"encoding/json"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
@@ -29,27 +32,35 @@ import (
 )
 
 var _ = Describe("Frob repository", func() {
+	var (
+		db               *postgres.DB
+		frobRepository   frob.Repository
+		err              error
+		headerRepository datastore.HeaderRepository
+		rawHeader        []byte
+	)
+
+	BeforeEach(func() {
+		db = test_config.NewTestDB(core.Node{})
+		test_config.CleanTestDB(db)
+		headerRepository = repositories.NewHeaderRepository(db)
+		frobRepository = frob.NewFrobRepository(db)
+		rawHeader, err = json.Marshal(types.Header{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Describe("Create", func() {
-		var (
-			db             *postgres.DB
-			frobRepository frob.Repository
-			err            error
-			headerID       int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			frobRepository = frob.NewFrobRepository(db)
+
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a frob", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
 			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, urn, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -65,9 +76,6 @@ var _ = Describe("Frob repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
-
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT frob_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,18 +84,12 @@ var _ = Describe("Frob repository", func() {
 
 		It("does not duplicate frob events", func() {
 			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes frob if corresponding header is deleted", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -99,20 +101,11 @@ var _ = Describe("Frob repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var (
-			db             *postgres.DB
-			frobRepository frob.Repository
-			err            error
-			headerID       int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
-			frobRepository = frob.NewFrobRepository(db)
 		})
 
 		It("creates a row for a new headerID", func() {
@@ -139,75 +132,58 @@ var _ = Describe("Frob repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			frobBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, frobBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
+		var (
+			startingBlock, endingBlock, frobBlock int64
+			blockNumbers, headerIDs               []int64
+		)
+
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			frobBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+
+			blockNumbers = []int64{startingBlock, frobBlock, endingBlock, endingBlock + 1}
+
+			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
+				headerIDs = append(headerIDs, headerID)
 			}
-			frobRepository := frob.NewFrobRepository(db)
+		})
+
+		It("returns headers that haven't been checked", func() {
 			err := frobRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := frobRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := frobRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if frob logs have been checked", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			frobdBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, frobdBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-			frobRepository := frob.NewFrobRepository(db)
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := frobRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := frobRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(frobdBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(frobdBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(frobdBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(frobBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(frobBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(frobBlock)))
 		})
 
 		It("only returns headers associated with the current node", func() {
-			db := test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			blockNumbers := []int64{1, 2, 3}
-			headerRepository := repositories.NewHeaderRepository(db)
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			var headerIDs []int64
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 			}
-			frobRepository := frob.NewFrobRepository(db)
 			frobRepositoryTwo := frob.NewFrobRepository(dbTwo)
 			err := frobRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())

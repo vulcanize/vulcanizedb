@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -34,7 +36,7 @@ var _ = Describe("Vat init repository", func() {
 		vatInitRepository vat_init.Repository
 		headerRepository  repositories.HeaderRepository
 		err               error
-		headerID          int64
+		rawHeader         []byte
 	)
 
 	BeforeEach(func() {
@@ -42,15 +44,22 @@ var _ = Describe("Vat init repository", func() {
 		test_config.CleanTestDB(db)
 		vatInitRepository = vat_init.NewVatInitRepository(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+		rawHeader, err = json.Marshal(types.Header{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Create", func() {
-		It("adds a vat event", func() {
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
+		var headerID int64
 
+		BeforeEach(func() {
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
 			Expect(err).NotTo(HaveOccurred())
+
+			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("adds a vat event", func() {
 			var dbVatInit vat_init.VatInitModel
 			err = db.Get(&dbVatInit, `SELECT ilk,tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -61,18 +70,12 @@ var _ = Describe("Vat init repository", func() {
 
 		It("does not duplicate vat events", func() {
 			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes vat if corresponding header is deleted", func() {
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -83,9 +86,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("marks the header as checked for vat init logs", func() {
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
-			Expect(err).NotTo(HaveOccurred())
-
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_init_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -94,6 +94,14 @@ var _ = Describe("Vat init repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
+		var headerID int64
+
+		BeforeEach(func() {
+			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{Raw: rawHeader})
+			Expect(err).NotTo(HaveOccurred())
+
+		})
+
 		It("creates a row for a new headerID", func() {
 			err = vatInitRepository.MarkHeaderChecked(headerID)
 
@@ -118,63 +126,56 @@ var _ = Describe("Vat init repository", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			startingBlockNumber := int64(1)
-			vatInitBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, vatInitBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
+		var (
+			startingBlock, vatInitBlock, endingBlock int64
+			blockNumbers, headerIDs                  []int64
+		)
+
+		BeforeEach(func() {
+			startingBlock = GinkgoRandomSeed()
+			vatInitBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+
+			blockNumbers = []int64{startingBlock, vatInitBlock, endingBlock, endingBlock + 1}
+
+			headerIDs = []int64{}
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
+				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
+				headerIDs = append(headerIDs, headerID)
 			}
-			vatInitRepository := vat_init.NewVatInitRepository(db)
+		})
+
+		It("returns headers that haven't been checked", func() {
 			err := vatInitRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := vatInitRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := vatInitRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if drip drip logs have been checked", func() {
-			headerRepository := repositories.NewHeaderRepository(db)
-			startingBlockNumber := int64(1)
-			vatInitBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers := []int64{startingBlockNumber, vatInitBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			var headerIDs []int64
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := vatInitRepository.MissingHeaders(startingBlockNumber, endingBlockNumber)
+			headers, err := vatInitRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatInitBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatInitBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(vatInitBlockNumber)))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatInitBlock)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatInitBlock)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatInitBlock)))
 		})
 
 		It("only returns headers associated with the current node", func() {
-			blockNumbers := []int64{1, 2, 3}
 			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			var headerIDs []int64
 			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(core.Header{BlockNumber: n, Raw: rawHeader})
 				Expect(err).NotTo(HaveOccurred())
 			}
 			vatInitRepositoryTwo := vat_init.NewVatInitRepository(dbTwo)
