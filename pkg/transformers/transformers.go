@@ -70,9 +70,15 @@ var (
 	PitFileIlkTransformerInitializer          = ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}.NewPitFileIlkTransformer
 	PitFileStabilityFeeTransformerInitializer = stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}.NewPitFileStabilityFeeTransformer
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
-	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
 	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
-	VatInitTransformerInitializer             = factories.Transformer{
+	TendTransformerInitializer                = factories.Transformer{
+		Config:     tend.TendConfig,
+		Converter:  &tend.TendConverter{},
+		Repository: &tend.TendRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	VatInitTransformerInitializer = factories.Transformer{
 		Config:     vat_init.VatInitConfig,
 		Converter:  &vat_init.VatInitConverter{},
 		Repository: &vat_init.VatInitRepository{},

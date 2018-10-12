@@ -32,6 +32,7 @@ var _ = Describe("TendRepository", func() {
 		db               *postgres.DB
 		tendRepository   tend.TendRepository
 		headerRepository repositories.HeaderRepository
+		headerId         int64
 		err              error
 	)
 
@@ -40,17 +41,15 @@ var _ = Describe("TendRepository", func() {
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		tendRepository = tend.NewTendRepository(db)
+		headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+		Expect(err).NotTo(HaveOccurred())
+
+		tendRepository = tend.TendRepository{DB: db}
 	})
 
 	Describe("Create", func() {
-		var headerId int64
-
-		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+		It("persists a tend record", func() {
+			err := tendRepository.Create(headerId, []interface{}{test_data.TendModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -81,13 +80,18 @@ var _ = Describe("TendRepository", func() {
 		})
 
 		It("returns an error if inserting a tend record fails", func() {
-			err = tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+			err := tendRepository.Create(headerId, []interface{}{test_data.TendModel})
+			Expect(err).NotTo(HaveOccurred())
 
+			err = tendRepository.Create(headerId, []interface{}{test_data.TendModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("deletes the tend record if its corresponding header record is deleted", func() {
+			err := tendRepository.Create(headerId, []interface{}{test_data.TendModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var count int
 			err = db.QueryRow(`SELECT count(*) from maker.tend`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
@@ -182,7 +186,7 @@ var _ = Describe("TendRepository", func() {
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			tendRepository2 := tend.NewTendRepository(db2)
+			tendRepository2 := tend.TendRepository{DB: db2}
 
 			for _, number := range []int64{startingBlock, tendBlock, endingBlock} {
 				headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
