@@ -30,10 +30,11 @@ import (
 )
 
 var _ = Describe("Vat move transformer", func() {
+	var config = vat_move.VatMoveConfig
 	var fetcher mocks.MockLogFetcher
 	var converter vat_move_mocks.MockVatMoveConverter
 	var repository vat_move_mocks.MockVatMoveRepository
-	var config = vat_move.VatMoveConfig
+	var transformer shared.Transformer
 	var headerOne core.Header
 	var headerTwo core.Header
 
@@ -43,16 +44,15 @@ var _ = Describe("Vat move transformer", func() {
 		repository = vat_move_mocks.MockVatMoveRepository{}
 		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
 		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		transformer = factories.Transformer{
+			Config:     config,
+			Converter:  &converter,
+			Fetcher:    &fetcher,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
 	})
 
 	It("gets missing headers for block numbers specified in config", func() {
-		transformer := factories.Transformer{
-			Config:     config,
-			Converter:  &converter,
-			Repository: &repository,
-			Fetcher:    &fetcher,
-		}.NewTransformer(nil, nil)
-
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -62,12 +62,7 @@ var _ = Describe("Vat move transformer", func() {
 
 	It("returns error if repository returns error for missing headers", func() {
 		repository.SetMissingHeadersError(fakes.FakeError)
-		transformer := factories.Transformer{
-			Config:     config,
-			Converter:  &converter,
-			Fetcher:    &fetcher,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
+
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -76,12 +71,6 @@ var _ = Describe("Vat move transformer", func() {
 
 	It("fetches logs for missing headers", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -97,12 +86,6 @@ var _ = Describe("Vat move transformer", func() {
 	It("returns error if fetcher returns error", func() {
 		fetcher.SetFetcherError(fakes.FakeError)
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -113,12 +96,6 @@ var _ = Describe("Vat move transformer", func() {
 	It("converts matching logs", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatMoveLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -130,12 +107,6 @@ var _ = Describe("Vat move transformer", func() {
 		converter.SetConverterError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatMoveLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -146,12 +117,6 @@ var _ = Describe("Vat move transformer", func() {
 	It("marks header as checked even if no logs were returned", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		fetcher.SetFetchedLogs([]types.Log{})
-		transformer := factories.Transformer{
-			Config:     config,
-			Converter:  &converter,
-			Fetcher:    &fetcher,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
@@ -163,12 +128,6 @@ var _ = Describe("Vat move transformer", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		repository.SetCheckedHeaderError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{})
-		transformer := factories.Transformer{
-			Config:     config,
-			Converter:  &converter,
-			Fetcher:    &fetcher,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -179,12 +138,6 @@ var _ = Describe("Vat move transformer", func() {
 	It("persists vat move model", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatMoveLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 
@@ -197,12 +150,6 @@ var _ = Describe("Vat move transformer", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatMoveLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
 
 		err := transformer.Execute()
 

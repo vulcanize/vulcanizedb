@@ -32,12 +32,13 @@ import (
 
 var _ = Describe("Vat init transformer", func() {
 	var (
-		config     = vat_init.VatInitConfig
-		converter  vat_init_mocks.MockVatInitConverter
-		repository vat_init_mocks.MockVatInitRepository
-		fetcher    mocks.MockLogFetcher
-		headerOne  core.Header
-		headerTwo  core.Header
+		config      = vat_init.VatInitConfig
+		converter   vat_init_mocks.MockVatInitConverter
+		repository  vat_init_mocks.MockVatInitRepository
+		fetcher     mocks.MockLogFetcher
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
 	)
 
 	BeforeEach(func() {
@@ -46,16 +47,15 @@ var _ = Describe("Vat init transformer", func() {
 		fetcher = mocks.MockLogFetcher{}
 		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
 		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		transformer = factories.Transformer{
+			Config:     config,
+			Fetcher:    &fetcher,
+			Converter:  &converter,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
 	})
 
 	It("gets missing headers for block numbers specified in config", func() {
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_init_mocks.MockVatInitConverter{},
-			Repository: &repository,
-		}.NewTransformer(nil, nil)
-
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -65,12 +65,6 @@ var _ = Describe("Vat init transformer", func() {
 
 	It("returns error if repository returns error for missing headers", func() {
 		repository.SetMissingHeadersError(fakes.FakeError)
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_init_mocks.MockVatInitConverter{},
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -80,31 +74,19 @@ var _ = Describe("Vat init transformer", func() {
 
 	It("fetches logs for missing headers", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 		Expect(fetcher.FetchedContractAddresses).To(Equal(
-			[][]string{transformer.Config.ContractAddresses, transformer.Config.ContractAddresses}))
+			[][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VatInitSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
 		fetcher.SetFetcherError(fakes.FakeError)
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -114,12 +96,6 @@ var _ = Describe("Vat init transformer", func() {
 
 	It("marks header checked if no logs returned", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -130,12 +106,6 @@ var _ = Describe("Vat init transformer", func() {
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetMarkHeaderCheckedError(fakes.FakeError)
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -146,12 +116,6 @@ var _ = Describe("Vat init transformer", func() {
 	It("converts matching logs", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatInitLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -163,12 +127,6 @@ var _ = Describe("Vat init transformer", func() {
 		converter.SetConverterError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatInitLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -179,12 +137,6 @@ var _ = Describe("Vat init transformer", func() {
 	It("persists vat init model", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatInitLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 
@@ -197,12 +149,6 @@ var _ = Describe("Vat init transformer", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatInitLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := factories.Transformer{
-			Config:     config,
-			Fetcher:    &fetcher,
-			Converter:  &converter,
-			Repository: &repository,
-		}
 
 		err := transformer.Execute()
 

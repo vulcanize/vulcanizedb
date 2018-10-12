@@ -24,18 +24,20 @@ import (
 )
 
 var _ = Describe("Vat init converter", func() {
-	It("returns err if log missing topics", func() {
-		converter := vat_init.VatInitConverter{}
-		badLog := types.Log{}
+	var converter vat_init.VatInitConverter
 
+	BeforeEach(func() {
+		converter = vat_init.VatInitConverter{}
+	})
+
+	It("returns err if log missing topics", func() {
+		badLog := types.Log{}
 		_, err := converter.ToModels([]types.Log{badLog})
 
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("converts a log to an model", func() {
-		converter := vat_init.VatInitConverter{}
-
 		models, err := converter.ToModels([]types.Log{test_data.EthVatInitLog})
 
 		Expect(err).NotTo(HaveOccurred())
