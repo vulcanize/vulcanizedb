@@ -75,14 +75,14 @@ var (
 	VatInitTransformerInitializer             = factories.Transformer{
 		Config:     vat_init.VatInitConfig,
 		Converter:  &vat_init.VatInitConverter{},
-		Repository: &vat_init.VatInitRepository{DB: nil},
+		Repository: &vat_init.VatInitRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 
 	VatMoveTransformerInitializer = factories.Transformer{
 		Config:     vat_move.VatMoveConfig,
 		Converter:  &vat_move.VatMoveConverter{},
-		Repository: &vat_move.VatMoveRepository{DB: nil},
+		Repository: &vat_move.VatMoveRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 	VatHealTransformerInitializer             = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
