@@ -50,12 +50,14 @@ func (transformer Transformer) NewTransformer(db *postgres.DB, bc core.BlockChai
 }
 
 func (transformer Transformer) Execute() error {
+	transformerName := transformer.Config.TransformerName
 	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
+		log.Printf("Error fetching mising headers in %v transformer: %v \n", transformerName, err)
 		return err
 	}
 
-	log.Printf("Fetching %v event logs for %d headers \n", transformer.Config.TransformerName, len(missingHeaders))
+	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
 		// Grab topics from config
 		var topics [][]common.Hash
@@ -66,6 +68,7 @@ func (transformer Transformer) Execute() error {
 		// Fetch the missing logs for a given header
 		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
+			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
 			return err
 		}
 
@@ -73,12 +76,14 @@ func (transformer Transformer) Execute() error {
 		if len(matchingLogs) < 1 {
 			err := transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
+				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 				return err
 			}
 		}
 
 		models, err := transformer.Converter.ToModels(matchingLogs)
 		if err != nil {
+			log.Printf("Error converting logs in %v: %v", transformerName, err)
 			return err
 		}
 
@@ -91,6 +96,7 @@ func (transformer Transformer) Execute() error {
 
 		err = transformer.Repository.Create(header.Id, typelessModels)
 		if err != nil {
+			log.Printf("Error persisting %v record: %v", transformerName, err)
 			return err
 		}
 	}
