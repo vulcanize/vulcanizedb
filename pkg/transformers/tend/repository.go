@@ -19,31 +19,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerId int64, tends []TendModel) error
-	MarkHeaderChecked(headerId int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
-
 type TendRepository struct {
 	DB *postgres.DB
 }
 
-func NewTendRepository(db *postgres.DB) TendRepository {
-	return TendRepository{DB: db}
-}
-
-func (r TendRepository) Create(headerId int64, tends []TendModel) error {
-	tx, err := r.DB.Begin()
+func (repository TendRepository) Create(headerId int64, models []interface{}) error {
+	tx, err := repository.DB.Begin()
 	if err != nil {
 		return err
 	}
-	for _, tend := range tends {
+	var tend TendModel
+	for _, model := range models {
+		tend = model.(TendModel)
 		_, err = tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+        	VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
 			headerId, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.TransactionIndex, tend.Raw,
 		)
+
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -53,6 +46,7 @@ func (r TendRepository) Create(headerId int64, tends []TendModel) error {
 			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET tend_checked = $2`, headerId, true)
+
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,28 +54,32 @@ func (r TendRepository) Create(headerId int64, tends []TendModel) error {
 	return tx.Commit()
 }
 
-func (r TendRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := r.DB.Exec(`INSERT INTO public.checked_headers (header_id, tend_checked)
+func (repository TendRepository) MarkHeaderChecked(headerId int64) error {
+	_, err := repository.DB.Exec(`INSERT INTO public.checked_headers (header_id, tend_checked)
 		VALUES ($1, $2)
 	ON CONFLICT (header_id) DO
 		UPDATE SET tend_checked = $2`, headerId, true)
 	return err
 }
 
-func (r TendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+func (repository TendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := r.DB.Select(
+	err := repository.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
+				LEFT JOIN checked_headers on headers.id = header_id
                WHERE (header_id ISNULL OR tend_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+               	AND headers.block_number >= $1
+               	AND headers.block_number <= $2
+               	AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		r.DB.Node.ID,
+		repository.DB.Node.ID,
 	)
 
 	return result, err
+}
+
+func (repository *TendRepository) SetDB(db *postgres.DB) {
+	repository.DB = db
 }
