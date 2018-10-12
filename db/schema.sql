@@ -839,6 +839,41 @@ ALTER SEQUENCE maker.vat_init_id_seq OWNED BY maker.vat_init.id;
 
 
 --
+-- Name: vat_move; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_move (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    src text NOT NULL,
+    dst text NOT NULL,
+    rad numeric NOT NULL,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_move_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_move_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_move_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_move_id_seq OWNED BY maker.vat_move.id;
+
+
+--
 -- Name: vat_toll; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -1012,6 +1047,7 @@ CREATE TABLE public.checked_headers (
     pit_file_ilk_checked boolean DEFAULT false NOT NULL,
     pit_file_stability_fee_checked boolean DEFAULT false NOT NULL,
     vat_init_checked boolean DEFAULT false NOT NULL,
+    vat_move_checked boolean DEFAULT false NOT NULL,
     vat_fold_checked boolean DEFAULT false NOT NULL,
     vat_heal_checked boolean DEFAULT false NOT NULL,
     vat_toll_checked boolean DEFAULT false NOT NULL,
@@ -1492,6 +1528,13 @@ ALTER TABLE ONLY maker.vat_init ALTER COLUMN id SET DEFAULT nextval('maker.vat_i
 
 
 --
+-- Name: vat_move id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_move ALTER COLUMN id SET DEFAULT nextval('maker.vat_move_id_seq'::regclass);
+
+
+--
 -- Name: vat_toll id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1928,6 +1971,22 @@ ALTER TABLE ONLY maker.vat_init
 
 
 --
+-- Name: vat_move vat_move_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_move
+    ADD CONSTRAINT vat_move_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_move vat_move_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_move
+    ADD CONSTRAINT vat_move_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: vat_toll vat_toll_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -2287,6 +2346,14 @@ ALTER TABLE ONLY maker.vat_heal
 
 ALTER TABLE ONLY maker.vat_init
     ADD CONSTRAINT vat_init_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_move vat_move_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_move
+    ADD CONSTRAINT vat_move_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
