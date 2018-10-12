@@ -16,10 +16,10 @@ package shared
 
 import "github.com/spf13/viper"
 
-func getContractValue(key string, val string) string {
+func getContractValue(key string, fallback string) string {
 	value := viper.GetString(key)
 	if value == "" {
-		return val
+		return fallback
 	}
 	return value
 }
