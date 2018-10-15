@@ -33,7 +33,6 @@ var _ = Describe("Price feeds transformer", func() {
 	)
 
 	BeforeEach(func() {
-		ipc := "https://kovan.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
 		blockChain, err = getBlockChain(rpcClient, ethClient)

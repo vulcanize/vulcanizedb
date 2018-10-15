@@ -15,19 +15,16 @@
 package integration_tests
 
 import (
-	"context"
-	"encoding/json"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"math/big"
 )
 
 func getClients(ipc string) (client.RpcClient, *ethclient.Client, error) {
@@ -46,22 +43,7 @@ func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (cor
 }
 
 func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int64) error {
-	var poaHeader core.POAHeader
-	blockNumberArg := hexutil.EncodeBig(big.NewInt(int64(blockNumber)))
-	err := rpcClient.CallContext(context.Background(), &poaHeader, "eth_getBlockByNumber", blockNumberArg, false)
-	if err != nil {
-		return err
-	}
-	rawHeader, err := json.Marshal(poaHeader)
-	if err != nil {
-		return err
-	}
 	headerRepository := repositories.NewHeaderRepository(db)
-	_, err = headerRepository.CreateOrUpdateHeader(core.Header{
-		BlockNumber: poaHeader.Number.ToInt().Int64(),
-		Hash:        poaHeader.Hash.String(),
-		Raw:         rawHeader,
-		Timestamp:   poaHeader.Time.ToInt().String(),
-	})
+	_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(blockNumber))
 	return err
 }
