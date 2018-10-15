@@ -34,7 +34,6 @@ var _ = Describe("Frob Transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		ipc := "https://kovan.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
 		blockchain, err := getBlockChain(rpcClient, ethClient)

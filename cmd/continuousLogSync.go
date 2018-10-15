@@ -109,6 +109,7 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap["vatMove"] = transformers.VatMoveTransformerInitializer
 	transformerInitializerMap["vatHeal"] = transformers.VatHealTransformerInitializer
 	transformerInitializerMap["vatFold"] = transformers.VatFoldTransformerInitializer
+	transformerInitializerMap["vatSlip"] = transformers.VatSlipTransformerInitializer
 	transformerInitializerMap["vatToll"] = transformers.VatTollTransformerInitializer
 	transformerInitializerMap["vatTune"] = transformers.VatTuneTransformerInitializer
 	transformerInitializerMap["vatFlux"] = transformers.VatFluxTransformerInitializer

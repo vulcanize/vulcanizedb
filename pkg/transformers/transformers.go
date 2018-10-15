@@ -43,6 +43,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 )
@@ -74,6 +75,7 @@ var (
 	VatMoveTransformerInitializer             = vat_move.VatMoveTransformerInitializer{Config: vat_move.VatMoveConfig}.NewVatMoveTransformer
 	VatHealTransformerInitializer             = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
 	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
+	VatSlipTransformerInitializer             = vat_slip.VatSlipTransformerInitializer{Config: vat_slip.VatSlipConfig}.NewVatSlipTransformer
 	VatTollTransformerInitializer             = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
 	VatTuneTransformerInitializer             = vat_tune.VatTuneTransformerInitializer{Config: vat_tune.VatTuneConfig}.NewVatTuneTransformer
 	VatFluxTransformerInitializer             = vat_flux.VatFluxTransformerInitializer{Config: vat_flux.VatFluxConfig}.NewVatFluxTransformer
@@ -104,6 +106,7 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		VatMoveTransformerInitializer,
 		VatHealTransformerInitializer,
 		VatFoldTransformerInitializer,
+		VatSlipTransformerInitializer,
 		VatTollTransformerInitializer,
 		VatTuneTransformerInitializer,
 		VatFluxTransformerInitializer,
