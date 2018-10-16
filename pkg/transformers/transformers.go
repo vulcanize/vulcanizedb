@@ -68,10 +68,16 @@ var (
 	pitFileConfig                             = pit_file.PitFileConfig
 	PitFileDebtCeilingTransformerInitializer  = debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}.NewPitFileDebtCeilingTransformer
 	PitFileIlkTransformerInitializer          = ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}.NewPitFileIlkTransformer
-	PitFileStabilityFeeTransformerInitializer = stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}.NewPitFileStabilityFeeTransformer
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
 	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
-	TendTransformerInitializer                = factories.Transformer{
+	PitFileStabilityFeeTransformerInitializer = factories.Transformer{
+		Config:     stability_fee.StabilityFeeFileConfig,
+		Converter:  &stability_fee.PitFileStabilityFeeConverter{},
+		Repository: &stability_fee.PitFileStabilityFeeRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	TendTransformerInitializer      = factories.Transformer{
 		Config:     tend.TendConfig,
 		Converter:  &tend.TendConverter{},
 		Repository: &tend.TendRepository{},
