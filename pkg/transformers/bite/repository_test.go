@@ -58,14 +58,15 @@ var _ = Describe("Bite repository", func() {
 
 		It("persists a bite record", func() {
 			var dbBite bite.BiteModel
-			err = db.Get(&dbBite, `SELECT id, ilk, urn, ink, art, tab, flip, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
+			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbBite.Id).To(Equal(test_data.BiteModel.Id))
 			Expect(dbBite.Ilk).To(Equal(test_data.BiteModel.Ilk))
 			Expect(dbBite.Urn).To(Equal(test_data.BiteModel.Urn))
+			Expect(dbBite.Ink).To(Equal(test_data.BiteModel.Ink))
 			Expect(dbBite.Art).To(Equal(test_data.BiteModel.Art))
 			Expect(dbBite.Tab).To(Equal(test_data.BiteModel.Tab))
-			Expect(dbBite.Flip).To(Equal(test_data.BiteModel.Flip))
+			Expect(dbBite.NFlip).To(Equal(test_data.BiteModel.NFlip))
+			Expect(dbBite.IArt).To(Equal(test_data.BiteModel.IArt))
 			Expect(dbBite.TransactionIndex).To(Equal(test_data.BiteModel.TransactionIndex))
 			Expect(dbBite.Raw).To(MatchJSON(test_data.BiteModel.Raw))
 		})
@@ -78,20 +79,7 @@ var _ = Describe("Bite repository", func() {
 		})
 
 		It("does not duplicate bite events", func() {
-			var anotherBiteModel = bite.BiteModel{
-				Id:               "11",
-				Ilk:              test_data.BiteModel.Ilk,
-				Urn:              test_data.BiteModel.Urn,
-				Ink:              test_data.BiteModel.Ink,
-				Art:              test_data.BiteModel.Art,
-				Tab:              test_data.BiteModel.Tab,
-				Flip:             test_data.BiteModel.Flip,
-				IArt:             test_data.BiteModel.IArt,
-				TransactionIndex: test_data.BiteModel.TransactionIndex,
-				Raw:              test_data.BiteModel.Raw,
-			}
-
-			err = biteRepository.Create(headerID, []bite.BiteModel{anotherBiteModel})
+			err = biteRepository.Create(headerID, []bite.BiteModel{test_data.BiteModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -102,7 +90,7 @@ var _ = Describe("Bite repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbBite bite.BiteModel
-			err = db.Get(&dbBite, `SELECT id, ilk, urn, ink, art, tab, flip, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
+			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

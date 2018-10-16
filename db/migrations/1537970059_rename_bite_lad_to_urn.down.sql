@@ -1,1 +1,0 @@
-ALTER TABLE maker.bite RENAME COLUMN urn TO lad;

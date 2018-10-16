@@ -18,8 +18,6 @@ package bite_test
 
 import (
 	"encoding/json"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -60,10 +58,6 @@ var _ = Describe("Bite Converter", func() {
 	Describe("ToModel", func() {
 		var emptyEntity = bite.BiteEntity{}
 
-		BeforeEach(func() {
-			emptyEntity.Id = big.NewInt(1)
-		})
-
 		It("converts an Entity to a Model", func() {
 			models, err := converter.ToModels([]bite.BiteEntity{test_data.BiteEntity})
 
@@ -71,21 +65,19 @@ var _ = Describe("Bite Converter", func() {
 			Expect(len(models)).To(Equal(1))
 			model := models[0]
 			Expect(model).To(Equal(test_data.BiteModel))
-			Expect(model.TransactionIndex).To(Equal(test_data.BiteModel.TransactionIndex))
 		})
 
 		It("handles nil values", func() {
 			emptyLog, err := json.Marshal(types.Log{})
 			Expect(err).NotTo(HaveOccurred())
 			expectedModel := bite.BiteModel{
-				Id:               "1",
 				Ilk:              "0x0000000000000000000000000000000000000000",
 				Urn:              "0x0000000000000000000000000000000000000000",
 				Ink:              "",
 				Art:              "",
 				IArt:             "",
 				Tab:              "",
-				Flip:             "",
+				NFlip:            "",
 				TransactionIndex: 0,
 				Raw:              string(emptyLog),
 			}

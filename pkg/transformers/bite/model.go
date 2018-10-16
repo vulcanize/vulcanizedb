@@ -15,14 +15,13 @@
 package bite
 
 type BiteModel struct {
-	Id               string
 	Ilk              string
 	Urn              string
 	Ink              string
 	Art              string
 	IArt             string
 	Tab              string
-	Flip             string
+	NFlip            string
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              string `db:"raw_log"`
 }
