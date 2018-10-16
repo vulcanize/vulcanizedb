@@ -33,7 +33,7 @@ import (
 var _ = Describe("Pit file ilk repository", func() {
 	var (
 		db                *postgres.DB
-		pitFileRepository ilk.Repository
+		pitFileRepository ilk.PitFileIlkRepository
 		err               error
 		headerRepository  datastore.HeaderRepository
 	)
@@ -42,18 +42,24 @@ var _ = Describe("Pit file ilk repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileRepository = ilk.NewPitFileIlkRepository(db)
+		pitFileRepository = ilk.PitFileIlkRepository{DB: db}
 	})
 
 	Describe("Create", func() {
-		var headerID int64
+		var (
+			db                   *postgres.DB
+			pitFileIlkRepository ilk.PitFileIlkRepository
+			err                  error
+			headerID             int64
+		)
 
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = pitFileRepository.Create(headerID, []ilk.PitFileIlkModel{test_data.PitFileIlkModel})
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 			Expect(err).NotTo(HaveOccurred())
+			pitFileIlkRepository = ilk.PitFileIlkRepository{DB: db}
 		})
 
 		It("adds a pit file ilk event", func() {
@@ -75,7 +81,7 @@ var _ = Describe("Pit file ilk repository", func() {
 		})
 
 		It("does not duplicate pit file ilk events", func() {
-			err = pitFileRepository.Create(headerID, []ilk.PitFileIlkModel{test_data.PitFileIlkModel})
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -176,7 +182,8 @@ var _ = Describe("Pit file ilk repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepositoryTwo := ilk.NewPitFileIlkRepository(dbTwo)
+
+			pitFileRepositoryTwo := ilk.PitFileIlkRepository{DB: dbTwo}
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
