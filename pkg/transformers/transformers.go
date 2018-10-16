@@ -31,7 +31,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
@@ -65,10 +64,15 @@ var (
 	FlipKickTransformerInitializer            = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
 	FlopKickTransformerInitializer            = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
 	FrobTransformerInitializer                = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
-	pitFileConfig                             = pit_file.PitFileConfig
-	PitFileDebtCeilingTransformerInitializer  = debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}.NewPitFileDebtCeilingTransformer
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
 	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
+	PitFileDebtCeilingTransformerInitializer  = factories.Transformer{
+		Config:     debt_ceiling.DebtCeilingFileConfig,
+		Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
+		Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
 	PitFileIlkTransformerInitializer          = factories.Transformer{
 		Config:     ilk.IlkFileConfig,
 		Converter:  &ilk.PitFileIlkConverter{},

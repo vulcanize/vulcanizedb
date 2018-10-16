@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pit_file
+package debt_ceiling
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var PitFileConfig = shared.TransformerConfig{
+var DebtCeilingFileConfig = shared.TransformerConfig{
+	TransformerName:     "pit file debt ceiling",
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
-	Topics:              []string{shared.PitFileIlkSignature, shared.PitFileDebtCeilingSignature, shared.PitFileStabilityFeeSignature},
+	Topics:              []string{shared.PitFileDebtCeilingSignature},
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }
