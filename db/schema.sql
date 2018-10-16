@@ -66,11 +66,11 @@ CREATE TABLE maker.bite (
     header_id integer NOT NULL,
     ilk text,
     urn text,
-    ink character varying,
-    art character varying,
-    iart character varying,
+    ink numeric,
+    art numeric,
+    iart numeric,
     tab numeric,
-    flip character varying,
+    nflip numeric,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );

@@ -22,7 +22,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
-	"strconv"
 )
 
 var (
@@ -44,7 +43,6 @@ var (
 	biteLad        = [32]byte{102, 97, 107, 101, 32, 108, 97, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	biteIlkString  = "0x66616b6520696c6B000000000000000000000000"
 	biteLadString  = "0x66616B65206c6164000000000000000000000000"
-	biteId         = int64(1)
 )
 
 var EthBiteLog = types.Log{
@@ -64,7 +62,6 @@ var EthBiteLog = types.Log{
 }
 
 var BiteEntity = bite.BiteEntity{
-	Id:               big.NewInt(biteId),
 	Ilk:              biteIlk,
 	Urn:              biteLad,
 	Ink:              biteInk,
@@ -77,13 +74,12 @@ var BiteEntity = bite.BiteEntity{
 }
 
 var BiteModel = bite.BiteModel{
-	Id:               strconv.FormatInt(biteId, 10),
 	Ilk:              biteIlkString,
 	Urn:              biteLadString,
 	Ink:              biteInk.String(),
 	Art:              biteArt.String(),
 	Tab:              biteTab.String(),
-	Flip:             biteFlip.String(),
+	NFlip:            biteFlip.String(),
 	IArt:             biteIArt.String(),
 	TransactionIndex: EthBiteLog.TxIndex,
 	Raw:              biteRawString,

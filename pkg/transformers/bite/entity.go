@@ -20,7 +20,6 @@ import (
 )
 
 type BiteEntity struct {
-	Id               *big.Int
 	Ilk              [32]byte
 	Urn              [32]byte
 	Ink              *big.Int

@@ -61,7 +61,6 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, error) {
 	var models []BiteModel
 	for _, entity := range entities {
-		id := entity.Id
 		ilk := common.BytesToAddress(entity.Ilk[:common.AddressLength]).String()
 		urn := common.BytesToAddress(entity.Urn[:common.AddressLength]).String()
 		ink := entity.Ink
@@ -77,14 +76,13 @@ func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, err
 		}
 
 		model := BiteModel{
-			Id:               shared.BigIntToString(id),
 			Ilk:              ilk,
 			Urn:              urn,
 			Ink:              shared.BigIntToString(ink),
 			Art:              shared.BigIntToString(art),
 			IArt:             shared.BigIntToString(iArt),
 			Tab:              shared.BigIntToString(tab),
-			Flip:             shared.BigIntToString(flip),
+			NFlip:            shared.BigIntToString(flip),
 			TransactionIndex: txIdx,
 			Raw:              rawLogString,
 		}

@@ -40,9 +40,9 @@ func (repository BiteRepository) Create(headerID int64, models []BiteModel) erro
 	}
 	for _, model := range models {
 		_, err := tx.Exec(
-			`INSERT into maker.bite (header_id, id, ilk, urn, ink, art, iart, tab, flip, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-			headerID, model.Id, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.Flip, model.TransactionIndex, model.Raw,
+			`INSERT into maker.bite (header_id, ilk, urn, ink, art, iart, tab, nflip, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7::NUMERIC, $8::NUMERIC, $9, $10)`,
+			headerID, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.NFlip, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
