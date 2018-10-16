@@ -17,7 +17,6 @@ package ilk
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
@@ -30,7 +29,7 @@ func (converter *MockPitFileIlkConverter) SetConverterError(err error) {
 	converter.converterError = err
 }
 
-func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]ilk.PitFileIlkModel, error) {
+func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []ilk.PitFileIlkModel{test_data.PitFileIlkModel}, converter.converterError
+	return []interface{}{test_data.PitFileIlkModel}, converter.converterError
 }
