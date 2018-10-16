@@ -67,9 +67,15 @@ var (
 	FrobTransformerInitializer                = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
 	pitFileConfig                             = pit_file.PitFileConfig
 	PitFileDebtCeilingTransformerInitializer  = debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}.NewPitFileDebtCeilingTransformer
-	PitFileIlkTransformerInitializer          = ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}.NewPitFileIlkTransformer
 	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
 	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
+	PitFileIlkTransformerInitializer          = factories.Transformer{
+		Config:     ilk.IlkFileConfig,
+		Converter:  &ilk.PitFileIlkConverter{},
+		Repository: &ilk.PitFileIlkRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
 	PitFileStabilityFeeTransformerInitializer = factories.Transformer{
 		Config:     stability_fee.StabilityFeeFileConfig,
 		Converter:  &stability_fee.PitFileStabilityFeeConverter{},
