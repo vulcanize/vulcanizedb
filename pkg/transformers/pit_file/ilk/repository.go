@@ -78,6 +78,6 @@ func (repository PitFileIlkRepository) MissingHeaders(startingBlockNumber, endin
 	return result, err
 }
 
-func (repository PitFileIlkRepository) SetDB(db *postgres.DB) {
+func (repository *PitFileIlkRepository) SetDB(db *postgres.DB) {
 	repository.DB = db
 }
