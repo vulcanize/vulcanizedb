@@ -24,56 +24,29 @@ type setupOptions struct {
 	missingHeaders         []core.Header
 }
 
-func setup(options setupOptions) (
-	vat_flux.VatFluxTransformer,
-	*mocks.MockLogFetcher,
-	*vat_flux_mocks.MockVatFlux,
-	*vat_flux_mocks.MockVatFluxRepository,
-) {
-	fetcher := &mocks.MockLogFetcher{}
-	if options.setFetcherError {
-		fetcher.SetFetcherError(fakes.FakeError)
-	}
-	if len(options.fetchedLogs) > 0 {
-		fetcher.SetFetchedLogs(options.fetchedLogs)
-	}
-
-	converter := &vat_flux_mocks.MockVatFlux{}
-	if options.setConverterError {
-		converter.SetConverterError(fakes.FakeError)
-	}
-
-	repository := &vat_flux_mocks.MockVatFluxRepository{}
-	if options.setMissingHeadersError {
-		repository.SetMissingHeadersErr(fakes.FakeError)
-	}
-	if options.setCreateError {
-		repository.SetCreateError(fakes.FakeError)
-	}
-	if len(options.missingHeaders) > 0 {
-		repository.SetMissingHeaders(options.missingHeaders)
-	}
-
-	transformer := vat_flux.VatFluxTransformer{
-		Config:     vat_flux.VatFluxConfig,
-		Fetcher:    fetcher,
-		Converter:  converter,
-		Repository: repository,
-	}
-
-	return transformer, fetcher, converter, repository
-}
-
 var _ = Describe("Vat flux transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
-		transformer := vat_flux.VatFluxTransformer{
-			Config:     vat_flux.VatFluxConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_flux_mocks.MockVatFlux{},
+	var (
+		config      shared.TransformerConfig
+		converter   *vat_flux_mocks.MockVatFlux
+		fetcher     *mocks.MockLogFetcher
+		repository  *vat_flux_mocks.MockVatFluxRepository
+		transformer vat_flux.VatFluxTransformer
+	)
+
+	BeforeEach(func() {
+		config = vat_flux.VatFluxConfig
+		converter = &vat_flux_mocks.MockVatFlux{}
+		fetcher = &mocks.MockLogFetcher{}
+		repository = &vat_flux_mocks.MockVatFluxRepository{}
+		transformer = vat_flux.VatFluxTransformer{
+			Config:     config,
+			Converter:  converter,
+			Fetcher:    fetcher,
 			Repository: repository,
 		}
+	})
 
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -82,14 +55,7 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_flux_mocks.MockVatFlux{},
-			Repository: repository,
-		}
-
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -98,10 +64,7 @@ var _ = Describe("Vat flux transformer", func() {
 
 	It("marks the header as checked when there are no logs", func() {
 		header := core.Header{Id: GinkgoRandomSeed()}
-		transformer, _, _, repository := setup(setupOptions{
-			missingHeaders: []core.Header{header},
-		})
-
+		repository.SetMissingHeaders([]core.Header{header})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -109,14 +72,7 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_flux_mocks.MockVatFlux{},
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -127,13 +83,22 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("returns error if marking header checked returns err", func() {
+		repository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		mockFetcher := &mocks.MockLogFetcher{}
 		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_flux_mocks.MockVatFlux{},
+			Converter:  converter,
+			Fetcher:    mockFetcher,
 			Repository: repository,
 		}
 
@@ -143,29 +108,8 @@ var _ = Describe("Vat flux transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("returns error if marking header checked returns err", func() {
-		mockConverter := &vat_flux_mocks.MockVatFlux{}
-		mockRepository := &vat_flux_mocks.MockVatFluxRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := vat_flux.VatFluxTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
-
-		err := transformer.Execute()
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
 	It("converts matching logs", func() {
-		converter := &vat_flux_mocks.MockVatFlux{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatFluxLog})
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
 		transformer := vat_flux.VatFluxTransformer{
 			Fetcher:    fetcher,
@@ -180,17 +124,9 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &vat_flux_mocks.MockVatFlux{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatFluxLog})
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -199,17 +135,9 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("persists vat flux model", func() {
-		converter := &vat_flux_mocks.MockVatFlux{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatFluxLog})
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
 		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -219,17 +147,9 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &vat_flux_mocks.MockVatFlux{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatFluxLog})
-		repository := &vat_flux_mocks.MockVatFluxRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := vat_flux.VatFluxTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
