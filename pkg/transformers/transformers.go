@@ -37,6 +37,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
@@ -75,6 +76,7 @@ var (
 	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
 	VatTollTransformerInitializer             = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
 	VatTuneTransformerInitializer             = vat_tune.VatTuneTransformerInitializer{Config: vat_tune.VatTuneConfig}.NewVatTuneTransformer
+	VatFluxTransformerInitializer             = vat_flux.VatFluxTransformerInitializer{Config: vat_flux.VatFluxConfig}.NewVatFluxTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
@@ -104,5 +106,6 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		VatFoldTransformerInitializer,
 		VatTollTransformerInitializer,
 		VatTuneTransformerInitializer,
+		VatFluxTransformerInitializer,
 	}
 }

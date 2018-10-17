@@ -62,6 +62,7 @@ var (
 	vatFoldMethod             = GetSolidityMethodSignature(VatABI, "fold")
 	vatTollMethod             = GetSolidityMethodSignature(VatABI, "toll")
 	vatTuneMethod             = GetSolidityMethodSignature(VatABI, "tune")
+	vatFluxMethod             = GetSolidityMethodSignature(VatABI, "flux")
 
 	BiteSignature                = GetEventSignature(biteMethod)
 	DealSignature                = GetLogNoteSignature(dealMethod)
@@ -88,4 +89,5 @@ var (
 	VatFoldSignature             = GetLogNoteSignature(vatFoldMethod)
 	VatTollSignature             = GetLogNoteSignature(vatTollMethod)
 	VatTuneSignature             = GetLogNoteSignature(vatTuneMethod)
+	VatFluxSignature             = GetLogNoteSignature(vatFluxMethod)
 )
