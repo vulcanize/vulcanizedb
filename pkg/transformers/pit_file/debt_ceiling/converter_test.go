@@ -17,10 +17,10 @@ package debt_ceiling_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
@@ -54,6 +54,6 @@ var _ = Describe("Pit file debt ceiling converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0]).To(Equal(test_data.PitFileDebtCeilingModel))
+		Expect(models[0].(debt_ceiling.PitFileDebtCeilingModel)).To(Equal(test_data.PitFileDebtCeilingModel))
 	})
 })

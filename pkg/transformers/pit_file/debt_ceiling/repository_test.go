@@ -32,17 +32,17 @@ import (
 
 var _ = Describe("Pit file debt ceiling repository", func() {
 	var (
-		db                *postgres.DB
-		pitFileRepository debt_ceiling.Repository
-		err               error
-		headerRepository  datastore.HeaderRepository
+		db                           *postgres.DB
+		pitFileDebtCeilingRepository debt_ceiling.PitFileDebtCeilingRepository
+		err                          error
+		headerRepository             datastore.HeaderRepository
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileRepository = debt_ceiling.NewPitFileDebtCeilingRepository(db)
+		pitFileDebtCeilingRepository = debt_ceiling.PitFileDebtCeilingRepository{DB: db}
 	})
 
 	Describe("Create", func() {
@@ -52,7 +52,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = pitFileRepository.Create(headerID, []debt_ceiling.PitFileDebtCeilingModel{test_data.PitFileDebtCeilingModel})
+			err = pitFileDebtCeilingRepository.Create(headerID, []interface{}{test_data.PitFileDebtCeilingModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -74,7 +74,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		})
 
 		It("does not duplicate pit file events", func() {
-			err = pitFileRepository.Create(headerID, []debt_ceiling.PitFileDebtCeilingModel{test_data.PitFileDebtCeilingModel})
+			err = pitFileDebtCeilingRepository.Create(headerID, []interface{}{test_data.PitFileDebtCeilingModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -100,7 +100,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		})
 
 		It("creates a row for a new headerID", func() {
-			err = pitFileRepository.MarkHeaderChecked(headerID)
+			err = pitFileDebtCeilingRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -112,7 +112,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		It("updates row when headerID already exists", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 
-			err = pitFileRepository.MarkHeaderChecked(headerID)
+			err = pitFileDebtCeilingRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -144,10 +144,11 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		})
 
 		It("returns headers that haven't been checked", func() {
-			err := pitFileRepository.MarkHeaderChecked(headerIDs[1])
+
+			err := pitFileDebtCeilingRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
+			headers, err := pitFileDebtCeilingRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
@@ -159,7 +160,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
+			headers, err := pitFileDebtCeilingRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
@@ -175,8 +176,8 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepository := debt_ceiling.NewPitFileDebtCeilingRepository(db)
-			pitFileRepositoryTwo := debt_ceiling.NewPitFileDebtCeilingRepository(dbTwo)
+			pitFileRepository := debt_ceiling.PitFileDebtCeilingRepository{DB: db}
+			pitFileRepositoryTwo := debt_ceiling.PitFileDebtCeilingRepository{DB: dbTwo}
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
