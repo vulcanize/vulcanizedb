@@ -12,52 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frob_test
+package integration_tests
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Integration tests", func() {
-	XIt("Fetches frob event logs from a local test chain", func() {
-		ipcPath := test_config.TestClient.IPCPath
+var _ = Describe("Frob Transformer", func() {
+	It("fetches and transforms a Frob event from Kovan chain", func() {
+		blockNumber := int64(8935258)
+		config := frob.FrobConfig
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
 
-		rawRpcClient, err := rpc.Dial(ipcPath)
+		ipc := "https://kovan.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockchain, err := getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
 
-		rpcClient := client.NewRpcClient(rawRpcClient, ipcPath)
-		ethClient := ethclient.NewClient(rawRpcClient)
-		blockChainClient := client.NewEthClient(ethClient)
-		realNode := node.MakeNode(rpcClient)
-		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-		realBlockChain := geth.NewBlockChain(blockChainClient, rpcClient, realNode, transactionConverter)
-		realFetcher := shared.NewFetcher(realBlockChain)
-		topic0 := common.HexToHash(shared.FrobSignature)
-		topics := [][]common.Hash{{topic0}}
+		db := test_config.NewTestDB(blockchain.Node())
+		test_config.CleanTestDB(db)
 
-		result, err := realFetcher.FetchLogs(frob.FrobConfig.ContractAddresses, topics, int64(12))
+		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(len(result) > 0).To(BeTrue())
-		Expect(result[0].Address).To(Equal(common.HexToAddress(shared.PitContractAddress)))
-		Expect(result[0].TxHash).To(Equal(test_data.EthFrobLog.TxHash))
-		Expect(result[0].BlockNumber).To(Equal(test_data.EthFrobLog.BlockNumber))
-		Expect(result[0].Topics).To(Equal(test_data.EthFrobLog.Topics))
-		Expect(result[0].Index).To(Equal(test_data.EthFrobLog.Index))
+		initializer := frob.FrobTransformerInitializer{Config: config}
+		transformer := initializer.NewFrobTransformer(db, blockchain)
+		err = transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []frob.FrobModel
+		err = db.Select(&dbResult, `SELECT art, dart, dink, iart, ilk, ink, urn from maker.frob`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Art).To(Equal("10000000000000000"))
+		Expect(dbResult[0].Dart).To(Equal("0"))
+		Expect(dbResult[0].Dink).To(Equal("10000000000000"))
+		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
+		Expect(dbResult[0].Ilk).To(Equal("ETH"))
+		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
+		Expect(dbResult[0].Urn).To(Equal("0xc8E093e5f3F9B5Aa6A6b33ea45960b93C161430C"))
 	})
 
 	It("unpacks an event log", func() {

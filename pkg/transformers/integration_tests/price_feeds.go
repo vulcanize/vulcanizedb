@@ -1,24 +1,27 @@
-package price_feeds_test
+// Copyright 2018 Vulcanize
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package integration_tests
 
 import (
-	"context"
-	"encoding/json"
-	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -107,40 +110,3 @@ var _ = Describe("Price feeds transformer", func() {
 		})
 	})
 })
-
-func getClients(ipc string) (client.RpcClient, *ethclient.Client, error) {
-	raw, err := rpc.Dial(ipc)
-	if err != nil {
-		return client.RpcClient{}, &ethclient.Client{}, err
-	}
-	return client.NewRpcClient(raw, ipc), ethclient.NewClient(raw), nil
-}
-
-func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (core.BlockChain, error) {
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := rpc2.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, rpcClient, node, transactionConverter)
-	return blockChain, nil
-}
-
-func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int64) error {
-	var poaHeader core.POAHeader
-	blockNumberArg := hexutil.EncodeBig(big.NewInt(int64(blockNumber)))
-	err := rpcClient.CallContext(context.Background(), &poaHeader, "eth_getBlockByNumber", blockNumberArg, false)
-	if err != nil {
-		return err
-	}
-	rawHeader, err := json.Marshal(poaHeader)
-	if err != nil {
-		return err
-	}
-	headerRepository := repositories.NewHeaderRepository(db)
-	_, err = headerRepository.CreateOrUpdateHeader(core.Header{
-		BlockNumber: poaHeader.Number.ToInt().Int64(),
-		Hash:        poaHeader.Hash.String(),
-		Raw:         rawHeader,
-		Timestamp:   poaHeader.Time.ToInt().String(),
-	})
-	return err
-}

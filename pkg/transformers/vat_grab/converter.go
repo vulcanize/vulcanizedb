@@ -24,10 +24,10 @@ func (VatGrabConverter) ToModels(ethLogs []types.Log) ([]VatGrabModel, error) {
 			return nil, err
 		}
 		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
-		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
-		v := common.BytesToAddress(ethLog.Topics[3].Bytes()[:common.AddressLength])
+		urn := common.BytesToAddress(ethLog.Topics[2].Bytes())
+		v := common.BytesToAddress(ethLog.Topics[3].Bytes())
 		wBytes := shared.GetDataBytesAtIndex(-3, ethLog.Data)
-		w := common.BytesToAddress(wBytes[:common.AddressLength])
+		w := common.BytesToAddress(wBytes)
 		dinkBytes := shared.GetDataBytesAtIndex(-2, ethLog.Data)
 		dink := big.NewInt(0).SetBytes(dinkBytes).String()
 		dartBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)

@@ -130,7 +130,8 @@ false
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
 ## Running the Tests
-- `make test`
+- `make test` will run the unit tests and skip the integration tests
+- `make integrationtest` will run the just the integration tests
 - Note: requires Ganache chain setup and seeded with `flip-kick.js` and `frob.js` (in that order)
 
 ## Deploying

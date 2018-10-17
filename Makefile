@@ -44,7 +44,13 @@ lint:
 test: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r
+	$(GINKGO) -r --skipPackage=integration_tests
+
+.PHONY: integrationtest
+integrationtest: | $(GINKGO) $(LINT)
+	go vet ./...
+	go fmt ./...
+	$(GINKGO) -r --flakeAttempts=5 pkg/transformers/integration_tests/
 
 .PHONY: dep
 dep: | $(DEP)

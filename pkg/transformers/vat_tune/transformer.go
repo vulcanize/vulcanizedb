@@ -36,7 +36,7 @@ func (transformer VatTuneTransformer) Execute() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Fetching vat init event logs for %d headers \n", len(missingHeaders))
+	log.Printf("Fetching vat tune event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
 		topics := [][]common.Hash{{common.HexToHash(shared.VatTuneSignature)}}
 		matchingLogs, err := transformer.Fetcher.FetchLogs(VatTuneConfig.ContractAddresses, topics, header.BlockNumber)
