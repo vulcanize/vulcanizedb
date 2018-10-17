@@ -34,8 +34,7 @@ var (
 	PipContractAddress     = "0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"
 	PitContractAddress     = "0xe7cf3198787c9a4daac73371a38f29aaeeced87e"
 	RepContractAddress     = "0xf88bbdc1e2718f8857f30a180076ec38d53cf296"
-	//VatContractAddress     = "0xcd726790550afcd77e9a7a47e86a3f9010af126b"
-	VatContractAddress	   = "0x239e6f0ab02713f1f8aa90ebeded9fc66dc96cd6"
+	VatContractAddress     = "0xcd726790550afcd77e9a7a47e86a3f9010af126b"
 
 	//TODO: get pit and drip file method signatures directly from the ABI
 	biteMethod                = GetSolidityMethodSignature(CatABI, "Bite")
