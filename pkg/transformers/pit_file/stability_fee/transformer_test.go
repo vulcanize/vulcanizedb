@@ -24,7 +24,6 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
@@ -60,8 +59,8 @@ var _ = Describe("Pit file stability fee transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(pit_file.PitFileConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(pit_file.PitFileConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
@@ -79,7 +78,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{
-			pit_file.PitFileConfig.ContractAddresses, pit_file.PitFileConfig.ContractAddresses}))
+			config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.PitFileStabilityFeeSignature)}}))
 	})
 

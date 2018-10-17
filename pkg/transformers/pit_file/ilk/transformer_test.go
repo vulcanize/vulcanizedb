@@ -23,31 +23,30 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	pit_file_ilk_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/ilk"
+	ilk_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/ilk"
 )
 
 var _ = Describe("Pit file ilk transformer", func() {
 	var (
 		config      = ilk.IlkFileConfig
 		fetcher     mocks.MockLogFetcher
-		converter   pit_file_ilk_mocks.MockPitFileIlkConverter
-		repository  pit_file_ilk_mocks.MockPitFileIlkRepository
+		converter   ilk_mocks.MockPitFileIlkConverter
+		repository  ilk_mocks.MockPitFileIlkRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
 	)
 
 	BeforeEach(func() {
-		fetcher     = mocks.MockLogFetcher{}
-		converter   = pit_file_ilk_mocks.MockPitFileIlkConverter{}
-		repository  = pit_file_ilk_mocks.MockPitFileIlkRepository{}
-		headerOne   = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
-		headerTwo   = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		fetcher = mocks.MockLogFetcher{}
+		converter = ilk_mocks.MockPitFileIlkConverter{}
+		repository = ilk_mocks.MockPitFileIlkRepository{}
+		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
 		transformer = factories.Transformer{
 			Config:     config,
 			Converter:  &converter,
@@ -60,8 +59,8 @@ var _ = Describe("Pit file ilk transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(pit_file.PitFileConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(pit_file.PitFileConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
@@ -80,7 +79,7 @@ var _ = Describe("Pit file ilk transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{pit_file.PitFileConfig.ContractAddresses, pit_file.PitFileConfig.ContractAddresses}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.PitFileIlkSignature)}}))
 	})
 
