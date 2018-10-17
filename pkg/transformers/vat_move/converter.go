@@ -35,8 +35,8 @@ func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]VatMoveModel, error) {
 			return []VatMoveModel{}, err
 		}
 
-		src := common.BytesToAddress(ethLog.Topics[1].Bytes()[:common.AddressLength])
-		dst := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
+		src := common.BytesToAddress(ethLog.Topics[1].Bytes())
+		dst := common.BytesToAddress(ethLog.Topics[2].Bytes())
 		rad := ethLog.Topics[3].Big()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {

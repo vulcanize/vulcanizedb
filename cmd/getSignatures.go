@@ -56,6 +56,7 @@ func getSignatures() {
 	signatures["VatInitSignature"] = shared.VatInitSignature
 	signatures["VatFluxSignature"] = shared.VatFluxSignature
 	signatures["VatFoldSignature"] = shared.VatFoldSignature
+	signatures["VatMoveSignature"] = shared.VatMoveSignature
 	signatures["VatSlipSignature"] = shared.VatSlipSignature
 	signatures["VatTollSignature"] = shared.VatTollSignature
 	signatures["VatTuneSignature"] = shared.VatTuneSignature
