@@ -14,6 +14,16 @@
 
 package shared
 
+import "github.com/spf13/viper"
+
+func getContractValue(key string, fallback string) string {
+	value := viper.GetString(key)
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
 var (
 	DataItemLength = 32
 
@@ -26,15 +36,15 @@ var (
 	VatABI        = `[{"constant":true,"inputs":[],"name":"debt","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0x0dca59c1"},{"constant":true,"inputs":[{"name":"","type":"bytes32"},{"name":"","type":"bytes32"}],"name":"urns","outputs":[{"name":"ink","type":"uint256"},{"name":"art","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0x26e27482"},{"constant":true,"inputs":[],"name":"vice","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0x2d61a355"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"sin","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0xa60f1d3e"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"wards","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0xbf353dbb"},{"constant":true,"inputs":[{"name":"","type":"bytes32"},{"name":"","type":"bytes32"}],"name":"gem","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0xc0912683"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"ilks","outputs":[{"name":"take","type":"uint256"},{"name":"rate","type":"uint256"},{"name":"Ink","type":"uint256"},{"name":"Art","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0xd9638d36"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"dai","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0xf53e4e69"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor","signature":"constructor"},{"anonymous":true,"inputs":[{"indexed":true,"name":"sig","type":"bytes4"},{"indexed":true,"name":"foo","type":"bytes32"},{"indexed":true,"name":"bar","type":"bytes32"},{"indexed":true,"name":"too","type":"bytes32"},{"indexed":false,"name":"fax","type":"bytes"}],"name":"Note","type":"event","signature":"0x8c2dbbc2b33ffaa77c104b777e574a8a4ff79829dfee8b66f4dc63e3f8067152"},{"constant":false,"inputs":[{"name":"guy","type":"address"}],"name":"rely","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x65fae35e"},{"constant":false,"inputs":[{"name":"guy","type":"address"}],"name":"deny","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x9c52a7f1"},{"constant":false,"inputs":[{"name":"ilk","type":"bytes32"}],"name":"init","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x3b663195"},{"constant":false,"inputs":[{"name":"ilk","type":"bytes32"},{"name":"guy","type":"bytes32"},{"name":"rad","type":"int256"}],"name":"slip","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x42066cbb"},{"constant":false,"inputs":[{"name":"ilk","type":"bytes32"},{"name":"src","type":"bytes32"},{"name":"dst","type":"bytes32"},{"name":"rad","type":"int256"}],"name":"flux","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0xa6e41821"},{"constant":false,"inputs":[{"name":"src","type":"bytes32"},{"name":"dst","type":"bytes32"},{"name":"rad","type":"int256"}],"name":"move","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x78f19470"},{"constant":false,"inputs":[{"name":"i","type":"bytes32"},{"name":"u","type":"bytes32"},{"name":"v","type":"bytes32"},{"name":"w","type":"bytes32"},{"name":"dink","type":"int256"},{"name":"dart","type":"int256"}],"name":"tune","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x5dd6471a"},{"constant":false,"inputs":[{"name":"i","type":"bytes32"},{"name":"u","type":"bytes32"},{"name":"v","type":"bytes32"},{"name":"w","type":"bytes32"},{"name":"dink","type":"int256"},{"name":"dart","type":"int256"}],"name":"grab","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x3690ae4c"},{"constant":false,"inputs":[{"name":"u","type":"bytes32"},{"name":"v","type":"bytes32"},{"name":"rad","type":"int256"}],"name":"heal","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x990a5f63"},{"constant":false,"inputs":[{"name":"i","type":"bytes32"},{"name":"u","type":"bytes32"},{"name":"rate","type":"int256"}],"name":"fold","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0xe6a6a64d"},{"constant":false,"inputs":[{"name":"i","type":"bytes32"},{"name":"u","type":"bytes32"},{"name":"take","type":"int256"}],"name":"toll","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0x09b7a0b5"}]`
 
 	// temporary addresses from Kovan deployment
-	CatContractAddress     = "0x2f34f22a00ee4b7a8f8bbc4eaee1658774c624e0"
-	DripContractAddress    = "0x891c04639a5edcae088e546fa125b5d7fb6a2b9d"
-	FlipperContractAddress = "0x32D496Ad866D110060866B7125981C73642cc509" // ETH FLIP Contract
-	FlopperContractAddress = "0x6191C9b0086c2eBF92300cC507009b53996FbFFa" // MCD FLOP Contract
-	PepContractAddress     = "0xB1997239Cfc3d15578A3a09730f7f84A90BB4975"
-	PipContractAddress     = "0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"
-	PitContractAddress     = "0xe7cf3198787c9a4daac73371a38f29aaeeced87e"
-	RepContractAddress     = "0xf88bbdc1e2718f8857f30a180076ec38d53cf296"
-	VatContractAddress     = "0xcd726790550afcd77e9a7a47e86a3f9010af126b"
+	CatContractAddress     = getContractValue("contract.cat", "0x2f34f22a00ee4b7a8f8bbc4eaee1658774c624e0")
+	DripContractAddress    = getContractValue("contract.drip", "0x891c04639a5edcae088e546fa125b5d7fb6a2b9d")
+	FlipperContractAddress = getContractValue("contract.eth_flip", "0x32D496Ad866D110060866B7125981C73642cc509") // ETH FLIP Contract
+	FlopperContractAddress = getContractValue("contract.mcd_flop", "0x6191C9b0086c2eBF92300cC507009b53996FbFFa") // MCD FLOP Contract
+	PepContractAddress     = getContractValue("contract.pep", "0xB1997239Cfc3d15578A3a09730f7f84A90BB4975")
+	PipContractAddress     = getContractValue("contract.pip", "0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc")
+	PitContractAddress     = getContractValue("contract.pit", "0xe7cf3198787c9a4daac73371a38f29aaeeced87e")
+	RepContractAddress     = getContractValue("contract.rep", "0xf88bbdc1e2718f8857f30a180076ec38d53cf296")
+	VatContractAddress     = getContractValue("contract.vat", "0xcd726790550afcd77e9a7a47e86a3f9010af126b")
 
 	//TODO: get pit and drip file method signatures directly from the ABI
 	biteMethod                = GetSolidityMethodSignature(CatABI, "Bite")
