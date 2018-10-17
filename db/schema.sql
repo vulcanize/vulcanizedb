@@ -815,7 +815,7 @@ CREATE TABLE maker.vat_heal (
     header_id integer NOT NULL,
     urn character varying,
     v character varying,
-    rad integer,
+    rad numeric,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );

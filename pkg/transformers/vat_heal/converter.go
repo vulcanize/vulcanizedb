@@ -17,9 +17,9 @@ package vat_heal
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"strconv"
 )
 
 type Converter interface {
@@ -36,9 +36,9 @@ func (VatHealConverter) ToModels(ethLogs []types.Log) ([]VatHealModel, error) {
 			return nil, err
 		}
 
-		urn := common.BytesToAddress(ethLog.Topics[1].Bytes()[:common.AddressLength])
-		v := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
-		radInt, err := strconv.ParseInt(ethLog.Topics[3].Hex(), 0, 64)
+		urn := common.BytesToAddress(ethLog.Topics[1].Bytes())
+		v := common.BytesToAddress(ethLog.Topics[2].Bytes())
+		radInt := ethLog.Topics[3].Big()
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func (VatHealConverter) ToModels(ethLogs []types.Log) ([]VatHealModel, error) {
 		model := VatHealModel{
 			Urn:              urn.String(),
 			V:                v.String(),
-			Rad:              int(radInt),
+			Rad:              radInt.String(),
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              rawLogJson,
 		}
