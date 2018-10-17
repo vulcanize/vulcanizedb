@@ -37,9 +37,9 @@ func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]VatFluxModel, error) {
 			return nil, err
 		}
 
-		ilk := common.BytesToAddress(ethLog.Topics[1].Bytes()[:])
-		src := common.BytesToAddress(ethLog.Topics[2].Bytes()[:])
-		dst := common.BytesToAddress(ethLog.Topics[3].Bytes()[:])
+		ilk := common.BytesToAddress(ethLog.Topics[1].Bytes())
+		src := common.BytesToAddress(ethLog.Topics[2].Bytes())
+		dst := common.BytesToAddress(ethLog.Topics[3].Bytes())
 		radBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)
 		rad := big.NewInt(0).SetBytes(radBytes).String()
 
