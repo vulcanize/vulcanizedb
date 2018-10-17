@@ -41,7 +41,7 @@ func (repository VatFluxRepository) Create(headerId int64, models []VatFluxModel
 
 	for _, model := range models {
 		_, err := tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, raw_log)
-		VALUES($1, $2, $3, $4, $5, $6, $7)`,
+		VALUES($1, $2, $3, $4, $5::numeric, $6, $7)`,
 			headerId, model.Ilk, model.Dst, model.Src, model.Rad, model.TransactionIndex, model.Raw)
 		if err != nil {
 			tx.Rollback()

@@ -15,6 +15,55 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 )
 
+type setupOptions struct {
+	setMissingHeadersError bool
+	setFetcherError        bool
+	setConverterError      bool
+	setCreateError         bool
+	fetchedLogs            []types.Log
+	missingHeaders         []core.Header
+}
+
+func setup(options setupOptions) (
+	vat_flux.VatFluxTransformer,
+	*mocks.MockLogFetcher,
+	*vat_flux_mocks.MockVatFlux,
+	*vat_flux_mocks.MockVatFluxRepository,
+) {
+	fetcher := &mocks.MockLogFetcher{}
+	if options.setFetcherError {
+		fetcher.SetFetcherError(fakes.FakeError)
+	}
+	if len(options.fetchedLogs) > 0 {
+		fetcher.SetFetchedLogs(options.fetchedLogs)
+	}
+
+	converter := &vat_flux_mocks.MockVatFlux{}
+	if options.setConverterError {
+		converter.SetConverterError(fakes.FakeError)
+	}
+
+	repository := &vat_flux_mocks.MockVatFluxRepository{}
+	if options.setMissingHeadersError {
+		repository.SetMissingHeadersErr(fakes.FakeError)
+	}
+	if options.setCreateError {
+		repository.SetCreateError(fakes.FakeError)
+	}
+	if len(options.missingHeaders) > 0 {
+		repository.SetMissingHeaders(options.missingHeaders)
+	}
+
+	transformer := vat_flux.VatFluxTransformer{
+		Config:     vat_flux.VatFluxConfig,
+		Fetcher:    fetcher,
+		Converter:  converter,
+		Repository: repository,
+	}
+
+	return transformer, fetcher, converter, repository
+}
+
 var _ = Describe("Vat flux transformer", func() {
 	It("gets missing headers for block numbers specified in config", func() {
 		repository := &vat_flux_mocks.MockVatFluxRepository{}
@@ -45,6 +94,18 @@ var _ = Describe("Vat flux transformer", func() {
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("marks the header as checked when there are no logs", func() {
+		header := core.Header{Id: GinkgoRandomSeed()}
+		transformer, _, _, repository := setup(setupOptions{
+			missingHeaders: []core.Header{header},
+		})
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.MarkHeaderCheckedPassedHeaderID).To(Equal(header.Id))
 	})
 
 	It("fetches logs for missing headers", func() {
