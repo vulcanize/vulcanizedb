@@ -698,6 +698,42 @@ ALTER SEQUENCE maker.tend_id_seq OWNED BY maker.tend.id;
 
 
 --
+-- Name: vat_flux; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vat_flux (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    ilk text,
+    src text,
+    dst text,
+    rad numeric,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vat_flux_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vat_flux_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vat_flux_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vat_flux_id_seq OWNED BY maker.vat_flux.id;
+
+
+--
 -- Name: vat_fold; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -1052,7 +1088,8 @@ CREATE TABLE public.checked_headers (
     vat_heal_checked boolean DEFAULT false NOT NULL,
     vat_toll_checked boolean DEFAULT false NOT NULL,
     vat_tune_checked boolean DEFAULT false NOT NULL,
-    vat_grab_checked boolean DEFAULT false NOT NULL
+    vat_grab_checked boolean DEFAULT false NOT NULL,
+    vat_flux_checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -1501,6 +1538,13 @@ ALTER TABLE ONLY maker.tend ALTER COLUMN id SET DEFAULT nextval('maker.tend_id_s
 
 
 --
+-- Name: vat_flux id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_flux ALTER COLUMN id SET DEFAULT nextval('maker.vat_flux_id_seq'::regclass);
+
+
+--
 -- Name: vat_fold id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1905,6 +1949,22 @@ ALTER TABLE ONLY maker.tend
 
 ALTER TABLE ONLY maker.tend
     ADD CONSTRAINT tend_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vat_flux vat_flux_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_flux
+    ADD CONSTRAINT vat_flux_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+
+
+--
+-- Name: vat_flux vat_flux_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_flux
+    ADD CONSTRAINT vat_flux_pkey PRIMARY KEY (id);
 
 
 --
@@ -2315,6 +2375,14 @@ ALTER TABLE ONLY maker.price_feeds
 
 ALTER TABLE ONLY maker.tend
     ADD CONSTRAINT tend_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_flux vat_flux_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_flux
+    ADD CONSTRAINT vat_flux_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

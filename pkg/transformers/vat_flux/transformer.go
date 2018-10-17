@@ -1,4 +1,4 @@
-package vat_grab
+package vat_flux
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -8,15 +8,15 @@ import (
 	"log"
 )
 
-type VatGrabTransformerInitializer struct {
+type VatFluxTransformerInitializer struct {
 	Config shared.TransformerConfig
 }
 
-func (initializer VatGrabTransformerInitializer) NewVatGrabTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
-	converter := VatGrabConverter{}
+func (initializer VatFluxTransformerInitializer) NewVatFluxTransformer(db *postgres.DB, blockChain core.BlockChain) shared.Transformer {
+	converter := VatFluxConverter{}
 	fetcher := shared.NewFetcher(blockChain)
-	repository := NewVatGrabRepository(db)
-	return VatGrabTransformer{
+	repository := NewVatFluxRepository(db)
+	return VatFluxTransformer{
 		Config:     initializer.Config,
 		Converter:  converter,
 		Fetcher:    fetcher,
@@ -24,27 +24,27 @@ func (initializer VatGrabTransformerInitializer) NewVatGrabTransformer(db *postg
 	}
 }
 
-type VatGrabTransformer struct {
+type VatFluxTransformer struct {
 	Config     shared.TransformerConfig
 	Converter  Converter
 	Fetcher    shared.LogFetcher
 	Repository Repository
 }
 
-func (transformer VatGrabTransformer) Execute() error {
+func (transformer VatFluxTransformer) Execute() error {
 	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
 		return err
 	}
-	log.Printf("Fetching vat grab event logs for %d headers \n", len(missingHeaders))
+	log.Printf("Fetching vat flux event logs for %d headers \n", len(missingHeaders))
 	for _, header := range missingHeaders {
-		topics := [][]common.Hash{{common.HexToHash(shared.VatGrabSignature)}}
-		matchingLogs, err := transformer.Fetcher.FetchLogs(VatGrabConfig.ContractAddresses, topics, header.BlockNumber)
+		topics := [][]common.Hash{{common.HexToHash(shared.VatFluxSignature)}}
+		matchingLogs, err := transformer.Fetcher.FetchLogs(VatFluxConfig.ContractAddresses, topics, header.BlockNumber)
 		if err != nil {
 			return err
 		}
 		if len(matchingLogs) < 1 {
-			err = transformer.Repository.MarkHeaderChecked(header.Id)
+			err = transformer.Repository.MarkCheckedHeader(header.Id)
 			if err != nil {
 				return err
 			}
