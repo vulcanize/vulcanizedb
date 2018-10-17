@@ -41,7 +41,7 @@ func (repository VatHealRepository) Create(headerId int64, models []VatHealModel
 
 	for _, model := range models {
 		_, err := tx.Exec(`INSERT INTO maker.vat_heal (header_id, urn, v, rad, tx_idx, raw_log)
-		VALUES($1, $2, $3, $4, $5, $6)`,
+		VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
 			headerId, model.Urn, model.V, model.Rad, model.TransactionIndex, model.Raw)
 		if err != nil {
 			tx.Rollback()
