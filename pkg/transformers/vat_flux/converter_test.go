@@ -30,6 +30,7 @@ var _ = Describe("VatFlux converter", func() {
 		models, err := converter.ToModels([]types.Log{test_data.VatFluxLog})
 
 		Expect(err).NotTo(HaveOccurred())
+		Expect(len(models)).To(Equal(1))
 		Expect(models[0].Ilk).To(Equal(test_data.VatFluxModel.Ilk))
 		Expect(models[0].Src).To(Equal(test_data.VatFluxModel.Src))
 		Expect(models[0].Dst).To(Equal(test_data.VatFluxModel.Dst))

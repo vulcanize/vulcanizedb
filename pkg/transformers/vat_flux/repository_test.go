@@ -20,6 +20,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -38,7 +39,7 @@ var _ = Describe("VatFlux Repository", func() {
 		test_config.CleanTestDB(db)
 		repository = vat_flux.VatFluxRepository{DB: db}
 		headerRepository = repositories.NewHeaderRepository(db)
-		headerId, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+		headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -122,7 +123,7 @@ var _ = Describe("VatFlux Repository", func() {
 			var headerIds []int64
 			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -146,7 +147,7 @@ var _ = Describe("VatFlux Repository", func() {
 			var headerIds []int64
 			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
@@ -174,11 +175,11 @@ var _ = Describe("VatFlux Repository", func() {
 			var headerIds []int64
 			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 
-				_, err = headerRepository2.CreateOrUpdateHeader(core.Header{BlockNumber: n})
+				_, err = headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 
