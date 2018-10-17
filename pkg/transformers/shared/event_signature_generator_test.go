@@ -133,6 +133,13 @@ var _ = Describe("Event signature generator", func() {
 				Expect(expected).To(Equal(actual))
 			})
 
+			It("gets the vat flux method signature", func() {
+				expected := "flux(bytes32,bytes32,bytes32,int256)"
+				actual := shared.GetSolidityMethodSignature(shared.VatABI, "flux")
+
+				Expect(expected).To(Equal(actual))
+			})
+
 			It("gets the flip deal method signature", func() {
 				expected := "deal(uint256)"
 				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "deal")
