@@ -41,8 +41,8 @@ var (
 	gem, _        = big.NewInt(0).SetString("115792089237316195423570985008687907853269984665640564039457584007913129639926", 10)
 	ink           = big.NewInt(15)
 	ilk           = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	frobIlkString = "0x66616b6520696c6B000000000000000000000000"
-	frobUrnString = "0x00000000000000000000000064D922894153BE9E"
+	frobIlkString = "fake ilk"
+	frobUrnString = "0x64d922894153BE9EEf7b7218dc565d1D0Ce2a092"
 )
 
 var EthFrobLog = types.Log{

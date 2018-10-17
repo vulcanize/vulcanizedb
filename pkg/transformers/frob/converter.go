@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"bytes"
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -57,8 +58,8 @@ func (FrobConverter) ToModels(entities []FrobEntity) ([]FrobModel, error) {
 			return nil, err
 		}
 		model := FrobModel{
-			Ilk:              common.BytesToAddress(entity.Ilk[:common.AddressLength]).String(),
-			Urn:              common.BytesToAddress(entity.Urn[:common.AddressLength]).String(),
+			Ilk:              string(bytes.Trim(entity.Ilk[:], "\x00)")),
+			Urn:              common.BytesToAddress(entity.Urn[:]).String(),
 			Ink:              entity.Ink.String(),
 			Art:              entity.Art.String(),
 			Dink:             entity.Dink.String(),
