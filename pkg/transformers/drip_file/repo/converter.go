@@ -22,25 +22,23 @@ import (
 	"math/big"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripFileRepoModel, error)
-}
-
 type DripFileRepoConverter struct{}
 
-func (DripFileRepoConverter) ToModels(ethLogs []types.Log) ([]DripFileRepoModel, error) {
-	var models []DripFileRepoModel
+func (DripFileRepoConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		model := DripFileRepoModel{
 			What:             what,
 			Data:             data,
