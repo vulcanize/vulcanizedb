@@ -46,11 +46,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 	})
 
 	Describe("Create", func() {
-		var (
-			db                            *postgres.DB
-			err                           error
-			headerID                      int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)

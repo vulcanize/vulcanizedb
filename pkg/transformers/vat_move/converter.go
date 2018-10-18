@@ -21,18 +21,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLog []types.Log) ([]VatMoveModel, error)
-}
-
 type VatMoveConverter struct{}
 
-func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]VatMoveModel, error) {
-	var models []VatMoveModel
+func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
-			return []VatMoveModel{}, err
+			return []interface{}{}, err
 		}
 
 		src := common.BytesToAddress(ethLog.Topics[1].Bytes())
@@ -40,7 +36,7 @@ func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]VatMoveModel, error) {
 		rad := ethLog.Topics[3].Big()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
-			return []VatMoveModel{}, err
+			return []interface{}{}, err
 		}
 
 		models = append(models, VatMoveModel{

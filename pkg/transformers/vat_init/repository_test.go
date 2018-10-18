@@ -66,9 +66,6 @@ var _ = Describe("Vat init repository", func() {
 
 		It("does not duplicate vat events", func() {
 			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -93,20 +90,11 @@ var _ = Describe("Vat init repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var (
-			db                *postgres.DB
-			vatInitRepository vat_init.VatInitRepository
-			err               error
-			headerID          int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(core.Node{})
-			test_config.CleanTestDB(db)
-			headerRepository := repositories.NewHeaderRepository(db)
-			headerID, err = headerRepository.CreateOrUpdateHeader(core.Header{})
+			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			vatInitRepository = vat_init.VatInitRepository{DB: db}
 		})
 
 		It("creates a row for a new headerID", func() {
@@ -166,16 +154,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("only treats headers as checked if drip drip logs have been checked", func() {
-			startingBlockNumber := int64(1)
-			vatInitBlockNumber := int64(2)
-			endingBlockNumber := int64(3)
-			blockNumbers = []int64{startingBlockNumber, vatInitBlockNumber, endingBlockNumber, endingBlockNumber + 1}
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(core.Header{BlockNumber: n})
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -196,9 +174,8 @@ var _ = Describe("Vat init repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			vatInitRepository := vat_init.VatInitRepository{DB: db}
 			vatInitRepositoryTwo := vat_init.VatInitRepository{DB: dbTwo}
-			err := vatInitRepository.MarkHeaderChecked(headerIDs[0])
+			err = vatInitRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := vatInitRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
@@ -213,8 +190,7 @@ var _ = Describe("Vat init repository", func() {
 
 	Describe("SetDB", func() {
 		It("sets the repository db", func() {
-			db := test_config.NewTestDB(core.Node{})
-			vatInitRepository := vat_init.VatInitRepository{DB: nil}
+			vatInitRepository.SetDB(nil)
 			Expect(vatInitRepository.DB).To(BeNil())
 			vatInitRepository.SetDB(db)
 			Expect(vatInitRepository.DB).To(Equal(db))

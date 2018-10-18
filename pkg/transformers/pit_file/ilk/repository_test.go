@@ -46,12 +46,7 @@ var _ = Describe("Pit file ilk repository", func() {
 	})
 
 	Describe("Create", func() {
-		var (
-			db                   *postgres.DB
-			pitFileIlkRepository ilk.PitFileIlkRepository
-			err                  error
-			headerID             int64
-		)
+		var headerID int64
 
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
@@ -59,7 +54,6 @@ var _ = Describe("Pit file ilk repository", func() {
 
 			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 			Expect(err).NotTo(HaveOccurred())
-			pitFileIlkRepository = ilk.PitFileIlkRepository{DB: db}
 		})
 
 		It("adds a pit file ilk event", func() {
