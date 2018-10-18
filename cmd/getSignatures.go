@@ -26,11 +26,12 @@ var getSignaturesCmd = &cobra.Command{
 	Short: "A command to see transformer method and event signatures",
 	Long: `A convenience command to see method/event signatures for Maker transformers
 vulcanizedb getSignatures`,
-	Run: func(cmd *cobra.Command, args []string) {},
+	Run: func(cmd *cobra.Command, args []string) {
+		getSignatures()
+	},
 }
 
-func init() {
-	rootCmd.AddCommand(getSignaturesCmd)
+func getSignatures() {
 	signatures := make(map[string]string)
 	signatures["BiteSignature"] = shared.BiteSignature
 	signatures["DealSignature"] = shared.DealSignature
@@ -62,4 +63,8 @@ func init() {
 	for name, sig := range signatures {
 		log.Println(name, ": ", sig)
 	}
+}
+
+func init() {
+	rootCmd.AddCommand(getSignaturesCmd)
 }
