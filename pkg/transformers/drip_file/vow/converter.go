@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -35,7 +36,7 @@ func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]DripFileVowModel, e
 			return nil, err
 		}
 		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-		data := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
+		data := common.BytesToAddress(ethLog.Topics[3].Bytes()).String()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
 			return nil, err
