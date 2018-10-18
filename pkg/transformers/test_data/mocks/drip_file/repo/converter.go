@@ -16,20 +16,19 @@ package repo
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 type MockDripFileRepoConverter struct {
-	converterErr error
-	PassedLogs   []types.Log
+	converterError error
+	PassedLogs     []types.Log
 }
 
-func (converter *MockDripFileRepoConverter) ToModels(ethLogs []types.Log) ([]repo.DripFileRepoModel, error) {
+func (converter *MockDripFileRepoConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []repo.DripFileRepoModel{test_data.DripFileRepoModel}, converter.converterErr
+	return []interface{}{test_data.DripFileRepoModel}, converter.converterError
 }
 
 func (converter *MockDripFileRepoConverter) SetConverterError(e error) {
-	converter.converterErr = e
+	converter.converterError = e
 }

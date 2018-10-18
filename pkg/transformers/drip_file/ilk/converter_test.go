@@ -56,6 +56,6 @@ var _ = Describe("Drip file ilk converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0]).To(Equal(test_data.DripFileIlkModel))
+		Expect(models[0].(ilk.DripFileIlkModel)).To(Equal(test_data.DripFileIlkModel))
 	})
 })

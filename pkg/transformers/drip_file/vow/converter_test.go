@@ -44,6 +44,6 @@ var _ = Describe("Drip file repo converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0]).To(Equal(test_data.DripFileVowModel))
+		Expect(models[0].(vow.DripFileVowModel)).To(Equal(test_data.DripFileVowModel))
 	})
 })
