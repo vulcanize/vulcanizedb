@@ -33,7 +33,7 @@ import (
 var _ = Describe("Drip file vow repository", func() {
 	var (
 		db                    *postgres.DB
-		dripFileVowRepository vow.Repository
+		dripFileVowRepository vow.DripFileVowRepository
 		err                   error
 		headerRepository      datastore.HeaderRepository
 	)
@@ -42,7 +42,7 @@ var _ = Describe("Drip file vow repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripFileVowRepository = vow.NewDripFileVowRepository(db)
+		dripFileVowRepository = vow.DripFileVowRepository{DB: db}
 	})
 
 	Describe("Create", func() {
@@ -52,7 +52,7 @@ var _ = Describe("Drip file vow repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dripFileVowRepository.Create(headerID, []vow.DripFileVowModel{test_data.DripFileVowModel})
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.DripFileVowModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -75,7 +75,7 @@ var _ = Describe("Drip file vow repository", func() {
 		})
 
 		It("does not duplicate drip file events", func() {
-			err = dripFileVowRepository.Create(headerID, []vow.DripFileVowModel{test_data.DripFileVowModel})
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.DripFileVowModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -176,7 +176,7 @@ var _ = Describe("Drip file vow repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripFileVowRepositoryTwo := vow.NewDripFileVowRepository(dbTwo)
+			dripFileVowRepositoryTwo := vow.DripFileVowRepository{DB: dbTwo}
 			err := dripFileVowRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -187,6 +187,16 @@ var _ = Describe("Drip file vow repository", func() {
 			nodeTwoMissingHeaders, err := dripFileVowRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
+		})
+	})
+
+	Describe("SetDB", func() {
+		It("sets the repository db", func() {
+			db := test_config.NewTestDB(core.Node{})
+			repository := vow.DripFileVowRepository{}
+			Expect(repository.DB).To(BeNil())
+			repository.SetDB(db)
+			Expect(repository.DB).To(Equal(db))
 		})
 	})
 })
