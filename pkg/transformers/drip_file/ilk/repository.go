@@ -19,31 +19,25 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerID int64, models []DripFileIlkModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
-
 type DripFileIlkRepository struct {
-	db *postgres.DB
+	DB *postgres.DB
 }
 
-func NewDripFileIlkRepository(db *postgres.DB) DripFileIlkRepository {
-	return DripFileIlkRepository{db: db}
-}
-
-func (repository DripFileIlkRepository) Create(headerID int64, models []DripFileIlkModel) error {
-	tx, err := repository.db.Begin()
+func (repository DripFileIlkRepository) Create(headerID int64, models []interface{}) error {
+	tx, err := repository.DB.Begin()
 	if err != nil {
 		return err
 	}
+
+	var ilk DripFileIlkModel
 	for _, model := range models {
+		ilk = model.(DripFileIlkModel)
 		_, err = tx.Exec(
 			`INSERT into maker.drip_file_ilk (header_id, ilk, vow, tax, log_idx, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, model.Ilk, model.Vow, model.Tax, model.LogIndex, model.TransactionIndex, model.Raw,
+        	VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, ilk.Ilk, ilk.Vow, ilk.Tax, ilk.LogIndex, ilk.TransactionIndex, ilk.Raw,
 		)
+
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -51,36 +45,41 @@ func (repository DripFileIlkRepository) Create(headerID int64, models []DripFile
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_ilk_checked)
 		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
+		ON CONFLICT (header_id) DO
+			UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
+
 	return tx.Commit()
 }
 
 func (repository DripFileIlkRepository) MarkHeaderChecked(headerID int64) error {
-	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_ilk_checked)
+	_, err := repository.DB.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_ilk_checked)
 		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
+		ON CONFLICT (header_id) DO
+			UPDATE SET drip_file_ilk_checked = $2`, headerID, true)
 	return err
 }
 
 func (repository DripFileIlkRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := repository.db.Select(
+	err := repository.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
+               	LEFT JOIN checked_headers on headers.id = header_id
                WHERE (header_id ISNULL OR drip_file_ilk_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+               	AND headers.block_number >= $1
+               	AND headers.block_number <= $2
+               	AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		repository.db.Node.ID,
+		repository.DB.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *DripFileIlkRepository) SetDB(db *postgres.DB) {
+	repository.DB = db
 }
