@@ -71,7 +71,7 @@ var _ = Describe("Bite Converter", func() {
 			emptyLog, err := json.Marshal(types.Log{})
 			Expect(err).NotTo(HaveOccurred())
 			expectedModel := bite.BiteModel{
-				Ilk:              "0x0000000000000000000000000000000000000000",
+				Ilk:              "",
 				Urn:              "0x0000000000000000000000000000000000000000",
 				Ink:              "",
 				Art:              "",

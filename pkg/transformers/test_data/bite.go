@@ -39,18 +39,18 @@ var (
 	biteIArt       = big.NewInt(5)
 	biteRawJson, _ = json.Marshal(EthBiteLog)
 	biteRawString  = string(biteRawJson)
-	biteIlk        = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	biteLad        = [32]byte{102, 97, 107, 101, 32, 108, 97, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	biteIlkString  = "0x66616b6520696c6B000000000000000000000000"
-	biteLadString  = "0x66616B65206c6164000000000000000000000000"
+	biteIlk        = [32]byte{69, 84, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	biteLad        = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 216, 180, 20, 126, 218, 128, 254, 199, 18, 42, 225, 109, 162, 71, 156, 189, 127, 251}
+	biteIlkString  = "ETH"
+	biteLadString  = "0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"
 )
 
 var EthBiteLog = types.Log{
 	Address: common.HexToAddress(shared.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8"),
-		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),
-		common.HexToHash("0x66616b65206c6164000000000000000000000000000000000000000000000000"),
+		common.HexToHash("0x4554480000000000000000000000000000000000000000000000000000000000"),
+		common.HexToHash("0x0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"),
 	},
 	Data:        hexutil.MustDecode(TemporaryBiteData),
 	BlockNumber: uint64(TemporaryBiteBlockNumber),

@@ -17,6 +17,7 @@
 package bite
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -61,8 +62,8 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, error) {
 	var models []BiteModel
 	for _, entity := range entities {
-		ilk := common.BytesToAddress(entity.Ilk[:common.AddressLength]).String()
-		urn := common.BytesToAddress(entity.Urn[:common.AddressLength]).String()
+		ilk := string(bytes.Trim(entity.Ilk[:], "\x00"))
+		urn := common.BytesToAddress(entity.Urn[:]).String()
 		ink := entity.Ink
 		art := entity.Art
 		iArt := entity.IArt
