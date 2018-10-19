@@ -87,14 +87,7 @@ func (transformer Transformer) Execute() error {
 			return err
 		}
 
-		// Can't assert a whole collection, wash types individually for Create,
-		// which needs interface{}
-		var typelessModels []interface{}
-		for _, m := range models {
-			typelessModels = append(typelessModels, m.(interface{}))
-		}
-
-		err = transformer.Repository.Create(header.Id, typelessModels)
+		err = transformer.Repository.Create(header.Id, models)
 		if err != nil {
 			log.Printf("Error persisting %v record: %v", transformerName, err)
 			return err
