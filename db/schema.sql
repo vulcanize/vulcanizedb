@@ -282,6 +282,7 @@ CREATE TABLE maker.drip_drip (
     id integer NOT NULL,
     header_id integer NOT NULL,
     ilk text,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1806,11 +1807,11 @@ ALTER TABLE ONLY maker.dent
 
 
 --
--- Name: drip_drip drip_drip_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: drip_drip drip_drip_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.drip_drip
-    ADD CONSTRAINT drip_drip_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT drip_drip_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
