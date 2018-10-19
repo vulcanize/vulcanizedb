@@ -57,7 +57,7 @@ var EthBiteLog = types.Log{
 	TxHash:      common.HexToHash(TemporaryBiteTransaction),
 	TxIndex:     111,
 	BlockHash:   TemporaryBiteBlockHash,
-	Index:       0,
+	Index:       7,
 	Removed:     false,
 }
 
@@ -69,6 +69,7 @@ var BiteEntity = bite.BiteEntity{
 	Tab:              biteTab,
 	Flip:             biteFlip,
 	IArt:             biteIArt,
+	LogIndex:         EthBiteLog.Index,
 	TransactionIndex: EthBiteLog.TxIndex,
 	Raw:              EthBiteLog,
 }
@@ -78,9 +79,10 @@ var BiteModel = bite.BiteModel{
 	Urn:              biteLadString,
 	Ink:              biteInk.String(),
 	Art:              biteArt.String(),
+	IArt:             biteIArt.String(),
 	Tab:              biteTab.String(),
 	NFlip:            biteFlip.String(),
-	IArt:             biteIArt.String(),
+	LogIndex:         EthBiteLog.Index,
 	TransactionIndex: EthBiteLog.TxIndex,
 	Raw:              biteRawString,
 }

@@ -9,6 +9,7 @@ CREATE TABLE maker.bite (
   tab       NUMERIC,
   nflip     NUMERIC,
   tx_idx    INTEGER NOT NUll,
+  log_idx   INTEGER NOT NUll,
   raw_log   JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 )
