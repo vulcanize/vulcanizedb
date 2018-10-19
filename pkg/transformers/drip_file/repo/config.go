@@ -16,11 +16,11 @@ package repo
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var DripFileRepoConfig = shared.TransformerConfig{
+var DripFileRepoConfig = shared.SingleTransformerConfig{
 	TransformerName:     "drip file repo",
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,
-	Topics:              []string{shared.DripFileRepoSignature},
+	Topic:               shared.DripFileRepoSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

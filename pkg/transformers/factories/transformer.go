@@ -26,7 +26,7 @@ import (
 )
 
 type Transformer struct {
-	Config     shared.TransformerConfig
+	Config     shared.SingleTransformerConfig
 	Converter  Converter
 	Repository Repository
 	Fetcher    shared.SettableLogFetcher
@@ -57,16 +57,14 @@ func (transformer Transformer) Execute() error {
 		return err
 	}
 
+	// Grab event signature from transformer config
+	// (Double-array structure required for go-ethereum FilterQuery)
+	var topic = [][]common.Hash{{common.HexToHash(transformer.Config.Topic)}}
+
 	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
-		// Grab topics from config
-		var topics [][]common.Hash
-		for _, topic := range transformer.Config.Topics {
-			topics = append(topics, []common.Hash{common.HexToHash(topic)})
-		}
-
 		// Fetch the missing logs for a given header
-		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topics, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header.BlockNumber)
 		if err != nil {
 			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
 			return err

@@ -18,11 +18,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var DebtCeilingFileConfig = shared.TransformerConfig{
+var DebtCeilingFileConfig = shared.SingleTransformerConfig{
 	TransformerName:     "pit file debt ceiling",
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
-	Topics:              []string{shared.PitFileDebtCeilingSignature},
+	Topic:               shared.PitFileDebtCeilingSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

@@ -36,6 +36,15 @@ type TransformerConfig struct {
 	EndingBlockNumber   int64
 }
 
+type SingleTransformerConfig struct {
+	TransformerName     string
+	ContractAddresses   []string
+	ContractAbi         string
+	Topic               string
+	StartingBlockNumber int64
+	EndingBlockNumber   int64
+}
+
 func HexToInt64(byteString string) int64 {
 	value := common.HexToHash(byteString)
 	return value.Big().Int64()
