@@ -58,11 +58,12 @@ var _ = Describe("Drip file ilk repository", func() {
 
 		It("adds a drip file ilk event", func() {
 			var dbDripFileIlk ilk.DripFileIlkModel
-			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, log_idx, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbDripFileIlk.Ilk).To(Equal(test_data.DripFileIlkModel.Ilk))
 			Expect(dbDripFileIlk.Vow).To(Equal(test_data.DripFileIlkModel.Vow))
 			Expect(dbDripFileIlk.Tax).To(Equal(test_data.DripFileIlkModel.Tax))
+			Expect(dbDripFileIlk.LogIndex).To(Equal(test_data.DripFileIlkModel.LogIndex))
 			Expect(dbDripFileIlk.TransactionIndex).To(Equal(test_data.DripFileIlkModel.TransactionIndex))
 			Expect(dbDripFileIlk.Raw).To(MatchJSON(test_data.DripFileIlkModel.Raw))
 		})
@@ -87,7 +88,7 @@ var _ = Describe("Drip file ilk repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbDripFileIlk ilk.DripFileIlkModel
-			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, log_idx, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

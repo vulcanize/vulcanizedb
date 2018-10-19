@@ -44,6 +44,7 @@ func (DripFileRepoConverter) ToModels(ethLogs []types.Log) ([]DripFileRepoModel,
 		model := DripFileRepoModel{
 			What:             what,
 			Data:             data,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}
