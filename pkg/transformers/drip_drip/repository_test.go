@@ -58,9 +58,10 @@ var _ = Describe("Drip drip repository", func() {
 
 		It("adds a drip drip event", func() {
 			var dbDripDrip drip_drip.DripDripModel
-			err = db.Get(&dbDripDrip, `SELECT ilk, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripDrip, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbDripDrip.Ilk).To(Equal(test_data.DripDripModel.Ilk))
+			Expect(dbDripDrip.LogIndex).To(Equal(test_data.DripDripModel.LogIndex))
 			Expect(dbDripDrip.TransactionIndex).To(Equal(test_data.DripDripModel.TransactionIndex))
 			Expect(dbDripDrip.Raw).To(MatchJSON(test_data.DripDripModel.Raw))
 		})
@@ -84,7 +85,7 @@ var _ = Describe("Drip drip repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbDripDrip drip_drip.DripDripModel
-			err = db.Get(&dbDripDrip, `SELECT ilk, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripDrip, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

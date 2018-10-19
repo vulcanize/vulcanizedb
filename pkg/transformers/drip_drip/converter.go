@@ -41,6 +41,7 @@ func (DripDripConverter) ToModels(ethLogs []types.Log) ([]DripDripModel, error) 
 		}
 		model := DripDripModel{
 			Ilk:              ilk,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}

@@ -36,13 +36,14 @@ var EthDripDripLog = types.Log{
 	TxHash:      common.HexToHash("0xa34fd5cfcb125ebfc81d33633495701b531753669712092bdb8aa6159a240040"),
 	TxIndex:     10,
 	BlockHash:   common.HexToHash("0x7a2aa72468986774d90dc8c80d436956a5b6a7e5acea430fb8a79f9217ef00a3"),
-	Index:       0,
+	Index:       11,
 	Removed:     false,
 }
 
 var rawDripDripLog, _ = json.Marshal(EthDripDripLog)
 var DripDripModel = drip_drip.DripDripModel{
 	Ilk:              "fake ilk",
+	LogIndex:         EthDripDripLog.Index,
 	TransactionIndex: EthDripDripLog.TxIndex,
 	Raw:              rawDripDripLog,
 }

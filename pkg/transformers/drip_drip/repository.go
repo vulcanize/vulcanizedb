@@ -40,9 +40,9 @@ func (repository DripDripRepository) Create(headerID int64, models []DripDripMod
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.drip_drip (header_id, ilk, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4)`,
-			headerID, model.Ilk, model.TransactionIndex, model.Raw,
+			`INSERT into maker.drip_drip (header_id, ilk, log_idx, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5)`,
+			headerID, model.Ilk, model.LogIndex, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
