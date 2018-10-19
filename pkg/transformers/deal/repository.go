@@ -38,9 +38,9 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.deal (header_id, bid_id, contract_address, tx_idx, raw_log)
-					 VALUES($1, $2, $3, $4, $5)`,
-			headerId, model.BidId, model.ContractAddress, model.TransactionIndex, model.Raw,
+			`INSERT into maker.deal (header_id, bid_id, contract_address, log_idx, tx_idx, raw_log)
+					 VALUES($1, $2, $3, $4, $5, $6)`,
+			headerId, model.BidId, model.ContractAddress, model.LogIndex, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

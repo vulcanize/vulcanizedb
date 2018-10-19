@@ -36,7 +36,7 @@ var DealLogNote = types.Log{
 	TxHash:      common.HexToHash("0xc6ff19de9299e5b290ba2d52fdb4662360ca86376613d78ee546244866a0be2d"),
 	TxIndex:     74,
 	BlockHash:   common.HexToHash("0x6454844075164a1d264c86d2a2c31ac1b64eb2f4ebdbbaeb4d44388fdf74470b"),
-	Index:       0,
+	Index:       75,
 	Removed:     false,
 }
 var dealRawJson, _ = json.Marshal(DealLogNote)
@@ -44,6 +44,7 @@ var dealRawJson, _ = json.Marshal(DealLogNote)
 var DealModel = deal.DealModel{
 	BidId:            "123",
 	ContractAddress:  shared.FlipperContractAddress,
-	TransactionIndex: 74,
+	LogIndex:         DealLogNote.Index,
+	TransactionIndex: DealLogNote.TxIndex,
 	Raw:              dealRawJson,
 }

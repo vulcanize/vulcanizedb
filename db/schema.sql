@@ -209,9 +209,10 @@ CREATE TABLE maker.deal (
     id integer NOT NULL,
     header_id integer NOT NULL,
     bid_id numeric NOT NULL,
+    contract_address character varying,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
-    raw_log jsonb,
-    contract_address character varying
+    raw_log jsonb
 );
 
 
@@ -1772,11 +1773,11 @@ ALTER TABLE ONLY maker.cat_file_pit_vow
 
 
 --
--- Name: deal deal_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: deal deal_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.deal
-    ADD CONSTRAINT deal_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT deal_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

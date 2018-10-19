@@ -47,6 +47,7 @@ func (DealConverter) ToModels(ethLogs []types.Log) (result []DealModel, err erro
 		model := DealModel{
 			BidId:            bidId.String(),
 			ContractAddress:  log.Address.Hex(),
+			LogIndex:         log.Index,
 			TransactionIndex: log.TxIndex,
 			Raw:              raw,
 		}

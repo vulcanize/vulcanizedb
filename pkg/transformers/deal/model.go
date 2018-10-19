@@ -17,6 +17,7 @@ package deal
 type DealModel struct {
 	BidId            string `db:"bid_id"`
 	ContractAddress  string `db:"contract_address"`
+	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              []byte `db:"raw_log"`
 }
