@@ -318,6 +318,7 @@ CREATE TABLE maker.drip_file_ilk (
     ilk text,
     vow text,
     tax numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -352,6 +353,7 @@ CREATE TABLE maker.drip_file_repo (
     header_id integer NOT NULL,
     what text,
     data numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -386,6 +388,7 @@ CREATE TABLE maker.drip_file_vow (
     header_id integer NOT NULL,
     what text,
     data text,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1823,11 +1826,11 @@ ALTER TABLE ONLY maker.drip_drip
 
 
 --
--- Name: drip_file_ilk drip_file_ilk_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: drip_file_ilk drip_file_ilk_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.drip_file_ilk
-    ADD CONSTRAINT drip_file_ilk_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT drip_file_ilk_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1839,11 +1842,11 @@ ALTER TABLE ONLY maker.drip_file_ilk
 
 
 --
--- Name: drip_file_repo drip_file_repo_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: drip_file_repo drip_file_repo_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.drip_file_repo
-    ADD CONSTRAINT drip_file_repo_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT drip_file_repo_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1855,11 +1858,11 @@ ALTER TABLE ONLY maker.drip_file_repo
 
 
 --
--- Name: drip_file_vow drip_file_vow_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: drip_file_vow drip_file_vow_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.drip_file_vow
-    ADD CONSTRAINT drip_file_vow_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT drip_file_vow_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

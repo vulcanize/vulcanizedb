@@ -44,6 +44,7 @@ func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]DripFileVowModel, e
 		model := DripFileVowModel{
 			What:             what,
 			Data:             data,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}

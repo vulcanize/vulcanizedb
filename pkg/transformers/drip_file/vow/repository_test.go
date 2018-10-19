@@ -58,10 +58,11 @@ var _ = Describe("Drip file vow repository", func() {
 
 		It("adds a drip file vow event", func() {
 			var dbDripFileVow vow.DripFileVowModel
-			err = db.Get(&dbDripFileVow, `SELECT what, data, tx_idx, raw_log FROM maker.drip_file_vow WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripFileVow, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.drip_file_vow WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbDripFileVow.What).To(Equal(test_data.DripFileVowModel.What))
 			Expect(dbDripFileVow.Data).To(Equal(test_data.DripFileVowModel.Data))
+			Expect(dbDripFileVow.LogIndex).To(Equal(test_data.DripFileVowModel.LogIndex))
 			Expect(dbDripFileVow.TransactionIndex).To(Equal(test_data.DripFileVowModel.TransactionIndex))
 			Expect(dbDripFileVow.Raw).To(MatchJSON(test_data.DripFileVowModel.Raw))
 		})
@@ -85,7 +86,7 @@ var _ = Describe("Drip file vow repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbDripFileVow vow.DripFileVowModel
-			err = db.Get(&dbDripFileVow, `SELECT what, data, tx_idx, raw_log FROM maker.drip_file_vow WHERE header_id = $1`, headerID)
+			err = db.Get(&dbDripFileVow, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.drip_file_vow WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

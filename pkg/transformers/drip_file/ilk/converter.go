@@ -49,6 +49,7 @@ func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]DripFileIlkModel, e
 			Ilk:              ilk,
 			Vow:              vow,
 			Tax:              tax,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}
