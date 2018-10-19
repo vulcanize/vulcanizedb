@@ -58,7 +58,7 @@ var _ = Describe("Bite repository", func() {
 
 		It("persists a bite record", func() {
 			var dbBite bite.BiteModel
-			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
+			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, log_idx, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbBite.Ilk).To(Equal(test_data.BiteModel.Ilk))
 			Expect(dbBite.Urn).To(Equal(test_data.BiteModel.Urn))
@@ -67,6 +67,7 @@ var _ = Describe("Bite repository", func() {
 			Expect(dbBite.Tab).To(Equal(test_data.BiteModel.Tab))
 			Expect(dbBite.NFlip).To(Equal(test_data.BiteModel.NFlip))
 			Expect(dbBite.IArt).To(Equal(test_data.BiteModel.IArt))
+			Expect(dbBite.LogIndex).To(Equal(test_data.BiteModel.LogIndex))
 			Expect(dbBite.TransactionIndex).To(Equal(test_data.BiteModel.TransactionIndex))
 			Expect(dbBite.Raw).To(MatchJSON(test_data.BiteModel.Raw))
 		})
@@ -90,7 +91,7 @@ var _ = Describe("Bite repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbBite bite.BiteModel
-			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
+			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, log_idx, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

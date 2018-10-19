@@ -72,6 +72,7 @@ CREATE TABLE maker.bite (
     tab numeric,
     nflip numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -1707,11 +1708,11 @@ ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT n
 
 
 --
--- Name: bite bite_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: bite bite_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.bite
-    ADD CONSTRAINT bite_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT bite_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

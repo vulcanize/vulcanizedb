@@ -27,6 +27,7 @@ type BiteEntity struct {
 	Tab              *big.Int
 	Flip             *big.Int
 	IArt             *big.Int
+	LogIndex         uint
 	TransactionIndex uint
 	Raw              types.Log
 }

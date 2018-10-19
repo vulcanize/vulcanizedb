@@ -22,6 +22,7 @@ type BiteModel struct {
 	IArt             string
 	Tab              string
 	NFlip            string
+	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              string `db:"raw_log"`
 }

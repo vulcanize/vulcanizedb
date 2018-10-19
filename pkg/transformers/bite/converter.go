@@ -51,6 +51,7 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 		}
 
 		entity.Raw = ethLog
+		entity.LogIndex = ethLog.Index
 		entity.TransactionIndex = ethLog.TxIndex
 
 		entities = append(entities, *entity)
@@ -69,6 +70,7 @@ func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, err
 		iArt := entity.IArt
 		tab := entity.Tab
 		flip := entity.Flip
+		logIdx := entity.LogIndex
 		txIdx := entity.TransactionIndex
 		rawLogJson, err := json.Marshal(entity.Raw)
 		rawLogString := string(rawLogJson)
@@ -84,6 +86,7 @@ func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, err
 			IArt:             shared.BigIntToString(iArt),
 			Tab:              shared.BigIntToString(tab),
 			NFlip:            shared.BigIntToString(flip),
+			LogIndex:         logIdx,
 			TransactionIndex: txIdx,
 			Raw:              rawLogString,
 		}
