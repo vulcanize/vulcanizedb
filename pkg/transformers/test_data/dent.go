@@ -59,6 +59,7 @@ var DentModel = dent.DentModel{
 	Bid:              dentBid,
 	Guy:              dentGuy,
 	Tic:              DentTic,
+	LogIndex:         DentLog.Index,
 	TransactionIndex: DentLog.TxIndex,
 	Raw:              dentRawJson,
 }

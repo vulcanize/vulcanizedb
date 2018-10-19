@@ -48,6 +48,7 @@ func (c DentConverter) ToModels(ethLogs []types.Log) (result []DentModel, err er
 		//TODO: it is likely that the tic value will need to be added to an emitted event,
 		//so this will need to be updated at that point
 
+		logIndex := log.Index
 		transactionIndex := log.TxIndex
 
 		raw, err := json.Marshal(log)
@@ -61,6 +62,7 @@ func (c DentConverter) ToModels(ethLogs []types.Log) (result []DentModel, err er
 			Bid:              bidValue,
 			Guy:              guy,
 			Tic:              tic,
+			LogIndex:         logIndex,
 			TransactionIndex: transactionIndex,
 			Raw:              raw,
 		}
