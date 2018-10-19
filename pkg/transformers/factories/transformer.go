@@ -77,6 +77,8 @@ func (transformer Transformer) Execute() error {
 				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 				return err
 			}
+			// Continue with the next header; nothing to persist
+			continue
 		}
 
 		models, err := transformer.Converter.ToModels(matchingLogs)
