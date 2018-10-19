@@ -40,9 +40,9 @@ func (r DentRepository) Create(headerId int64, models []DentModel) error {
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.dent (header_id, bid_id, lot, bid, guy, tic, tx_idx, raw_log)
-         VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-			headerId, model.BidId, model.Lot, model.Bid, model.Guy, model.Tic, model.TransactionIndex, model.Raw,
+			`INSERT into maker.dent (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			headerId, model.BidId, model.Lot, model.Bid, model.Guy, model.Tic, model.LogIndex, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

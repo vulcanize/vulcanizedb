@@ -248,6 +248,7 @@ CREATE TABLE maker.dent (
     bid numeric,
     guy bytea,
     tic numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1789,11 +1790,11 @@ ALTER TABLE ONLY maker.deal
 
 
 --
--- Name: dent dent_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: dent dent_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.dent
-    ADD CONSTRAINT dent_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT dent_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
