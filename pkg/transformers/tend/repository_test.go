@@ -111,9 +111,6 @@ var _ = Describe("TendRepository", func() {
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = tendRepository.Create(headerId, []interface{}{test_data.TendModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("creates a row for a new headerID", func() {
