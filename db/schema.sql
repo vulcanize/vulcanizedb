@@ -868,6 +868,7 @@ CREATE TABLE maker.vat_init (
     id integer NOT NULL,
     header_id integer NOT NULL,
     ilk text,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -2078,11 +2079,11 @@ ALTER TABLE ONLY maker.vat_heal
 
 
 --
--- Name: vat_init vat_init_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_init vat_init_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_init
-    ADD CONSTRAINT vat_init_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_init_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

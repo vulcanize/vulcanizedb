@@ -37,7 +37,7 @@ var _ = Describe("Vat init converter", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("converts a log to an model", func() {
+	It("converts a log to a model", func() {
 		models, err := converter.ToModels([]types.Log{test_data.EthVatInitLog})
 
 		Expect(err).NotTo(HaveOccurred())

@@ -52,21 +52,25 @@ var _ = Describe("Vat init repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat event", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbVatInit vat_init.VatInitModel
-			err = db.Get(&dbVatInit, `SELECT ilk, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatInit, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatInit.Ilk).To(Equal(test_data.VatInitModel.Ilk))
+			Expect(dbVatInit.LogIndex).To(Equal(test_data.VatInitModel.LogIndex))
 			Expect(dbVatInit.TransactionIndex).To(Equal(test_data.VatInitModel.TransactionIndex))
 			Expect(dbVatInit.Raw).To(MatchJSON(test_data.VatInitModel.Raw))
 		})
 
 		It("does not duplicate vat events", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
 
 			Expect(err).To(HaveOccurred())
@@ -74,16 +78,35 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("removes vat if corresponding header is deleted", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbVatInit vat_init.VatInitModel
-			err = db.Get(&dbVatInit, `SELECT ilk, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatInit, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 
 		It("marks the header as checked for vat init logs", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_init_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_init_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -161,7 +184,7 @@ var _ = Describe("Vat init repository", func() {
 			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
-		It("only treats headers as checked if drip drip logs have been checked", func() {
+		It("only treats headers as checked if vat init logs have been checked", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 

@@ -37,6 +37,7 @@ func (VatInitConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 		model := VatInitModel{
 			Ilk:              ilk,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}
