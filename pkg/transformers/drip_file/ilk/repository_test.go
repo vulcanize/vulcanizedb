@@ -40,7 +40,8 @@ var _ = Describe("Drip file ilk repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripFileIlkRepository = ilk.DripFileIlkRepository{DB: db}
+		dripFileIlkRepository = ilk.DripFileIlkRepository{}
+		dripFileIlkRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -182,7 +183,8 @@ var _ = Describe("Drip file ilk repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripFileIlkRepositoryTwo := ilk.DripFileIlkRepository{DB: dbTwo}
+			dripFileIlkRepositoryTwo := ilk.DripFileIlkRepository{}
+			dripFileIlkRepositoryTwo.SetDB(dbTwo)
 			err := dripFileIlkRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -193,16 +195,6 @@ var _ = Describe("Drip file ilk repository", func() {
 			nodeTwoMissingHeaders, err := dripFileIlkRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
-	})
-
-	Describe("SetDB", func() {
-		It("sets the repository db", func() {
-			db := test_config.NewTestDB(core.Node{})
-			repository := ilk.DripFileIlkRepository{}
-			Expect(repository.DB).To(BeNil())
-			repository.SetDB(db)
-			Expect(repository.DB).To(Equal(db))
 		})
 	})
 })

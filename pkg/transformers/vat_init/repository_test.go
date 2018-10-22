@@ -40,7 +40,8 @@ var _ = Describe("Vat init repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
-		vatInitRepository = vat_init.VatInitRepository{DB: db}
+		vatInitRepository = vat_init.VatInitRepository{}
+		vatInitRepository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -180,7 +181,8 @@ var _ = Describe("Vat init repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			vatInitRepositoryTwo := vat_init.VatInitRepository{DB: dbTwo}
+			vatInitRepositoryTwo := vat_init.VatInitRepository{}
+			vatInitRepositoryTwo.SetDB(dbTwo)
 			err = vatInitRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -191,15 +193,6 @@ var _ = Describe("Vat init repository", func() {
 			nodeTwoMissingHeaders, err := vatInitRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
-	})
-
-	Describe("SetDB", func() {
-		It("sets the repository db", func() {
-			vatInitRepository.SetDB(nil)
-			Expect(vatInitRepository.DB).To(BeNil())
-			vatInitRepository.SetDB(db)
-			Expect(vatInitRepository.DB).To(Equal(db))
 		})
 	})
 })

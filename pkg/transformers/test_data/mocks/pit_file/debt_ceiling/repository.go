@@ -31,6 +31,7 @@ type MockPitFileDebtCeilingRepository struct {
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
 	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
 func (repository *MockPitFileDebtCeilingRepository) MarkHeaderChecked(headerID int64) error {
@@ -70,4 +71,6 @@ func (repository *MockPitFileDebtCeilingRepository) AssertMarkHeaderCheckedCalle
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }
 
-func (repository *MockPitFileDebtCeilingRepository) SetDB(db *postgres.DB) {}
+func (repository *MockPitFileDebtCeilingRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}

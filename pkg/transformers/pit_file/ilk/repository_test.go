@@ -42,7 +42,8 @@ var _ = Describe("Pit file ilk repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileRepository = ilk.PitFileIlkRepository{DB: db}
+		pitFileRepository = ilk.PitFileIlkRepository{}
+		pitFileRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -183,7 +184,8 @@ var _ = Describe("Pit file ilk repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			pitFileRepositoryTwo := ilk.PitFileIlkRepository{DB: dbTwo}
+			pitFileRepositoryTwo := ilk.PitFileIlkRepository{}
+			pitFileRepositoryTwo.SetDB(dbTwo)
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

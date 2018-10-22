@@ -29,6 +29,7 @@ type MockVatMoveRepository struct {
 	PassedModels              []interface{}
 	CheckedHeaderIDs          []int64
 	CheckedHeaderError        error
+	SetDbCalled               bool
 }
 
 func (repository *MockVatMoveRepository) Create(headerID int64, models []interface{}) error {
@@ -64,4 +65,6 @@ func (repository *MockVatMoveRepository) SetCheckedHeaderError(e error) {
 	repository.CheckedHeaderError = e
 }
 
-func (repository *MockVatMoveRepository) SetDB(db *postgres.DB) {}
+func (repository *MockVatMoveRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}

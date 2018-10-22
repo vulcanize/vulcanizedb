@@ -55,6 +55,11 @@ var _ = Describe("Vat init transformer", func() {
 		}.NewTransformer(nil, nil)
 	})
 
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
 	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 

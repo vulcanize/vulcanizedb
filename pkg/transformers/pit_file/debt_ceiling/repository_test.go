@@ -42,7 +42,8 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileDebtCeilingRepository = debt_ceiling.PitFileDebtCeilingRepository{DB: db}
+		pitFileDebtCeilingRepository = debt_ceiling.PitFileDebtCeilingRepository{}
+		pitFileDebtCeilingRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -182,16 +183,16 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepository := debt_ceiling.PitFileDebtCeilingRepository{DB: db}
-			pitFileRepositoryTwo := debt_ceiling.PitFileDebtCeilingRepository{DB: dbTwo}
-			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
+			pitFileDebtCeilingRepositoryTwo := debt_ceiling.PitFileDebtCeilingRepository{}
+			pitFileDebtCeilingRepositoryTwo.SetDB(dbTwo)
+			err := pitFileDebtCeilingRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeOneMissingHeaders, err := pitFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			nodeOneMissingHeaders, err := pitFileDebtCeilingRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
 
-			nodeTwoMissingHeaders, err := pitFileRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			nodeTwoMissingHeaders, err := pitFileDebtCeilingRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
 		})

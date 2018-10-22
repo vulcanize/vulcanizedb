@@ -50,9 +50,14 @@ var _ = Describe("Drip file vow transformer", func() {
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}
+		}.NewTransformer(nil, nil)
 		headerOne = core.Header{BlockNumber: GinkgoRandomSeed(), Id: GinkgoRandomSeed()}
 		headerTwo = core.Header{BlockNumber: GinkgoRandomSeed(), Id: GinkgoRandomSeed()}
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers for block numbers specified in config", func() {

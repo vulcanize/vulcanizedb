@@ -26,6 +26,7 @@ type MockLogFetcher struct {
 	FetchedBlocks            []int64
 	fetcherError             error
 	FetchedLogs              []types.Log
+	SetBcCalled              bool
 }
 
 func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
@@ -36,7 +37,9 @@ func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]comm
 	return mlf.FetchedLogs, mlf.fetcherError
 }
 
-func (mlf *MockLogFetcher) SetBC(_ core.BlockChain) {}
+func (mlf *MockLogFetcher) SetBC(bc core.BlockChain) {
+	mlf.SetBcCalled = true
+}
 
 func (mlf *MockLogFetcher) SetFetcherError(err error) {
 	mlf.fetcherError = err

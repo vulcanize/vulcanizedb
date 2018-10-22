@@ -37,7 +37,8 @@ var _ = Describe("Vat Move", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		vatMoveRepository = vat_move.VatMoveRepository{DB: db}
+		vatMoveRepository = vat_move.VatMoveRepository{}
+		vatMoveRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -150,7 +151,8 @@ var _ = Describe("Vat Move", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatMoveRepositoryTwo := vat_move.VatMoveRepository{DB: dbTwo}
+			vatMoveRepositoryTwo := vat_move.VatMoveRepository{}
+			vatMoveRepositoryTwo.SetDB(dbTwo)
 			err := vatMoveRepository.Create(headerIDs[0], []interface{}{test_data.VatMoveModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -193,15 +195,6 @@ var _ = Describe("Vat Move", func() {
 			err = db.Get(&headerChecked, `SELECT vat_move_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headerChecked).To(BeTrue())
-		})
-	})
-
-	Describe("SetDB", func() {
-		It("sets the repository db", func() {
-			vatMoveRepository.DB = nil
-			Expect(vatMoveRepository.DB).To(BeNil())
-			vatMoveRepository.SetDB(db)
-			Expect(vatMoveRepository.DB).To(Equal(db))
 		})
 	})
 })

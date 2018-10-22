@@ -56,6 +56,11 @@ var _ = Describe("Tend Transformer", func() {
 		}.NewTransformer(nil, nil)
 	})
 
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
 	It("gets missing headers for blocks in the configured range", func() {
 		err := transformer.Execute()
 

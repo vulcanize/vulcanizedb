@@ -31,6 +31,7 @@ type MockTendRepository struct {
 	markHeaderCheckedPassedHeaderId int64
 	missingHeaders                  []core.Header
 	missingHeadersError             error
+	SetDbCalled                     bool
 }
 
 func (repository *MockTendRepository) Create(headerId int64, tend []interface{}) error {
@@ -70,4 +71,6 @@ func (repository *MockTendRepository) AssertMarkHeaderCheckedCalledWith(headerId
 	Expect(repository.markHeaderCheckedPassedHeaderId).To(Equal(headerId))
 }
 
-func (repository *MockTendRepository) SetDB(db *postgres.DB) {}
+func (repository *MockTendRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}
