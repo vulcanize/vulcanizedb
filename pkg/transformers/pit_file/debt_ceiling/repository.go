@@ -15,6 +15,7 @@
 package debt_ceiling
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 		return err
 	}
 
-	var pitFileDC PitFileDebtCeilingModel
 	for _, model := range models {
-		pitFileDC = model.(PitFileDebtCeilingModel)
+		pitFileDC, ok := model.(PitFileDebtCeilingModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, PitFileDebtCeilingModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_debt_ceiling (header_id, what, data, tx_idx, raw_log)
         VALUES($1, $2, $3::NUMERIC, $4, $5)`,

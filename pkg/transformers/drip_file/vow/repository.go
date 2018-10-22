@@ -15,6 +15,7 @@
 package vow
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository DripFileVowRepository) Create(headerID int64, models []interfac
 		return err
 	}
 
-	var vow DripFileVowModel
 	for _, model := range models {
-		vow = model.(DripFileVowModel)
+		vow, ok := model.(DripFileVowModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, DripFileVowModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.drip_file_vow (header_id, what, data, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3, $4, $5, $6)`,

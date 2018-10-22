@@ -15,6 +15,7 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository DripFileRepoRepository) Create(headerID int64, models []interfa
 		return err
 	}
 
-	var repo DripFileRepoModel
 	for _, model := range models {
-		repo = model.(DripFileRepoModel)
+		repo, ok := model.(DripFileRepoModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, DripFileRepoModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.drip_file_repo (header_id, what, data, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3::NUMERIC, $4, $5, $6)`,

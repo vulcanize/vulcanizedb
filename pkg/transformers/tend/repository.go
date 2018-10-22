@@ -15,6 +15,7 @@
 package tend
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -28,9 +29,14 @@ func (repository TendRepository) Create(headerId int64, models []interface{}) er
 	if err != nil {
 		return err
 	}
-	var tend TendModel
+
 	for _, model := range models {
-		tend = model.(TendModel)
+		tend, ok := model.(TendModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, TendModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, tx_idx, raw_log)
         	VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,

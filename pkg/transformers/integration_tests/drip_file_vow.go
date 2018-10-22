@@ -17,8 +17,9 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -26,7 +27,7 @@ import (
 var _ = Describe("Drip File Vow Transformer", func() {
 	It("transforms DripFileVow log events", func() {
 		blockNumber := int64(8762197)
-		config := drip_file.DripFileConfig
+		config := vow.DripFileVowConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -41,8 +42,13 @@ var _ = Describe("Drip File Vow Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := vow.DripFileVowTransformerInitializer{Config: config}
-		transformer := initializer.NewDripFileVowTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &vow.DripFileVowConverter{},
+			Repository: &vow.DripFileVowRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

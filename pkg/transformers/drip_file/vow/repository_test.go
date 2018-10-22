@@ -90,6 +90,12 @@ var _ = Describe("Drip file vow repository", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {

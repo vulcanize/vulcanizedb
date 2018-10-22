@@ -89,6 +89,12 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = pitFileDebtCeilingRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {

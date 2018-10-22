@@ -15,6 +15,7 @@
 package vat_move
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository VatMoveRepository) Create(headerID int64, models []interface{})
 		return err
 	}
 
-	var vatMove VatMoveModel
 	for _, model := range models {
-		vatMove = model.(VatMoveModel)
+		vatMove, ok := model.(VatMoveModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatMoveModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_move (header_id, src, dst, rad, tx_idx, raw_log)
         	VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`,

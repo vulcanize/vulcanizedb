@@ -87,6 +87,12 @@ var _ = Describe("Vat init repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headerChecked).To(BeTrue())
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {

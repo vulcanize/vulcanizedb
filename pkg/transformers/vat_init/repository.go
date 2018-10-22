@@ -15,6 +15,7 @@
 package vat_init
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"log"
@@ -29,9 +30,14 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 	if err != nil {
 		return err
 	}
-	var vatInit VatInitModel
+
 	for _, model := range models {
-		vatInit = model.(VatInitModel)
+		vatInit, ok := model.(VatInitModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatInitModel{})
+		}
+
 		log.Printf("VatInit model: %v", vatInit)
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_init (header_id, ilk, tx_idx, raw_log)

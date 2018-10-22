@@ -15,6 +15,7 @@
 package ilk
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository DripFileIlkRepository) Create(headerID int64, models []interfac
 		return err
 	}
 
-	var ilk DripFileIlkModel
 	for _, model := range models {
-		ilk = model.(DripFileIlkModel)
+		ilk, ok := model.(DripFileIlkModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, DripFileIlkModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.drip_file_ilk (header_id, ilk, vow, tax, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
