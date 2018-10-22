@@ -70,11 +70,11 @@ func (repository DripFileRepoRepository) MissingHeaders(startingBlockNumber, end
 	err := repository.DB.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               	LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR drip_file_repo_checked IS FALSE)
-               	AND headers.block_number >= $1
-               	AND headers.block_number <= $2
-               	AND headers.eth_node_fingerprint = $3`,
+			LEFT JOIN checked_headers on headers.id = header_id
+		WHERE (header_id ISNULL OR drip_file_repo_checked IS FALSE)
+			AND headers.block_number >= $1
+			AND headers.block_number <= $2
+			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
 		repository.DB.Node.ID,
