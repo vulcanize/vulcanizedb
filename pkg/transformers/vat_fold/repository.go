@@ -42,9 +42,9 @@ func (repository VatFoldRepository) Create(headerID int64, models []VatFoldModel
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, tx_idx, raw_log)
-				VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, model.Ilk, model.Urn, model.Rate, model.TransactionIndex, model.Raw,
+			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, log_idx, tx_idx, raw_log)
+				VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, model.Ilk, model.Urn, model.Rate, model.LogIndex, model.TransactionIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

@@ -50,6 +50,7 @@ func (VatFoldConverter) ToModels(ethLogs []types.Log) ([]VatFoldModel, error) {
 			Ilk:              ilk,
 			Urn:              urn,
 			Rate:             rate,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}
