@@ -47,6 +47,7 @@ var VatFoldModel = vat_fold.VatFoldModel{
 	Ilk:              "REP",
 	Urn:              "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1",
 	Rate:             "2",
+	LogIndex:         EthVatFoldLog.Index,
 	TransactionIndex: EthVatFoldLog.TxIndex,
 	Raw:              rawVatFoldLog,
 }

@@ -759,6 +759,7 @@ CREATE TABLE maker.vat_fold (
     ilk text,
     urn text,
     rate numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -2027,11 +2028,11 @@ ALTER TABLE ONLY maker.vat_flux
 
 
 --
--- Name: vat_fold vat_fold_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_fold vat_fold_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_fold
-    ADD CONSTRAINT vat_fold_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_fold_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
