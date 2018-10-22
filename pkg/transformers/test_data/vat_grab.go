@@ -22,7 +22,7 @@ var EthVatGrabLog = types.Log{
 	TxHash:      common.HexToHash("0x7cb84c750ce4985f7811abf641d52ffcb35306d943081475226484cf1470c6fa"),
 	TxIndex:     4,
 	BlockHash:   common.HexToHash("0xf5a367d560e14c4658ef85e4877e08b5560a4773b69b39f6b8025910b666fade"),
-	Index:       0,
+	Index:       5,
 	Removed:     false,
 }
 
@@ -34,6 +34,7 @@ var VatGrabModel = vat_grab.VatGrabModel{
 	W:                "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1",
 	Dink:             "115792089237316195423570985008687907853269984665640564039455584007913129639936",
 	Dart:             "115792089237316195423570985008687907853269984665640564039441803007913129639936",
+	LogIndex:         EthVatGrabLog.Index,
 	TransactionIndex: EthVatGrabLog.TxIndex,
 	Raw:              rawVatGrabLog,
 }

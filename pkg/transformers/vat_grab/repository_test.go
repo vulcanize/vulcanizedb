@@ -37,14 +37,14 @@ var _ = Describe("Vat grab repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat grab event", func() {
+			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbVatGrab vat_grab.VatGrabModel
-			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatGrab.Ilk).To(Equal(test_data.VatGrabModel.Ilk))
 			Expect(dbVatGrab.Urn).To(Equal(test_data.VatGrabModel.Urn))
@@ -52,30 +52,53 @@ var _ = Describe("Vat grab repository", func() {
 			Expect(dbVatGrab.W).To(Equal(test_data.VatGrabModel.W))
 			Expect(dbVatGrab.Dink).To(Equal(test_data.VatGrabModel.Dink))
 			Expect(dbVatGrab.Dart).To(Equal(test_data.VatGrabModel.Dart))
+			Expect(dbVatGrab.LogIndex).To(Equal(test_data.VatGrabModel.LogIndex))
 			Expect(dbVatGrab.TransactionIndex).To(Equal(test_data.VatGrabModel.TransactionIndex))
 			Expect(dbVatGrab.Raw).To(MatchJSON(test_data.VatGrabModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_grab_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headerChecked).To(BeTrue())
 		})
 
-		It("does not duplicate pit file vat_grab events", func() {
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_grab_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("does not duplicate vat grab events", func() {
+			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("removes pit file vat_grab if corresponding header is deleted", func() {
+		It("removes vat grab if corresponding header is deleted", func() {
+			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbVatGrab vat_grab.VatGrabModel
-			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

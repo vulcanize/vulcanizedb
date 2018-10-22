@@ -7,9 +7,10 @@ CREATE TABLE maker.vat_grab (
   w             TEXT,
   dink          NUMERIC,
   dart          NUMERIC,
+  log_idx       INTEGER NOT NULL,
   tx_idx        INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 ALTER TABLE public.checked_headers
