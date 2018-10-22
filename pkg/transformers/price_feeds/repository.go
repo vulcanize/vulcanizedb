@@ -39,8 +39,8 @@ func (repository PriceFeedRepository) Create(headerID int64, models []PriceFeedM
 		return err
 	}
 	for _, model := range models {
-		_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, tx_idx, raw_log)
-		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.TransactionIndex, model.Raw)
+		_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, log_idx, tx_idx, raw_log)
+		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.LogIndex, model.TransactionIndex, model.Raw)
 		if err != nil {
 			tx.Rollback()
 			return err

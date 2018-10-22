@@ -647,8 +647,9 @@ CREATE TABLE maker.price_feeds (
     id integer NOT NULL,
     block_number bigint NOT NULL,
     header_id integer NOT NULL,
-    medianizer_address bytea,
+    medianizer_address text,
     usd_value numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1977,11 +1978,11 @@ ALTER TABLE ONLY maker.pit_file_stability_fee
 
 
 --
--- Name: price_feeds price_feeds_header_id_medianizer_address_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: price_feeds price_feeds_header_id_medianizer_address_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.price_feeds
-    ADD CONSTRAINT price_feeds_header_id_medianizer_address_tx_idx_key UNIQUE (header_id, medianizer_address, tx_idx);
+    ADD CONSTRAINT price_feeds_header_id_medianizer_address_tx_idx_log_idx_key UNIQUE (header_id, medianizer_address, tx_idx, log_idx);
 
 
 --
