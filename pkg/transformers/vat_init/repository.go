@@ -40,9 +40,9 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 
 		log.Printf("VatInit model: %v", vatInit)
 		_, err = tx.Exec(
-			`INSERT INTO maker.vat_init (header_id, ilk, tx_idx, raw_log)
-			VALUES($1, $2, $3, $4)`,
-			headerID, vatInit.Ilk, vatInit.TransactionIndex, vatInit.Raw,
+			`INSERT INTO maker.vat_init (header_id, ilk, log_idx, tx_idx, raw_log)
+			VALUES($1, $2, $3, $4, $5)`,
+			headerID, vatInit.Ilk, vatInit.LogIndex, vatInit.TransactionIndex, vatInit.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -54,7 +54,7 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, vat_init_checked)
 			VALUES($1, $2)
 		ON CONFLICT (header_id) DO
-			UPDATE SET vat_heal_checked = $2`, headerID, true)
+			UPDATE SET vat_init_checked = $2`, headerID, true)
 	if err != nil {
 		tx.Rollback()
 		return err

@@ -38,13 +38,14 @@ var EthVatInitLog = types.Log{
 	TxHash:      common.HexToHash("0xe8f39fbb7fea3621f543868f19b1114e305aff6a063a30d32835ff1012526f91"),
 	TxIndex:     7,
 	BlockHash:   common.HexToHash("0xe3dd2e05bd8b92833e20ed83e2171bbc06a9ec823232eca1730a807bd8f5edc0"),
-	Index:       0,
+	Index:       8,
 	Removed:     false,
 }
 
 var rawVatInitLog, _ = json.Marshal(EthVatInitLog)
 var VatInitModel = vat_init.VatInitModel{
 	Ilk:              "fake ilk",
+	LogIndex:         EthVatInitLog.Index,
 	TransactionIndex: EthVatInitLog.TxIndex,
 	Raw:              rawVatInitLog,
 }
