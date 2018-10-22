@@ -5,8 +5,9 @@ CREATE TABLE maker.cat_file_chop_lump (
   what          TEXT,
   data          NUMERIC,
   tx_idx        INTEGER NOT NUll,
+  log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 CREATE TABLE maker.cat_file_flip (
@@ -16,8 +17,9 @@ CREATE TABLE maker.cat_file_flip (
   what          TEXT,
   flip          TEXT,
   tx_idx        INTEGER NOT NUll,
+  log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 CREATE TABLE maker.cat_file_pit_vow (
@@ -26,6 +28,7 @@ CREATE TABLE maker.cat_file_pit_vow (
   what          TEXT,
   data          TEXT,
   tx_idx        INTEGER NOT NUll,
+  log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );

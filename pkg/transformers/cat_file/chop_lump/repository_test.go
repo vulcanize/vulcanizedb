@@ -81,6 +81,14 @@ var _ = Describe("Cat file chop lump repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple cat file chop lump events if they have different log indexes", func() {
+			newCatFileChopLump := test_data.CatFileChopLumpModel
+			newCatFileChopLump.LogIndex = newCatFileChopLump.LogIndex + 1
+			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{newCatFileChopLump})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("removes cat file chop lump if corresponding header is deleted", func() {
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 

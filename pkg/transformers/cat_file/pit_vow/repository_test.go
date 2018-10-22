@@ -58,11 +58,12 @@ var _ = Describe("Cat file pit vow repository", func() {
 
 		It("adds a cat file pit vow event", func() {
 			var dbResult pit_vow.CatFilePitVowModel
-			err = db.Get(&dbResult, `SELECT what, data, tx_idx, raw_log FROM maker.cat_file_pit_vow WHERE header_id = $1`, headerID)
+			err = db.Get(&dbResult, `SELECT what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_pit_vow WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.What).To(Equal(test_data.CatFilePitVowModel.What))
 			Expect(dbResult.Data).To(Equal(test_data.CatFilePitVowModel.Data))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFilePitVowModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.CatFilePitVowModel.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFilePitVowModel.Raw))
 		})
 

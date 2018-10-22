@@ -58,12 +58,13 @@ var _ = Describe("Cat file flip repository", func() {
 
 		It("adds a cat file flip event", func() {
 			var dbResult flip.CatFileFlipModel
-			err = db.Get(&dbResult, `SELECT ilk, what, flip, tx_idx, raw_log FROM maker.cat_file_flip WHERE header_id = $1`, headerID)
+			err = db.Get(&dbResult, `SELECT ilk, what, flip, tx_idx, log_idx, raw_log FROM maker.cat_file_flip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.Ilk).To(Equal(test_data.CatFileFlipModel.Ilk))
 			Expect(dbResult.What).To(Equal(test_data.CatFileFlipModel.What))
 			Expect(dbResult.Flip).To(Equal(test_data.CatFileFlipModel.Flip))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileFlipModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.CatFileFlipModel.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileFlipModel.Raw))
 		})
 

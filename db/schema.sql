@@ -108,6 +108,7 @@ CREATE TABLE maker.cat_file_chop_lump (
     what text,
     data numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -143,6 +144,7 @@ CREATE TABLE maker.cat_file_flip (
     what text,
     flip text,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -177,6 +179,7 @@ CREATE TABLE maker.cat_file_pit_vow (
     what text,
     data text,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -1730,11 +1733,11 @@ ALTER TABLE ONLY maker.bite
 
 
 --
--- Name: cat_file_chop_lump cat_file_chop_lump_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: cat_file_chop_lump cat_file_chop_lump_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.cat_file_chop_lump
-    ADD CONSTRAINT cat_file_chop_lump_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT cat_file_chop_lump_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1746,11 +1749,11 @@ ALTER TABLE ONLY maker.cat_file_chop_lump
 
 
 --
--- Name: cat_file_flip cat_file_flip_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: cat_file_flip cat_file_flip_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.cat_file_flip
-    ADD CONSTRAINT cat_file_flip_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT cat_file_flip_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1762,11 +1765,11 @@ ALTER TABLE ONLY maker.cat_file_flip
 
 
 --
--- Name: cat_file_pit_vow cat_file_pit_vow_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: cat_file_pit_vow cat_file_pit_vow_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.cat_file_pit_vow
-    ADD CONSTRAINT cat_file_pit_vow_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT cat_file_pit_vow_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
