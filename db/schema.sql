@@ -831,9 +831,10 @@ ALTER SEQUENCE maker.vat_grab_id_seq OWNED BY maker.vat_grab.id;
 CREATE TABLE maker.vat_heal (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    urn character varying,
-    v character varying,
+    urn text,
+    v text,
     rad numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -2061,11 +2062,11 @@ ALTER TABLE ONLY maker.vat_grab
 
 
 --
--- Name: vat_heal vat_heal_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_heal vat_heal_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_heal
-    ADD CONSTRAINT vat_heal_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_heal_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

@@ -52,6 +52,7 @@ func (VatHealConverter) ToModels(ethLogs []types.Log) ([]VatHealModel, error) {
 			Urn:              urn.String(),
 			V:                v.String(),
 			Rad:              radInt.String(),
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              rawLogJson,
 		}

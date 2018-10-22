@@ -35,7 +35,7 @@ var VatHealLog = types.Log{
 	TxHash:      common.HexToHash("0x991b8079b1333024000dcaf2b00c24c5db0315e112a4ac4d912aa96a602e12b9"),
 	TxIndex:     2,
 	BlockHash:   common.HexToHash("0x0c54bdadb149691a103cfa5ad57329bda1e0fe55f1ba1ce5dd49dc1ecfe03daa"),
-	Index:       0,
+	Index:       3,
 	Removed:     false,
 }
 
@@ -44,6 +44,7 @@ var VatHealModel = vat_heal.VatHealModel{
 	Urn:              "0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6",
 	V:                "0x7340e006f4135BA6970D43bf43d88DCAD4e7a8CA",
 	Rad:              "120",
-	TransactionIndex: 2,
+	LogIndex:         VatHealLog.Index,
+	TransactionIndex: VatHealLog.TxIndex,
 	Raw:              rawHealLog,
 }

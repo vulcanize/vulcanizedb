@@ -1,12 +1,13 @@
 CREATE TABLE maker.vat_heal (
   id            SERIAL PRIMARY KEY,
   header_id     INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-  urn           varchar,
-  v             varchar,
-  rad           int,
+  urn           TEXT,
+  v             TEXT,
+  rad           NUMERIC,
+  log_idx       INTEGER NOT NULL,
   tx_idx        INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 ALTER TABLE public.checked_headers

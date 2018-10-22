@@ -1,1 +1,0 @@
-ALTER TABLE maker.vat_heal ALTER COLUMN rad SET DATA TYPE numeric;

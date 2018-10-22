@@ -30,11 +30,8 @@ var _ = Describe("VatHeal converter", func() {
 		models, err := converter.ToModels([]types.Log{test_data.VatHealLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(models[0].Urn).To(Equal(test_data.VatHealModel.Urn))
-		Expect(models[0].V).To(Equal(test_data.VatHealModel.V))
-		Expect(models[0].Rad).To(Equal(test_data.VatHealModel.Rad))
-		Expect(models[0].TransactionIndex).To(Equal(test_data.VatHealModel.TransactionIndex))
-		Expect(models[0].Raw).To(Equal(test_data.VatHealModel.Raw))
+		Expect(len(models)).To(Equal(1))
+		Expect(models[0]).To(Equal(test_data.VatHealModel))
 	})
 
 	It("Returns an error there are missing topics", func() {
