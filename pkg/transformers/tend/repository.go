@@ -38,9 +38,9 @@ func (repository TendRepository) Create(headerId int64, models []interface{}) er
 		}
 
 		_, err = tx.Exec(
-			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, tx_idx, raw_log)
-        	VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-			headerId, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.TransactionIndex, tend.Raw,
+			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
+        	VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9)`,
+			headerId, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
 		)
 
 		if err != nil {

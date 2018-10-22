@@ -61,6 +61,7 @@ var TendModel = tend.TendModel{
 	Bid:              tendBid,
 	Guy:              tendGuy,
 	Tic:              TendTic,
+	LogIndex:         TendLogNote.Index,
 	TransactionIndex: TendLogNote.TxIndex,
 	Raw:              string(RawLogNoteJson),
 }

@@ -44,6 +44,7 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 		//TODO: it is likely that the tic value will need to be added to an emitted event,
 		//so this will need to be updated at that point
 		transactionIndex := ethLog.TxIndex
+		logIndex := ethLog.Index
 
 		rawJson, err := json.Marshal(ethLog)
 		if err != nil {
@@ -57,6 +58,7 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 			Bid:              bidValue,
 			Guy:              guy,
 			Tic:              tic,
+			LogIndex:         logIndex,
 			TransactionIndex: transactionIndex,
 			Raw:              raw,
 		}

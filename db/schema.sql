@@ -685,8 +685,9 @@ CREATE TABLE maker.tend (
     bid_id numeric NOT NULL,
     lot numeric,
     bid numeric,
-    guy character varying,
+    guy text,
     tic numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1994,11 +1995,11 @@ ALTER TABLE ONLY maker.price_feeds
 
 
 --
--- Name: tend tend_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: tend tend_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.tend
-    ADD CONSTRAINT tend_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT tend_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
