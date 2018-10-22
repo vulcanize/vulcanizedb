@@ -98,6 +98,12 @@ var _ = Describe("TendRepository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(0))
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = tendRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {

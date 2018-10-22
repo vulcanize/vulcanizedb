@@ -17,8 +17,9 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -26,7 +27,7 @@ import (
 var _ = Describe("PitFileDebtCeiling Transformer", func() {
 	It("fetches and transforms a PitFileDebtCeiling event from Kovan chain", func() {
 		blockNumber := int64(8535578)
-		config := pit_file.PitFileConfig
+		config := debt_ceiling.DebtCeilingFileConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -41,8 +42,13 @@ var _ = Describe("PitFileDebtCeiling Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: config}
-		transformer := initializer.NewPitFileDebtCeilingTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
+			Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

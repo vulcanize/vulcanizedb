@@ -16,7 +16,6 @@ package vat_move_test
 
 import (
 	"database/sql"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -84,6 +83,12 @@ var _ = Describe("Vat Move", func() {
 			err = db.Get(&dbVatMove, `SELECT src, dst, rad, tx_idx, raw_log FROM maker.vat_move WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 

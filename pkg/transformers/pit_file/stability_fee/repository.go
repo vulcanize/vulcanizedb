@@ -15,6 +15,7 @@
 package stability_fee
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -29,9 +30,13 @@ func (repository PitFileStabilityFeeRepository) Create(headerID int64, models []
 		return err
 	}
 
-	var pitFileSF PitFileStabilityFeeModel
 	for _, model := range models {
-		pitFileSF = model.(PitFileStabilityFeeModel)
+		pitFileSF, ok := model.(PitFileStabilityFeeModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, PitFileStabilityFeeModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_stability_fee (header_id, what, data, tx_idx, raw_log)
         VALUES($1, $2, $3, $4, $5)`,
