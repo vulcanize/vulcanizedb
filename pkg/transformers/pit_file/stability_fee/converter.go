@@ -42,6 +42,7 @@ func (PitFileStabilityFeeConverter) ToModels(ethLogs []types.Log) ([]interface{}
 		model := PitFileStabilityFeeModel{
 			What:             what,
 			Data:             data,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}

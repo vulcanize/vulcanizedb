@@ -18,6 +18,7 @@ type PitFileIlkModel struct {
 	Ilk              string
 	What             string
 	Data             string
+	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              []byte `db:"raw_log"`
 }

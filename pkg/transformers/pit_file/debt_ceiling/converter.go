@@ -43,6 +43,7 @@ func (PitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]interface{},
 		model := PitFileDebtCeilingModel{
 			What:             what,
 			Data:             data,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}

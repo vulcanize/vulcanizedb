@@ -53,23 +53,40 @@ var _ = Describe("Pit file ilk repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a pit file ilk event", func() {
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile ilk.PitFileIlkModel
-			err = db.Get(&dbPitFile, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPitFile, `SELECT ilk, what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbPitFile.Ilk).To(Equal(test_data.PitFileIlkModel.Ilk))
 			Expect(dbPitFile.What).To(Equal(test_data.PitFileIlkModel.What))
 			Expect(dbPitFile.Data).To(Equal(test_data.PitFileIlkModel.Data))
+			Expect(dbPitFile.LogIndex).To(Equal(test_data.PitFileIlkModel.LogIndex))
 			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.PitFileIlkModel.TransactionIndex))
 			Expect(dbPitFile.Raw).To(MatchJSON(test_data.PitFileIlkModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT pit_file_ilk_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT pit_file_ilk_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -78,17 +95,23 @@ var _ = Describe("Pit file ilk repository", func() {
 
 		It("does not duplicate pit file ilk events", func() {
 			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes pit file ilk if corresponding header is deleted", func() {
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile ilk.PitFileIlkModel
-			err = db.Get(&dbPitFile, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPitFile, `SELECT ilk, what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

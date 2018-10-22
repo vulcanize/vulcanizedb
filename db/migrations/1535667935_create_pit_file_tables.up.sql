@@ -4,9 +4,10 @@ CREATE TABLE maker.pit_file_ilk (
   ilk           TEXT,
   what          TEXT,
   data          NUMERIC,
-	tx_idx        INTEGER NOT NUll,
+  log_idx       INTEGER NOT NUll,
+  tx_idx        INTEGER NOT NUll,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 CREATE TABLE maker.pit_file_stability_fee (
@@ -14,9 +15,10 @@ CREATE TABLE maker.pit_file_stability_fee (
   header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
   what      TEXT,
   data      TEXT,
+  log_idx   INTEGER NOT NULL,
   tx_idx    INTEGER NOT NULL,
   raw_log   JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 CREATE TABLE maker.pit_file_debt_ceiling (
@@ -24,7 +26,8 @@ CREATE TABLE maker.pit_file_debt_ceiling (
   header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
   what      TEXT,
   data      NUMERIC,
+  log_idx   INTEGER NOT NULL,
   tx_idx    INTEGER NOT NULL,
   raw_log   JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );

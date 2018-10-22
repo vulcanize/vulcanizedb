@@ -53,22 +53,39 @@ var _ = Describe("Pit file stability fee repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a pit file stability fee event", func() {
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile stability_fee.PitFileStabilityFeeModel
-			err = db.Get(&dbPitFile, `SELECT what, data, tx_idx, raw_log FROM maker.pit_file_stability_fee WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPitFile, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_stability_fee WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbPitFile.What).To(Equal(test_data.PitFileStabilityFeeModel.What))
 			Expect(dbPitFile.Data).To(Equal(test_data.PitFileStabilityFeeModel.Data))
+			Expect(dbPitFile.LogIndex).To(Equal(test_data.PitFileStabilityFeeModel.LogIndex))
 			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.PitFileStabilityFeeModel.TransactionIndex))
 			Expect(dbPitFile.Raw).To(MatchJSON(test_data.PitFileStabilityFeeModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT pit_file_stability_fee_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT pit_file_stability_fee_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -77,17 +94,23 @@ var _ = Describe("Pit file stability fee repository", func() {
 
 		It("does not duplicate pit file events", func() {
 			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes pit file if corresponding header is deleted", func() {
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile stability_fee.PitFileStabilityFeeModel
-			err = db.Get(&dbPitFile, `SELECT what, data, tx_idx, raw_log FROM maker.pit_file_stability_fee WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPitFile, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_stability_fee WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

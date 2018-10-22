@@ -38,9 +38,9 @@ func (repository PitFileStabilityFeeRepository) Create(headerID int64, models []
 		}
 
 		_, err = tx.Exec(
-			`INSERT into maker.pit_file_stability_fee (header_id, what, data, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5)`,
-			headerID, pitFileSF.What, pitFileSF.Data, pitFileSF.TransactionIndex, pitFileSF.Raw,
+			`INSERT into maker.pit_file_stability_fee (header_id, what, data, log_idx, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6)`,
+			headerID, pitFileSF.What, pitFileSF.Data, pitFileSF.LogIndex, pitFileSF.TransactionIndex, pitFileSF.Raw,
 		)
 
 		if err != nil {
