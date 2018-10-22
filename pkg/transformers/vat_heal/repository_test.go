@@ -62,7 +62,7 @@ var _ = Describe("VatHeal Repository", func() {
 
 		It("persists vat heal records", func() {
 			anotherVatHeal := test_data.VatHealModel
-			anotherVatHeal.TransactionIndex = test_data.VatHealModel.TransactionIndex + 1
+			anotherVatHeal.LogIndex = test_data.VatHealModel.LogIndex + 1
 			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel, anotherVatHeal})
 
 			var dbResult []VatHealDBResult
@@ -72,8 +72,9 @@ var _ = Describe("VatHeal Repository", func() {
 			Expect(dbResult[0].Urn).To(Equal(test_data.VatHealModel.Urn))
 			Expect(dbResult[0].V).To(Equal(test_data.VatHealModel.V))
 			Expect(dbResult[0].Rad).To(Equal(test_data.VatHealModel.Rad))
+			Expect(dbResult[0].LogIndex).To(Equal(test_data.VatHealModel.LogIndex))
+			Expect(dbResult[1].LogIndex).To(Equal(test_data.VatHealModel.LogIndex + 1))
 			Expect(dbResult[0].TransactionIndex).To(Equal(test_data.VatHealModel.TransactionIndex))
-			Expect(dbResult[1].TransactionIndex).To(Equal(test_data.VatHealModel.TransactionIndex + 1))
 			Expect(dbResult[0].Raw).To(MatchJSON(test_data.VatHealModel.Raw))
 			Expect(dbResult[0].HeaderId).To(Equal(headerId))
 		})
@@ -81,7 +82,9 @@ var _ = Describe("VatHeal Repository", func() {
 		It("returns an error if the insertion fails", func() {
 			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
 			Expect(err).NotTo(HaveOccurred())
+
 			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -90,6 +93,19 @@ var _ = Describe("VatHeal Repository", func() {
 			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
 			Expect(err).NotTo(HaveOccurred())
 
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_heal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_heal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
