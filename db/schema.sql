@@ -798,6 +798,7 @@ CREATE TABLE maker.vat_grab (
     w text,
     dink numeric,
     dart numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -2044,11 +2045,11 @@ ALTER TABLE ONLY maker.vat_fold
 
 
 --
--- Name: vat_grab vat_grab_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_grab vat_grab_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_grab
-    ADD CONSTRAINT vat_grab_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_grab_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --

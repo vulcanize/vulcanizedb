@@ -44,6 +44,7 @@ func (VatGrabConverter) ToModels(ethLogs []types.Log) ([]VatGrabModel, error) {
 			W:                w.String(),
 			Dink:             dink,
 			Dart:             dart,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}
