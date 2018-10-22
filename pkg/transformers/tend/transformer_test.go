@@ -16,6 +16,7 @@ package tend_test
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
@@ -46,8 +47,8 @@ var _ = Describe("Tend Transformer", func() {
 		converter = tend_mocks.MockTendConverter{}
 		repository = tend_mocks.MockTendRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
-		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
 			Config:     config,
 			Fetcher:    &fetcher,

@@ -16,6 +16,7 @@ package debt_ceiling_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -136,7 +137,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			pitFileBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 

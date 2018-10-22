@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
@@ -45,8 +46,8 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 		fetcher = mocks.MockLogFetcher{}
 		converter = debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
 		repository = debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
-		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
 			Config:     config,
 			Fetcher:    &fetcher,

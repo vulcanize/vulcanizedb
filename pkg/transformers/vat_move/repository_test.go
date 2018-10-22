@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -94,7 +95,7 @@ var _ = Describe("Vat Move", func() {
 	})
 
 	Describe("MissingHeaders", func() {
-		var eventBlockNumber = GinkgoRandomSeed()
+		var eventBlockNumber = rand.Int63()
 		var startingBlockNumber = eventBlockNumber - 1
 		var endingBlockNumber = eventBlockNumber + 1
 		var outOfRangeBlockNumber = eventBlockNumber + 2

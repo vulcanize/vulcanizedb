@@ -16,6 +16,7 @@ package vat_init_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -134,7 +135,7 @@ var _ = Describe("Vat init repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatInitBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
