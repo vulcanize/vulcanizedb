@@ -24,10 +24,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripFileIlkModel, error)
-}
-
 type DripFileIlkConverter struct{}
 
 func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {

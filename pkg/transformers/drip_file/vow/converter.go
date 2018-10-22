@@ -22,10 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripFileVowModel, error)
-}
-
 type DripFileVowConverter struct{}
 
 func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
