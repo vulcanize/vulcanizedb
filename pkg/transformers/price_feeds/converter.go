@@ -34,8 +34,9 @@ func (converter PriceFeedConverter) ToModels(logs []types.Log, headerID int64) (
 		}
 		model := PriceFeedModel{
 			BlockNumber:       log.BlockNumber,
-			MedianizerAddress: log.Address.Bytes(),
+			MedianizerAddress: log.Address.String(),
 			UsdValue:          Convert("wad", hexutil.Encode(log.Data), 15),
+			LogIndex:          log.Index,
 			TransactionIndex:  log.TxIndex,
 			Raw:               raw,
 		}

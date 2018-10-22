@@ -51,23 +51,40 @@ var _ = Describe("Price feeds repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("persists a price feed update", func() {
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbPriceFeedUpdate price_feeds.PriceFeedModel
-			err = db.Get(&dbPriceFeedUpdate, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
+			err = db.Get(&dbPriceFeedUpdate, `SELECT block_number, medianizer_address, usd_value, log_idx, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbPriceFeedUpdate.BlockNumber).To(Equal(test_data.PriceFeedModel.BlockNumber))
 			Expect(dbPriceFeedUpdate.MedianizerAddress).To(Equal(test_data.PriceFeedModel.MedianizerAddress))
 			Expect(dbPriceFeedUpdate.UsdValue).To(Equal(test_data.PriceFeedModel.UsdValue))
+			Expect(dbPriceFeedUpdate.LogIndex).To(Equal(test_data.PriceFeedModel.LogIndex))
 			Expect(dbPriceFeedUpdate.TransactionIndex).To(Equal(test_data.PriceFeedModel.TransactionIndex))
 			Expect(dbPriceFeedUpdate.Raw).To(MatchJSON(test_data.PriceFeedModel.Raw))
 		})
 
 		It("marks headerID as checked for price feed logs", func() {
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,17 +93,23 @@ var _ = Describe("Price feeds repository", func() {
 
 		It("does not duplicate price feed updates", func() {
 			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes price feed if corresponding header is deleted", func() {
+			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbResult price_feeds.PriceFeedModel
-			err = db.Get(&dbResult, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
+			err = db.Get(&dbResult, `SELECT block_number, medianizer_address, usd_value, log_idx, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

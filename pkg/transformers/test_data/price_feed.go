@@ -37,15 +37,16 @@ var EthPriceFeedLog = types.Log{
 	TxHash:      common.HexToHash("0xa51a50a2adbfba4e2ab3d72dfd67a21c769f1bc8d2b180663a15500a56cde58f"),
 	TxIndex:     txIndex,
 	BlockHash:   common.HexToHash("0x27ecebbf69eefa3bb3cf65f472322a80ff4946653a50a2171dc605f49829467d"),
-	Index:       0,
+	Index:       8,
 	Removed:     false,
 }
 
 var rawPriceFeedLog, _ = json.Marshal(EthPriceFeedLog)
 var PriceFeedModel = price_feeds.PriceFeedModel{
 	BlockNumber:       blockNumber,
-	MedianizerAddress: EthPriceFeedLog.Address[:],
+	MedianizerAddress: EthPriceFeedLog.Address.String(),
 	UsdValue:          "378.6599388897",
+	LogIndex:          EthPriceFeedLog.Index,
 	TransactionIndex:  EthPriceFeedLog.TxIndex,
 	Raw:               rawPriceFeedLog,
 }

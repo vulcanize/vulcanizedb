@@ -15,13 +15,12 @@
 package integration_tests
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -30,6 +29,7 @@ var _ = Describe("Price feeds transformer", func() {
 	var (
 		db         *postgres.DB
 		blockChain core.BlockChain
+		rpcClient  client.RpcClient
 	)
 
 	BeforeEach(func() {
@@ -39,73 +39,71 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
-
-		for i := 8763054; i < 8763063; i++ {
-			err = persistHeader(rpcClient, db, int64(i))
-			Expect(err).NotTo(HaveOccurred())
-		}
 	})
 
 	It("persists a ETH/USD price feed event", func() {
+		blockNumber := int64(8763054)
+		err := persistHeader(rpcClient, db, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"},
-			StartingBlockNumber: 8763054,
-			EndingBlockNumber:   8763054,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
 		}
 		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
 		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
 
-		err := transformer.Execute()
+		err = transformer.Execute()
 
-		time.AfterFunc(5*time.Second, func() {
-			defer GinkgoRecover()
-			Expect(err).NotTo(HaveOccurred())
-			var model price_feeds.PriceFeedModel
-			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(model.UsdValue).To(Equal("207.314891143"))
-		})
+		Expect(err).NotTo(HaveOccurred())
+		var model price_feeds.PriceFeedModel
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.UsdValue).To(Equal("207.314891143"))
+		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
 	})
 
 	It("persists a MKR/USD price feed event", func() {
+		blockNumber := int64(8763059)
+		err := persistHeader(rpcClient, db, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0xB1997239Cfc3d15578A3a09730f7f84A90BB4975"},
-			StartingBlockNumber: 8763059,
-			EndingBlockNumber:   8763059,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
 		}
 		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
 		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
 
-		err := transformer.Execute()
+		err = transformer.Execute()
 
-		time.AfterFunc(5*time.Second, func() {
-			defer GinkgoRecover()
-			Expect(err).NotTo(HaveOccurred())
-			var model price_feeds.PriceFeedModel
-			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(model.UsdValue).To(Equal("391.803979212"))
-		})
+		Expect(err).NotTo(HaveOccurred())
+		var model price_feeds.PriceFeedModel
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.UsdValue).To(Equal("391.803979212"))
+		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
 	})
 
 	It("persists a REP/USD price feed event", func() {
+		blockNumber := int64(8763062)
+		err := persistHeader(rpcClient, db, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0xf88bBDc1E2718F8857F30A180076ec38d53cf296"},
-			StartingBlockNumber: 8763062,
-			EndingBlockNumber:   8763062,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
 		}
 		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
 		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
 
-		err := transformer.Execute()
+		err = transformer.Execute()
 
-		time.AfterFunc(5*time.Second, func() {
-			defer GinkgoRecover()
-			Expect(err).NotTo(HaveOccurred())
-			var model price_feeds.PriceFeedModel
-			err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(model.UsdValue).To(Equal("12.8169284827"))
-		})
+		Expect(err).NotTo(HaveOccurred())
+		var model price_feeds.PriceFeedModel
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.UsdValue).To(Equal("12.8169284827"))
+		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
 	})
 })

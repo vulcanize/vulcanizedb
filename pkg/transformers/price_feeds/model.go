@@ -26,8 +26,9 @@ type LogValueEntity struct {
 
 type PriceFeedModel struct {
 	BlockNumber       uint64 `db:"block_number"`
-	MedianizerAddress []byte `db:"medianizer_address"`
+	MedianizerAddress string `db:"medianizer_address"`
 	UsdValue          string `db:"usd_value"`
+	LogIndex          uint   `db:"log_idx"`
 	TransactionIndex  uint   `db:"tx_idx"`
 	Raw               []byte `db:"raw_log"`
 }
