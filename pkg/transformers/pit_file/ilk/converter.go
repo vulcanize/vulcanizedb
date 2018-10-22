@@ -46,6 +46,7 @@ func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) 
 			Ilk:              ilk,
 			What:             what,
 			Data:             risk,
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		}

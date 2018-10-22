@@ -38,9 +38,9 @@ func (repository PitFileIlkRepository) Create(headerID int64, models []interface
 		}
 
 		_, err = tx.Exec(
-			`INSERT into maker.pit_file_ilk (header_id, ilk, what, data, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, pitFileIlk.Ilk, pitFileIlk.What, pitFileIlk.Data, pitFileIlk.TransactionIndex, pitFileIlk.Raw,
+			`INSERT into maker.pit_file_ilk (header_id, ilk, what, data, log_idx, tx_idx, raw_log)
+        VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, pitFileIlk.Ilk, pitFileIlk.What, pitFileIlk.Data, pitFileIlk.LogIndex, pitFileIlk.TransactionIndex, pitFileIlk.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

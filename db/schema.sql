@@ -541,6 +541,7 @@ CREATE TABLE maker.pit_file_debt_ceiling (
     header_id integer NOT NULL,
     what text,
     data numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -576,6 +577,7 @@ CREATE TABLE maker.pit_file_ilk (
     ilk text,
     what text,
     data numeric,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -610,6 +612,7 @@ CREATE TABLE maker.pit_file_stability_fee (
     header_id integer NOT NULL,
     what text,
     data text,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -1925,11 +1928,11 @@ ALTER TABLE ONLY maker.frob
 
 
 --
--- Name: pit_file_debt_ceiling pit_file_debt_ceiling_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_debt_ceiling pit_file_debt_ceiling_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.pit_file_debt_ceiling
-    ADD CONSTRAINT pit_file_debt_ceiling_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT pit_file_debt_ceiling_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1941,11 +1944,11 @@ ALTER TABLE ONLY maker.pit_file_debt_ceiling
 
 
 --
--- Name: pit_file_ilk pit_file_ilk_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_ilk pit_file_ilk_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.pit_file_ilk
-    ADD CONSTRAINT pit_file_ilk_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT pit_file_ilk_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1957,11 +1960,11 @@ ALTER TABLE ONLY maker.pit_file_ilk
 
 
 --
--- Name: pit_file_stability_fee pit_file_stability_fee_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: pit_file_stability_fee pit_file_stability_fee_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.pit_file_stability_fee
-    ADD CONSTRAINT pit_file_stability_fee_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT pit_file_stability_fee_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
