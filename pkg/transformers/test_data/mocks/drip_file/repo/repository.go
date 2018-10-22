@@ -31,6 +31,7 @@ type MockDripFileRepoRepository struct {
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
 	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
 func (repository *MockDripFileRepoRepository) Create(headerID int64, models []interface{}) error {
@@ -70,4 +71,6 @@ func (repository *MockDripFileRepoRepository) AssertMarkHeaderCheckedCalledWith(
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }
 
-func (repository *MockDripFileRepoRepository) SetDB(db *postgres.DB) {}
+func (repository *MockDripFileRepoRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}

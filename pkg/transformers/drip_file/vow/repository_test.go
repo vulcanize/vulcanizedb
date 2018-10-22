@@ -42,7 +42,8 @@ var _ = Describe("Drip file vow repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripFileVowRepository = vow.DripFileVowRepository{DB: db}
+		dripFileVowRepository = vow.DripFileVowRepository{}
+		dripFileVowRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -182,7 +183,8 @@ var _ = Describe("Drip file vow repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripFileVowRepositoryTwo := vow.DripFileVowRepository{DB: dbTwo}
+			dripFileVowRepositoryTwo := vow.DripFileVowRepository{}
+			dripFileVowRepositoryTwo.SetDB(dbTwo)
 			err := dripFileVowRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -193,16 +195,6 @@ var _ = Describe("Drip file vow repository", func() {
 			nodeTwoMissingHeaders, err := dripFileVowRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
-	})
-
-	Describe("SetDB", func() {
-		It("sets the repository db", func() {
-			db := test_config.NewTestDB(core.Node{})
-			repository := vow.DripFileVowRepository{}
-			Expect(repository.DB).To(BeNil())
-			repository.SetDB(db)
-			Expect(repository.DB).To(Equal(db))
 		})
 	})
 })

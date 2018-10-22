@@ -31,6 +31,7 @@ type MockVatInitRepository struct {
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
 	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
 func (repository *MockVatInitRepository) Create(headerID int64, models []interface{}) error {
@@ -70,4 +71,6 @@ func (repository *MockVatInitRepository) AssertMarkHeaderCheckedCalledWith(i int
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }
 
-func (repository *MockVatInitRepository) SetDB(db *postgres.DB) {}
+func (repository *MockVatInitRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}

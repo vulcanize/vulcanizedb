@@ -21,11 +21,11 @@ import (
 )
 
 type DripFileVowRepository struct {
-	DB *postgres.DB
+	db *postgres.DB
 }
 
 func (repository DripFileVowRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.DB.Begin()
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (repository DripFileVowRepository) Create(headerID int64, models []interfac
 }
 
 func (repository DripFileVowRepository) MarkHeaderChecked(headerID int64) error {
-	_, err := repository.DB.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_vow_checked)
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, drip_file_vow_checked)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO
 			UPDATE SET drip_file_vow_checked = $2`, headerID, true)
@@ -71,7 +71,7 @@ func (repository DripFileVowRepository) MarkHeaderChecked(headerID int64) error 
 
 func (repository DripFileVowRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := repository.DB.Select(
+	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
 			LEFT JOIN checked_headers on headers.id = header_id
@@ -81,11 +81,11 @@ func (repository DripFileVowRepository) MissingHeaders(startingBlockNumber, endi
 			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		repository.DB.Node.ID,
+		repository.db.Node.ID,
 	)
 	return result, err
 }
 
 func (repository *DripFileVowRepository) SetDB(db *postgres.DB) {
-	repository.DB = db
+	repository.db = db
 }

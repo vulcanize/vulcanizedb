@@ -42,7 +42,8 @@ var _ = Describe("Pit file stability fee repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileStabilityFeeRepository = stability_fee.PitFileStabilityFeeRepository{DB: db}
+		pitFileStabilityFeeRepository = stability_fee.PitFileStabilityFeeRepository{}
+		pitFileStabilityFeeRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -182,7 +183,8 @@ var _ = Describe("Pit file stability fee repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			pitFileRepositoryTwo := stability_fee.PitFileStabilityFeeRepository{DB: dbTwo}
+			pitFileRepositoryTwo := stability_fee.PitFileStabilityFeeRepository{}
+			pitFileRepositoryTwo.SetDB(dbTwo)
 			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

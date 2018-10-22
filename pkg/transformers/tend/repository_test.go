@@ -41,7 +41,8 @@ var _ = Describe("TendRepository", func() {
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		tendRepository = tend.TendRepository{DB: db}
+		tendRepository = tend.TendRepository{}
+		tendRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -187,7 +188,8 @@ var _ = Describe("TendRepository", func() {
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			tendRepository2 := tend.TendRepository{DB: db2}
+			tendRepository2 := tend.TendRepository{}
+			tendRepository2.SetDB(db2)
 
 			for _, number := range []int64{startingBlock, tendBlock, endingBlock} {
 				headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))

@@ -31,6 +31,7 @@ type MockPitFileIlkRepository struct {
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
 	missingHeadersError             error
+	SetDbCalled                     bool
 }
 
 func (repository *MockPitFileIlkRepository) SetCreateError(err error) {
@@ -70,4 +71,6 @@ func (repository *MockPitFileIlkRepository) AssertMarkHeaderCheckedCalledWith(i 
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
 }
 
-func (repository *MockPitFileIlkRepository) SetDB(db *postgres.DB) {}
+func (repository *MockPitFileIlkRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
+}
