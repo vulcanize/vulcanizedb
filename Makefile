@@ -50,7 +50,7 @@ test: | $(GINKGO) $(LINT)
 integrationtest: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r --flakeAttempts=5 pkg/transformers/integration_tests/
+	$(GINKGO) -r --flakeAttempts=20 pkg/transformers/integration_tests/
 
 .PHONY: dep
 dep: | $(DEP)
