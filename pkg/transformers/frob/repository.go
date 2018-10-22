@@ -39,9 +39,9 @@ func (repository FrobRepository) Create(headerID int64, models []FrobModel) erro
 		return err
 	}
 	for _, model := range models {
-		_, err = tx.Exec(`INSERT INTO maker.frob (header_id, art, dart, dink, iart, ilk, ink, urn, raw_log, tx_idx)
-		VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8, $9, $10)`,
-			headerID, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Urn, model.Raw, model.TransactionIndex)
+		_, err = tx.Exec(`INSERT INTO maker.frob (header_id, art, dart, dink, iart, ilk, ink, urn, raw_log, log_idx, tx_idx)
+		VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8, $9, $10, $11)`,
+			headerID, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Urn, model.Raw, model.LogIndex, model.TransactionIndex)
 		if err != nil {
 			tx.Rollback()
 			return err

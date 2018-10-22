@@ -42,6 +42,10 @@ func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Frob
 		}
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
 		err = contract.UnpackLog(&entity, "Frob", ethLog)
+		if err != nil {
+			return entities, err
+		}
+		entity.LogIndex = ethLog.Index
 		entity.TransactionIndex = ethLog.TxIndex
 		entity.Raw = ethLog
 		entities = append(entities, entity)
@@ -65,6 +69,7 @@ func (FrobConverter) ToModels(entities []FrobEntity) ([]FrobModel, error) {
 			Dink:             entity.Dink.String(),
 			Dart:             entity.Dart.String(),
 			IArt:             entity.IArt.String(),
+			LogIndex:         entity.LogIndex,
 			TransactionIndex: entity.TransactionIndex,
 			Raw:              rawLog,
 		}

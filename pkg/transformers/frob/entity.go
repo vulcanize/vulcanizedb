@@ -28,6 +28,7 @@ type FrobEntity struct {
 	Dink             *big.Int
 	Dart             *big.Int
 	IArt             *big.Int
+	LogIndex         uint
 	TransactionIndex uint
 	Raw              types.Log
 }

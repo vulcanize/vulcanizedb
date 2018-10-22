@@ -57,7 +57,7 @@ var EthFrobLog = types.Log{
 	TxHash:      common.HexToHash(TemporaryFrobTransaction),
 	TxIndex:     123,
 	BlockHash:   TemporaryFrobBlockHash,
-	Index:       0,
+	Index:       7,
 	Removed:     false,
 }
 
@@ -69,6 +69,7 @@ var FrobEntity = frob.FrobEntity{
 	Dink:             dink,
 	Dart:             dart,
 	IArt:             iArt,
+	LogIndex:         EthFrobLog.Index,
 	TransactionIndex: EthFrobLog.TxIndex,
 	Raw:              EthFrobLog,
 }
@@ -82,6 +83,7 @@ var FrobModel = frob.FrobModel{
 	Dink:             dink.String(),
 	Dart:             dart.String(),
 	IArt:             iArt.String(),
+	LogIndex:         EthFrobLog.Index,
 	TransactionIndex: EthFrobLog.TxIndex,
 	Raw:              rawFrobLog,
 }

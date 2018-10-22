@@ -51,14 +51,14 @@ var _ = Describe("Frob repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a frob", func() {
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, urn, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, urn, log_idx, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbFrob.Ilk).To(Equal(test_data.FrobModel.Ilk))
 			Expect(dbFrob.Urn).To(Equal(test_data.FrobModel.Urn))
@@ -67,11 +67,28 @@ var _ = Describe("Frob repository", func() {
 			Expect(dbFrob.Dink).To(Equal(test_data.FrobModel.Dink))
 			Expect(dbFrob.Dart).To(Equal(test_data.FrobModel.Dart))
 			Expect(dbFrob.IArt).To(Equal(test_data.FrobModel.IArt))
+			Expect(dbFrob.LogIndex).To(Equal(test_data.FrobModel.LogIndex))
 			Expect(dbFrob.TransactionIndex).To(Equal(test_data.FrobModel.TransactionIndex))
 			Expect(dbFrob.Raw).To(MatchJSON(test_data.FrobModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT frob_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT frob_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -80,17 +97,23 @@ var _ = Describe("Frob repository", func() {
 
 		It("does not duplicate frob events", func() {
 			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes frob if corresponding header is deleted", func() {
+			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
-			err = db.Get(&dbFrob, `SELECT art, iart, ilk, ink, urn, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
+			err = db.Get(&dbFrob, `SELECT art, iart, ilk, ink, urn, log_idx, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
