@@ -40,9 +40,9 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []CatFil
 	}
 	for _, model := range models {
 		_, err = repository.db.Exec(
-			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5)`,
-			headerID, model.What, model.Data, model.TransactionIndex, model.Raw,
+			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6)`,
+			headerID, model.What, model.Data, model.TransactionIndex, model.LogIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

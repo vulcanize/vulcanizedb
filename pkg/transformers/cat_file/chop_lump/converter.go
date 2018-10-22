@@ -50,6 +50,7 @@ func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]CatFileChopLump
 			What:             what,
 			Data:             data,
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		results = append(results, result)

@@ -40,9 +40,9 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []CatFileF
 	}
 	for _, model := range models {
 		_, err = repository.db.Exec(
-			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6)`,
-			headerID, model.Ilk, model.What, model.Flip, model.TransactionIndex, model.Raw,
+			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, log_idx, raw_log)
+        VALUES($1, $2, $3, $4, $5, $6, $7)`,
+			headerID, model.Ilk, model.What, model.Flip, model.TransactionIndex, model.LogIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

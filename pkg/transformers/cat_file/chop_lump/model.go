@@ -19,5 +19,6 @@ type CatFileChopLumpModel struct {
 	What             string
 	Data             string
 	TransactionIndex uint   `db:"tx_idx"`
+	LogIndex         uint   `db:"log_idx"`
 	Raw              []byte `db:"raw_log"`
 }

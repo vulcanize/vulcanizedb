@@ -47,6 +47,7 @@ func (CatFilePitVowConverter) ToModels(ethLogs []types.Log) ([]CatFilePitVowMode
 			What:             what,
 			Data:             data,
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		results = append(results, result)

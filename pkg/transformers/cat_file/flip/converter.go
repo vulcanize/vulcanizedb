@@ -50,6 +50,7 @@ func (CatFileFlipConverter) ToModels(ethLogs []types.Log) ([]CatFileFlipModel, e
 			What:             what,
 			Flip:             flip,
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		results = append(results, result)
