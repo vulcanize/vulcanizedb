@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	vat_move_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_move"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
+	"math/rand"
 )
 
 var _ = Describe("Vat move transformer", func() {
@@ -42,8 +43,8 @@ var _ = Describe("Vat move transformer", func() {
 		fetcher = mocks.MockLogFetcher{}
 		converter = vat_move_mocks.MockVatMoveConverter{}
 		repository = vat_move_mocks.MockVatMoveRepository{}
-		headerOne = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
-		headerTwo = core.Header{Id: GinkgoRandomSeed(), BlockNumber: GinkgoRandomSeed()}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
 			Config:     config,
 			Converter:  &converter,

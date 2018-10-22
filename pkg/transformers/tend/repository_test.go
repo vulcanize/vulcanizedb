@@ -17,6 +17,7 @@ package tend_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -143,7 +144,7 @@ var _ = Describe("TendRepository", func() {
 		)
 
 		BeforeEach(func() {
-			tendBlock = GinkgoRandomSeed()
+			tendBlock = rand.Int63()
 			startingBlock = tendBlock - 1
 			endingBlock = tendBlock + 1
 			outOfRangeBlock = tendBlock + 2

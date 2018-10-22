@@ -16,6 +16,7 @@ package vow_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -137,7 +138,7 @@ var _ = Describe("Drip file vow repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			dripFileBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
