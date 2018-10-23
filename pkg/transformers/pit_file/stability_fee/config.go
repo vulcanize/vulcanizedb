@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pit_file
+package stability_fee
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var PitFileConfig = shared.TransformerConfig{
+var StabilityFeeFileConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.PitFileStabilityFeeLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
-	Topics:              []string{shared.PitFileIlkSignature, shared.PitFileDebtCeilingSignature, shared.PitFileStabilityFeeSignature},
+	Topic:               shared.PitFileStabilityFeeSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

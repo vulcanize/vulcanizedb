@@ -16,10 +16,8 @@ package ilk_test
 
 import (
 	"database/sql"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -33,7 +31,7 @@ import (
 var _ = Describe("Drip file ilk repository", func() {
 	var (
 		db                    *postgres.DB
-		dripFileIlkRepository ilk.Repository
+		dripFileIlkRepository ilk.DripFileIlkRepository
 		err                   error
 		headerRepository      datastore.HeaderRepository
 	)
@@ -42,7 +40,8 @@ var _ = Describe("Drip file ilk repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripFileIlkRepository = ilk.NewDripFileIlkRepository(db)
+		dripFileIlkRepository = ilk.DripFileIlkRepository{}
+		dripFileIlkRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +51,7 @@ var _ = Describe("Drip file ilk repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dripFileIlkRepository.Create(headerID, []ilk.DripFileIlkModel{test_data.DripFileIlkModel})
+			err = dripFileIlkRepository.Create(headerID, []interface{}{test_data.DripFileIlkModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -69,7 +68,6 @@ var _ = Describe("Drip file ilk repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT drip_file_ilk_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -77,7 +75,7 @@ var _ = Describe("Drip file ilk repository", func() {
 		})
 
 		It("does not duplicate drip file events", func() {
-			err = dripFileIlkRepository.Create(headerID, []ilk.DripFileIlkModel{test_data.DripFileIlkModel})
+			err = dripFileIlkRepository.Create(headerID, []interface{}{test_data.DripFileIlkModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -91,6 +89,12 @@ var _ = Describe("Drip file ilk repository", func() {
 			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, log_idx, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = dripFileIlkRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -139,12 +143,12 @@ var _ = Describe("Drip file ilk repository", func() {
 			blockNumbers = []int64{startingBlock, dripFileBlock, endingBlock, endingBlock + 1}
 
 			headerIDs = []int64{}
+
 			for _, n := range blockNumbers {
 				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIDs = append(headerIDs, headerID)
 			}
-
 		})
 
 		It("returns headers with no associated drip file event", func() {
@@ -179,7 +183,8 @@ var _ = Describe("Drip file ilk repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripFileIlkRepositoryTwo := ilk.NewDripFileIlkRepository(dbTwo)
+			dripFileIlkRepositoryTwo := ilk.DripFileIlkRepository{}
+			dripFileIlkRepositoryTwo.SetDB(dbTwo)
 			err := dripFileIlkRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

@@ -15,33 +15,28 @@
 package vat_move
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []VatMoveModel) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-	MarkHeaderChecked(headerID int64) error
-}
 
 type VatMoveRepository struct {
 	db *postgres.DB
 }
 
-func NewVatMoveRepository(db *postgres.DB) VatMoveRepository {
-	return VatMoveRepository{
-		db: db,
-	}
-}
-
-func (repository VatMoveRepository) Create(headerID int64, models []VatMoveModel) error {
+func (repository VatMoveRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 
-	for _, vatMove := range models {
+	for _, model := range models {
+		vatMove, ok := model.(VatMoveModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatMoveModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_move (header_id, src, dst, rad, tx_idx, raw_log)
         	VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`,
@@ -93,4 +88,8 @@ func (repository VatMoveRepository) MarkHeaderChecked(headerID int64) error {
 		ON CONFLICT (header_id) DO
 			UPDATE SET vat_move_checked = $2`, headerID, true)
 	return err
+}
+
+func (repository *VatMoveRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

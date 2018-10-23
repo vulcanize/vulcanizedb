@@ -23,17 +23,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]TendModel, error)
-}
-
 type TendConverter struct{}
 
-func NewTendConverter() TendConverter {
-	return TendConverter{}
-}
-
-func (c TendConverter) ToModels(ethLogs []types.Log) (results []TendModel, err error) {
+func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err error) {
 	for _, ethLog := range ethLogs {
 		err := validateLog(ethLog)
 		if err != nil {

@@ -16,6 +16,7 @@ package vat_init_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,7 +33,7 @@ import (
 var _ = Describe("Vat init repository", func() {
 	var (
 		db                *postgres.DB
-		vatInitRepository vat_init.Repository
+		vatInitRepository vat_init.VatInitRepository
 		headerRepository  repositories.HeaderRepository
 		err               error
 	)
@@ -40,7 +41,8 @@ var _ = Describe("Vat init repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
-		vatInitRepository = vat_init.NewVatInitRepository(db)
+		vatInitRepository = vat_init.VatInitRepository{}
+		vatInitRepository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -51,13 +53,13 @@ var _ = Describe("Vat init repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat event", func() {
 			var dbVatInit vat_init.VatInitModel
-			err = db.Get(&dbVatInit, `SELECT ilk,tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatInit, `SELECT ilk, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatInit.Ilk).To(Equal(test_data.VatInitModel.Ilk))
 			Expect(dbVatInit.TransactionIndex).To(Equal(test_data.VatInitModel.TransactionIndex))
@@ -65,7 +67,7 @@ var _ = Describe("Vat init repository", func() {
 		})
 
 		It("does not duplicate vat events", func() {
-			err = vatInitRepository.Create(headerID, []vat_init.VatInitModel{test_data.VatInitModel})
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.VatInitModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -87,6 +89,12 @@ var _ = Describe("Vat init repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(headerChecked).To(BeTrue())
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = vatInitRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
@@ -95,7 +103,6 @@ var _ = Describe("Vat init repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
 		})
 
 		It("creates a row for a new headerID", func() {
@@ -128,7 +135,7 @@ var _ = Describe("Vat init repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatInitBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -174,8 +181,10 @@ var _ = Describe("Vat init repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatInitRepositoryTwo := vat_init.NewVatInitRepository(dbTwo)
-			err := vatInitRepository.MarkHeaderChecked(headerIDs[0])
+
+			vatInitRepositoryTwo := vat_init.VatInitRepository{}
+			vatInitRepositoryTwo.SetDB(dbTwo)
+			err = vatInitRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := vatInitRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])

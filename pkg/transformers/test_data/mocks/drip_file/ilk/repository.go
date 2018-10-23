@@ -16,46 +16,47 @@ package ilk
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 )
 
 type MockDripFileIlkRepository struct {
-	createErr                       error
-	markHeaderCheckedErr            error
+	createError                     error
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []ilk.DripFileIlkModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockDripFileIlkRepository) Create(headerID int64, models []ilk.DripFileIlkModel) error {
+func (repository *MockDripFileIlkRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
-	return repository.createErr
+	return repository.createError
 }
 
 func (repository *MockDripFileIlkRepository) MarkHeaderChecked(headerID int64) error {
 	repository.markHeaderCheckedPassedHeaderID = headerID
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
 func (repository *MockDripFileIlkRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
-func (repository *MockDripFileIlkRepository) SetMarkHeaderCheckedErr(e error) {
-	repository.markHeaderCheckedErr = e
+func (repository *MockDripFileIlkRepository) SetMarkHeaderCheckedError(e error) {
+	repository.markHeaderCheckedError = e
 }
 
-func (repository *MockDripFileIlkRepository) SetMissingHeadersErr(e error) {
-	repository.missingHeadersErr = e
+func (repository *MockDripFileIlkRepository) SetMissingHeadersError(e error) {
+	repository.missingHeadersError = e
 }
 
 func (repository *MockDripFileIlkRepository) SetMissingHeaders(headers []core.Header) {
@@ -63,8 +64,12 @@ func (repository *MockDripFileIlkRepository) SetMissingHeaders(headers []core.He
 }
 
 func (repository *MockDripFileIlkRepository) SetCreateError(e error) {
-	repository.createErr = e
+	repository.createError = e
 }
 func (repository *MockDripFileIlkRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+}
+
+func (repository *MockDripFileIlkRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }

@@ -18,19 +18,18 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 type MockVatInitConverter struct {
-	converterErr error
-	PassedLogs   []types.Log
+	converterError error
+	PassedLogs     []types.Log
 }
 
-func (converter *MockVatInitConverter) ToModels(ethLogs []types.Log) ([]vat_init.VatInitModel, error) {
+func (converter *MockVatInitConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []vat_init.VatInitModel{test_data.VatInitModel}, converter.converterErr
+	return []interface{}{test_data.VatInitModel}, converter.converterError
 }
 
 func (converter *MockVatInitConverter) SetConverterError(e error) {
-	converter.converterErr = e
+	converter.converterError = e
 }

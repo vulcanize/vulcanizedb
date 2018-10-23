@@ -17,8 +17,9 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -26,7 +27,7 @@ import (
 var _ = Describe("PitFileIlk Transformer", func() {
 	It("fetches and transforms a PitFileIlk event from Kovan chain", func() {
 		blockNumber := int64(9103223)
-		config := pit_file.PitFileConfig
+		config := ilk.IlkFileConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -41,8 +42,13 @@ var _ = Describe("PitFileIlk Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := ilk.PitFileIlkTransformerInitializer{Config: config}
-		transformer := initializer.NewPitFileIlkTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &ilk.PitFileIlkConverter{},
+			Repository: &ilk.PitFileIlkRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

@@ -17,6 +17,8 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -40,8 +42,13 @@ var _ = Describe("VatInit Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := vat_init.VatInitTransformerInitializer{Config: config}
-		transformer := initializer.NewVatInitTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &vat_init.VatInitConverter{},
+			Repository: &vat_init.VatInitRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

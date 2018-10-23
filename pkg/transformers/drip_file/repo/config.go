@@ -12,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ilk
+package repo
 
-import (
-	"github.com/ethereum/go-ethereum/core/types"
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-)
-
-type MockPitFileIlkConverter struct {
-	PassedLogs     []types.Log
-	converterError error
-}
-
-func (converter *MockPitFileIlkConverter) SetConverterError(err error) {
-	converter.converterError = err
-}
-
-func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	return []interface{}{test_data.PitFileIlkModel}, converter.converterError
+var DripFileRepoConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.DripFileRepoLabel,
+	ContractAddresses:   []string{shared.DripContractAddress},
+	ContractAbi:         shared.DripABI,
+	Topic:               shared.DripFileRepoSignature,
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }

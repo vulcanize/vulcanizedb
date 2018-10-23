@@ -22,25 +22,23 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripFileVowModel, error)
-}
-
 type DripFileVowConverter struct{}
 
-func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]DripFileVowModel, error) {
-	var models []DripFileVowModel
+func (DripFileVowConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		data := common.BytesToAddress(ethLog.Topics[3].Bytes()).String()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		model := DripFileVowModel{
 			What:             what,
 			Data:             data,

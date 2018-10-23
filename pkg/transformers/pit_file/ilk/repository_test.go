@@ -16,6 +16,7 @@ package ilk_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ import (
 var _ = Describe("Pit file ilk repository", func() {
 	var (
 		db                *postgres.DB
-		pitFileRepository ilk.Repository
+		pitFileRepository ilk.PitFileIlkRepository
 		err               error
 		headerRepository  datastore.HeaderRepository
 	)
@@ -42,7 +43,8 @@ var _ = Describe("Pit file ilk repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileRepository = ilk.NewPitFileIlkRepository(db)
+		pitFileRepository = ilk.PitFileIlkRepository{}
+		pitFileRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +54,7 @@ var _ = Describe("Pit file ilk repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = pitFileRepository.Create(headerID, []ilk.PitFileIlkModel{test_data.PitFileIlkModel})
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -75,7 +77,7 @@ var _ = Describe("Pit file ilk repository", func() {
 		})
 
 		It("does not duplicate pit file ilk events", func() {
-			err = pitFileRepository.Create(headerID, []ilk.PitFileIlkModel{test_data.PitFileIlkModel})
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -89,6 +91,12 @@ var _ = Describe("Pit file ilk repository", func() {
 			err = db.Get(&dbPitFile, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = pitFileRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -130,7 +138,7 @@ var _ = Describe("Pit file ilk repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			pitFileBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -176,7 +184,9 @@ var _ = Describe("Pit file ilk repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepositoryTwo := ilk.NewPitFileIlkRepository(dbTwo)
+
+			pitFileRepositoryTwo := ilk.PitFileIlkRepository{}
+			pitFileRepositoryTwo.SetDB(dbTwo)
 			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

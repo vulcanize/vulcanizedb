@@ -17,6 +17,8 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -40,8 +42,13 @@ var _ = Describe("Tend Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := tend.TendTransformerInitializer{Config: config}
-		transformer := initializer.NewTendTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &tend.TendConverter{},
+			Repository: &tend.TendRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -74,8 +81,13 @@ var _ = Describe("Tend Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := tend.TendTransformerInitializer{Config: config}
-		transformer := initializer.NewTendTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &tend.TendConverter{},
+			Repository: &tend.TendRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

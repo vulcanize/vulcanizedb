@@ -15,21 +15,14 @@
 package ilk
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type MockPitFileIlkConverter struct {
-	PassedLogs     []types.Log
-	converterError error
-}
-
-func (converter *MockPitFileIlkConverter) SetConverterError(err error) {
-	converter.converterError = err
-}
-
-func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	return []interface{}{test_data.PitFileIlkModel}, converter.converterError
+var IlkFileConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.PitFileIlkLabel,
+	ContractAddresses:   []string{shared.PitContractAddress},
+	ContractAbi:         shared.PitABI,
+	Topic:               shared.PitFileIlkSignature,
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }

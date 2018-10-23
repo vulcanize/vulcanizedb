@@ -23,14 +23,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
@@ -49,36 +48,86 @@ import (
 )
 
 var (
-	BiteTransformerInitializer                = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
-	catFileConfig                             = cat_file.CatFileConfig
-	CatFileChopLumpTransformerInitializer     = chop_lump.CatFileChopLumpTransformerInitializer{Config: catFileConfig}.NewCatFileChopLumpTransformer
-	CatFileFlipTransformerInitializer         = flip.CatFileFlipTransformerInitializer{Config: catFileConfig}.NewCatFileFlipTransformer
-	CatFilePitVowTransformerInitializer       = pit_vow.CatFilePitVowTransformerInitializer{Config: catFileConfig}.NewCatFilePitVowTransformer
-	DealTransformerInitializer                = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
-	DentTransformerInitializer                = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
-	DripDripTransformerInitializer            = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
-	dripFileConfig                            = drip_file.DripFileConfig
-	DripFileIlkTransformerInitializer         = ilk2.DripFileIlkTransformerInitializer{Config: dripFileConfig}.NewDripFileIlkTransformer
-	DripFileRepoTransformerInitializer        = repo.DripFileRepoTransformerInitializer{Config: dripFileConfig}.NewDripFileRepoTransformer
-	DripFileVowTransfromerInitializer         = vow.DripFileVowTransformerInitializer{Config: dripFileConfig}.NewDripFileVowTransformer
-	FlipKickTransformerInitializer            = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
-	FlopKickTransformerInitializer            = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
-	FrobTransformerInitializer                = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
-	pitFileConfig                             = pit_file.PitFileConfig
-	PitFileDebtCeilingTransformerInitializer  = debt_ceiling.PitFileDebtCeilingTransformerInitializer{Config: pitFileConfig}.NewPitFileDebtCeilingTransformer
-	PitFileIlkTransformerInitializer          = ilk.PitFileIlkTransformerInitializer{Config: pitFileConfig}.NewPitFileIlkTransformer
-	PitFileStabilityFeeTransformerInitializer = stability_fee.PitFileStabilityFeeTransformerInitializer{Config: pitFileConfig}.NewPitFileStabilityFeeTransformer
-	PriceFeedTransformerInitializer           = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
-	TendTransformerInitializer                = tend.TendTransformerInitializer{Config: tend.TendConfig}.NewTendTransformer
-	VatGrabTransformerInitializer             = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
-	VatInitTransformerInitializer             = vat_init.VatInitTransformerInitializer{Config: vat_init.VatInitConfig}.NewVatInitTransformer
-	VatMoveTransformerInitializer             = vat_move.VatMoveTransformerInitializer{Config: vat_move.VatMoveConfig}.NewVatMoveTransformer
-	VatHealTransformerInitializer             = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
-	VatFoldTransformerInitializer             = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
-	VatSlipTransformerInitializer             = vat_slip.VatSlipTransformerInitializer{Config: vat_slip.VatSlipConfig}.NewVatSlipTransformer
-	VatTollTransformerInitializer             = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
-	VatTuneTransformerInitializer             = vat_tune.VatTuneTransformerInitializer{Config: vat_tune.VatTuneConfig}.NewVatTuneTransformer
-	VatFluxTransformerInitializer             = vat_flux.VatFluxTransformerInitializer{Config: vat_flux.VatFluxConfig}.NewVatFluxTransformer
+	BiteTransformerInitializer            = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
+	catFileConfig                         = cat_file.CatFileConfig
+	CatFileChopLumpTransformerInitializer = chop_lump.CatFileChopLumpTransformerInitializer{Config: catFileConfig}.NewCatFileChopLumpTransformer
+	CatFileFlipTransformerInitializer     = flip.CatFileFlipTransformerInitializer{Config: catFileConfig}.NewCatFileFlipTransformer
+	CatFilePitVowTransformerInitializer   = pit_vow.CatFilePitVowTransformerInitializer{Config: catFileConfig}.NewCatFilePitVowTransformer
+	DealTransformerInitializer            = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
+	DentTransformerInitializer            = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
+	DripDripTransformerInitializer        = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
+	DripFileIlkTransformerInitializer     = factories.Transformer{
+		Config:     ilk2.DripFileIlkConfig,
+		Converter:  &ilk2.DripFileIlkConverter{},
+		Repository: &ilk2.DripFileIlkRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	DripFileRepoTransformerInitializer = factories.Transformer{
+		Config:     repo.DripFileRepoConfig,
+		Converter:  &repo.DripFileRepoConverter{},
+		Repository: &repo.DripFileRepoRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	DripFileVowTransfromerInitializer = factories.Transformer{
+		Config:     vow.DripFileVowConfig,
+		Converter:  &vow.DripFileVowConverter{},
+		Repository: &vow.DripFileVowRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	FlipKickTransformerInitializer           = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
+	FlopKickTransformerInitializer           = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
+	FrobTransformerInitializer               = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
+	PitFileDebtCeilingTransformerInitializer = factories.Transformer{
+		Config:     debt_ceiling.DebtCeilingFileConfig,
+		Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
+		Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	PitFileIlkTransformerInitializer = factories.Transformer{
+		Config:     ilk.IlkFileConfig,
+		Converter:  &ilk.PitFileIlkConverter{},
+		Repository: &ilk.PitFileIlkRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	PitFileStabilityFeeTransformerInitializer = factories.Transformer{
+		Config:     stability_fee.StabilityFeeFileConfig,
+		Converter:  &stability_fee.PitFileStabilityFeeConverter{},
+		Repository: &stability_fee.PitFileStabilityFeeRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	PriceFeedTransformerInitializer = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
+	TendTransformerInitializer      = factories.Transformer{
+		Config:     tend.TendConfig,
+		Converter:  &tend.TendConverter{},
+		Repository: &tend.TendRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	VatInitTransformerInitializer = factories.Transformer{
+		Config:     vat_init.VatInitConfig,
+		Converter:  &vat_init.VatInitConverter{},
+		Repository: &vat_init.VatInitRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+	VatGrabTransformerInitializer = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
+	VatHealTransformerInitializer = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
+	VatFoldTransformerInitializer = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
+	VatMoveTransformerInitializer = factories.Transformer{
+		Config:     vat_move.VatMoveConfig,
+		Converter:  &vat_move.VatMoveConverter{},
+		Repository: &vat_move.VatMoveRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+	VatSlipTransformerInitializer = vat_slip.VatSlipTransformerInitializer{Config: vat_slip.VatSlipConfig}.NewVatSlipTransformer
+	VatTollTransformerInitializer = vat_toll.VatTollTransformerInitializer{Config: vat_toll.VatTollConfig}.NewVatTollTransformer
+	VatTuneTransformerInitializer = vat_tune.VatTuneTransformerInitializer{Config: vat_tune.VatTuneConfig}.NewVatTuneTransformer
+	VatFluxTransformerInitializer = vat_flux.VatFluxTransformerInitializer{Config: vat_flux.VatFluxConfig}.NewVatFluxTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {

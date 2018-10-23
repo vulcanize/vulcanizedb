@@ -17,20 +17,19 @@ package stability_fee
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 type MockPitFileStabilityFeeConverter struct {
-	converterErr error
-	PassedLogs   []types.Log
+	converterError error
+	PassedLogs     []types.Log
 }
 
-func (converter *MockPitFileStabilityFeeConverter) ToModels(ethLogs []types.Log) ([]stability_fee.PitFileStabilityFeeModel, error) {
+func (converter *MockPitFileStabilityFeeConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel}, converter.converterErr
+	return []interface{}{test_data.PitFileStabilityFeeModel}, converter.converterError
 }
 
 func (converter *MockPitFileStabilityFeeConverter) SetConverterError(e error) {
-	converter.converterErr = e
+	converter.converterError = e
 }

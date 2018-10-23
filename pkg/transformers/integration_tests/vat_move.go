@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -41,8 +43,13 @@ var _ = Describe("VatMove Transformer", func() {
 		err = persistHeader(rpcClient, db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := vat_move.VatMoveTransformerInitializer{Config: config}
-		transformer := initializer.NewVatMoveTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &vat_move.VatMoveConverter{},
+			Repository: &vat_move.VatMoveRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

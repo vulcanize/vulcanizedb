@@ -17,6 +17,7 @@ package tend_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -32,6 +33,7 @@ var _ = Describe("TendRepository", func() {
 		db               *postgres.DB
 		tendRepository   tend.TendRepository
 		headerRepository repositories.HeaderRepository
+		headerId         int64
 		err              error
 	)
 
@@ -40,17 +42,16 @@ var _ = Describe("TendRepository", func() {
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		tendRepository = tend.NewTendRepository(db)
+		tendRepository = tend.TendRepository{}
+		tendRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
-		var headerId int64
-
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err := tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
+			err = tendRepository.Create(headerId, []interface{}{test_data.TendModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -81,8 +82,7 @@ var _ = Describe("TendRepository", func() {
 		})
 
 		It("returns an error if inserting a tend record fails", func() {
-			err = tendRepository.Create(headerId, []tend.TendModel{test_data.TendModel})
-
+			err = tendRepository.Create(headerId, []interface{}{test_data.TendModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -100,11 +100,15 @@ var _ = Describe("TendRepository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(0))
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = tendRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerId int64
-
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
@@ -140,7 +144,7 @@ var _ = Describe("TendRepository", func() {
 		)
 
 		BeforeEach(func() {
-			tendBlock = GinkgoRandomSeed()
+			tendBlock = rand.Int63()
 			startingBlock = tendBlock - 1
 			endingBlock = tendBlock + 1
 			outOfRangeBlock = tendBlock + 2
@@ -182,7 +186,8 @@ var _ = Describe("TendRepository", func() {
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			tendRepository2 := tend.NewTendRepository(db2)
+			tendRepository2 := tend.TendRepository{}
+			tendRepository2.SetDB(db2)
 
 			for _, number := range []int64{startingBlock, tendBlock, endingBlock} {
 				headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))

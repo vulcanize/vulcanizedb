@@ -16,46 +16,47 @@ package debt_ceiling
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 )
 
 type MockPitFileDebtCeilingRepository struct {
-	createErr                       error
-	markHeaderCheckedErr            error
+	createError                     error
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []debt_ceiling.PitFileDebtCeilingModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
 func (repository *MockPitFileDebtCeilingRepository) MarkHeaderChecked(headerID int64) error {
 	repository.markHeaderCheckedPassedHeaderID = headerID
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
-func (repository *MockPitFileDebtCeilingRepository) Create(headerID int64, models []debt_ceiling.PitFileDebtCeilingModel) error {
+func (repository *MockPitFileDebtCeilingRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
-	return repository.createErr
+	return repository.createError
 }
 
 func (repository *MockPitFileDebtCeilingRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
-func (repository *MockPitFileDebtCeilingRepository) SetMarkHeaderCheckedErr(e error) {
-	repository.markHeaderCheckedErr = e
+func (repository *MockPitFileDebtCeilingRepository) SetMarkHeaderCheckedError(e error) {
+	repository.markHeaderCheckedError = e
 }
 
-func (repository *MockPitFileDebtCeilingRepository) SetMissingHeadersErr(e error) {
-	repository.missingHeadersErr = e
+func (repository *MockPitFileDebtCeilingRepository) SetMissingHeadersError(e error) {
+	repository.missingHeadersError = e
 }
 
 func (repository *MockPitFileDebtCeilingRepository) SetMissingHeaders(headers []core.Header) {
@@ -63,9 +64,13 @@ func (repository *MockPitFileDebtCeilingRepository) SetMissingHeaders(headers []
 }
 
 func (repository *MockPitFileDebtCeilingRepository) SetCreateError(e error) {
-	repository.createErr = e
+	repository.createError = e
 }
 
 func (repository *MockPitFileDebtCeilingRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+}
+
+func (repository *MockPitFileDebtCeilingRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }

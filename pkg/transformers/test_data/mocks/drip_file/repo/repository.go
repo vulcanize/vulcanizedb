@@ -16,46 +16,47 @@ package repo
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 )
 
 type MockDripFileRepoRepository struct {
-	createErr                       error
-	markHeaderCheckedErr            error
+	createError                     error
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []repo.DripFileRepoModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockDripFileRepoRepository) Create(headerID int64, models []repo.DripFileRepoModel) error {
+func (repository *MockDripFileRepoRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
-	return repository.createErr
+	return repository.createError
 }
 
 func (repository *MockDripFileRepoRepository) MarkHeaderChecked(headerID int64) error {
 	repository.markHeaderCheckedPassedHeaderID = headerID
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
 func (repository *MockDripFileRepoRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
-func (repository *MockDripFileRepoRepository) SetMarkHeaderCheckedErr(e error) {
-	repository.markHeaderCheckedErr = e
+func (repository *MockDripFileRepoRepository) SetMarkHeaderCheckedError(e error) {
+	repository.markHeaderCheckedError = e
 }
 
-func (repository *MockDripFileRepoRepository) SetMissingHeadersErr(e error) {
-	repository.missingHeadersErr = e
+func (repository *MockDripFileRepoRepository) SetMissingHeadersError(e error) {
+	repository.missingHeadersError = e
 }
 
 func (repository *MockDripFileRepoRepository) SetMissingHeaders(headers []core.Header) {
@@ -63,8 +64,13 @@ func (repository *MockDripFileRepoRepository) SetMissingHeaders(headers []core.H
 }
 
 func (repository *MockDripFileRepoRepository) SetCreateError(e error) {
-	repository.createErr = e
+	repository.createError = e
 }
+
 func (repository *MockDripFileRepoRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+}
+
+func (repository *MockDripFileRepoRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }
