@@ -17,7 +17,7 @@ package ilk
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var DripFileIlkConfig = shared.SingleTransformerConfig{
-	TransformerName:     "drip file ilk",
+	TransformerName:     shared.DripFileIlkLabel,
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,
 	Topic:               shared.DripFileIlkSignature,

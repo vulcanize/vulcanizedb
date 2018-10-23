@@ -17,7 +17,7 @@ package repo
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var DripFileRepoConfig = shared.SingleTransformerConfig{
-	TransformerName:     "drip file repo",
+	TransformerName:     shared.DripFileRepoLabel,
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,
 	Topic:               shared.DripFileRepoSignature,
