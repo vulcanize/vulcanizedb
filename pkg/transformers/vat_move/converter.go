@@ -43,6 +43,7 @@ func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			Src:              src.String(),
 			Dst:              dst.String(),
 			Rad:              rad.String(),
+			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
 		})

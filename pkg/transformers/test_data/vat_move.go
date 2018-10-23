@@ -38,7 +38,7 @@ var EthVatMoveLog = types.Log{
 	TxHash:      common.HexToHash("0xe8f39fbb7fea3621f543868f19b1114e305aff6a063a30d32835ff1012526f91"),
 	TxIndex:     7,
 	BlockHash:   common.HexToHash("0xe3dd2e05bd8b92833e20ed83e2171bbc06a9ec823232eca1730a807bd8f5edc0"),
-	Index:       0,
+	Index:       8,
 	Removed:     false,
 }
 
@@ -47,6 +47,7 @@ var VatMoveModel = vat_move.VatMoveModel{
 	Src:              "0xA730d1FF8B6Bc74a26d54c20a9dda539909BaB0e",
 	Dst:              "0xB730D1fF8b6BC74a26D54c20a9ddA539909BAb0e",
 	Rad:              "42",
+	LogIndex:         EthVatMoveLog.Index,
 	TransactionIndex: EthVatMoveLog.TxIndex,
 	Raw:              rawVatMoveLog,
 }

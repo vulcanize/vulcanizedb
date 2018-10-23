@@ -41,6 +41,7 @@ var _ = Describe("Vat move converter", func() {
 		models, err := converter.ToModels([]types.Log{test_data.EthVatMoveLog})
 
 		Expect(err).NotTo(HaveOccurred())
+		Expect(len(models)).To(Equal(1))
 		Expect(models[0]).To(Equal(test_data.VatMoveModel))
 	})
 })

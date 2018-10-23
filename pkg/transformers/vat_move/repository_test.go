@@ -49,22 +49,40 @@ var _ = Describe("Vat Move", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat move event", func() {
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbVatMove vat_move.VatMoveModel
-			err = db.Get(&dbVatMove, `SELECT src, dst, rad, tx_idx, raw_log FROM maker.vat_move WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatMove, `SELECT src, dst, rad, log_idx, tx_idx, raw_log FROM maker.vat_move WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatMove.Src).To(Equal(test_data.VatMoveModel.Src))
 			Expect(dbVatMove.Dst).To(Equal(test_data.VatMoveModel.Dst))
 			Expect(dbVatMove.Rad).To(Equal(test_data.VatMoveModel.Rad))
+			Expect(dbVatMove.LogIndex).To(Equal(test_data.VatMoveModel.LogIndex))
 			Expect(dbVatMove.TransactionIndex).To(Equal(test_data.VatMoveModel.TransactionIndex))
 			Expect(dbVatMove.Raw).To(MatchJSON(test_data.VatMoveModel.Raw))
 		})
 
 		It("marks header id as checked for vat move logs", func() {
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_move_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_move_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -73,16 +91,23 @@ var _ = Describe("Vat Move", func() {
 
 		It("returns an error if insertion fails", func() {
 			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
+
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes vat move event if corresponding header is deleted", func() {
-			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
+			err = vatMoveRepository.Create(headerID, []interface{}{test_data.VatMoveModel})
 			Expect(err).NotTo(HaveOccurred())
 
+			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbVatMove vat_move.VatMoveModel
-			err = db.Get(&dbVatMove, `SELECT src, dst, rad, tx_idx, raw_log FROM maker.vat_move WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatMove, `SELECT src, dst, rad, log_idx, tx_idx, raw_log FROM maker.vat_move WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})

@@ -38,9 +38,9 @@ func (repository VatMoveRepository) Create(headerID int64, models []interface{})
 		}
 
 		_, err = tx.Exec(
-			`INSERT INTO maker.vat_move (header_id, src, dst, rad, tx_idx, raw_log)
-        	VALUES ($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, vatMove.Src, vatMove.Dst, vatMove.Rad, vatMove.TransactionIndex, vatMove.Raw,
+			`INSERT INTO maker.vat_move (header_id, src, dst, rad, log_idx, tx_idx, raw_log)
+				VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, vatMove.Src, vatMove.Dst, vatMove.Rad, vatMove.LogIndex, vatMove.TransactionIndex, vatMove.Raw,
 		)
 
 		if err != nil {
