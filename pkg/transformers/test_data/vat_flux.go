@@ -28,7 +28,7 @@ var VatFluxLog = types.Log{
 	Address: common.HexToAddress("0x239e6f0ab02713f1f8aa90ebeded9fc66dc96cd6"),
 	Topics: []common.Hash{
 		common.HexToHash("0xa6e4182100000000000000000000000000000000000000000000000000000000"),
-		common.HexToHash("0x0000000000000000000000007340e006f4135BA6970D43bf43d88DCAD4e7a8CA"),
+		common.HexToHash("0x5245500000000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x0000000000000000000000007FA9EF6609Ca7921112231f8f195138ebba29770"),
 		common.HexToHash("0x00000000000000000000000093086347c52a8878af71bb818509d484c6a2e1bf"),
 	},
@@ -43,7 +43,7 @@ var VatFluxLog = types.Log{
 
 var rawFluxLog, _ = json.Marshal(VatFluxLog)
 var VatFluxModel = vat_flux.VatFluxModel{
-	Ilk:              "0x7340e006f4135BA6970D43bf43d88DCAD4e7a8CA",
+	Ilk:              "REP",
 	Src:              "0x7FA9EF6609Ca7921112231f8f195138ebba29770",
 	Dst:              "0x93086347c52a8878af71bB818509d484c6a2e1bF",
 	Rad:              "123",
