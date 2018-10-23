@@ -12,24 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ilk
+package test_data
 
-import (
-	"github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-)
-
-type MockPitFileIlkConverter struct {
-	PassedLogs     []types.Log
-	converterError error
-}
-
-func (converter *MockPitFileIlkConverter) SetConverterError(err error) {
-	converter.converterError = err
-}
-
-func (converter *MockPitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	return []interface{}{test_data.PitFileIlkModel}, converter.converterError
-}
+type WrongModel struct{}

@@ -16,9 +16,9 @@ package tend
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
 type MockTendRepository struct {
@@ -26,14 +26,15 @@ type MockTendRepository struct {
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
 	PassedStartingBlockNumber       int64
-	PassedTendModel                 tend.TendModel
-	markHeaderCheckedErr            error
+	PassedTendModel                 interface{}
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderId int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
+	SetDbCalled                     bool
 }
 
-func (repository *MockTendRepository) Create(headerId int64, tend []tend.TendModel) error {
+func (repository *MockTendRepository) Create(headerId int64, tend []interface{}) error {
 	repository.PassedHeaderID = headerId
 	repository.PassedTendModel = tend[0]
 	return repository.createError
@@ -44,11 +45,11 @@ func (repository *MockTendRepository) SetCreateError(err error) {
 }
 
 func (repository *MockTendRepository) SetMarkHeaderCheckedErr(err error) {
-	repository.markHeaderCheckedErr = err
+	repository.markHeaderCheckedError = err
 }
 
 func (repository *MockTendRepository) SetMissingHeadersErr(err error) {
-	repository.missingHeadersErr = err
+	repository.missingHeadersError = err
 }
 
 func (repository *MockTendRepository) SetMissingHeaders(headers []core.Header) {
@@ -57,15 +58,19 @@ func (repository *MockTendRepository) SetMissingHeaders(headers []core.Header) {
 
 func (repository *MockTendRepository) MarkHeaderChecked(headerId int64) error {
 	repository.markHeaderCheckedPassedHeaderId = headerId
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
 func (repository *MockTendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
 func (repository *MockTendRepository) AssertMarkHeaderCheckedCalledWith(headerId int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderId).To(Equal(headerId))
+}
+
+func (repository *MockTendRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }

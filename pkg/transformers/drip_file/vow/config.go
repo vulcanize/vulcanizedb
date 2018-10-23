@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package drip_file
+package vow
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var DripFileConfig = shared.TransformerConfig{
+var DripFileVowConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.DripFileVowLabel,
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,
-	Topics:              []string{shared.DripFileIlkSignature, shared.DripFileRepoSignature},
+	Topic:               shared.DripFileVowSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

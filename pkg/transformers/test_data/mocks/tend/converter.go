@@ -17,20 +17,19 @@ package tend
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 type MockTendConverter struct {
-	LogsToConvert  []types.Log
+	PassedLogs     []types.Log
 	ConverterError error
 }
 
-func (c *MockTendConverter) ToModels(ethLogs []types.Log) ([]tend.TendModel, error) {
-	c.LogsToConvert = append(c.LogsToConvert, ethLogs...)
-	return []tend.TendModel{test_data.TendModel}, c.ConverterError
+func (converter *MockTendConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	converter.PassedLogs = ethLogs
+	return []interface{}{test_data.TendModel}, converter.ConverterError
 }
 
-func (c *MockTendConverter) SetConverterError(err error) {
-	c.ConverterError = err
+func (converter *MockTendConverter) SetConverterError(err error) {
+	converter.ConverterError = err
 }

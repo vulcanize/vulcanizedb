@@ -16,6 +16,7 @@ package vow_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ import (
 var _ = Describe("Drip file vow repository", func() {
 	var (
 		db                    *postgres.DB
-		dripFileVowRepository vow.Repository
+		dripFileVowRepository vow.DripFileVowRepository
 		err                   error
 		headerRepository      datastore.HeaderRepository
 	)
@@ -42,7 +43,8 @@ var _ = Describe("Drip file vow repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripFileVowRepository = vow.NewDripFileVowRepository(db)
+		dripFileVowRepository = vow.DripFileVowRepository{}
+		dripFileVowRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +54,7 @@ var _ = Describe("Drip file vow repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dripFileVowRepository.Create(headerID, []vow.DripFileVowModel{test_data.DripFileVowModel})
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.DripFileVowModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -75,7 +77,7 @@ var _ = Describe("Drip file vow repository", func() {
 		})
 
 		It("does not duplicate drip file events", func() {
-			err = dripFileVowRepository.Create(headerID, []vow.DripFileVowModel{test_data.DripFileVowModel})
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.DripFileVowModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -89,6 +91,12 @@ var _ = Describe("Drip file vow repository", func() {
 			err = db.Get(&dbDripFileVow, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.drip_file_vow WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = dripFileVowRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -130,7 +138,7 @@ var _ = Describe("Drip file vow repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			dripFileBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -176,7 +184,8 @@ var _ = Describe("Drip file vow repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripFileVowRepositoryTwo := vow.NewDripFileVowRepository(dbTwo)
+			dripFileVowRepositoryTwo := vow.DripFileVowRepository{}
+			dripFileVowRepositoryTwo.SetDB(dbTwo)
 			err := dripFileVowRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

@@ -17,20 +17,19 @@ package debt_ceiling
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 type MockPitFileDebtCeilingConverter struct {
-	converterErr error
-	PassedLogs   []types.Log
+	converterError error
+	PassedLogs     []types.Log
 }
 
-func (converter *MockPitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]debt_ceiling.PitFileDebtCeilingModel, error) {
+func (converter *MockPitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []debt_ceiling.PitFileDebtCeilingModel{test_data.PitFileDebtCeilingModel}, converter.converterErr
+	return []interface{}{test_data.PitFileDebtCeilingModel}, converter.converterError
 }
 
 func (converter *MockPitFileDebtCeilingConverter) SetConverterError(e error) {
-	converter.converterErr = e
+	converter.converterError = e
 }

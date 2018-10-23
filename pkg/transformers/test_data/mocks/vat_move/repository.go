@@ -16,7 +16,7 @@ package vat_move
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockVatMoveRepository struct {
@@ -26,12 +26,13 @@ type MockVatMoveRepository struct {
 	PassedStartingBlockNumber int64
 	PassedEndingBlockNumber   int64
 	PassedHeaderID            int64
-	PassedModels              []vat_move.VatMoveModel
+	PassedModels              []interface{}
 	CheckedHeaderIDs          []int64
 	CheckedHeaderError        error
+	SetDbCalled               bool
 }
 
-func (repository *MockVatMoveRepository) Create(headerID int64, models []vat_move.VatMoveModel) error {
+func (repository *MockVatMoveRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
 	return repository.createError
@@ -62,4 +63,8 @@ func (repository *MockVatMoveRepository) MarkHeaderChecked(headerId int64) error
 
 func (repository *MockVatMoveRepository) SetCheckedHeaderError(e error) {
 	repository.CheckedHeaderError = e
+}
+
+func (repository *MockVatMoveRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }

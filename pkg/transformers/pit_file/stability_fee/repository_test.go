@@ -16,6 +16,7 @@ package stability_fee_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,17 +33,18 @@ import (
 
 var _ = Describe("Pit file stability fee repository", func() {
 	var (
-		db                *postgres.DB
-		pitFileRepository stability_fee.Repository
-		err               error
-		headerRepository  datastore.HeaderRepository
+		db                            *postgres.DB
+		pitFileStabilityFeeRepository stability_fee.PitFileStabilityFeeRepository
+		err                           error
+		headerRepository              datastore.HeaderRepository
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		pitFileRepository = stability_fee.NewPitFileStabilityFeeRepository(db)
+		pitFileStabilityFeeRepository = stability_fee.PitFileStabilityFeeRepository{}
+		pitFileStabilityFeeRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +54,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = pitFileRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -74,7 +76,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("does not duplicate pit file events", func() {
-			err = pitFileRepository.Create(headerID, []stability_fee.PitFileStabilityFeeModel{test_data.PitFileStabilityFeeModel})
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.PitFileStabilityFeeModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -89,6 +91,12 @@ var _ = Describe("Pit file stability fee repository", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
+
+		It("Returns an error if model is of wrong type", func() {
+			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
@@ -100,7 +108,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("creates a row for a new headerID", func() {
-			err = pitFileRepository.MarkHeaderChecked(headerID)
+			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -112,7 +120,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 		It("updates row when headerID already exists", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 
-			err = pitFileRepository.MarkHeaderChecked(headerID)
+			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerID)
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -129,7 +137,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			pitFileBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -144,10 +152,10 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("returns headers that haven't been checked", func() {
-			err := pitFileRepository.MarkHeaderChecked(headerIDs[1])
+			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
+			headers, err := pitFileStabilityFeeRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(2))
@@ -156,10 +164,10 @@ var _ = Describe("Pit file stability fee repository", func() {
 		})
 
 		It("only treats headers as checked if pit file stability fee logs have been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := pitFileRepository.MissingHeaders(startingBlock, endingBlock)
+			headers, err := pitFileStabilityFeeRepository.MissingHeaders(startingBlock, endingBlock)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
@@ -175,11 +183,13 @@ var _ = Describe("Pit file stability fee repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			pitFileRepositoryTwo := stability_fee.NewPitFileStabilityFeeRepository(dbTwo)
-			err := pitFileRepository.MarkHeaderChecked(headerIDs[0])
+
+			pitFileRepositoryTwo := stability_fee.PitFileStabilityFeeRepository{}
+			pitFileRepositoryTwo.SetDB(dbTwo)
+			err = pitFileStabilityFeeRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeOneMissingHeaders, err := pitFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
+			nodeOneMissingHeaders, err := pitFileStabilityFeeRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
 

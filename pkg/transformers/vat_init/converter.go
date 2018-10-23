@@ -18,18 +18,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatInitModel, error)
-}
-
 type VatInitConverter struct{}
 
-func (VatInitConverter) ToModels(ethLogs []types.Log) ([]VatInitModel, error) {
-	var models []VatInitModel
+func (VatInitConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

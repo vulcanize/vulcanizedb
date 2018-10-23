@@ -16,20 +16,19 @@ package ilk
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 type MockDripFileIlkConverter struct {
-	converterErr error
-	PassedLogs   []types.Log
+	converterError error
+	PassedLogs     []types.Log
 }
 
-func (converter *MockDripFileIlkConverter) ToModels(ethLogs []types.Log) ([]ilk.DripFileIlkModel, error) {
+func (converter *MockDripFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []ilk.DripFileIlkModel{test_data.DripFileIlkModel}, converter.converterErr
+	return []interface{}{test_data.DripFileIlkModel}, converter.converterError
 }
 
 func (converter *MockDripFileIlkConverter) SetConverterError(e error) {
-	converter.converterErr = e
+	converter.converterError = e
 }

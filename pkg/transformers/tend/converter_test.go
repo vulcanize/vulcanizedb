@@ -28,7 +28,7 @@ var _ = Describe("Tend TendConverter", func() {
 	var converter tend.TendConverter
 
 	BeforeEach(func() {
-		converter = tend.NewTendConverter()
+		converter = tend.TendConverter{}
 	})
 
 	Describe("ToModels", func() {

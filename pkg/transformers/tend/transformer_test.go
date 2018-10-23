@@ -15,6 +15,7 @@
 package tend_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,24 +33,33 @@ import (
 )
 
 var _ = Describe("Tend Transformer", func() {
-	var repository tend_mocks.MockTendRepository
-	var fetcher mocks.MockLogFetcher
-	var converter tend_mocks.MockTendConverter
-	var transformer tend.TendTransformer
-	var blockNumber1 = rand.Int63()
-	var blockNumber2 = rand.Int63()
+	var (
+		config      = tend.TendConfig
+		converter   tend_mocks.MockTendConverter
+		repository  tend_mocks.MockTendRepository
+		fetcher     mocks.MockLogFetcher
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+	)
 
 	BeforeEach(func() {
+		converter = tend_mocks.MockTendConverter{}
 		repository = tend_mocks.MockTendRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = tend_mocks.MockTendConverter{}
-
-		transformer = tend.TendTransformer{
-			Repository: &repository,
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		transformer = factories.Transformer{
+			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
-			Config:     tend.TendConfig,
-		}
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers for blocks in the configured range", func() {
@@ -68,12 +78,12 @@ var _ = Describe("Tend Transformer", func() {
 	})
 
 	It("fetches eth logs for each missing header", func() {
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1}, {BlockNumber: blockNumber2}})
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		expectedTopics := [][]common.Hash{{common.HexToHash(shared.TendFunctionSignature)}}
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{blockNumber1, blockNumber2}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
 		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{tend.TendConfig.ContractAddresses, tend.TendConfig.ContractAddresses}))
 	})
@@ -88,34 +98,17 @@ var _ = Describe("Tend Transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &tend_mocks.MockTendConverter{}
-		mockRepository := &tend_mocks.MockTendRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := tend.TendTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &tend_mocks.MockTendConverter{}
-		mockRepository := &tend_mocks.MockTendRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := tend.TendTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -124,37 +117,37 @@ var _ = Describe("Tend Transformer", func() {
 	})
 
 	It("converts an eth log to a Model", func() {
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.TendLogNote}))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.TendLogNote}))
 	})
 
 	It("returns an error if converter fails", func() {
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		converter.SetConverterError(fakes.FakeError)
 		err := transformer.Execute()
+
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("persists the tend record", func() {
-		headerId := int64(1)
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1, Id: headerId}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(headerId))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
 		Expect(repository.PassedTendModel).To(Equal(test_data.TendModel))
 	})
 
 	It("returns error if persisting tend record fails", func() {
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 		repository.SetCreateError(fakes.FakeError)
 		err := transformer.Execute()

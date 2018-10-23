@@ -24,19 +24,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripFileIlkModel, error)
-}
-
 type DripFileIlkConverter struct{}
 
-func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]DripFileIlkModel, error) {
-	var models []DripFileIlkModel
+func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		vow := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
 		taxBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
@@ -45,6 +42,7 @@ func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]DripFileIlkModel, e
 		if err != nil {
 			return nil, err
 		}
+
 		model := DripFileIlkModel{
 			Ilk:              ilk,
 			Vow:              vow,

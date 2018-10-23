@@ -16,46 +16,47 @@ package stability_fee
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 )
 
 type MockPitFileStabilityFeeRepository struct {
-	createErr                       error
-	markHeaderCheckedErr            error
+	createError                     error
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []stability_fee.PitFileStabilityFeeModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockPitFileStabilityFeeRepository) Create(headerID int64, models []stability_fee.PitFileStabilityFeeModel) error {
+func (repository *MockPitFileStabilityFeeRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedModels = models
 	repository.PassedHeaderID = headerID
-	return repository.createErr
+	return repository.createError
 }
 
 func (repository *MockPitFileStabilityFeeRepository) MarkHeaderChecked(headerID int64) error {
 	repository.markHeaderCheckedPassedHeaderID = headerID
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
 func (repository *MockPitFileStabilityFeeRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
 func (repository *MockPitFileStabilityFeeRepository) SetMarkHeaderCheckedErr(e error) {
-	repository.markHeaderCheckedErr = e
+	repository.markHeaderCheckedError = e
 }
 
 func (repository *MockPitFileStabilityFeeRepository) SetMissingHeadersErr(e error) {
-	repository.missingHeadersErr = e
+	repository.missingHeadersError = e
 }
 
 func (repository *MockPitFileStabilityFeeRepository) SetMissingHeaders(headers []core.Header) {
@@ -63,9 +64,13 @@ func (repository *MockPitFileStabilityFeeRepository) SetMissingHeaders(headers [
 }
 
 func (repository *MockPitFileStabilityFeeRepository) SetCreateError(e error) {
-	repository.createErr = e
+	repository.createError = e
 }
 
 func (repository *MockPitFileStabilityFeeRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+}
+
+func (repository *MockPitFileStabilityFeeRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }

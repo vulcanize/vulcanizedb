@@ -17,7 +17,6 @@ package vat_move
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
 )
 
 type MockVatMoveConverter struct {
@@ -25,9 +24,9 @@ type MockVatMoveConverter struct {
 	PassedLogs     []types.Log
 }
 
-func (converter *MockVatMoveConverter) ToModels(ethLogs []types.Log) ([]vat_move.VatMoveModel, error) {
+func (converter *MockVatMoveConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []vat_move.VatMoveModel{test_data.VatMoveModel}, converter.converterError
+	return []interface{}{test_data.VatMoveModel}, converter.converterError
 }
 
 func (converter *MockVatMoveConverter) SetConverterError(e error) {

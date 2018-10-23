@@ -102,4 +102,32 @@ var (
 	VatTollSignature             = GetLogNoteSignature(vatTollMethod)
 	VatTuneSignature             = GetLogNoteSignature(vatTuneMethod)
 	VatFluxSignature             = GetLogNoteSignature(vatFluxMethod)
+
+	BiteLabel                = "bite"
+	DealLabel                = "deal"
+	CatFileChopLumpLabel     = "catFileChopLump"
+	CatFileFlipLabel         = "catFileFlip"
+	CatFilePitVowLabel       = "catFilePitVow"
+	DentLabel                = "dent"
+	DripDripLabel            = "dripDrip"
+	DripFileIlkLabel         = "dripFileIlk"
+	DripFileRepoLabel        = "dripFileRepo"
+	DripFileVowLabel         = "dripFileVow"
+	FlipKickLabel            = "flipKick"
+	FlopKickLabel            = "flopKick"
+	FrobLabel                = "frob"
+	PitFileDebtCeilingLabel  = "pitFileDebtCeiling"
+	PitFileIlkLabel          = "pitFileIlk"
+	PitFileStabilityFeeLabel = "pitFileStabilityFee"
+	PriceFeedLabel           = "priceFeed"
+	TendLabel                = "tend"
+	VatHealLabel             = "vatHeal"
+	VatGrabLabel             = "vatGrab"
+	VatInitLabel             = "vatInit"
+	VatMoveLabel             = "vatMove"
+	VatFoldLabel             = "vatFold"
+	VatSlipLabel             = "vatSlip"
+	VatTollLabel             = "vatToll"
+	VatTuneLabel             = "vatTune"
+	VatFluxLabel             = "vatFlux"
 )

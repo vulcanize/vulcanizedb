@@ -15,36 +15,32 @@
 package ilk
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []PitFileIlkModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type PitFileIlkRepository struct {
 	db *postgres.DB
 }
 
-func NewPitFileIlkRepository(db *postgres.DB) PitFileIlkRepository {
-	return PitFileIlkRepository{
-		db: db,
-	}
-}
-
-func (repository PitFileIlkRepository) Create(headerID int64, models []PitFileIlkModel) error {
+func (repository PitFileIlkRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
+
 	for _, model := range models {
+		pitFileIlk, ok := model.(PitFileIlkModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, PitFileIlkModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_ilk (header_id, ilk, what, data, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, model.Ilk, model.What, model.Data, model.TransactionIndex, model.Raw,
+			headerID, pitFileIlk.Ilk, pitFileIlk.What, pitFileIlk.Data, pitFileIlk.TransactionIndex, pitFileIlk.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -75,14 +71,18 @@ func (repository PitFileIlkRepository) MissingHeaders(startingBlockNumber, endin
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
+                 LEFT JOIN checked_headers on headers.id = header_id
                WHERE (header_id ISNULL OR pit_file_ilk_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+                 AND headers.block_number >= $1
+                 AND headers.block_number <= $2
+                 AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *PitFileIlkRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

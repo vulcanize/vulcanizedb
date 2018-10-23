@@ -24,14 +24,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]PitFileIlkModel, error)
-}
-
 type PitFileIlkConverter struct{}
 
-func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]PitFileIlkModel, error) {
-	var models []PitFileIlkModel
+func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

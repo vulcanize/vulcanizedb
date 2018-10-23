@@ -19,10 +19,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -31,31 +32,45 @@ import (
 )
 
 var _ = Describe("Pit file debt ceiling transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Config:     pit_file.PitFileConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{},
-			Repository: repository,
-		}
+	var (
+		config      = debt_ceiling.DebtCeilingFileConfig
+		fetcher     mocks.MockLogFetcher
+		converter   debt_ceiling_mocks.MockPitFileDebtCeilingConverter
+		repository  debt_ceiling_mocks.MockPitFileDebtCeilingRepository
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+	)
 
+	BeforeEach(func() {
+		fetcher = mocks.MockLogFetcher{}
+		converter = debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
+		repository = debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		transformer = factories.Transformer{
+			Config:     config,
+			Fetcher:    &fetcher,
+			Converter:  &converter,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(pit_file.PitFileConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(pit_file.PitFileConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{},
-			Repository: repository,
-		}
-
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -63,34 +78,18 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{},
-			Repository: repository,
-		}
-
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{pit_file.PitFileConfig.ContractAddresses, pit_file.PitFileConfig.ContractAddresses}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.PitFileDebtCeilingSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{},
-			Repository: repository,
-		}
-
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -98,34 +97,17 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		mockRepository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		mockRepository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -134,16 +116,8 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileDebtCeilingLog})
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -152,17 +126,9 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileDebtCeilingLog})
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -171,37 +137,20 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("persists pit file model", func() {
-		converter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileDebtCeilingLog})
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
-		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]debt_ceiling.PitFileDebtCeilingModel{test_data.PitFileDebtCeilingModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.PitFileDebtCeilingModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileDebtCeilingLog})
-		repository := &debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := debt_ceiling.PitFileDebtCeilingTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 

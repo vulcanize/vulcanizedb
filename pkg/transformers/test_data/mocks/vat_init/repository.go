@@ -16,46 +16,47 @@ package vat_init
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 type MockVatInitRepository struct {
-	createErr                       error
-	markHeaderCheckedErr            error
+	createError                     error
+	markHeaderCheckedError          error
 	markHeaderCheckedPassedHeaderID int64
 	missingHeaders                  []core.Header
-	missingHeadersErr               error
+	missingHeadersError             error
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []vat_init.VatInitModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockVatInitRepository) Create(headerID int64, models []vat_init.VatInitModel) error {
+func (repository *MockVatInitRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
-	return repository.createErr
+	return repository.createError
 }
 
 func (repository *MockVatInitRepository) MarkHeaderChecked(headerID int64) error {
 	repository.markHeaderCheckedPassedHeaderID = headerID
-	return repository.markHeaderCheckedErr
+	return repository.markHeaderCheckedError
 }
 
 func (repository *MockVatInitRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersErr
+	return repository.missingHeaders, repository.missingHeadersError
 }
 
-func (repository *MockVatInitRepository) SetMarkHeaderCheckedErr(e error) {
-	repository.markHeaderCheckedErr = e
+func (repository *MockVatInitRepository) SetMarkHeaderCheckedError(e error) {
+	repository.markHeaderCheckedError = e
 }
 
-func (repository *MockVatInitRepository) SetMissingHeadersErr(e error) {
-	repository.missingHeadersErr = e
+func (repository *MockVatInitRepository) SetMissingHeadersError(e error) {
+	repository.missingHeadersError = e
 }
 
 func (repository *MockVatInitRepository) SetMissingHeaders(headers []core.Header) {
@@ -63,9 +64,13 @@ func (repository *MockVatInitRepository) SetMissingHeaders(headers []core.Header
 }
 
 func (repository *MockVatInitRepository) SetCreateError(e error) {
-	repository.createErr = e
+	repository.createError = e
 }
 
 func (repository *MockVatInitRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
 	Expect(repository.markHeaderCheckedPassedHeaderID).To(Equal(i))
+}
+
+func (repository *MockVatInitRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }
