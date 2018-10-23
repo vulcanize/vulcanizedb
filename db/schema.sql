@@ -904,6 +904,7 @@ CREATE TABLE maker.vat_move (
     src text NOT NULL,
     dst text NOT NULL,
     rad numeric NOT NULL,
+    log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
 );
@@ -2095,11 +2096,11 @@ ALTER TABLE ONLY maker.vat_init
 
 
 --
--- Name: vat_move vat_move_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_move vat_move_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_move
-    ADD CONSTRAINT vat_move_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_move_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
