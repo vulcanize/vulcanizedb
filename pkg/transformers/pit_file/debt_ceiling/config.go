@@ -19,7 +19,7 @@ import (
 )
 
 var DebtCeilingFileConfig = shared.SingleTransformerConfig{
-	TransformerName:     "pit file debt ceiling",
+	TransformerName:     shared.PitFileDebtCeilingLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
 	Topic:               shared.PitFileDebtCeilingSignature,

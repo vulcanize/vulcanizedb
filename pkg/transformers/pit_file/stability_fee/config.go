@@ -19,7 +19,7 @@ import (
 )
 
 var StabilityFeeFileConfig = shared.SingleTransformerConfig{
-	TransformerName:     "pit file stability fee",
+	TransformerName:     shared.PitFileStabilityFeeLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
 	Topic:               shared.PitFileStabilityFeeSignature,

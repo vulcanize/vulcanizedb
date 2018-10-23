@@ -19,7 +19,7 @@ import (
 )
 
 var IlkFileConfig = shared.SingleTransformerConfig{
-	TransformerName:     "pit file ilk",
+	TransformerName:     shared.PitFileIlkLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
 	Topic:               shared.PitFileIlkSignature,
