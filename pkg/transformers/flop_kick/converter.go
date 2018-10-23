@@ -50,6 +50,7 @@ func (FlopKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]
 		}
 		entity.Raw = ethLog
 		entity.TransactionIndex = ethLog.TxIndex
+		entity.LogIndex = ethLog.Index
 		results = append(results, entity)
 	}
 	return results, nil
@@ -71,6 +72,7 @@ func (FlopKickConverter) ToModels(entities []Entity) ([]Model, error) {
 			Gal:              entity.Gal.String(),
 			End:              time.Unix(endValue, 0),
 			TransactionIndex: entity.TransactionIndex,
+			LogIndex:         entity.LogIndex,
 			Raw:              rawLogJson,
 		}
 		results = append(results, model)

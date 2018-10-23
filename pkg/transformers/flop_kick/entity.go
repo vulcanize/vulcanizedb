@@ -28,5 +28,6 @@ type Entity struct {
 	Gal              common.Address
 	End              *big.Int
 	TransactionIndex uint
+	LogIndex         uint
 	Raw              types.Log
 }

@@ -37,23 +37,39 @@ var _ = Describe("Vat toll repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat toll event", func() {
+			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var dbVatToll vat_toll.VatTollModel
-			err = db.Get(&dbVatToll, `SELECT ilk, urn, take, tx_idx, raw_log FROM maker.vat_toll WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatToll, `SELECT ilk, urn, take, tx_idx, log_idx, raw_log FROM maker.vat_toll WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatToll.Ilk).To(Equal(test_data.VatTollModel.Ilk))
 			Expect(dbVatToll.Urn).To(Equal(test_data.VatTollModel.Urn))
 			Expect(dbVatToll.Take).To(Equal(test_data.VatTollModel.Take))
 			Expect(dbVatToll.TransactionIndex).To(Equal(test_data.VatTollModel.TransactionIndex))
+			Expect(dbVatToll.LogIndex).To(Equal(test_data.VatTollModel.LogIndex))
 			Expect(dbVatToll.Raw).To(MatchJSON(test_data.VatTollModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_toll_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_toll_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -62,9 +78,22 @@ var _ = Describe("Vat toll repository", func() {
 
 		It("does not duplicate vat toll events", func() {
 			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			Expect(err).NotTo(HaveOccurred())
 
+			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
+		})
+
+		It("allows for multiple vat toll events in one transaction if they have different log indexes", func() {
+			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			newVatToll := test_data.VatTollModel
+			newVatToll.LogIndex = newVatToll.LogIndex + 1
+			err := vatTollRepository.Create(headerID, []vat_toll.VatTollModel{newVatToll})
+
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("removes vat toll if corresponding header is deleted", func() {

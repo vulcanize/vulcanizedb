@@ -40,5 +40,6 @@ var VatTuneModel = vat_tune.VatTuneModel{
 	Dink:             big.NewInt(0).String(),
 	Dart:             vatTuneDart.String(),
 	TransactionIndex: EthVatTuneLog.TxIndex,
+	LogIndex:         EthVatTuneLog.Index,
 	Raw:              rawVatTuneLog,
 }

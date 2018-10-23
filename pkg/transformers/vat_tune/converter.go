@@ -47,6 +47,7 @@ func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]VatTuneModel, error) {
 			Dink:             dink,
 			Dart:             dart,
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		models = append(models, model)

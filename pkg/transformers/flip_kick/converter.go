@@ -51,6 +51,7 @@ func (FlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) (re
 		}
 		entity.Raw = ethLog
 		entity.TransactionIndex = ethLog.TxIndex
+		entity.LogIndex = ethLog.Index
 		results = append(results, *entity)
 	}
 
@@ -86,6 +87,7 @@ func (FlipKickConverter) ToModels(flipKicks []FlipKickEntity) (results []FlipKic
 			Urn:              urn,
 			Tab:              tab,
 			TransactionIndex: flipKick.TransactionIndex,
+			LogIndex:         flipKick.LogIndex,
 			Raw:              rawLogString,
 		}
 		results = append(results, model)

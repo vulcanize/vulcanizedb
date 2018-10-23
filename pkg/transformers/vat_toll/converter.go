@@ -35,6 +35,7 @@ func (VatTollConverter) ToModels(ethLogs []types.Log) ([]VatTollModel, error) {
 			Urn:              urn.String(),
 			Take:             take.String(),
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		models = append(models, model)

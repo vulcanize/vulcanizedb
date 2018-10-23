@@ -38,14 +38,7 @@ var _ = Describe("FlipKick Converter", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(entities)).To(Equal(1))
 			entity := entities[0]
-			Expect(entity.Id).To(Equal(test_data.FlipKickEntity.Id))
-			Expect(entity.Lot).To(Equal(test_data.FlipKickEntity.Lot))
-			Expect(entity.Bid).To(Equal(test_data.FlipKickEntity.Bid))
-			Expect(entity.Gal).To(Equal(test_data.FlipKickEntity.Gal))
-			Expect(entity.End).To(Equal(test_data.FlipKickEntity.End))
-			Expect(entity.Urn).To(Equal(test_data.FlipKickEntity.Urn))
-			Expect(entity.Tab).To(Equal(test_data.FlipKickEntity.Tab))
-			Expect(entity.Raw).To(Equal(test_data.FlipKickEntity.Raw))
+			Expect(entity).To(Equal(test_data.FlipKickEntity))
 		})
 
 		It("returns an error if converting log to entity fails", func() {

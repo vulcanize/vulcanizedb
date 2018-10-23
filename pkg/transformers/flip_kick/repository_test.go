@@ -69,11 +69,24 @@ var _ = Describe("FlipKick Repository", func() {
 			Expect(dbResult.Urn).To(Equal(flipKick.Urn))
 			Expect(dbResult.Tab).To(Equal(flipKick.Tab))
 			Expect(dbResult.TransactionIndex).To(Equal(flipKick.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(flipKick.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(flipKick.Raw))
 		})
 
 		It("marks header checked", func() {
 			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT flip_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			err = flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -89,6 +102,14 @@ var _ = Describe("FlipKick Repository", func() {
 			err = flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
+		})
+
+		It("allows for multiple flip kick events in one transaction if they have different log indexes", func() {
+			newFlipKick := test_data.FlipKickModel
+			newFlipKick.LogIndex = newFlipKick.LogIndex + 1
+			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{newFlipKick})
+
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("deletes the flip_kick records if its corresponding header record is deleted", func() {

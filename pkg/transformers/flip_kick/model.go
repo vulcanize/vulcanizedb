@@ -25,5 +25,6 @@ type FlipKickModel struct {
 	Urn              string
 	Tab              string
 	TransactionIndex uint   `db:"tx_idx"`
+	LogIndex         uint   `db:"log_idx"`
 	Raw              string `db:"raw_log"`
 }

@@ -28,9 +28,9 @@ func (repository VatTuneRepository) Create(headerID int64, models []VatTuneModel
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.vat_tune (header_id, ilk, urn, v, w, dink, dart, tx_idx, raw_log)
-	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9)`,
-			headerID, model.Ilk, model.Urn, model.V, model.W, model.Dink, model.Dart, model.TransactionIndex, model.Raw,
+			`INSERT into maker.vat_tune (header_id, ilk, urn, v, w, dink, dart, tx_idx, log_idx, raw_log)
+	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)`,
+			headerID, model.Ilk, model.Urn, model.V, model.W, model.Dink, model.Dart, model.TransactionIndex, model.LogIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

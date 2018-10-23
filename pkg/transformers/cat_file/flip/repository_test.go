@@ -82,6 +82,14 @@ var _ = Describe("Cat file flip repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple cat file flip events in one transaction if they have different log indexes", func() {
+			catFileFlip := test_data.CatFileFlipModel
+			catFileFlip.LogIndex = catFileFlip.LogIndex + 1
+			err = catFileRepository.Create(headerID, []flip.CatFileFlipModel{catFileFlip})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("removes cat file flip if corresponding header is deleted", func() {
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 

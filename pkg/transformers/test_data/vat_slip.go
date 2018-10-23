@@ -38,7 +38,7 @@ var EthVatSlipLog = types.Log{
 	TxHash:      common.HexToHash("0xb114ba306c80c86d51bdbf4a5ac8ed151020cd81b70cfa1dc9822f4a1f73930b"),
 	TxIndex:     3,
 	BlockHash:   common.HexToHash("0x34b7e5ddb3be73257a5a0087f10b8bf68d4df5c8831ec04c63ecae4094de72ad"),
-	Index:       0,
+	Index:       2,
 	Removed:     false,
 }
 
@@ -48,5 +48,6 @@ var VatSlipModel = vat_slip.VatSlipModel{
 	Guy:              common.HexToAddress("0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6").String(),
 	Rad:              "987654321",
 	TransactionIndex: EthVatSlipLog.TxIndex,
+	LogIndex:         EthVatSlipLog.Index,
 	Raw:              rawVatSlipLog,
 }

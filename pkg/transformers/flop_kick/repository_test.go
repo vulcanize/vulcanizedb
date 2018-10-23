@@ -50,12 +50,12 @@ var _ = Describe("FlopRepository", func() {
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("creates FlopKick records", func() {
+			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			err = db.QueryRowx(`SELECT * FROM maker.flop_kick WHERE header_id = $1`, headerId).StructScan(&dbResult)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.HeaderId).To(Equal(headerId))
@@ -65,10 +65,26 @@ var _ = Describe("FlopRepository", func() {
 			Expect(dbResult.Gal).To(Equal(test_data.FlopKickModel.Gal))
 			Expect(dbResult.End.Equal(test_data.FlopKickModel.End)).To(BeTrue())
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.FlopKickModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.FlopKickModel.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.FlopKickModel.Raw))
 		})
 
 		It("marks headerId as checked for flop kick logs", func() {
+			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT flop_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT flop_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,12 +92,29 @@ var _ = Describe("FlopRepository", func() {
 		})
 
 		It("returns an error if inserting the flop_kick record fails", func() {
+			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			err = repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple flop kick events in one transaction if they have different log indexes", func() {
+			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			newFlopKick := test_data.FlopKickModel
+			newFlopKick.LogIndex = newFlopKick.LogIndex + 1
+			err = repository.Create(headerId, []flop_kick.Model{newFlopKick})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("deletes the flop_kick records if its corresponding header record is deleted", func() {
+			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var flopKickCount int
 			err = db.QueryRow(`SELECT count(*) FROM maker.flop_kick`).Scan(&flopKickCount)
 			Expect(err).NotTo(HaveOccurred())

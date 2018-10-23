@@ -81,6 +81,14 @@ var _ = Describe("Cat file pit vow repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple cat file pit events in one transaction if they have different log indexes", func() {
+			catFilePitVow := test_data.CatFilePitVowModel
+			catFilePitVow.LogIndex = catFilePitVow.LogIndex + 1
+			err = catFileRepository.Create(headerID, []pit_vow.CatFilePitVowModel{catFilePitVow})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("removes cat file pit vow if corresponding header is deleted", func() {
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
