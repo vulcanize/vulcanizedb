@@ -28,9 +28,9 @@ func (repository VatSlipRepository) Create(headerID int64, models []VatSlipModel
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.vat_slip (header_id, ilk, guy, rad, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, model.Ilk, model.Guy, model.Rad, model.TransactionIndex, model.Raw,
+			`INSERT into maker.vat_slip (header_id, ilk, guy, rad, tx_idx, log_idx, raw_log)
+        VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, model.Ilk, model.Guy, model.Rad, model.TransactionIndex, model.LogIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

@@ -57,6 +57,7 @@ var (
 		Gal:              common.HexToAddress(flopGal),
 		End:              big.NewInt(flopEnd),
 		TransactionIndex: flopTxIndex,
+		LogIndex:         FlopKickLog.Index,
 		Raw:              FlopKickLog,
 	}
 
@@ -67,6 +68,7 @@ var (
 		Gal:              flopGal,
 		End:              time.Unix(flopEnd, 0),
 		TransactionIndex: flopTxIndex,
+		LogIndex:         FlopKickLog.Index,
 		Raw:              rawFlopLogJson,
 	}
 )

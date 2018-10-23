@@ -5,8 +5,9 @@ CREATE TABLE maker.vat_slip (
   guy           TEXT,
   rad           NUMERIC,
   tx_idx        INTEGER NOT NULL,
+  log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 ALTER TABLE public.checked_headers

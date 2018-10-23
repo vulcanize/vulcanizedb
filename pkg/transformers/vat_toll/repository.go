@@ -28,9 +28,9 @@ func (repository VatTollRepository) Create(headerID int64, models []VatTollModel
 	}
 	for _, model := range models {
 		_, err = tx.Exec(
-			`INSERT into maker.vat_toll (header_id, ilk, urn, take, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6)`,
-			headerID, model.Ilk, model.Urn, model.Take, model.TransactionIndex, model.Raw,
+			`INSERT into maker.vat_toll (header_id, ilk, urn, take, tx_idx, log_idx, raw_log)
+        VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, model.Ilk, model.Urn, model.Take, model.TransactionIndex, model.LogIndex, model.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

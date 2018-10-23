@@ -31,12 +31,7 @@ var _ = Describe("VatFlux converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0].Ilk).To(Equal(test_data.VatFluxModel.Ilk))
-		Expect(models[0].Src).To(Equal(test_data.VatFluxModel.Src))
-		Expect(models[0].Dst).To(Equal(test_data.VatFluxModel.Dst))
-		Expect(models[0].Rad).To(Equal(test_data.VatFluxModel.Rad))
-		Expect(models[0].TransactionIndex).To(Equal(test_data.VatFluxModel.TransactionIndex))
-		Expect(models[0].Raw).To(Equal(test_data.VatFluxModel.Raw))
+		Expect(models[0]).To(Equal(test_data.VatFluxModel))
 	})
 
 	It("Returns an error there are missing topics", func() {

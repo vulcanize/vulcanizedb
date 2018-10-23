@@ -4,11 +4,12 @@ CREATE TABLE maker.flip_kick (
   bid_id        NUMERIC NOT NULL,
   lot           NUMERIC,
   bid           NUMERIC,
-  gal           VARCHAR,
+  gal           TEXT,
 	"end"         TIMESTAMP WITH TIME ZONE,
-  urn           VARCHAR,
+  urn           TEXT,
   tab           NUMERIC,
   tx_idx        INTEGER NOT NUll,
+  log_idx       INTEGER NOT NUll,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );

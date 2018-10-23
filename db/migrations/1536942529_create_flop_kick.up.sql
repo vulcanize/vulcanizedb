@@ -4,11 +4,12 @@ CREATE TABLE maker.flop_kick (
   bid_id        NUMERIC NOT NULL,
   lot           NUMERIC NOT NULL,
   bid           NUMERIC NOT NULL,
-  gal           VARCHAR,
+  gal           TEXT,
   "end"         TIMESTAMP WITH TIME ZONE,
   tx_idx        INTEGER NOT NULL,
+  log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
-  UNIQUE (header_id, tx_idx)
+  UNIQUE (header_id, tx_idx, log_idx)
 );
 
 ALTER TABLE public.checked_headers

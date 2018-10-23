@@ -37,23 +37,39 @@ var _ = Describe("Vat slip repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat slip event", func() {
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var dbVatSlip vat_slip.VatSlipModel
-			err = db.Get(&dbVatSlip, `SELECT ilk, guy, rad, tx_idx, raw_log FROM maker.vat_slip WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatSlip, `SELECT ilk, guy, rad, tx_idx, log_idx, raw_log FROM maker.vat_slip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatSlip.Ilk).To(Equal(test_data.VatSlipModel.Ilk))
 			Expect(dbVatSlip.Guy).To(Equal(test_data.VatSlipModel.Guy))
 			Expect(dbVatSlip.Rad).To(Equal(test_data.VatSlipModel.Rad))
 			Expect(dbVatSlip.TransactionIndex).To(Equal(test_data.VatSlipModel.TransactionIndex))
+			Expect(dbVatSlip.LogIndex).To(Equal(test_data.VatSlipModel.LogIndex))
 			Expect(dbVatSlip.Raw).To(MatchJSON(test_data.VatSlipModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -62,12 +78,29 @@ var _ = Describe("Vat slip repository", func() {
 
 		It("does not duplicate vat slip events", func() {
 			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple vat slip events in one transaction if they have different log indexes", func() {
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			newVatSlip := test_data.VatSlipModel
+			newVatSlip.LogIndex = newVatSlip.LogIndex + 1
+			err := vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{newVatSlip})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("removes vat slip if corresponding header is deleted", func() {
+			err = vatSlipRepository.Create(headerID, []vat_slip.VatSlipModel{test_data.VatSlipModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())

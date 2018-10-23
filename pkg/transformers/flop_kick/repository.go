@@ -40,9 +40,9 @@ func (r FlopKickRepository) Create(headerId int64, flopKicks []Model) error {
 	}
 	for _, flopKick := range flopKicks {
 		_, err = tx.Exec(
-			`INSERT into maker.flop_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-			headerId, flopKick.BidId, flopKick.Lot, flopKick.Bid, flopKick.Gal, flopKick.End, flopKick.TransactionIndex, flopKick.Raw,
+			`INSERT into maker.flop_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, log_idx, raw_log)
+        VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
+			headerId, flopKick.BidId, flopKick.Lot, flopKick.Bid, flopKick.Gal, flopKick.End, flopKick.TransactionIndex, flopKick.LogIndex, flopKick.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

@@ -30,5 +30,6 @@ type FlipKickEntity struct {
 	Urn              [32]byte
 	Tab              *big.Int
 	TransactionIndex uint
+	LogIndex         uint
 	Raw              types.Log
 }

@@ -32,5 +32,6 @@ var VatTollModel = vat_toll.VatTollModel{
 	Urn:              "0xA3E37186E017747DbA34042e83e3F76Ad3CcE9b0",
 	Take:             big.NewInt(123456789).String(),
 	TransactionIndex: EthVatTollLog.TxIndex,
+	LogIndex:         EthVatTollLog.Index,
 	Raw:              rawVatTollLog,
 }

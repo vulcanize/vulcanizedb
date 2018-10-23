@@ -37,7 +37,7 @@ var VatFluxLog = types.Log{
 	TxHash:      common.HexToHash("0xf98681bab9b8c75bd8aa4a7d0a8142ff527c5ea8fa54f3c2835d4533838b2e6f"),
 	TxIndex:     0,
 	BlockHash:   common.HexToHash("0xc3fe212ad4f81ade1265af6de2b4bb50d962b1a4db06aabc982e7f9cb0972c2d"),
-	Index:       0,
+	Index:       3,
 	Removed:     false,
 }
 
@@ -47,6 +47,7 @@ var VatFluxModel = vat_flux.VatFluxModel{
 	Src:              "0x7FA9EF6609Ca7921112231f8f195138ebba29770",
 	Dst:              "0x93086347c52a8878af71bB818509d484c6a2e1bF",
 	Rad:              "123",
-	TransactionIndex: 0,
+	TransactionIndex: VatFluxLog.TxIndex,
+	LogIndex:         VatFluxLog.Index,
 	Raw:              rawFluxLog,
 }

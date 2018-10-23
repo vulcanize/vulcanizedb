@@ -63,7 +63,7 @@ var EthFlipKickLog = types.Log{
 	TxHash:      common.HexToHash(flipKickTransactionHash),
 	TxIndex:     999,
 	BlockHash:   common.HexToHash(flipKickBlockHash),
-	Index:       0,
+	Index:       1,
 	Removed:     false,
 }
 
@@ -76,6 +76,7 @@ var FlipKickEntity = flip_kick.FlipKickEntity{
 	Urn:              urn,
 	Tab:              tab,
 	TransactionIndex: EthFlipKickLog.TxIndex,
+	LogIndex:         EthFlipKickLog.Index,
 	Raw:              EthFlipKickLog,
 }
 
@@ -88,6 +89,7 @@ var FlipKickModel = flip_kick.FlipKickModel{
 	Urn:              urnString,
 	Tab:              tabString,
 	TransactionIndex: EthFlipKickLog.TxIndex,
+	LogIndex:         EthFlipKickLog.Index,
 	Raw:              rawLogString,
 }
 

@@ -41,9 +41,9 @@ func (fkr FlipKickRepository) Create(headerId int64, flipKicks []FlipKickModel) 
 	}
 	for _, flipKick := range flipKicks {
 		_, err := tx.Exec(
-			`INSERT into maker.flip_kick (header_id, bid_id, lot, bid, gal, "end", urn, tab, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-			headerId, flipKick.BidId, flipKick.Lot, flipKick.Bid, flipKick.Gal, flipKick.End, flipKick.Urn, flipKick.Tab, flipKick.TransactionIndex, flipKick.Raw,
+			`INSERT into maker.flip_kick (header_id, bid_id, lot, bid, gal, "end", urn, tab, tx_idx, log_idx, raw_log)
+        VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8::NUMERIC, $9, $10, $11)`,
+			headerId, flipKick.BidId, flipKick.Lot, flipKick.Bid, flipKick.Gal, flipKick.End, flipKick.Urn, flipKick.Tab, flipKick.TransactionIndex, flipKick.LogIndex, flipKick.Raw,
 		)
 		if err != nil {
 			tx.Rollback()

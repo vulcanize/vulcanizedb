@@ -58,12 +58,13 @@ var _ = Describe("Cat file chop lump repository", func() {
 
 		It("adds a cat file chop lump event", func() {
 			var dbResult chop_lump.CatFileChopLumpModel
-			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
+			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.Ilk).To(Equal(test_data.CatFileChopLumpModel.Ilk))
 			Expect(dbResult.What).To(Equal(test_data.CatFileChopLumpModel.What))
 			Expect(dbResult.Data).To(Equal(test_data.CatFileChopLumpModel.Data))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileChopLumpModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.CatFileChopLumpModel.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileChopLumpModel.Raw))
 		})
 
@@ -81,7 +82,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("allows for multiple cat file chop lump events if they have different log indexes", func() {
+		It("allows for multiple cat file chop lump events in one transaction if they have different log indexes", func() {
 			newCatFileChopLump := test_data.CatFileChopLumpModel
 			newCatFileChopLump.LogIndex = newCatFileChopLump.LogIndex + 1
 			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{newCatFileChopLump})

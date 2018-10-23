@@ -37,14 +37,14 @@ var _ = Describe("Vat tune repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a vat tune event", func() {
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var dbVatTune vat_tune.VatTuneModel
-			err = db.Get(&dbVatTune, `SELECT ilk, urn, v, w, dink, dart, tx_idx, raw_log FROM maker.vat_tune WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatTune, `SELECT ilk, urn, v, w, dink, dart, tx_idx, log_idx, raw_log FROM maker.vat_tune WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbVatTune.Ilk).To(Equal(test_data.VatTuneModel.Ilk))
 			Expect(dbVatTune.Urn).To(Equal(test_data.VatTuneModel.Urn))
@@ -53,10 +53,26 @@ var _ = Describe("Vat tune repository", func() {
 			Expect(dbVatTune.Dink).To(Equal(test_data.VatTuneModel.Dink))
 			Expect(dbVatTune.Dart).To(Equal(test_data.VatTuneModel.Dart))
 			Expect(dbVatTune.TransactionIndex).To(Equal(test_data.VatTuneModel.TransactionIndex))
+			Expect(dbVatTune.LogIndex).To(Equal(test_data.VatTuneModel.LogIndex))
 			Expect(dbVatTune.Raw).To(MatchJSON(test_data.VatTuneModel.Raw))
 		})
 
 		It("marks header as checked for logs", func() {
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_tune_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_tune_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -65,12 +81,29 @@ var _ = Describe("Vat tune repository", func() {
 
 		It("does not duplicate pit file vat_tune events", func() {
 			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple flop kick events in one transaction if they have different log indexes", func() {
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			newVatTune := test_data.VatTuneModel
+			newVatTune.LogIndex = newVatTune.LogIndex + 1
+			err := vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{newVatTune})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("removes pit file vat_tune if corresponding header is deleted", func() {
+			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())

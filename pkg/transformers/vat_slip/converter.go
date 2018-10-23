@@ -48,6 +48,7 @@ func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]VatSlipModel, error) {
 			Guy:              guy.String(),
 			Rad:              rad.String(),
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              raw,
 		}
 		models = append(models, model)

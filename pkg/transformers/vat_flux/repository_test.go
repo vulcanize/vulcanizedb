@@ -69,6 +69,7 @@ var _ = Describe("VatFlux Repository", func() {
 			Expect(dbResult[0].Rad).To(Equal(test_data.VatFluxModel.Rad))
 			Expect(dbResult[0].TransactionIndex).To(Equal(test_data.VatFluxModel.TransactionIndex))
 			Expect(dbResult[1].TransactionIndex).To(Equal(test_data.VatFluxModel.TransactionIndex + 1))
+			Expect(dbResult[0].LogIndex).To(Equal(test_data.VatFluxModel.LogIndex))
 			Expect(dbResult[0].Raw).To(MatchJSON(test_data.VatFluxModel.Raw))
 			Expect(dbResult[0].HeaderId).To(Equal(headerId))
 		})
@@ -81,7 +82,30 @@ var _ = Describe("VatFlux Repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("allows for multiple vat flux events in one transaction if they have different log indexes", func() {
+			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			anotherVatFlux := test_data.VatFluxModel
+			anotherVatFlux.LogIndex = anotherVatFlux.LogIndex + 1
+			err = repository.Create(headerId, []vat_flux.VatFluxModel{anotherVatFlux})
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("marks the header as checked for vat flux logs", func() {
+			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_flux_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
 			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
 			Expect(err).NotTo(HaveOccurred())
 

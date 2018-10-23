@@ -59,6 +59,7 @@ func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]VatFluxModel, error) {
 			Dst:              dst.String(),
 			Rad:              rad,
 			TransactionIndex: ethLog.TxIndex,
+			LogIndex:         ethLog.Index,
 			Raw:              rawLogJson,
 		}
 

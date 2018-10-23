@@ -427,11 +427,12 @@ CREATE TABLE maker.flip_kick (
     bid_id numeric NOT NULL,
     lot numeric,
     bid numeric,
-    gal character varying,
+    gal text,
     "end" timestamp with time zone,
-    urn character varying,
+    urn text,
     tab numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -466,9 +467,10 @@ CREATE TABLE maker.flop_kick (
     bid_id numeric NOT NULL,
     lot numeric NOT NULL,
     bid numeric NOT NULL,
-    gal character varying,
+    gal text,
     "end" timestamp with time zone,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -725,6 +727,7 @@ CREATE TABLE maker.vat_flux (
     dst text,
     rad numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -941,6 +944,7 @@ CREATE TABLE maker.vat_slip (
     guy text,
     rad numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -976,6 +980,7 @@ CREATE TABLE maker.vat_toll (
     urn text,
     take numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -1014,6 +1019,7 @@ CREATE TABLE maker.vat_tune (
     dink numeric,
     dart numeric,
     tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
     raw_log jsonb
 );
 
@@ -1888,11 +1894,11 @@ ALTER TABLE ONLY maker.drip_file_vow
 
 
 --
--- Name: flip_kick flip_kick_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: flip_kick flip_kick_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.flip_kick
-    ADD CONSTRAINT flip_kick_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT flip_kick_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -1904,11 +1910,11 @@ ALTER TABLE ONLY maker.flip_kick
 
 
 --
--- Name: flop_kick flop_kick_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: flop_kick flop_kick_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.flop_kick
-    ADD CONSTRAINT flop_kick_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT flop_kick_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -2016,11 +2022,11 @@ ALTER TABLE ONLY maker.tend
 
 
 --
--- Name: vat_flux vat_flux_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_flux vat_flux_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_flux
-    ADD CONSTRAINT vat_flux_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_flux_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -2112,11 +2118,11 @@ ALTER TABLE ONLY maker.vat_move
 
 
 --
--- Name: vat_slip vat_slip_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_slip vat_slip_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_slip
-    ADD CONSTRAINT vat_slip_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_slip_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -2128,11 +2134,11 @@ ALTER TABLE ONLY maker.vat_slip
 
 
 --
--- Name: vat_toll vat_toll_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_toll vat_toll_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_toll
-    ADD CONSTRAINT vat_toll_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_toll_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
@@ -2144,11 +2150,11 @@ ALTER TABLE ONLY maker.vat_toll
 
 
 --
--- Name: vat_tune vat_tune_header_id_tx_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+-- Name: vat_tune vat_tune_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_tune
-    ADD CONSTRAINT vat_tune_header_id_tx_idx_key UNIQUE (header_id, tx_idx);
+    ADD CONSTRAINT vat_tune_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
 
 
 --
