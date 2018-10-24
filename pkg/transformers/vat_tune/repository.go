@@ -1,36 +1,30 @@
 package vat_tune
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []VatTuneModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type VatTuneRepository struct {
 	db *postgres.DB
 }
 
-func NewVatTuneRepository(db *postgres.DB) VatTuneRepository {
-	return VatTuneRepository{
-		db: db,
-	}
-}
-
-func (repository VatTuneRepository) Create(headerID int64, models []VatTuneModel) error {
+func (repository VatTuneRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		vatTune, ok := model.(VatTuneModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatTuneModel{})
+		}
 		_, err = tx.Exec(
 			`INSERT into maker.vat_tune (header_id, ilk, urn, v, w, dink, dart, tx_idx, log_idx, raw_log)
 	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)`,
-			headerID, model.Ilk, model.Urn, model.V, model.W, model.Dink, model.Dart, model.TransactionIndex, model.LogIndex, model.Raw,
+			headerID, vatTune.Ilk, vatTune.Urn, vatTune.V, vatTune.W, vatTune.Dink, vatTune.Dart, vatTune.TransactionIndex, vatTune.LogIndex, vatTune.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -71,4 +65,8 @@ func (repository VatTuneRepository) MissingHeaders(startingBlockNumber, endingBl
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *VatTuneRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

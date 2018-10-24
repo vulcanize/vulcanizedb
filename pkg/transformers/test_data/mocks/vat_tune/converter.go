@@ -3,7 +3,6 @@ package vat_tune
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 )
 
 type MockVatTuneConverter struct {
@@ -11,9 +10,9 @@ type MockVatTuneConverter struct {
 	PassedLogs []types.Log
 }
 
-func (converter *MockVatTuneConverter) ToModels(ethLogs []types.Log) ([]vat_tune.VatTuneModel, error) {
+func (converter *MockVatTuneConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []vat_tune.VatTuneModel{test_data.VatTuneModel}, converter.err
+	return []interface{}{test_data.VatTuneModel}, converter.err
 }
 
 func (converter *MockVatTuneConverter) SetConverterError(e error) {

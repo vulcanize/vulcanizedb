@@ -8,38 +8,53 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	vat_tune_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_tune"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
+	"math/rand"
 )
 
 var _ = Describe("Vat tune transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		transformer := vat_tune.VatTuneTransformer{
-			Config:     vat_tune.VatTuneConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_tune_mocks.MockVatTuneConverter{},
-			Repository: repository,
-		}
+	var config = vat_tune.VatTuneConfig
+	var fetcher mocks.MockLogFetcher
+	var converter vat_tune_mocks.MockVatTuneConverter
+	var repository vat_tune_mocks.MockVatTuneRepository
+	var transformer shared.Transformer
+	var headerOne core.Header
+	var headerTwo core.Header
 
+	BeforeEach(func() {
+		fetcher = mocks.MockLogFetcher{}
+		converter = vat_tune_mocks.MockVatTuneConverter{}
+		repository = vat_tune_mocks.MockVatTuneRepository{}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		transformer = factories.Transformer{
+			Config:     config,
+			Converter:  &converter,
+			Fetcher:    &fetcher,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(vat_tune.VatTuneConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(vat_tune.VatTuneConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
 		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_tune_mocks.MockVatTuneConverter{},
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -48,33 +63,19 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_tune_mocks.MockVatTuneConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{vat_tune.VatTuneConfig.ContractAddresses, vat_tune.VatTuneConfig.ContractAddresses}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VatTuneSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_tune_mocks.MockVatTuneConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -83,34 +84,17 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &vat_tune_mocks.MockVatTuneConverter{}
-		mockRepository := &vat_tune_mocks.MockVatTuneRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := vat_tune.VatTuneTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &vat_tune_mocks.MockVatTuneConverter{}
-		mockRepository := &vat_tune_mocks.MockVatTuneRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := vat_tune.VatTuneTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -119,16 +103,8 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &vat_tune_mocks.MockVatTuneConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatTuneLog})
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -137,17 +113,9 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &vat_tune_mocks.MockVatTuneConverter{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatTuneLog})
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -156,37 +124,20 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("persists vat tune model", func() {
-		converter := &vat_tune_mocks.MockVatTuneConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatTuneLog})
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
-		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]vat_tune.VatTuneModel{test_data.VatTuneModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.VatTuneModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &vat_tune_mocks.MockVatTuneConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatTuneLog})
-		repository := &vat_tune_mocks.MockVatTuneRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := vat_tune.VatTuneTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
