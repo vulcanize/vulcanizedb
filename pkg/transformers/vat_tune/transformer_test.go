@@ -18,13 +18,15 @@ import (
 )
 
 var _ = Describe("Vat tune transformer", func() {
-	var config = vat_tune.VatTuneConfig
-	var fetcher mocks.MockLogFetcher
-	var converter vat_tune_mocks.MockVatTuneConverter
-	var repository vat_tune_mocks.MockVatTuneRepository
-	var transformer shared.Transformer
-	var headerOne core.Header
-	var headerTwo core.Header
+	var (
+		config      = vat_tune.VatTuneConfig
+		fetcher     mocks.MockLogFetcher
+		converter   vat_tune_mocks.MockVatTuneConverter
+		repository  vat_tune_mocks.MockVatTuneRepository
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+	)
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}

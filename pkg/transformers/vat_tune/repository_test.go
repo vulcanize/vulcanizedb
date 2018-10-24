@@ -14,6 +14,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/rand"
 )
 
 var _ = Describe("Vat tune repository", func() {
@@ -80,7 +81,7 @@ var _ = Describe("Vat tune repository", func() {
 			Expect(headerChecked).To(BeTrue())
 		})
 
-		It("does not duplicate pit file vat_tune events", func() {
+		It("does not duplicate vat tune events", func() {
 			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -90,7 +91,7 @@ var _ = Describe("Vat tune repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("allows for multiple flop kick events in one transaction if they have different log indexes", func() {
+		It("allows for multiple vat tune events in one transaction if they have different log indexes", func() {
 			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -101,7 +102,7 @@ var _ = Describe("Vat tune repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("removes pit file vat_tune if corresponding header is deleted", func() {
+		It("removes vat tune if corresponding header is deleted", func() {
 			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -112,6 +113,12 @@ var _ = Describe("Vat tune repository", func() {
 			err = db.Get(&dbVatTune, `SELECT ilk, urn, v, w, dink, dart, tx_idx, raw_log FROM maker.vat_tune WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -153,7 +160,7 @@ var _ = Describe("Vat tune repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlockNumber = GinkgoRandomSeed()
+			startingBlockNumber = rand.Int63()
 			vatTuneBlockNumber = startingBlockNumber + 1
 			endingBlockNumber = startingBlockNumber + 2
 

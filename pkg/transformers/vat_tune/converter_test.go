@@ -33,7 +33,7 @@ var _ = Describe("Vat tune converter", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("converts a log to an model", func() {
+	It("converts a log to a model", func() {
 		converter := vat_tune.VatTuneConverter{}
 
 		models, err := converter.ToModels([]types.Log{test_data.EthVatTuneLog})
