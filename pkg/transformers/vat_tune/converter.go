@@ -12,14 +12,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatTuneModel, error)
-}
-
 type VatTuneConverter struct{}
 
-func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]VatTuneModel, error) {
-	var models []VatTuneModel
+func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
@@ -31,9 +27,9 @@ func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]VatTuneModel, error) {
 		wBytes := shared.GetDataBytesAtIndex(-3, ethLog.Data)
 		w := common.BytesToAddress(wBytes)
 		dinkBytes := shared.GetDataBytesAtIndex(-2, ethLog.Data)
-		dink := big.NewInt(0).SetBytes(dinkBytes).String()
+		dink := big.NewInt(0).SetBytes(dinkBytes)
 		dartBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)
-		dart := big.NewInt(0).SetBytes(dartBytes).String()
+		dart := big.NewInt(0).SetBytes(dartBytes)
 
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
@@ -44,8 +40,8 @@ func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]VatTuneModel, error) {
 			Urn:              urn.String(),
 			V:                v.String(),
 			W:                w.String(),
-			Dink:             dink,
-			Dart:             dart,
+			Dink:             dink.String(),
+			Dart:             dart.String(),
 			TransactionIndex: ethLog.TxIndex,
 			LogIndex:         ethLog.Index,
 			Raw:              raw,

@@ -19,7 +19,7 @@ import (
 var _ = Describe("Vat tune repository", func() {
 	var (
 		db                *postgres.DB
-		vatTuneRepository vat_tune.Repository
+		vatTuneRepository vat_tune.VatTuneRepository
 		err               error
 		headerRepository  datastore.HeaderRepository
 	)
@@ -28,7 +28,8 @@ var _ = Describe("Vat tune repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		vatTuneRepository = vat_tune.NewVatTuneRepository(db)
+		vatTuneRepository = vat_tune.VatTuneRepository{}
+		vatTuneRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -40,7 +41,7 @@ var _ = Describe("Vat tune repository", func() {
 		})
 
 		It("adds a vat tune event", func() {
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var dbVatTune vat_tune.VatTuneModel
@@ -58,7 +59,7 @@ var _ = Describe("Vat tune repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -70,7 +71,7 @@ var _ = Describe("Vat tune repository", func() {
 		It("updates the header to checked if checked headers row already exists", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -80,28 +81,28 @@ var _ = Describe("Vat tune repository", func() {
 		})
 
 		It("does not duplicate pit file vat_tune events", func() {
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("allows for multiple flop kick events in one transaction if they have different log indexes", func() {
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			newVatTune := test_data.VatTuneModel
 			newVatTune.LogIndex = newVatTune.LogIndex + 1
-			err := vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{newVatTune})
+			err := vatTuneRepository.Create(headerID, []interface{}{newVatTune})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("removes pit file vat_tune if corresponding header is deleted", func() {
-			err = vatTuneRepository.Create(headerID, []vat_tune.VatTuneModel{test_data.VatTuneModel})
+			err = vatTuneRepository.Create(headerID, []interface{}{test_data.VatTuneModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -198,8 +199,8 @@ var _ = Describe("Vat tune repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatTuneRepository := vat_tune.NewVatTuneRepository(db)
-			vatTuneRepositoryTwo := vat_tune.NewVatTuneRepository(dbTwo)
+			vatTuneRepositoryTwo := vat_tune.VatTuneRepository{}
+			vatTuneRepositoryTwo.SetDB(dbTwo)
 			err := vatTuneRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
