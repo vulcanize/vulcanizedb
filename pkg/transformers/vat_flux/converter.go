@@ -24,14 +24,10 @@ import (
 	"math/big"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatFluxModel, error)
-}
-
 type VatFluxConverter struct{}
 
-func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]VatFluxModel, error) {
-	var models []VatFluxModel
+func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

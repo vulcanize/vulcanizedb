@@ -24,20 +24,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/rand"
 )
 
 var _ = Describe("VatFlux Repository", func() {
-	var db *postgres.DB
-	var repository vat_flux.VatFluxRepository
-	var headerRepository repositories.HeaderRepository
-	var headerId int64
-	var err error
+	var (
+		db               *postgres.DB
+		repository       vat_flux.VatFluxRepository
+		headerRepository repositories.HeaderRepository
+		headerId         int64
+		err              error
+	)
 
 	BeforeEach(func() {
 		node := test_config.NewTestNode()
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
-		repository = vat_flux.VatFluxRepository{DB: db}
+		repository = vat_flux.VatFluxRepository{}
+		repository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 		Expect(err).NotTo(HaveOccurred())
@@ -57,7 +61,7 @@ var _ = Describe("VatFlux Repository", func() {
 		It("persists vat flux records", func() {
 			anotherVatFlux := test_data.VatFluxModel
 			anotherVatFlux.TransactionIndex = test_data.VatFluxModel.TransactionIndex + 1
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel, anotherVatFlux})
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel, anotherVatFlux})
 
 			var dbResult []VatFluxDBResult
 			err = db.Select(&dbResult, `SELECT * from maker.vat_flux where header_id = $1`, headerId)
@@ -75,28 +79,30 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("returns an error if the insertion fails", func() {
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
 			Expect(err).NotTo(HaveOccurred())
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
+
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("allows for multiple vat flux events in one transaction if they have different log indexes", func() {
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			anotherVatFlux := test_data.VatFluxModel
 			anotherVatFlux.LogIndex = anotherVatFlux.LogIndex + 1
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{anotherVatFlux})
+			err = repository.Create(headerId, []interface{}{anotherVatFlux})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("marks the header as checked for vat flux logs", func() {
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
-			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
 
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_flux_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -106,9 +112,10 @@ var _ = Describe("VatFlux Repository", func() {
 		It("updates the header to checked if checked headers row already exists", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
-			Expect(err).NotTo(HaveOccurred())
 
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT vat_flux_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -116,7 +123,7 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("removes vat flux if corresponding header is deleted", func() {
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerId)
@@ -129,30 +136,45 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("wraps create in a transaction", func() {
-			err = repository.Create(headerId, []vat_flux.VatFluxModel{test_data.VatFluxModel, test_data.VatFluxModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatFluxModel, test_data.VatFluxModel})
+
 			Expect(err).To(HaveOccurred())
 			var count int
-			err = repository.DB.QueryRowx(`SELECT count(*) FROM maker.vat_flux`).Scan(&count)
+			err = db.QueryRowx(`SELECT count(*) FROM maker.vat_flux`).Scan(&count)
 			Expect(count).To(Equal(0))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = repository.Create(headerId, []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
 	Describe("MissingHeaders", func() {
-		It("returns headers that haven't been checked", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatFluxBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
+		var (
+			startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock int64
+			headerIds, blockNumbers                                     []int64
+		)
 
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
+		BeforeEach(func() {
+			startingBlock = rand.Int63()
+			vatFluxBlock = startingBlock + 1
+			endingBlock = startingBlock + 2
+			outsideRangeBlock = startingBlock + 3
+
+			blockNumbers = []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
+			headerIds = []int64{}
 			for _, n := range blockNumbers {
 				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 				headerIds = append(headerIds, headerId)
 			}
+		})
 
-			err = repository.MarkCheckedHeader(headerIds[0])
+		It("returns headers that haven't been checked", func() {
+			err = repository.MarkHeaderChecked(headerIds[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -163,21 +185,8 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("returns header ids when checked_headers.vat_flux is false", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatFluxBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
-
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
-			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-			}
-
-			err = repository.MarkCheckedHeader(headerIds[0])
-			_, err = repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES ($1)`, headerIds[1])
+			err = repository.MarkHeaderChecked(headerIds[0])
+			_, err = db.Exec(`INSERT INTO checked_headers (header_id) VALUES ($1)`, headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -188,26 +197,17 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("only returns header ids for the current node", func() {
-			startingBlock := GinkgoRandomSeed()
-			vatFluxBlock := startingBlock + 1
-			endingBlock := startingBlock + 2
-			outsideRangeBlock := startingBlock + 3
 			db2 := test_config.NewTestDB(core.Node{ID: "second node"})
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			repository2 := vat_flux.NewVatFluxRepository(db2)
+			repository2 := vat_flux.VatFluxRepository{}
+			repository2.SetDB(db2)
 
-			var headerIds []int64
-			blockNumbers := []int64{startingBlock, vatFluxBlock, endingBlock, outsideRangeBlock}
 			for _, n := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-
 				_, err = headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			err = repository.MarkCheckedHeader(headerIds[0])
+			err = repository.MarkHeaderChecked(headerIds[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -220,9 +220,9 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 	})
 
-	Describe("MarkCheckedHeader", func() {
+	Describe("MarkHeaderChecked", func() {
 		It("creates a new checked_header record", func() {
-			err := repository.MarkCheckedHeader(headerId)
+			err := repository.MarkHeaderChecked(headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			var checkedHeaderResult = CheckedHeaderResult{}
@@ -232,7 +232,7 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 
 		It("updates an existing checked header", func() {
-			_, err := repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerId)
+			_, err := db.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			var checkedHeaderResult CheckedHeaderResult
@@ -240,7 +240,7 @@ var _ = Describe("VatFlux Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(checkedHeaderResult.VatFluxChecked).To(BeFalse())
 
-			err = repository.MarkCheckedHeader(headerId)
+			err = repository.MarkHeaderChecked(headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = db.Get(&checkedHeaderResult, `SELECT vat_flux_checked FROM checked_headers WHERE header_id = $1`, headerId)

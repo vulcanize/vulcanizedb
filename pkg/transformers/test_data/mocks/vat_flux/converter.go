@@ -4,19 +4,18 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 )
 
-type MockVatFlux struct {
+type MockVatFluxConverter struct {
 	err        error
 	PassedLogs []types.Log
 }
 
-func (converter *MockVatFlux) ToModels(ethLogs []types.Log) ([]vat_flux.VatFluxModel, error) {
+func (converter *MockVatFluxConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []vat_flux.VatFluxModel{test_data.VatFluxModel}, converter.err
+	return []interface{}{test_data.VatFluxModel}, converter.err
 }
 
-func (converter *MockVatFlux) SetConverterError(e error) {
+func (converter *MockVatFluxConverter) SetConverterError(e error) {
 	converter.err = e
 }

@@ -16,7 +16,7 @@ package vat_flux
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockVatFluxRepository struct {
@@ -28,24 +28,29 @@ type MockVatFluxRepository struct {
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []vat_flux.VatFluxModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockVatFluxRepository) MarkCheckedHeader(headerId int64) error {
-	repository.MarkHeaderCheckedPassedHeaderID = headerId
-	return repository.markHeaderCheckedErr
-}
-
-func (repository *MockVatFluxRepository) Create(headerID int64, models []vat_flux.VatFluxModel) error {
+func (repository *MockVatFluxRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
 	return repository.createErr
+}
+
+func (repository *MockVatFluxRepository) MarkHeaderChecked(headerID int64) error {
+	repository.MarkHeaderCheckedPassedHeaderID = headerID
+	return repository.markHeaderCheckedErr
 }
 
 func (repository *MockVatFluxRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockVatFluxRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }
 
 func (repository *MockVatFluxRepository) SetMarkHeaderCheckedErr(e error) {

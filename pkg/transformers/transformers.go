@@ -140,7 +140,12 @@ var (
 		Repository: &vat_tune.VatTuneRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
-	VatFluxTransformerInitializer = vat_flux.VatFluxTransformerInitializer{Config: vat_flux.VatFluxConfig}.NewVatFluxTransformer
+	VatFluxTransformerInitializer = factories.Transformer{
+		Config:     vat_flux.VatFluxConfig,
+		Converter:  &vat_flux.VatFluxConverter{},
+		Repository: &vat_flux.VatFluxRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {
