@@ -53,7 +53,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a chop lump event", func() {
 		// transaction: 0x98574bfba4d05c3875be10d2376e678d005dbebe9a4520363407508fd21f4014
 		chopLumpBlockNumber := int64(8762253)
-		err = persistHeader(rpcClient, db, chopLumpBlockNumber)
+		err = persistHeader(db, chopLumpBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := cat_file.CatFileConfig
@@ -86,7 +86,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a flip event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		flipBlockNumber := int64(8751794)
-		err = persistHeader(rpcClient, db, flipBlockNumber)
+		err = persistHeader(db, flipBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := cat_file.CatFileConfig
@@ -111,7 +111,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a pit vow event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		pitVowBlockNumber := int64(8751794)
-		err = persistHeader(rpcClient, db, pitVowBlockNumber)
+		err = persistHeader(db, pitVowBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := cat_file.CatFileConfig

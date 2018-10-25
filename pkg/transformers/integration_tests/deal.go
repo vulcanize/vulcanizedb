@@ -48,7 +48,7 @@ var _ = Describe("Deal transformer", func() {
 	It("persists a flip deal log event", func() {
 		// transaction: 0x05b5eabac2ace136f0f7e0efc61d7d42abe8e8938cc0f04fbf1a6ba545d59e58
 		flipBlockNumber := int64(8958007)
-		err = persistHeader(rpcClient, db, flipBlockNumber)
+		err = persistHeader(db, flipBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := deal.Config

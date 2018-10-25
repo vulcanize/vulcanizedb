@@ -18,7 +18,7 @@ var _ = Describe("Vat slip transformer", func() {
 		blockChain core.BlockChain
 	)
 
-	BeforeEach(func() {
+	It("persists vat slip event", func() {
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
 		blockChain, err = getBlockChain(rpcClient, ethClient)
@@ -26,16 +26,14 @@ var _ = Describe("Vat slip transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(rpcClient, db, 8953655)
-		Expect(err).NotTo(HaveOccurred())
-	})
+		blockNumber := int64(8953655)
+		config := vat_slip.VatSlipConfig
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
 
-	It("persists vat slip event", func(done Done) {
-		config := shared.SingleTransformerConfig{
-			ContractAddresses:   []string{"0xcd726790550afcd77e9a7a47e86a3f9010af126b"},
-			StartingBlockNumber: 8953655,
-			EndingBlockNumber:   8953655,
-		}
+		err = persistHeader(db, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
 		initializer := factories.Transformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
@@ -44,11 +42,11 @@ var _ = Describe("Vat slip transformer", func() {
 		}
 		transformer := initializer.NewTransformer(db, blockChain)
 
-		err := transformer.Execute()
+		err = transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		var headerID int64
-		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, config.StartingBlockNumber)
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		var model vat_slip.VatSlipModel
 		err = db.Get(&model, `SELECT ilk, guy, rad, tx_idx FROM maker.vat_slip WHERE header_id = $1`, headerID)
@@ -61,6 +59,5 @@ var _ = Describe("Vat slip transformer", func() {
 		err = db.Get(&headerChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(headerChecked).To(BeTrue())
-		close(done)
-	}, 15)
+	})
 })
