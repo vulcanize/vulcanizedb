@@ -15,34 +15,31 @@
 package pit_vow
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []CatFilePitVowModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type CatFilePitVowRepository struct {
 	db *postgres.DB
 }
 
-func NewCatFilePitVowRepository(db *postgres.DB) CatFilePitVowRepository {
-	return CatFilePitVowRepository{db: db}
-}
-
-func (repository CatFilePitVowRepository) Create(headerID int64, models []CatFilePitVowModel) error {
+func (repository CatFilePitVowRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		vow, ok := model.(CatFilePitVowModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, CatFilePitVowModel{})
+		}
+
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6)`,
-			headerID, model.What, model.Data, model.TransactionIndex, model.LogIndex, model.Raw,
+        	VALUES($1, $2, $3, $4, $5, $6)`,
+			headerID, vow.What, vow.Data, vow.TransactionIndex, vow.LogIndex, vow.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -50,9 +47,9 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []CatFil
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_pit_vow_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_pit_vow_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_pit_vow_checked = $2`, headerID, true)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -62,9 +59,9 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []CatFil
 
 func (repository CatFilePitVowRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_pit_vow_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_pit_vow_checked = $2`, headerID, true)
+			VALUES ($1, $2)
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_pit_vow_checked = $2`, headerID, true)
 	return err
 }
 
@@ -73,14 +70,18 @@ func (repository CatFilePitVowRepository) MissingHeaders(startingBlockNumber, en
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR cat_file_pit_vow_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+			LEFT JOIN checked_headers on headers.id = header_id
+		WHERE (header_id ISNULL OR cat_file_pit_vow_checked IS FALSE)
+			AND headers.block_number >= $1
+			AND headers.block_number <= $2
+			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *CatFilePitVowRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

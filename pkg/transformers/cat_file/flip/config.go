@@ -14,22 +14,13 @@
 
 package flip
 
-import (
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-type MockCatFileFlipConverter struct {
-	err        error
-	PassedLogs []types.Log
-}
-
-func (converter *MockCatFileFlipConverter) ToModels(ethLogs []types.Log) ([]flip.CatFileFlipModel, error) {
-	converter.PassedLogs = ethLogs
-	return []flip.CatFileFlipModel{test_data.CatFileFlipModel}, converter.err
-}
-
-func (converter *MockCatFileFlipConverter) SetConverterError(e error) {
-	converter.err = e
+var CatFileFlipConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.CatFileFlipLabel,
+	ContractAddresses:   []string{shared.CatContractAddress},
+	ContractAbi:         shared.CatABI,
+	Topic:               shared.CatFileFlipSignature,
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }

@@ -15,34 +15,32 @@
 package chop_lump
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []CatFileChopLumpModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type CatFileChopLumpRepository struct {
 	db *postgres.DB
 }
 
-func NewCatFileChopLumpRepository(db *postgres.DB) CatFileChopLumpRepository {
-	return CatFileChopLumpRepository{db: db}
-}
-
-func (repository CatFileChopLumpRepository) Create(headerID int64, models []CatFileChopLumpModel) error {
+func (repository CatFileChopLumpRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
+
 	for _, model := range models {
+		chopLump, ok := model.(CatFileChopLumpModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, CatFileChopLumpModel{})
+		}
+
 		_, err := tx.Exec(
 			`INSERT into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx, log_idx, raw_log)
-        VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, model.Ilk, model.What, model.Data, model.TransactionIndex, model.LogIndex, model.Raw,
+        	VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			headerID, chopLump.Ilk, chopLump.What, chopLump.Data, chopLump.TransactionIndex, chopLump.LogIndex, chopLump.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -50,9 +48,9 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []CatF
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_chop_lump_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -62,9 +60,9 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []CatF
 
 func (repository CatFileChopLumpRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_chop_lump_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
 	return err
 }
 
@@ -73,14 +71,18 @@ func (repository CatFileChopLumpRepository) MissingHeaders(startingBlockNumber, 
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR cat_file_chop_lump_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+			LEFT JOIN checked_headers on headers.id = header_id
+		WHERE (header_id ISNULL OR cat_file_chop_lump_checked IS FALSE)
+			AND headers.block_number >= $1
+			AND headers.block_number <= $2
+			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *CatFileChopLumpRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

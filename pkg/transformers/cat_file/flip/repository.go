@@ -15,34 +15,31 @@
 package flip
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []CatFileFlipModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type CatFileFlipRepository struct {
 	db *postgres.DB
 }
 
-func NewCatFileFlipRepository(db *postgres.DB) CatFileFlipRepository {
-	return CatFileFlipRepository{db: db}
-}
-
-func (repository CatFileFlipRepository) Create(headerID int64, models []CatFileFlipModel) error {
+func (repository CatFileFlipRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		flip, ok := model.(CatFileFlipModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, CatFileFlipModel{})
+		}
+
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, log_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5, $6, $7)`,
-			headerID, model.Ilk, model.What, model.Flip, model.TransactionIndex, model.LogIndex, model.Raw,
+        	VALUES($1, $2, $3, $4, $5, $6, $7)`,
+			headerID, flip.Ilk, flip.What, flip.Flip, flip.TransactionIndex, flip.LogIndex, flip.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -50,9 +47,10 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []CatFileF
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_flip_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_flip_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_flip_checked = $2`, headerID, true)
+
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -62,9 +60,9 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []CatFileF
 
 func (repository CatFileFlipRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_flip_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET cat_file_flip_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET cat_file_flip_checked = $2`, headerID, true)
 	return err
 }
 
@@ -83,4 +81,8 @@ func (repository CatFileFlipRepository) MissingHeaders(startingBlockNumber, endi
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *CatFileFlipRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

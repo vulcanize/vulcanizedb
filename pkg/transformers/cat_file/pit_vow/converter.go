@@ -23,19 +23,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]CatFilePitVowModel, error)
-}
-
 type CatFilePitVowConverter struct{}
 
-func (CatFilePitVowConverter) ToModels(ethLogs []types.Log) ([]CatFilePitVowModel, error) {
-	var results []CatFilePitVowModel
+func (CatFilePitVowConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var results []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
 			return nil, err
 		}
+
 		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		data := common.BytesToAddress(ethLog.Topics[3].Bytes()).String()
 
@@ -43,6 +40,7 @@ func (CatFilePitVowConverter) ToModels(ethLogs []types.Log) ([]CatFilePitVowMode
 		if err != nil {
 			return nil, err
 		}
+
 		result := CatFilePitVowModel{
 			What:             what,
 			Data:             data,

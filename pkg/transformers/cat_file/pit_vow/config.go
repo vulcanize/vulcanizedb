@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cat_file
+package pit_vow
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var CatFileConfig = shared.TransformerConfig{
+var CatFilePitVowConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.CatFilePitVowLabel,
 	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,
-	Topics:              []string{shared.CatFileChopLumpSignature, shared.CatFileFlipSignature, shared.CatFilePitVowSignature},
+	Topic:               shared.CatFilePitVowSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }
