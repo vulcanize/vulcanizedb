@@ -43,8 +43,7 @@ func GetSolidityMethodSignature(abi, name string) string {
 	} else if event, ok := parsedAbi.Events[name]; ok {
 		return getEventSignature(event)
 	}
-	return ""
-
+	panic("Error: could not get Solidity method signature for: " + name)
 }
 
 func getEventSignature(event abi.Event) string {

@@ -28,6 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
@@ -77,7 +78,14 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 
-	FlipKickTransformerInitializer           = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
+	FlipKickTransformerInitializer = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
+	FlogTransformerInitializer     = factories.Transformer{
+		Config:     flog.FlogConfig,
+		Converter:  &flog.FlogConverter{},
+		Repository: &flog.FlogRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
 	FlopKickTransformerInitializer           = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
 	FrobTransformerInitializer               = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
 	PitFileDebtCeilingTransformerInitializer = factories.Transformer{
@@ -148,6 +156,7 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		DripFileVowTransfromerInitializer,
 		DripFileRepoTransformerInitializer,
 		FlipKickTransformerInitializer,
+		FlogTransformerInitializer,
 		FlopKickTransformerInitializer,
 		FrobTransformerInitializer,
 		PitFileDebtCeilingTransformerInitializer,
