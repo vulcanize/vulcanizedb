@@ -42,7 +42,8 @@ var _ = Describe("Cat file chop lump repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		catFileRepository = chop_lump.NewCatFileChopLumpRepository(db)
+		catFileRepository = chop_lump.CatFileChopLumpRepository{}
+		catFileRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +53,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -76,7 +77,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 		})
 
 		It("does not duplicate cat file chop lump events", func() {
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -85,7 +86,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 		It("allows for multiple cat file chop lump events in one transaction if they have different log indexes", func() {
 			newCatFileChopLump := test_data.CatFileChopLumpModel
 			newCatFileChopLump.LogIndex = newCatFileChopLump.LogIndex + 1
-			err = catFileRepository.Create(headerID, []chop_lump.CatFileChopLumpModel{newCatFileChopLump})
+			err = catFileRepository.Create(headerID, []interface{}{newCatFileChopLump})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -187,7 +188,8 @@ var _ = Describe("Cat file chop lump repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			catFileRepositoryTwo := chop_lump.NewCatFileChopLumpRepository(dbTwo)
+			catFileRepositoryTwo := chop_lump.CatFileChopLumpRepository{}
+			catFileRepositoryTwo.SetDB(dbTwo)
 
 			nodeOneMissingHeaders, err := catFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())

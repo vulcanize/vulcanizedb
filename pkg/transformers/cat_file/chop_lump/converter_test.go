@@ -25,34 +25,34 @@ import (
 )
 
 var _ = Describe("Cat file chop lump converter", func() {
+	var converter chop_lump.CatFileChopLumpConverter
+
+	BeforeEach(func() {
+		converter = chop_lump.CatFileChopLumpConverter{}
+	})
+
 	It("returns err if log is missing topics", func() {
-		converter := chop_lump.CatFileChopLumpConverter{}
 		badLog := types.Log{
 			Data: []byte{1, 1, 1, 1, 1},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns err if log is missing data", func() {
-		converter := chop_lump.CatFileChopLumpConverter{}
 		badLog := types.Log{
 			Topics: []common.Hash{{}, {}, {}, {}},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("converts a log to an model", func() {
-		converter := chop_lump.CatFileChopLumpConverter{}
-
-		model, err := converter.ToModels([]types.Log{test_data.EthCatFileChopLumpLog})
+		models, err := converter.ToModels([]types.Log{test_data.EthCatFileChopLumpLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal([]chop_lump.CatFileChopLumpModel{test_data.CatFileChopLumpModel}))
+		Expect(models).To(Equal([]interface{}{test_data.CatFileChopLumpModel}))
 	})
 })

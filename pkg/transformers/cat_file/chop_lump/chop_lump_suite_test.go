@@ -15,6 +15,8 @@
 package chop_lump_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestChopLump(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ChopLump Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

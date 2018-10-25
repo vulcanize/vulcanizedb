@@ -25,34 +25,34 @@ import (
 )
 
 var _ = Describe("Cat file pit vow converter", func() {
+	var converter pit_vow.CatFilePitVowConverter
+
+	BeforeEach(func() {
+		converter = pit_vow.CatFilePitVowConverter{}
+	})
+
 	It("returns err if log is missing topics", func() {
-		converter := pit_vow.CatFilePitVowConverter{}
 		badLog := types.Log{
 			Data: []byte{1, 1, 1, 1, 1},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns err if log is missing data", func() {
-		converter := pit_vow.CatFilePitVowConverter{}
 		badLog := types.Log{
 			Topics: []common.Hash{{}, {}, {}, {}},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("converts a log to an model", func() {
-		converter := pit_vow.CatFilePitVowConverter{}
-
-		model, err := converter.ToModels([]types.Log{test_data.EthCatFilePitVowLog})
+		models, err := converter.ToModels([]types.Log{test_data.EthCatFilePitVowLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal([]pit_vow.CatFilePitVowModel{test_data.CatFilePitVowModel}))
+		Expect(models).To(Equal([]interface{}{test_data.CatFilePitVowModel}))
 	})
 })

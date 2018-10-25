@@ -15,6 +15,8 @@
 package integration_tests
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -24,7 +26,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
@@ -56,12 +57,17 @@ var _ = Describe("Cat File transformer", func() {
 		err = persistHeader(db, chopLumpBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := cat_file.CatFileConfig
+		config := chop_lump.CatFileChopLumpConfig
 		config.StartingBlockNumber = chopLumpBlockNumber
 		config.EndingBlockNumber = chopLumpBlockNumber
 
-		initializer := chop_lump.CatFileChopLumpTransformerInitializer{Config: config}
-		transformer := initializer.NewCatFileChopLumpTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Converter:  &chop_lump.CatFileChopLumpConverter{},
+			Repository: &chop_lump.CatFileChopLumpRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -89,12 +95,17 @@ var _ = Describe("Cat File transformer", func() {
 		err = persistHeader(db, flipBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := cat_file.CatFileConfig
+		config := flip.CatFileFlipConfig
 		config.StartingBlockNumber = flipBlockNumber
 		config.EndingBlockNumber = flipBlockNumber
 
-		initializer := flip.CatFileFlipTransformerInitializer{Config: config}
-		transformer := initializer.NewCatFileFlipTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Converter:  &flip.CatFileFlipConverter{},
+			Repository: &flip.CatFileFlipRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -114,12 +125,17 @@ var _ = Describe("Cat File transformer", func() {
 		err = persistHeader(db, pitVowBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := cat_file.CatFileConfig
+		config := pit_vow.CatFilePitVowConfig
 		config.StartingBlockNumber = pitVowBlockNumber
 		config.EndingBlockNumber = pitVowBlockNumber
 
-		initializer := pit_vow.CatFilePitVowTransformerInitializer{Config: config}
-		transformer := initializer.NewCatFilePitVowTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Converter:  &pit_vow.CatFilePitVowConverter{},
+			Repository: &pit_vow.CatFilePitVowRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

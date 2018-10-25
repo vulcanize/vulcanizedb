@@ -42,7 +42,8 @@ var _ = Describe("Cat file pit vow repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		catFileRepository = pit_vow.NewCatFilePitVowRepository(db)
+		catFileRepository = pit_vow.CatFilePitVowRepository{}
+		catFileRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +53,7 @@ var _ = Describe("Cat file pit vow repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = catFileRepository.Create(headerID, []pit_vow.CatFilePitVowModel{test_data.CatFilePitVowModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -75,7 +76,7 @@ var _ = Describe("Cat file pit vow repository", func() {
 		})
 
 		It("does not duplicate cat file pit vow events", func() {
-			err = catFileRepository.Create(headerID, []pit_vow.CatFilePitVowModel{test_data.CatFilePitVowModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -84,7 +85,7 @@ var _ = Describe("Cat file pit vow repository", func() {
 		It("allows for multiple cat file pit events in one transaction if they have different log indexes", func() {
 			catFilePitVow := test_data.CatFilePitVowModel
 			catFilePitVow.LogIndex = catFilePitVow.LogIndex + 1
-			err = catFileRepository.Create(headerID, []pit_vow.CatFilePitVowModel{catFilePitVow})
+			err = catFileRepository.Create(headerID, []interface{}{catFilePitVow})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -186,7 +187,8 @@ var _ = Describe("Cat file pit vow repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			catFileRepositoryTwo := pit_vow.NewCatFilePitVowRepository(dbTwo)
+			catFileRepositoryTwo := pit_vow.CatFilePitVowRepository{}
+			catFileRepositoryTwo.SetDB(dbTwo)
 
 			nodeOneMissingHeaders, err := catFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())
