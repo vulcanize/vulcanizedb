@@ -22,14 +22,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatSlipModel, error)
-}
-
 type VatSlipConverter struct{}
 
-func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]VatSlipModel, error) {
-	var models []VatSlipModel
+func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

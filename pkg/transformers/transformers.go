@@ -132,7 +132,12 @@ var (
 		Repository: &vat_move.VatMoveRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
-	VatSlipTransformerInitializer = vat_slip.VatSlipTransformerInitializer{Config: vat_slip.VatSlipConfig}.NewVatSlipTransformer
+	VatSlipTransformerInitializer = factories.Transformer{
+		Config:     vat_slip.VatSlipConfig,
+		Converter:  &vat_slip.VatSlipConverter{},
+		Repository: &vat_slip.VatSlipRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
 	VatTollTransformerInitializer = factories.Transformer{
 		Config:     vat_toll.VatTollConfig,
 		Converter:  &vat_toll.VatTollConverter{},

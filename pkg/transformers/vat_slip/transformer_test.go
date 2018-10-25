@@ -8,41 +8,51 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	vat_slip_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_slip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
+	"math/rand"
 )
 
 var _ = Describe("Vat slip transformer", func() {
 	var (
-		config      shared.TransformerConfig
-		converter   *vat_slip_mocks.MockVatSlipConverter
-		fetcher     *mocks.MockLogFetcher
-		repository  *vat_slip_mocks.MockVatSlipRepository
-		transformer vat_slip.VatSlipTransformer
+		config      = vat_slip.VatSlipConfig
+		fetcher     mocks.MockLogFetcher
+		converter   vat_slip_mocks.MockVatSlipConverter
+		repository  vat_slip_mocks.MockVatSlipRepository
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
 	)
 
 	BeforeEach(func() {
-		config = vat_slip.VatSlipConfig
-		converter = &vat_slip_mocks.MockVatSlipConverter{}
-		fetcher = &mocks.MockLogFetcher{}
-		repository = &vat_slip_mocks.MockVatSlipRepository{}
-		transformer = vat_slip.VatSlipTransformer{
+		fetcher = mocks.MockLogFetcher{}
+		converter = vat_slip_mocks.MockVatSlipConverter{}
+		repository = vat_slip_mocks.MockVatSlipRepository{}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		transformer = factories.Transformer{
 			Config:     config,
-			Converter:  converter,
-			Fetcher:    fetcher,
-			Repository: repository,
-		}
+			Converter:  &converter,
+			Fetcher:    &fetcher,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(vat_slip.VatSlipConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(vat_slip.VatSlipConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
@@ -55,21 +65,19 @@ var _ = Describe("Vat slip transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		headerOne := core.Header{BlockNumber: GinkgoRandomSeed()}
-		headerTwo := core.Header{BlockNumber: GinkgoRandomSeed()}
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{vat_slip.VatSlipConfig.ContractAddresses, vat_slip.VatSlipConfig.ContractAddresses}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VatSlipSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: GinkgoRandomSeed()}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -78,17 +86,16 @@ var _ = Describe("Vat slip transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		headerID := GinkgoRandomSeed()
-		repository.SetMissingHeaders([]core.Header{{Id: headerID}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		repository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		repository.SetMissingHeaders([]core.Header{{Id: GinkgoRandomSeed()}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
 
 		err := transformer.Execute()
@@ -99,7 +106,7 @@ var _ = Describe("Vat slip transformer", func() {
 
 	It("converts matching logs", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatSlipLog})
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: GinkgoRandomSeed()}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -110,7 +117,7 @@ var _ = Describe("Vat slip transformer", func() {
 	It("returns error if converter returns error", func() {
 		converter.SetConverterError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatSlipLog})
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: GinkgoRandomSeed()}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -120,19 +127,18 @@ var _ = Describe("Vat slip transformer", func() {
 
 	It("persists vat slip model", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatSlipLog})
-		fakeHeader := core.Header{BlockNumber: GinkgoRandomSeed(), Id: GinkgoRandomSeed()}
-		repository.SetMissingHeaders([]core.Header{fakeHeader})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]vat_slip.VatSlipModel{test_data.VatSlipModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.VatSlipModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatSlipLog})
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: GinkgoRandomSeed(), Id: GinkgoRandomSeed()}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
 
 		err := transformer.Execute()

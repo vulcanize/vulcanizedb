@@ -1,36 +1,31 @@
 package vat_slip
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []VatSlipModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type VatSlipRepository struct {
 	db *postgres.DB
 }
 
-func NewVatSlipRepository(db *postgres.DB) VatSlipRepository {
-	return VatSlipRepository{
-		db: db,
-	}
-}
-
-func (repository VatSlipRepository) Create(headerID int64, models []VatSlipModel) error {
+func (repository VatSlipRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		vatSlip, ok := model.(VatSlipModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatSlipModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.vat_slip (header_id, ilk, guy, rad, tx_idx, log_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, model.Ilk, model.Guy, model.Rad, model.TransactionIndex, model.LogIndex, model.Raw,
+			headerID, vatSlip.Ilk, vatSlip.Guy, vatSlip.Rad, vatSlip.TransactionIndex, vatSlip.LogIndex, vatSlip.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -45,6 +40,7 @@ func (repository VatSlipRepository) Create(headerID int64, models []VatSlipModel
 		tx.Rollback()
 		return err
 	}
+
 	return tx.Commit()
 }
 
@@ -71,4 +67,8 @@ func (repository VatSlipRepository) MissingHeaders(startingBlockNumber, endingBl
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *VatSlipRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

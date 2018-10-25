@@ -17,7 +17,6 @@ package vat_slip
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 )
 
 type MockVatSlipConverter struct {
@@ -25,9 +24,9 @@ type MockVatSlipConverter struct {
 	PassedLogs []types.Log
 }
 
-func (converter *MockVatSlipConverter) ToModels(ethLogs []types.Log) ([]vat_slip.VatSlipModel, error) {
+func (converter *MockVatSlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	return []vat_slip.VatSlipModel{test_data.VatSlipModel}, converter.err
+	return []interface{}{test_data.VatSlipModel}, converter.err
 }
 
 func (converter *MockVatSlipConverter) SetConverterError(e error) {
