@@ -167,6 +167,13 @@ var _ = Describe("Event signature generator", func() {
 
 				Expect(expected).To(Equal(actual))
 			})
+
+			It("gets the flog method signature", func() {
+				expected := "flog(uint48)"
+				actual := shared.GetSolidityMethodSignature(shared.VowABI, "flog")
+
+				Expect(expected).To(Equal(actual))
+			})
 		})
 
 		Describe("it handles events", func() {

@@ -1045,6 +1045,40 @@ ALTER SEQUENCE maker.vat_tune_id_seq OWNED BY maker.vat_tune.id;
 
 
 --
+-- Name: vow_flog; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_flog (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    era integer NOT NULL,
+    log_idx integer NOT NULL,
+    tx_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: vow_flog_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_flog_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_flog_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_flog_id_seq OWNED BY maker.vow_flog.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1152,7 +1186,8 @@ CREATE TABLE public.checked_headers (
     vat_tune_checked boolean DEFAULT false NOT NULL,
     vat_grab_checked boolean DEFAULT false NOT NULL,
     vat_flux_checked boolean DEFAULT false NOT NULL,
-    vat_slip_checked boolean DEFAULT false NOT NULL
+    vat_slip_checked boolean DEFAULT false NOT NULL,
+    vow_flog_checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -1664,6 +1699,13 @@ ALTER TABLE ONLY maker.vat_tune ALTER COLUMN id SET DEFAULT nextval('maker.vat_t
 
 
 --
+-- Name: vow_flog id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_flog ALTER COLUMN id SET DEFAULT nextval('maker.vow_flog_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2166,6 +2208,22 @@ ALTER TABLE ONLY maker.vat_tune
 
 
 --
+-- Name: vow_flog vow_flog_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_flog
+    ADD CONSTRAINT vow_flog_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
+
+
+--
+-- Name: vow_flog vow_flog_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_flog
+    ADD CONSTRAINT vow_flog_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2533,6 +2591,14 @@ ALTER TABLE ONLY maker.vat_toll
 
 ALTER TABLE ONLY maker.vat_tune
     ADD CONSTRAINT vat_tune_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vow_flog vow_flog_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_flog
+    ADD CONSTRAINT vow_flog_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

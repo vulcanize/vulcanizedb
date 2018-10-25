@@ -97,6 +97,7 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap[shared2.DripFileRepoLabel] = transformers.DripFileRepoTransformerInitializer
 	transformerInitializerMap[shared2.DripFileVowLabel] = transformers.DripFileVowTransfromerInitializer
 	transformerInitializerMap[shared2.FlipKickLabel] = transformers.FlipKickTransformerInitializer
+	transformerInitializerMap[shared2.FlogLabel] = transformers.FlogTransformerInitializer
 	transformerInitializerMap[shared2.FlopKickLabel] = transformers.FlopKickTransformerInitializer
 	transformerInitializerMap[shared2.FrobLabel] = transformers.FrobTransformerInitializer
 	transformerInitializerMap[shared2.PitFileDebtCeilingLabel] = transformers.PitFileDebtCeilingTransformerInitializer
