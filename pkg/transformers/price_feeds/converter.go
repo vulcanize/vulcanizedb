@@ -20,14 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(logs []types.Log, headerID int64) ([]PriceFeedModel, error)
-}
-
 type PriceFeedConverter struct{}
 
-func (converter PriceFeedConverter) ToModels(logs []types.Log, headerID int64) (results []PriceFeedModel, err error) {
-	for _, log := range logs {
+func (converter PriceFeedConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var results []interface{}
+	for _, log := range ethLogs {
 		raw, err := json.Marshal(log)
 		if err != nil {
 			return nil, err
@@ -42,5 +39,5 @@ func (converter PriceFeedConverter) ToModels(logs []types.Log, headerID int64) (
 		}
 		results = append(results, model)
 	}
-	return results, err
+	return results, nil
 }

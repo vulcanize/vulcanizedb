@@ -20,7 +20,9 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -43,13 +45,18 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763054)
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.IPriceFeedConfig{
-			ContractAddresses:   []string{"0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"},
-			StartingBlockNumber: blockNumber,
-			EndingBlockNumber:   blockNumber,
+		config := price_feeds.PriceFeedConfig
+		config.ContractAddresses = []string{shared.PipContractAddress}
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
+
+		transformerInitializer := factories.Transformer{
+			Config:     config,
+			Converter:  &price_feeds.PriceFeedConverter{},
+			Repository: &price_feeds.PriceFeedRepository{},
+			Fetcher:    &shared.Fetcher{},
 		}
-		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
-		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
+		transformer := transformerInitializer.NewTransformer(db, blockChain)
 
 		err = transformer.Execute()
 
@@ -65,13 +72,18 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763059)
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.IPriceFeedConfig{
-			ContractAddresses:   []string{"0xB1997239Cfc3d15578A3a09730f7f84A90BB4975"},
-			StartingBlockNumber: blockNumber,
-			EndingBlockNumber:   blockNumber,
+		config := price_feeds.PriceFeedConfig
+		config.ContractAddresses = []string{shared.PepContractAddress}
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
+
+		transformerInitializer := factories.Transformer{
+			Config:     config,
+			Converter:  &price_feeds.PriceFeedConverter{},
+			Repository: &price_feeds.PriceFeedRepository{},
+			Fetcher:    &shared.Fetcher{},
 		}
-		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
-		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
+		transformer := transformerInitializer.NewTransformer(db, blockChain)
 
 		err = transformer.Execute()
 
@@ -87,13 +99,18 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763062)
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.IPriceFeedConfig{
-			ContractAddresses:   []string{"0xf88bBDc1E2718F8857F30A180076ec38d53cf296"},
-			StartingBlockNumber: blockNumber,
-			EndingBlockNumber:   blockNumber,
+		config := price_feeds.PriceFeedConfig
+		config.ContractAddresses = []string{shared.RepContractAddress}
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
+
+		transformerInitializer := factories.Transformer{
+			Config:     config,
+			Converter:  &price_feeds.PriceFeedConverter{},
+			Repository: &price_feeds.PriceFeedRepository{},
+			Fetcher:    &shared.Fetcher{},
 		}
-		transformerInitializer := price_feeds.PriceFeedTransformerInitializer{Config: config}
-		transformer := transformerInitializer.NewPriceFeedTransformer(db, blockChain)
+		transformer := transformerInitializer.NewTransformer(db, blockChain)
 
 		err = transformer.Execute()
 

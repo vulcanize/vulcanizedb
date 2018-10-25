@@ -15,32 +15,29 @@
 package price_feeds
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type IPriceFeedRepository interface {
-	Create(headerID int64, models []PriceFeedModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type PriceFeedRepository struct {
 	db *postgres.DB
 }
 
-func NewPriceFeedRepository(db *postgres.DB) PriceFeedRepository {
-	return PriceFeedRepository{db: db}
-}
-
-func (repository PriceFeedRepository) Create(headerID int64, models []PriceFeedModel) error {
+func (repository PriceFeedRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		priceUpdate, ok := model.(PriceFeedModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, PriceFeedModel{})
+		}
+
 		_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, log_idx, tx_idx, raw_log)
-		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`, model.BlockNumber, headerID, model.MedianizerAddress, model.UsdValue, model.LogIndex, model.TransactionIndex, model.Raw)
+		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`, priceUpdate.BlockNumber, headerID, priceUpdate.MedianizerAddress, priceUpdate.UsdValue, priceUpdate.LogIndex, priceUpdate.TransactionIndex, priceUpdate.Raw)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -80,4 +77,8 @@ func (repository PriceFeedRepository) MissingHeaders(startingBlockNumber, ending
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *PriceFeedRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

@@ -35,14 +35,15 @@ var _ = Describe("Price feeds repository", func() {
 		db                  *postgres.DB
 		err                 error
 		headerRepository    datastore.HeaderRepository
-		priceFeedRepository price_feeds.IPriceFeedRepository
+		priceFeedRepository price_feeds.PriceFeedRepository
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		priceFeedRepository = price_feeds.NewPriceFeedRepository(db)
+		priceFeedRepository = price_feeds.PriceFeedRepository{}
+		priceFeedRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -54,7 +55,7 @@ var _ = Describe("Price feeds repository", func() {
 		})
 
 		It("persists a price feed update", func() {
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPriceFeedUpdate price_feeds.PriceFeedModel
@@ -69,7 +70,7 @@ var _ = Describe("Price feeds repository", func() {
 		})
 
 		It("marks headerID as checked for price feed logs", func() {
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -82,7 +83,7 @@ var _ = Describe("Price feeds repository", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -92,17 +93,17 @@ var _ = Describe("Price feeds repository", func() {
 		})
 
 		It("does not duplicate price feed updates", func() {
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes price feed if corresponding header is deleted", func() {
-			err = priceFeedRepository.Create(headerID, []price_feeds.PriceFeedModel{test_data.PriceFeedModel})
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -112,6 +113,12 @@ var _ = Describe("Price feeds repository", func() {
 			err = db.Get(&dbResult, `SELECT block_number, medianizer_address, usd_value, log_idx, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = priceFeedRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -200,7 +207,8 @@ var _ = Describe("Price feeds repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			priceFeedRepositoryTwo := price_feeds.NewPriceFeedRepository(dbTwo)
+			priceFeedRepositoryTwo := price_feeds.PriceFeedRepository{}
+			priceFeedRepositoryTwo.SetDB(dbTwo)
 			err := priceFeedRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

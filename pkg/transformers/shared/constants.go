@@ -46,7 +46,7 @@ var (
 	PepContractAddress     = getContractValue("contract.pep", "0xB1997239Cfc3d15578A3a09730f7f84A90BB4975")
 	PipContractAddress     = getContractValue("contract.pip", "0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc")
 	PitContractAddress     = getContractValue("contract.pit", "0xe7cf3198787c9a4daac73371a38f29aaeeced87e")
-	RepContractAddress     = getContractValue("contract.rep", "0xf88bbdc1e2718f8857f30a180076ec38d53cf296")
+	RepContractAddress     = getContractValue("contract.rep", "0xf88bBDc1E2718F8857F30A180076ec38d53cf296")
 	VatContractAddress     = getContractValue("contract.vat", "0xcd726790550afcd77e9a7a47e86a3f9010af126b")
 	VowContractAddress     = getContractValue("contract.vow", "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1")
 

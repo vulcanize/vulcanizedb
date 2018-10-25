@@ -16,20 +16,15 @@ package price_feeds
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var ()
-
-type IPriceFeedConfig struct {
-	ContractAddresses   []string
-	StartingBlockNumber int64
-	EndingBlockNumber   int64
-}
-
-var PriceFeedConfig = IPriceFeedConfig{
+var PriceFeedConfig = shared.SingleTransformerConfig{
+	TransformerName: shared.PriceFeedLabel,
 	ContractAddresses: []string{
 		shared.PepContractAddress,
 		shared.PipContractAddress,
 		shared.RepContractAddress,
 	},
+	ContractAbi:         shared.MedianizerABI,
+	Topic:               shared.LogValueSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }
