@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockVatTollRepository struct {
@@ -16,10 +16,11 @@ type MockVatTollRepository struct {
 	PassedStartingBlockNumber       int64
 	PassedEndingBlockNumber         int64
 	PassedHeaderID                  int64
-	PassedModels                    []vat_toll.VatTollModel
+	PassedModels                    []interface{}
+	SetDbCalled                     bool
 }
 
-func (repository *MockVatTollRepository) Create(headerID int64, models []vat_toll.VatTollModel) error {
+func (repository *MockVatTollRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
 	return repository.createErr
@@ -34,6 +35,10 @@ func (repository *MockVatTollRepository) MissingHeaders(startingBlockNumber, end
 	repository.PassedStartingBlockNumber = startingBlockNumber
 	repository.PassedEndingBlockNumber = endingBlockNumber
 	return repository.missingHeaders, repository.missingHeadersErr
+}
+
+func (repository *MockVatTollRepository) SetDB(db *postgres.DB) {
+	repository.SetDbCalled = true
 }
 
 func (repository *MockVatTollRepository) SetCreateError(e error) {

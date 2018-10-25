@@ -1,36 +1,30 @@
 package vat_toll
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []VatTollModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type VatTollRepository struct {
 	db *postgres.DB
 }
 
-func NewVatTollRepository(db *postgres.DB) VatTollRepository {
-	return VatTollRepository{
-		db: db,
-	}
-}
-
-func (repository VatTollRepository) Create(headerID int64, models []VatTollModel) error {
+func (repository VatTollRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		vatToll, ok := model.(VatTollModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatTollModel{})
+		}
 		_, err = tx.Exec(
 			`INSERT into maker.vat_toll (header_id, ilk, urn, take, tx_idx, log_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, model.Ilk, model.Urn, model.Take, model.TransactionIndex, model.LogIndex, model.Raw,
+			headerID, vatToll.Ilk, vatToll.Urn, vatToll.Take, vatToll.TransactionIndex, vatToll.LogIndex, vatToll.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -71,4 +65,8 @@ func (repository VatTollRepository) MissingHeaders(startingBlockNumber, endingBl
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *VatTollRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

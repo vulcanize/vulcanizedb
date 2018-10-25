@@ -14,12 +14,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/rand"
 )
 
 var _ = Describe("Vat toll repository", func() {
 	var (
 		db                *postgres.DB
-		vatTollRepository vat_toll.Repository
+		vatTollRepository vat_toll.VatTollRepository
 		err               error
 		headerRepository  datastore.HeaderRepository
 	)
@@ -28,7 +29,8 @@ var _ = Describe("Vat toll repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		vatTollRepository = vat_toll.NewVatTollRepository(db)
+		vatTollRepository = vat_toll.VatTollRepository{}
+		vatTollRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -40,7 +42,7 @@ var _ = Describe("Vat toll repository", func() {
 		})
 
 		It("adds a vat toll event", func() {
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var dbVatToll vat_toll.VatTollModel
@@ -55,7 +57,7 @@ var _ = Describe("Vat toll repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -67,7 +69,7 @@ var _ = Describe("Vat toll repository", func() {
 		It("updates the header to checked if checked headers row already exists", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -77,21 +79,21 @@ var _ = Describe("Vat toll repository", func() {
 		})
 
 		It("does not duplicate vat toll events", func() {
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("allows for multiple vat toll events in one transaction if they have different log indexes", func() {
-			err = vatTollRepository.Create(headerID, []vat_toll.VatTollModel{test_data.VatTollModel})
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.VatTollModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			newVatToll := test_data.VatTollModel
 			newVatToll.LogIndex = newVatToll.LogIndex + 1
-			err := vatTollRepository.Create(headerID, []vat_toll.VatTollModel{newVatToll})
+			err := vatTollRepository.Create(headerID, []interface{}{newVatToll})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -104,6 +106,13 @@ var _ = Describe("Vat toll repository", func() {
 			err = db.Get(&dbVatToll, `SELECT ilk, urn, take, tx_idx, raw_log FROM maker.vat_toll WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = vatTollRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -145,7 +154,7 @@ var _ = Describe("Vat toll repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatTollBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -191,7 +200,8 @@ var _ = Describe("Vat toll repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatTollRepositoryTwo := vat_toll.NewVatTollRepository(dbTwo)
+			vatTollRepositoryTwo := vat_toll.VatTollRepository{}
+			vatTollRepositoryTwo.SetDB(dbTwo)
 			err := vatTollRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
