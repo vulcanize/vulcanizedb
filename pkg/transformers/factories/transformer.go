@@ -53,7 +53,7 @@ func (transformer Transformer) Execute() error {
 	transformerName := transformer.Config.TransformerName
 	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
-		log.Printf("Error fetching mising headers in %v transformer: %v \n", transformerName, err)
+		log.Printf("Error fetching missing headers in %v transformer: %v \n", transformerName, err)
 		return err
 	}
 

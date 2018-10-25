@@ -23,14 +23,10 @@ import (
 	"math/big"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]CatFileChopLumpModel, error)
-}
-
 type CatFileChopLumpConverter struct{}
 
-func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]CatFileChopLumpModel, error) {
-	var results []CatFileChopLumpModel
+func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var results []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

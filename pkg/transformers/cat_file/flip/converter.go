@@ -23,14 +23,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]CatFileFlipModel, error)
-}
-
 type CatFileFlipConverter struct{}
 
-func (CatFileFlipConverter) ToModels(ethLogs []types.Log) ([]CatFileFlipModel, error) {
-	var results []CatFileFlipModel
+func (CatFileFlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var results []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

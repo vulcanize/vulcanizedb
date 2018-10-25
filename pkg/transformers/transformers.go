@@ -16,7 +16,6 @@ package transformers
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
@@ -50,14 +49,31 @@ import (
 
 var (
 	BiteTransformerInitializer            = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
-	catFileConfig                         = cat_file.CatFileConfig
-	CatFileChopLumpTransformerInitializer = chop_lump.CatFileChopLumpTransformerInitializer{Config: catFileConfig}.NewCatFileChopLumpTransformer
-	CatFileFlipTransformerInitializer     = flip.CatFileFlipTransformerInitializer{Config: catFileConfig}.NewCatFileFlipTransformer
-	CatFilePitVowTransformerInitializer   = pit_vow.CatFilePitVowTransformerInitializer{Config: catFileConfig}.NewCatFilePitVowTransformer
-	DealTransformerInitializer            = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
-	DentTransformerInitializer            = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
-	DripDripTransformerInitializer        = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
-	DripFileIlkTransformerInitializer     = factories.Transformer{
+	CatFileChopLumpTransformerInitializer = factories.Transformer{
+		Config:     chop_lump.CatFileChopLumpConfig,
+		Converter:  &chop_lump.CatFileChopLumpConverter{},
+		Repository: &chop_lump.CatFileChopLumpRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	CatFileFlipTransformerInitializer = factories.Transformer{
+		Config:     flip.CatFileFlipConfig,
+		Converter:  &flip.CatFileFlipConverter{},
+		Repository: &flip.CatFileFlipRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	CatFilePitVowTransformerInitializer = factories.Transformer{
+		Config:     pit_vow.CatFilePitVowConfig,
+		Converter:  &pit_vow.CatFilePitVowConverter{},
+		Repository: &pit_vow.CatFilePitVowRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	DealTransformerInitializer        = deal.DealTransformerInitializer{Config: deal.Config}.NewDealTransformer
+	DentTransformerInitializer        = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
+	DripDripTransformerInitializer    = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
+	DripFileIlkTransformerInitializer = factories.Transformer{
 		Config:     ilk2.DripFileIlkConfig,
 		Converter:  &ilk2.DripFileIlkConverter{},
 		Repository: &ilk2.DripFileIlkRepository{},
