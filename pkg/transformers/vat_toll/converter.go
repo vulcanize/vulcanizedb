@@ -9,14 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatTollModel, error)
-}
-
 type VatTollConverter struct{}
 
-func (VatTollConverter) ToModels(ethLogs []types.Log) ([]VatTollModel, error) {
-	var models []VatTollModel
+func (VatTollConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
