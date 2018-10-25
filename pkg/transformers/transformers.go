@@ -109,8 +109,14 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 
-	PriceFeedTransformerInitializer = price_feeds.PriceFeedTransformerInitializer{Config: price_feeds.PriceFeedConfig}.NewPriceFeedTransformer
-	TendTransformerInitializer      = factories.Transformer{
+	PriceFeedTransformerInitializer = factories.Transformer{
+		Config:     price_feeds.PriceFeedConfig,
+		Converter:  &price_feeds.PriceFeedConverter{},
+		Repository: &price_feeds.PriceFeedRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	TendTransformerInitializer = factories.Transformer{
 		Config:     tend.TendConfig,
 		Converter:  &tend.TendConverter{},
 		Repository: &tend.TendRepository{},

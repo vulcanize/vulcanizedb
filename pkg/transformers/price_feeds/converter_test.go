@@ -26,9 +26,8 @@ import (
 var _ = Describe("Price feed Converter", func() {
 	It("converts a log to a price feed model", func() {
 		converter := price_feeds.PriceFeedConverter{}
-		headerID := int64(123)
 
-		models, err := converter.ToModels([]types.Log{test_data.EthPriceFeedLog}, headerID)
+		models, err := converter.ToModels([]types.Log{test_data.EthPriceFeedLog})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
