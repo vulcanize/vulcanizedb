@@ -15,28 +15,28 @@
 package stability_fee_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	stability_fee_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/stability_fee"
 )
 
 var _ = Describe("Pit file stability fee transformer", func() {
 	var (
 		config      = stability_fee.StabilityFeeFileConfig
 		fetcher     mocks.MockLogFetcher
-		converter   stability_fee_mocks.MockPitFileStabilityFeeConverter
-		repository  stability_fee_mocks.MockPitFileStabilityFeeRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -44,8 +44,8 @@ var _ = Describe("Pit file stability fee transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = stability_fee_mocks.MockPitFileStabilityFeeConverter{}
-		repository = stability_fee_mocks.MockPitFileStabilityFeeRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		transformer = factories.Transformer{
 			Config:     config,
 			Fetcher:    &fetcher,
@@ -70,7 +70,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -109,7 +109,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -139,6 +139,7 @@ var _ = Describe("Pit file stability fee transformer", func() {
 	})
 
 	It("persists pit file model", func() {
+		converter.SetReturnModels([]interface{}{test_data.PitFileStabilityFeeModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileStabilityFeeLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

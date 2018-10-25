@@ -15,28 +15,27 @@
 package tend_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	tend_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/tend"
 )
 
 var _ = Describe("Tend Transformer", func() {
 	var (
 		config      = tend.TendConfig
-		converter   tend_mocks.MockTendConverter
-		repository  tend_mocks.MockTendRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -44,8 +43,8 @@ var _ = Describe("Tend Transformer", func() {
 	)
 
 	BeforeEach(func() {
-		converter = tend_mocks.MockTendConverter{}
-		repository = tend_mocks.MockTendRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
@@ -71,7 +70,7 @@ var _ = Describe("Tend Transformer", func() {
 	})
 
 	It("returns an error if it fails to get missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -108,7 +107,7 @@ var _ = Describe("Tend Transformer", func() {
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -136,6 +135,7 @@ var _ = Describe("Tend Transformer", func() {
 	})
 
 	It("persists the tend record", func() {
+		converter.SetReturnModels([]interface{}{test_data.TendModel})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.TendLogNote})
 
@@ -143,7 +143,7 @@ var _ = Describe("Tend Transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
-		Expect(repository.PassedTendModel).To(Equal(test_data.TendModel))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.TendModel}))
 	})
 
 	It("returns error if persisting tend record fails", func() {

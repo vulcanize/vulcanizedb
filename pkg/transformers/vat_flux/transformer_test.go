@@ -1,28 +1,28 @@
 package vat_flux_test
 
 import (
+	"math/rand"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_flux_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_flux"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
-	"math/rand"
 )
 
 var _ = Describe("Vat flux transformer", func() {
 	var (
 		config      = vat_flux.VatFluxConfig
 		fetcher     mocks.MockLogFetcher
-		converter   vat_flux_mocks.MockVatFluxConverter
-		repository  vat_flux_mocks.MockVatFluxRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -30,8 +30,8 @@ var _ = Describe("Vat flux transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = vat_flux_mocks.MockVatFluxConverter{}
-		repository = vat_flux_mocks.MockVatFluxRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -56,7 +56,7 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -89,12 +89,12 @@ var _ = Describe("Vat flux transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.MarkHeaderCheckedPassedHeaderID).To(Equal(headerOne.Id))
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -124,6 +124,7 @@ var _ = Describe("Vat flux transformer", func() {
 	})
 
 	It("persists vat flux model", func() {
+		converter.SetReturnModels([]interface{}{test_data.VatFluxModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatFluxLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

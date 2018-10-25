@@ -12,7 +12,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_slip_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_slip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 	"math/rand"
 )
@@ -21,8 +20,8 @@ var _ = Describe("Vat slip transformer", func() {
 	var (
 		config      = vat_slip.VatSlipConfig
 		fetcher     mocks.MockLogFetcher
-		converter   vat_slip_mocks.MockVatSlipConverter
-		repository  vat_slip_mocks.MockVatSlipRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -30,8 +29,8 @@ var _ = Describe("Vat slip transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = vat_slip_mocks.MockVatSlipConverter{}
-		repository = vat_slip_mocks.MockVatSlipRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -56,7 +55,7 @@ var _ = Describe("Vat slip transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -96,7 +95,7 @@ var _ = Describe("Vat slip transformer", func() {
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -126,6 +125,7 @@ var _ = Describe("Vat slip transformer", func() {
 	})
 
 	It("persists vat slip model", func() {
+		converter.SetReturnModels([]interface{}{test_data.VatSlipModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatSlipLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

@@ -15,27 +15,27 @@
 package vat_init_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_init_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_init"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 var _ = Describe("Vat init transformer", func() {
 	var (
 		config      = vat_init.VatInitConfig
-		converter   vat_init_mocks.MockVatInitConverter
-		repository  vat_init_mocks.MockVatInitRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -43,8 +43,8 @@ var _ = Describe("Vat init transformer", func() {
 	)
 
 	BeforeEach(func() {
-		converter = vat_init_mocks.MockVatInitConverter{}
-		repository = vat_init_mocks.MockVatInitRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
@@ -141,6 +141,7 @@ var _ = Describe("Vat init transformer", func() {
 	})
 
 	It("persists vat init model", func() {
+		converter.SetReturnModels([]interface{}{test_data.VatInitModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatInitLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

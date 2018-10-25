@@ -15,28 +15,28 @@
 package debt_ceiling_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	debt_ceiling_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/debt_ceiling"
 )
 
 var _ = Describe("Pit file debt ceiling transformer", func() {
 	var (
 		config      = debt_ceiling.DebtCeilingFileConfig
 		fetcher     mocks.MockLogFetcher
-		converter   debt_ceiling_mocks.MockPitFileDebtCeilingConverter
-		repository  debt_ceiling_mocks.MockPitFileDebtCeilingRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -44,8 +44,8 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = debt_ceiling_mocks.MockPitFileDebtCeilingConverter{}
-		repository = debt_ceiling_mocks.MockPitFileDebtCeilingRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -137,6 +137,7 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	})
 
 	It("persists pit file model", func() {
+		converter.SetReturnModels([]interface{}{test_data.PitFileDebtCeilingModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileDebtCeilingLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

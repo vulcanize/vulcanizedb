@@ -15,34 +15,35 @@
 package vat_move_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_move_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_move"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_move"
-	"math/rand"
 )
 
 var _ = Describe("Vat move transformer", func() {
 	var config = vat_move.VatMoveConfig
 	var fetcher mocks.MockLogFetcher
-	var converter vat_move_mocks.MockVatMoveConverter
-	var repository vat_move_mocks.MockVatMoveRepository
+	var converter mocks.MockConverter
+	var repository mocks.MockRepository
 	var transformer shared.Transformer
 	var headerOne core.Header
 	var headerTwo core.Header
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = vat_move_mocks.MockVatMoveConverter{}
-		repository = vat_move_mocks.MockVatMoveRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -126,13 +127,13 @@ var _ = Describe("Vat move transformer", func() {
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.CheckedHeaderIDs).To(ContainElement(headerOne.Id))
-		Expect(repository.CheckedHeaderIDs).To(ContainElement(headerTwo.Id))
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
+		repository.AssertMarkHeaderCheckedCalledWith(headerTwo.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
-		repository.SetCheckedHeaderError(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{})
 
 		err := transformer.Execute()
@@ -142,6 +143,7 @@ var _ = Describe("Vat move transformer", func() {
 	})
 
 	It("persists vat move model", func() {
+		converter.SetReturnModels([]interface{}{test_data.VatMoveModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatMoveLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 
