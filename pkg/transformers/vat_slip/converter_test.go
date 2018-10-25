@@ -35,7 +35,7 @@ var _ = Describe("Vat slip converter", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("converts a log to an model", func() {
+	It("converts a log to a model", func() {
 		converter := vat_slip.VatSlipConverter{}
 
 		models, err := converter.ToModels([]types.Log{test_data.EthVatSlipLog})

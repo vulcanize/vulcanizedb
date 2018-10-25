@@ -3,8 +3,10 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -29,13 +31,18 @@ var _ = Describe("Vat slip transformer", func() {
 	})
 
 	It("persists vat slip event", func(done Done) {
-		config := shared.TransformerConfig{
+		config := shared.SingleTransformerConfig{
 			ContractAddresses:   []string{"0xcd726790550afcd77e9a7a47e86a3f9010af126b"},
 			StartingBlockNumber: 8953655,
 			EndingBlockNumber:   8953655,
 		}
-		transformerInitializer := vat_slip.VatSlipTransformerInitializer{Config: config}
-		transformer := transformerInitializer.NewVatSlipTransformer(db, blockChain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &vat_slip.VatSlipConverter{},
+			Repository: &vat_slip.VatSlipRepository{},
+		}
+		transformer := initializer.NewTransformer(db, blockChain)
 
 		err := transformer.Execute()
 
