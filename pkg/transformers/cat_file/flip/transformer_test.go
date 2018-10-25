@@ -19,42 +19,57 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	flip_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/cat_file/flip"
 )
 
 var _ = Describe("Cat file flip transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		transformer := flip.CatFileFlipTransformer{
-			Config:     cat_file.CatFileConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &flip_mocks.MockCatFileFlipConverter{},
-			Repository: repository,
-		}
+	var (
+		config      = flip.CatFileFlipConfig
+		repository  mocks.MockRepository
+		converter   mocks.MockConverter
+		fetcher     mocks.MockLogFetcher
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+	)
 
+	BeforeEach(func() {
+		repository = mocks.MockRepository{}
+		converter = mocks.MockConverter{}
+		fetcher = mocks.MockLogFetcher{}
+		transformer = factories.Transformer{
+			Config:     config,
+			Converter:  &converter,
+			Repository: &repository,
+			Fetcher:    &fetcher,
+		}.NewTransformer(nil, nil)
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedStartingBlockNumber).To(Equal(cat_file.CatFileConfig.StartingBlockNumber))
-		Expect(repository.PassedEndingBlockNumber).To(Equal(cat_file.CatFileConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &flip_mocks.MockCatFileFlipConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -63,33 +78,20 @@ var _ = Describe("Cat file flip transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  &flip_mocks.MockCatFileFlipConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{cat_file.CatFileConfig.ContractAddresses, cat_file.CatFileConfig.ContractAddresses}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{
+			config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.CatFileFlipSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  &flip_mocks.MockCatFileFlipConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -98,34 +100,17 @@ var _ = Describe("Cat file flip transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &flip_mocks.MockCatFileFlipConverter{}
-		mockRepository := &flip_mocks.MockCatFileFlipRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := flip.CatFileFlipTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &flip_mocks.MockCatFileFlipConverter{}
-		mockRepository := &flip_mocks.MockCatFileFlipRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := flip.CatFileFlipTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -134,16 +119,8 @@ var _ = Describe("Cat file flip transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &flip_mocks.MockCatFileFlipConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthCatFileFlipLog})
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -152,17 +129,9 @@ var _ = Describe("Cat file flip transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &flip_mocks.MockCatFileFlipConverter{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthCatFileFlipLog})
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -171,37 +140,21 @@ var _ = Describe("Cat file flip transformer", func() {
 	})
 
 	It("persists cat file flip model", func() {
-		converter := &flip_mocks.MockCatFileFlipConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthCatFileFlipLog})
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
-		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		converter.SetReturnModels([]interface{}{test_data.CatFileFlipModel})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]flip.CatFileFlipModel{test_data.CatFileFlipModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.CatFileFlipModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &flip_mocks.MockCatFileFlipConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthCatFileFlipLog})
-		repository := &flip_mocks.MockCatFileFlipRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := flip.CatFileFlipTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 

@@ -15,6 +15,8 @@
 package flip_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +27,7 @@ func TestFlip(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Flip Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

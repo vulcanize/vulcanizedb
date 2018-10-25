@@ -42,7 +42,8 @@ var _ = Describe("Cat file flip repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		catFileRepository = flip.NewCatFileFlipRepository(db)
+		catFileRepository = flip.CatFileFlipRepository{}
+		catFileRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,7 +53,7 @@ var _ = Describe("Cat file flip repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = catFileRepository.Create(headerID, []flip.CatFileFlipModel{test_data.CatFileFlipModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileFlipModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -76,7 +77,7 @@ var _ = Describe("Cat file flip repository", func() {
 		})
 
 		It("does not duplicate cat file flip events", func() {
-			err = catFileRepository.Create(headerID, []flip.CatFileFlipModel{test_data.CatFileFlipModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileFlipModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
@@ -85,7 +86,7 @@ var _ = Describe("Cat file flip repository", func() {
 		It("allows for multiple cat file flip events in one transaction if they have different log indexes", func() {
 			catFileFlip := test_data.CatFileFlipModel
 			catFileFlip.LogIndex = catFileFlip.LogIndex + 1
-			err = catFileRepository.Create(headerID, []flip.CatFileFlipModel{catFileFlip})
+			err = catFileRepository.Create(headerID, []interface{}{catFileFlip})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -187,7 +188,8 @@ var _ = Describe("Cat file flip repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			catFileRepositoryTwo := flip.NewCatFileFlipRepository(dbTwo)
+			catFileRepositoryTwo := flip.CatFileFlipRepository{}
+			catFileRepositoryTwo.SetDB(dbTwo)
 
 			nodeOneMissingHeaders, err := catFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())

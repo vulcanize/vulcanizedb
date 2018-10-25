@@ -25,34 +25,34 @@ import (
 )
 
 var _ = Describe("Cat file flip converter", func() {
+	var converter flip.CatFileFlipConverter
+
+	BeforeEach(func() {
+		converter = flip.CatFileFlipConverter{}
+	})
+
 	It("returns err if log is missing topics", func() {
-		converter := flip.CatFileFlipConverter{}
 		badLog := types.Log{
 			Data: []byte{1, 1, 1, 1, 1},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns err if log is missing data", func() {
-		converter := flip.CatFileFlipConverter{}
 		badLog := types.Log{
 			Topics: []common.Hash{{}, {}, {}, {}},
 		}
 
 		_, err := converter.ToModels([]types.Log{badLog})
-
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("converts a log to an model", func() {
-		converter := flip.CatFileFlipConverter{}
-
-		model, err := converter.ToModels([]types.Log{test_data.EthCatFileFlipLog})
+		models, err := converter.ToModels([]types.Log{test_data.EthCatFileFlipLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal([]flip.CatFileFlipModel{test_data.CatFileFlipModel}))
+		Expect(models).To(Equal([]interface{}{test_data.CatFileFlipModel}))
 	})
 })
