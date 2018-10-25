@@ -39,6 +39,6 @@ var _ = Describe("Vat fold converter", func() {
 		model, err := converter.ToModels([]types.Log{test_data.EthVatFoldLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal([]vat_fold.VatFoldModel{test_data.VatFoldModel}))
+		Expect(model).To(Equal([]interface{}{test_data.VatFoldModel}))
 	})
 })

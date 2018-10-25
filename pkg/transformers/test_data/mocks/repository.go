@@ -10,7 +10,7 @@ import (
 type MockRepository struct {
 	createError                      error
 	markHeaderCheckedError           error
-	markHeaderCheckedPassedHeaderIDs []int64
+	MarkHeaderCheckedPassedHeaderIDs []int64
 	missingHeaders                   []core.Header
 	missingHeadersError              error
 	PassedStartingBlockNumber        int64
@@ -27,7 +27,7 @@ func (repository *MockRepository) Create(headerID int64, models []interface{}) e
 }
 
 func (repository *MockRepository) MarkHeaderChecked(headerID int64) error {
-	repository.markHeaderCheckedPassedHeaderIDs = append(repository.markHeaderCheckedPassedHeaderIDs, headerID)
+	repository.MarkHeaderCheckedPassedHeaderIDs = append(repository.MarkHeaderCheckedPassedHeaderIDs, headerID)
 	return repository.markHeaderCheckedError
 }
 
@@ -50,7 +50,7 @@ func (repository *MockRepository) SetMissingHeaders(headers []core.Header) {
 }
 
 func (repository *MockRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
-	Expect(repository.markHeaderCheckedPassedHeaderIDs).To(ContainElement(i))
+	Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(i))
 }
 
 func (repository *MockRepository) SetMarkHeaderCheckedError(e error) {

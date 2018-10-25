@@ -18,10 +18,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var VatFoldConfig = shared.TransformerConfig{
+var VatFoldConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.VatFoldLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,
-	Topics:              []string{shared.VatFoldSignature},
+	Topic:               shared.VatFoldSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }
