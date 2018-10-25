@@ -15,28 +15,28 @@
 package ilk_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	ilk_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/pit_file/ilk"
 )
 
 var _ = Describe("Pit file ilk transformer", func() {
 	var (
 		config      = ilk.IlkFileConfig
 		fetcher     mocks.MockLogFetcher
-		converter   ilk_mocks.MockPitFileIlkConverter
-		repository  ilk_mocks.MockPitFileIlkRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -44,8 +44,8 @@ var _ = Describe("Pit file ilk transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = ilk_mocks.MockPitFileIlkConverter{}
-		repository = ilk_mocks.MockPitFileIlkRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -140,6 +140,7 @@ var _ = Describe("Pit file ilk transformer", func() {
 	})
 
 	It("persists pit file model", func() {
+		converter.SetReturnModels([]interface{}{test_data.PitFileIlkModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthPitFileIlkLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

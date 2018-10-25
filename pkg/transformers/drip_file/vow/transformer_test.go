@@ -15,28 +15,28 @@
 package vow_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vow_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/drip_file/vow"
 )
 
 var _ = Describe("Drip file vow transformer", func() {
 	var (
 		config      = vow.DripFileVowConfig
 		fetcher     mocks.MockLogFetcher
-		converter   vow_mocks.MockDripFileVowConverter
-		repository  vow_mocks.MockDripFileVowRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -44,8 +44,8 @@ var _ = Describe("Drip file vow transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = vow_mocks.MockDripFileVowConverter{}
-		repository = vow_mocks.MockDripFileVowRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		transformer = factories.Transformer{
 			Config:     config,
 			Fetcher:    &fetcher,
@@ -137,6 +137,7 @@ var _ = Describe("Drip file vow transformer", func() {
 	})
 
 	It("persists drip file model", func() {
+		converter.SetReturnModels([]interface{}{test_data.DripFileVowModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthDripFileVowLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

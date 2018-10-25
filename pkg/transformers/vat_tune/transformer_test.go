@@ -1,6 +1,8 @@
 package vat_tune_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
@@ -12,17 +14,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_tune_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_tune"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
-	"math/rand"
 )
 
 var _ = Describe("Vat tune transformer", func() {
 	var (
 		config      = vat_tune.VatTuneConfig
 		fetcher     mocks.MockLogFetcher
-		converter   vat_tune_mocks.MockVatTuneConverter
-		repository  vat_tune_mocks.MockVatTuneRepository
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
 		headerTwo   core.Header
@@ -30,8 +30,8 @@ var _ = Describe("Vat tune transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = vat_tune_mocks.MockVatTuneConverter{}
-		repository = vat_tune_mocks.MockVatTuneRepository{}
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.Transformer{
@@ -56,7 +56,7 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -96,7 +96,7 @@ var _ = Describe("Vat tune transformer", func() {
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -126,6 +126,7 @@ var _ = Describe("Vat tune transformer", func() {
 	})
 
 	It("persists vat tune model", func() {
+		converter.SetReturnModels([]interface{}{test_data.VatTuneModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatTuneLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 
