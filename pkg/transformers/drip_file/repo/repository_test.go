@@ -53,12 +53,12 @@ var _ = Describe("Drip file repo repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a drip file repo event", func() {
+			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbDripFileRepo repo.DripFileRepoModel
 			err = db.Get(&dbDripFileRepo, `SELECT what, data, log_idx, tx_idx, raw_log FROM maker.drip_file_repo WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -70,6 +70,22 @@ var _ = Describe("Drip file repo repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
+			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT drip_file_repo_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT drip_file_repo_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -78,12 +94,17 @@ var _ = Describe("Drip file repo repository", func() {
 
 		It("does not duplicate drip file events", func() {
 			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes drip file if corresponding header is deleted", func() {
+			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.DripFileRepoModel})
+			Expect(err).NotTo(HaveOccurred())
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -93,7 +114,7 @@ var _ = Describe("Drip file repo repository", func() {
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 
-		It("Returns an error if model is of wrong type", func() {
+		It("returns an error if model is of wrong type", func() {
 			err = dripFileRepoRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("model of type"))

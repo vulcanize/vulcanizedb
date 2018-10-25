@@ -115,7 +115,7 @@ var _ = Describe("Pit file stability fee repository", func() {
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 
-		It("Returns an error if model is of wrong type", func() {
+		It("returns an error if model is of wrong type", func() {
 			err = pitFileStabilityFeeRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("model of type"))

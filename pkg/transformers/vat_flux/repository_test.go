@@ -15,8 +15,11 @@
 package vat_flux_test
 
 import (
+	"math/rand"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -24,7 +27,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/rand"
 )
 
 var _ = Describe("VatFlux Repository", func() {
