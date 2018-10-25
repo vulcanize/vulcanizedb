@@ -39,7 +39,7 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 
 		_, err := tx.Exec(
 			`INSERT into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx, log_idx, raw_log)
-        	VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
 			headerID, chopLump.Ilk, chopLump.What, chopLump.Data, chopLump.TransactionIndex, chopLump.LogIndex, chopLump.Raw,
 		)
 		if err != nil {
@@ -48,7 +48,7 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_chop_lump_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
 	if err != nil {
@@ -60,7 +60,7 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 
 func (repository CatFileChopLumpRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_chop_lump_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET cat_file_chop_lump_checked = $2`, headerID, true)
 	return err

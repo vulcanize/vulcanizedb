@@ -38,7 +38,7 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
-        	VALUES($1, $2, $3, $4, $5, $6)`,
+			VALUES($1, $2, $3, $4, $5, $6)`,
 			headerID, vow.What, vow.Data, vow.TransactionIndex, vow.LogIndex, vow.Raw,
 		)
 		if err != nil {
@@ -47,7 +47,7 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_pit_vow_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET cat_file_pit_vow_checked = $2`, headerID, true)
 	if err != nil {
