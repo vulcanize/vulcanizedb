@@ -42,7 +42,7 @@ func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (cor
 	return blockChain, nil
 }
 
-func persistHeader(rpcClient client.RpcClient, db *postgres.DB, blockNumber int64) error {
+func persistHeader(db *postgres.DB, blockNumber int64) error {
 	headerRepository := repositories.NewHeaderRepository(db)
 	_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(blockNumber))
 	return err

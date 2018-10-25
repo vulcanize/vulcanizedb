@@ -41,7 +41,7 @@ var _ = Describe("VatTune Transformer", func() {
 		db := test_config.NewTestDB(blockchain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(rpcClient, db, blockNumber)
+		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.Transformer{

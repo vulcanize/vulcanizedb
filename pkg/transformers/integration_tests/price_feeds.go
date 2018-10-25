@@ -20,7 +20,6 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -29,7 +28,6 @@ var _ = Describe("Price feeds transformer", func() {
 	var (
 		db         *postgres.DB
 		blockChain core.BlockChain
-		rpcClient  client.RpcClient
 	)
 
 	BeforeEach(func() {
@@ -43,7 +41,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a ETH/USD price feed event", func() {
 		blockNumber := int64(8763054)
-		err := persistHeader(rpcClient, db, blockNumber)
+		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0x9FfFE440258B79c5d6604001674A4722FfC0f7Bc"},
@@ -65,7 +63,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a MKR/USD price feed event", func() {
 		blockNumber := int64(8763059)
-		err := persistHeader(rpcClient, db, blockNumber)
+		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0xB1997239Cfc3d15578A3a09730f7f84A90BB4975"},
@@ -87,7 +85,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a REP/USD price feed event", func() {
 		blockNumber := int64(8763062)
-		err := persistHeader(rpcClient, db, blockNumber)
+		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.IPriceFeedConfig{
 			ContractAddresses:   []string{"0xf88bBDc1E2718F8857F30A180076ec38d53cf296"},
