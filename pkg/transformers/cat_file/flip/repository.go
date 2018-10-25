@@ -38,7 +38,7 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, log_idx, raw_log)
-        	VALUES($1, $2, $3, $4, $5, $6, $7)`,
+			VALUES($1, $2, $3, $4, $5, $6, $7)`,
 			headerID, flip.Ilk, flip.What, flip.Flip, flip.TransactionIndex, flip.LogIndex, flip.Raw,
 		)
 		if err != nil {
@@ -47,7 +47,7 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_flip_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET cat_file_flip_checked = $2`, headerID, true)
 
@@ -60,7 +60,7 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 
 func (repository CatFileFlipRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, cat_file_flip_checked)
-			VALUES ($1, $2) 
+			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET cat_file_flip_checked = $2`, headerID, true)
 	return err
@@ -71,11 +71,11 @@ func (repository CatFileFlipRepository) MissingHeaders(startingBlockNumber, endi
 	err := repository.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR cat_file_flip_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+			LEFT JOIN checked_headers on headers.id = header_id
+		WHERE (header_id ISNULL OR cat_file_flip_checked IS FALSE)
+			AND headers.block_number >= $1
+			AND headers.block_number <= $2
+			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
 		repository.db.Node.ID,
