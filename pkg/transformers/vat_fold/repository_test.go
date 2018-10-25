@@ -104,16 +104,6 @@ var _ = Describe("Vat.fold repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("does not mark header checked if not all models persisted", func() {
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel, test_data.VatFoldModel})
-
-			Expect(err).To(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT vat_fold_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(sql.ErrNoRows))
-		})
-
 		It("removes vat fold if corresponding header is deleted", func() {
 			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 			Expect(err).NotTo(HaveOccurred())

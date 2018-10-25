@@ -15,9 +15,10 @@
 package tend_test
 
 import (
+	"math/rand"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -124,7 +125,7 @@ var _ = Describe("TendRepository", func() {
 			Expect(count).To(Equal(0))
 		})
 
-		It("Returns an error if model is of wrong type", func() {
+		It("returns an error if model is of wrong type", func() {
 			err = tendRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("model of type"))

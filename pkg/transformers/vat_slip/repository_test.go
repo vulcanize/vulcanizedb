@@ -2,6 +2,7 @@ package vat_slip_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -156,7 +157,7 @@ var _ = Describe("Vat slip repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatSlipBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 

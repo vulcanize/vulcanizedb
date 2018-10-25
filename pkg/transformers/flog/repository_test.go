@@ -16,7 +16,6 @@ package flog_test
 
 import (
 	"database/sql"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"math/rand"
 
 	. "github.com/onsi/ginkgo"
@@ -27,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -110,7 +110,7 @@ var _ = Describe("Flog repository", func() {
 			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 
-		It("Returns an error if model is of wrong type", func() {
+		It("returns an error if model is of wrong type", func() {
 			err = flogRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("model of type"))
