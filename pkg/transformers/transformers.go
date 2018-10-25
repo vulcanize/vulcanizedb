@@ -125,7 +125,12 @@ var (
 	}.NewTransformer
 	VatGrabTransformerInitializer = vat_grab.VatGrabTransformerInitializer{Config: vat_grab.VatGrabConfig}.NewVatGrabTransformer
 	VatHealTransformerInitializer = vat_heal.VatHealTransformerInitializer{Config: vat_heal.VatHealConfig}.NewVatHealTransformer
-	VatFoldTransformerInitializer = vat_fold.VatFoldTransformerInitializer{Config: vat_fold.VatFoldConfig}.NewVatFoldTransformer
+	VatFoldTransformerInitializer = factories.Transformer{
+		Config:     vat_fold.VatFoldConfig,
+		Converter:  &vat_fold.VatFoldConverter{},
+		Repository: &vat_fold.VatFoldRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
 	VatMoveTransformerInitializer = factories.Transformer{
 		Config:     vat_move.VatMoveConfig,
 		Converter:  &vat_move.VatMoveConverter{},

@@ -16,6 +16,7 @@ package vat_fold_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,7 +42,8 @@ var _ = Describe("Vat.fold repository", func() {
 		node := test_config.NewTestNode()
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
-		repository = vat_fold.NewVatFoldRepository(db)
+		repository = vat_fold.VatFoldRepository{}
+		repository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -53,8 +55,8 @@ var _ = Describe("Vat.fold repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("adds a vat event", func() {
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+		It("adds a vat fold event", func() {
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbVatFold vat_fold.VatFoldModel
@@ -70,7 +72,7 @@ var _ = Describe("Vat.fold repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -83,7 +85,7 @@ var _ = Describe("Vat.fold repository", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -92,18 +94,28 @@ var _ = Describe("Vat.fold repository", func() {
 			Expect(headerChecked).To(BeTrue())
 		})
 
-		It("does not duplicate vat events", func() {
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+		It("does not duplicate vat fold events", func() {
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("removes vat if corresponding header is deleted", func() {
-			err = repository.Create(headerID, []vat_fold.VatFoldModel{test_data.VatFoldModel})
+		It("does not mark header checked if not all models persisted", func() {
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel, test_data.VatFoldModel})
+
+			Expect(err).To(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT vat_fold_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("removes vat fold if corresponding header is deleted", func() {
+			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -113,6 +125,13 @@ var _ = Describe("Vat.fold repository", func() {
 			err = db.Get(&dbVatFold, `SELECT ilk, urn, rate, log_idx, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = repository.Create(headerID, []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -139,7 +158,7 @@ var _ = Describe("Vat.fold repository", func() {
 		})
 
 		It("updates an existing checked header", func() {
-			_, err := repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerID)
+			_, err := db.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
 			var checkedHeaderResult CheckedHeaderResult
@@ -163,7 +182,7 @@ var _ = Describe("Vat.fold repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatFoldBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -211,7 +230,8 @@ var _ = Describe("Vat.fold repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			repositoryTwo := vat_fold.NewVatFoldRepository(dbTwo)
+			repositoryTwo := vat_fold.VatFoldRepository{}
+			repositoryTwo.SetDB(dbTwo)
 
 			err := repository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
