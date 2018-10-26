@@ -15,34 +15,35 @@
 package vat_heal
 
 import (
+	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerId int64, models []VatHealModel) error
-	MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error)
-	MarkCheckedHeader(headerId int64) error
-}
-
 type VatHealRepository struct {
-	DB *postgres.DB
+	db *postgres.DB
 }
 
-func NewVatHealRepository(db *postgres.DB) VatHealRepository {
-	return VatHealRepository{DB: db}
+func (repository *VatHealRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }
 
-func (repository VatHealRepository) Create(headerId int64, models []VatHealModel) error {
-	tx, err := repository.DB.Begin()
+func (repository VatHealRepository) Create(headerId int64, models []interface{}) error {
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 
 	for _, model := range models {
+		vatHeal, ok := model.(VatHealModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatHealModel{})
+		}
 		_, err := tx.Exec(`INSERT INTO maker.vat_heal (header_id, urn, v, rad, log_idx, tx_idx, raw_log)
 		VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerId, model.Urn, model.V, model.Rad, model.LogIndex, model.TransactionIndex, model.Raw)
+			headerId, vatHeal.Urn, vatHeal.V, vatHeal.Rad, vatHeal.LogIndex, vatHeal.TransactionIndex, vatHeal.Raw)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -62,20 +63,20 @@ func (repository VatHealRepository) Create(headerId int64, models []VatHealModel
 
 func (repository VatHealRepository) MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
 	var headers []core.Header
-	err := repository.DB.Select(&headers,
+	err := repository.db.Select(&headers,
 		`SELECT headers.id, block_number from headers
                LEFT JOIN checked_headers on headers.id = header_id
                WHERE (header_id ISNULL OR vat_heal_checked IS FALSE)
                AND headers.block_number >= $1
                AND headers.block_number <= $2
                AND headers.eth_node_fingerprint = $3`,
-		startingBlock, endingBlock, repository.DB.Node.ID)
+		startingBlock, endingBlock, repository.db.Node.ID)
 
 	return headers, err
 }
 
-func (repository VatHealRepository) MarkCheckedHeader(headerId int64) error {
-	_, err := repository.DB.Exec(`INSERT INTO public.checked_headers (header_id, vat_heal_checked)
+func (repository VatHealRepository) MarkHeaderChecked(headerId int64) error {
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vat_heal_checked)
 			VALUES($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET vat_heal_checked = $2`, headerId, true)
