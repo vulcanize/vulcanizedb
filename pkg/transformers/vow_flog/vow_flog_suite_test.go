@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog
+package vow_flog
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"log"
 )
 
-type MockFlogConverter struct {
-	converterError error
-	PassedLogs     []types.Log
+func TestVowFlog(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "VowFlog Suite")
 }
 
-func (converter *MockFlogConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	return []interface{}{test_data.FlogModel}, converter.converterError
-}
-
-func (converter *MockFlogConverter) SetConverterError(e error) {
-	converter.converterError = e
-}
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

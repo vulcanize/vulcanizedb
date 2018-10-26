@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog
+package vow_flog
 
 import (
 	"fmt"
@@ -20,21 +20,21 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type FlogRepository struct {
+type VowFlogRepository struct {
 	db *postgres.DB
 }
 
-func (repository FlogRepository) Create(headerID int64, models []interface{}) error {
+func (repository VowFlogRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 
 	for _, model := range models {
-		flog, ok := model.(FlogModel)
+		flog, ok := model.(VowFlogModel)
 		if !ok {
 			tx.Rollback()
-			return fmt.Errorf("model of type %T, not %T", model, FlogModel{})
+			return fmt.Errorf("model of type %T, not %T", model, VowFlogModel{})
 		}
 
 		_, err = tx.Exec(
@@ -60,7 +60,7 @@ func (repository FlogRepository) Create(headerID int64, models []interface{}) er
 	return tx.Commit()
 }
 
-func (repository FlogRepository) MarkHeaderChecked(headerID int64) error {
+func (repository VowFlogRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vow_flog_checked)
 		VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
@@ -68,7 +68,7 @@ func (repository FlogRepository) MarkHeaderChecked(headerID int64) error {
 	return err
 }
 
-func (repository FlogRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+func (repository VowFlogRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
 	err := repository.db.Select(
 		&result,
@@ -85,6 +85,6 @@ func (repository FlogRepository) MissingHeaders(startingBlockNumber, endingBlock
 	return result, err
 }
 
-func (repository *FlogRepository) SetDB(db *postgres.DB) {
+func (repository *VowFlogRepository) SetDB(db *postgres.DB) {
 	repository.db = db
 }

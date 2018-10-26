@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog
+package vow_flog
 
 import (
 	"encoding/json"
@@ -22,9 +22,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type FlogConverter struct{}
+type VowFlogConverter struct{}
 
-func (FlogConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+func (VowFlogConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
@@ -38,7 +38,7 @@ func (FlogConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		model := FlogModel{
+		model := VowFlogModel{
 			Era:              era.String(),
 			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,

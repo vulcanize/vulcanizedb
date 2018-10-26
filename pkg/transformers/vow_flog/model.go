@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog
+package vow_flog
 
-type FlogModel struct {
+type VowFlogModel struct {
 	Era              string
 	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`

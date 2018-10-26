@@ -27,7 +27,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
@@ -45,6 +44,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 )
 
 var (
@@ -120,9 +120,9 @@ var (
 
 	FlipKickTransformerInitializer = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
 	FlogTransformerInitializer     = factories.LogNoteTransformer{
-		Config:     flog.FlogConfig,
-		Converter:  &flog.FlogConverter{},
-		Repository: &flog.FlogRepository{},
+		Config:     vow_flog.VowFlogConfig,
+		Converter:  &vow_flog.VowFlogConverter{},
+		Repository: &vow_flog.VowFlogRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 

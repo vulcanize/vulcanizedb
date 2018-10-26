@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog_test
+package vow_flog_test
 
 import (
 	"database/sql"
@@ -26,15 +26,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Flog repository", func() {
+var _ = Describe("Vow flog repository", func() {
 	var (
 		db               *postgres.DB
-		flogRepository   flog.FlogRepository
+		flogRepository   vow_flog.VowFlogRepository
 		err              error
 		headerRepository datastore.HeaderRepository
 	)
@@ -43,7 +43,7 @@ var _ = Describe("Flog repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		flogRepository = flog.FlogRepository{}
+		flogRepository = vow_flog.VowFlogRepository{}
 		flogRepository.SetDB(db)
 	})
 
@@ -55,11 +55,11 @@ var _ = Describe("Flog repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("adds a flog event", func() {
+		It("adds a vow flog event", func() {
 			err = flogRepository.Create(headerID, []interface{}{test_data.FlogModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			var dbFlog flog.FlogModel
+			var dbFlog vow_flog.VowFlogModel
 			err = db.Get(&dbFlog, `SELECT era, log_idx, tx_idx, raw_log FROM maker.vow_flog WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbFlog.Era).To(Equal(test_data.FlogModel.Era))
@@ -91,7 +91,7 @@ var _ = Describe("Flog repository", func() {
 			Expect(headerChecked).To(BeTrue())
 		})
 
-		It("does not duplicate flog events", func() {
+		It("does not duplicate vow flog events", func() {
 			err = flogRepository.Create(headerID, []interface{}{test_data.FlogModel})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -100,11 +100,11 @@ var _ = Describe("Flog repository", func() {
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("removes flog events if corresponding header is deleted", func() {
+		It("removes vow flog events if corresponding header is deleted", func() {
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
-			var dbFlog flog.FlogModel
+			var dbFlog vow_flog.VowFlogModel
 			err = db.Get(&dbFlog, `SELECT era, log_idx, tx_idx, raw_log FROM maker.vow_flog WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
@@ -181,7 +181,7 @@ var _ = Describe("Flog repository", func() {
 			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
 		})
 
-		It("only treats headers as checked if flog logs have been checked", func() {
+		It("only treats headers as checked if vow flog logs have been checked", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
@@ -201,7 +201,7 @@ var _ = Describe("Flog repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			flogRepositoryTwo := flog.FlogRepository{}
+			flogRepositoryTwo := vow_flog.VowFlogRepository{}
 			flogRepositoryTwo.SetDB(dbTwo)
 			err := flogRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())

@@ -12,37 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog_test
+package vow_flog_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	flog_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/flog"
-	"math/rand"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 )
 
-var _ = Describe("Flog transformer", func() {
-	var config = flog.FlogConfig
+var _ = Describe("Vow flog transformer", func() {
+	var config = vow_flog.VowFlogConfig
 	var fetcher mocks.MockLogFetcher
-	var converter flog_mocks.MockFlogConverter
-	var repository flog_mocks.MockFlogRepository
+	var converter mocks.MockLogNoteConverter
+	var repository mocks.MockRepository
 	var transformer shared.Transformer
 	var headerOne core.Header
 	var headerTwo core.Header
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = flog_mocks.MockFlogConverter{}
-		repository = flog_mocks.MockFlogRepository{}
+		converter = mocks.MockLogNoteConverter{}
+		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		transformer = factories.LogNoteTransformer{
@@ -86,7 +87,7 @@ var _ = Describe("Flog transformer", func() {
 			config.ContractAddresses,
 			config.ContractAddresses,
 		}))
-		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.FlogSignature)}}))
+		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VowFlogSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
@@ -126,13 +127,13 @@ var _ = Describe("Flog transformer", func() {
 
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.CheckedHeaderIDs).To(ContainElement(headerOne.Id))
-		Expect(repository.CheckedHeaderIDs).To(ContainElement(headerTwo.Id))
+		Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(headerOne.Id))
+		Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(headerTwo.Id))
 	})
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
-		repository.SetCheckedHeaderError(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{})
 
 		err := transformer.Execute()
@@ -141,7 +142,8 @@ var _ = Describe("Flog transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("persists flog model", func() {
+	It("persists vow flog model", func() {
+		converter.SetReturnModels([]interface{}{test_data.FlogModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthFlogLog})
 		repository.SetMissingHeaders([]core.Header{headerOne})
 

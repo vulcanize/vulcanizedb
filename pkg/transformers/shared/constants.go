@@ -50,7 +50,7 @@ var (
 	VatContractAddress     = getContractValue("contract.vat", "0xcd726790550afcd77e9a7a47e86a3f9010af126b")
 	VowContractAddress     = getContractValue("contract.vow", "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1")
 
-	//TODO: get pit and drip file method signatures directly from the ABI
+	//TODO: get cat, pit, and drip file method signatures directly from the ABI
 	biteMethod                = GetSolidityMethodSignature(CatABI, "Bite")
 	catFileChopLumpMethod     = "file(bytes32,bytes32,uint256)"
 	catFileFlipMethod         = GetSolidityMethodSignature(CatABI, "file")
@@ -62,7 +62,6 @@ var (
 	dripFileRepoMethod        = GetSolidityMethodSignature(DripABI, "file")
 	dripFileVowMethod         = "file(bytes32,bytes32)"
 	flipKickMethod            = GetSolidityMethodSignature(FlipperABI, "Kick")
-	flogMethod                = GetSolidityMethodSignature(VowABI, "flog")
 	flopKickMethod            = GetSolidityMethodSignature(FlopperABI, "Kick")
 	frobMethod                = GetSolidityMethodSignature(PitABI, "Frob")
 	logValueMethod            = GetSolidityMethodSignature(MedianizerABI, "LogValue")
@@ -70,28 +69,28 @@ var (
 	pitFileIlkMethod          = "file(bytes32,bytes32,uint256)"
 	pitFileStabilityFeeMethod = GetSolidityMethodSignature(PitABI, "file")
 	tendMethod                = GetSolidityMethodSignature(FlipperABI, "tend")
-	vatHealMethod             = GetSolidityMethodSignature(VatABI, "heal")
+	vatFluxMethod             = GetSolidityMethodSignature(VatABI, "flux")
+	vatFoldMethod             = GetSolidityMethodSignature(VatABI, "fold")
 	vatGrabMethod             = GetSolidityMethodSignature(VatABI, "grab")
+	vatHealMethod             = GetSolidityMethodSignature(VatABI, "heal")
 	vatInitMethod             = GetSolidityMethodSignature(VatABI, "init")
 	vatMoveMethod             = GetSolidityMethodSignature(VatABI, "move")
-	vatFoldMethod             = GetSolidityMethodSignature(VatABI, "fold")
 	vatSlipMethod             = GetSolidityMethodSignature(VatABI, "slip")
 	vatTollMethod             = GetSolidityMethodSignature(VatABI, "toll")
 	vatTuneMethod             = GetSolidityMethodSignature(VatABI, "tune")
-	vatFluxMethod             = GetSolidityMethodSignature(VatABI, "flux")
+	vowFlogMethod             = GetSolidityMethodSignature(VowABI, "flog")
 
 	BiteSignature                = GetEventSignature(biteMethod)
-	DealSignature                = GetLogNoteSignature(dealMethod)
 	CatFileChopLumpSignature     = GetLogNoteSignature(catFileChopLumpMethod)
 	CatFileFlipSignature         = GetLogNoteSignature(catFileFlipMethod)
 	CatFilePitVowSignature       = GetLogNoteSignature(catFilePitVowMethod)
+	DealSignature                = GetLogNoteSignature(dealMethod)
 	DentFunctionSignature        = GetLogNoteSignature(dentMethod)
 	DripDripSignature            = GetLogNoteSignature(dripDripMethod)
 	DripFileIlkSignature         = GetLogNoteSignature(dripFileIlkMethod)
 	DripFileRepoSignature        = GetLogNoteSignature(dripFileRepoMethod)
 	DripFileVowSignature         = GetLogNoteSignature(dripFileVowMethod)
 	FlipKickSignature            = GetEventSignature(flipKickMethod)
-	FlogSignature                = GetLogNoteSignature(flogMethod)
 	FlopKickSignature            = GetEventSignature(flopKickMethod)
 	FrobSignature                = GetEventSignature(frobMethod)
 	LogValueSignature            = GetEventSignature(logValueMethod)
@@ -99,28 +98,28 @@ var (
 	PitFileIlkSignature          = GetLogNoteSignature(pitFileIlkMethod)
 	PitFileStabilityFeeSignature = GetLogNoteSignature(pitFileStabilityFeeMethod)
 	TendFunctionSignature        = GetLogNoteSignature(tendMethod)
-	VatHealSignature             = GetLogNoteSignature(vatHealMethod)
+	VatFluxSignature             = GetLogNoteSignature(vatFluxMethod)
+	VatFoldSignature             = GetLogNoteSignature(vatFoldMethod)
 	VatGrabSignature             = GetLogNoteSignature(vatGrabMethod)
+	VatHealSignature             = GetLogNoteSignature(vatHealMethod)
 	VatInitSignature             = GetLogNoteSignature(vatInitMethod)
 	VatMoveSignature             = GetLogNoteSignature(vatMoveMethod)
-	VatFoldSignature             = GetLogNoteSignature(vatFoldMethod)
 	VatSlipSignature             = GetLogNoteSignature(vatSlipMethod)
 	VatTollSignature             = GetLogNoteSignature(vatTollMethod)
 	VatTuneSignature             = GetLogNoteSignature(vatTuneMethod)
-	VatFluxSignature             = GetLogNoteSignature(vatFluxMethod)
+	VowFlogSignature             = GetLogNoteSignature(vowFlogMethod)
 
 	BiteLabel                = "bite"
-	DealLabel                = "deal"
 	CatFileChopLumpLabel     = "catFileChopLump"
 	CatFileFlipLabel         = "catFileFlip"
 	CatFilePitVowLabel       = "catFilePitVow"
+	DealLabel                = "deal"
 	DentLabel                = "dent"
 	DripDripLabel            = "dripDrip"
 	DripFileIlkLabel         = "dripFileIlk"
 	DripFileRepoLabel        = "dripFileRepo"
 	DripFileVowLabel         = "dripFileVow"
 	FlipKickLabel            = "flipKick"
-	FlogLabel                = "flog"
 	FlopKickLabel            = "flopKick"
 	FrobLabel                = "frob"
 	PitFileDebtCeilingLabel  = "pitFileDebtCeiling"
@@ -128,13 +127,14 @@ var (
 	PitFileStabilityFeeLabel = "pitFileStabilityFee"
 	PriceFeedLabel           = "priceFeed"
 	TendLabel                = "tend"
-	VatHealLabel             = "vatHeal"
+	VatFluxLabel             = "vatFlux"
+	VatFoldLabel             = "vatFold"
 	VatGrabLabel             = "vatGrab"
+	VatHealLabel             = "vatHeal"
 	VatInitLabel             = "vatInit"
 	VatMoveLabel             = "vatMove"
-	VatFoldLabel             = "vatFold"
 	VatSlipLabel             = "vatSlip"
 	VatTollLabel             = "vatToll"
 	VatTuneLabel             = "vatTune"
-	VatFluxLabel             = "vatFlux"
+	VowFlogLabel             = "vowFlog"
 )
