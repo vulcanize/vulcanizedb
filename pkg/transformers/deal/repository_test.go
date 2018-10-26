@@ -49,11 +49,12 @@ var _ = Describe("Deal Repository", func() {
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err := dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("persists a deal record", func() {
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var count int
 			db.QueryRow(`SELECT count(*) FROM maker.deal`).Scan(&count)
 			Expect(count).To(Equal(1))
@@ -68,6 +69,22 @@ var _ = Describe("Deal Repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,20 +93,34 @@ var _ = Describe("Deal Repository", func() {
 
 		It("returns an error if inserting a deal record fails", func() {
 			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("deletes the deal record if its corresponding header record is deleted", func() {
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
+			Expect(err).NotTo(HaveOccurred())
 			var count int
 			err = db.QueryRow(`SELECT count(*) from maker.deal`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
+
 			_, err = db.Exec(`DELETE FROM headers where id = $1`, headerId)
+
 			Expect(err).NotTo(HaveOccurred())
 			err = db.QueryRow(`SELECT count(*) from maker.deal`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(0))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = dealRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
