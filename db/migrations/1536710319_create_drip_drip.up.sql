@@ -7,3 +7,6 @@ CREATE TABLE maker.drip_drip (
   raw_log       JSONB,
   UNIQUE (header_id, tx_idx, log_idx)
 );
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN drip_drip_checked BOOLEAN NOT NULL DEFAULT FALSE;
