@@ -15,47 +15,60 @@
 package vat_heal_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	mock_vat_heal "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_heal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 )
 
 var _ = Describe("VatHeal Transformer", func() {
-	var mockRepository mock_vat_heal.MockVatHealRepository
-	var transformer vat_heal.VatHealTransformer
-	var fetcher mocks.MockLogFetcher
-	var converter mock_vat_heal.MockVatHealConverter
+	var (
+		repository  mocks.MockRepository
+		transformer shared.Transformer
+		fetcher     mocks.MockLogFetcher
+		converter   mocks.MockConverter
+		config      = vat_heal.VatHealConfig
+	)
 
 	BeforeEach(func() {
-		mockRepository = mock_vat_heal.MockVatHealRepository{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = mock_vat_heal.MockVatHealConverter{}
-		transformer = vat_heal.VatHealTransformer{
-			Repository: &mockRepository,
-			Config:     vat_heal.VatHealConfig,
+		converter = mocks.MockConverter{}
+		transformer = factories.Transformer{
+			Repository: &repository,
+			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
-		}
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the database and blockchain", func() {
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets all of the missing header ids", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(mockRepository.PassedStartingBlockNumber).To(Equal(vat_heal.VatHealConfig.StartingBlockNumber))
-		Expect(mockRepository.PassedEndingBlockNumber).To(Equal(vat_heal.VatHealConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns and error if getting the missing headers fails", func() {
-		mockRepository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -63,8 +76,8 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("fetches vat heal logs for the headers", func() {
-		header := core.Header{BlockNumber: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{BlockNumber: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -74,8 +87,8 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("returns and error if fetching the logs fails", func() {
-		header := core.Header{BlockNumber: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{BlockNumber: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetcherError(fakes.FakeError)
 		err := transformer.Execute()
 
@@ -84,8 +97,8 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("converts the logs to models", func() {
-		header := core.Header{BlockNumber: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{BlockNumber: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatHealLog})
 
 		err := transformer.Execute()
@@ -95,8 +108,8 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("returns an error if converting fails", func() {
-		header := core.Header{BlockNumber: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{BlockNumber: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatHealLog})
 		converter.SetConverterError(fakes.FakeError)
 
@@ -107,22 +120,23 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("persists the vat heal models", func() {
-		header := core.Header{Id: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{Id: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatHealLog})
+		converter.SetReturnModels([]interface{}{test_data.VatHealModel})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(mockRepository.PassedModels).To(ContainElement(test_data.VatHealModel))
-		Expect(mockRepository.PassedHeaderID).To(Equal(header.Id))
+		Expect(repository.PassedModels).To(ContainElement(test_data.VatHealModel))
+		Expect(repository.PassedHeaderID).To(Equal(header.Id))
 	})
 
 	It("returns an error if persisting the vat heal models fails", func() {
-		header := core.Header{Id: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{Id: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatHealLog})
-		mockRepository.SetCreateError(fakes.FakeError)
+		repository.SetCreateError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -131,29 +145,29 @@ var _ = Describe("VatHeal Transformer", func() {
 	})
 
 	It("marks the header as checked when there are no logs", func() {
-		header := core.Header{Id: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		header := core.Header{Id: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(mockRepository.MarkHeaderCheckedPassedHeaderID).To(Equal(header.Id))
+		repository.AssertMarkHeaderCheckedCalledWith(header.Id)
 	})
 
 	It("doesn't call MarkCheckedHeader when there are logs", func() {
 		header := core.Header{Id: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
+		repository.SetMissingHeaders([]core.Header{header})
 		fetcher.SetFetchedLogs([]types.Log{test_data.VatHealLog})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(mockRepository.MarkHeaderCheckedPassedHeaderID).To(Equal(int64(0)))
+		repository.AssertMarkHeaderCheckedNotCalled()
 	})
 
 	It("returns an error if MarkCheckedHeader fails", func() {
-		header := core.Header{Id: GinkgoRandomSeed()}
-		mockRepository.SetMissingHeaders([]core.Header{header})
-		mockRepository.SetMissingHeadersErr(fakes.FakeError)
+		header := core.Header{Id: rand.Int63()}
+		repository.SetMissingHeaders([]core.Header{header})
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 

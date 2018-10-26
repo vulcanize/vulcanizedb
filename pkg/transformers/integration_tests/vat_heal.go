@@ -19,6 +19,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -41,8 +43,13 @@ var _ = Describe("VatHeal Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := vat_heal.VatHealTransformerInitializer{Config: config}
-		transformer := initializer.NewVatHealTransformer(db, blockchain)
+		transformer := factories.Transformer{
+			Config:     vat_heal.VatHealConfig,
+			Converter:  &vat_heal.VatHealConverter{},
+			Repository: &vat_heal.VatHealRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}.NewTransformer(db, blockchain)
+
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

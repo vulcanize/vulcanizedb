@@ -49,14 +49,18 @@ func (repository *MockRepository) SetMissingHeaders(headers []core.Header) {
 	repository.missingHeaders = headers
 }
 
-func (repository *MockRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
-	Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(i))
-}
-
 func (repository *MockRepository) SetMarkHeaderCheckedError(e error) {
 	repository.markHeaderCheckedError = e
 }
 
 func (repository *MockRepository) SetCreateError(e error) {
 	repository.createError = e
+}
+
+func (repository *MockRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
+	Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(i))
+}
+
+func (repository *MockRepository) AssertMarkHeaderCheckedNotCalled() {
+	Expect(len(repository.MarkHeaderCheckedPassedHeaderIDs)).To(Equal(0))
 }

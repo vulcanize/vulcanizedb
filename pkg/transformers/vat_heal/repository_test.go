@@ -15,6 +15,8 @@
 package vat_heal_test
 
 import (
+	"math/rand"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -38,7 +40,8 @@ var _ = Describe("VatHeal Repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		repository = vat_heal.VatHealRepository{DB: db}
+		repository = vat_heal.VatHealRepository{}
+		repository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -63,7 +66,7 @@ var _ = Describe("VatHeal Repository", func() {
 		It("persists vat heal records", func() {
 			anotherVatHeal := test_data.VatHealModel
 			anotherVatHeal.LogIndex = test_data.VatHealModel.LogIndex + 1
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel, anotherVatHeal})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel, anotherVatHeal})
 
 			var dbResult []VatHealDBResult
 			err = db.Select(&dbResult, `SELECT * from maker.vat_heal where header_id = $1`, headerId)
@@ -80,17 +83,17 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("returns an error if the insertion fails", func() {
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("marks the header as checked for vat heal logs", func() {
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -103,7 +106,7 @@ var _ = Describe("VatHeal Repository", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -113,7 +116,7 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("removes vat heal if corresponding header is deleted", func() {
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerId)
@@ -125,11 +128,17 @@ var _ = Describe("VatHeal Repository", func() {
 			Expect(count).To(Equal(0))
 		})
 
+		It("returns an error if the wrong model types are passed in", func() {
+			err = repository.Create(headerId, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type test_data.WrongModel, not vat_heal.VatHealModel"))
+		})
+
 		It("wraps create in a transaction", func() {
-			err = repository.Create(headerId, []vat_heal.VatHealModel{test_data.VatHealModel, test_data.VatHealModel})
+			err = repository.Create(headerId, []interface{}{test_data.VatHealModel, test_data.VatHealModel})
 			Expect(err).To(HaveOccurred())
 			var count int
-			err = repository.DB.QueryRowx(`SELECT count(*) FROM maker.vat_heal`).Scan(&count)
+			err = db.QueryRowx(`SELECT count(*) FROM maker.vat_heal`).Scan(&count)
 			Expect(count).To(Equal(0))
 		})
 	})
@@ -141,7 +150,7 @@ var _ = Describe("VatHeal Repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			vatHealBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 			outsideRangeBlock = startingBlock + 3
@@ -156,7 +165,7 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("returns headers that haven't been checked", func() {
-			err = repository.MarkCheckedHeader(headerIds[0])
+			err = repository.MarkHeaderChecked(headerIds[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -168,8 +177,8 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("returns header ids when checked_headers.vat_heal is false", func() {
-			err = repository.MarkCheckedHeader(headerIds[0])
-			_, err = repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES ($1)`, headerIds[1])
+			err = repository.MarkHeaderChecked(headerIds[0])
+			_, err = db.Exec(`INSERT INTO checked_headers (header_id) VALUES ($1)`, headerIds[1])
 			Expect(err).NotTo(HaveOccurred())
 
 			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -183,14 +192,15 @@ var _ = Describe("VatHeal Repository", func() {
 		It("only returns header ids for the current node", func() {
 			db2 := test_config.NewTestDB(core.Node{ID: "second node"})
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			repository2 := vat_heal.NewVatHealRepository(db2)
+			repository2 := vat_heal.VatHealRepository{}
+			repository2.SetDB(db2)
 
 			for _, n := range blockNumbers {
 				_, err = headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			err = repository.MarkCheckedHeader(headerIds[0])
+			err = repository.MarkHeaderChecked(headerIds[0])
 			Expect(err).NotTo(HaveOccurred())
 
 			nodeOneMissingHeaders, err := repository.MissingHeaders(startingBlock, endingBlock)
@@ -212,7 +222,7 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("creates a new checked_header record", func() {
-			err := repository.MarkCheckedHeader(headerId)
+			err := repository.MarkHeaderChecked(headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			var checkedHeaderResult = CheckedHeaderResult{}
@@ -222,7 +232,7 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 
 		It("updates an existing checked header", func() {
-			_, err := repository.DB.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerId)
+			_, err := db.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			var checkedHeaderResult CheckedHeaderResult
@@ -230,7 +240,7 @@ var _ = Describe("VatHeal Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(checkedHeaderResult.VatHealChecked).To(BeFalse())
 
-			err = repository.MarkCheckedHeader(headerId)
+			err = repository.MarkHeaderChecked(headerId)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = db.Get(&checkedHeaderResult, `SELECT vat_heal_checked FROM checked_headers WHERE header_id = $1`, headerId)
