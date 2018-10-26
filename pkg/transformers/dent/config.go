@@ -16,10 +16,11 @@ package dent
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var DentConfig = shared.TransformerConfig{
+var DentConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.DentLabel,
 	ContractAddresses:   []string{shared.FlipperContractAddress},
 	ContractAbi:         shared.FlipperABI,
-	Topics:              []string{shared.DentFunctionSignature},
+	Topic:               shared.DentFunctionSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

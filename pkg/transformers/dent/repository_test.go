@@ -38,7 +38,8 @@ var _ = Describe("Dent Repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		dentRepository = dent.NewDentRepository(db)
+		dentRepository = dent.DentRepository{}
+		dentRepository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -48,12 +49,12 @@ var _ = Describe("Dent Repository", func() {
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err := dentRepository.Create(headerId, []dent.DentModel{test_data.DentModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("persists a dent record", func() {
+			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var count int
 			db.QueryRow(`SELECT count(*) FROM maker.dent`).Scan(&count)
 			Expect(count).To(Equal(1))
@@ -72,6 +73,22 @@ var _ = Describe("Dent Repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
+			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the checked_header row if it already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,12 +96,25 @@ var _ = Describe("Dent Repository", func() {
 		})
 
 		It("returns an error if inserting a dent record fails", func() {
-			err = dentRepository.Create(headerId, []dent.DentModel{test_data.DentModel})
+			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
-		It("deletes the tend record if its corresponding header record is deleted", func() {
+		It("returns an error if model is of wrong type", func() {
+			err = dentRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
+		})
+
+		It("deletes the dent record if its corresponding header record is deleted", func() {
+			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			var count int
 			err = db.QueryRow(`SELECT count(*) from maker.dent`).Scan(&count)
 			Expect(err).NotTo(HaveOccurred())
@@ -180,7 +210,8 @@ var _ = Describe("Dent Repository", func() {
 			dentRepository.MarkHeaderChecked(headerIds[1])
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
-			dentRepository2 := dent.NewDentRepository(db2)
+			dentRepository2 := dent.DentRepository{}
+			dentRepository2.SetDB(db2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
 			var node2HeaderIds []int64
 			for _, number := range blockNumbers {
