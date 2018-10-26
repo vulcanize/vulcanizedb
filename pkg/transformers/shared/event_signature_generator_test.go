@@ -84,95 +84,135 @@ var _ = Describe("Event signature generator", func() {
 
 	Describe("getting the solidity method/event signature from the abi", func() {
 		Describe("it handles methods", func() {
-			It("gets the cat file method signature", func() {
-				expected := "file(bytes32,bytes32,address)"
-				actual := shared.GetSolidityMethodSignature(shared.CatABI, "file")
+			Describe("from the cat contract", func() {
+				It("gets the file method signature", func() {
+					expected := "file(bytes32,bytes32,address)"
+					actual := shared.GetSolidityMethodSignature(shared.CatABI, "file")
 
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
 			})
 
-			It("gets the flip dent method signature", func() {
-				expected := "dent(uint256,uint256,uint256)"
-				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "dent")
+			Describe("from the drip contract", func() {
+				It("gets the drip method signature", func() {
+					expected := "drip(bytes32)"
+					actual := shared.GetSolidityMethodSignature(shared.DripABI, "drip")
 
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the file method signature", func() {
+					expected := "file(bytes32,uint256)"
+					actual := shared.GetSolidityMethodSignature(shared.DripABI, "file")
+
+					Expect(expected).To(Equal(actual))
+				})
 			})
 
-			It("gets the flip tend method signature", func() {
-				expected := "tend(uint256,uint256,uint256)"
-				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "tend")
+			Describe("from the flipper contract", func() {
+				It("gets the deal method signature", func() {
+					expected := "deal(uint256)"
+					actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "deal")
 
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the dent method signature", func() {
+					expected := "dent(uint256,uint256,uint256)"
+					actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "dent")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the tend method signature", func() {
+					expected := "tend(uint256,uint256,uint256)"
+					actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "tend")
+
+					Expect(expected).To(Equal(actual))
+				})
 			})
 
-			It("gets the pit file deb ceiling method signature", func() {
-				expected := "file(bytes32,address)"
-				actual := shared.GetSolidityMethodSignature(shared.PitABI, "file")
+			Describe("from the pit contract", func() {
+				It("gets the file method signature", func() {
+					expected := "file(bytes32,address)"
+					actual := shared.GetSolidityMethodSignature(shared.PitABI, "file")
 
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
 			})
 
-			It("gets the vat init method signature", func() {
-				expected := "init(bytes32)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "init")
+			Describe("from the vat contract", func() {
+				It("gets the init method signature", func() {
+					expected := "init(bytes32)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "init")
 
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the heal method signature", func() {
+					expected := "heal(bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "heal")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the fold method signature", func() {
+					expected := "fold(bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "fold")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the flux method signature", func() {
+					expected := "flux(bytes32,bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "flux")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the grab method signature", func() {
+					expected := "grab(bytes32,bytes32,bytes32,bytes32,int256,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "grab")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the move method signature", func() {
+					expected := "move(bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "move")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the slip method signature", func() {
+					expected := "slip(bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "slip")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the toll method signature", func() {
+					expected := "toll(bytes32,bytes32,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "toll")
+
+					Expect(expected).To(Equal(actual))
+				})
+
+				It("gets the tune method signature", func() {
+					expected := "tune(bytes32,bytes32,bytes32,bytes32,int256,int256)"
+					actual := shared.GetSolidityMethodSignature(shared.VatABI, "tune")
+
+					Expect(expected).To(Equal(actual))
+				})
 			})
 
-			It("gets the vat heal method signature", func() {
-				expected := "heal(bytes32,bytes32,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "heal")
+			Describe("from the vow contract", func() {
+				It("gets the flog method signature", func() {
+					expected := "flog(uint48)"
+					actual := shared.GetSolidityMethodSignature(shared.VowABI, "flog")
 
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the vat init method signature", func() {
-				expected := "fold(bytes32,bytes32,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "fold")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the vat flux method signature", func() {
-				expected := "flux(bytes32,bytes32,bytes32,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "flux")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the flip deal method signature", func() {
-				expected := "deal(uint256)"
-				actual := shared.GetSolidityMethodSignature(shared.FlipperABI, "deal")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the vat grab method signature", func() {
-				expected := "grab(bytes32,bytes32,bytes32,bytes32,int256,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "grab")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the vat move method signature", func() {
-				expected := "move(bytes32,bytes32,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "move")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the vat slip method signature", func() {
-				expected := "slip(bytes32,bytes32,int256)"
-				actual := shared.GetSolidityMethodSignature(shared.VatABI, "slip")
-
-				Expect(expected).To(Equal(actual))
-			})
-
-			It("gets the flog method signature", func() {
-				expected := "flog(uint48)"
-				actual := shared.GetSolidityMethodSignature(shared.VowABI, "flog")
-
-				Expect(expected).To(Equal(actual))
+					Expect(expected).To(Equal(actual))
+				})
 			})
 		})
 
