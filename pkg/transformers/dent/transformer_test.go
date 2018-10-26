@@ -15,6 +15,7 @@
 package dent_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -28,38 +29,46 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	dent_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/dent"
 )
 
 var _ = Describe("DentTransformer", func() {
 	var config = dent.DentConfig
-	var dentRepository dent_mocks.MockDentRepository
+	var repository mocks.MockRepository
 	var fetcher mocks.MockLogFetcher
-	var converter dent_mocks.MockDentConverter
-	var transformer dent.DentTransformer
+	var converter mocks.MockLogNoteConverter
+	var transformer shared.Transformer
+	var headerOne core.Header
+	var headerTwo core.Header
 
 	BeforeEach(func() {
-		dentRepository = dent_mocks.MockDentRepository{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = dent_mocks.MockDentConverter{}
-		transformer = dent.DentTransformer{
-			Repository: &dentRepository,
+		converter = mocks.MockLogNoteConverter{}
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &fetcher,
 			Converter:  &converter,
-		}
+			Repository: &repository,
+			Fetcher:    &fetcher,
+		}.NewLogNoteTransformer(nil, nil)
+		headerOne = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
+		headerTwo = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dentRepository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
-		Expect(dentRepository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns an error if fetching the missing headers fails", func() {
-		dentRepository.SetMissingHeadersError(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -67,20 +76,18 @@ var _ = Describe("DentTransformer", func() {
 	})
 
 	It("fetches logs for each missing header", func() {
-		header1 := core.Header{BlockNumber: rand.Int63()}
-		header2 := core.Header{BlockNumber: rand.Int63()}
-		dentRepository.SetMissingHeaders([]core.Header{header1, header2})
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		expectedTopics := [][]common.Hash{{common.HexToHash(shared.DentFunctionSignature)}}
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{header1.BlockNumber, header2.BlockNumber}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 	})
 
 	It("returns an error if fetching logs fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetcherError(fakes.FakeError)
 		err := transformer.Execute()
 
@@ -89,34 +96,17 @@ var _ = Describe("DentTransformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &dent_mocks.MockDentConverter{}
-		mockRepository := &dent_mocks.MockDentRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := dent.DentTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &dent_mocks.MockDentConverter{}
-		mockRepository := &dent_mocks.MockDentRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := dent.DentTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -125,16 +115,16 @@ var _ = Describe("DentTransformer", func() {
 	})
 
 	It("converts each eth log to a Model", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.DentLog}))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.DentLog}))
 	})
 
 	It("returns an error if converting the eth log fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
 		converter.SetConverterError(fakes.FakeError)
 		err := transformer.Execute()
@@ -143,21 +133,20 @@ var _ = Describe("DentTransformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("persists each model as a Dent record", func() {
-		header1 := core.Header{Id: rand.Int63()}
-		header2 := core.Header{Id: rand.Int63()}
-		dentRepository.SetMissingHeaders([]core.Header{header1, header2})
+	It("persists the model as a Dent record", func() {
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
+		converter.SetReturnModels([]interface{}{test_data.DentModel})
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dentRepository.PassedDentModels).To(Equal([]dent.DentModel{test_data.DentModel, test_data.DentModel}))
-		Expect(dentRepository.PassedHeaderIds).To(Equal([]int64{header1.Id, header2.Id}))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.DentModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
 	})
 
 	It("returns an error if persisting dent record fails", func() {
-		dentRepository.SetMissingHeaders([]core.Header{{}})
-		dentRepository.SetCreateError(fakes.FakeError)
+		repository.SetMissingHeaders([]core.Header{{}})
+		repository.SetCreateError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{test_data.DentLog})
 		err := transformer.Execute()
 

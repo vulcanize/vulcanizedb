@@ -83,7 +83,13 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-	DentTransformerInitializer        = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
+	DentTransformerInitializer = factories.Transformer{
+		Config:     dent.DentConfig,
+		Converter:  &dent.DentConverter{},
+		Repository: &dent.DentRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
 	DripDripTransformerInitializer    = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
 
 	DripFileIlkTransformerInitializer = factories.LogNoteTransformer{

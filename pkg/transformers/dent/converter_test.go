@@ -36,7 +36,7 @@ var _ = Describe("Dent Converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0]).To(Equal(test_data.DentModel))
+		Expect(models[0].(dent.DentModel)).To(Equal(test_data.DentModel))
 	})
 
 	It("returns an error if the expected amount of topics aren't in the log", func() {

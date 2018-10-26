@@ -23,17 +23,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DentModel, error)
-}
-
 type DentConverter struct{}
 
 func NewDentConverter() DentConverter {
 	return DentConverter{}
 }
 
-func (c DentConverter) ToModels(ethLogs []types.Log) (result []DentModel, err error) {
+func (c DentConverter) ToModels(ethLogs []types.Log) (result []interface{}, err error) {
 	for _, log := range ethLogs {
 		err := validateLog(log)
 		if err != nil {
