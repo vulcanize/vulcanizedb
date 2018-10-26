@@ -6,12 +6,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 )
 
 var _ = Describe("Vat grab converter", func() {
-	var converter vat_grab.Converter
+	var converter factories.Converter
 
 	BeforeEach(func() {
 		converter = vat_grab.VatGrabConverter{}

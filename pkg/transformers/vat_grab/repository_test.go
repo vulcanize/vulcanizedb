@@ -2,7 +2,6 @@ package vat_grab_test
 
 import (
 	"database/sql"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -19,7 +19,7 @@ import (
 var _ = Describe("Vat grab repository", func() {
 	var (
 		db                *postgres.DB
-		vatGrabRepository vat_grab.Repository
+		vatGrabRepository factories.Repository
 		err               error
 		headerRepository  datastore.HeaderRepository
 	)
@@ -28,7 +28,8 @@ var _ = Describe("Vat grab repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		vatGrabRepository = vat_grab.NewVatGrabRepository(db)
+		vatGrabRepository = &vat_grab.VatGrabRepository{}
+		vatGrabRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -40,7 +41,7 @@ var _ = Describe("Vat grab repository", func() {
 		})
 
 		It("adds a vat grab event", func() {
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbVatGrab vat_grab.VatGrabModel
@@ -58,7 +59,7 @@ var _ = Describe("Vat grab repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -71,7 +72,7 @@ var _ = Describe("Vat grab repository", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -81,17 +82,17 @@ var _ = Describe("Vat grab repository", func() {
 		})
 
 		It("does not duplicate vat grab events", func() {
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes vat grab if corresponding header is deleted", func() {
-			err = vatGrabRepository.Create(headerID, []vat_grab.VatGrabModel{test_data.VatGrabModel})
+			err = vatGrabRepository.Create(headerID, []interface{}{test_data.VatGrabModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -101,6 +102,14 @@ var _ = Describe("Vat grab repository", func() {
 			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if the wrong model is passed in", func() {
+			badModel := struct{}{}
+			err = vatGrabRepository.Create(headerID, []interface{}{badModel})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type struct {}, not vat_grab.VatGrabModel"))
 		})
 	})
 
@@ -187,7 +196,8 @@ var _ = Describe("Vat grab repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			vatGrabRepositoryTwo := vat_grab.NewVatGrabRepository(dbTwo)
+			vatGrabRepositoryTwo := vat_grab.VatGrabRepository{}
+			vatGrabRepositoryTwo.SetDB(dbTwo)
 			err := vatGrabRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 
