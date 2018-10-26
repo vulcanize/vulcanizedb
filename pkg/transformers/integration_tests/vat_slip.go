@@ -34,13 +34,13 @@ var _ = Describe("Vat slip transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_slip.VatSlipConverter{},
 			Repository: &vat_slip.VatSlipRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockChain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 
 		err = transformer.Execute()
 

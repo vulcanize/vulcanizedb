@@ -15,34 +15,34 @@
 package bite
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []BiteModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type BiteRepository struct {
 	db *postgres.DB
 }
 
-func NewBiteRepository(db *postgres.DB) Repository {
-	return BiteRepository{db: db}
+func (repository *BiteRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }
 
-func (repository BiteRepository) Create(headerID int64, models []BiteModel) error {
+func (repository BiteRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		biteModel, ok := model.(BiteModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, BiteModel{})
+		}
 		_, err := tx.Exec(
 			`INSERT into maker.bite (header_id, ilk, urn, ink, art, iart, tab, nflip, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7::NUMERIC, $8::NUMERIC, $9, $10, $11)`,
-			headerID, model.Ilk, model.Urn, model.Ink, model.Art, model.IArt, model.Tab, model.NFlip, model.LogIndex, model.TransactionIndex, model.Raw,
+			headerID, biteModel.Ilk, biteModel.Urn, biteModel.Ink, biteModel.Art, biteModel.IArt, biteModel.Tab, biteModel.NFlip, biteModel.LogIndex, biteModel.TransactionIndex, biteModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -50,13 +50,14 @@ func (repository BiteRepository) Create(headerID int64, models []BiteModel) erro
 		}
 	}
 	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, bite_checked)
-		VALUES ($1, $2) 
-	ON CONFLICT (header_id) DO
-		UPDATE SET bite_checked = $2`, headerID, true)
+			VALUES ($1, $2) 
+		ON CONFLICT (header_id) DO
+			UPDATE SET bite_checked = $2`, headerID, true)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
+
 	return tx.Commit()
 }
 

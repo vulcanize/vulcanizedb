@@ -34,7 +34,7 @@ var _ = Describe("DealTransformer", func() {
 	var config = deal.DealConfig
 	var repository mocks.MockRepository
 	var fetcher mocks.MockLogFetcher
-	var converter mocks.MockConverter
+	var converter mocks.MockLogNoteConverter
 	var transformer shared.Transformer
 	var headerOne core.Header
 	var headerTwo core.Header
@@ -42,13 +42,13 @@ var _ = Describe("DealTransformer", func() {
 	BeforeEach(func() {
 		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
-		transformer = factories.Transformer{
+		converter = mocks.MockLogNoteConverter{}
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &converter,
 			Repository: &repository,
 			Fetcher:    &fetcher,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 		headerOne = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
 		headerTwo = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
 	})

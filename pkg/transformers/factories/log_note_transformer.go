@@ -24,55 +24,54 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Transformer struct {
+type LogNoteTransformer struct {
 	Config     shared.SingleTransformerConfig
-	Converter  Converter
+	Converter  LogNoteConverter
 	Repository Repository
 	Fetcher    shared.SettableLogFetcher
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB, bc core.BlockChain) shared.Transformer {
+func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB, bc core.BlockChain) shared.Transformer {
 	transformer.Repository.SetDB(db)
 	transformer.Fetcher.SetBC(bc)
 	return transformer
 }
 
-func (transformer Transformer) Execute() error {
+func (transformer LogNoteTransformer) Execute() error {
 	transformerName := transformer.Config.TransformerName
-	config := transformer.Config
-	topics := [][]common.Hash{{common.HexToHash(config.Topic)}}
-	missingHeaders, err := transformer.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
+	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
-		log.Printf("Error fetching missing headers in %v transformer: %v \n", transformerName, err)
+		log.Printf("Error fetching mising headers in %v transformer: %v \n", transformerName, err)
 		return err
 	}
+
+	// Grab event signature from transformer config
+	// (Double-array structure required for go-ethereum FilterQuery)
+	var topic = [][]common.Hash{{common.HexToHash(transformer.Config.Topic)}}
+
 	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
-		logs, err := transformer.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
+		// Fetch the missing logs for a given header
+		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header.BlockNumber)
 		if err != nil {
 			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
 			return err
 		}
 
-		if len(logs) < 1 {
-			err = transformer.Repository.MarkHeaderChecked(header.Id)
+		// No matching logs, mark the header as checked for this type of logs
+		if len(matchingLogs) < 1 {
+			err := transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
 				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 				return err
 			}
-
+			// Continue with the next header; nothing to persist
 			continue
 		}
 
-		entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
+		models, err := transformer.Converter.ToModels(matchingLogs)
 		if err != nil {
-			log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
-			return err
-		}
-
-		models, err := transformer.Converter.ToModels(entities)
-		if err != nil {
-			log.Printf("Error converting entities to models in %v: %v", transformerName, err)
+			log.Printf("Error converting logs in %v: %v", transformerName, err)
 			return err
 		}
 
@@ -81,8 +80,6 @@ func (transformer Transformer) Execute() error {
 			log.Printf("Error persisting %v record: %v", transformerName, err)
 			return err
 		}
-
 	}
-
 	return nil
 }

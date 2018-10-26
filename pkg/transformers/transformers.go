@@ -48,158 +48,172 @@ import (
 )
 
 var (
-	BiteTransformerInitializer = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
+	BiteTransformerInitializer = factories.Transformer{
+		Config:     bite.BiteConfig,
+		Converter:  &bite.BiteConverter{},
+		Repository: &bite.BiteRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
 
-	CatFileChopLumpTransformerInitializer = factories.Transformer{
+	CatFileChopLumpTransformerInitializer = factories.LogNoteTransformer{
 		Config:     chop_lump.CatFileChopLumpConfig,
 		Converter:  &chop_lump.CatFileChopLumpConverter{},
 		Repository: &chop_lump.CatFileChopLumpRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	CatFileFlipTransformerInitializer = factories.Transformer{
+	CatFileFlipTransformerInitializer = factories.LogNoteTransformer{
 		Config:     flip.CatFileFlipConfig,
 		Converter:  &flip.CatFileFlipConverter{},
 		Repository: &flip.CatFileFlipRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	CatFilePitVowTransformerInitializer = factories.Transformer{
+	CatFilePitVowTransformerInitializer = factories.LogNoteTransformer{
 		Config:     pit_vow.CatFilePitVowConfig,
 		Converter:  &pit_vow.CatFilePitVowConverter{},
 		Repository: &pit_vow.CatFilePitVowRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	DealTransformerInitializer = factories.Transformer{
+	DealTransformerInitializer = factories.LogNoteTransformer{
 		Config:     deal.DealConfig,
 		Converter:  &deal.DealConverter{},
 		Repository: &deal.DealRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
 	DentTransformerInitializer        = dent.DentTransformerInitializer{Config: dent.DentConfig}.NewDentTransformer
 	DripDripTransformerInitializer    = drip_drip.DripDripTransformerInitializer{Config: drip_drip.DripDripConfig}.NewDripDripTransformer
-	DripFileIlkTransformerInitializer = factories.Transformer{
+
+	DripFileIlkTransformerInitializer = factories.LogNoteTransformer{
 		Config:     ilk2.DripFileIlkConfig,
 		Converter:  &ilk2.DripFileIlkConverter{},
 		Repository: &ilk2.DripFileIlkRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	DripFileRepoTransformerInitializer = factories.Transformer{
+	DripFileRepoTransformerInitializer = factories.LogNoteTransformer{
 		Config:     repo.DripFileRepoConfig,
 		Converter:  &repo.DripFileRepoConverter{},
 		Repository: &repo.DripFileRepoRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	DripFileVowTransfromerInitializer = factories.Transformer{
+	DripFileVowTransfromerInitializer = factories.LogNoteTransformer{
 		Config:     vow.DripFileVowConfig,
 		Converter:  &vow.DripFileVowConverter{},
 		Repository: &vow.DripFileVowRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
 	FlipKickTransformerInitializer = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
-	FlogTransformerInitializer     = factories.Transformer{
+	FlogTransformerInitializer     = factories.LogNoteTransformer{
 		Config:     flog.FlogConfig,
 		Converter:  &flog.FlogConverter{},
 		Repository: &flog.FlogRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
 	FlopKickTransformerInitializer           = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
 	FrobTransformerInitializer               = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
-	PitFileDebtCeilingTransformerInitializer = factories.Transformer{
+	PitFileDebtCeilingTransformerInitializer = factories.LogNoteTransformer{
 		Config:     debt_ceiling.DebtCeilingFileConfig,
 		Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
 		Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	PitFileIlkTransformerInitializer = factories.Transformer{
+	PitFileIlkTransformerInitializer = factories.LogNoteTransformer{
 		Config:     ilk.IlkFileConfig,
 		Converter:  &ilk.PitFileIlkConverter{},
 		Repository: &ilk.PitFileIlkRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	PitFileStabilityFeeTransformerInitializer = factories.Transformer{
+	PitFileStabilityFeeTransformerInitializer = factories.LogNoteTransformer{
 		Config:     stability_fee.StabilityFeeFileConfig,
 		Converter:  &stability_fee.PitFileStabilityFeeConverter{},
 		Repository: &stability_fee.PitFileStabilityFeeRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	PriceFeedTransformerInitializer = factories.Transformer{
+	PriceFeedTransformerInitializer = factories.LogNoteTransformer{
 		Config:     price_feeds.PriceFeedConfig,
 		Converter:  &price_feeds.PriceFeedConverter{},
 		Repository: &price_feeds.PriceFeedRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	TendTransformerInitializer = factories.Transformer{
+	TendTransformerInitializer = factories.LogNoteTransformer{
 		Config:     tend.TendConfig,
 		Converter:  &tend.TendConverter{},
 		Repository: &tend.TendRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 
-	VatInitTransformerInitializer = factories.Transformer{
+	VatInitTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_init.VatInitConfig,
 		Converter:  &vat_init.VatInitConverter{},
 		Repository: &vat_init.VatInitRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatGrabTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatGrabTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_grab.VatGrabConfig,
 		Converter:  &vat_grab.VatGrabConverter{},
 		Repository: &vat_grab.VatGrabRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatFoldTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatFoldTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_fold.VatFoldConfig,
 		Converter:  &vat_fold.VatFoldConverter{},
 		Repository: &vat_fold.VatFoldRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatHealTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatHealTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_heal.VatHealConfig,
 		Converter:  &vat_heal.VatHealConverter{},
 		Repository: &vat_heal.VatHealRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatMoveTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatMoveTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_move.VatMoveConfig,
 		Converter:  &vat_move.VatMoveConverter{},
 		Repository: &vat_move.VatMoveRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatSlipTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatSlipTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_slip.VatSlipConfig,
 		Converter:  &vat_slip.VatSlipConverter{},
 		Repository: &vat_slip.VatSlipRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatTollTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatTollTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_toll.VatTollConfig,
 		Converter:  &vat_toll.VatTollConverter{},
 		Repository: &vat_toll.VatTollRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatTuneTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatTuneTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_tune.VatTuneConfig,
 		Converter:  &vat_tune.VatTuneConverter{},
 		Repository: &vat_tune.VatTuneRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
-	VatFluxTransformerInitializer = factories.Transformer{
+	}.NewLogNoteTransformer
+
+	VatFluxTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vat_flux.VatFluxConfig,
 		Converter:  &vat_flux.VatFluxConverter{},
 		Repository: &vat_flux.VatFluxRepository{},
 		Fetcher:    &shared.Fetcher{},
-	}.NewTransformer
+	}.NewLogNoteTransformer
 )
 
 func TransformerInitializers() []shared.TransformerInitializer {

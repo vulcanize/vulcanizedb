@@ -50,13 +50,13 @@ var _ = Describe("Price feeds transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.Transformer{
+		transformerInitializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &price_feeds.PriceFeedConverter{},
 			Repository: &price_feeds.PriceFeedRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := transformerInitializer.NewTransformer(db, blockChain)
+		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
 
 		err = transformer.Execute()
 
@@ -77,13 +77,13 @@ var _ = Describe("Price feeds transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.Transformer{
+		transformerInitializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &price_feeds.PriceFeedConverter{},
 			Repository: &price_feeds.PriceFeedRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := transformerInitializer.NewTransformer(db, blockChain)
+		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
 
 		err = transformer.Execute()
 
@@ -104,13 +104,13 @@ var _ = Describe("Price feeds transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.Transformer{
+		transformerInitializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &price_feeds.PriceFeedConverter{},
 			Repository: &price_feeds.PriceFeedRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := transformerInitializer.NewTransformer(db, blockChain)
+		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
 
 		err = transformer.Execute()
 

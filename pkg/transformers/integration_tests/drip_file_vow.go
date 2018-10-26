@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Drip File Vow Transformer", func() {
+var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 	It("transforms DripFileVow log events", func() {
 		blockNumber := int64(8762197)
 		config := vow.DripFileVowConfig
@@ -42,13 +42,13 @@ var _ = Describe("Drip File Vow Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &vow.DripFileVowConverter{},
 			Repository: &vow.DripFileVowRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

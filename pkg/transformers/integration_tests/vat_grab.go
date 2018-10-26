@@ -44,12 +44,12 @@ var _ = Describe("Vat Grab Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		transformer := factories.Transformer{
+		transformer := factories.LogNoteTransformer{
 			Config:     vat_grab.VatGrabConfig,
 			Converter:  &vat_grab.VatGrabConverter{},
 			Repository: &vat_grab.VatGrabRepository{},
 			Fetcher:    &shared.Fetcher{},
-		}.NewTransformer(db, blockchain)
+		}.NewLogNoteTransformer(db, blockchain)
 
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())

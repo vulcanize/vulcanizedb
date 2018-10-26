@@ -35,7 +35,7 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 	var (
 		config      = debt_ceiling.DebtCeilingFileConfig
 		fetcher     mocks.MockLogFetcher
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -44,16 +44,16 @@ var _ = Describe("Pit file debt ceiling transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the blockchain and database", func() {

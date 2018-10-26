@@ -35,7 +35,7 @@ var _ = Describe("Drip file ilk transformer", func() {
 	var (
 		config      = ilk.DripFileIlkConfig
 		fetcher     mocks.MockLogFetcher
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -44,14 +44,14 @@ var _ = Describe("Drip file ilk transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 		headerOne = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
 		headerTwo = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
 	})

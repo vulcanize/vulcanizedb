@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Tend Transformer", func() {
+var _ = Describe("Tend LogNoteTransformer", func() {
 	It("fetches and transforms a Tend event from Kovan chain", func() {
 		blockNumber := int64(8935601)
 		config := tend.TendConfig
@@ -42,13 +42,13 @@ var _ = Describe("Tend Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -81,13 +81,13 @@ var _ = Describe("Tend Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

@@ -27,33 +27,36 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	bite_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/bite"
 )
 
 var _ = Describe("Bite Transformer", func() {
-	var repository bite_mocks.MockBiteRepository
+	var repository mocks.MockRepository
 	var fetcher mocks.MockLogFetcher
-	var converter bite_mocks.MockBiteConverter
-	var transformer bite.BiteTransformer
+	var converter mocks.MockConverter
+	var transformer shared.Transformer
 	var blockNumber1 = rand.Int63()
 	var blockNumber2 = rand.Int63()
 
 	BeforeEach(func() {
-		repository = bite_mocks.MockBiteRepository{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = bite_mocks.MockBiteConverter{}
+		converter = mocks.MockConverter{}
 
-		transformer = bite.BiteTransformer{
+		transformer = factories.Transformer{
 			Repository: &repository,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Config:     bite.BiteConfig,
-		}
+		}.NewTransformer(nil, nil)
+	})
 
-		transformer.SetConfig(bite.BiteConfig)
+	It("sets the blockchain and db", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers for blocks in the configured range", func() {
@@ -65,7 +68,7 @@ var _ = Describe("Bite Transformer", func() {
 	})
 
 	It("returns an error if it fails to get missing headers", func() {
-		repository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 
 		Expect(err).To(HaveOccurred())
@@ -103,7 +106,7 @@ var _ = Describe("Bite Transformer", func() {
 
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		repository.SetMarkHeaderCheckedErr(fakes.FakeError)
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -117,7 +120,7 @@ var _ = Describe("Bite Transformer", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ConverterAbi).To(Equal(bite.BiteConfig.ContractAbi))
+		Expect(converter.ContractAbi).To(Equal(bite.BiteConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.EthBiteLog}))
 	})
 
@@ -125,7 +128,30 @@ var _ = Describe("Bite Transformer", func() {
 		headerId := int64(1)
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1, Id: headerId}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthBiteLog})
-		converter.SetConverterError(fakes.FakeError)
+		converter.ToEntitiesError = fakes.FakeError
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("converts an entity to a BiteModel", func() {
+		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthBiteLog})
+		converter.EntitiesToReturn = []interface{}{test_data.BiteEntity}
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(converter.EntitiesToConvert[0]).To(Equal(test_data.BiteEntity))
+	})
+
+	It("returns an error if converting to models fails", func() {
+		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+		fetcher.SetFetchedLogs([]types.Log{test_data.EthBiteLog})
+		converter.EntitiesToReturn = []interface{}{test_data.BiteEntity}
+		converter.ToModelsError = fakes.FakeError
 
 		err := transformer.Execute()
 
@@ -137,12 +163,13 @@ var _ = Describe("Bite Transformer", func() {
 		headerId := int64(1)
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: blockNumber1, Id: headerId}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthBiteLog})
+		converter.ModelsToReturn = []interface{}{test_data.BiteModel}
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(headerId))
-		Expect(repository.PassedBiteModels).To(Equal([]bite.BiteModel{test_data.BiteModel}))
+		Expect(repository.PassedModels[0]).To(Equal(test_data.BiteModel))
 	})
 
 	It("returns error if persisting bite record fails", func() {
