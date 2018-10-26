@@ -15,32 +15,32 @@
 package deal
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerId int64, models []DealModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 type DealRepository struct {
 	db *postgres.DB
 }
 
-func NewDealRepository(database *postgres.DB) DealRepository {
-	return DealRepository{db: database}
-}
-func (r DealRepository) Create(headerId int64, models []DealModel) error {
-	tx, err := r.db.Begin()
+func (repository DealRepository) Create(headerId int64, models []interface{}) error {
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
+
 	for _, model := range models {
+		deal, ok := model.(DealModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, DealModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.deal (header_id, bid_id, contract_address, log_idx, tx_idx, raw_log)
 					 VALUES($1, $2, $3, $4, $5, $6)`,
-			headerId, model.BidId, model.ContractAddress, model.LogIndex, model.TransactionIndex, model.Raw,
+			headerId, deal.BidId, deal.ContractAddress, deal.LogIndex, deal.TransactionIndex, deal.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -51,6 +51,7 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 			VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
 			UPDATE SET deal_checked = $2`, headerId, true)
+
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -58,26 +59,30 @@ func (r DealRepository) Create(headerId int64, models []DealModel) error {
 	return tx.Commit()
 }
 
-func (r DealRepository) MarkHeaderChecked(headerID int64) error {
-	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, deal_checked)
-		VALUES ($1, $2)
-	ON CONFLICT (header_id) DO
-		UPDATE SET deal_checked = $2`, headerID, true)
+func (repository DealRepository) MarkHeaderChecked(headerID int64) error {
+	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, deal_checked)
+			VALUES ($1, $2)
+		ON CONFLICT (header_id) DO
+			UPDATE SET deal_checked = $2`, headerID, true)
 	return err
 }
 
-func (r DealRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+func (repository DealRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var missingHeaders []core.Header
-	err := r.db.Select(&missingHeaders,
+	err := repository.db.Select(&missingHeaders,
 		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR deal_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
+			LEFT JOIN checked_headers on headers.id = header_id
+		WHERE (header_id ISNULL OR deal_checked IS FALSE)
+			AND headers.block_number >= $1
+			AND headers.block_number <= $2
+			AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		r.db.Node.ID,
+		repository.db.Node.ID,
 	)
 	return missingHeaders, err
+}
+
+func (repository *DealRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }
