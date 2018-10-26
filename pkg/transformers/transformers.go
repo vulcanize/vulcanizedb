@@ -48,7 +48,7 @@ import (
 )
 
 var (
-	BiteTransformerInitializer            = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
+	BiteTransformerInitializer = bite.BiteTransformerInitializer{Config: bite.BiteConfig}.NewBiteTransformer
 
 	CatFileChopLumpTransformerInitializer = factories.Transformer{
 		Config:     chop_lump.CatFileChopLumpConfig,
@@ -71,7 +71,7 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 
-	DealTransformerInitializer        = factories.Transformer{
+	DealTransformerInitializer = factories.Transformer{
 		Config:     deal.DealConfig,
 		Converter:  &deal.DealConverter{},
 		Repository: &deal.DealRepository{},

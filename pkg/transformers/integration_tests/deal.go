@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -51,12 +52,17 @@ var _ = Describe("Deal transformer", func() {
 		err = persistHeader(db, flipBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := deal.Config
+		config := deal.DealConfig
 		config.StartingBlockNumber = flipBlockNumber
 		config.EndingBlockNumber = flipBlockNumber
 
-		initializer := deal.DealTransformerInitializer{Config: config}
-		transformer := initializer.NewDealTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Converter:  &deal.DealConverter{},
+			Repository: &deal.DealRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
