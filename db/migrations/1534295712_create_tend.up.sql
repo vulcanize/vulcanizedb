@@ -11,3 +11,6 @@ CREATE TABLE maker.tend (
   raw_log          JSONB,
   UNIQUE (header_id, tx_idx, log_idx)
 );
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN tend_checked BOOLEAN NOT NULL DEFAULT FALSE;
