@@ -21,14 +21,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]DripDripModel, error)
-}
-
 type DripDripConverter struct{}
 
-func (DripDripConverter) ToModels(ethLogs []types.Log) ([]DripDripModel, error) {
-	var models []DripDripModel
+func (DripDripConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {
