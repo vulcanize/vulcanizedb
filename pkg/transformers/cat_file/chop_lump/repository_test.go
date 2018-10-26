@@ -52,12 +52,12 @@ var _ = Describe("Cat file chop lump repository", func() {
 		BeforeEach(func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a cat file chop lump event", func() {
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbResult chop_lump.CatFileChopLumpModel
 			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -70,6 +70,22 @@ var _ = Describe("Cat file chop lump repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT cat_file_chop_lump_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT cat_file_chop_lump_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -78,20 +94,29 @@ var _ = Describe("Cat file chop lump repository", func() {
 
 		It("does not duplicate cat file chop lump events", func() {
 			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("allows for multiple cat file chop lump events in one transaction if they have different log indexes", func() {
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+			Expect(err).NotTo(HaveOccurred())
 			newCatFileChopLump := test_data.CatFileChopLumpModel
 			newCatFileChopLump.LogIndex = newCatFileChopLump.LogIndex + 1
+
 			err = catFileRepository.Create(headerID, []interface{}{newCatFileChopLump})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("removes cat file chop lump if corresponding header is deleted", func() {
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -99,6 +124,12 @@ var _ = Describe("Cat file chop lump repository", func() {
 			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = catFileRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
