@@ -31,3 +31,12 @@ CREATE TABLE maker.drip_file_vow (
   raw_log   JSONB,
   UNIQUE (header_id, tx_idx, log_idx)
 );
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN drip_file_ilk_checked BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN drip_file_repo_checked BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN drip_file_vow_checked BOOLEAN NOT NULL DEFAULT FALSE;
