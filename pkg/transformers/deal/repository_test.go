@@ -38,7 +38,8 @@ var _ = Describe("Deal Repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		dealRepository = deal.NewDealRepository(db)
+		dealRepository = deal.DealRepository{}
+		dealRepository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
@@ -48,7 +49,7 @@ var _ = Describe("Deal Repository", func() {
 		BeforeEach(func() {
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err := dealRepository.Create(headerId, []deal.DealModel{test_data.DealModel})
+			err := dealRepository.Create(headerId, []interface{}{test_data.DealModel})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -74,7 +75,7 @@ var _ = Describe("Deal Repository", func() {
 		})
 
 		It("returns an error if inserting a deal record fails", func() {
-			err = dealRepository.Create(headerId, []deal.DealModel{test_data.DealModel})
+			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -175,7 +176,8 @@ var _ = Describe("Deal Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
-			dealRepository2 := deal.NewDealRepository(db2)
+			dealRepository2 := deal.DealRepository{}
+			dealRepository2.SetDB(db2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
 			var node2HeaderIds []int64
 			for _, number := range blockNumbers {

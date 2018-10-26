@@ -17,6 +17,7 @@ package deal_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,56 +27,63 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	deal_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/deal"
 	"math/rand"
 )
 
 var _ = Describe("DealTransformer", func() {
-	var config = deal.Config
-	var dealRepository deal_mocks.MockDealRepository
+	var config = deal.DealConfig
+	var repository mocks.MockRepository
 	var fetcher mocks.MockLogFetcher
-	var converter deal_mocks.MockDealConverter
-	var transformer deal.DealTransformer
+	var converter mocks.MockConverter
+	var transformer shared.Transformer
+	var headerOne core.Header
+	var headerTwo core.Header
 
 	BeforeEach(func() {
-		dealRepository = deal_mocks.MockDealRepository{}
+		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = deal_mocks.MockDealConverter{}
-		transformer = deal.DealTransformer{
-			Repository: &dealRepository,
+		converter = mocks.MockConverter{}
+		transformer = factories.Transformer{
 			Config:     config,
-			Fetcher:    &fetcher,
 			Converter:  &converter,
-		}
+			Repository: &repository,
+			Fetcher:    &fetcher,
+		}.NewTransformer(nil, nil)
+		headerOne = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
+		headerTwo = core.Header{BlockNumber: rand.Int63(), Id: rand.Int63()}
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
 	})
 
 	It("gets missing headers", func() {
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dealRepository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
-		Expect(dealRepository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(config.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(config.EndingBlockNumber))
 	})
 
 	It("returns an error if fetching the missing headers fails", func() {
-		dealRepository.SetMissingHeadersErr(fakes.FakeError)
+		repository.SetMissingHeadersError(fakes.FakeError)
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("fetches logs for each missing header", func() {
-		header1 := core.Header{BlockNumber: rand.Int63()}
-		header2 := core.Header{BlockNumber: rand.Int63()}
-		dealRepository.SetMissingHeaders([]core.Header{header1, header2})
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{
+			config.ContractAddresses, config.ContractAddresses}))
 		expectedTopics := [][]common.Hash{{common.HexToHash(shared.DealSignature)}}
 		Expect(fetcher.FetchedTopics).To(Equal(expectedTopics))
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{header1.BlockNumber, header2.BlockNumber}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 	})
 
 	It("returns an error if fetching logs fails", func() {
-		dealRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{{}})
 		fetcher.SetFetcherError(fakes.FakeError)
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
@@ -83,34 +91,17 @@ var _ = Describe("DealTransformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &deal_mocks.MockDealConverter{}
-		mockRepository := &deal_mocks.MockDealRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := deal.DealTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &deal_mocks.MockDealConverter{}
-		mockRepository := &deal_mocks.MockDealRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := deal.DealTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -119,37 +110,40 @@ var _ = Describe("DealTransformer", func() {
 	})
 
 	It("converts each eth log to a Model", func() {
-		dealRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
+
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.LogsToConvert).To(Equal([]types.Log{test_data.DealLogNote}))
+		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.DealLogNote}))
 	})
 
 	It("returns an error if converting the eth log fails", func() {
-		dealRepository.SetMissingHeaders([]core.Header{{}})
+		repository.SetMissingHeaders([]core.Header{{}})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
 		converter.SetConverterError(fakes.FakeError)
+
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("persists each model as a Deal record", func() {
-		header1 := core.Header{Id: rand.Int63()}
-		header2 := core.Header{Id: rand.Int63()}
-		dealRepository.SetMissingHeaders([]core.Header{header1, header2})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
+		converter.SetReturnModels([]interface{}{test_data.DealModel})
+
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(dealRepository.PassedDealModels).To(Equal([]deal.DealModel{test_data.DealModel, test_data.DealModel}))
-		Expect(dealRepository.PassedHeaderIDs).To(Equal([]int64{header1.Id, header2.Id}))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.DealModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
 	})
 
 	It("returns an error if persisting deal record fails", func() {
-		dealRepository.SetMissingHeaders([]core.Header{{}})
-		dealRepository.SetCreateError(fakes.FakeError)
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetCreateError(fakes.FakeError)
 		fetcher.SetFetchedLogs([]types.Log{test_data.DealLogNote})
+
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
 	})
