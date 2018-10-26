@@ -8,3 +8,6 @@ CREATE TABLE maker.deal (
   raw_log           JSONB,
   UNIQUE (header_id, tx_idx, log_idx)
 );
+
+ALTER TABLE public.checked_headers
+  ADD COLUMN deal_checked BOOLEAN NOT NULL DEFAULT FALSE;
