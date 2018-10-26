@@ -31,7 +31,7 @@ func (repository DealRepository) Create(headerId int64, models []interface{}) er
 	}
 
 	for _, model := range models {
-		deal, ok := model.(DealModel)
+		dealModel, ok := model.(DealModel)
 		if !ok {
 			tx.Rollback()
 			return fmt.Errorf("model of type %T, not %T", model, DealModel{})
@@ -40,7 +40,7 @@ func (repository DealRepository) Create(headerId int64, models []interface{}) er
 		_, err = tx.Exec(
 			`INSERT into maker.deal (header_id, bid_id, contract_address, log_idx, tx_idx, raw_log)
 					 VALUES($1, $2, $3, $4, $5, $6)`,
-			headerId, deal.BidId, deal.ContractAddress, deal.LogIndex, deal.TransactionIndex, deal.Raw,
+			headerId, dealModel.BidId, dealModel.ContractAddress, dealModel.LogIndex, dealModel.TransactionIndex, dealModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
