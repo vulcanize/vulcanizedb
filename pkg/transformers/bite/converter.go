@@ -19,6 +19,7 @@ package bite
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,15 +27,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error)
-	ToModels(biteEntities []BiteEntity) ([]BiteModel, error)
-}
-
 type BiteConverter struct{}
 
-func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]BiteEntity, error) {
-	var entities []BiteEntity
+func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+	var entities []interface{}
 	for _, ethLog := range ethLogs {
 		entity := &BiteEntity{}
 		address := ethLog.Address
@@ -60,19 +56,24 @@ func (BiteConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Bite
 	return entities, nil
 }
 
-func (converter BiteConverter) ToModels(entities []BiteEntity) ([]BiteModel, error) {
-	var models []BiteModel
+func (converter BiteConverter) ToModels(entities []interface{}) ([]interface{}, error) {
+	var models []interface{}
 	for _, entity := range entities {
-		ilk := string(bytes.Trim(entity.Ilk[:], "\x00"))
-		urn := common.BytesToAddress(entity.Urn[:]).String()
-		ink := entity.Ink
-		art := entity.Art
-		iArt := entity.IArt
-		tab := entity.Tab
-		flip := entity.Flip
-		logIdx := entity.LogIndex
-		txIdx := entity.TransactionIndex
-		rawLogJson, err := json.Marshal(entity.Raw)
+		biteEntity, ok := entity.(BiteEntity)
+		if !ok {
+			return nil, fmt.Errorf("entity of type %T, not %T", entity, BiteEntity{})
+		}
+
+		ilk := string(bytes.Trim(biteEntity.Ilk[:], "\x00"))
+		urn := common.BytesToAddress(biteEntity.Urn[:]).String()
+		ink := biteEntity.Ink
+		art := biteEntity.Art
+		iArt := biteEntity.IArt
+		tab := biteEntity.Tab
+		flip := biteEntity.Flip
+		logIdx := biteEntity.LogIndex
+		txIdx := biteEntity.TransactionIndex
+		rawLogJson, err := json.Marshal(biteEntity.Raw)
 		rawLogString := string(rawLogJson)
 		if err != nil {
 			return nil, err

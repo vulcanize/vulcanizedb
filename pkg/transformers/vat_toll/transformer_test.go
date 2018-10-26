@@ -21,7 +21,7 @@ var _ = Describe("Vat toll transformer", func() {
 	var (
 		config      = vat_toll.VatTollConfig
 		fetcher     mocks.MockLogFetcher
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -30,16 +30,16 @@ var _ = Describe("Vat toll transformer", func() {
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &converter,
 			Fetcher:    &fetcher,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the blockchain and database", func() {

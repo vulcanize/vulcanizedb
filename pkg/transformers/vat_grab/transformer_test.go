@@ -18,7 +18,7 @@ import (
 var _ = Describe("Vat grab transformer", func() {
 	var (
 		config      = vat_grab.VatGrabConfig
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
@@ -27,13 +27,13 @@ var _ = Describe("Vat grab transformer", func() {
 	BeforeEach(func() {
 		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
-		transformer = factories.Transformer{
+		converter = mocks.MockLogNoteConverter{}
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the blockchain and database", func() {

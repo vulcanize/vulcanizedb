@@ -19,6 +19,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -40,8 +42,13 @@ var _ = Describe("Bite Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := bite.BiteTransformerInitializer{Config: config}
-		transformer := initializer.NewBiteTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     config,
+			Converter:  &bite.BiteConverter{},
+			Repository: &bite.BiteRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

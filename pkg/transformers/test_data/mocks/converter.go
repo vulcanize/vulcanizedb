@@ -5,20 +5,22 @@ import (
 )
 
 type MockConverter struct {
-	err          error
-	returnModels []interface{}
-	PassedLogs   []types.Log
+	ToEntitiesError   error
+	ToModelsError     error
+	ContractAbi       string
+	LogsToConvert     []types.Log
+	EntitiesToConvert []interface{}
+	EntitiesToReturn  []interface{}
+	ModelsToReturn    []interface{}
 }
 
-func (converter *MockConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	return converter.returnModels, converter.err
+func (converter *MockConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+	converter.ContractAbi = contractAbi
+	converter.LogsToConvert = ethLogs
+	return converter.EntitiesToReturn, converter.ToEntitiesError
 }
 
-func (converter *MockConverter) SetConverterError(e error) {
-	converter.err = e
-}
-
-func (converter *MockConverter) SetReturnModels(models []interface{}) {
-	converter.returnModels = models
+func (converter *MockConverter) ToModels(entities []interface{}) ([]interface{}, error) {
+	converter.EntitiesToConvert = entities
+	return converter.ModelsToReturn, converter.ToModelsError
 }

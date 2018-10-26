@@ -43,13 +43,13 @@ var _ = Describe("VatFold Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_fold.VatFoldConverter{},
 			Repository: &vat_fold.VatFoldRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

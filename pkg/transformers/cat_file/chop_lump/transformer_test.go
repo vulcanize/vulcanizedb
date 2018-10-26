@@ -34,7 +34,7 @@ var _ = Describe("Cat file chop lump transformer", func() {
 	var (
 		config      = chop_lump.CatFileChopLumpConfig
 		repository  mocks.MockRepository
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
 		headerOne   core.Header
@@ -43,14 +43,14 @@ var _ = Describe("Cat file chop lump transformer", func() {
 
 	BeforeEach(func() {
 		repository = mocks.MockRepository{}
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		fetcher = mocks.MockLogFetcher{}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &converter,
 			Repository: &repository,
 			Fetcher:    &fetcher,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 	})

@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("VatInit Transformer", func() {
+var _ = Describe("VatInit LogNoteTransformer", func() {
 	It("transforms VatInit log events", func() {
 		blockNumber := int64(8535561)
 		config := vat_init.VatInitConfig
@@ -42,13 +42,13 @@ var _ = Describe("VatInit Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_init.VatInitConverter{},
 			Repository: &vat_init.VatInitRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

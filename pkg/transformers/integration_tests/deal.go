@@ -56,13 +56,13 @@ var _ = Describe("Deal transformer", func() {
 		config.StartingBlockNumber = flipBlockNumber
 		config.EndingBlockNumber = flipBlockNumber
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &deal.DealConverter{},
 			Repository: &deal.DealRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

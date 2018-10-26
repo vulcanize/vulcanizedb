@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("PitFileStabilityFee Transformer", func() {
+var _ = Describe("PitFileStabilityFee LogNoteTransformer", func() {
 	It("fetches and transforms a PitFileStabilityFee event from Kovan chain", func() {
 		blockNumber := int64(8535544)
 		config := stability_fee.StabilityFeeFileConfig
@@ -42,13 +42,13 @@ var _ = Describe("PitFileStabilityFee Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &stability_fee.PitFileStabilityFeeConverter{},
 			Repository: &stability_fee.PitFileStabilityFeeRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

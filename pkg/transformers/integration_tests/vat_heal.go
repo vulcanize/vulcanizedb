@@ -43,12 +43,12 @@ var _ = Describe("VatHeal Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		transformer := factories.Transformer{
+		transformer := factories.LogNoteTransformer{
 			Config:     vat_heal.VatHealConfig,
 			Converter:  &vat_heal.VatHealConverter{},
 			Repository: &vat_heal.VatHealRepository{},
 			Fetcher:    &shared.Fetcher{},
-		}.NewTransformer(db, blockchain)
+		}.NewLogNoteTransformer(db, blockchain)
 
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())

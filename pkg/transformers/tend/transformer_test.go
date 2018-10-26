@@ -31,10 +31,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 )
 
-var _ = Describe("Tend Transformer", func() {
+var _ = Describe("Tend LogNoteTransformer", func() {
 	var (
 		config      = tend.TendConfig
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
@@ -43,17 +43,17 @@ var _ = Describe("Tend Transformer", func() {
 	)
 
 	BeforeEach(func() {
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the blockchain and database", func() {

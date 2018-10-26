@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("PitFileIlk Transformer", func() {
+var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 	It("fetches and transforms a PitFileIlk event from Kovan chain", func() {
 		blockNumber := int64(9103223)
 		config := ilk.IlkFileConfig
@@ -42,13 +42,13 @@ var _ = Describe("PitFileIlk Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &shared.Fetcher{},
 			Converter:  &ilk.PitFileIlkConverter{},
 			Repository: &ilk.PitFileIlkRepository{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

@@ -34,7 +34,7 @@ import (
 var _ = Describe("Vat init transformer", func() {
 	var (
 		config      = vat_init.VatInitConfig
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
 		fetcher     mocks.MockLogFetcher
 		transformer shared.Transformer
@@ -43,17 +43,17 @@ var _ = Describe("Vat init transformer", func() {
 	)
 
 	BeforeEach(func() {
-		converter = mocks.MockConverter{}
+		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
-		transformer = factories.Transformer{
+		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the blockchain and database", func() {

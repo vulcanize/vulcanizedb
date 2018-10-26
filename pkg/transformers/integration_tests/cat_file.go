@@ -61,13 +61,13 @@ var _ = Describe("Cat File transformer", func() {
 		config.StartingBlockNumber = chopLumpBlockNumber
 		config.EndingBlockNumber = chopLumpBlockNumber
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &chop_lump.CatFileChopLumpConverter{},
 			Repository: &chop_lump.CatFileChopLumpRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -99,13 +99,13 @@ var _ = Describe("Cat File transformer", func() {
 		config.StartingBlockNumber = flipBlockNumber
 		config.EndingBlockNumber = flipBlockNumber
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &flip.CatFileFlipConverter{},
 			Repository: &flip.CatFileFlipRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -129,13 +129,13 @@ var _ = Describe("Cat File transformer", func() {
 		config.StartingBlockNumber = pitVowBlockNumber
 		config.EndingBlockNumber = pitVowBlockNumber
 
-		initializer := factories.Transformer{
+		initializer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &pit_vow.CatFilePitVowConverter{},
 			Repository: &pit_vow.CatFilePitVowRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

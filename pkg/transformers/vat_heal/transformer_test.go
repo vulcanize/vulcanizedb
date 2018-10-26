@@ -36,20 +36,20 @@ var _ = Describe("VatHeal Transformer", func() {
 		repository  mocks.MockRepository
 		transformer shared.Transformer
 		fetcher     mocks.MockLogFetcher
-		converter   mocks.MockConverter
+		converter   mocks.MockLogNoteConverter
 		config      = vat_heal.VatHealConfig
 	)
 
 	BeforeEach(func() {
 		repository = mocks.MockRepository{}
 		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockConverter{}
-		transformer = factories.Transformer{
+		converter = mocks.MockLogNoteConverter{}
+		transformer = factories.LogNoteTransformer{
 			Repository: &repository,
 			Config:     config,
 			Fetcher:    &fetcher,
 			Converter:  &converter,
-		}.NewTransformer(nil, nil)
+		}.NewLogNoteTransformer(nil, nil)
 	})
 
 	It("sets the database and blockchain", func() {
