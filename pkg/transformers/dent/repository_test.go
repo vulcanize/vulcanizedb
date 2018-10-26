@@ -189,8 +189,8 @@ var _ = Describe("Dent Repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(startingBlock))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(endingBlock))
+			Expect(missingHeaders[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(missingHeaders[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 		})
 
 		It("only treats headers as checked if dent has been checked", func() {
@@ -223,8 +223,8 @@ var _ = Describe("Dent Repository", func() {
 			missingHeadersNode1, err := dentRepository.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(missingHeadersNode1)).To(Equal(2))
-			Expect(missingHeadersNode1[0].BlockNumber).To(Equal(startingBlock))
-			Expect(missingHeadersNode1[1].BlockNumber).To(Equal(endingBlock))
+			Expect(missingHeadersNode1[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
+			Expect(missingHeadersNode1[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
 
 			missingHeadersNode2, err := dentRepository2.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
