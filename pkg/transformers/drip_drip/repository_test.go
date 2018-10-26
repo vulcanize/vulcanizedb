@@ -16,6 +16,7 @@ package drip_drip_test
 
 import (
 	"database/sql"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ import (
 var _ = Describe("Drip drip repository", func() {
 	var (
 		db                 *postgres.DB
-		dripDripRepository drip_drip.Repository
+		dripDripRepository drip_drip.DripDripRepository
 		err                error
 		headerRepository   datastore.HeaderRepository
 	)
@@ -42,7 +43,8 @@ var _ = Describe("Drip drip repository", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		dripDripRepository = drip_drip.NewDripDripRepository(db)
+		dripDripRepository = drip_drip.DripDripRepository{}
+		dripDripRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -52,11 +54,12 @@ var _ = Describe("Drip drip repository", func() {
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("adds a drip drip event", func() {
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var dbDripDrip drip_drip.DripDripModel
 			err = db.Get(&dbDripDrip, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -67,6 +70,22 @@ var _ = Describe("Drip drip repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked bool
+			err = db.Get(&headerChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(BeTrue())
+		})
+
+		It("updates the header to checked if checked headers row already exists", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
+
+			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
 			err = db.Get(&headerChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
@@ -74,13 +93,19 @@ var _ = Describe("Drip drip repository", func() {
 		})
 
 		It("does not duplicate drip drip events", func() {
-			err = dripDripRepository.Create(headerID, []drip_drip.DripDripModel{test_data.DripDripModel})
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("removes drip drip if corresponding header is deleted", func() {
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.DripDripModel})
+			Expect(err).NotTo(HaveOccurred())
+
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -88,6 +113,12 @@ var _ = Describe("Drip drip repository", func() {
 			err = db.Get(&dbDripDrip, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(sql.ErrNoRows))
+		})
+
+		It("returns an error if model is of wrong type", func() {
+			err = dripDripRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -129,7 +160,7 @@ var _ = Describe("Drip drip repository", func() {
 		)
 
 		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
+			startingBlock = rand.Int63()
 			dripDripBlock = startingBlock + 1
 			endingBlock = startingBlock + 2
 
@@ -178,7 +209,8 @@ var _ = Describe("Drip drip repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			dripDripRepositoryTwo := drip_drip.NewDripDripRepository(dbTwo)
+			dripDripRepositoryTwo := drip_drip.DripDripRepository{}
+			dripDripRepositoryTwo.SetDB(dbTwo)
 
 			nodeOneMissingHeaders, err := dripDripRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
 			Expect(err).NotTo(HaveOccurred())

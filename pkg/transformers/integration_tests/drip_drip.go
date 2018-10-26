@@ -17,6 +17,8 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -40,8 +42,14 @@ var _ = Describe("DripDrip Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := drip_drip.DripDripTransformerInitializer{Config: config}
-		transformer := initializer.NewDripDripTransformer(db, blockchain)
+		initializer := factories.LogNoteTransformer{
+			Config:     drip_drip.DripDripConfig,
+			Converter:  &drip_drip.DripDripConverter{},
+			Repository: &drip_drip.DripDripRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

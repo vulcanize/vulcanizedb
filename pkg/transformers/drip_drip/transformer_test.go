@@ -19,6 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"math/rand"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
@@ -26,19 +28,39 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	drip_drip_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/drip_drip"
 )
 
 var _ = Describe("Drip drip transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		transformer := drip_drip.DripDripTransformer{
-			Config:     drip_drip.DripDripConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &drip_drip_mocks.MockDripDripConverter{},
-			Repository: repository,
-		}
+	var (
+		config      = drip_drip.DripDripConfig
+		converter   mocks.MockLogNoteConverter
+		repository  mocks.MockRepository
+		fetcher     mocks.MockLogFetcher
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+	)
 
+	BeforeEach(func() {
+		converter = mocks.MockLogNoteConverter{}
+		repository = mocks.MockRepository{}
+		fetcher = mocks.MockLogFetcher{}
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		transformer = factories.LogNoteTransformer{
+			Config:     config,
+			Fetcher:    &fetcher,
+			Converter:  &converter,
+			Repository: &repository,
+		}.NewLogNoteTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -47,13 +69,7 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &drip_drip_mocks.MockDripDripConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -62,34 +78,19 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := drip_drip.DripDripTransformer{
-			Config:     drip_drip.DripDripConfig,
-			Fetcher:    fetcher,
-			Converter:  &drip_drip_mocks.MockDripDripConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fetcher.FetchedBlocks).To(Equal([]int64{1, 2}))
-		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{drip_drip.DripDripConfig.ContractAddresses, drip_drip.DripDripConfig.ContractAddresses}))
+		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
+		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
 		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.DripDripSignature)}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    fetcher,
-			Converter:  &drip_drip_mocks.MockDripDripConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -98,34 +99,17 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &drip_drip_mocks.MockDripDripConverter{}
-		mockRepository := &drip_drip_mocks.MockDripDripRepository{}
-		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := drip_drip.DripDripTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &drip_drip_mocks.MockDripDripConverter{}
-		mockRepository := &drip_drip_mocks.MockDripDripRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := drip_drip.DripDripTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -134,16 +118,8 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &drip_drip_mocks.MockDripDripConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthDripDripLog})
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -152,17 +128,9 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &drip_drip_mocks.MockDripDripConverter{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthDripDripLog})
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
@@ -171,37 +139,21 @@ var _ = Describe("Drip drip transformer", func() {
 	})
 
 	It("persists drip drip model", func() {
-		converter := &drip_drip_mocks.MockDripDripConverter{}
-		fetcher := &mocks.MockLogFetcher{}
+		converter.SetReturnModels([]interface{}{test_data.DripDripModel})
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthDripDripLog})
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
-		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]drip_drip.DripDripModel{test_data.DripDripModel}))
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.DripDripModel}))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &drip_drip_mocks.MockDripDripConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthDripDripLog})
-		repository := &drip_drip_mocks.MockDripDripRepository{}
-		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
+		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := drip_drip.DripDripTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 

@@ -39,6 +39,6 @@ var _ = Describe("Drip drip converter", func() {
 		model, err := converter.ToModels([]types.Log{test_data.EthDripDripLog})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model).To(Equal([]drip_drip.DripDripModel{test_data.DripDripModel}))
+		Expect(model).To(Equal([]interface{}{test_data.DripDripModel}))
 	})
 })

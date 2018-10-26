@@ -15,34 +15,31 @@
 package drip_drip
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []DripDripModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type DripDripRepository struct {
 	db *postgres.DB
 }
 
-func NewDripDripRepository(db *postgres.DB) DripDripRepository {
-	return DripDripRepository{db: db}
-}
-
-func (repository DripDripRepository) Create(headerID int64, models []DripDripModel) error {
+func (repository DripDripRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		dripDrip, ok := model.(DripDripModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, DripDripModel{})
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.drip_drip (header_id, ilk, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4, $5)`,
-			headerID, model.Ilk, model.LogIndex, model.TransactionIndex, model.Raw,
+			headerID, dripDrip.Ilk, dripDrip.LogIndex, dripDrip.TransactionIndex, dripDrip.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -83,4 +80,8 @@ func (repository DripDripRepository) MissingHeaders(startingBlockNumber, endingB
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *DripDripRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }
