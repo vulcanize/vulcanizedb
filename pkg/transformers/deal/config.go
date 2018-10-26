@@ -16,10 +16,11 @@ package deal
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var Config = shared.TransformerConfig{
+var DealConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.DealLabel,
 	ContractAddresses:   []string{shared.FlipperContractAddress, shared.FlopperContractAddress},
 	ContractAbi:         shared.FlipperABI,
-	Topics:              []string{shared.DealSignature},
+	Topic:               shared.DealSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

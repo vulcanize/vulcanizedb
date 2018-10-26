@@ -21,17 +21,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Converter interface {
-	ToModels(ethLog []types.Log) ([]DealModel, error)
-}
-
 type DealConverter struct{}
 
-func NewDealConverter() DealConverter {
-	return DealConverter{}
-}
-
-func (DealConverter) ToModels(ethLogs []types.Log) (result []DealModel, err error) {
+func (DealConverter) ToModels(ethLogs []types.Log) (result []interface{}, err error) {
 	for _, log := range ethLogs {
 		err := validateLog(log)
 		if err != nil {
