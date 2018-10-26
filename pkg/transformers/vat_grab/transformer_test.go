@@ -8,23 +8,40 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	vat_grab_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/vat_grab"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 )
 
 var _ = Describe("Vat grab transformer", func() {
-	It("gets missing headers for block numbers specified in config", func() {
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
-		transformer := vat_grab.VatGrabTransformer{
-			Config:     vat_grab.VatGrabConfig,
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_grab_mocks.MockVatGrabConverter{},
-			Repository: repository,
-		}
+	var (
+		config      = vat_grab.VatGrabConfig
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
+		fetcher     mocks.MockLogFetcher
+		transformer shared.Transformer
+	)
 
+	BeforeEach(func() {
+		repository = mocks.MockRepository{}
+		fetcher = mocks.MockLogFetcher{}
+		converter = mocks.MockConverter{}
+		transformer = factories.Transformer{
+			Config:     config,
+			Fetcher:    &fetcher,
+			Converter:  &converter,
+			Repository: &repository,
+		}.NewTransformer(nil, nil)
+	})
+
+	It("sets the blockchain and database", func() {
+		Expect(fetcher.SetBcCalled).To(BeTrue())
+		Expect(repository.SetDbCalled).To(BeTrue())
+	})
+
+	It("gets missing headers for block numbers specified in config", func() {
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
@@ -33,13 +50,7 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("returns error if repository returns error for missing headers", func() {
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
-		repository.SetMissingHeadersErr(fakes.FakeError)
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    &mocks.MockLogFetcher{},
-			Converter:  &vat_grab_mocks.MockVatGrabConverter{},
-			Repository: repository,
-		}
+		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -48,14 +59,7 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("fetches logs for missing headers", func() {
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}, {BlockNumber: 2}})
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_grab_mocks.MockVatGrabConverter{},
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -66,15 +70,8 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("returns error if fetcher returns error", func() {
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetcherError(fakes.FakeError)
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  &vat_grab_mocks.MockVatGrabConverter{},
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -83,34 +80,18 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &vat_grab_mocks.MockVatGrabConverter{}
-		mockRepository := &vat_grab_mocks.MockVatGrabRepository{}
 		headerID := int64(123)
-		mockRepository.SetMissingHeaders([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := vat_grab.VatGrabTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{{Id: headerID}})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerID)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &vat_grab_mocks.MockVatGrabConverter{}
-		mockRepository := &vat_grab_mocks.MockVatGrabRepository{}
-		mockRepository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := vat_grab.VatGrabTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{{Id: int64(123)}})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -119,16 +100,8 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("converts matching logs", func() {
-		converter := &vat_grab_mocks.MockVatGrabConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatGrabLog})
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -137,17 +110,9 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("returns error if converter returns error", func() {
-		converter := &vat_grab_mocks.MockVatGrabConverter{}
 		converter.SetConverterError(fakes.FakeError)
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatGrabLog})
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 
@@ -156,37 +121,22 @@ var _ = Describe("Vat grab transformer", func() {
 	})
 
 	It("persists vat grab model", func() {
-		converter := &vat_grab_mocks.MockVatGrabConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatGrabLog})
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		fakeHeader := core.Header{BlockNumber: 1, Id: 2}
 		repository.SetMissingHeaders([]core.Header{fakeHeader})
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
+		converter.SetReturnModels([]interface{}{test_data.VatGrabModel})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeader.Id))
-		Expect(repository.PassedModels).To(Equal([]vat_grab.VatGrabModel{test_data.VatGrabModel}))
+		Expect(repository.PassedModels[0]).To(Equal(test_data.VatGrabModel))
 	})
 
 	It("returns error if repository returns error for create", func() {
-		converter := &vat_grab_mocks.MockVatGrabConverter{}
-		fetcher := &mocks.MockLogFetcher{}
 		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatGrabLog})
-		repository := &vat_grab_mocks.MockVatGrabRepository{}
 		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1, Id: 2}})
 		repository.SetCreateError(fakes.FakeError)
-		transformer := vat_grab.VatGrabTransformer{
-			Fetcher:    fetcher,
-			Converter:  converter,
-			Repository: repository,
-		}
 
 		err := transformer.Execute()
 

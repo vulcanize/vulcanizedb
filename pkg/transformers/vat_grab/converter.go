@@ -10,14 +10,10 @@ import (
 	"math/big"
 )
 
-type Converter interface {
-	ToModels(ethLogs []types.Log) ([]VatGrabModel, error)
-}
-
 type VatGrabConverter struct{}
 
-func (VatGrabConverter) ToModels(ethLogs []types.Log) ([]VatGrabModel, error) {
-	var models []VatGrabModel
+func (VatGrabConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	var models []interface{}
 	for _, ethLog := range ethLogs {
 		err := verifyLog(ethLog)
 		if err != nil {

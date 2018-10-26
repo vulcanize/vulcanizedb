@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -42,8 +44,13 @@ var _ = Describe("Vat Grab Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := vat_grab.VatGrabTransformerInitializer{Config: config}
-		transformer := initializer.NewVatGrabTransformer(db, blockchain)
+		transformer := factories.Transformer{
+			Config:     vat_grab.VatGrabConfig,
+			Converter:  &vat_grab.VatGrabConverter{},
+			Repository: &vat_grab.VatGrabRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}.NewTransformer(db, blockchain)
+
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

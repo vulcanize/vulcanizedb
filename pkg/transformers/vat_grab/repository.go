@@ -1,36 +1,31 @@
 package vat_grab
 
 import (
+	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []VatGrabModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type VatGrabRepository struct {
 	db *postgres.DB
 }
 
-func NewVatGrabRepository(db *postgres.DB) VatGrabRepository {
-	return VatGrabRepository{
-		db: db,
-	}
-}
-
-func (repository VatGrabRepository) Create(headerID int64, models []VatGrabModel) error {
+func (repository VatGrabRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		vatGrab, ok := model.(VatGrabModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, VatGrabModel{})
+		}
 		_, err = tx.Exec(
 			`INSERT into maker.vat_grab (header_id, ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log)
 	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)`,
-			headerID, model.Ilk, model.Urn, model.V, model.W, model.Dink, model.Dart, model.LogIndex, model.TransactionIndex, model.Raw,
+			headerID, vatGrab.Ilk, vatGrab.Urn, vatGrab.V, vatGrab.W, vatGrab.Dink, vatGrab.Dart, vatGrab.LogIndex, vatGrab.TransactionIndex, vatGrab.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -71,4 +66,8 @@ func (repository VatGrabRepository) MissingHeaders(startingBlockNumber, endingBl
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *VatGrabRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }
