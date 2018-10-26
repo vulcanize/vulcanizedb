@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
@@ -42,7 +42,7 @@ var EthFlogLog = types.Log{
 }
 
 var rawFlogLog, _ = json.Marshal(EthFlogLog)
-var FlogModel = flog.FlogModel{
+var FlogModel = vow_flog.VowFlogModel{
 	Era:              "1337",
 	LogIndex:         EthFlogLog.Index,
 	TransactionIndex: EthFlogLog.TxIndex,

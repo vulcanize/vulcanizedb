@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog_test
+package vow_flog_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/flog"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
-var _ = Describe("Flog converter", func() {
-	var converter flog.FlogConverter
+var _ = Describe("Vow flog converter", func() {
+	var converter vow_flog.VowFlogConverter
 	BeforeEach(func() {
-		converter = flog.FlogConverter{}
+		converter = vow_flog.VowFlogConverter{}
 	})
 
 	It("returns err if log is missing topics", func() {
@@ -53,6 +53,6 @@ var _ = Describe("Flog converter", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0].(flog.FlogModel)).To(Equal(test_data.FlogModel))
+		Expect(models[0].(vow_flog.VowFlogModel)).To(Equal(test_data.FlogModel))
 	})
 })

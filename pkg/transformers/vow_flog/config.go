@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flog
+package vow_flog
 
-import (
-	"testing"
+import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"io/ioutil"
-	"log"
-)
-
-func TestFlog(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Flog Suite")
+var VowFlogConfig = shared.SingleTransformerConfig{
+	TransformerName:     shared.VowFlogLabel,
+	ContractAddresses:   []string{shared.VowContractAddress},
+	ContractAbi:         shared.VowABI,
+	Topic:               shared.VowFlogSignature,
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   10000000,
 }
-
-var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
-})
