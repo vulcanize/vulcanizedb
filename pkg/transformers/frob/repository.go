@@ -15,33 +15,30 @@
 package frob
 
 import (
+	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Repository interface {
-	Create(headerID int64, models []FrobModel) error
-	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
 
 type FrobRepository struct {
 	db *postgres.DB
 }
 
-func NewFrobRepository(db *postgres.DB) FrobRepository {
-	return FrobRepository{db: db}
-}
-
-func (repository FrobRepository) Create(headerID int64, models []FrobModel) error {
+func (repository FrobRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
 	for _, model := range models {
+		frobModel, ok := model.(FrobModel)
+		if !ok {
+			tx.Rollback()
+			return fmt.Errorf("model of type %T, not %T", model, FrobModel{})
+		}
 		_, err = tx.Exec(`INSERT INTO maker.frob (header_id, art, dart, dink, iart, ilk, ink, urn, raw_log, log_idx, tx_idx)
 		VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8, $9, $10, $11)`,
-			headerID, model.Art, model.Dart, model.Dink, model.IArt, model.Ilk, model.Ink, model.Urn, model.Raw, model.LogIndex, model.TransactionIndex)
+			headerID, frobModel.Art, frobModel.Dart, frobModel.Dink, frobModel.IArt, frobModel.Ilk, frobModel.Ink, frobModel.Urn, frobModel.Raw, frobModel.LogIndex, frobModel.TransactionIndex)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -81,4 +78,8 @@ func (repository FrobRepository) MissingHeaders(startingBlockNumber, endingBlock
 		repository.db.Node.ID,
 	)
 	return result, err
+}
+
+func (repository *FrobRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

@@ -15,24 +15,21 @@
 package frob
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"bytes"
 	"encoding/json"
+	"fmt"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
-type Converter interface {
-	ToEntities(contractAbi string, ethLogs []types.Log) ([]FrobEntity, error)
-	ToModels(entities []FrobEntity) ([]FrobModel, error)
-}
-
 type FrobConverter struct{}
 
-func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]FrobEntity, error) {
-	var entities []FrobEntity
+func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+	var entities []interface{}
 	for _, ethLog := range ethLogs {
 		entity := FrobEntity{}
 		address := ethLog.Address
@@ -54,23 +51,28 @@ func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Frob
 	return entities, nil
 }
 
-func (FrobConverter) ToModels(entities []FrobEntity) ([]FrobModel, error) {
-	var models []FrobModel
+func (FrobConverter) ToModels(entities []interface{}) ([]interface{}, error) {
+	var models []interface{}
 	for _, entity := range entities {
-		rawLog, err := json.Marshal(entity.Raw)
+		frobEntity, ok := entity.(FrobEntity)
+		if !ok {
+			return nil, fmt.Errorf("entity of type %T, not %T", entity, FrobEntity{})
+		}
+
+		rawLog, err := json.Marshal(frobEntity.Raw)
 		if err != nil {
 			return nil, err
 		}
 		model := FrobModel{
-			Ilk:              string(bytes.Trim(entity.Ilk[:], "\x00)")),
-			Urn:              common.BytesToAddress(entity.Urn[:]).String(),
-			Ink:              entity.Ink.String(),
-			Art:              entity.Art.String(),
-			Dink:             entity.Dink.String(),
-			Dart:             entity.Dart.String(),
-			IArt:             entity.IArt.String(),
-			LogIndex:         entity.LogIndex,
-			TransactionIndex: entity.TransactionIndex,
+			Ilk:              string(bytes.Trim(frobEntity.Ilk[:], "\x00)")),
+			Urn:              common.BytesToAddress(frobEntity.Urn[:]).String(),
+			Ink:              frobEntity.Ink.String(),
+			Art:              frobEntity.Art.String(),
+			Dink:             frobEntity.Dink.String(),
+			Dart:             frobEntity.Dart.String(),
+			IArt:             frobEntity.IArt.String(),
+			LogIndex:         frobEntity.LogIndex,
+			TransactionIndex: frobEntity.TransactionIndex,
 			Raw:              rawLog,
 		}
 		models = append(models, model)

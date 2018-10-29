@@ -33,7 +33,7 @@ import (
 var _ = Describe("Frob repository", func() {
 	var (
 		db               *postgres.DB
-		frobRepository   frob.Repository
+		frobRepository   frob.FrobRepository
 		err              error
 		headerRepository datastore.HeaderRepository
 	)
@@ -42,7 +42,8 @@ var _ = Describe("Frob repository", func() {
 		db = test_config.NewTestDB(core.Node{})
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		frobRepository = frob.NewFrobRepository(db)
+		frobRepository = frob.FrobRepository{}
+		frobRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
@@ -54,7 +55,7 @@ var _ = Describe("Frob repository", func() {
 		})
 
 		It("adds a frob", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbFrob frob.FrobModel
@@ -73,7 +74,7 @@ var _ = Describe("Frob repository", func() {
 		})
 
 		It("marks header as checked for logs", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -86,7 +87,7 @@ var _ = Describe("Frob repository", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var headerChecked bool
@@ -96,17 +97,23 @@ var _ = Describe("Frob repository", func() {
 		})
 
 		It("does not duplicate frob events", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
+		It("returns an error if the wrong model type is passed in", func() {
+			err = frobRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type test_data.WrongModel, not frob.FrobModel"))
+		})
+
 		It("removes frob if corresponding header is deleted", func() {
-			err = frobRepository.Create(headerID, []frob.FrobModel{test_data.FrobModel})
+			err = frobRepository.Create(headerID, []interface{}{test_data.FrobModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
@@ -203,7 +210,8 @@ var _ = Describe("Frob repository", func() {
 				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
 				Expect(err).NotTo(HaveOccurred())
 			}
-			frobRepositoryTwo := frob.NewFrobRepository(dbTwo)
+			frobRepositoryTwo := frob.FrobRepository{}
+			frobRepositoryTwo.SetDB(dbTwo)
 			err := frobRepository.MarkHeaderChecked(headerIDs[0])
 			Expect(err).NotTo(HaveOccurred())
 

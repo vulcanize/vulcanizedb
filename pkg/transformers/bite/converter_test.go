@@ -59,6 +59,13 @@ var _ = Describe("Bite Converter", func() {
 			Expect(model).To(Equal(test_data.BiteModel))
 		})
 
+		It("returns an error if the entity type is wrong", func() {
+			_, err := converter.ToModels([]interface{}{test_data.WrongEntity{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("entity of type test_data.WrongEntity, not bite.BiteEntity"))
+		})
+
 		It("handles nil values", func() {
 			emptyLog, err := json.Marshal(types.Log{})
 			Expect(err).NotTo(HaveOccurred())
