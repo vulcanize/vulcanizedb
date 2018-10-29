@@ -18,9 +18,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -64,5 +68,24 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(dbResult[0].NFlip).To(Equal("2"))
 		Expect(dbResult[0].Tab).To(Equal("149846666666666655744"))
 		Expect(dbResult[0].Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+	})
+
+	It("unpacks an event log", func() {
+		address := common.HexToAddress(shared.CatContractAddress)
+		abi, err := geth.ParseAbi(shared.CatABI)
+		Expect(err).NotTo(HaveOccurred())
+
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+		entity := &bite.BiteEntity{}
+
+		var eventLog = test_data.EthBiteLog
+
+		err = contract.UnpackLog(entity, "Bite", eventLog)
+		Expect(err).NotTo(HaveOccurred())
+
+		expectedEntity := test_data.BiteEntity
+		Expect(entity.Art).To(Equal(expectedEntity.Art))
+		Expect(entity.Ilk).To(Equal(expectedEntity.Ilk))
+		Expect(entity.Ink).To(Equal(expectedEntity.Ink))
 	})
 })

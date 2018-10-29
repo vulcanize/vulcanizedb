@@ -126,8 +126,15 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-	FlopKickTransformerInitializer           = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
-	FrobTransformerInitializer               = frob.FrobTransformerInitializer{Config: frob.FrobConfig}.NewFrobTransformer
+	FlopKickTransformerInitializer = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
+
+	FrobTransformerInitializer = factories.Transformer{
+		Config:     frob.FrobConfig,
+		Converter:  &frob.FrobConverter{},
+		Repository: &frob.FrobRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
 	PitFileDebtCeilingTransformerInitializer = factories.LogNoteTransformer{
 		Config:     debt_ceiling.DebtCeilingFileConfig,
 		Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},

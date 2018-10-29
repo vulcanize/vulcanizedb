@@ -14,4 +14,5 @@
 
 package test_data
 
+type WrongEntity struct{}
 type WrongModel struct{}

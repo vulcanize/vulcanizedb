@@ -25,9 +25,8 @@ import (
 )
 
 var _ = Describe("Frob converter", func() {
+	var converter = frob.FrobConverter{}
 	It("converts a log to an entity", func() {
-		converter := frob.FrobConverter{}
-
 		entities, err := converter.ToEntities(shared.PitABI, []types.Log{test_data.EthFrobLog})
 
 		Expect(err).NotTo(HaveOccurred())
@@ -35,13 +34,24 @@ var _ = Describe("Frob converter", func() {
 		Expect(entities[0]).To(Equal(test_data.FrobEntity))
 	})
 
-	It("converts an entity to a model", func() {
-		converter := frob.FrobConverter{}
+	It("returns an error if converting to an entity fails", func() {
+		_, err := converter.ToEntities("bad abi", []types.Log{test_data.EthFrobLog})
 
-		models, err := converter.ToModels([]frob.FrobEntity{test_data.FrobEntity})
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("converts an entity to a model", func() {
+		models, err := converter.ToModels([]interface{}{test_data.FrobEntity})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
 		Expect(models[0]).To(Equal(test_data.FrobModel))
+	})
+
+	It("returns an error if the entity type is wrong", func() {
+		_, err := converter.ToModels([]interface{}{test_data.WrongEntity{}})
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("entity of type test_data.WrongEntity, not frob.FrobEntity"))
 	})
 })

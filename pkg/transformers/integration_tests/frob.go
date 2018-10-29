@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
@@ -45,8 +46,13 @@ var _ = Describe("Frob Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := frob.FrobTransformerInitializer{Config: config}
-		transformer := initializer.NewFrobTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     frob.FrobConfig,
+			Converter:  &frob.FrobConverter{},
+			Repository: &frob.FrobRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
