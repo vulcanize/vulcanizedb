@@ -2,7 +2,8 @@ CREATE OR REPLACE FUNCTION notify_pricefeed() RETURNS trigger AS $$
 BEGIN
   PERFORM pg_notify(
     CAST('postgraphile:price_feed' AS text),
-    row_to_json(NEW)::text);
+    json_build_object('__node__', json_build_array('price_feeds', NEW.id))::text
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
