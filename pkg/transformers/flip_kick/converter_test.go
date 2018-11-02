@@ -66,7 +66,7 @@ var _ = Describe("FlipKick Converter", func() {
 		})
 
 		It("converts an Entity to a Model", func() {
-			models, err := converter.ToModels([]flip_kick.FlipKickEntity{test_data.FlipKickEntity})
+			models, err := converter.ToModels([]interface{}{test_data.FlipKickEntity})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(models)).To(Equal(1))
@@ -74,11 +74,11 @@ var _ = Describe("FlipKick Converter", func() {
 		})
 
 		It("handles nil values", func() {
-			models, err := converter.ToModels([]flip_kick.FlipKickEntity{emptyEntity})
+			models, err := converter.ToModels([]interface{}{emptyEntity})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(models)).To(Equal(1))
-			model := models[0]
+			model := models[0].(flip_kick.FlipKickModel)
 			Expect(model.BidId).To(Equal("1"))
 			Expect(model.Lot).To(Equal(emptyString))
 			Expect(model.Bid).To(Equal(emptyString))
@@ -91,9 +91,16 @@ var _ = Describe("FlipKick Converter", func() {
 
 		It("returns an error if the flip kick event id is nil", func() {
 			emptyEntity.Id = nil
-			_, err := converter.ToModels([]flip_kick.FlipKickEntity{emptyEntity})
+			_, err := converter.ToModels([]interface{}{emptyEntity})
 
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns an error if the wrong entity type is passed in", func() {
+			_, err := converter.ToModels([]interface{}{test_data.WrongEntity{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("entity of type"))
 		})
 	})
 })

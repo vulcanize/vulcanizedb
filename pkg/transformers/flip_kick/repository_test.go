@@ -37,7 +37,8 @@ var _ = Describe("FlipKick Repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		flipKickRepository = flip_kick.FlipKickRepository{DB: db}
+		flipKickRepository = flip_kick.FlipKickRepository{}
+		flipKickRepository.SetDB(db)
 		blockNumber = GinkgoRandomSeed()
 		headerId = createHeader(db, blockNumber)
 
@@ -47,18 +48,18 @@ var _ = Describe("FlipKick Repository", func() {
 
 	Describe("Create", func() {
 		AfterEach(func() {
-			_, err := db.Exec(`DELETE from headers;`)
+			_, err := db.Exec(`DELETE from headers`)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("persists flip_kick records", func() {
-			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err := flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
 			assertDBRecordCount(db, "maker.flip_kick", 1)
 
 			dbResult := test_data.FlipKickDBRow{}
-			err = flipKickRepository.DB.QueryRowx(`SELECT * FROM maker.flip_kick`).StructScan(&dbResult)
+			err = db.QueryRowx(`SELECT * FROM maker.flip_kick`).StructScan(&dbResult)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.HeaderId).To(Equal(headerId))
 			Expect(dbResult.BidId).To(Equal(flipKick.BidId))
@@ -74,7 +75,7 @@ var _ = Describe("FlipKick Repository", func() {
 		})
 
 		It("marks header checked", func() {
-			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err := flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -86,7 +87,7 @@ var _ = Describe("FlipKick Repository", func() {
 		It("updates the header to checked if checked headers row already exists", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
-			err = flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err = flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -96,10 +97,10 @@ var _ = Describe("FlipKick Repository", func() {
 		})
 
 		It("returns an error if inserting the flip_kick record fails", func() {
-			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err := flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err = flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
@@ -107,13 +108,13 @@ var _ = Describe("FlipKick Repository", func() {
 		It("allows for multiple flip kick events in one transaction if they have different log indexes", func() {
 			newFlipKick := test_data.FlipKickModel
 			newFlipKick.LogIndex = newFlipKick.LogIndex + 1
-			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{newFlipKick})
+			err := flipKickRepository.Create(headerId, []interface{}{newFlipKick})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("deletes the flip_kick records if its corresponding header record is deleted", func() {
-			err := flipKickRepository.Create(headerId, []flip_kick.FlipKickModel{flipKick})
+			err := flipKickRepository.Create(headerId, []interface{}{flipKick})
 			Expect(err).NotTo(HaveOccurred())
 			assertDBRecordCount(db, "maker.flip_kick", 1)
 			assertDBRecordCount(db, "headers", 1)
@@ -123,6 +124,13 @@ var _ = Describe("FlipKick Repository", func() {
 
 			assertDBRecordCount(db, "headers", 0)
 			assertDBRecordCount(db, "maker.flip_kick", 0)
+		})
+
+		It("returns an error if the wrong model type is passed in", func() {
+			err := flipKickRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type"))
 		})
 	})
 
@@ -164,7 +172,8 @@ var _ = Describe("FlipKick Repository", func() {
 				ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 			}
 			db2 = test_config.NewTestDB(node2)
-			flipKickRepository2 = flip_kick.FlipKickRepository{DB: db2}
+			flipKickRepository2 = flip_kick.FlipKickRepository{}
+			flipKickRepository2.SetDB(db2)
 			createHeader(db2, blockNumber)
 
 			_, err := db2.Exec(`DELETE from maker.flip_kick;`)

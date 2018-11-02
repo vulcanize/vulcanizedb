@@ -23,18 +23,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToEntities(contractAbi string, ethLogs []types.Log) ([]FlipKickEntity, error)
-	ToModels(flipKicks []FlipKickEntity) ([]FlipKickModel, error)
-}
-
 type FlipKickConverter struct{}
 
-func (FlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) (results []FlipKickEntity, err error) {
+func (FlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+	var entities []interface{}
 	for _, ethLog := range ethLogs {
 		entity := &FlipKickEntity{}
 		address := ethLog.Address
@@ -52,27 +49,33 @@ func (FlipKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) (re
 		entity.Raw = ethLog
 		entity.TransactionIndex = ethLog.TxIndex
 		entity.LogIndex = ethLog.Index
-		results = append(results, *entity)
+		entities = append(entities, *entity)
 	}
 
-	return results, nil
+	return entities, nil
 }
 
-func (FlipKickConverter) ToModels(flipKicks []FlipKickEntity) (results []FlipKickModel, err error) {
-	for _, flipKick := range flipKicks {
-		if flipKick.Id == nil {
+func (FlipKickConverter) ToModels(entities []interface{}) ([]interface{}, error) {
+	var models []interface{}
+	for _, entity := range entities {
+		flipKickEntity, ok := entity.(FlipKickEntity)
+		if !ok {
+			return nil, fmt.Errorf("entity of type %T, not %T", entity, FlipKickEntity{})
+		}
+
+		if flipKickEntity.Id == nil {
 			return nil, errors.New("FlipKick log ID cannot be nil.")
 		}
 
-		id := flipKick.Id.String()
-		lot := shared.BigIntToString(flipKick.Lot)
-		bid := shared.BigIntToString(flipKick.Bid)
-		gal := flipKick.Gal.String()
-		endValue := shared.BigIntToInt64(flipKick.End)
+		id := flipKickEntity.Id.String()
+		lot := shared.BigIntToString(flipKickEntity.Lot)
+		bid := shared.BigIntToString(flipKickEntity.Bid)
+		gal := flipKickEntity.Gal.String()
+		endValue := shared.BigIntToInt64(flipKickEntity.End)
 		end := time.Unix(endValue, 0)
-		urn := common.BytesToAddress(flipKick.Urn[:common.AddressLength]).String()
-		tab := shared.BigIntToString(flipKick.Tab)
-		rawLogJson, err := json.Marshal(flipKick.Raw)
+		urn := common.BytesToAddress(flipKickEntity.Urn[:common.AddressLength]).String()
+		tab := shared.BigIntToString(flipKickEntity.Tab)
+		rawLogJson, err := json.Marshal(flipKickEntity.Raw)
 		if err != nil {
 			return nil, err
 		}
@@ -86,11 +89,11 @@ func (FlipKickConverter) ToModels(flipKicks []FlipKickEntity) (results []FlipKic
 			End:              end,
 			Urn:              urn,
 			Tab:              tab,
-			TransactionIndex: flipKick.TransactionIndex,
-			LogIndex:         flipKick.LogIndex,
+			TransactionIndex: flipKickEntity.TransactionIndex,
+			LogIndex:         flipKickEntity.LogIndex,
 			Raw:              rawLogString,
 		}
-		results = append(results, model)
+		models = append(models, model)
 	}
-	return results, err
+	return models, nil
 }

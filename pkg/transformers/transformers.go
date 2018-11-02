@@ -118,8 +118,14 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-	FlipKickTransformerInitializer = flip_kick.FlipKickTransformerInitializer{Config: flip_kick.FlipKickConfig}.NewFlipKickTransformer
-	FlogTransformerInitializer     = factories.LogNoteTransformer{
+	FlipKickTransformerInitializer = factories.Transformer{
+		Config:     flip_kick.FlipKickConfig,
+		Converter:  &flip_kick.FlipKickConverter{},
+		Repository: &flip_kick.FlipKickRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	FlogTransformerInitializer = factories.LogNoteTransformer{
 		Config:     vow_flog.VowFlogConfig,
 		Converter:  &vow_flog.VowFlogConverter{},
 		Repository: &vow_flog.VowFlogRepository{},

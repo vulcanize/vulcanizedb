@@ -21,29 +21,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerId int64, flipKicks []FlipKickModel) error
-	MarkHeaderChecked(headerId int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-}
-
 type FlipKickRepository struct {
-	DB *postgres.DB
+	db *postgres.DB
 }
 
-func NewFlipKickRepository(db *postgres.DB) FlipKickRepository {
-	return FlipKickRepository{DB: db}
-}
-func (fkr FlipKickRepository) Create(headerId int64, flipKicks []FlipKickModel) error {
-	tx, err := fkr.DB.Begin()
+func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error {
+	tx, err := fkr.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, flipKick := range flipKicks {
+	for _, model := range models {
+		flipKickModel, ok := model.(FlipKickModel)
+		if !ok {
+			return fmt.Errorf("model of type %T, not %T", model, FlipKickModel{})
+		}
 		_, err := tx.Exec(
 			`INSERT into maker.flip_kick (header_id, bid_id, lot, bid, gal, "end", urn, tab, tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8::NUMERIC, $9, $10, $11)`,
-			headerId, flipKick.BidId, flipKick.Lot, flipKick.Bid, flipKick.Gal, flipKick.End, flipKick.Urn, flipKick.Tab, flipKick.TransactionIndex, flipKick.LogIndex, flipKick.Raw,
+			headerId, flipKickModel.BidId, flipKickModel.Lot, flipKickModel.Bid, flipKickModel.Gal, flipKickModel.End, flipKickModel.Urn, flipKickModel.Tab, flipKickModel.TransactionIndex, flipKickModel.LogIndex, flipKickModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -62,7 +57,7 @@ func (fkr FlipKickRepository) Create(headerId int64, flipKicks []FlipKickModel) 
 }
 
 func (fkr FlipKickRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := fkr.DB.Exec(`INSERT INTO public.checked_headers (header_id, flip_kick_checked)
+	_, err := fkr.db.Exec(`INSERT INTO public.checked_headers (header_id, flip_kick_checked)
 		VALUES ($1, $2)
 	ON CONFLICT (header_id) DO
 		UPDATE SET flip_kick_checked = $2`, headerId, true)
@@ -71,7 +66,7 @@ func (fkr FlipKickRepository) MarkHeaderChecked(headerId int64) error {
 
 func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := fkr.DB.Select(
+	err := fkr.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
                LEFT JOIN checked_headers on headers.id = header_id
@@ -81,7 +76,7 @@ func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNum
                AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		fkr.DB.Node.ID,
+		fkr.db.Node.ID,
 	)
 
 	if err != nil {
@@ -90,4 +85,8 @@ func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNum
 	}
 
 	return result, nil
+}
+
+func (fkr *FlipKickRepository) SetDB(db *postgres.DB) {
+	fkr.db = db
 }

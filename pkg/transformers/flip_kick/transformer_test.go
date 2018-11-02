@@ -15,59 +15,57 @@
 package flip_kick_test
 
 import (
-	"math/rand"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	flip_kick_mocks "github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks/flip_kick"
+	"math/rand"
 )
 
 var _ = Describe("FlipKick Transformer", func() {
-	var transformer flip_kick.FlipKickTransformer
-	var fetcher mocks.MockLogFetcher
-	var converter flip_kick_mocks.MockFlipKickConverter
-	var repository flip_kick_mocks.MockFlipKickRepository
-	var blockNumber int64
-	var headerId int64
-	var headers []core.Header
-	var logs []types.Log
+	var (
+		transformer shared.Transformer
+		fetcher     mocks.MockLogFetcher
+		converter   mocks.MockConverter
+		repository  mocks.MockRepository
+		blockNumber int64
+		headerId    int64
+		headers     []core.Header
+		logs        []types.Log
+		config      = flip_kick.FlipKickConfig
+	)
 
 	BeforeEach(func() {
 		fetcher = mocks.MockLogFetcher{}
-		converter = flip_kick_mocks.MockFlipKickConverter{}
-		repository = flip_kick_mocks.MockFlipKickRepository{}
-		transformer = flip_kick.FlipKickTransformer{
+		converter = mocks.MockConverter{}
+		repository = mocks.MockRepository{}
+		transformer = factories.Transformer{
 			Fetcher:    &fetcher,
 			Converter:  &converter,
 			Repository: &repository,
+			Config:     config,
 		}
-		transformer.SetConfig(flip_kick.FlipKickConfig)
 
 		blockNumber = rand.Int63()
 		headerId = rand.Int63()
+		logs = []types.Log{test_data.EthFlipKickLog}
 		headers = []core.Header{{
 			Id:          headerId,
 			BlockNumber: blockNumber,
 			Hash:        "0x",
 			Raw:         nil,
 		}}
-
-		repository.SetHeadersToReturn(headers)
-
-		logs = []types.Log{test_data.EthFlipKickLog}
-		fetcher.SetFetchedLogs(logs)
 	})
 
 	It("fetches logs with the configured contract and topic(s) for each block", func() {
+		repository.SetMissingHeaders(headers)
 		expectedTopics := [][]common.Hash{{common.HexToHash(shared.FlipKickSignature)}}
 
 		err := transformer.Execute()
@@ -79,42 +77,26 @@ var _ = Describe("FlipKick Transformer", func() {
 	})
 
 	It("returns an error if the fetcher fails", func() {
+		repository.SetMissingHeaders(headers)
 		fetcher.SetFetcherError(fakes.FakeError)
 
 		err := transformer.Execute()
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("error(s) transforming FlipKick event logs"))
+		Expect(err.Error()).To(ContainSubstring("failed"))
 	})
 
 	It("marks header checked if no logs returned", func() {
-		mockConverter := &flip_kick_mocks.MockFlipKickConverter{}
-		mockRepository := &flip_kick_mocks.MockFlipKickRepository{}
-		headerID := int64(123)
-		mockRepository.SetHeadersToReturn([]core.Header{{Id: headerID}})
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := flip_kick.FlipKickTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{{Id: headerId}})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		mockRepository.AssertMarkHeaderCheckedCalledWith(headerID)
+		repository.AssertMarkHeaderCheckedCalledWith(headerId)
 	})
 
 	It("returns error if marking header checked returns err", func() {
-		mockConverter := &flip_kick_mocks.MockFlipKickConverter{}
-		mockRepository := &flip_kick_mocks.MockFlipKickRepository{}
-		mockRepository.SetHeadersToReturn([]core.Header{{Id: int64(123)}})
-		mockRepository.SetMarkHeaderCheckedErr(fakes.FakeError)
-		mockFetcher := &mocks.MockLogFetcher{}
-		transformer := flip_kick.FlipKickTransformer{
-			Converter:  mockConverter,
-			Fetcher:    mockFetcher,
-			Repository: mockRepository,
-		}
+		repository.SetMissingHeaders([]core.Header{{Id: headerId}})
+		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
 		err := transformer.Execute()
 
@@ -123,49 +105,64 @@ var _ = Describe("FlipKick Transformer", func() {
 	})
 
 	It("converts the logs", func() {
-		err := transformer.Execute()
-		Expect(err).NotTo(HaveOccurred())
+		repository.SetMissingHeaders([]core.Header{{BlockNumber: 1}})
+		fetcher.SetFetchedLogs(logs)
 
-		Expect(converter.ConverterContracts).To(Equal(flip_kick.FlipKickConfig.ContractAddresses))
-		Expect(converter.ConverterAbi).To(Equal(flip_kick.FlipKickConfig.ContractAbi))
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(converter.ContractAbi).To(Equal(flip_kick.FlipKickConfig.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal(logs))
-		Expect(converter.EntitiesToConvert).To(Equal([]flip_kick.FlipKickEntity{test_data.FlipKickEntity}))
 	})
 
 	It("returns an error if converting the geth log fails", func() {
-		converter.SetConverterError(fakes.FakeError)
+		repository.SetMissingHeaders(headers)
+		fetcher.SetFetchedLogs(logs)
+		converter.ToEntitiesError = fakes.FakeError
 
 		err := transformer.Execute()
+
 		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("failed"))
 	})
 
 	It("persists a flip_kick record", func() {
-		err := transformer.Execute()
-		Expect(err).NotTo(HaveOccurred())
+		repository.SetMissingHeaders(headers)
+		fetcher.SetFetchedLogs(logs)
+		converter.ModelsToReturn = []interface{}{test_data.FlipKickModel}
 
-		Expect(repository.HeaderIds).To(Equal([]int64{headerId}))
-		Expect(repository.FlipKicksCreated).To(Equal([]flip_kick.FlipKickModel{test_data.FlipKickModel}))
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.PassedHeaderID).To(Equal(headerId))
+		Expect(repository.PassedModels[0]).To(Equal(test_data.FlipKickModel))
 	})
 
 	It("returns an error if persisting a record fails", func() {
-		repository.SetCreateRecordError(fakes.FakeError)
+		repository.SetCreateError(fakes.FakeError)
+		repository.SetMissingHeaders(headers)
+		fetcher.SetFetchedLogs(logs)
 
 		err := transformer.Execute()
+
 		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("failed"))
 	})
 
 	It("returns an error if fetching missing headers fails", func() {
 		repository.SetMissingHeadersError(fakes.FakeError)
 
 		err := transformer.Execute()
+
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("gets missing headers for blocks between the configured block number range", func() {
+		repository.SetMissingHeaders(headers)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(repository.StartingBlockNumber).To(Equal(flip_kick.FlipKickConfig.StartingBlockNumber))
-		Expect(repository.EndingBlockNumber).To(Equal(flip_kick.FlipKickConfig.EndingBlockNumber))
+		Expect(repository.PassedStartingBlockNumber).To(Equal(flip_kick.FlipKickConfig.StartingBlockNumber))
+		Expect(repository.PassedEndingBlockNumber).To(Equal(flip_kick.FlipKickConfig.EndingBlockNumber))
 	})
 })
