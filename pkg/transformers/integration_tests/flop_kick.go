@@ -20,7 +20,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -42,8 +44,13 @@ var _ = Describe("FlopKick Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := flop_kick.FlopKickTransformerInitializer{Config: config}
-		transformer := initializer.NewFlopKickTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     flop_kick.Config,
+			Converter:  &flop_kick.FlopKickConverter{},
+			Repository: &flop_kick.FlopKickRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -77,8 +84,13 @@ var _ = Describe("FlopKick Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := flop_kick.FlopKickTransformerInitializer{Config: config}
-		transformer := initializer.NewFlopKickTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     flop_kick.Config,
+			Converter:  &flop_kick.FlopKickConverter{},
+			Repository: &flop_kick.FlopKickRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

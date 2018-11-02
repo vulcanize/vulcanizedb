@@ -15,34 +15,30 @@
 package flop_kick
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(headerId int64, flopKick []Model) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
-	MarkHeaderChecked(headerId int64) error
-}
-
 type FlopKickRepository struct {
-	DB *postgres.DB
+	db *postgres.DB
 }
 
-func NewFlopKickRepository(db *postgres.DB) FlopKickRepository {
-	return FlopKickRepository{DB: db}
-}
-
-func (r FlopKickRepository) Create(headerId int64, flopKicks []Model) error {
-	tx, err := r.DB.Begin()
+func (r FlopKickRepository) Create(headerId int64, models []interface{}) error {
+	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, flopKick := range flopKicks {
+	for _, flopKick := range models {
+		flopKickModel, ok := flopKick.(Model)
+
+		if !ok {
+			return fmt.Errorf("model of type %T, not %T", flopKick, Model{})
+		}
 		_, err = tx.Exec(
 			`INSERT into maker.flop_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
-			headerId, flopKick.BidId, flopKick.Lot, flopKick.Bid, flopKick.Gal, flopKick.End, flopKick.TransactionIndex, flopKick.LogIndex, flopKick.Raw,
+			headerId, flopKickModel.BidId, flopKickModel.Lot, flopKickModel.Bid, flopKickModel.Gal, flopKickModel.End, flopKickModel.TransactionIndex, flopKickModel.LogIndex, flopKickModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -63,7 +59,7 @@ func (r FlopKickRepository) Create(headerId int64, flopKicks []Model) error {
 }
 
 func (r FlopKickRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := r.DB.Exec(`INSERT INTO public.checked_headers (header_id, flop_kick_checked)
+	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, flop_kick_checked)
 		VALUES ($1, $2)
 	ON CONFLICT (header_id) DO
 		UPDATE SET flop_kick_checked = $2`, headerId, true)
@@ -72,7 +68,7 @@ func (r FlopKickRepository) MarkHeaderChecked(headerId int64) error {
 
 func (r FlopKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
 	var result []core.Header
-	err := r.DB.Select(
+	err := r.db.Select(
 		&result,
 		`SELECT headers.id, headers.block_number FROM headers
                LEFT JOIN checked_headers on headers.id = header_id
@@ -82,8 +78,12 @@ func (r FlopKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumbe
                AND headers.eth_node_fingerprint = $3`,
 		startingBlockNumber,
 		endingBlockNumber,
-		r.DB.Node.ID,
+		r.db.Node.ID,
 	)
 
 	return result, err
+}
+
+func (repository *FlopKickRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

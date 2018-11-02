@@ -16,10 +16,11 @@ package flop_kick
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var Config = shared.TransformerConfig{
+var Config = shared.SingleTransformerConfig{
+	TransformerName:     shared.FlopKickLabel,
 	ContractAddresses:   []string{shared.FlopperContractAddress},
 	ContractAbi:         shared.FlopperABI,
-	Topics:              []string{shared.FlopKickSignature},
+	Topic:               shared.FlopKickSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

@@ -21,19 +21,15 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Converter interface {
-	ToEntities(contractAbi string, ethLogs []types.Log) ([]Entity, error)
-	ToModels(entities []Entity) ([]Model, error)
-}
-
 type FlopKickConverter struct{}
 
-func (FlopKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]Entity, error) {
-	var results []Entity
+func (FlopKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+	var results []interface{}
 	for _, ethLog := range ethLogs {
 		entity := Entity{}
 		address := ethLog.Address
@@ -56,23 +52,28 @@ func (FlopKickConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]
 	return results, nil
 }
 
-func (FlopKickConverter) ToModels(entities []Entity) ([]Model, error) {
-	var results []Model
+func (FlopKickConverter) ToModels(entities []interface{}) ([]interface{}, error) {
+	var results []interface{}
 	for _, entity := range entities {
-		endValue := shared.BigIntToInt64(entity.End)
-		rawLogJson, err := json.Marshal(entity.Raw)
+		flopKickEntity, ok := entity.(Entity)
+		if !ok {
+			return nil, fmt.Errorf("entity of type %T, not %T", entity, Entity{})
+		}
+
+		endValue := shared.BigIntToInt64(flopKickEntity.End)
+		rawLogJson, err := json.Marshal(flopKickEntity.Raw)
 		if err != nil {
 			return nil, err
 		}
 
 		model := Model{
-			BidId:            shared.BigIntToString(entity.Id),
-			Lot:              shared.BigIntToString(entity.Lot),
-			Bid:              shared.BigIntToString(entity.Bid),
-			Gal:              entity.Gal.String(),
+			BidId:            shared.BigIntToString(flopKickEntity.Id),
+			Lot:              shared.BigIntToString(flopKickEntity.Lot),
+			Bid:              shared.BigIntToString(flopKickEntity.Bid),
+			Gal:              flopKickEntity.Gal.String(),
 			End:              time.Unix(endValue, 0),
-			TransactionIndex: entity.TransactionIndex,
-			LogIndex:         entity.LogIndex,
+			TransactionIndex: flopKickEntity.TransactionIndex,
+			LogIndex:         flopKickEntity.LogIndex,
 			Raw:              rawLogJson,
 		}
 		results = append(results, model)

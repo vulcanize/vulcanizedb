@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -50,27 +51,42 @@ var _ = Describe("FlopKick Converter", func() {
 		var emptyAddressHex = "0x0000000000000000000000000000000000000000"
 		var emptyString = ""
 		var emptyTime = time.Unix(0, 0)
-		var emptyEntities = []flop_kick.Entity{flop_kick.Entity{}}
+		var emptyEntity = flop_kick.Entity{}
 
 		It("converts an Entity to a Model", func() {
 			converter := flop_kick.FlopKickConverter{}
-			models, err := converter.ToModels([]flop_kick.Entity{test_data.FlopKickEntity})
+			models, err := converter.ToModels([]interface{}{test_data.FlopKickEntity})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(models[0]).To(Equal(test_data.FlopKickModel))
 		})
 
-		It("handles nil values", func() {
+		It("returns error if wrong entity", func() {
 			converter := flop_kick.FlopKickConverter{}
+			_, err := converter.ToModels([]interface{}{test_data.WrongEntity{}})
 
-			models, err := converter.ToModels(emptyEntities)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("entity of type test_data.WrongEntity, not flop_kick.Entity"))
+		})
+
+		It("handles nil values", func() {
+			emptyLog, err := json.Marshal(types.Log{})
+
+			converter := flop_kick.FlopKickConverter{}
+			expectedModel := flop_kick.Model{
+				BidId:            emptyString,
+				Lot:              emptyString,
+				Bid:              emptyString,
+				Gal:              emptyAddressHex,
+				End:              emptyTime,
+				TransactionIndex: 0,
+				Raw:              emptyLog,
+			}
+
+			models, err := converter.ToModels([]interface{}{emptyEntity})
 			model := models[0]
 			Expect(err).NotTo(HaveOccurred())
-			Expect(model.BidId).To(Equal(emptyString))
-			Expect(model.Lot).To(Equal(emptyString))
-			Expect(model.Bid).To(Equal(emptyString))
-			Expect(model.Gal).To(Equal(emptyAddressHex))
-			Expect(model.End).To(Equal(emptyTime))
+			Expect(model).To(Equal(expectedModel))
 		})
 	})
 })

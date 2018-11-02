@@ -39,7 +39,8 @@ var _ = Describe("FlopRepository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		repository = flop_kick.NewFlopKickRepository(db)
+		repository = flop_kick.FlopKickRepository{}
+		repository.SetDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		dbResult = test_data.FlopKickDBResult{}
 	})
@@ -53,7 +54,7 @@ var _ = Describe("FlopRepository", func() {
 		})
 
 		It("creates FlopKick records", func() {
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err := repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			err = db.QueryRowx(`SELECT * FROM maker.flop_kick WHERE header_id = $1`, headerId).StructScan(&dbResult)
@@ -70,7 +71,7 @@ var _ = Describe("FlopRepository", func() {
 		})
 
 		It("marks headerId as checked for flop kick logs", func() {
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err := repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -82,7 +83,7 @@ var _ = Describe("FlopRepository", func() {
 		It("updates the header to checked if checked headers row already exists", func() {
 			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
 			Expect(err).NotTo(HaveOccurred())
-			err = repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err = repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var headerChecked bool
@@ -92,27 +93,27 @@ var _ = Describe("FlopRepository", func() {
 		})
 
 		It("returns an error if inserting the flop_kick record fails", func() {
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err := repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err = repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
 		})
 
 		It("allows for multiple flop kick events in one transaction if they have different log indexes", func() {
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err := repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			newFlopKick := test_data.FlopKickModel
 			newFlopKick.LogIndex = newFlopKick.LogIndex + 1
-			err = repository.Create(headerId, []flop_kick.Model{newFlopKick})
+			err = repository.Create(headerId, []interface{}{newFlopKick})
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("deletes the flop_kick records if its corresponding header record is deleted", func() {
-			err := repository.Create(headerId, []flop_kick.Model{test_data.FlopKickModel})
+			err := repository.Create(headerId, []interface{}{test_data.FlopKickModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var flopKickCount int
@@ -208,7 +209,8 @@ var _ = Describe("FlopRepository", func() {
 			node2 := core.Node{}
 			db2 := test_config.NewTestDB(node2)
 			headerRepository2 := repositories.NewHeaderRepository(db2)
-			flopKickRepository2 := flop_kick.NewFlopKickRepository(db2)
+			flopKickRepository2 := flop_kick.FlopKickRepository{}
+			flopKickRepository2.SetDB(db2)
 
 			for _, number := range []int64{startingBlock, flopKickBlock, endingBlock} {
 				headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
@@ -225,6 +227,13 @@ var _ = Describe("FlopRepository", func() {
 			node2MissingHeaders, err := flopKickRepository2.MissingHeaders(startingBlock, endingBlock)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(node2MissingHeaders)).To(Equal(3))
+		})
+
+		It("returns an error when wrong model is passed", func() {
+			err = repository.Create(headerIds[0], []interface{}{test_data.WrongModel{}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("model of type test_data.WrongModel, not flop_kick.Model"))
 		})
 	})
 })
