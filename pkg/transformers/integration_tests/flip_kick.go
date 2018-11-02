@@ -18,12 +18,41 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"time"
 )
 
 var _ = Describe("FlipKick Transformer", func() {
+	It("unpacks an event log", func() {
+		address := common.HexToAddress(shared.FlipperContractAddress)
+		abi, err := geth.ParseAbi(shared.FlipperABI)
+		Expect(err).NotTo(HaveOccurred())
+
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+		entity := &flip_kick.FlipKickEntity{}
+
+		var eventLog = test_data.EthFlipKickLog
+
+		err = contract.UnpackLog(entity, "Kick", eventLog)
+		Expect(err).NotTo(HaveOccurred())
+
+		expectedEntity := test_data.FlipKickEntity
+		Expect(entity.Id).To(Equal(expectedEntity.Id))
+		Expect(entity.Lot).To(Equal(expectedEntity.Lot))
+		Expect(entity.Bid).To(Equal(expectedEntity.Bid))
+		Expect(entity.Gal).To(Equal(expectedEntity.Gal))
+		Expect(entity.End).To(Equal(expectedEntity.End))
+		Expect(entity.Urn).To(Equal(expectedEntity.Urn))
+		Expect(entity.Tab).To(Equal(expectedEntity.Tab))
+	})
+
 	It("fetches and transforms a FlipKick event from Kovan chain", func() {
 		blockNumber := int64(8956476)
 		config := flip_kick.FlipKickConfig
@@ -41,8 +70,13 @@ var _ = Describe("FlipKick Transformer", func() {
 		err = persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := flip_kick.FlipKickTransformerInitializer{Config: config}
-		transformer := initializer.NewFlipKickTransformer(db, blockchain)
+		initializer := factories.Transformer{
+			Config:     flip_kick.FlipKickConfig,
+			Converter:  &flip_kick.FlipKickConverter{},
+			Repository: &flip_kick.FlipKickRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewTransformer(db, blockchain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
