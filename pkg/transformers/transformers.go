@@ -132,12 +132,18 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-	FlopKickTransformerInitializer = flop_kick.FlopKickTransformerInitializer{Config: flop_kick.Config}.NewFlopKickTransformer
 
 	FrobTransformerInitializer = factories.Transformer{
 		Config:     frob.FrobConfig,
 		Converter:  &frob.FrobConverter{},
 		Repository: &frob.FrobRepository{},
+		Fetcher:    &shared.Fetcher{},
+	}.NewTransformer
+
+	FlopKickTransformerInitializer = factories.Transformer{
+		Config:     flop_kick.Config,
+		Converter:  &flop_kick.FlopKickConverter{},
+		Repository: &flop_kick.FlopKickRepository{},
 		Fetcher:    &shared.Fetcher{},
 	}.NewTransformer
 

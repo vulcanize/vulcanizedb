@@ -11,6 +11,7 @@ type MockRepository struct {
 	createError                      error
 	markHeaderCheckedError           error
 	MarkHeaderCheckedPassedHeaderIDs []int64
+	CreatedHeaderIds                 []int64
 	missingHeaders                   []core.Header
 	missingHeadersError              error
 	PassedStartingBlockNumber        int64
@@ -23,6 +24,8 @@ type MockRepository struct {
 func (repository *MockRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
+	repository.CreatedHeaderIds = append(repository.CreatedHeaderIds, headerID)
+
 	return repository.createError
 }
 
