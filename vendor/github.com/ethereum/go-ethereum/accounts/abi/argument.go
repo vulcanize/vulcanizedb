@@ -100,6 +100,16 @@ func (arguments Arguments) Unpack(v interface{}, data []byte) error {
 	return arguments.unpackAtomic(v, marshalledValues)
 }
 
+// Unpack performs the operation hexdata -> Go format
+func (arguments Arguments) UnpackIntoMap(v map[string]interface{}, data []byte) error {
+	marshalledValues, err := arguments.UnpackValues(data)
+	if err != nil {
+		return err
+	}
+
+	return arguments.unpackIntoMap(v, marshalledValues)
+}
+
 func (arguments Arguments) unpackTuple(v interface{}, marshalledValues []interface{}) error {
 
 	var (
@@ -156,6 +166,36 @@ func (arguments Arguments) unpackTuple(v interface{}, marshalledValues []interfa
 			return fmt.Errorf("abi:[2] cannot unmarshal tuple in to %v", typ)
 		}
 	}
+	return nil
+}
+
+// Unpack arguments into map
+func (arguments Arguments) unpackIntoMap(v map[string]interface{}, marshalledValues []interface{}) error {
+	// Make sure fields exist in map
+	exists := make(map[string]bool)
+	for _, arg := range arguments {
+		field := arg.Name
+		if field == "" {
+			return fmt.Errorf("abi: purely underscored output cannot unpack to map")
+		}
+		if exists[field] {
+			return fmt.Errorf("abi: multiple outputs mapping to the same map field '%s'", field)
+		}
+		exists[field] = true
+	}
+
+	for name, _ := range exists {
+		_, ok := v[name]
+		if !ok {
+			return fmt.Errorf("abi: output map missing argument name")
+		}
+	}
+
+	for i, arg := range arguments.NonIndexed() {
+		reflectValue := reflect.ValueOf(marshalledValues[i])
+		v[arg.Name] = reflectValue
+	}
+
 	return nil
 }
 
