@@ -20,10 +20,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
+// Parser is used to fetch and parse contract ABIs
+// It is dependent on etherscan's api
 type Parser interface {
 	Parse(contractAddr string) error
-	GetAbi() string
-	GetParsedAbi() abi.ABI
+	Abi() string
+	ParsedAbi() abi.ABI
 	GetMethods() map[string]*types.Method
 	GetEvents() map[string]*types.Event
 }
@@ -42,14 +44,16 @@ func NewParser(network string) *parser {
 	}
 }
 
-func (p *parser) GetAbi() string {
+func (p *parser) Abi() string {
 	return p.abi
 }
 
-func (p *parser) GetParsedAbi() abi.ABI {
+func (p *parser) ParsedAbi() abi.ABI {
 	return p.parsedAbi
 }
 
+// Retrieves and parses the abi string
+// the given contract address
 func (p *parser) Parse(contractAddr string) error {
 	abiStr, err := p.client.GetAbi(contractAddr)
 	if err != nil {
@@ -62,6 +66,7 @@ func (p *parser) Parse(contractAddr string) error {
 	return err
 }
 
+// Parses methods into our custom method type and returns
 func (p *parser) GetMethods() map[string]*types.Method {
 	methods := map[string]*types.Method{}
 
@@ -73,6 +78,7 @@ func (p *parser) GetMethods() map[string]*types.Method {
 	return methods
 }
 
+// Parses events into our custom event type and returns
 func (p *parser) GetEvents() map[string]*types.Event {
 	events := map[string]*types.Event{}
 

@@ -18,6 +18,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// Retriever is used to retrieve the first block for a given contract
+// It requires a vDB synced database with blocks, transactions, receipts, and logs
 type Retriever interface {
 	RetrieveFirstBlock(contractAddr string) (int64, error)
 	RetrieveFirstBlockFromLogs(contractAddr string) (int64, error)
@@ -35,7 +37,7 @@ func NewRetriever(db *postgres.DB) (r *retriever) {
 	}
 }
 
-// For some contracts the creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
+// For some contracts the contract creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
 func (r *retriever) RetrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
 	var firstBlock int
 	err := r.DB.Get(
@@ -51,7 +53,7 @@ func (r *retriever) RetrieveFirstBlockFromReceipts(contractAddr string) (int64, 
 	return int64(firstBlock), err
 }
 
-// This servers as a heuristic to find the first block by finding the first contract event log
+// In which case this servers as a heuristic to find the first block by finding the first contract event log
 func (r *retriever) RetrieveFirstBlockFromLogs(contractAddr string) (int64, error) {
 	var firstBlock int
 	err := r.DB.Get(

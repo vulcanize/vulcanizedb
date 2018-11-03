@@ -26,8 +26,7 @@ import (
 
 // Fetcher serves as the lower level data fetcher that calls the underlying
 // blockchain's FetchConctractData method for a given return type
-
-// Interface definition for a Fetcher
+// Used to collect data from contract public methods
 type Fetcher interface {
 	FetchBigInt(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error)
 	FetchBool(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (bool, error)
@@ -36,12 +35,10 @@ type Fetcher interface {
 	FetchHash(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (common.Hash, error)
 }
 
-// Fetcher struct
 type fetcher struct {
 	BlockChain core.BlockChain // Underyling Blockchain
 }
 
-// Fetcher error
 type fetcherError struct {
 	err         string
 	fetchMethod string
@@ -53,7 +50,6 @@ func NewFetcher(blockChain core.BlockChain) *fetcher {
 	}
 }
 
-// Fetcher error method
 func (fe *fetcherError) Error() string {
 	return fmt.Sprintf("Error fetching %s: %s", fe.fetchMethod, fe.err)
 }

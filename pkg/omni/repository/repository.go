@@ -16,12 +16,15 @@ package repository
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"strings"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
+// Repository is used to
 type DataStore interface {
 	PersistEvents(info types.ContractInfo) error
 }
@@ -36,6 +39,9 @@ func NewDataStore(db *postgres.DB) *dataStore {
 	}
 }
 
+// Creates a schema for the contract
+// Creates tables for the watched contract events
+// Persists converted event log data into these custom tables
 func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 
 	schemaExists, err := d.CheckForSchema(contract.Name)
@@ -50,7 +56,9 @@ func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 		}
 	}
 
-	for eventName, event := range contract.Events {
+	for eventName := range contract.Filters {
+
+		event := contract.Events[eventName]
 
 		tableExists, err := d.CheckForTable(contract.Name, eventName)
 		if err != nil {
@@ -79,12 +87,31 @@ func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 
 			counter := 0
 			for inputName, input := range log.Values {
+				// postgres cannot handle custom types, resolve to strings
+				switch input.(type) {
+				case big.Int:
+					var b big.Int
+					b = input.(big.Int)
+					input = b.String()
+				case *big.Int:
+					var b *big.Int
+					b = input.(*big.Int)
+					input = b.String()
+				case common.Address:
+					var a common.Address
+					a = input.(common.Address)
+					input = a.String()
+				case common.Hash:
+					var h common.Hash
+					h = input.(common.Hash)
+					input = h.String()
+				}
+
 				counter += 1
-				pgStr = pgStr + fmt.Sprintf(", %s", strings.ToLower(inputName))
+				pgStr = pgStr + fmt.Sprintf(", _%s", strings.ToLower(inputName))
 				data = append(data, input)
 			}
 
-			pgStr = pgStr + ") "
 			appendStr := "VALUES ($1, $2, $3, $4, $5, $6"
 
 			for i := 0; i < counter; i++ {
@@ -100,51 +127,47 @@ func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 				return err
 			}
 		}
-
 	}
 
 	return nil
 }
 
+// Creates a table for the given contract and event
 func (d *dataStore) CreateEventTable(contractName string, event *types.Event) error {
 	// Create postgres command to create table for any given event
 	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s.%s ", strings.ToLower(contractName), strings.ToLower(event.Name))
-	pgStr = pgStr + `(id SERIAL, 
-					vulcanize_log_id INTEGER NOT NULL UNIQUE, 
-					token_name CHARACTER VARYING(66) NOT NULL,
-					token_address CHARACTER VARYING(66) NOT NULL,
-					event_name CHARACTER VARYING(66) NOT NULL,
-					block INTEGER NOT NULL,
-					tx CHARACTER VARYING(66) NOT NULL, `
+	pgStr = pgStr + "(id SERIAL, vulcanize_log_id INTEGER NOT NULL UNIQUE, token_name CHARACTER VARYING(66) NOT NULL, token_address CHARACTER VARYING(66) NOT NULL, event_name CHARACTER VARYING(66) NOT NULL, block INTEGER NOT NULL, tx CHARACTER VARYING(66) NOT NULL,"
 	for _, field := range event.Fields {
-		pgStr = pgStr + fmt.Sprintf("%s %s NOT NULL, ", field.Name, field.PgType)
+		pgStr = pgStr + fmt.Sprintf(" _%s %s NOT NULL,", field.Name, field.PgType)
 	}
-	pgStr = pgStr + "CONSTRAINT log_index_fk FOREIGN KEY (vulcanize_log_id) REFERENCES logs (id) ON DELETE CASCADE)"
-
+	pgStr = pgStr + " CONSTRAINT log_index_fk FOREIGN KEY (vulcanize_log_id) REFERENCES logs (id) ON DELETE CASCADE)"
 	_, err := d.DB.Exec(pgStr)
 
 	return err
 }
 
+// Checks if a table already exists for the given contract and event
 func (d *dataStore) CheckForTable(contractName string, eventName string) (bool, error) {
 	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s')", contractName, eventName)
 	var exists bool
-	err := d.DB.Get(exists, pgStr)
+	err := d.DB.Get(&exists, pgStr)
 
 	return exists, err
 }
 
+// Creates a schema for the given contract
 func (d *dataStore) CreateContractSchema(contractName string) error {
 	_, err := d.DB.Exec("CREATE SCHEMA IF NOT EXISTS " + contractName)
 
 	return err
 }
 
+// Checks if a schema already exists for the given contract
 func (d *dataStore) CheckForSchema(contractName string) (bool, error) {
 	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = '%s')", contractName)
 
 	var exists bool
-	err := d.DB.Get(exists, pgStr)
+	err := d.DB.Get(&exists, pgStr)
 
 	return exists, err
 }

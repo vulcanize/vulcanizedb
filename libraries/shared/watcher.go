@@ -23,6 +23,10 @@ func (watcher *Watcher) AddTransformers(us []TransformerInitializer, con Contrac
 	return nil
 }
 
+func (watcher *Watcher) AddTransformer(t Transformer) {
+	watcher.Transformers = append(watcher.Transformers, t)
+}
+
 func (watcher *Watcher) Execute() error {
 	var err error
 	for _, transformer := range watcher.Transformers {

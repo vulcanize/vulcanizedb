@@ -24,20 +24,19 @@ import (
 type Event struct {
 	Name      string
 	Anonymous bool
-	Fields    []Field
+	Fields    []*Field
 	Logs      map[int64]Log // Map of VulcanizeIdLog to parsed event log
 }
 
 type Method struct {
 	Name    string
 	Const   bool
-	Inputs  []Field
-	Outputs []Field
+	Inputs  []*Field
+	Outputs []*Field
 }
 
 type Field struct {
 	abi.Argument
-	Value  interface{}
 	PgType string
 }
 
@@ -48,8 +47,9 @@ type Log struct {
 }
 
 func NewEvent(e abi.Event) *Event {
-	fields := make([]Field, len(e.Inputs))
+	fields := make([]*Field, len(e.Inputs))
 	for i, input := range e.Inputs {
+		fields[i] = &Field{}
 		fields[i].Name = input.Name
 		fields[i].Type = input.Type
 		fields[i].Indexed = input.Indexed
@@ -64,15 +64,17 @@ func NewEvent(e abi.Event) *Event {
 }
 
 func NewMethod(m abi.Method) *Method {
-	inputs := make([]Field, len(m.Inputs))
+	inputs := make([]*Field, len(m.Inputs))
 	for i, input := range m.Inputs {
+		inputs[i] = &Field{}
 		inputs[i].Name = input.Name
 		inputs[i].Type = input.Type
 		inputs[i].Indexed = input.Indexed
 	}
 
-	outputs := make([]Field, len(m.Outputs))
+	outputs := make([]*Field, len(m.Outputs))
 	for i, output := range m.Outputs {
+		outputs[i] = &Field{}
 		outputs[i].Name = output.Name
 		outputs[i].Type = output.Type
 		outputs[i].Indexed = output.Indexed
