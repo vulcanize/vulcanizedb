@@ -20,11 +20,13 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
@@ -58,16 +60,24 @@ Requires a .toml config file:
 }
 
 func omniWatcher() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
-	if contractAddress == "" {
+	if contractAddress == "" && len(contractAddresses) == 0 {
 		log.Fatal("Contract address required")
 	}
 
-	if contractEvents == nil {
+	if len(contractEvents) == 0 || len(contractMethods) == 0 {
 		var str string
 		for str != "y" {
 			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Warning: no events specified, proceeding to watch every event at address" + contractAddress + "? (Y/n)\n> ")
+			if len(contractEvents) == 0 && len(contractMethods) == 0 {
+				fmt.Print("Warning: no events or methods specified, proceed to watch every event and method? (Y/n)\n> ")
+			} else if len(contractEvents) == 0 {
+				fmt.Print("Warning: no events specified, proceed to watch every event? (Y/n)\n> ")
+			} else {
+				fmt.Print("Warning: no methods specified, proceed to watch every method? (Y/n)\n> ")
+			}
 			resp, err := reader.ReadBytes('\n')
 			if err != nil {
 				log.Fatal(err)
@@ -82,8 +92,9 @@ func omniWatcher() {
 
 	rawRpcClient, err := rpc.Dial(ipc)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Failed to initialize rpc client\r\nerr: %v\r\n", err))
 	}
+
 	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	client := client.NewEthClient(ethClient)
@@ -102,21 +113,31 @@ func omniWatcher() {
 	}
 
 	t := transformer.NewTransformer(&con)
-	t.Set(contractAddress, contractEvents)
+
+	contractAddresses = append(contractAddresses, contractAddress)
+	for _, addr := range contractAddresses {
+		t.Set(addr, contractEvents)
+	}
 
 	err = t.Init()
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to initialized generator\r\nerr: %v\r\n", err))
+		log.Fatal(fmt.Sprintf("Failed to initialized transformer\r\nerr: %v\r\n", err))
 	}
 
-	log.Fatal(t.Execute())
+	w := shared.Watcher{}
+	w.AddTransformer(t)
+
+	for range ticker.C {
+		w.Execute()
+	}
 }
 
 func init() {
 	rootCmd.AddCommand(omniWatcherCmd)
 
 	omniWatcherCmd.Flags().StringVarP(&contractAddress, "contract-address", "a", "", "Single address to generate watchers for")
-	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-events", "e", []string{}, "Subset of events to watch- use only with single address")
-	omniWatcherCmd.Flags().StringArrayVarP(&contractAddresses, "contract-addresses", "l", []string{}, "Addresses of the contracts to generate watchers for")
+	omniWatcherCmd.Flags().StringArrayVarP(&contractAddresses, "contract-addresses", "l", []string{}, "List of addresses to generate watchers for")
+	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-events", "e", []string{}, "Subset of events to watch; by default all events are watched")
+	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-methods", "m", []string{}, "Subset of methods to watch; by default all methods are watched")
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 }

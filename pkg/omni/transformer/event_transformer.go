@@ -29,10 +29,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
-// Top-level object similar to generator
-// but attempts to solve problem without
-// automated code generation
-
+// Omni event transformer
+// Used to extract all or a subset of event data for
+// any contract and persist it to postgres in a manner
+// that requires no prior knowledge of the contract
+// other than its address and which network it is on
 type EventTransformer interface {
 	Init(contractAddr string) error
 }
@@ -49,13 +50,14 @@ type eventTransformer struct {
 	// Underlying interfaces
 	parser.Parser       // Parses events out of contract abi fetched with addr
 	retriever.Retriever // Retrieves first block with contract addr referenced
-	fetcher.Fetcher     // Fetches data from contract methods
+	fetcher.Fetcher     // Fetches data from public contract methods
+	converter.Converter // Converts watched event logs into custom log
 
 	// Store contract info as mapping to contract address
 	ContractInfo map[string]types.ContractInfo
 
 	// Subset of events of interest, stored as map of contract address to events
-	// By default this
+	// Default/empty list means all events are considered for that address
 	sets map[string][]string
 }
 
@@ -64,6 +66,7 @@ func NewTransformer(c *types.Config) (t *eventTransformer) {
 	t.Parser = parser.NewParser(c.Network)
 	t.Retriever = retriever.NewRetriever(c.DB)
 	t.Fetcher = fetcher.NewFetcher(c.BC)
+	t.Converter = converter.NewConverter(types.ContractInfo{})
 	t.ContractInfo = map[string]types.ContractInfo{}
 	t.WatchedEventRepository = repositories.WatchedEventRepository{DB: c.DB}
 	t.FilterRepository = repositories.FilterRepository{DB: c.DB}
@@ -91,11 +94,11 @@ func (t *eventTransformer) Init() error {
 		}
 
 		var ctrName string
-		strName, err1 := t.Fetcher.FetchString("name", t.Parser.GetAbi(), contractAddr, -1, nil)
-		if err1 != nil || strName == "" {
-			hashName, err2 := t.Fetcher.FetchHash("name", t.Parser.GetAbi(), contractAddr, -1, nil)
-			if err2 != nil || hashName.String() == "" {
-				return errors.New(fmt.Sprintf("fetching string: %s and hash: %s names failed\r\nerr1: %v\r\nerr2: %v\r\n ", strName, hashName, err1, err2))
+		strName, err := t.Fetcher.FetchString("name", t.Parser.Abi(), contractAddr, -1, nil)
+		if err != nil || strName == "" {
+			hashName, err := t.Fetcher.FetchHash("name", t.Parser.Abi(), contractAddr, -1, nil)
+			if err != nil || hashName.String() == "" {
+				return errors.New("unable to fetch contract name") // provide CLI prompt here for user to input a contract name?
 			}
 			ctrName = hashName.String()
 		} else {
@@ -110,8 +113,8 @@ func (t *eventTransformer) Init() error {
 		info := types.ContractInfo{
 			Name:          ctrName,
 			Address:       contractAddr,
-			Abi:           t.Parser.GetAbi(),
-			ParsedAbi:     t.Parser.GetParsedAbi(),
+			Abi:           t.Parser.Abi(),
+			ParsedAbi:     t.Parser.ParsedAbi(),
 			StartingBlock: firstBlock,
 			Events:        t.Parser.GetEvents(),
 			Methods:       t.Parser.GetMethods(),
@@ -129,10 +132,14 @@ func (t *eventTransformer) Init() error {
 	return nil
 }
 
+// Iterate through contracts, creating a new
+// converter for each one and using it to
+// convert watched event logs and persist
+// them into the postgres db
 func (tr eventTransformer) Execute() error {
 	for _, contract := range tr.ContractInfo {
 
-		c := converter.NewConverter(contract)
+		tr.Converter.Update(contract)
 
 		for eventName, filter := range contract.Filters {
 			watchedEvents, err := tr.GetWatchedEvents(eventName)
@@ -142,7 +149,7 @@ func (tr eventTransformer) Execute() error {
 			}
 
 			for _, we := range watchedEvents {
-				err = c.Convert(*we, contract.Events[eventName])
+				err = tr.Converter.Convert(*we, contract.Events[eventName])
 				if err != nil {
 					return err
 				}

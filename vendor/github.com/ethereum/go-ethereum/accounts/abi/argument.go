@@ -192,8 +192,7 @@ func (arguments Arguments) unpackIntoMap(v map[string]interface{}, marshalledVal
 	}
 
 	for i, arg := range arguments.NonIndexed() {
-		reflectValue := reflect.ValueOf(marshalledValues[i])
-		v[arg.Name] = reflectValue
+		v[arg.Name] = marshalledValues[i]
 	}
 
 	return nil

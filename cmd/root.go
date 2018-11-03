@@ -36,6 +36,7 @@ var (
 	contractAddress     string
 	contractAddresses   []string
 	contractEvents      []string
+	contractMethods     []string
 )
 
 var rootCmd = &cobra.Command{

@@ -24,6 +24,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
+// Converter is used to convert watched event logs to
+// custom logs containing event input name => value maps
 type Converter interface {
 	Convert(watchedEvent core.WatchedEvent, event *types.Event) error
 	Update(info types.ContractInfo)
@@ -40,11 +42,12 @@ func NewConverter(info types.ContractInfo) *converter {
 	}
 }
 
-func (c converter) Update(info types.ContractInfo) {
+func (c *converter) Update(info types.ContractInfo) {
 	c.contractInfo = info
 }
 
-func (c converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) error {
+// Convert the given watched event log into a types.Log for the given event
+func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) error {
 	contract := bind.NewBoundContract(common.HexToAddress(c.contractInfo.Address), c.contractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
 
@@ -53,27 +56,24 @@ func (c converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) e
 		values[field.Name] = i
 
 		switch field.Type.T {
-		case abi.StringTy:
-			field.PgType = "CHARACTER VARYING(66) NOT NULL"
+		case abi.StringTy, abi.HashTy, abi.AddressTy:
+			field.PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
-			field.PgType = "DECIMAL NOT NULL"
+			field.PgType = "DECIMAL"
 		case abi.BoolTy:
-			field.PgType = "BOOLEAN NOT NULL"
+			field.PgType = "BOOLEAN"
 		case abi.BytesTy, abi.FixedBytesTy:
-			field.PgType = "BYTEA NOT NULL"
-		case abi.AddressTy:
-			field.PgType = "CHARACTER VARYING(66) NOT NULL"
-		case abi.HashTy:
-			field.PgType = "CHARACTER VARYING(66) NOT NULL"
+			field.PgType = "BYTEA"
 		case abi.ArrayTy:
-			field.PgType = "TEXT[] NOT NULL"
+			field.PgType = "TEXT[]"
 		case abi.FixedPointTy:
-			field.PgType = "MONEY NOT NULL" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
+			field.PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
 		case abi.FunctionTy:
-			field.PgType = "TEXT NOT NULL"
+			field.PgType = "TEXT"
 		default:
-			field.PgType = "TEXT NOT NULL"
+			field.PgType = "TEXT"
 		}
+
 	}
 
 	log := helpers.ConvertToLog(watchedEvent)
