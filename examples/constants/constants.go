@@ -47,10 +47,10 @@ func (e Event) String() string {
 
 func (e Event) Signature() string {
 	strings := [...]string{
-		helpers.GenerateSignature("Transfer(address,address,uint)"),
-		helpers.GenerateSignature("Approval(address,address,uint)"),
-		helpers.GenerateSignature("Burn(address,uint)"),
-		helpers.GenerateSignature("Mint(address,uint)"),
+		helpers.GenerateSignature("Transfer(address,address,uint256)"),
+		helpers.GenerateSignature("Approval(address,address,uint256)"),
+		helpers.GenerateSignature("Burn(address,uint256)"),
+		helpers.GenerateSignature("Mint(address,uint256)"),
 	}
 
 	if e < TransferEvent || e > MintEvent {

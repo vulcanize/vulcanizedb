@@ -15,10 +15,9 @@
 package fetcher_test
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/fetcher"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/ginkgo"
@@ -29,6 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/fetcher"
 )
 
 var _ = Describe("Fetcher Test", func() {
@@ -106,7 +106,7 @@ var _ = Describe("Fetcher Test", func() {
 
 	Describe("Fetch string test", func() {
 
-		It("fetch nae string", func() {
+		It("fetch name string", func() {
 			expectedStr := "TrueUSD"
 			str, err := realFetcher.FetchString("name", constants.TusdAbiString, constants.TusdContractAddress, blockNumber, nil)
 

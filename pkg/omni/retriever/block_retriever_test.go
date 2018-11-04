@@ -26,9 +26,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/retriever"
 )
 
-var _ = Describe("Fetcher Test", func() {
+var _ = Describe("Block Retriever Test", func() {
 	var db *postgres.DB
-	var r retriever.Retriever
+	var r retriever.BlockRetriever
 	var blockRepository repositories.BlockRepository
 
 	BeforeEach(func() {
@@ -42,12 +42,13 @@ var _ = Describe("Fetcher Test", func() {
 
 		blockRepository = *repositories.NewBlockRepository(db)
 
-		r = retriever.NewRetriever(db)
+		r = retriever.NewBlockRetriever(db)
 	})
 
 	AfterEach(func() {
 		db.Query(`DELETE FROM blocks`)
 		db.Query(`DELETE FROM logs`)
+		db.Query(`DELETE FROM transactions`)
 		db.Query(`DELETE FROM receipts`)
 	})
 
@@ -177,5 +178,26 @@ var _ = Describe("Fetcher Test", func() {
 		i, err := r.RetrieveFirstBlock(constants.DaiContractAddress)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(i).To(Equal(int64(1)))
+	})
+
+	It("Fails if a block cannot be found", func() {
+
+		block1 := core.Block{
+			Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
+			Number:       1,
+			Transactions: []core.Transaction{},
+		}
+
+		block2 := core.Block{
+			Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad456yui",
+			Number:       2,
+			Transactions: []core.Transaction{},
+		}
+
+		blockRepository.CreateOrUpdateBlock(block1)
+		blockRepository.CreateOrUpdateBlock(block2)
+
+		_, err := r.RetrieveFirstBlock(constants.DaiContractAddress)
+		Expect(err).To(HaveOccurred())
 	})
 })

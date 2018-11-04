@@ -60,11 +60,12 @@ Requires a .toml config file:
 }
 
 func omniWatcher() {
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
 	if contractAddress == "" && len(contractAddresses) == 0 {
 		log.Fatal("Contract address required")
+	}
+
+	if !methodsOn && !eventsOn {
+		log.Fatal("Method polling and event watching turned off- nothing to do!")
 	}
 
 	if len(contractEvents) == 0 || len(contractMethods) == 0 {
@@ -89,6 +90,9 @@ func omniWatcher() {
 			}
 		}
 	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
 	rawRpcClient, err := rpc.Dial(ipc)
 	if err != nil {
@@ -116,7 +120,8 @@ func omniWatcher() {
 
 	contractAddresses = append(contractAddresses, contractAddress)
 	for _, addr := range contractAddresses {
-		t.Set(addr, contractEvents)
+		t.SetEvents(addr, contractEvents)
+		t.SetMethods(addr, contractMethods)
 	}
 
 	err = t.Init()
@@ -137,6 +142,9 @@ func init() {
 
 	omniWatcherCmd.Flags().StringVarP(&contractAddress, "contract-address", "a", "", "Single address to generate watchers for")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractAddresses, "contract-addresses", "l", []string{}, "List of addresses to generate watchers for")
+	omniWatcherCmd.Flags().BoolVarP(&eventsOn, "events-on", "o", true, "Set to false to turn off watching of any event")
+	omniWatcherCmd.Flags().BoolVarP(&methodsOn, "methods-on", "p", true, "Set to false to turn off polling of any method")
+	omniWatcherCmd.Flags().StringVarP(&contractAddress, "methods-off", "a", "", "Single address to generate watchers for")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-events", "e", []string{}, "Subset of events to watch; by default all events are watched")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-methods", "m", []string{}, "Subset of methods to watch; by default all methods are watched")
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)

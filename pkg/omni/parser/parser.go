@@ -53,7 +53,7 @@ func (p *parser) ParsedAbi() abi.ABI {
 }
 
 // Retrieves and parses the abi string
-// the given contract address
+// for the given contract address
 func (p *parser) Parse(contractAddr string) error {
 	abiStr, err := p.client.GetAbi(contractAddr)
 	if err != nil {

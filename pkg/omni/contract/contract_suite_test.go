@@ -12,4 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package transformer_test
+package contract_test
+
+import (
+	"io/ioutil"
+	"log"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestContract(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Contract Suite Test")
+}
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

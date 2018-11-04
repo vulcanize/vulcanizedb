@@ -19,7 +19,16 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
+
+type Config struct {
+	Network string
+	BC      core.BlockChain
+	DB      *postgres.DB
+}
 
 type Event struct {
 	Name      string

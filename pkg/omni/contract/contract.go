@@ -12,39 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package types
+package contract
 
 import (
+	"errors"
+	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
-type ContractInfo struct {
+type Contract struct {
 	Name          string
 	Address       string
 	StartingBlock int64
 	Abi           string
 	ParsedAbi     abi.ABI
-	Events        map[string]*Event            // Map of events to their names
-	Methods       map[string]*Method           // Map of methods to their names
+	Events        map[string]*types.Event      // Map of events to their names
+	Methods       map[string]*types.Method     // Map of methods to their names
 	Filters       map[string]filters.LogFilter // Map of event filters to their names
+	Addresses     map[string]bool              // Map of all contract-associated addresses, populated as events are transformed
 }
 
-func (i *ContractInfo) GenerateFilters(subset []string) {
-	i.Filters = map[string]filters.LogFilter{}
-	for name, event := range i.Events {
+func (c *Contract) GenerateFilters(subset []string) error {
+	c.Filters = map[string]filters.LogFilter{}
+	for name, event := range c.Events {
 		if len(subset) == 0 || stringInSlice(subset, name) {
-			i.Filters[name] = filters.LogFilter{
+			c.Filters[name] = filters.LogFilter{
 				Name:      name,
-				FromBlock: i.StartingBlock,
+				FromBlock: c.StartingBlock,
 				ToBlock:   -1,
-				Address:   i.Address,
-				Topics:    core.Topics{event.Sig()},
+				Address:   c.Address,
+				Topics:    core.Topics{helpers.GenerateSignature(event.Sig())},
 			}
 		}
 	}
+
+	if len(c.Filters) == 0 {
+		return errors.New("error: no filters created")
+	}
+
+	return nil
+}
+
+func (c *Contract) AddAddress(addr string) {
+	c.Addresses[addr] = true
 }
 
 func stringInSlice(list []string, s string) bool {

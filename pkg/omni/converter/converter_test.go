@@ -24,9 +24,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/converter"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/parser"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
 var mockEvent = core.WatchedEvent{
@@ -44,13 +44,17 @@ var mockEvent = core.WatchedEvent{
 }
 
 var _ = Describe("Converter Test", func() {
+	var p parser.Parser
+	var err error
+
+	BeforeEach(func() {
+		p = parser.NewParser("")
+		err = p.Parse(constants.TusdContractAddress)
+		Expect(err).ToNot(HaveOccurred())
+	})
 
 	It("Converts watched event log to mapping of event input names to values", func() {
-		p := parser.NewParser("")
-		err := p.Parse(constants.TusdContractAddress)
-		Expect(err).ToNot(HaveOccurred())
-
-		info := types.ContractInfo{
+		info := contract.Contract{
 			Name:          "TrueUSD",
 			Address:       constants.TusdContractAddress,
 			Abi:           p.Abi(),
@@ -58,11 +62,12 @@ var _ = Describe("Converter Test", func() {
 			StartingBlock: 5197514,
 			Events:        p.GetEvents(),
 			Methods:       p.GetMethods(),
+			Addresses:     map[string]bool{},
 		}
-
 		event := info.Events["Transfer"]
 
-		info.GenerateFilters([]string{"Transfer"})
+		err = info.GenerateFilters([]string{"Transfer"})
+		Expect(err).ToNot(HaveOccurred())
 		c := converter.NewConverter(info)
 		err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
@@ -76,5 +81,12 @@ var _ = Describe("Converter Test", func() {
 		Expect(event.Logs[1].Values["to"].(common.Address)).To(Equal(to))
 		Expect(event.Logs[1].Values["from"].(common.Address)).To(Equal(from))
 		Expect(v.String()).To(Equal(value.String()))
+	})
+
+	It("Fails with an empty contract", func() {
+		event := p.GetEvents()["Transfer"]
+		c := converter.NewConverter(contract.Contract{})
+		err = c.Convert(mockEvent, event)
+		Expect(err).To(HaveOccurred())
 	})
 })
