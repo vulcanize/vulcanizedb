@@ -16,17 +16,19 @@ package repository
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
 // Repository is used to
 type DataStore interface {
-	PersistEvents(info types.ContractInfo) error
+	PersistEvents(info *contract.Contract) error
 }
 
 type dataStore struct {
@@ -34,6 +36,7 @@ type dataStore struct {
 }
 
 func NewDataStore(db *postgres.DB) *dataStore {
+
 	return &dataStore{
 		DB: db,
 	}
@@ -42,31 +45,33 @@ func NewDataStore(db *postgres.DB) *dataStore {
 // Creates a schema for the contract
 // Creates tables for the watched contract events
 // Persists converted event log data into these custom tables
-func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
+func (d *dataStore) PersistEvents(con *contract.Contract) error {
 
-	schemaExists, err := d.CheckForSchema(contract.Name)
+	schemaExists, err := d.CheckForSchema(con.Name)
 	if err != nil {
 		return err
 	}
 
 	if !schemaExists {
-		err = d.CreateContractSchema(contract.Name)
+		err = d.CreateContractSchema(con.Name)
 		if err != nil {
 			return err
 		}
 	}
 
-	for eventName := range contract.Filters {
+	for eventName := range con.Filters {
+		event := con.Events[eventName]
+		if len(event.Logs) == 0 {
+			break
+		}
 
-		event := contract.Events[eventName]
-
-		tableExists, err := d.CheckForTable(contract.Name, eventName)
+		tableExists, err := d.CheckForTable(con.Name, eventName)
 		if err != nil {
 			return err
 		}
 
 		if !tableExists {
-			err = d.CreateEventTable(contract.Name, event)
+			err = d.CreateEventTable(con.Name, event)
 			if err != nil {
 				return err
 			}
@@ -74,13 +79,13 @@ func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 
 		for id, log := range event.Logs {
 			// Create postgres command to persist any given event
-			pgStr := fmt.Sprintf("INSERT INTO %s.%s ", strings.ToLower(contract.Name), strings.ToLower(eventName))
+			pgStr := fmt.Sprintf("INSERT INTO %s.%s ", strings.ToLower(con.Name), strings.ToLower(eventName))
 			pgStr = pgStr + "(vulcanize_log_id, token_name, token_address, event_name, block, tx"
 			var data []interface{}
 			data = append(data,
 				id,
-				strings.ToLower(contract.Name),
-				strings.ToLower(contract.Address),
+				strings.ToLower(con.Name),
+				strings.ToLower(con.Address),
 				strings.ToLower(eventName),
 				log.Block,
 				log.Tx)
@@ -100,7 +105,8 @@ func (d *dataStore) PersistEvents(contract types.ContractInfo) error {
 				case common.Address:
 					var a common.Address
 					a = input.(common.Address)
-					input = a.String()
+					input = a.String()         // this also gives us a chance to add any event emitted address
+					con.AddAddress(a.String()) // to a list of token-related addresses, growing it as we go
 				case common.Hash:
 					var h common.Hash
 					h = input.(common.Hash)

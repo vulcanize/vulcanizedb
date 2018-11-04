@@ -17,6 +17,7 @@ package parser_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/parser"
@@ -57,6 +58,12 @@ var _ = Describe("Parser Test", func() {
 
 		_, ok = events["Transfer"]
 		Expect(ok).To(Equal(true))
+	})
+
+	It("Fails with a normal, non-contract, account address", func() {
+		addr := "0xAb2A8F7cB56D9EC65573BA1bE0f92Fa2Ff7dd165"
+		err = p.Parse(addr)
+		Expect(err).To(HaveOccurred())
 	})
 
 })

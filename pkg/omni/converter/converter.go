@@ -21,6 +21,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
@@ -28,21 +29,21 @@ import (
 // custom logs containing event input name => value maps
 type Converter interface {
 	Convert(watchedEvent core.WatchedEvent, event *types.Event) error
-	Update(info types.ContractInfo)
+	Update(info contract.Contract)
 }
 
 type converter struct {
-	contractInfo types.ContractInfo
+	contractInfo contract.Contract
 }
 
-func NewConverter(info types.ContractInfo) *converter {
+func NewConverter(info contract.Contract) *converter {
 
 	return &converter{
 		contractInfo: info,
 	}
 }
 
-func (c *converter) Update(info types.ContractInfo) {
+func (c *converter) Update(info contract.Contract) {
 	c.contractInfo = info
 }
 

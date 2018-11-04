@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository_test
+package retriever_test
 
 import (
 	"math/rand"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/converter"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/retriever"
 )
 
 var mockEvent = core.WatchedEvent{
@@ -46,7 +48,7 @@ var mockEvent = core.WatchedEvent{
 	Data:        "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe",
 }
 
-var _ = Describe("Repository Test", func() {
+var _ = Describe("Address Retriever Test", func() {
 	var db *postgres.DB
 	var logRepository repositories.LogRepository
 	var blockRepository repositories.BlockRepository
@@ -57,6 +59,8 @@ var _ = Describe("Repository Test", func() {
 	var blockNumber int64
 	var blockId int64
 	var vulcanizeLogId int64
+	var r retriever.AddressRetriever
+	var addresses map[common.Address]bool
 	rand.Seed(time.Now().UnixNano())
 
 	BeforeEach(func() {
@@ -111,6 +115,10 @@ var _ = Describe("Repository Test", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		dataStore = repository.NewDataStore(db)
+		err = dataStore.PersistEvents(info)
+		Expect(err).ToNot(HaveOccurred())
+
+		r = retriever.NewAddressRetriever(db)
 	})
 
 	AfterEach(func() {
@@ -121,21 +129,24 @@ var _ = Describe("Repository Test", func() {
 		db.Query(`DROP SCHEMA IF EXISTS trueusd CASCADE`)
 	})
 
-	It("Persist contract info in custom tables", func() {
-		err = dataStore.PersistEvents(info)
+	It("Retrieves a list of token holder addresses", func() {
+		addresses, err = r.RetrieveTokenHolderAddresses(*info)
 		Expect(err).ToNot(HaveOccurred())
 
-		b, ok := info.Addresses["0x000000000000000000000000000000000000Af21"]
+		_, ok := addresses[common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")]
 		Expect(ok).To(Equal(true))
-		Expect(b).To(Equal(true))
 
-		b, ok = info.Addresses["0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"]
+		_, ok = addresses[common.HexToAddress("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")]
 		Expect(ok).To(Equal(true))
-		Expect(b).To(Equal(true))
+
+		_, ok = addresses[common.HexToAddress("0x")]
+		Expect(ok).To(Equal(false))
+
 	})
 
-	It("Fails with empty contract", func() {
-		err = dataStore.PersistEvents(&contract.Contract{})
-		Expect(err).To(HaveOccurred())
+	It("Returns empty list when empty contract info is used", func() {
+		addresses, err = r.RetrieveTokenHolderAddresses(contract.Contract{})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(len(addresses)).To(Equal(0))
 	})
 })

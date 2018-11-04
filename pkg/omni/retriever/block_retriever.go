@@ -18,27 +18,36 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Retriever is used to retrieve the first block for a given contract
+// Block retriever is used to retrieve the first block for a given contract and the most recent block
 // It requires a vDB synced database with blocks, transactions, receipts, and logs
-type Retriever interface {
+type BlockRetriever interface {
 	RetrieveFirstBlock(contractAddr string) (int64, error)
-	RetrieveFirstBlockFromLogs(contractAddr string) (int64, error)
-	RetrieveFirstBlockFromReceipts(contractAddr string) (int64, error)
+	RetrieveMostRecentBlock() (int64, error)
 }
 
-type retriever struct {
+type blockRetriever struct {
 	*postgres.DB
 }
 
-func NewRetriever(db *postgres.DB) (r *retriever) {
+func NewBlockRetriever(db *postgres.DB) (r *blockRetriever) {
 
-	return &retriever{
+	return &blockRetriever{
 		DB: db,
 	}
 }
 
+// Try both methods of finding the first block, with the receipt method taking precedence
+func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) {
+	i, err := r.retrieveFirstBlockFromReceipts(contractAddr)
+	if err != nil {
+		i, err = r.retrieveFirstBlockFromLogs(contractAddr)
+	}
+
+	return i, err
+}
+
 // For some contracts the contract creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
-func (r *retriever) RetrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
+func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
 	var firstBlock int
 	err := r.DB.Get(
 		&firstBlock,
@@ -54,7 +63,7 @@ func (r *retriever) RetrieveFirstBlockFromReceipts(contractAddr string) (int64, 
 }
 
 // In which case this servers as a heuristic to find the first block by finding the first contract event log
-func (r *retriever) RetrieveFirstBlockFromLogs(contractAddr string) (int64, error) {
+func (r *blockRetriever) retrieveFirstBlockFromLogs(contractAddr string) (int64, error) {
 	var firstBlock int
 	err := r.DB.Get(
 		&firstBlock,
@@ -65,12 +74,13 @@ func (r *retriever) RetrieveFirstBlockFromLogs(contractAddr string) (int64, erro
 	return int64(firstBlock), err
 }
 
-// Try both methods of finding the first block, with the receipt method taking precedence
-func (r *retriever) RetrieveFirstBlock(contractAddr string) (int64, error) {
-	i, err := r.RetrieveFirstBlockFromReceipts(contractAddr)
-	if err != nil {
-		i, err = r.RetrieveFirstBlockFromLogs(contractAddr)
-	}
+// Method to retrieve the most recent block in vDB
+func (r *blockRetriever) RetrieveMostRecentBlock() (int64, error) {
+	var lastBlock int64
+	err := r.DB.Get(
+		&lastBlock,
+		"SELECT number FROM blocks ORDER BY number DESC LIMIT 1",
+	)
 
-	return i, err
+	return lastBlock, err
 }

@@ -35,6 +35,8 @@ var (
 	network             string
 	contractAddress     string
 	contractAddresses   []string
+	eventsOn            bool
+	methodsOn           bool
 	contractEvents      []string
 	contractMethods     []string
 )
