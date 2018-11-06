@@ -15,47 +15,51 @@
 package pit_vow_test
 
 import (
-	"database/sql"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Cat file pit vow repository", func() {
 	var (
-		catFileRepository pit_vow.CatFilePitVowRepository
-		db                *postgres.DB
-		err               error
-		headerRepository  datastore.HeaderRepository
+		catFilePitVowRepository pit_vow.CatFilePitVowRepository
+		db                      *postgres.DB
+		headerRepository        datastore.HeaderRepository
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
-		catFileRepository = pit_vow.CatFilePitVowRepository{}
-		catFileRepository.SetDB(db)
+		catFilePitVowRepository = pit_vow.CatFilePitVowRepository{}
+		catFilePitVowRepository.SetDB(db)
 	})
 
 	Describe("Create", func() {
-		var headerID int64
+		modelWithDifferentLogIdx := test_data.CatFilePitVowModel
+		modelWithDifferentLogIdx.LogIndex++
+		inputs := shared_behaviors.CreateBehaviorInputs{
+			CheckedHeaderColumnName:  "cat_file_pit_vow_checked",
+			LogEventTableName:        "maker.cat_file_pit_vow",
+			TestModel:                test_data.CatFilePitVowModel,
+			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
+			Repository:               &catFilePitVowRepository,
+		}
 
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
+		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("adds a cat file pit vow event", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
+			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
+			err = catFilePitVowRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbResult pit_vow.CatFilePitVowModel
@@ -67,167 +71,22 @@ var _ = Describe("Cat file pit vow repository", func() {
 			Expect(dbResult.LogIndex).To(Equal(test_data.CatFilePitVowModel.LogIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFilePitVowModel.Raw))
 		})
-
-		It("marks header as checked for logs", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT cat_file_pit_vow_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates the header to checked if checked headers row already exists", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT cat_file_pit_vow_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("does not duplicate cat file pit vow events", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		It("allows for multiple cat file pit events in one transaction if they have different log indexes", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-			Expect(err).NotTo(HaveOccurred())
-			catFilePitVow := test_data.CatFilePitVowModel
-			catFilePitVow.LogIndex = catFilePitVow.LogIndex + 1
-
-			err = catFileRepository.Create(headerID, []interface{}{catFilePitVow})
-
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("removes cat file pit vow if corresponding header is deleted", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFilePitVowModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var dbResult pit_vow.CatFilePitVowModel
-			err = db.Get(&dbResult, `SELECT what, data, tx_idx, raw_log FROM maker.cat_file_pit_vow WHERE header_id = $1`, headerID)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(sql.ErrNoRows))
-		})
-
-		It("returns an error if model is of wrong type", func() {
-			err = catFileRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("model of type"))
-		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerID int64
-
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("creates a row for a new headerID", func() {
-			err = catFileRepository.MarkHeaderChecked(headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT cat_file_pit_vow_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates row when headerID already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
-
-			err = catFileRepository.MarkHeaderChecked(headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT cat_file_pit_vow_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
+		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
+			CheckedHeaderColumnName: "cat_file_pit_vow_checked",
+			Repository:              &catFilePitVowRepository,
+		}
+		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
 
 	Describe("MissingHeaders", func() {
-		var (
-			startingBlock, endingBlock, catFileBlock int64
-			blockNumbers, headerIDs                  []int64
-		)
+		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
+			Repository:    &catFilePitVowRepository,
+			RepositoryTwo: &pit_vow.CatFilePitVowRepository{},
+		}
 
-		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
-			endingBlock = startingBlock + 2
-			catFileBlock = startingBlock + 1
-
-			blockNumbers = []int64{startingBlock, catFileBlock, endingBlock, endingBlock + 1}
-
-			headerIDs = []int64{}
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-
-		It("returns headers that haven't been checked", func() {
-			err := catFileRepository.MarkHeaderChecked(headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := catFileRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-		})
-
-		It("only treats headers as checked if cat file pit vow logs have been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := catFileRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(catFileBlock)))
-		})
-
-		It("only returns headers associated with the current node", func() {
-			err := catFileRepository.MarkHeaderChecked(headerIDs[0])
-			Expect(err).NotTo(HaveOccurred())
-			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
-			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-			}
-			catFileRepositoryTwo := pit_vow.CatFilePitVowRepository{}
-			catFileRepositoryTwo.SetDB(dbTwo)
-
-			nodeOneMissingHeaders, err := catFileRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
-
-			nodeTwoMissingHeaders, err := catFileRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
+		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
 	})
 })

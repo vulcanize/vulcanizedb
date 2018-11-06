@@ -18,12 +18,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -32,7 +32,6 @@ var _ = Describe("Deal Repository", func() {
 		db               *postgres.DB
 		dealRepository   deal.DealRepository
 		headerRepository repositories.HeaderRepository
-		err              error
 	)
 
 	BeforeEach(func() {
@@ -44,14 +43,21 @@ var _ = Describe("Deal Repository", func() {
 	})
 
 	Describe("Create", func() {
-		var headerId int64
+		modelWithDifferentLogIdx := test_data.DealModel
+		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
+		inputs := shared_behaviors.CreateBehaviorInputs{
+			CheckedHeaderColumnName:  "deal_checked",
+			LogEventTableName:        "maker.deal",
+			TestModel:                test_data.DealModel,
+			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
+			Repository:               &dealRepository,
+		}
 
-		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
+		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("persists a deal record", func() {
+			headerId, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
 			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -67,168 +73,23 @@ var _ = Describe("Deal Repository", func() {
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.DealModel.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.DealModel.Raw))
 		})
-
-		It("marks header as checked for logs", func() {
-			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates the header to checked if checked headers row already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("returns an error if inserting a deal record fails", func() {
-			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		It("deletes the deal record if its corresponding header record is deleted", func() {
-			err = dealRepository.Create(headerId, []interface{}{test_data.DealModel})
-			Expect(err).NotTo(HaveOccurred())
-			var count int
-			err = db.QueryRow(`SELECT count(*) from maker.deal`).Scan(&count)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(1))
-
-			_, err = db.Exec(`DELETE FROM headers where id = $1`, headerId)
-
-			Expect(err).NotTo(HaveOccurred())
-			err = db.QueryRow(`SELECT count(*) from maker.deal`).Scan(&count)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(0))
-		})
-
-		It("returns an error if model is of wrong type", func() {
-			err = dealRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("model of type"))
-		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerId int64
+		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
+			CheckedHeaderColumnName: "deal_checked",
+			Repository:              &dealRepository,
+		}
 
-		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("creates a row for a new headerID", func() {
-			err = dealRepository.MarkHeaderChecked(headerId)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates row when headerID already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
-
-			err = dealRepository.MarkHeaderChecked(headerId)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
+		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
 
 	Describe("MissingHeaders", func() {
-		var (
-			dealBlock, startingBlock, endingBlock int64
-			blockNumbers, headerIds               []int64
-		)
+		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
+			Repository:    &dealRepository,
+			RepositoryTwo: &deal.DealRepository{},
+		}
 
-		BeforeEach(func() {
-			dealBlock = GinkgoRandomSeed()
-			startingBlock = dealBlock - 1
-			endingBlock = dealBlock + 1
-			outOfRangeBlockNumber := dealBlock + 2
-
-			blockNumbers = []int64{startingBlock, dealBlock, endingBlock, outOfRangeBlockNumber}
-
-			headerIds = []int64{}
-			for _, number := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-			}
-		})
-
-		It("returns header records that don't have a corresponding deals", func() {
-			err = dealRepository.MarkHeaderChecked(headerIds[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			missingHeaders, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(missingHeaders[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-		})
-
-		It("only treats headers as checked if deal have been checked", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIds[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dealBlock)))
-		})
-
-		It("only returns missing headers for the given node", func() {
-			err = dealRepository.MarkHeaderChecked(headerIds[1])
-			Expect(err).NotTo(HaveOccurred())
-			node2 := core.Node{}
-			db2 := test_config.NewTestDB(node2)
-			dealRepository2 := deal.DealRepository{}
-			dealRepository2.SetDB(db2)
-			headerRepository2 := repositories.NewHeaderRepository(db2)
-			var node2HeaderIds []int64
-			for _, number := range blockNumbers {
-				id, err := headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
-				node2HeaderIds = append(node2HeaderIds, id)
-				Expect(err).NotTo(HaveOccurred())
-			}
-
-			missingHeadersNode1, err := dealRepository.MissingHeaders(startingBlock, endingBlock)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeadersNode1)).To(Equal(2))
-			Expect(missingHeadersNode1[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode1[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-
-			missingHeadersNode2, err := dealRepository2.MissingHeaders(startingBlock, endingBlock)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeadersNode2)).To(Equal(3))
-			Expect(missingHeadersNode2[0].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode2[1].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode2[2].BlockNumber).To(Or(Equal(startingBlock), Equal(dealBlock), Equal(endingBlock)))
-		})
+		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
 	})
 })
