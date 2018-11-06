@@ -16,7 +16,7 @@ package flip
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var CatFileFlipConfig = shared.SingleTransformerConfig{
+var CatFileFlipConfig = shared.TransformerConfig{
 	TransformerName:     shared.CatFileFlipLabel,
 	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,

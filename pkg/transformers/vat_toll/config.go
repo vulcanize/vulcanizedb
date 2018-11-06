@@ -2,7 +2,7 @@ package vat_toll
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VatTollConfig = shared.SingleTransformerConfig{
+var VatTollConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatTollLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

@@ -16,7 +16,7 @@ package vow
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var DripFileVowConfig = shared.SingleTransformerConfig{
+var DripFileVowConfig = shared.TransformerConfig{
 	TransformerName:     shared.DripFileVowLabel,
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,

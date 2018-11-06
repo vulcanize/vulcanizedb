@@ -16,7 +16,7 @@ package chop_lump
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var CatFileChopLumpConfig = shared.SingleTransformerConfig{
+var CatFileChopLumpConfig = shared.TransformerConfig{
 	TransformerName:     shared.CatFileChopLumpLabel,
 	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,

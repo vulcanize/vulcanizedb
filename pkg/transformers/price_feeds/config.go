@@ -16,7 +16,7 @@ package price_feeds
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var PriceFeedConfig = shared.SingleTransformerConfig{
+var PriceFeedConfig = shared.TransformerConfig{
 	TransformerName: shared.PriceFeedLabel,
 	ContractAddresses: []string{
 		shared.PepContractAddress,

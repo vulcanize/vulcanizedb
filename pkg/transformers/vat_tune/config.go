@@ -2,7 +2,7 @@ package vat_tune
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VatTuneConfig = shared.SingleTransformerConfig{
+var VatTuneConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatTuneLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

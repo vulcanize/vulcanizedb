@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var VatInitConfig = shared.SingleTransformerConfig{
+var VatInitConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatInitLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

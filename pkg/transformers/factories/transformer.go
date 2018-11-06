@@ -25,7 +25,7 @@ import (
 )
 
 type Transformer struct {
-	Config     shared.SingleTransformerConfig
+	Config     shared.TransformerConfig
 	Converter  Converter
 	Repository Repository
 	Fetcher    shared.SettableLogFetcher

@@ -2,7 +2,7 @@ package vat_grab
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VatGrabConfig = shared.SingleTransformerConfig{
+var VatGrabConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatGrabLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

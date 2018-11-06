@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var DebtCeilingFileConfig = shared.SingleTransformerConfig{
+var DebtCeilingFileConfig = shared.TransformerConfig{
 	TransformerName:     shared.PitFileDebtCeilingLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,
