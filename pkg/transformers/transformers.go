@@ -132,7 +132,6 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-
 	FrobTransformerInitializer = factories.Transformer{
 		Config:     frob.FrobConfig,
 		Converter:  &frob.FrobConverter{},

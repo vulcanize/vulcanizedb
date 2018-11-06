@@ -12,48 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vat_fold_test
+package factories_test
 
 import (
-	"math/rand"
-
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
+	"math/rand"
 )
 
-var _ = Describe("Vat fold transformer", func() {
+var _ = Describe("LogNoteTransformer", func() {
 	var (
-		config      = vat_fold.VatFoldConfig
-		fetcher     mocks.MockLogFetcher
-		converter   mocks.MockLogNoteConverter
 		repository  mocks.MockRepository
-		transformer shared.Transformer
+		converter   mocks.MockLogNoteConverter
+		fetcher     mocks.MockLogFetcher
 		headerOne   core.Header
 		headerTwo   core.Header
+		transformer shared.Transformer
+		model       test_data.GenericModel
+		config      = test_data.GenericTestConfig
+		logs        = test_data.GenericTestLogs
 	)
 
 	BeforeEach(func() {
-		fetcher = mocks.MockLogFetcher{}
-		converter = mocks.MockLogNoteConverter{}
 		repository = mocks.MockRepository{}
-		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
-		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		converter = mocks.MockLogNoteConverter{}
+		fetcher = mocks.MockLogFetcher{}
 		transformer = factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &converter,
-			Fetcher:    &fetcher,
 			Repository: &repository,
+			Fetcher:    &fetcher,
 		}.NewLogNoteTransformer(nil, nil)
+
+		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerTwo = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 	})
 
 	It("sets the blockchain and database", func() {
@@ -86,7 +85,8 @@ var _ = Describe("Vat fold transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fetcher.FetchedBlocks).To(Equal([]int64{headerOne.BlockNumber, headerTwo.BlockNumber}))
 		Expect(fetcher.FetchedContractAddresses).To(Equal([][]string{config.ContractAddresses, config.ContractAddresses}))
-		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{common.HexToHash(shared.VatFoldSignature)}}))
+		expectedTopic := common.HexToHash(config.Topic)
+		Expect(fetcher.FetchedTopics).To(Equal([][]common.Hash{{expectedTopic}}))
 	})
 
 	It("returns error if fetcher returns error", func() {
@@ -99,51 +99,7 @@ var _ = Describe("Vat fold transformer", func() {
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
-	It("converts matching logs", func() {
-		repository.SetMissingHeaders([]core.Header{headerOne})
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatFoldLog})
-
-		err := transformer.Execute()
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.PassedLogs).To(Equal([]types.Log{test_data.EthVatFoldLog}))
-	})
-
-	It("returns error if converter returns error", func() {
-		repository.SetMissingHeaders([]core.Header{headerOne})
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatFoldLog})
-		converter.SetConverterError(fakes.FakeError)
-
-		err := transformer.Execute()
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
-	It("persists vat fold model", func() {
-		repository.SetMissingHeaders([]core.Header{headerOne})
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatFoldLog})
-		converter.SetReturnModels([]interface{}{test_data.VatFoldModel})
-
-		err := transformer.Execute()
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
-		Expect(repository.PassedModels).To(Equal([]interface{}{test_data.VatFoldModel}))
-	})
-
-	It("returns error if repository returns error for create", func() {
-		repository.SetMissingHeaders([]core.Header{headerOne})
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatFoldLog})
-		repository.SetCreateError(fakes.FakeError)
-
-		err := transformer.Execute()
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
-	It("marks the header as checked when there are no logs", func() {
+	It("marks header checked if no logs returned", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
 
 		err := transformer.Execute()
@@ -152,19 +108,72 @@ var _ = Describe("Vat fold transformer", func() {
 		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
-	It("doesn't call MarkHeaderChecked when there are logs", func() {
-		repository.SetMissingHeaders([]core.Header{headerOne})
-		fetcher.SetFetchedLogs([]types.Log{test_data.EthVatFoldLog})
+	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
+		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
 
 		err := transformer.Execute()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(BeEmpty())
+		Expect(converter.ToModelsCalledCounter).To(Equal(0))
+		Expect(repository.CreateCalledCounter).To(Equal(0))
 	})
 
-	It("returns an error if MarkHeaderChecked fails", func() {
+	It("does not call repository.MarkCheckedHeader when there are logs", func() {
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		fetcher.SetFetchedLogs(logs)
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		repository.AssertMarkHeaderCheckedNotCalled()
+	})
+
+	It("returns error if marking header checked returns err", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne})
 		repository.SetMarkHeaderCheckedError(fakes.FakeError)
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("converts matching logs to models", func() {
+		fetcher.SetFetchedLogs(logs)
+		repository.SetMissingHeaders([]core.Header{headerOne})
+
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(converter.PassedLogs).To(Equal(logs))
+	})
+
+	It("returns error if converter returns error", func() {
+		converter.SetConverterError(fakes.FakeError)
+		fetcher.SetFetchedLogs(logs)
+		repository.SetMissingHeaders([]core.Header{headerOne})
+
+		err := transformer.Execute()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(fakes.FakeError))
+	})
+
+	It("persists the model", func() {
+		fetcher.SetFetchedLogs(logs)
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		converter.SetReturnModels([]interface{}{model})
+		err := transformer.Execute()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
+		Expect(repository.PassedModels).To(Equal([]interface{}{model}))
+	})
+
+	It("returns error if repository returns error for create", func() {
+		fetcher.SetFetchedLogs(logs)
+		repository.SetMissingHeaders([]core.Header{headerOne})
+		repository.SetCreateError(fakes.FakeError)
 
 		err := transformer.Execute()
 
