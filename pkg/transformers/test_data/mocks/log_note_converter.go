@@ -13,7 +13,7 @@ type MockLogNoteConverter struct {
 
 func (converter *MockLogNoteConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
-	converter.ToModelsCalledCounter ++
+	converter.ToModelsCalledCounter++
 	return converter.returnModels, converter.err
 }
 

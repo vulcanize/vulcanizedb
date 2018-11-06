@@ -18,12 +18,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -32,7 +32,6 @@ var _ = Describe("Dent Repository", func() {
 		db               *postgres.DB
 		dentRepository   dent.DentRepository
 		headerRepository repositories.HeaderRepository
-		err              error
 	)
 
 	BeforeEach(func() {
@@ -44,15 +43,22 @@ var _ = Describe("Dent Repository", func() {
 	})
 
 	Describe("Create", func() {
-		var headerId int64
+		modelWithDifferentLogIdx := test_data.DentModel
+		modelWithDifferentLogIdx.LogIndex++
+		inputs := shared_behaviors.CreateBehaviorInputs{
+			CheckedHeaderColumnName:  "dent_checked",
+			LogEventTableName:        "maker.dent",
+			TestModel:                test_data.DentModel,
+			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
+			Repository:               &dentRepository,
+		}
 
-		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
+		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("persists a dent record", func() {
-			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			headerId, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
+			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var count int
@@ -71,167 +77,23 @@ var _ = Describe("Dent Repository", func() {
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.DentModel.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.DentModel.Raw))
 		})
-
-		It("marks header as checked for logs", func() {
-			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates the checked_header row if it already exists", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("returns an error if inserting a dent record fails", func() {
-			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		It("returns an error if model is of wrong type", func() {
-			err = dentRepository.Create(headerId, []interface{}{test_data.WrongModel{}})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("model of type"))
-		})
-
-		It("deletes the dent record if its corresponding header record is deleted", func() {
-			err := dentRepository.Create(headerId, []interface{}{test_data.DentModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			var count int
-			err = db.QueryRow(`SELECT count(*) from maker.dent`).Scan(&count)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(1))
-
-			_, err = db.Exec(`DELETE FROM headers where id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = db.QueryRow(`SELECT count(*) from maker.dent`).Scan(&count)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(0))
-		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerId int64
+		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
+			CheckedHeaderColumnName: "dent_checked",
+			Repository:              &dentRepository,
+		}
 
-		BeforeEach(func() {
-			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("creates a row for a new headerId", func() {
-			err = dentRepository.MarkHeaderChecked(headerId)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates row when headerId already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = dentRepository.MarkHeaderChecked(headerId)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerId)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
+		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
 
 	Describe("MissingHeaders", func() {
-		var (
-			dentBlock, startingBlock, endingBlock int64
-			blockNumbers, headerIds               []int64
-		)
+		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
+			Repository:    &dentRepository,
+			RepositoryTwo: &dent.DentRepository{},
+		}
 
-		BeforeEach(func() {
-			dentBlock = GinkgoRandomSeed()
-			startingBlock = dentBlock - 1
-			endingBlock = dentBlock + 1
-			outOfRangeBlockNumber := dentBlock + 2
-
-			blockNumbers = []int64{startingBlock, dentBlock, endingBlock, outOfRangeBlockNumber}
-
-			headerIds = []int64{}
-			for _, number := range blockNumbers {
-				headerId, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
-				Expect(err).NotTo(HaveOccurred())
-				headerIds = append(headerIds, headerId)
-			}
-		})
-
-		It("returns header records that haven't been checked", func() {
-			dentRepository.MarkHeaderChecked(headerIds[1])
-			missingHeaders, err := dentRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(missingHeaders[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-		})
-
-		It("only treats headers as checked if dent has been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIds[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := dentRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dentBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dentBlock)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(dentBlock)))
-		})
-
-		It("only returns missing headers for the given node", func() {
-			dentRepository.MarkHeaderChecked(headerIds[1])
-			node2 := core.Node{}
-			db2 := test_config.NewTestDB(node2)
-			dentRepository2 := dent.DentRepository{}
-			dentRepository2.SetDB(db2)
-			headerRepository2 := repositories.NewHeaderRepository(db2)
-			var node2HeaderIds []int64
-			for _, number := range blockNumbers {
-				id, err := headerRepository2.CreateOrUpdateHeader(fakes.GetFakeHeader(number))
-				node2HeaderIds = append(node2HeaderIds, id)
-				Expect(err).NotTo(HaveOccurred())
-			}
-
-			missingHeadersNode1, err := dentRepository.MissingHeaders(startingBlock, endingBlock)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeadersNode1)).To(Equal(2))
-			Expect(missingHeadersNode1[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode1[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-
-			missingHeadersNode2, err := dentRepository2.MissingHeaders(startingBlock, endingBlock)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(missingHeadersNode2)).To(Equal(3))
-			Expect(missingHeadersNode2[0].BlockNumber).To(Or(Equal(startingBlock), Equal(dentBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode2[1].BlockNumber).To(Or(Equal(startingBlock), Equal(dentBlock), Equal(endingBlock)))
-			Expect(missingHeadersNode2[2].BlockNumber).To(Or(Equal(startingBlock), Equal(dentBlock), Equal(endingBlock)))
-		})
+		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
 	})
 })

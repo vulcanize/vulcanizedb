@@ -26,7 +26,7 @@ func (repository *MockRepository) Create(headerID int64, models []interface{}) e
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
 	repository.CreatedHeaderIds = append(repository.CreatedHeaderIds, headerID)
-	repository.CreateCalledCounter ++
+	repository.CreateCalledCounter++
 
 	return repository.createError
 }
