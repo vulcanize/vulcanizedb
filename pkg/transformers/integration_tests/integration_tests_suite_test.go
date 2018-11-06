@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 	"io/ioutil"
 )
 
@@ -17,6 +18,13 @@ func TestIntegrationTests(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	ipc = "http://147.75.64.249:8545" //self hosted parity kovan node
+	testConfig := viper.New()
+	testConfig.SetConfigName("integration")
+	testConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	err := testConfig.ReadInConfig()
+	ipc = testConfig.GetString("client.ipcPath")
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.SetOutput(ioutil.Discard)
 })
