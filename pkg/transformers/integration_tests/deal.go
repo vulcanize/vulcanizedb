@@ -80,6 +80,30 @@ var _ = Describe("Deal transformer", func() {
 	})
 
 	It("persists a flap deal log event", func() {
-		//TODO: The flap.deal transformer has not yet been implemented
+		flapBlockNumber := int64(9004628)
+		err = persistHeader(db, flapBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		config := deal.DealConfig
+		config.StartingBlockNumber = flapBlockNumber
+		config.EndingBlockNumber = flapBlockNumber
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &deal.DealConverter{},
+			Repository: &deal.DealRepository{},
+			Fetcher:    &shared.Fetcher{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		err := transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []deal.DealModel
+		err = db.Select(&dbResult, `SELECT bid_id, contract_address FROM maker.deal`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].BidId).To(Equal("1"))
+		Expect(dbResult[0].ContractAddress).To(Equal(shared.FlapperContractAddress))
 	})
 })
