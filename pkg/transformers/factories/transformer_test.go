@@ -29,14 +29,14 @@ import (
 
 var _ = Describe("Transformer", func() {
 	var (
-		repository   mocks.MockRepository
-		fetcher      mocks.MockLogFetcher
-		converter    mocks.MockConverter
-		transformer  shared.Transformer
-		headerOne core.Header
-		headerTwo core.Header
-		config       = test_data.GenericTestConfig
-		logs         = test_data.GenericTestLogs
+		repository  mocks.MockRepository
+		fetcher     mocks.MockLogFetcher
+		converter   mocks.MockConverter
+		transformer shared.Transformer
+		headerOne   core.Header
+		headerTwo   core.Header
+		config      = test_data.GenericTestConfig
+		logs        = test_data.GenericTestLogs
 	)
 
 	BeforeEach(func() {
@@ -105,7 +105,6 @@ var _ = Describe("Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		repository.AssertMarkHeaderCheckedCalledWith(headerID)
 	})
-
 
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
 		repository.SetMissingHeaders([]core.Header{headerOne, headerTwo})
