@@ -35,7 +35,7 @@ var GenericTestLogs = []types.Log{{
 	BlockNumber: uint64(startingBlockNumber),
 }}
 
-var GenericTestConfig = shared.SingleTransformerConfig{
+var GenericTestConfig = shared.TransformerConfig{
 	TransformerName:     "generic-test-transformer",
 	ContractAddresses:   []string{address},
 	ContractAbi:         randomString(100),

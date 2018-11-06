@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var IlkFileConfig = shared.SingleTransformerConfig{
+var IlkFileConfig = shared.TransformerConfig{
 	TransformerName:     shared.PitFileIlkLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,

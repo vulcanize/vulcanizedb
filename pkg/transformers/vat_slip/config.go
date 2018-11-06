@@ -2,7 +2,7 @@ package vat_slip
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VatSlipConfig = shared.SingleTransformerConfig{
+var VatSlipConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatSlipLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

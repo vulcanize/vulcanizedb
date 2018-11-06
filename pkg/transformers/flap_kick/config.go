@@ -16,7 +16,7 @@ package flap_kick
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var FlapKickConfig = shared.SingleTransformerConfig{
+var FlapKickConfig = shared.TransformerConfig{
 	TransformerName:     shared.FlapKickLabel,
 	ContractAddresses:   []string{shared.FlapperContractAddress},
 	ContractAbi:         shared.FlapperABI,

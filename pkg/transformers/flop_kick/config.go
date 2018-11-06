@@ -16,7 +16,7 @@ package flop_kick
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var Config = shared.SingleTransformerConfig{
+var Config = shared.TransformerConfig{
 	TransformerName:     shared.FlopKickLabel,
 	ContractAddresses:   []string{shared.FlopperContractAddress},
 	ContractAbi:         shared.FlopperABI,

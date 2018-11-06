@@ -31,15 +31,6 @@ type TransformerConfig struct {
 	TransformerName     string
 	ContractAddresses   []string
 	ContractAbi         string
-	Topics              []string // TODO Change this to single topic
-	StartingBlockNumber int64
-	EndingBlockNumber   int64
-}
-
-type SingleTransformerConfig struct {
-	TransformerName     string
-	ContractAddresses   []string
-	ContractAbi         string
 	Topic               string
 	StartingBlockNumber int64
 	EndingBlockNumber   int64

@@ -16,7 +16,7 @@ package frob
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var FrobConfig = shared.SingleTransformerConfig{
+var FrobConfig = shared.TransformerConfig{
 	TransformerName:     shared.FrobLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,

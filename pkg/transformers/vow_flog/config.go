@@ -16,7 +16,7 @@ package vow_flog
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VowFlogConfig = shared.SingleTransformerConfig{
+var VowFlogConfig = shared.TransformerConfig{
 	TransformerName:     shared.VowFlogLabel,
 	ContractAddresses:   []string{shared.VowContractAddress},
 	ContractAbi:         shared.VowABI,

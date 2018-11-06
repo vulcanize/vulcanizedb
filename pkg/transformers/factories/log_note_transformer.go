@@ -25,7 +25,7 @@ import (
 )
 
 type LogNoteTransformer struct {
-	Config     shared.SingleTransformerConfig
+	Config     shared.TransformerConfig
 	Converter  LogNoteConverter
 	Repository Repository
 	Fetcher    shared.SettableLogFetcher

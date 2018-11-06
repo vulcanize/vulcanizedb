@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var StabilityFeeFileConfig = shared.SingleTransformerConfig{
+var StabilityFeeFileConfig = shared.TransformerConfig{
 	TransformerName:     shared.PitFileStabilityFeeLabel,
 	ContractAddresses:   []string{shared.PitContractAddress},
 	ContractAbi:         shared.PitABI,

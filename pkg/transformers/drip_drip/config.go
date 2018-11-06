@@ -16,7 +16,7 @@ package drip_drip
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var DripDripConfig = shared.SingleTransformerConfig{
+var DripDripConfig = shared.TransformerConfig{
 	TransformerName:     shared.DripDripLabel,
 	ContractAddresses:   []string{shared.DripContractAddress},
 	ContractAbi:         shared.DripABI,

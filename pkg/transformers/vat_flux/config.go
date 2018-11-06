@@ -2,7 +2,7 @@ package vat_flux
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var VatFluxConfig = shared.SingleTransformerConfig{
+var VatFluxConfig = shared.TransformerConfig{
 	TransformerName:     shared.VatFluxLabel,
 	ContractAddresses:   []string{shared.VatContractAddress},
 	ContractAbi:         shared.VatABI,

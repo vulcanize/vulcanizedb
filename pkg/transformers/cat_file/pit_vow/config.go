@@ -16,7 +16,7 @@ package pit_vow
 
 import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-var CatFilePitVowConfig = shared.SingleTransformerConfig{
+var CatFilePitVowConfig = shared.TransformerConfig{
 	TransformerName:     shared.CatFilePitVowLabel,
 	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,

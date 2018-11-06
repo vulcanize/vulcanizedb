@@ -20,7 +20,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-var BiteConfig = shared.SingleTransformerConfig{
+var BiteConfig = shared.TransformerConfig{
 	TransformerName:     shared.BiteLabel,
 	ContractAddresses:   []string{shared.CatContractAddress},
 	ContractAbi:         shared.CatABI,
