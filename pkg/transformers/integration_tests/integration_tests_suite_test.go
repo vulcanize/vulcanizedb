@@ -19,7 +19,7 @@ func TestIntegrationTests(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	testConfig := viper.New()
-	testConfig.SetConfigName("integration")
+	testConfig.SetConfigName("staging")
 	testConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 	err := testConfig.ReadInConfig()
 	ipc = testConfig.GetString("client.ipcPath")
