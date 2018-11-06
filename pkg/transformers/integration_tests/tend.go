@@ -25,7 +25,7 @@ import (
 )
 
 var _ = Describe("Tend LogNoteTransformer", func() {
-	It("fetches and transforms a Tend event from Kovan chain", func() {
+	It("fetches and transforms a Flip Tend event from Kovan chain", func() {
 		blockNumber := int64(8935601)
 		config := tend.TendConfig
 		config.StartingBlockNumber = blockNumber
@@ -64,7 +64,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(dbResult[0].Tic).To(Equal("0"))
 	})
 
-	It("fetches and transforms a subsequent Tend event from Kovan chain for the same auction", func() {
+	It("fetches and transforms a subsequent Flip Tend event from Kovan chain for the same auction", func() {
 		blockNumber := int64(8935731)
 		config := tend.TendConfig
 		config.StartingBlockNumber = blockNumber
@@ -98,6 +98,45 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("4300"))
 		Expect(dbResult[0].BidId).To(Equal("3"))
+		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
+		Expect(dbResult[0].Tic).To(Equal("0"))
+	})
+
+	It("fetches and transforms a Flap Tend event from the Kovan chain", func() {
+		blockNumber := int64(9003177)
+		config := tend.TendConfig
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
+
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockchain, err := getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+
+		db := test_config.NewTestDB(blockchain.Node())
+		test_config.CleanTestDB(db)
+
+		err = persistHeader(db, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Fetcher:    &shared.Fetcher{},
+			Converter:  &tend.TendConverter{},
+			Repository: &tend.TendRepository{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		err = transformer.Execute()
+		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []tend.TendModel
+		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot, tic from maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Bid).To(Equal("1000000000000000"))
+		Expect(dbResult[0].BidId).To(Equal("1"))
 		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
 		Expect(dbResult[0].Tic).To(Equal("0"))
