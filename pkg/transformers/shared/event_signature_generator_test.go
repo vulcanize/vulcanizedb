@@ -37,6 +37,13 @@ var _ = Describe("Event signature generator", func() {
 			Expect(expected).To(Equal(actual))
 		})
 
+		It("generates the flap kick event signature", func() {
+			expected := "0xefa52d9342a199cb30efd2692463f2c2bef63cd7186b50382d4fb94ad207880e"
+			actual := shared.GetEventSignature("Kick(uint256,uint256,uint256,address,uint48)")
+
+			Expect(expected).To(Equal(actual))
+		})
+
 		It("generates flip kick event signature", func() {
 			expected := "0xbac86238bdba81d21995024470425ecb370078fa62b7271b90cf28cbd1e3e87e"
 			actual := shared.GetEventSignature("Kick(uint256,uint256,uint256,address,uint48,bytes32,uint256)")
@@ -220,6 +227,13 @@ var _ = Describe("Event signature generator", func() {
 			It("gets the Bite event signature", func() {
 				expected := "Bite(bytes32,bytes32,uint256,uint256,uint256,uint256,uint256)"
 				actual := shared.GetSolidityMethodSignature(shared.CatABI, "Bite")
+
+				Expect(expected).To(Equal(actual))
+			})
+
+			It("gets the flap Kick event signature", func() {
+				expected := "Kick(uint256,uint256,uint256,address,uint48)"
+				actual := shared.GetSolidityMethodSignature(shared.FlapperABI, "Kick")
 
 				Expect(expected).To(Equal(actual))
 			})
