@@ -1,1 +1,0 @@
-DROP TABLE maker.vat_init;
