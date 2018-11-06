@@ -5,13 +5,15 @@ import (
 )
 
 type MockLogNoteConverter struct {
-	err          error
-	returnModels []interface{}
-	PassedLogs   []types.Log
+	err                   error
+	returnModels          []interface{}
+	PassedLogs            []types.Log
+	ToModelsCalledCounter int
 }
 
 func (converter *MockLogNoteConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 	converter.PassedLogs = ethLogs
+	converter.ToModelsCalledCounter ++
 	return converter.returnModels, converter.err
 }
 

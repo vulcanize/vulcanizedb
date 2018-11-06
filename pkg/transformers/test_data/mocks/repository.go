@@ -19,12 +19,14 @@ type MockRepository struct {
 	PassedHeaderID                   int64
 	PassedModels                     []interface{}
 	SetDbCalled                      bool
+	CreateCalledCounter              int
 }
 
 func (repository *MockRepository) Create(headerID int64, models []interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedModels = models
 	repository.CreatedHeaderIds = append(repository.CreatedHeaderIds, headerID)
+	repository.CreateCalledCounter ++
 
 	return repository.createError
 }

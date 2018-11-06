@@ -15,6 +15,8 @@ type MockConverter struct {
 	EntitiesToConvert       []interface{}
 	EntitiesToReturn        []interface{}
 	ModelsToReturn          []interface{}
+	ToEntitiesCalledCounter int
+	ToModelsCalledCounter   int
 }
 
 func (converter *MockConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
