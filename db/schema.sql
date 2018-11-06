@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
+-- Dumped from database version 10.3
 -- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
@@ -415,6 +415,44 @@ CREATE SEQUENCE maker.drip_file_vow_id_seq
 --
 
 ALTER SEQUENCE maker.drip_file_vow_id_seq OWNED BY maker.drip_file_vow.id;
+
+
+--
+-- Name: flap_kick; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.flap_kick (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    bid_id numeric NOT NULL,
+    lot numeric NOT NULL,
+    bid numeric NOT NULL,
+    gal text,
+    "end" timestamp with time zone,
+    tx_idx integer NOT NULL,
+    log_idx integer NOT NULL,
+    raw_log jsonb
+);
+
+
+--
+-- Name: flap_kick_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.flap_kick_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: flap_kick_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.flap_kick_id_seq OWNED BY maker.flap_kick.id;
 
 
 --
@@ -1187,7 +1225,8 @@ CREATE TABLE public.checked_headers (
     vat_grab_checked boolean DEFAULT false NOT NULL,
     vat_flux_checked boolean DEFAULT false NOT NULL,
     vat_slip_checked boolean DEFAULT false NOT NULL,
-    vow_flog_checked boolean DEFAULT false NOT NULL
+    vow_flog_checked boolean DEFAULT false NOT NULL,
+    flap_kick_checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -1580,6 +1619,13 @@ ALTER TABLE ONLY maker.drip_file_vow ALTER COLUMN id SET DEFAULT nextval('maker.
 
 
 --
+-- Name: flap_kick id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flap_kick ALTER COLUMN id SET DEFAULT nextval('maker.flap_kick_id_seq'::regclass);
+
+
+--
 -- Name: flip_kick id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1933,6 +1979,22 @@ ALTER TABLE ONLY maker.drip_file_vow
 
 ALTER TABLE ONLY maker.drip_file_vow
     ADD CONSTRAINT drip_file_vow_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flap_kick flap_kick_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flap_kick
+    ADD CONSTRAINT flap_kick_header_id_tx_idx_log_idx_key UNIQUE (header_id, tx_idx, log_idx);
+
+
+--
+-- Name: flap_kick flap_kick_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flap_kick
+    ADD CONSTRAINT flap_kick_pkey PRIMARY KEY (id);
 
 
 --
@@ -2455,6 +2517,14 @@ ALTER TABLE ONLY maker.drip_file_repo
 
 ALTER TABLE ONLY maker.drip_file_vow
     ADD CONSTRAINT drip_file_vow_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: flap_kick flap_kick_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.flap_kick
+    ADD CONSTRAINT flap_kick_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
