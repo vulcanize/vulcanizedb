@@ -18,7 +18,7 @@ import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 var DentConfig = shared.TransformerConfig{
 	TransformerName:     shared.DentLabel,
-	ContractAddresses:   []string{shared.FlipperContractAddress},
+	ContractAddresses:   []string{shared.FlipperContractAddress, shared.FlopperContractAddress},
 	ContractAbi:         shared.FlipperABI,
 	Topic:               shared.DentFunctionSignature,
 	StartingBlockNumber: 0,
