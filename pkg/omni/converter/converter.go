@@ -1,27 +1,32 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package converter
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"errors"
+	"math/big"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/examples/generic/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
@@ -29,22 +34,26 @@ import (
 // custom logs containing event input name => value maps
 type Converter interface {
 	Convert(watchedEvent core.WatchedEvent, event *types.Event) error
-	Update(info contract.Contract)
+	Update(info *contract.Contract)
 }
 
 type converter struct {
-	contractInfo contract.Contract
+	contractInfo *contract.Contract
 }
 
-func NewConverter(info contract.Contract) *converter {
+func NewConverter(info *contract.Contract) *converter {
 
 	return &converter{
 		contractInfo: info,
 	}
 }
 
-func (c *converter) Update(info contract.Contract) {
+func (c *converter) Update(info *contract.Contract) {
 	c.contractInfo = info
+}
+
+func (c *converter) CheckInfo() *contract.Contract {
+	return c.contractInfo
 }
 
 // Convert the given watched event log into a types.Log for the given event
@@ -55,26 +64,6 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) 
 	for _, field := range event.Fields {
 		var i interface{}
 		values[field.Name] = i
-
-		switch field.Type.T {
-		case abi.StringTy, abi.HashTy, abi.AddressTy:
-			field.PgType = "CHARACTER VARYING(66)"
-		case abi.IntTy, abi.UintTy:
-			field.PgType = "DECIMAL"
-		case abi.BoolTy:
-			field.PgType = "BOOLEAN"
-		case abi.BytesTy, abi.FixedBytesTy:
-			field.PgType = "BYTEA"
-		case abi.ArrayTy:
-			field.PgType = "TEXT[]"
-		case abi.FixedPointTy:
-			field.PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
-		case abi.FunctionTy:
-			field.PgType = "TEXT"
-		default:
-			field.PgType = "TEXT"
-		}
-
 	}
 
 	log := helpers.ConvertToLog(watchedEvent)
@@ -83,13 +72,45 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) 
 		return err
 	}
 
-	eventLog := types.Log{
-		Values: values,
-		Block:  watchedEvent.BlockNumber,
-		Tx:     watchedEvent.TxHash,
+	strValues := make(map[string]string, len(values))
+
+	for eventName, input := range values {
+		// Postgres cannot handle custom types, resolve to strings
+		switch input.(type) {
+		case *big.Int:
+			var b *big.Int
+			b = input.(*big.Int)
+			strValues[eventName] = b.String()
+		case common.Address:
+			var a common.Address
+			a = input.(common.Address)
+			strValues[eventName] = a.String()
+			c.contractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
+		case common.Hash:
+			var h common.Hash
+			h = input.(common.Hash)
+			strValues[eventName] = h.String()
+		case string:
+			strValues[eventName] = input.(string)
+		case bool:
+			strValues[eventName] = strconv.FormatBool(input.(bool))
+		default:
+			return errors.New("error: unhandled abi type")
+		}
 	}
 
-	event.Logs[watchedEvent.LogID] = eventLog
+	// Only hold onto logs that pass our address filter, if any
+	// Persist log here and don't hold onto it
+	if c.contractInfo.PassesEventFilter(strValues) {
+		eventLog := types.Log{
+			Id:     watchedEvent.LogID,
+			Values: strValues,
+			Block:  watchedEvent.BlockNumber,
+			Tx:     watchedEvent.TxHash,
+		}
+
+		event.Logs[watchedEvent.LogID] = eventLog
+	}
 
 	return nil
 }

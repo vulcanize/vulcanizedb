@@ -1,70 +1,233 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package contract_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/filters"
 
-	"github.com/vulcanize/vulcanizedb/examples/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/parser"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers/test_helpers"
 )
 
-var expectedLogFilter = filters.LogFilter{
-	Name:      "Transfer",
-	Address:   constants.TusdContractAddress,
-	ToBlock:   -1,
-	FromBlock: 5197514,
-	Topics:    core.Topics{constants.TransferEvent.Signature()},
-}
-
-var _ = Describe("Contract test", func() {
-	var p parser.Parser
+var _ = Describe("Contract", func() {
 	var err error
+	var info *contract.Contract
+	var wantedEvents = []string{"Transfer", "Approval"}
 
-	BeforeEach(func() {
-		p = parser.NewParser("")
-		err = p.Parse(constants.TusdContractAddress)
-		Expect(err).ToNot(HaveOccurred())
+	Describe("GenerateFilters", func() {
+
+		It("Generates filters from contract data", func() {
+			info = test_helpers.SetupTusdContract(wantedEvents, nil)
+			err = info.GenerateFilters()
+			Expect(err).ToNot(HaveOccurred())
+
+			val, ok := info.Filters["Transfer"]
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(test_helpers.ExpectedTransferFilter))
+
+			val, ok = info.Filters["Approval"]
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(test_helpers.ExpectedApprovalFilter))
+
+			val, ok = info.Filters["Mint"]
+			Expect(ok).To(Equal(false))
+
+		})
+
+		It("Fails with an empty contract", func() {
+			info = &contract.Contract{}
+			err = info.GenerateFilters()
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
-	It("Creates filters from stored data", func() {
-		info := contract.Contract{
-			Name:          "TrueUSD",
-			Address:       constants.TusdContractAddress,
-			Abi:           p.Abi(),
-			ParsedAbi:     p.ParsedAbi(),
-			StartingBlock: 5197514,
-			Events:        p.GetEvents(),
-			Methods:       p.GetMethods(),
-			Addresses:     map[string]bool{},
-		}
+	Describe("IsEventAddr", func() {
 
-		err = info.GenerateFilters([]string{"Transfer"})
-		Expect(err).ToNot(HaveOccurred())
-		val, ok := info.Filters["Transfer"]
-		Expect(ok).To(Equal(true))
-		Expect(val).To(Equal(expectedLogFilter))
+		BeforeEach(func() {
+			info = &contract.Contract{}
+			info.MethodAddrs = map[string]bool{}
+			info.EventAddrs = map[string]bool{}
+		})
+
+		It("Returns true if address is in event address filter list", func() {
+			info.EventAddrs["testAddress1"] = true
+			info.EventAddrs["testAddress2"] = true
+
+			is := info.IsEventAddr("testAddress1")
+			Expect(is).To(Equal(true))
+			is = info.IsEventAddr("testAddress2")
+			Expect(is).To(Equal(true))
+
+			info.MethodAddrs["testAddress3"] = true
+			is = info.IsEventAddr("testAddress3")
+			Expect(is).To(Equal(false))
+		})
+
+		It("Returns true if event address filter is empty (no filter)", func() {
+			is := info.IsEventAddr("testAddress1")
+			Expect(is).To(Equal(true))
+			is = info.IsEventAddr("testAddress2")
+			Expect(is).To(Equal(true))
+		})
+
+		It("Returns false if address is not in event address filter list", func() {
+			info.EventAddrs["testAddress1"] = true
+			info.EventAddrs["testAddress2"] = true
+
+			is := info.IsEventAddr("testAddress3")
+			Expect(is).To(Equal(false))
+		})
+
+		It("Returns false if event address filter is nil (block all)", func() {
+			info.EventAddrs = nil
+
+			is := info.IsEventAddr("testAddress1")
+			Expect(is).To(Equal(false))
+			is = info.IsEventAddr("testAddress2")
+			Expect(is).To(Equal(false))
+		})
 	})
 
-	It("Fails with an empty contract", func() {
-		info := contract.Contract{}
-		err = info.GenerateFilters([]string{"Transfer"})
-		Expect(err).To(HaveOccurred())
+	Describe("IsMethodAddr", func() {
+		BeforeEach(func() {
+			info = &contract.Contract{}
+			info.MethodAddrs = map[string]bool{}
+			info.EventAddrs = map[string]bool{}
+		})
+
+		It("Returns true if address is in method address filter list", func() {
+			info.MethodAddrs["testAddress1"] = true
+			info.MethodAddrs["testAddress2"] = true
+
+			is := info.IsMethodAddr("testAddress1")
+			Expect(is).To(Equal(true))
+			is = info.IsMethodAddr("testAddress2")
+			Expect(is).To(Equal(true))
+
+			info.EventAddrs["testAddress3"] = true
+			is = info.IsMethodAddr("testAddress3")
+			Expect(is).To(Equal(false))
+		})
+
+		It("Returns true if method address filter list is empty (no filter)", func() {
+			is := info.IsMethodAddr("testAddress1")
+			Expect(is).To(Equal(true))
+			is = info.IsMethodAddr("testAddress2")
+			Expect(is).To(Equal(true))
+		})
+
+		It("Returns false if address is not in method address filter list", func() {
+			info.MethodAddrs["testAddress1"] = true
+			info.MethodAddrs["testAddress2"] = true
+
+			is := info.IsMethodAddr("testAddress3")
+			Expect(is).To(Equal(false))
+		})
+
+		It("Returns false if method address filter list is nil (block all)", func() {
+			info.MethodAddrs = nil
+
+			is := info.IsMethodAddr("testAddress1")
+			Expect(is).To(Equal(false))
+			is = info.IsMethodAddr("testAddress2")
+			Expect(is).To(Equal(false))
+		})
+	})
+
+	Describe("PassesEventFilter", func() {
+		var mapping map[string]string
+		BeforeEach(func() {
+			info = &contract.Contract{}
+			info.EventAddrs = map[string]bool{}
+			mapping = map[string]string{}
+
+		})
+
+		It("Return true if event log name-value mapping has filtered for address as a value", func() {
+			info.EventAddrs["testAddress1"] = true
+			info.EventAddrs["testAddress2"] = true
+
+			mapping["testInputName1"] = "testAddress1"
+			mapping["testInputName2"] = "testAddress2"
+			mapping["testInputName3"] = "testAddress3"
+
+			pass := info.PassesEventFilter(mapping)
+			Expect(pass).To(Equal(true))
+		})
+
+		It("Return true if event address filter list is empty (no filter)", func() {
+			mapping["testInputName1"] = "testAddress1"
+			mapping["testInputName2"] = "testAddress2"
+			mapping["testInputName3"] = "testAddress3"
+
+			pass := info.PassesEventFilter(mapping)
+			Expect(pass).To(Equal(true))
+		})
+
+		It("Return false if event log name-value mapping does not have filtered for address as a value", func() {
+			info.EventAddrs["testAddress1"] = true
+			info.EventAddrs["testAddress2"] = true
+
+			mapping["testInputName3"] = "testAddress3"
+
+			pass := info.PassesEventFilter(mapping)
+			Expect(pass).To(Equal(false))
+		})
+
+		It("Return false if event address filter list is nil (block all)", func() {
+			info.EventAddrs = nil
+
+			mapping["testInputName1"] = "testAddress1"
+			mapping["testInputName2"] = "testAddress2"
+			mapping["testInputName3"] = "testAddress3"
+
+			pass := info.PassesEventFilter(mapping)
+			Expect(pass).To(Equal(false))
+		})
+	})
+
+	Describe("AddTokenHolderAddress", func() {
+		BeforeEach(func() {
+			info = &contract.Contract{}
+			info.EventAddrs = map[string]bool{}
+			info.MethodAddrs = map[string]bool{}
+			info.TknHolderAddrs = map[string]bool{}
+		})
+
+		It("Adds address to list if it is on the method filter address list", func() {
+			info.MethodAddrs["testAddress2"] = true
+			info.AddTokenHolderAddress("testAddress2")
+			b := info.TknHolderAddrs["testAddress2"]
+			Expect(b).To(Equal(true))
+		})
+
+		It("Adds address to list if method filter is empty", func() {
+			info.AddTokenHolderAddress("testAddress2")
+			b := info.TknHolderAddrs["testAddress2"]
+			Expect(b).To(Equal(true))
+		})
+
+		It("Does not add address to list if both filters are closed (nil)", func() {
+			info.EventAddrs = nil // close both
+			info.MethodAddrs = nil
+			info.AddTokenHolderAddress("testAddress1")
+			b := info.TknHolderAddrs["testAddress1"]
+			Expect(b).To(Equal(false))
+		})
 	})
 })

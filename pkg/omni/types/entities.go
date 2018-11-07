@@ -1,16 +1,18 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -19,16 +21,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
-
-type Config struct {
-	Network string
-	BC      core.BlockChain
-	DB      *postgres.DB
-}
 
 type Event struct {
 	Name      string
@@ -42,19 +35,30 @@ type Method struct {
 	Const   bool
 	Inputs  []*Field
 	Outputs []*Field
+	Results []*Result
 }
 
 type Field struct {
-	abi.Argument
-	PgType string
+	abi.Argument        // Name, Type, Indexed
+	PgType       string // Holds type used when committing data held in this field to postgres
 }
 
+// Struct to hold results from method call with given inputs across different blocks
+type Result struct {
+	Inputs  []interface{} // Will only use addresses
+	Outputs map[int64]interface{}
+	PgType  string // Holds output pg type
+}
+
+// Struct to hold event log data data
 type Log struct {
-	Values map[string]interface{} // Map of event input names to their values
+	Id     int64             // VulcanizeIdLog
+	Values map[string]string // Map of event input names to their values
 	Block  int64
 	Tx     string
 }
 
+// Unpack abi.Event into our custom Event struct
 func NewEvent(e abi.Event) *Event {
 	fields := make([]*Field, len(e.Inputs))
 	for i, input := range e.Inputs {
@@ -62,6 +66,25 @@ func NewEvent(e abi.Event) *Event {
 		fields[i].Name = input.Name
 		fields[i].Type = input.Type
 		fields[i].Indexed = input.Indexed
+		// Fill in pg type based on abi type
+		switch fields[i].Type.T {
+		case abi.StringTy, abi.HashTy, abi.AddressTy:
+			fields[i].PgType = "CHARACTER VARYING(66)"
+		case abi.IntTy, abi.UintTy:
+			fields[i].PgType = "DECIMAL"
+		case abi.BoolTy:
+			fields[i].PgType = "BOOLEAN"
+		case abi.BytesTy, abi.FixedBytesTy:
+			fields[i].PgType = "BYTEA"
+		case abi.ArrayTy:
+			fields[i].PgType = "TEXT[]"
+		case abi.FixedPointTy:
+			fields[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
+		case abi.FunctionTy:
+			fields[i].PgType = "TEXT"
+		default:
+			fields[i].PgType = "TEXT"
+		}
 	}
 
 	return &Event{
@@ -72,6 +95,7 @@ func NewEvent(e abi.Event) *Event {
 	}
 }
 
+// Unpack abi.Method into our custom Method struct
 func NewMethod(m abi.Method) *Method {
 	inputs := make([]*Field, len(m.Inputs))
 	for i, input := range m.Inputs {
@@ -79,6 +103,24 @@ func NewMethod(m abi.Method) *Method {
 		inputs[i].Name = input.Name
 		inputs[i].Type = input.Type
 		inputs[i].Indexed = input.Indexed
+		switch inputs[i].Type.T {
+		case abi.StringTy, abi.HashTy, abi.AddressTy:
+			inputs[i].PgType = "CHARACTER VARYING(66)"
+		case abi.IntTy, abi.UintTy:
+			inputs[i].PgType = "DECIMAL"
+		case abi.BoolTy:
+			inputs[i].PgType = "BOOLEAN"
+		case abi.BytesTy, abi.FixedBytesTy:
+			inputs[i].PgType = "BYTEA"
+		case abi.ArrayTy:
+			inputs[i].PgType = "TEXT[]"
+		case abi.FixedPointTy:
+			inputs[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
+		case abi.FunctionTy:
+			inputs[i].PgType = "TEXT"
+		default:
+			inputs[i].PgType = "TEXT"
+		}
 	}
 
 	outputs := make([]*Field, len(m.Outputs))
@@ -87,6 +129,24 @@ func NewMethod(m abi.Method) *Method {
 		outputs[i].Name = output.Name
 		outputs[i].Type = output.Type
 		outputs[i].Indexed = output.Indexed
+		switch outputs[i].Type.T {
+		case abi.StringTy, abi.HashTy, abi.AddressTy:
+			outputs[i].PgType = "CHARACTER VARYING(66)"
+		case abi.IntTy, abi.UintTy:
+			outputs[i].PgType = "DECIMAL"
+		case abi.BoolTy:
+			outputs[i].PgType = "BOOLEAN"
+		case abi.BytesTy, abi.FixedBytesTy:
+			outputs[i].PgType = "BYTEA"
+		case abi.ArrayTy:
+			outputs[i].PgType = "TEXT[]"
+		case abi.FixedPointTy:
+			outputs[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
+		case abi.FunctionTy:
+			outputs[i].PgType = "TEXT"
+		default:
+			outputs[i].PgType = "TEXT"
+		}
 	}
 
 	return &Method{
@@ -94,6 +154,7 @@ func NewMethod(m abi.Method) *Method {
 		Const:   m.Const,
 		Inputs:  inputs,
 		Outputs: outputs,
+		Results: make([]*Result, 0),
 	}
 }
 

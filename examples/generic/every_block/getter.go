@@ -1,25 +1,27 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package every_block
 
 import (
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -39,13 +41,13 @@ type GenericGetterInterface interface {
 
 // Getter struct
 type GenericGetter struct {
-	fetcher generic.Fetcher // Underlying Fetcher
+	generic.Fetcher // Underlying Fetcher
 }
 
 // Initializes and returns a Getter with the given blockchain
 func NewGetter(blockChain core.BlockChain) GenericGetter {
 	return GenericGetter{
-		fetcher: generic.Fetcher{
+		Fetcher: generic.Fetcher{
 			BlockChain: blockChain,
 		},
 	}
@@ -53,34 +55,34 @@ func NewGetter(blockChain core.BlockChain) GenericGetter {
 
 // Public getter methods for calling contract methods
 func (g GenericGetter) GetOwner(contractAbi, contractAddress string, blockNumber int64) (common.Address, error) {
-	return g.fetcher.FetchAddress("owner", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchAddress("owner", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetStoppedStatus(contractAbi, contractAddress string, blockNumber int64) (bool, error) {
-	return g.fetcher.FetchBool("stopped", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchBool("stopped", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetStringName(contractAbi, contractAddress string, blockNumber int64) (string, error) {
-	return g.fetcher.FetchString("name", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchString("name", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetHashName(contractAbi, contractAddress string, blockNumber int64) (common.Hash, error) {
-	return g.fetcher.FetchHash("name", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchHash("name", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetStringSymbol(contractAbi, contractAddress string, blockNumber int64) (string, error) {
-	return g.fetcher.FetchString("symbol", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchString("symbol", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetHashSymbol(contractAbi, contractAddress string, blockNumber int64) (common.Hash, error) {
-	return g.fetcher.FetchHash("symbol", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchHash("symbol", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g GenericGetter) GetDecimals(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
-	return g.fetcher.FetchBigInt("decimals", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchBigInt("decimals", contractAbi, contractAddress, blockNumber, nil)
 }
 
 // Method to retrieve the Getter's blockchain
 func (g GenericGetter) GetBlockChain() core.BlockChain {
-	return g.fetcher.BlockChain
+	return g.Fetcher.BlockChain
 }
