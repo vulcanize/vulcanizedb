@@ -1,36 +1,32 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package retriever_test
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/examples/constants"
-	"github.com/vulcanize/vulcanizedb/examples/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/parser"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/retriever"
 )
@@ -50,103 +46,60 @@ var mockEvent = core.WatchedEvent{
 
 var _ = Describe("Address Retriever Test", func() {
 	var db *postgres.DB
-	var logRepository repositories.LogRepository
-	var blockRepository repositories.BlockRepository
-	var receiptRepository repositories.ReceiptRepository
-	var dataStore repository.DataStore
+	var dataStore repository.EventDatastore
 	var err error
 	var info *contract.Contract
-	var blockNumber int64
-	var blockId int64
 	var vulcanizeLogId int64
 	var r retriever.AddressRetriever
 	var addresses map[common.Address]bool
-	rand.Seed(time.Now().UnixNano())
+	var wantedEvents = []string{"Transfer"}
 
 	BeforeEach(func() {
-		db, err = postgres.NewDB(config.Database{
-			Hostname: "localhost",
-			Name:     "vulcanize_private",
-			Port:     5432,
-		}, core.Node{})
-		Expect(err).NotTo(HaveOccurred())
-
-		receiptRepository = repositories.ReceiptRepository{DB: db}
-		logRepository = repositories.LogRepository{DB: db}
-		blockRepository = *repositories.NewBlockRepository(db)
-
-		blockNumber = rand.Int63()
-		blockId = test_helpers.CreateBlock(blockNumber, blockRepository)
-
-		log := core.Log{}
-		logs := []core.Log{log}
-		receipt := core.Receipt{
-			Logs: logs,
-		}
-		receipts := []core.Receipt{receipt}
-
-		err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
-		Expect(err).ToNot(HaveOccurred())
-
-		err = logRepository.Get(&vulcanizeLogId, `SELECT id FROM logs`)
-		Expect(err).ToNot(HaveOccurred())
-
-		p := parser.NewParser("")
-		err = p.Parse(constants.TusdContractAddress)
-		Expect(err).ToNot(HaveOccurred())
-
-		info = &contract.Contract{
-			Name:          "TrueUSD",
-			Address:       constants.TusdContractAddress,
-			Abi:           p.Abi(),
-			ParsedAbi:     p.ParsedAbi(),
-			StartingBlock: 5197514,
-			Events:        p.GetEvents(),
-			Methods:       p.GetMethods(),
-			Addresses:     map[string]bool{},
-		}
+		db, info = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, []string{})
+		mockEvent.LogID = vulcanizeLogId
 
 		event := info.Events["Transfer"]
-		err = info.GenerateFilters([]string{"Transfer"})
+		err = info.GenerateFilters()
 		Expect(err).ToNot(HaveOccurred())
-		c := converter.NewConverter(*info)
-		mockEvent.LogID = vulcanizeLogId
+
+		c := converter.NewConverter(info)
 		err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
 
-		dataStore = repository.NewDataStore(db)
-		err = dataStore.PersistEvents(info)
+		dataStore = repository.NewEventDataStore(db)
+		dataStore.PersistContractEvents(info)
 		Expect(err).ToNot(HaveOccurred())
 
 		r = retriever.NewAddressRetriever(db)
 	})
 
 	AfterEach(func() {
-		db.Query(`DELETE FROM blocks`)
-		db.Query(`DELETE FROM logs`)
-		db.Query(`DELETE FROM transactions`)
-		db.Query(`DELETE FROM receipts`)
-		db.Query(`DROP SCHEMA IF EXISTS trueusd CASCADE`)
+		test_helpers.TearDown(db)
 	})
 
-	It("Retrieves a list of token holder addresses", func() {
-		addresses, err = r.RetrieveTokenHolderAddresses(*info)
-		Expect(err).ToNot(HaveOccurred())
+	Describe("RetrieveTokenHolderAddresses", func() {
+		It("Retrieves a list of token holder addresses from persisted event logs", func() {
+			addresses, err = r.RetrieveTokenHolderAddresses(*info)
+			Expect(err).ToNot(HaveOccurred())
 
-		_, ok := addresses[common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")]
-		Expect(ok).To(Equal(true))
+			_, ok := addresses[common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")]
+			Expect(ok).To(Equal(true))
 
-		_, ok = addresses[common.HexToAddress("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")]
-		Expect(ok).To(Equal(true))
+			_, ok = addresses[common.HexToAddress("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")]
+			Expect(ok).To(Equal(true))
 
-		_, ok = addresses[common.HexToAddress("0x")]
-		Expect(ok).To(Equal(false))
+			_, ok = addresses[common.HexToAddress("0x")]
+			Expect(ok).To(Equal(false))
 
-	})
+			_, ok = addresses[common.HexToAddress(constants.TusdContractAddress)]
+			Expect(ok).To(Equal(false))
 
-	It("Returns empty list when empty contract info is used", func() {
-		addresses, err = r.RetrieveTokenHolderAddresses(contract.Contract{})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(len(addresses)).To(Equal(0))
+		})
+
+		It("Returns empty list when empty contract info is used", func() {
+			addresses, err = r.RetrieveTokenHolderAddresses(contract.Contract{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(addresses)).To(Equal(0))
+		})
 	})
 })
