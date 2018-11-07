@@ -15,46 +15,49 @@
 package price_feeds_test
 
 import (
-	"database/sql"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Price feeds repository", func() {
 	var (
 		db                  *postgres.DB
-		err                 error
-		headerRepository    datastore.HeaderRepository
 		priceFeedRepository price_feeds.PriceFeedRepository
+		headerRepository    repositories.HeaderRepository
 	)
 
 	BeforeEach(func() {
-		db = test_config.NewTestDB(core.Node{})
+		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		headerRepository = repositories.NewHeaderRepository(db)
 		priceFeedRepository = price_feeds.PriceFeedRepository{}
 		priceFeedRepository.SetDB(db)
+		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
 	Describe("Create", func() {
-		var headerID int64
+		modelWithDifferentLogIdx := test_data.PriceFeedModel
+		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
+		inputs := shared_behaviors.CreateBehaviorInputs{
+			CheckedHeaderColumnName:  "price_feeds_checked",
+			LogEventTableName:        "maker.price_feeds",
+			TestModel:                test_data.PriceFeedModel,
+			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
+			Repository:               &priceFeedRepository,
+		}
 
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
+		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("persists a price feed update", func() {
+			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
 			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -68,157 +71,23 @@ var _ = Describe("Price feeds repository", func() {
 			Expect(dbPriceFeedUpdate.TransactionIndex).To(Equal(test_data.PriceFeedModel.TransactionIndex))
 			Expect(dbPriceFeedUpdate.Raw).To(MatchJSON(test_data.PriceFeedModel.Raw))
 		})
-
-		It("marks headerID as checked for price feed logs", func() {
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates the header to checked if checked headers row already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("does not duplicate price feed updates", func() {
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		It("removes price feed if corresponding header is deleted", func() {
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.PriceFeedModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var dbResult price_feeds.PriceFeedModel
-			err = db.Get(&dbResult, `SELECT block_number, medianizer_address, usd_value, log_idx, tx_idx, raw_log FROM maker.price_feeds WHERE header_id = $1`, headerID)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(sql.ErrNoRows))
-		})
-
-		It("returns an error if model is of wrong type", func() {
-			err = priceFeedRepository.Create(headerID, []interface{}{test_data.WrongModel{}})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("model of type"))
-		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerID int64
+		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
+			CheckedHeaderColumnName: "price_feeds_checked",
+			Repository:              &priceFeedRepository,
+		}
 
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("creates a row for a new headerID", func() {
-			err = priceFeedRepository.MarkHeaderChecked(headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates row when headerID already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
-
-			err = priceFeedRepository.MarkHeaderChecked(headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
+		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
 
 	Describe("MissingHeaders", func() {
-		var (
-			startingBlock, priceFeedBlock, endingBlock int64
-			blockNumbers, headerIDs                    []int64
-		)
+		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
+			Repository:    &priceFeedRepository,
+			RepositoryTwo: &price_feeds.PriceFeedRepository{},
+		}
 
-		BeforeEach(func() {
-			startingBlock = GinkgoRandomSeed()
-			priceFeedBlock = startingBlock + 1
-			endingBlock = startingBlock + 2
-
-			blockNumbers = []int64{startingBlock, priceFeedBlock, endingBlock, endingBlock + 1}
-
-			headerIDs = []int64{}
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-			}
-
-		})
-
-		It("returns headers that haven't been checked", func() {
-			err := priceFeedRepository.MarkHeaderChecked(headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := priceFeedRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-		})
-
-		It("only treats headers as checked if price feeds have been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := priceFeedRepository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(priceFeedBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(priceFeedBlock)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(priceFeedBlock)))
-		})
-
-		It("only returns headers associated with the current node", func() {
-			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
-			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-			}
-			priceFeedRepositoryTwo := price_feeds.PriceFeedRepository{}
-			priceFeedRepositoryTwo.SetDB(dbTwo)
-			err := priceFeedRepository.MarkHeaderChecked(headerIDs[0])
-			Expect(err).NotTo(HaveOccurred())
-
-			nodeOneMissingHeaders, err := priceFeedRepository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
-
-			nodeTwoMissingHeaders, err := priceFeedRepositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
+		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
 	})
 })
