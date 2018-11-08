@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -43,7 +44,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 		modelWithDifferentLogIdx := test_data.CatFileChopLumpModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "cat_file_chop_lump_checked",
+			CheckedHeaderColumnName:  constants.CatFileChopLumpChecked,
 			LogEventTableName:        "maker.cat_file_chop_lump",
 			TestModel:                test_data.CatFileChopLumpModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -73,7 +74,7 @@ var _ = Describe("Cat file chop lump repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "cat_file_chop_lump_checked",
+			CheckedHeaderColumnName: constants.CatFileChopLumpChecked,
 			Repository:              &catFileRepository,
 		}
 

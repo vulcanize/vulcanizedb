@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -47,7 +48,7 @@ var _ = Describe("Cat file flip repository", func() {
 		catFileFlipWithDifferentIdx := test_data.CatFileFlipModel
 		catFileFlipWithDifferentIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "cat_file_flip_checked",
+			CheckedHeaderColumnName:  constants.CatFileFlipChecked,
 			LogEventTableName:        "maker.cat_file_flip",
 			TestModel:                test_data.CatFileFlipModel,
 			ModelWithDifferentLogIdx: catFileFlipWithDifferentIdx,
@@ -76,7 +77,7 @@ var _ = Describe("Cat file flip repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "cat_file_flip_checked",
+			CheckedHeaderColumnName: constants.CatFileFlipChecked,
 			Repository:              &catFileFlipRepository,
 		}
 

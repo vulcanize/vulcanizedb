@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Drip drip repository", func() {
 		modelWithDifferentLogIdx := test_data.DripDripModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "drip_drip_checked",
+			CheckedHeaderColumnName:  constants.DripDripChecked,
 			LogEventTableName:        "maker.drip_drip",
 			TestModel:                test_data.DripDripModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -73,7 +74,7 @@ var _ = Describe("Drip drip repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "drip_drip_checked",
+			CheckedHeaderColumnName: constants.DripDripChecked,
 			Repository:              &dripDripRepository,
 		}
 

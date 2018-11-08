@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Drip file vow repository", func() {
 		modelWithDifferentLogIdx := test_data.DripFileVowModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "drip_file_vow_checked",
+			CheckedHeaderColumnName:  constants.DripFileVowChecked,
 			LogEventTableName:        "maker.drip_file_vow",
 			TestModel:                test_data.DripFileVowModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -83,7 +84,7 @@ var _ = Describe("Drip file vow repository", func() {
 
 	Describe("MissingHeaders", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "drip_file_vow_checked",
+			CheckedHeaderColumnName: constants.DripFileVowChecked,
 			Repository:              &dripFileVowRepository,
 		}
 

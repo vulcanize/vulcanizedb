@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Drip file ilk repository", func() {
 		modelWithDifferentLogIdx := test_data.DripFileIlkModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "drip_file_ilk_checked",
+			CheckedHeaderColumnName:  constants.DripFileIlkChecked,
 			LogEventTableName:        "maker.drip_file_ilk",
 			TestModel:                test_data.DripFileIlkModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -75,7 +76,7 @@ var _ = Describe("Drip file ilk repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "drip_file_ilk_checked",
+			CheckedHeaderColumnName: constants.DripFileIlkChecked,
 			Repository:              &dripFileIlkRepository,
 		}
 

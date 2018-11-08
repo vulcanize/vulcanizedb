@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type DentRepository struct {
@@ -48,10 +50,7 @@ func (r DentRepository) Create(headerId int64, models []interface{}) error {
 		}
 	}
 
-	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, dent_checked)
-			VALUES ($1, $2)
-		ON CONFLICT (header_id) DO
-			UPDATE SET dent_checked = $2`, headerId, true)
+	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.DentChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,30 +59,11 @@ func (r DentRepository) Create(headerId int64, models []interface{}) error {
 }
 
 func (r DentRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, dent_checked)
-		VALUES ($1, $2)
-	ON CONFLICT (header_id) DO
-		UPDATE SET dent_checked = $2`, headerId, true)
-	return err
+	return shared.MarkHeaderChecked(headerId, r.db, constants.DentChecked)
 }
 
 func (r DentRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	var missingHeaders []core.Header
-
-	err := r.db.Select(
-		&missingHeaders,
-		`SELECT headers.id, headers.block_number FROM headers
-			LEFT JOIN checked_headers on headers.id = header_id
-		WHERE (header_id ISNULL OR dent_checked IS FALSE)
-			AND headers.block_number >= $1
-			AND headers.block_number <= $2
-			AND headers.eth_node_fingerprint = $3`,
-		startingBlockNumber,
-		endingBlockNumber,
-		r.db.Node.ID,
-	)
-
-	return missingHeaders, err
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, r.db, constants.DentChecked)
 }
 
 func (repository *DentRepository) SetDB(db *postgres.DB) {
