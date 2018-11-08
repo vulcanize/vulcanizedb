@@ -18,15 +18,15 @@ import (
 	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 )
 
 var EthVatSlipLog = types.Log{
-	Address: common.HexToAddress(shared.VatContractAddress),
+	Address: common.HexToAddress(constants.VatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x42066cbb00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

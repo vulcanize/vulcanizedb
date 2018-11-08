@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 	"strconv"
 	"time"
@@ -28,7 +28,7 @@ import (
 
 var (
 	FlopKickLog = types.Log{
-		Address: common.HexToAddress(shared.FlopperContractAddress),
+		Address: common.HexToAddress(constants.FlopperContractAddress),
 		Topics: []common.Hash{
 			common.HexToHash("0xefa52d9342a199cb30efd2692463f2c2bef63cd7186b50382d4fb94ad207880e"),
 			common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000005"),

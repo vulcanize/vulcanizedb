@@ -14,13 +14,16 @@
 
 package deal
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var DealConfig = shared.TransformerConfig{
-	TransformerName:     shared.DealLabel,
-	ContractAddresses:   []string{shared.FlapperContractAddress, shared.FlipperContractAddress, shared.FlopperContractAddress},
-	ContractAbi:         shared.FlipperABI,
-	Topic:               shared.DealSignature,
+	TransformerName:     constants.DealLabel,
+	ContractAddresses:   []string{constants.FlapperContractAddress, constants.FlipperContractAddress, constants.FlopperContractAddress},
+	ContractAbi:         constants.FlipperABI,
+	Topic:               constants.DealSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

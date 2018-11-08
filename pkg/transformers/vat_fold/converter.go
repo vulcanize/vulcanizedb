@@ -20,7 +20,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type VatFoldConverter struct{}
@@ -62,7 +62,7 @@ func verifyLog(log types.Log) error {
 	}
 
 	sig := log.Topics[0].String()
-	if sig != shared.VatFoldSignature {
+	if sig != constants.VatFoldSignature {
 		return errors.New("log is not a Vat.fold event")
 	}
 

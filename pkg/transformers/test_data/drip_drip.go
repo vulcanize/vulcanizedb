@@ -20,11 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var EthDripDripLog = types.Log{
-	Address: common.HexToAddress(shared.DripContractAddress),
+	Address: common.HexToAddress(constants.DripContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x44e2a5a800000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),

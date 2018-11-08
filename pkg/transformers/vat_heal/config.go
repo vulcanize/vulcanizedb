@@ -14,13 +14,16 @@
 
 package vat_heal
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var VatHealConfig = shared.TransformerConfig{
-	TransformerName:     shared.VatHealLabel,
-	ContractAddresses:   []string{shared.VatContractAddress},
-	ContractAbi:         shared.VatABI,
-	Topic:               shared.VatHealSignature,
+	TransformerName:     constants.VatHealLabel,
+	ContractAddresses:   []string{constants.VatContractAddress},
+	ContractAbi:         constants.VatABI,
+	Topic:               constants.VatHealSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

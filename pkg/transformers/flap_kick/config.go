@@ -14,13 +14,16 @@
 
 package flap_kick
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var FlapKickConfig = shared.TransformerConfig{
-	TransformerName:     shared.FlapKickLabel,
-	ContractAddresses:   []string{shared.FlapperContractAddress},
-	ContractAbi:         shared.FlapperABI,
-	Topic:               shared.FlapKickSignature,
+	TransformerName:     constants.FlapKickLabel,
+	ContractAddresses:   []string{constants.FlapperContractAddress},
+	ContractAbi:         constants.FlapperABI,
+	Topic:               constants.FlapKickSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

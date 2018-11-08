@@ -5,12 +5,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"math/big"
 )
 
 var EthVatTollLog = types.Log{
-	Address: common.HexToAddress("0x239E6f0AB02713f1F8AA90ebeDeD9FC66Dc96CD6"),
+	Address: common.HexToAddress(constants.VatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x09b7a0b500000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

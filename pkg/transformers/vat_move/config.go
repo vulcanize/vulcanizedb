@@ -16,13 +16,14 @@ package vat_move
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var VatMoveConfig = shared.TransformerConfig{
-	TransformerName:     shared.VatMoveLabel,
-	ContractAddresses:   []string{shared.VatContractAddress},
-	ContractAbi:         shared.VatABI,
-	Topic:               shared.VatMoveSignature,
+	TransformerName:     constants.VatMoveLabel,
+	ContractAddresses:   []string{constants.VatContractAddress},
+	ContractAbi:         constants.VatABI,
+	Topic:               constants.VatMoveSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

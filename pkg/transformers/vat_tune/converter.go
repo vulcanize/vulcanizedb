@@ -6,10 +6,11 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type VatTuneConverter struct{}
@@ -55,7 +56,7 @@ func verifyLog(log types.Log) error {
 	if len(log.Topics) < 4 {
 		return errors.New("log missing topics")
 	}
-	if len(log.Data) < shared.DataItemLength {
+	if len(log.Data) < constants.DataItemLength {
 		return errors.New("log missing data")
 	}
 	return nil

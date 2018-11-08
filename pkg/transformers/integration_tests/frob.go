@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -71,8 +72,8 @@ var _ = Describe("Frob Transformer", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(shared.PitContractAddress)
-		abi, err := geth.ParseAbi(shared.PitABI)
+		address := common.HexToAddress(constants.PitContractAddress)
+		abi, err := geth.ParseAbi(constants.PitABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

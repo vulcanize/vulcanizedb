@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"log"
 )
 
@@ -33,33 +33,33 @@ vulcanizedb getSignatures`,
 
 func getSignatures() {
 	signatures := make(map[string]string)
-	signatures["BiteSignature"] = shared.BiteSignature
-	signatures["DealSignature"] = shared.DealSignature
-	signatures["CatFileChopLumpSignature"] = shared.CatFileChopLumpSignature
-	signatures["CatFileFlipSignature"] = shared.CatFileFlipSignature
-	signatures["CatFilePitVowSignature"] = shared.CatFilePitVowSignature
-	signatures["DentFunctionSignature"] = shared.DentFunctionSignature
-	signatures["DripDripSignature"] = shared.DripDripSignature
-	signatures["DripFileIlkSignature"] = shared.DripFileIlkSignature
-	signatures["DripFileRepoSignature"] = shared.DripFileRepoSignature
-	signatures["DripFileVowSignature"] = shared.DripFileVowSignature
-	signatures["FlipKickSignature"] = shared.FlipKickSignature
-	signatures["FlopKickSignature"] = shared.FlopKickSignature
-	signatures["FrobSignature"] = shared.FrobSignature
-	signatures["LogValueSignature"] = shared.LogValueSignature
-	signatures["PitFileDebtCeilingSignature"] = shared.PitFileDebtCeilingSignature
-	signatures["PitFileIlkSignature"] = shared.PitFileIlkSignature
-	signatures["PitFileStabilityFeeSignature"] = shared.PitFileStabilityFeeSignature
-	signatures["TendFunctionSignature"] = shared.TendFunctionSignature
-	signatures["VatHealSignature"] = shared.VatHealSignature
-	signatures["VatGrabSignature"] = shared.VatGrabSignature
-	signatures["VatInitSignature"] = shared.VatInitSignature
-	signatures["VatFluxSignature"] = shared.VatFluxSignature
-	signatures["VatFoldSignature"] = shared.VatFoldSignature
-	signatures["VatMoveSignature"] = shared.VatMoveSignature
-	signatures["VatSlipSignature"] = shared.VatSlipSignature
-	signatures["VatTollSignature"] = shared.VatTollSignature
-	signatures["VatTuneSignature"] = shared.VatTuneSignature
+	signatures["BiteSignature"] = constants.BiteSignature
+	signatures["DealSignature"] = constants.DealSignature
+	signatures["CatFileChopLumpSignature"] = constants.CatFileChopLumpSignature
+	signatures["CatFileFlipSignature"] = constants.CatFileFlipSignature
+	signatures["CatFilePitVowSignature"] = constants.CatFilePitVowSignature
+	signatures["DentFunctionSignature"] = constants.DentFunctionSignature
+	signatures["DripDripSignature"] = constants.DripDripSignature
+	signatures["DripFileIlkSignature"] = constants.DripFileIlkSignature
+	signatures["DripFileRepoSignature"] = constants.DripFileRepoSignature
+	signatures["DripFileVowSignature"] = constants.DripFileVowSignature
+	signatures["FlipKickSignature"] = constants.FlipKickSignature
+	signatures["FlopKickSignature"] = constants.FlopKickSignature
+	signatures["FrobSignature"] = constants.FrobSignature
+	signatures["LogValueSignature"] = constants.LogValueSignature
+	signatures["PitFileDebtCeilingSignature"] = constants.PitFileDebtCeilingSignature
+	signatures["PitFileIlkSignature"] = constants.PitFileIlkSignature
+	signatures["PitFileStabilityFeeSignature"] = constants.PitFileStabilityFeeSignature
+	signatures["TendFunctionSignature"] = constants.TendFunctionSignature
+	signatures["VatHealSignature"] = constants.VatHealSignature
+	signatures["VatGrabSignature"] = constants.VatGrabSignature
+	signatures["VatInitSignature"] = constants.VatInitSignature
+	signatures["VatFluxSignature"] = constants.VatFluxSignature
+	signatures["VatFoldSignature"] = constants.VatFoldSignature
+	signatures["VatMoveSignature"] = constants.VatMoveSignature
+	signatures["VatSlipSignature"] = constants.VatSlipSignature
+	signatures["VatTollSignature"] = constants.VatTollSignature
+	signatures["VatTuneSignature"] = constants.VatTuneSignature
 
 	for name, sig := range signatures {
 		log.Println(name, ": ", sig)

@@ -18,13 +18,14 @@ package bite_test
 
 import (
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("Bite Converter", func() {
@@ -32,7 +33,7 @@ var _ = Describe("Bite Converter", func() {
 
 	Describe("ToEntity", func() {
 		It("converts an eth log to a bite entity", func() {
-			entities, err := converter.ToEntities(shared.CatABI, []types.Log{test_data.EthBiteLog})
+			entities, err := converter.ToEntities(constants.CatABI, []types.Log{test_data.EthBiteLog})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(entities)).To(Equal(1))

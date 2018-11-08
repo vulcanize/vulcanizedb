@@ -19,11 +19,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 )
 
 var VatHealLog = types.Log{
-	Address: common.HexToAddress("0xa970ed54e41d9db6d91db5e7ff7a9451dad98993"),
+	Address: common.HexToAddress(constants.VatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x990a5f6300000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x0000000000000000000000007d7bee5fcfd8028cf7b00876c5b1421c800561a6"),

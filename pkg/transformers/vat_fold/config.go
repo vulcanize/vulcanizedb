@@ -16,13 +16,14 @@ package vat_fold
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var VatFoldConfig = shared.TransformerConfig{
-	TransformerName:     shared.VatFoldLabel,
-	ContractAddresses:   []string{shared.VatContractAddress},
-	ContractAbi:         shared.VatABI,
-	Topic:               shared.VatFoldSignature,
+	TransformerName:     constants.VatFoldLabel,
+	ContractAddresses:   []string{constants.VatContractAddress},
+	ContractAbi:         constants.VatABI,
+	Topic:               constants.VatFoldSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

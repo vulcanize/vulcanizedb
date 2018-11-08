@@ -14,13 +14,16 @@
 
 package drip_drip
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var DripDripConfig = shared.TransformerConfig{
-	TransformerName:     shared.DripDripLabel,
-	ContractAddresses:   []string{shared.DripContractAddress},
-	ContractAbi:         shared.DripABI,
-	Topic:               shared.DripDripSignature,
+	TransformerName:     constants.DripDripLabel,
+	ContractAddresses:   []string{constants.DripContractAddress},
+	ContractAbi:         constants.DripABI,
+	Topic:               constants.DripDripSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

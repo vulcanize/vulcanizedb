@@ -20,11 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var DealLogNote = types.Log{
-	Address: common.HexToAddress(shared.FlipperContractAddress),
+	Address: common.HexToAddress(constants.FlipperContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xc959c42b00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -43,7 +43,7 @@ var dealRawJson, _ = json.Marshal(DealLogNote)
 
 var DealModel = deal.DealModel{
 	BidId:            "123",
-	ContractAddress:  shared.FlipperContractAddress,
+	ContractAddress:  constants.FlipperContractAddress,
 	LogIndex:         DealLogNote.Index,
 	TransactionIndex: DealLogNote.TxIndex,
 	Raw:              dealRawJson,

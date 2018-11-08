@@ -14,13 +14,16 @@
 
 package flip_kick
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var FlipKickConfig = shared.TransformerConfig{
-	TransformerName:     shared.FlipKickLabel,
-	ContractAddresses:   []string{shared.FlipperContractAddress},
-	ContractAbi:         shared.FlipperABI,
-	Topic:               shared.FlipKickSignature,
+	TransformerName:     constants.FlipKickLabel,
+	ContractAddresses:   []string{constants.FlipperContractAddress},
+	ContractAbi:         constants.FlipperABI,
+	Topic:               constants.FlipKickSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

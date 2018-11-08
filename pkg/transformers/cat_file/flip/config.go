@@ -14,13 +14,16 @@
 
 package flip
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var CatFileFlipConfig = shared.TransformerConfig{
-	TransformerName:     shared.CatFileFlipLabel,
-	ContractAddresses:   []string{shared.CatContractAddress},
-	ContractAbi:         shared.CatABI,
-	Topic:               shared.CatFileFlipSignature,
+	TransformerName:     constants.CatFileFlipLabel,
+	ContractAddresses:   []string{constants.CatContractAddress},
+	ContractAbi:         constants.CatABI,
+	Topic:               constants.CatFileFlipSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

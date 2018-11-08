@@ -18,8 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type VowFlogConverter struct{}
@@ -53,7 +52,7 @@ func verifyLog(log types.Log) error {
 	if len(log.Topics) < 3 {
 		return errors.New("log missing topics")
 	}
-	if len(log.Data) < shared.DataItemLength {
+	if len(log.Data) < constants.DataItemLength {
 		return errors.New("log missing data")
 	}
 	return nil
