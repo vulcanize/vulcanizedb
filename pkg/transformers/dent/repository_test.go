@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Dent Repository", func() {
 		modelWithDifferentLogIdx := test_data.DentModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "dent_checked",
+			CheckedHeaderColumnName:  constants.DentChecked,
 			LogEventTableName:        "maker.dent",
 			TestModel:                test_data.DentModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -81,7 +82,7 @@ var _ = Describe("Dent Repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "dent_checked",
+			CheckedHeaderColumnName: constants.DentChecked,
 			Repository:              &dentRepository,
 		}
 

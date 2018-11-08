@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -47,7 +48,7 @@ var _ = Describe("Cat file pit vow repository", func() {
 		modelWithDifferentLogIdx := test_data.CatFilePitVowModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "cat_file_pit_vow_checked",
+			CheckedHeaderColumnName:  constants.CatFilePitVowChecked,
 			LogEventTableName:        "maker.cat_file_pit_vow",
 			TestModel:                test_data.CatFilePitVowModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -75,7 +76,7 @@ var _ = Describe("Cat file pit vow repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "cat_file_pit_vow_checked",
+			CheckedHeaderColumnName: constants.CatFilePitVowChecked,
 			Repository:              &catFilePitVowRepository,
 		}
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)

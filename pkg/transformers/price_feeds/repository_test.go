@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Price feeds repository", func() {
 		modelWithDifferentLogIdx := test_data.PriceFeedModel
 		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "price_feeds_checked",
+			CheckedHeaderColumnName:  constants.PriceFeedsChecked,
 			LogEventTableName:        "maker.price_feeds",
 			TestModel:                test_data.PriceFeedModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -75,7 +76,7 @@ var _ = Describe("Price feeds repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "price_feeds_checked",
+			CheckedHeaderColumnName: constants.PriceFeedsChecked,
 			Repository:              &priceFeedRepository,
 		}
 

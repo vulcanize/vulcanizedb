@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
@@ -46,7 +47,7 @@ var _ = Describe("TendRepository", func() {
 		modelWithDifferentLogIdx := test_data.TendModel
 		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "tend_checked",
+			CheckedHeaderColumnName:  constants.TendChecked,
 			LogEventTableName:        "maker.tend",
 			TestModel:                test_data.TendModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -84,7 +85,7 @@ var _ = Describe("TendRepository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "tend_checked",
+			CheckedHeaderColumnName: constants.TendChecked,
 			Repository:              &tendRepository,
 		}
 

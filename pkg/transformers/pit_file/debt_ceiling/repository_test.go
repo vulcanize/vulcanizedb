@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -46,7 +47,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 		modelWithDifferentLogIdx := test_data.PitFileDebtCeilingModel
 		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
 		inputs := shared_behaviors.CreateBehaviorInputs{
-			CheckedHeaderColumnName:  "pit_file_debt_ceiling_checked",
+			CheckedHeaderColumnName:  constants.PitFileDebtCeilingChecked,
 			LogEventTableName:        "maker.pit_file_debt_ceiling",
 			TestModel:                test_data.PitFileDebtCeilingModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
@@ -74,7 +75,7 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
-			CheckedHeaderColumnName: "pit_file_debt_ceiling_checked",
+			CheckedHeaderColumnName: constants.PitFileDebtCeilingChecked,
 			Repository:              &pitFileDebtCeilingRepository,
 		}
 
