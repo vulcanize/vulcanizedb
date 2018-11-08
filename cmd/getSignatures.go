@@ -34,15 +34,16 @@ vulcanizedb getSignatures`,
 func getSignatures() {
 	signatures := make(map[string]string)
 	signatures["BiteSignature"] = constants.BiteSignature
-	signatures["DealSignature"] = constants.DealSignature
 	signatures["CatFileChopLumpSignature"] = constants.CatFileChopLumpSignature
 	signatures["CatFileFlipSignature"] = constants.CatFileFlipSignature
 	signatures["CatFilePitVowSignature"] = constants.CatFilePitVowSignature
+	signatures["DealSignature"] = constants.DealSignature
 	signatures["DentFunctionSignature"] = constants.DentFunctionSignature
 	signatures["DripDripSignature"] = constants.DripDripSignature
 	signatures["DripFileIlkSignature"] = constants.DripFileIlkSignature
 	signatures["DripFileRepoSignature"] = constants.DripFileRepoSignature
 	signatures["DripFileVowSignature"] = constants.DripFileVowSignature
+	signatures["FlapKickSignature"] = constants.FlapKickSignature
 	signatures["FlipKickSignature"] = constants.FlipKickSignature
 	signatures["FlopKickSignature"] = constants.FlopKickSignature
 	signatures["FrobSignature"] = constants.FrobSignature
@@ -51,15 +52,16 @@ func getSignatures() {
 	signatures["PitFileIlkSignature"] = constants.PitFileIlkSignature
 	signatures["PitFileStabilityFeeSignature"] = constants.PitFileStabilityFeeSignature
 	signatures["TendFunctionSignature"] = constants.TendFunctionSignature
-	signatures["VatHealSignature"] = constants.VatHealSignature
-	signatures["VatGrabSignature"] = constants.VatGrabSignature
-	signatures["VatInitSignature"] = constants.VatInitSignature
 	signatures["VatFluxSignature"] = constants.VatFluxSignature
 	signatures["VatFoldSignature"] = constants.VatFoldSignature
+	signatures["VatGrabSignature"] = constants.VatGrabSignature
+	signatures["VatHealSignature"] = constants.VatHealSignature
+	signatures["VatInitSignature"] = constants.VatInitSignature
 	signatures["VatMoveSignature"] = constants.VatMoveSignature
 	signatures["VatSlipSignature"] = constants.VatSlipSignature
 	signatures["VatTollSignature"] = constants.VatTollSignature
 	signatures["VatTuneSignature"] = constants.VatTuneSignature
+	signatures["VowFlogSignature"] = constants.VowFlogSignature
 
 	for name, sig := range signatures {
 		log.Println(name, ": ", sig)
