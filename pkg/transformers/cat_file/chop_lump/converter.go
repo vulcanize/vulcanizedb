@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
@@ -34,7 +34,7 @@ func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]interface{}, er
 		}
 		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-		dataBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
+		dataBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
 		data := big.NewInt(0).SetBytes(dataBytes).String()
 
 		raw, err := json.Marshal(ethLog)
@@ -58,7 +58,7 @@ func verifyLog(log types.Log) error {
 	if len(log.Topics) < 4 {
 		return errors.New("log missing topics")
 	}
-	if len(log.Data) < shared.DataItemLength {
+	if len(log.Data) < constants.DataItemLength {
 		return errors.New("log missing data")
 	}
 	return nil

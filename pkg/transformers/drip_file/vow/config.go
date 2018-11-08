@@ -14,13 +14,16 @@
 
 package vow
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var DripFileVowConfig = shared.TransformerConfig{
-	TransformerName:     shared.DripFileVowLabel,
-	ContractAddresses:   []string{shared.DripContractAddress},
-	ContractAbi:         shared.DripABI,
-	Topic:               shared.DripFileVowSignature,
+	TransformerName:     constants.DripFileVowLabel,
+	ContractAddresses:   []string{constants.DripContractAddress},
+	ContractAbi:         constants.DripABI,
+	Topic:               constants.DripFileVowSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

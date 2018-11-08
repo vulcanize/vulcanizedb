@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
@@ -46,7 +46,7 @@ var (
 )
 
 var EthBiteLog = types.Log{
-	Address: common.HexToAddress(shared.CatContractAddress),
+	Address: common.HexToAddress(constants.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8"),
 		common.HexToHash("0x4554480000000000000000000000000000000000000000000000000000000000"),

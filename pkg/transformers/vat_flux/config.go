@@ -1,12 +1,15 @@
 package vat_flux
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var VatFluxConfig = shared.TransformerConfig{
-	TransformerName:     shared.VatFluxLabel,
-	ContractAddresses:   []string{shared.VatContractAddress},
-	ContractAbi:         shared.VatABI,
-	Topic:               shared.VatFluxSignature,
+	TransformerName:     constants.VatFluxLabel,
+	ContractAddresses:   []string{constants.VatContractAddress},
+	ContractAbi:         constants.VatABI,
+	Topic:               constants.VatFluxSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

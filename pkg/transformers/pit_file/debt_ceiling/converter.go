@@ -16,12 +16,12 @@ package debt_ceiling
 
 import (
 	"encoding/json"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 
 	"bytes"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type PitFileDebtCeilingConverter struct{}
@@ -56,7 +56,7 @@ func verifyLog(log types.Log) error {
 	if len(log.Topics) < 2 {
 		return errors.New("log missing topics")
 	}
-	if len(log.Data) < shared.DataItemLength {
+	if len(log.Data) < constants.DataItemLength {
 		return errors.New("log missing data")
 	}
 	return nil

@@ -14,13 +14,16 @@
 
 package repo
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var DripFileRepoConfig = shared.TransformerConfig{
-	TransformerName:     shared.DripFileRepoLabel,
-	ContractAddresses:   []string{shared.DripContractAddress},
-	ContractAbi:         shared.DripABI,
-	Topic:               shared.DripFileRepoSignature,
+	TransformerName:     constants.DripFileRepoLabel,
+	ContractAddresses:   []string{constants.DripContractAddress},
+	ContractAbi:         constants.DripABI,
+	Topic:               constants.DripFileRepoSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

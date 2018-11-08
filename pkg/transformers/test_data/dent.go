@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"strconv"
 )
 
@@ -37,7 +37,7 @@ var (
 )
 
 var DentLog = types.Log{
-	Address: common.HexToAddress(shared.FlipperContractAddress),
+	Address: common.HexToAddress(constants.FlipperContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x5ff3a38200000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),

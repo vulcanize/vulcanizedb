@@ -21,12 +21,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_init"
 )
 
 var EthVatInitLog = types.Log{
-	Address: common.HexToAddress(shared.VatContractAddress),
+	Address: common.HexToAddress(constants.VatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x3b66319500000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

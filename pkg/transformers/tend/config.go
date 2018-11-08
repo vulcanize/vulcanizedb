@@ -14,13 +14,16 @@
 
 package tend
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var TendConfig = shared.TransformerConfig{
-	TransformerName:     shared.TendLabel,
-	ContractAddresses:   []string{shared.FlapperContractAddress, shared.FlipperContractAddress},
-	ContractAbi:         shared.FlipperABI,
-	Topic:               shared.TendFunctionSignature,
+	TransformerName:     constants.TendLabel,
+	ContractAddresses:   []string{constants.FlapperContractAddress, constants.FlipperContractAddress},
+	ContractAbi:         constants.FlipperABI,
+	Topic:               constants.TendFunctionSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

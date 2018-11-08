@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 // continuousLogSyncCmd represents the continuousLogSync command
@@ -86,35 +87,35 @@ func getTransformerInititalizers(transformerNames []string) []shared2.Transforme
 func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer {
 	transformerInitializerMap := make(map[string]shared2.TransformerInitializer)
 
-	transformerInitializerMap[shared2.BiteLabel] = transformers.BiteTransformerInitializer
-	transformerInitializerMap[shared2.CatFileChopLumpLabel] = transformers.CatFileChopLumpTransformerInitializer
-	transformerInitializerMap[shared2.CatFileFlipLabel] = transformers.CatFileFlipTransformerInitializer
-	transformerInitializerMap[shared2.CatFilePitVowLabel] = transformers.CatFilePitVowTransformerInitializer
-	transformerInitializerMap[shared2.DealLabel] = transformers.DealTransformerInitializer
-	transformerInitializerMap[shared2.DentLabel] = transformers.DentTransformerInitializer
-	transformerInitializerMap[shared2.DripDripLabel] = transformers.DripDripTransformerInitializer
-	transformerInitializerMap[shared2.DripFileIlkLabel] = transformers.DripFileIlkTransformerInitializer
-	transformerInitializerMap[shared2.DripFileRepoLabel] = transformers.DripFileRepoTransformerInitializer
-	transformerInitializerMap[shared2.DripFileVowLabel] = transformers.DripFileVowTransfromerInitializer
-	transformerInitializerMap[shared2.FlapKickLabel] = transformers.FlapKickTransformerInitializer
-	transformerInitializerMap[shared2.FlipKickLabel] = transformers.FlipKickTransformerInitializer
-	transformerInitializerMap[shared2.VowFlogLabel] = transformers.FlogTransformerInitializer
-	transformerInitializerMap[shared2.FlopKickLabel] = transformers.FlopKickTransformerInitializer
-	transformerInitializerMap[shared2.FrobLabel] = transformers.FrobTransformerInitializer
-	transformerInitializerMap[shared2.PitFileDebtCeilingLabel] = transformers.PitFileDebtCeilingTransformerInitializer
-	transformerInitializerMap[shared2.PitFileIlkLabel] = transformers.PitFileIlkTransformerInitializer
-	transformerInitializerMap[shared2.PitFileStabilityFeeLabel] = transformers.PitFileStabilityFeeTransformerInitializer
-	transformerInitializerMap[shared2.PriceFeedLabel] = transformers.PriceFeedTransformerInitializer
-	transformerInitializerMap[shared2.TendLabel] = transformers.TendTransformerInitializer
-	transformerInitializerMap[shared2.VatGrabLabel] = transformers.VatGrabTransformerInitializer
-	transformerInitializerMap[shared2.VatInitLabel] = transformers.VatInitTransformerInitializer
-	transformerInitializerMap[shared2.VatMoveLabel] = transformers.VatMoveTransformerInitializer
-	transformerInitializerMap[shared2.VatHealLabel] = transformers.VatHealTransformerInitializer
-	transformerInitializerMap[shared2.VatFoldLabel] = transformers.VatFoldTransformerInitializer
-	transformerInitializerMap[shared2.VatSlipLabel] = transformers.VatSlipTransformerInitializer
-	transformerInitializerMap[shared2.VatTollLabel] = transformers.VatTollTransformerInitializer
-	transformerInitializerMap[shared2.VatTuneLabel] = transformers.VatTuneTransformerInitializer
-	transformerInitializerMap[shared2.VatFluxLabel] = transformers.VatFluxTransformerInitializer
+	transformerInitializerMap[constants.BiteLabel] = transformers.BiteTransformerInitializer
+	transformerInitializerMap[constants.CatFileChopLumpLabel] = transformers.CatFileChopLumpTransformerInitializer
+	transformerInitializerMap[constants.CatFileFlipLabel] = transformers.CatFileFlipTransformerInitializer
+	transformerInitializerMap[constants.CatFilePitVowLabel] = transformers.CatFilePitVowTransformerInitializer
+	transformerInitializerMap[constants.DealLabel] = transformers.DealTransformerInitializer
+	transformerInitializerMap[constants.DentLabel] = transformers.DentTransformerInitializer
+	transformerInitializerMap[constants.DripDripLabel] = transformers.DripDripTransformerInitializer
+	transformerInitializerMap[constants.DripFileIlkLabel] = transformers.DripFileIlkTransformerInitializer
+	transformerInitializerMap[constants.DripFileRepoLabel] = transformers.DripFileRepoTransformerInitializer
+	transformerInitializerMap[constants.DripFileVowLabel] = transformers.DripFileVowTransfromerInitializer
+	transformerInitializerMap[constants.FlapKickLabel] = transformers.FlapKickTransformerInitializer
+	transformerInitializerMap[constants.FlipKickLabel] = transformers.FlipKickTransformerInitializer
+	transformerInitializerMap[constants.VowFlogLabel] = transformers.FlogTransformerInitializer
+	transformerInitializerMap[constants.FlopKickLabel] = transformers.FlopKickTransformerInitializer
+	transformerInitializerMap[constants.FrobLabel] = transformers.FrobTransformerInitializer
+	transformerInitializerMap[constants.PitFileDebtCeilingLabel] = transformers.PitFileDebtCeilingTransformerInitializer
+	transformerInitializerMap[constants.PitFileIlkLabel] = transformers.PitFileIlkTransformerInitializer
+	transformerInitializerMap[constants.PitFileStabilityFeeLabel] = transformers.PitFileStabilityFeeTransformerInitializer
+	transformerInitializerMap[constants.PriceFeedLabel] = transformers.PriceFeedTransformerInitializer
+	transformerInitializerMap[constants.TendLabel] = transformers.TendTransformerInitializer
+	transformerInitializerMap[constants.VatGrabLabel] = transformers.VatGrabTransformerInitializer
+	transformerInitializerMap[constants.VatInitLabel] = transformers.VatInitTransformerInitializer
+	transformerInitializerMap[constants.VatMoveLabel] = transformers.VatMoveTransformerInitializer
+	transformerInitializerMap[constants.VatHealLabel] = transformers.VatHealTransformerInitializer
+	transformerInitializerMap[constants.VatFoldLabel] = transformers.VatFoldTransformerInitializer
+	transformerInitializerMap[constants.VatSlipLabel] = transformers.VatSlipTransformerInitializer
+	transformerInitializerMap[constants.VatTollLabel] = transformers.VatTollTransformerInitializer
+	transformerInitializerMap[constants.VatTuneLabel] = transformers.VatTuneTransformerInitializer
+	transformerInitializerMap[constants.VatFluxLabel] = transformers.VatFluxTransformerInitializer
 
 	return transformerInitializerMap
 }

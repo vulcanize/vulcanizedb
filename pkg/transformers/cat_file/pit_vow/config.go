@@ -14,13 +14,16 @@
 
 package pit_vow
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var CatFilePitVowConfig = shared.TransformerConfig{
-	TransformerName:     shared.CatFilePitVowLabel,
-	ContractAddresses:   []string{shared.CatContractAddress},
-	ContractAbi:         shared.CatABI,
-	Topic:               shared.CatFilePitVowSignature,
+	TransformerName:     constants.CatFilePitVowLabel,
+	ContractAddresses:   []string{constants.CatContractAddress},
+	ContractAbi:         constants.CatABI,
+	Topic:               constants.CatFilePitVowSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

@@ -20,7 +20,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type CatFileFlipConverter struct{}
@@ -34,7 +34,7 @@ func (CatFileFlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error)
 		}
 		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-		flipBytes := ethLog.Data[len(ethLog.Data)-shared.DataItemLength:]
+		flipBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
 		flip := common.BytesToAddress(flipBytes).String()
 
 		raw, err := json.Marshal(ethLog)
@@ -58,7 +58,7 @@ func verifyLog(log types.Log) error {
 	if len(log.Topics) < 4 {
 		return errors.New("log missing topics")
 	}
-	if len(log.Data) < shared.DataItemLength {
+	if len(log.Data) < constants.DataItemLength {
 		return errors.New("log missing data")
 	}
 	return nil

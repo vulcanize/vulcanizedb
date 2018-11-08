@@ -17,12 +17,17 @@ package integration_tests
 import (
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -104,5 +109,26 @@ var _ = Describe("FlopKick Transformer", func() {
 		Expect(dbResult[0].End.Equal(time.Unix(1538810564, 0))).To(BeTrue())
 		Expect(dbResult[0].Gal).To(Equal("0x3728e9777B2a0a611ee0F89e00E01044ce4736d1"))
 		Expect(dbResult[0].Lot).To(Equal("115792089237316195423570985008687907853269984665640564039457584007913129639935"))
+	})
+
+	It("unpacks an flop kick event log", func() {
+		address := common.HexToAddress(constants.FlopperContractAddress)
+		abi, err := geth.ParseAbi(constants.FlopperABI)
+		Expect(err).NotTo(HaveOccurred())
+
+		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
+		entity := &flop_kick.Entity{}
+
+		var eventLog = test_data.FlopKickLog
+
+		err = contract.UnpackLog(entity, "Kick", eventLog)
+		Expect(err).NotTo(HaveOccurred())
+
+		expectedEntity := test_data.FlopKickEntity
+		Expect(entity.Id).To(Equal(expectedEntity.Id))
+		Expect(entity.Lot).To(Equal(expectedEntity.Lot))
+		Expect(entity.Bid).To(Equal(expectedEntity.Bid))
+		Expect(entity.Gal).To(Equal(expectedEntity.Gal))
+		Expect(entity.End).To(Equal(expectedEntity.End))
 	})
 })

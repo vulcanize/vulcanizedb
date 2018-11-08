@@ -14,7 +14,10 @@
 
 package shared
 
-import "math/big"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"math/big"
+)
 
 func BigIntToInt64(value *big.Int) int64 {
 	if value == nil {
@@ -36,11 +39,11 @@ func BigIntToString(value *big.Int) string {
 func GetDataBytesAtIndex(n int, logData []byte) []byte {
 	switch {
 	case n == -1:
-		return logData[len(logData)-DataItemLength:]
+		return logData[len(logData)-constants.DataItemLength:]
 	case n == -2:
-		return logData[len(logData)-(2*DataItemLength) : len(logData)-DataItemLength]
+		return logData[len(logData)-(2*constants.DataItemLength) : len(logData)-constants.DataItemLength]
 	case n == -3:
-		return logData[len(logData)-(3*DataItemLength) : len(logData)-(2*DataItemLength)]
+		return logData[len(logData)-(3*constants.DataItemLength) : len(logData)-(2*constants.DataItemLength)]
 	}
 	return []byte{}
 }

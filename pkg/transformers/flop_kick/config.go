@@ -14,13 +14,16 @@
 
 package flop_kick
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var Config = shared.TransformerConfig{
-	TransformerName:     shared.FlopKickLabel,
-	ContractAddresses:   []string{shared.FlopperContractAddress},
-	ContractAbi:         shared.FlopperABI,
-	Topic:               shared.FlopKickSignature,
+	TransformerName:     constants.FlopKickLabel,
+	ContractAddresses:   []string{constants.FlopperContractAddress},
+	ContractAbi:         constants.FlopperABI,
+	Topic:               constants.FlopKickSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

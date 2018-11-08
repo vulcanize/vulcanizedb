@@ -20,10 +20,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -71,8 +73,8 @@ var _ = Describe("Bite Transformer", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(shared.CatContractAddress)
-		abi, err := geth.ParseAbi(shared.CatABI)
+		address := common.HexToAddress(constants.CatContractAddress)
+		abi, err := geth.ParseAbi(constants.CatABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

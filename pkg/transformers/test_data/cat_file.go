@@ -22,12 +22,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
 var EthCatFileChopLumpLog = types.Log{
-	Address: common.HexToAddress(shared.CatContractAddress),
+	Address: common.HexToAddress(constants.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -54,7 +54,7 @@ var CatFileChopLumpModel = chop_lump.CatFileChopLumpModel{
 }
 
 var EthCatFileFlipLog = types.Log{
-	Address: common.HexToAddress(shared.CatContractAddress),
+	Address: common.HexToAddress(constants.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xebecb39d00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -81,7 +81,7 @@ var CatFileFlipModel = flip.CatFileFlipModel{
 }
 
 var EthCatFilePitVowLog = types.Log{
-	Address: common.HexToAddress(shared.CatContractAddress),
+	Address: common.HexToAddress(constants.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xd4e8be8300000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),

@@ -16,13 +16,14 @@ package stability_fee
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var StabilityFeeFileConfig = shared.TransformerConfig{
-	TransformerName:     shared.PitFileStabilityFeeLabel,
-	ContractAddresses:   []string{shared.PitContractAddress},
-	ContractAbi:         shared.PitABI,
-	Topic:               shared.PitFileStabilityFeeSignature,
+	TransformerName:     constants.PitFileStabilityFeeLabel,
+	ContractAddresses:   []string{constants.PitContractAddress},
+	ContractAbi:         constants.PitABI,
+	Topic:               constants.PitFileStabilityFeeSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

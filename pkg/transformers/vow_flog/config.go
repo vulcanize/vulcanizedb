@@ -14,13 +14,16 @@
 
 package vow_flog
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var VowFlogConfig = shared.TransformerConfig{
-	TransformerName:     shared.VowFlogLabel,
-	ContractAddresses:   []string{shared.VowContractAddress},
-	ContractAbi:         shared.VowABI,
-	Topic:               shared.VowFlogSignature,
+	TransformerName:     constants.VowFlogLabel,
+	ContractAddresses:   []string{constants.VowContractAddress},
+	ContractAbi:         constants.VowABI,
+	Topic:               constants.VowFlogSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

@@ -6,13 +6,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flap_kick"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 	"time"
 )
 
 var EthFlapKickLog = types.Log{
-	Address: common.HexToAddress(shared.FlapperContractAddress),
+	Address: common.HexToAddress(constants.FlapperContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xefa52d9342a199cb30efd2692463f2c2bef63cd7186b50382d4fb94ad207880e"),
 		common.HexToHash("0x00000000000000000000000000000000000000000000000000000000069f6bc7"),

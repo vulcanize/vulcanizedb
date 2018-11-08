@@ -1,12 +1,15 @@
 package vat_grab
 
-import "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+)
 
 var VatGrabConfig = shared.TransformerConfig{
-	TransformerName:     shared.VatGrabLabel,
-	ContractAddresses:   []string{shared.VatContractAddress},
-	ContractAbi:         shared.VatABI,
-	Topic:               shared.VatGrabSignature,
+	TransformerName:     constants.VatGrabLabel,
+	ContractAddresses:   []string{constants.VatContractAddress},
+	ContractAbi:         constants.VatABI,
+	Topic:               constants.VatGrabSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }

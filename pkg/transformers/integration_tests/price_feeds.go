@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -46,7 +47,7 @@ var _ = Describe("Price feeds transformer", func() {
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{shared.PipContractAddress}
+		config.ContractAddresses = []string{constants.PipContractAddress}
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -73,7 +74,7 @@ var _ = Describe("Price feeds transformer", func() {
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{shared.PepContractAddress}
+		config.ContractAddresses = []string{constants.PepContractAddress}
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -100,7 +101,7 @@ var _ = Describe("Price feeds transformer", func() {
 		err := persistHeader(db, blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{shared.RepContractAddress}
+		config.ContractAddresses = []string{constants.RepContractAddress}
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 

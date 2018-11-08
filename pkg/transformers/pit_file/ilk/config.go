@@ -16,13 +16,14 @@ package ilk
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var IlkFileConfig = shared.TransformerConfig{
-	TransformerName:     shared.PitFileIlkLabel,
-	ContractAddresses:   []string{shared.PitContractAddress},
-	ContractAbi:         shared.PitABI,
-	Topic:               shared.PitFileIlkSignature,
+	TransformerName:     constants.PitFileIlkLabel,
+	ContractAddresses:   []string{constants.PitContractAddress},
+	ContractAbi:         constants.PitABI,
+	Topic:               constants.PitFileIlkSignature,
 	StartingBlockNumber: 0,
 	EndingBlockNumber:   10000000,
 }
