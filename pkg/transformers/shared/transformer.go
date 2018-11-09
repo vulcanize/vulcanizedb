@@ -33,7 +33,7 @@ type TransformerConfig struct {
 	ContractAbi         string
 	Topic               string
 	StartingBlockNumber int64
-	EndingBlockNumber   int64
+	EndingBlockNumber   int64 // Set -1 for indefinite transformer
 }
 
 func HexToInt64(byteString string) int64 {

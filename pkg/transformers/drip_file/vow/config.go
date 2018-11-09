@@ -25,5 +25,5 @@ var DripFileVowConfig = shared.TransformerConfig{
 	ContractAbi:         constants.DripABI,
 	Topic:               constants.DripFileVowSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

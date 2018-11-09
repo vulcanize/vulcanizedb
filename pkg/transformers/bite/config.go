@@ -27,5 +27,5 @@ var BiteConfig = shared.TransformerConfig{
 	ContractAbi:         constants.CatABI,
 	Topic:               constants.BiteSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

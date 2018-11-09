@@ -25,5 +25,5 @@ var VowFlogConfig = shared.TransformerConfig{
 	ContractAbi:         constants.VowABI,
 	Topic:               constants.VowFlogSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

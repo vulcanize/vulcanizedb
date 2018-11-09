@@ -25,5 +25,5 @@ var CatFileFlipConfig = shared.TransformerConfig{
 	ContractAbi:         constants.CatABI,
 	Topic:               constants.CatFileFlipSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

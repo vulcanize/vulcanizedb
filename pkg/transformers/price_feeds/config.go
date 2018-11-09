@@ -29,5 +29,5 @@ var PriceFeedConfig = shared.TransformerConfig{
 	ContractAbi:         constants.MedianizerABI,
 	Topic:               constants.LogValueSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

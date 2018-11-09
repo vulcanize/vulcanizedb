@@ -25,5 +25,5 @@ var DripFileIlkConfig = shared.TransformerConfig{
 	ContractAbi:         constants.DripABI,
 	Topic:               constants.DripFileIlkSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

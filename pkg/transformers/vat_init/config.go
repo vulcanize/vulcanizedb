@@ -25,5 +25,5 @@ var VatInitConfig = shared.TransformerConfig{
 	ContractAbi:         constants.VatABI,
 	Topic:               constants.VatInitSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

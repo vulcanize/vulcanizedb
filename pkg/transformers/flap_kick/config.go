@@ -25,5 +25,5 @@ var FlapKickConfig = shared.TransformerConfig{
 	ContractAbi:         constants.FlapperABI,
 	Topic:               constants.FlapKickSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }
