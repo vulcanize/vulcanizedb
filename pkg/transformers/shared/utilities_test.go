@@ -45,5 +45,21 @@ var _ = Describe("Shared utilities", func() {
 
 			Expect(expected[:]).To(Equal(actual))
 		})
+
+		It("converts values to rays", func() {
+			rayOne := shared.ConvertToRay("123456789012345678901234567890")
+			Expect(rayOne).To(Equal("123.456789012345680589533003513"))
+
+			rayTwo := shared.ConvertToRay("1234567890123456790123567890")
+			Expect(rayTwo).To(Equal("1.234567890123456912476740399"))
+		})
+
+		It("converts values to wads", func() {
+			wadOne := shared.ConvertToWad("12345678901234567890123")
+			Expect(wadOne).To(Equal("12345.678901234567092615"))
+
+			wadTwo := shared.ConvertToWad("1234567890123456789")
+			Expect(wadTwo).To(Equal("1.234567890123456690"))
+		})
 	})
 })

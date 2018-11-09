@@ -19,6 +19,15 @@ import (
 	"math/big"
 )
 
+var (
+	rayBase      = big.NewFloat(1e27)
+	wadBase      = big.NewFloat(1e18)
+	rayPrecision = 27
+	wadPrecision = 18
+	ray          = "ray"
+	wad          = "wad"
+)
+
 func BigIntToInt64(value *big.Int) int64 {
 	if value == nil {
 		return int64(0)
@@ -46,4 +55,26 @@ func GetDataBytesAtIndex(n int, logData []byte) []byte {
 		return logData[len(logData)-(3*constants.DataItemLength) : len(logData)-(2*constants.DataItemLength)]
 	}
 	return []byte{}
+}
+
+func ConvertToRay(value string) string {
+	return convert(ray, value, rayPrecision)
+}
+
+func ConvertToWad(value string) string {
+	return convert(wad, value, wadPrecision)
+}
+
+func convert(conversion string, value string, precision int) string {
+	result := big.NewFloat(0.0)
+	bigFloat := big.NewFloat(0.0)
+	bigFloat.SetString(value)
+
+	switch conversion {
+	case ray:
+		result.Quo(bigFloat, rayBase)
+	case wad:
+		result.Quo(bigFloat, wadBase)
+	}
+	return result.Text('f', precision)
 }

@@ -23,10 +23,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/pit_vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"math/big"
 )
 
-var EthCatFileChopLumpLog = types.Log{
+var EthCatFileChopLog = types.Log{
 	Address: common.HexToAddress(constants.CatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
@@ -34,7 +33,7 @@ var EthCatFileChopLumpLog = types.Log{
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x63686f7000000000000000000000000000000000000000000000000000000000"),
 	},
-	Data:        hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000641a0b287e66616b6520696c6b00000000000000000000000000000000000000000000000063686f700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000075bcd15"),
+	Data:        hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000641a0b287e66616b6520696c6b00000000000000000000000000000000000000000000000063686f700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018EE90FF6C373E0EE4E3F0AD2"),
 	BlockNumber: 110,
 	TxHash:      common.HexToHash("0xe32dfe6afd7ea28475569756fc30f0eea6ad4cfd32f67436ff1d1c805e4382df"),
 	TxIndex:     13,
@@ -42,15 +41,40 @@ var EthCatFileChopLumpLog = types.Log{
 	Index:       1,
 	Removed:     false,
 }
-
-var rawCatFileChopLumpLog, _ = json.Marshal(EthCatFileChopLumpLog)
-var CatFileChopLumpModel = chop_lump.CatFileChopLumpModel{
+var rawCatFileChopLog, _ = json.Marshal(EthCatFileChopLog)
+var CatFileChopModel = chop_lump.CatFileChopLumpModel{
 	Ilk:              "fake ilk",
 	What:             "chop",
-	Data:             big.NewInt(123456789).String(),
-	TransactionIndex: EthCatFileChopLumpLog.TxIndex,
-	LogIndex:         EthCatFileChopLumpLog.Index,
-	Raw:              rawCatFileChopLumpLog,
+	Data:             "123.456789012345680589533003513",
+	TransactionIndex: EthCatFileChopLog.TxIndex,
+	LogIndex:         EthCatFileChopLog.Index,
+	Raw:              rawCatFileChopLog,
+}
+
+var EthCatFileLumpLog = types.Log{
+	Address: common.HexToAddress(constants.CatContractAddress),
+	Topics: []common.Hash{
+		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
+		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
+		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),
+		common.HexToHash("0x6c756d7000000000000000000000000000000000000000000000000000000000"),
+	},
+	Data:        hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000641a0b287e66616b6520696c6b00000000000000000000000000000000000000000000000063686f700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000029D42B64E76714244CB"),
+	BlockNumber: 110,
+	TxHash:      common.HexToHash("0xe32dfe6afd7ea28475569756fc30f0eea6ad4cfd32f67436ff1d1c805e4382df"),
+	TxIndex:     15,
+	BlockHash:   common.HexToHash("0x2764998a4e048d4c4ba45ea40fd5efaa8e2d4f1dd2b15425a6c6a3dea7f1064a"),
+	Index:       3,
+	Removed:     false,
+}
+var rawCatFileLumpLog, _ = json.Marshal(EthCatFileLumpLog)
+var CatFileLumpModel = chop_lump.CatFileChopLumpModel{
+	Ilk:              "fake ilk",
+	What:             "lump",
+	Data:             "12345.678901234567092615",
+	TransactionIndex: EthCatFileLumpLog.TxIndex,
+	LogIndex:         EthCatFileLumpLog.Index,
+	Raw:              rawCatFileLumpLog,
 }
 
 var EthCatFileFlipLog = types.Log{
