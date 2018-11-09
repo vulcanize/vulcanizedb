@@ -19,6 +19,8 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type VatHealRepository struct {
@@ -50,10 +52,7 @@ func (repository VatHealRepository) Create(headerId int64, models []interface{})
 		}
 	}
 
-	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, vat_heal_checked)
-			VALUES($1, $2)
-		ON CONFLICT (header_id) DO
-			UPDATE SET vat_heal_checked = $2`, headerId, true)
+	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.VatHealChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -62,24 +61,9 @@ func (repository VatHealRepository) Create(headerId int64, models []interface{})
 }
 
 func (repository VatHealRepository) MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
-	var headers []core.Header
-	err := repository.db.Select(&headers,
-		`SELECT headers.id, block_number from headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR vat_heal_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
-		startingBlock, endingBlock, repository.db.Node.ID)
-
-	return headers, err
+	return shared.MissingHeaders(startingBlock, endingBlock, repository.db, constants.VatHealChecked)
 }
 
 func (repository VatHealRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := repository.db.Exec(`INSERT INTO public.checked_headers (header_id, vat_heal_checked)
-			VALUES($1, $2)
-		ON CONFLICT (header_id) DO
-			UPDATE SET vat_heal_checked = $2`, headerId, true)
-
-	return err
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.VatHealChecked)
 }
