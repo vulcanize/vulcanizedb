@@ -25,5 +25,5 @@ var CatFilePitVowConfig = shared.TransformerConfig{
 	ContractAbi:         constants.CatABI,
 	Topic:               constants.CatFilePitVowSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

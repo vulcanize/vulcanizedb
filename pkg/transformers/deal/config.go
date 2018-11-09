@@ -25,5 +25,5 @@ var DealConfig = shared.TransformerConfig{
 	ContractAbi:         constants.FlipperABI,
 	Topic:               constants.DealSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

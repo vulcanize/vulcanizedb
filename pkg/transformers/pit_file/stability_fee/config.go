@@ -25,5 +25,5 @@ var StabilityFeeFileConfig = shared.TransformerConfig{
 	ContractAbi:         constants.PitABI,
 	Topic:               constants.PitFileStabilityFeeSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

@@ -25,5 +25,5 @@ var DripFileRepoConfig = shared.TransformerConfig{
 	ContractAbi:         constants.DripABI,
 	Topic:               constants.DripFileRepoSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

@@ -55,17 +55,25 @@ func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, checkedHeadersCo
 
 func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, checkedHeadersColumn string) ([]core.Header, error) {
 	var result []core.Header
-	err := db.Select(
-		&result,
-		`SELECT headers.id, headers.block_number FROM headers
-               	LEFT JOIN checked_headers on headers.id = header_id
-                WHERE (header_id ISNULL OR `+checkedHeadersColumn+` IS FALSE)
-               	AND headers.block_number >= $1
-               	AND headers.block_number <= $2
-               	AND headers.eth_node_fingerprint = $3`,
-		startingBlockNumber,
-		endingBlockNumber,
-		db.Node.ID,
-	)
+	var query string
+	var err error
+
+	if endingBlockNumber == -1 {
+		query = `SELECT headers.id, headers.block_number FROM headers
+				LEFT JOIN checked_headers on headers.id = header_id
+				WHERE (header_id ISNULL OR ` + checkedHeadersColumn + ` IS FALSE)
+				AND headers.block_number >= $1
+				AND headers.eth_node_fingerprint = $2`
+		err = db.Select(&result, query, startingBlockNumber, db.Node.ID)
+	} else {
+		query = `SELECT headers.id, headers.block_number FROM headers
+				LEFT JOIN checked_headers on headers.id = header_id
+				WHERE (header_id ISNULL OR ` + checkedHeadersColumn + ` IS FALSE)
+				AND headers.block_number >= $1
+				AND headers.block_number <= $2
+				AND headers.eth_node_fingerprint = $3`
+		err = db.Select(&result, query, startingBlockNumber, endingBlockNumber, db.Node.ID)
+	}
+
 	return result, err
 }

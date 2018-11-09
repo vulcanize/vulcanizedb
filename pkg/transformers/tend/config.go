@@ -25,5 +25,5 @@ var TendConfig = shared.TransformerConfig{
 	ContractAbi:         constants.FlipperABI,
 	Topic:               constants.TendFunctionSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

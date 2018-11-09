@@ -11,5 +11,5 @@ var VatFluxConfig = shared.TransformerConfig{
 	ContractAbi:         constants.VatABI,
 	Topic:               constants.VatFluxSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

@@ -25,5 +25,5 @@ var IlkFileConfig = shared.TransformerConfig{
 	ContractAbi:         constants.PitABI,
 	Topic:               constants.PitFileIlkSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }

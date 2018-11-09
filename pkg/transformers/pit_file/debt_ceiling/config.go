@@ -25,5 +25,5 @@ var DebtCeilingFileConfig = shared.TransformerConfig{
 	ContractAbi:         constants.PitABI,
 	Topic:               constants.PitFileDebtCeilingSignature,
 	StartingBlockNumber: 0,
-	EndingBlockNumber:   10000000,
+	EndingBlockNumber:   -1,
 }
