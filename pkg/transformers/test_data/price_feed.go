@@ -45,7 +45,7 @@ var rawPriceFeedLog, _ = json.Marshal(EthPriceFeedLog)
 var PriceFeedModel = price_feeds.PriceFeedModel{
 	BlockNumber:       blockNumber,
 	MedianizerAddress: EthPriceFeedLog.Address.String(),
-	UsdValue:          "378.6599388897",
+	UsdValue:          "378.659938889700015352",
 	LogIndex:          EthPriceFeedLog.Index,
 	TransactionIndex:  EthPriceFeedLog.TxIndex,
 	Raw:               rawPriceFeedLog,

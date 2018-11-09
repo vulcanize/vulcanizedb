@@ -41,34 +41,52 @@ var _ = Describe("Cat file chop lump repository", func() {
 	})
 
 	Describe("Create", func() {
-		modelWithDifferentLogIdx := test_data.CatFileChopLumpModel
+		modelWithDifferentLogIdx := test_data.CatFileChopModel
 		modelWithDifferentLogIdx.LogIndex++
 		inputs := shared_behaviors.CreateBehaviorInputs{
 			CheckedHeaderColumnName:  constants.CatFileChopLumpChecked,
 			LogEventTableName:        "maker.cat_file_chop_lump",
-			TestModel:                test_data.CatFileChopLumpModel,
+			TestModel:                test_data.CatFileChopModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
 			Repository:               &catFileRepository,
 		}
 
 		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
-		It("adds a cat file chop lump event", func() {
+		It("adds a cat file chop event", func() {
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopLumpModel})
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileChopModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbResult chop_lump.CatFileChopLumpModel
 			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbResult.Ilk).To(Equal(test_data.CatFileChopLumpModel.Ilk))
-			Expect(dbResult.What).To(Equal(test_data.CatFileChopLumpModel.What))
-			Expect(dbResult.Data).To(Equal(test_data.CatFileChopLumpModel.Data))
-			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileChopLumpModel.TransactionIndex))
-			Expect(dbResult.LogIndex).To(Equal(test_data.CatFileChopLumpModel.LogIndex))
-			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileChopLumpModel.Raw))
+			Expect(dbResult.Ilk).To(Equal(test_data.CatFileChopModel.Ilk))
+			Expect(dbResult.What).To(Equal(test_data.CatFileChopModel.What))
+			Expect(dbResult.Data).To(Equal(test_data.CatFileChopModel.Data))
+			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileChopModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.CatFileChopModel.LogIndex))
+			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileChopModel.Raw))
+		})
+
+		It("adds a cat file lump event", func() {
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
+			err = catFileRepository.Create(headerID, []interface{}{test_data.CatFileLumpModel})
+
+			Expect(err).NotTo(HaveOccurred())
+			var dbResult chop_lump.CatFileChopLumpModel
+			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbResult.Ilk).To(Equal(test_data.CatFileLumpModel.Ilk))
+			Expect(dbResult.What).To(Equal(test_data.CatFileLumpModel.What))
+			Expect(dbResult.Data).To(Equal(test_data.CatFileLumpModel.Data))
+			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileLumpModel.TransactionIndex))
+			Expect(dbResult.LogIndex).To(Equal(test_data.CatFileLumpModel.LogIndex))
+			Expect(dbResult.Raw).To(MatchJSON(test_data.CatFileLumpModel.Raw))
 		})
 	})
 

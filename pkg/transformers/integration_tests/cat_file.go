@@ -80,12 +80,12 @@ var _ = Describe("Cat File transformer", func() {
 
 		Expect(dbResult[0].Ilk).To(Equal("REP"))
 		Expect(dbResult[0].What).To(Equal("lump"))
-		Expect(dbResult[0].Data).To(Equal("10000000000000000000000"))
+		Expect(dbResult[0].Data).To(Equal("10000.000000000000000000"))
 		Expect(dbResult[0].LogIndex).To(Equal(uint(3)))
 
 		Expect(dbResult[1].Ilk).To(Equal("REP"))
 		Expect(dbResult[1].What).To(Equal("chop"))
-		Expect(dbResult[1].Data).To(Equal("1000000000000000000000000000"))
+		Expect(dbResult[1].Data).To(Equal("1.000000000000000000000000000"))
 		Expect(dbResult[1].LogIndex).To(Equal(uint(4)))
 	})
 

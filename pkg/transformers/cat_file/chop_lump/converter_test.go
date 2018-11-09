@@ -31,6 +31,24 @@ var _ = Describe("Cat file chop lump converter", func() {
 		converter = chop_lump.CatFileChopLumpConverter{}
 	})
 
+	Context("chop events", func() {
+		It("converts a chop log to a model", func() {
+			models, err := converter.ToModels([]types.Log{test_data.EthCatFileChopLog})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(models).To(Equal([]interface{}{test_data.CatFileChopModel}))
+		})
+	})
+
+	Context("lump events", func() {
+		It("converts a lump log to a model", func() {
+			models, err := converter.ToModels([]types.Log{test_data.EthCatFileLumpLog})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(models).To(Equal([]interface{}{test_data.CatFileLumpModel}))
+		})
+	})
+
 	It("returns err if log is missing topics", func() {
 		badLog := types.Log{
 			Data: []byte{1, 1, 1, 1, 1},
@@ -47,12 +65,5 @@ var _ = Describe("Cat file chop lump converter", func() {
 
 		_, err := converter.ToModels([]types.Log{badLog})
 		Expect(err).To(HaveOccurred())
-	})
-
-	It("converts a log to an model", func() {
-		models, err := converter.ToModels([]types.Log{test_data.EthCatFileChopLumpLog})
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(models).To(Equal([]interface{}{test_data.CatFileChopLumpModel}))
 	})
 })

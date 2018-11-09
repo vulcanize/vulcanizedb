@@ -19,8 +19,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
+)
+
+var (
+	chop = "chop"
+	lump = "lump"
 )
 
 type CatFileChopLumpConverter struct{}
@@ -44,7 +50,7 @@ func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]interface{}, er
 		result := CatFileChopLumpModel{
 			Ilk:              ilk,
 			What:             what,
-			Data:             data,
+			Data:             convertData(what, data),
 			TransactionIndex: ethLog.TxIndex,
 			LogIndex:         ethLog.Index,
 			Raw:              raw,
@@ -52,6 +58,17 @@ func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]interface{}, er
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+func convertData(what, data string) string {
+	var convertedData string
+	if what == chop {
+		convertedData = shared.ConvertToRay(data)
+	} else if what == lump {
+		convertedData = shared.ConvertToWad(data)
+	}
+
+	return convertedData
 }
 
 func verifyLog(log types.Log) error {
