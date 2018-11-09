@@ -15,27 +15,23 @@
 package vat_fold_test
 
 import (
-	"database/sql"
-	"math/rand"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Vat.fold repository", func() {
 	var (
-		db               *postgres.DB
-		repository       vat_fold.VatFoldRepository
-		headerRepository repositories.HeaderRepository
-		err              error
+		db         *postgres.DB
+		repository vat_fold.VatFoldRepository
 	)
 
 	BeforeEach(func() {
@@ -44,23 +40,31 @@ var _ = Describe("Vat.fold repository", func() {
 		test_config.CleanTestDB(db)
 		repository = vat_fold.VatFoldRepository{}
 		repository.SetDB(db)
-		headerRepository = repositories.NewHeaderRepository(db)
 	})
 
 	Describe("Create", func() {
-		var headerID int64
+		modelWithDifferentLogIdx := test_data.VatFoldModel
+		modelWithDifferentLogIdx.LogIndex++
 
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
+		inputs := shared_behaviors.CreateBehaviorInputs{
+			CheckedHeaderColumnName:  constants.VatFoldChecked,
+			LogEventTableName:        "maker.vat_fold",
+			TestModel:                test_data.VatFoldModel,
+			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
+			Repository:               &repository,
+		}
+
+		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("adds a vat fold event", func() {
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(err).NotTo(HaveOccurred())
 			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbVatFold vat_fold.VatFoldModel
-			err := db.Get(&dbVatFold, `SELECT ilk, urn, rate, log_idx, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
+			err = db.Get(&dbVatFold, `SELECT ilk, urn, rate, log_idx, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(dbVatFold.Ilk).To(Equal(test_data.VatFoldModel.Ilk))
@@ -70,169 +74,23 @@ var _ = Describe("Vat.fold repository", func() {
 			Expect(dbVatFold.TransactionIndex).To(Equal(test_data.VatFoldModel.TransactionIndex))
 			Expect(dbVatFold.Raw).To(MatchJSON(test_data.VatFoldModel.Raw))
 		})
-
-		It("marks header as checked for logs", func() {
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT vat_fold_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("updates the header to checked if checked headers row already exists", func() {
-			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
-
-			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
-			err = db.Get(&headerChecked, `SELECT vat_fold_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("does not duplicate vat fold events", func() {
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		It("removes vat fold if corresponding header is deleted", func() {
-			err = repository.Create(headerID, []interface{}{test_data.VatFoldModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = db.Exec(`DELETE FROM headers WHERE id = $1`, headerID)
-
-			Expect(err).NotTo(HaveOccurred())
-			var dbVatFold vat_fold.VatFoldModel
-			err = db.Get(&dbVatFold, `SELECT ilk, urn, rate, log_idx, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(sql.ErrNoRows))
-		})
-
-		It("returns an error if model is of wrong type", func() {
-			err = repository.Create(headerID, []interface{}{test_data.WrongModel{}})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("model of type"))
-		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		var headerID int64
-
-		BeforeEach(func() {
-			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		type CheckedHeaderResult struct {
-			VatFoldChecked bool `db:"vat_fold_checked"`
+		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
+			CheckedHeaderColumnName: constants.VatFoldChecked,
+			Repository:              &repository,
 		}
 
-		It("creates a new checked header record", func() {
-			err := repository.MarkHeaderChecked(headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			var checkedHeaderResult = CheckedHeaderResult{}
-			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(checkedHeaderResult.VatFoldChecked).To(BeTrue())
-		})
-
-		It("updates an existing checked header", func() {
-			_, err := db.Exec(`INSERT INTO checked_headers (header_id) VALUES($1)`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			var checkedHeaderResult CheckedHeaderResult
-			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(checkedHeaderResult.VatFoldChecked).To(BeFalse())
-
-			err = repository.MarkHeaderChecked(headerID)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = db.Get(&checkedHeaderResult, `SELECT vat_fold_checked FROM checked_headers WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(checkedHeaderResult.VatFoldChecked).To(BeTrue())
-		})
+		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
 
 	Describe("MissingHeaders", func() {
-		var (
-			startingBlock, vatFoldBlock, endingBlock int64
-			blockNumbers, headerIDs                  []int64
-		)
+		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
+			Repository:    &repository,
+			RepositoryTwo: &vat_fold.VatFoldRepository{},
+		}
 
-		BeforeEach(func() {
-			startingBlock = rand.Int63()
-			vatFoldBlock = startingBlock + 1
-			endingBlock = startingBlock + 2
-
-			blockNumbers = []int64{startingBlock, vatFoldBlock, endingBlock, endingBlock + 1}
-
-			headerIDs = []int64{}
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-				headerIDs = append(headerIDs, headerID)
-			}
-		})
-
-		It("returns headers that haven't been checked", func() {
-			err := repository.MarkHeaderChecked(headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock)))
-		})
-
-		It("only treats headers as checked if vat fold logs have been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := repository.MissingHeaders(startingBlock, endingBlock)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatFoldBlock)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatFoldBlock)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlock), Equal(endingBlock), Equal(vatFoldBlock)))
-		})
-
-		It("only returns headers associated with the current node", func() {
-			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
-			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-
-			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-			}
-
-			repositoryTwo := vat_fold.VatFoldRepository{}
-			repositoryTwo.SetDB(dbTwo)
-
-			err := repository.MarkHeaderChecked(headerIDs[0])
-			Expect(err).NotTo(HaveOccurred())
-
-			nodeOneMissingHeaders, err := repository.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeOneMissingHeaders)).To(Equal(len(blockNumbers) - 1))
-
-			nodeTwoMissingHeaders, err := repositoryTwo.MissingHeaders(blockNumbers[0], blockNumbers[len(blockNumbers)-1])
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeTwoMissingHeaders)).To(Equal(len(blockNumbers)))
-		})
+		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
 	})
 })
