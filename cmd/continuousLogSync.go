@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -31,11 +32,15 @@ import (
 var continuousLogSyncCmd = &cobra.Command{
 	Use:   "continuousLogSync",
 	Short: "Continuously sync logs at the head of the chain",
-	Long: `Continously syncs logs based on the configured transformers.
+	Long: fmt.Sprintf(`Continously syncs logs based on the configured transformers.
 
 vulcanizedb continousLogSync --config environments/local.toml
+	
+Available transformers for (optional) selection with --transformers:
+%v
 
 This command expects a light sync to have been run, and the presence of header records in the Vulcanize database.`,
+	constants.AllTransformerLabels()),
 	Run: func(cmd *cobra.Command, args []string) {
 		syncMakerLogs()
 	},
