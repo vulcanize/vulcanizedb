@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
@@ -35,7 +36,7 @@ var DealLogNote = types.Log{
 	BlockNumber: 16,
 	TxHash:      common.HexToHash("0xc6ff19de9299e5b290ba2d52fdb4662360ca86376613d78ee546244866a0be2d"),
 	TxIndex:     74,
-	BlockHash:   common.HexToHash("0x6454844075164a1d264c86d2a2c31ac1b64eb2f4ebdbbaeb4d44388fdf74470b"),
+	BlockHash:   fakes.FakeHash,
 	Index:       75,
 	Removed:     false,
 }

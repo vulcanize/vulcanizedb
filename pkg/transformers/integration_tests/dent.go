@@ -1,15 +1,13 @@
 package integration_tests
 
 import (
-	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -17,24 +15,21 @@ import (
 var _ = Describe("Dent transformer", func() {
 	var (
 		db         *postgres.DB
-		blockchain core.BlockChain
-		rpcClient  client.RpcClient
-		err        error
-		ethClient  *ethclient.Client
+		blockChain core.BlockChain
 	)
 
 	BeforeEach(func() {
-		rpcClient, ethClient, err = getClients(ipc)
+		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		blockchain, err = getBlockChain(rpcClient, ethClient)
+		blockChain, err = getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
-		db = test_config.NewTestDB(blockchain.Node())
+		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 	})
 
 	It("persists a flop dent log event", func() {
 		blockNumber := int64(8955613)
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := dent.DentConfig
@@ -47,8 +42,8 @@ var _ = Describe("Dent transformer", func() {
 			Repository: &dent.DentRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
-		err := transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
+		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []dent.DentModel

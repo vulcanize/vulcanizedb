@@ -8,13 +8,13 @@ import (
 
 type HeaderConverter struct{}
 
-func (converter HeaderConverter) Convert(gethHeader *types.Header) (core.Header, error) {
+func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) (core.Header, error) {
 	rawHeader, err := json.Marshal(gethHeader)
 	if err != nil {
 		panic(err)
 	}
 	coreHeader := core.Header{
-		Hash:        gethHeader.Hash().Hex(),
+		Hash:        blockHash,
 		BlockNumber: gethHeader.Number.Int64(),
 		Raw:         rawHeader,
 		Timestamp:   gethHeader.Time.String(),

@@ -38,6 +38,12 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 			return fmt.Errorf("model of type %T, not %T", model, CatFileFlipModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, flip.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4, $5, $6, $7)`,

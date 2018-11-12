@@ -46,11 +46,10 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 		transactionIndex := ethLog.TxIndex
 		logIndex := ethLog.Index
 
-		rawJson, err := json.Marshal(ethLog)
+		rawLog, err := json.Marshal(ethLog)
 		if err != nil {
 			return nil, err
 		}
-		raw := string(rawJson)
 
 		model := TendModel{
 			BidId:            bidId.String(),
@@ -60,7 +59,7 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 			Tic:              tic,
 			LogIndex:         logIndex,
 			TransactionIndex: transactionIndex,
-			Raw:              raw,
+			Raw:              rawLog,
 		}
 		results = append(results, model)
 	}

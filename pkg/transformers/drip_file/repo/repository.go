@@ -39,6 +39,12 @@ func (repository DripFileRepoRepository) Create(headerID int64, models []interfa
 			return fmt.Errorf("model of type %T, not %T", model, DripFileRepoModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, repo.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.drip_file_repo (header_id, what, data, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3::NUMERIC, $4, $5, $6)`,

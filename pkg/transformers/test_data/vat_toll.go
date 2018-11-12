@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_toll"
 	"math/big"
@@ -22,7 +23,7 @@ var EthVatTollLog = types.Log{
 	BlockNumber: 21,
 	TxHash:      common.HexToHash("0x0d59cb158b033ffdfb9a021d1e80bfbbcd99594c62c501897ccee446bcd33828"),
 	TxIndex:     2,
-	BlockHash:   common.HexToHash("0xdbfda0ecb4ac6267c50be21db97874dc1203c22033e19733a6f67ca00b51dfc5"),
+	BlockHash:   fakes.FakeHash,
 	Index:       4,
 	Removed:     false,
 }

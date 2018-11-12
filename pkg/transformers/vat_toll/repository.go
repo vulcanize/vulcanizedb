@@ -23,6 +23,13 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 			tx.Rollback()
 			return fmt.Errorf("model of type %T, not %T", model, VatTollModel{})
 		}
+
+		err = shared.ValidateHeaderConsistency(headerID, vatToll.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.vat_toll (header_id, ilk, urn, take, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 )
@@ -35,7 +36,7 @@ var EthVowFlogLog = types.Log{
 	BlockNumber: 11,
 	TxHash:      common.HexToHash("0x47ffd75c1cda1d5c08219755743663a3790e4f5ae9e1fcb85bb3fe0d74bb7109"),
 	TxIndex:     4,
-	BlockHash:   common.HexToHash("0x6fd1980ab4af87ce371599a3ef37d4f8fba03718a1f06d127a245b068492c65d"),
+	BlockHash:   fakes.FakeHash,
 	Index:       3,
 	Removed:     false,
 }

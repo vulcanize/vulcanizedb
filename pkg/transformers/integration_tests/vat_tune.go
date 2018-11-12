@@ -35,13 +35,13 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
+		blockChain, err := getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
 
-		db := test_config.NewTestDB(blockchain.Node())
+		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber)
+		err = persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
@@ -50,7 +50,7 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 			Converter:  &vat_tune.VatTuneConverter{},
 			Repository: &vat_tune.VatTuneRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

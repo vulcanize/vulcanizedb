@@ -31,7 +31,7 @@ var _ = Describe("Vat slip transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		err = persistHeader(db, blockNumber)
+		err = persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{

@@ -79,7 +79,7 @@ var _ = Describe("Bite Converter", func() {
 				Tab:              "",
 				NFlip:            "",
 				TransactionIndex: 0,
-				Raw:              string(emptyLog),
+				Raw:              emptyLog,
 			}
 			models, err := converter.ToModels([]interface{}{emptyEntity})
 

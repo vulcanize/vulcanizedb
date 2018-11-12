@@ -44,7 +44,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a ETH/USD price feed event", func() {
 		blockNumber := int64(8763054)
-		err := persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
 		config.ContractAddresses = []string{constants.PipContractAddress}
@@ -71,7 +71,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a MKR/USD price feed event", func() {
 		blockNumber := int64(8763059)
-		err := persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
 		config.ContractAddresses = []string{constants.PepContractAddress}
@@ -98,7 +98,7 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a REP/USD price feed event", func() {
 		blockNumber := int64(8763062)
-		err := persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 		config := price_feeds.PriceFeedConfig
 		config.ContractAddresses = []string{constants.RepContractAddress}

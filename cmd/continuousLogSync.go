@@ -40,7 +40,7 @@ Available transformers for (optional) selection with --transformers:
 %v
 
 This command expects a light sync to have been run, and the presence of header records in the Vulcanize database.`,
-	constants.AllTransformerLabels()),
+		constants.AllTransformerLabels()),
 	Run: func(cmd *cobra.Command, args []string) {
 		syncMakerLogs()
 	},

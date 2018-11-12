@@ -22,5 +22,5 @@ type TendModel struct {
 	Tic              string
 	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`
-	Raw              string `db:"raw_log"`
+	Raw              []byte `db:"raw_log"`
 }

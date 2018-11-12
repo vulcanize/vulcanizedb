@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
@@ -33,7 +34,6 @@ var (
 	tendGuy             = "0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6"
 	tendData            = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000644b43ed12000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000049b9ca9a6943400000000000000000000000000000000000000000000000000000de0b6b3a7640000"
 	tendTransactionHash = "0x7909c8793ded2b8348f5db623044fbc26bb7ab78ad5792897abdf68ddc1df63d"
-	tendBlockHash       = "0xa8ea87147c0a68daeb6b1d9f8c0937ba975a650809cab80d19c969e8d0df452c"
 	TendTic             = "0"
 )
 
@@ -49,12 +49,12 @@ var TendLogNote = types.Log{
 	BlockNumber: 11,
 	TxHash:      common.HexToHash(tendTransactionHash),
 	TxIndex:     10,
-	BlockHash:   common.HexToHash(tendBlockHash),
+	BlockHash:   fakes.FakeHash,
 	Index:       1,
 	Removed:     false,
 }
-var RawLogNoteJson, _ = json.Marshal(TendLogNote)
 
+var rawTendLog, _ = json.Marshal(TendLogNote)
 var TendModel = tend.TendModel{
 	BidId:            strconv.FormatInt(tendBidId, 10),
 	Lot:              tendLot,
@@ -63,5 +63,5 @@ var TendModel = tend.TendModel{
 	Tic:              TendTic,
 	LogIndex:         TendLogNote.Index,
 	TransactionIndex: TendLogNote.TxIndex,
-	Raw:              string(RawLogNoteJson),
+	Raw:              rawTendLog,
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/dent"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"strconv"
@@ -27,7 +28,6 @@ import (
 var (
 	DentData            = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000645ff3a382000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000098a7d9b8314c000000000000000000000000000000000000000000000000000029a2241af62c0000"
 	DentTransactionHash = "0x5a210319fcd31eea5959fedb4a1b20881c21a21976e23ff19dff3b44cc1c71e8"
-	DentBlockHash       = "0x105b771e04d7b8516f9291b1f006c46c09cfbff9efa8bc52498b171ff99d28b5"
 	dentBidId           = int64(1)
 	dentLot             = "11000000000000000000"
 	dentBid             = "3000000000000000000"
@@ -48,7 +48,7 @@ var DentLog = types.Log{
 	BlockNumber: 15,
 	TxHash:      common.HexToHash(DentTransactionHash),
 	TxIndex:     5,
-	BlockHash:   common.HexToHash(DentBlockHash),
+	BlockHash:   fakes.FakeHash,
 	Index:       2,
 	Removed:     false,
 }

@@ -54,7 +54,7 @@ func (blockChain *BlockChain) getPOWHeader(blockNumber int64) (header core.Heade
 	if err != nil {
 		return header, err
 	}
-	return blockChain.headerConverter.Convert(gethHeader)
+	return blockChain.headerConverter.Convert(gethHeader, gethHeader.Hash().String())
 }
 
 func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Header, err error) {
@@ -82,7 +82,7 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 		GasUsed:     uint64(POAHeader.GasUsed),
 		Time:        POAHeader.Time.ToInt(),
 		Extra:       POAHeader.Extra,
-	})
+	}, POAHeader.Hash.String())
 }
 
 func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {

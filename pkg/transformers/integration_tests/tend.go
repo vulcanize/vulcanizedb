@@ -17,29 +17,37 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Tend LogNoteTransformer", func() {
+	var (
+		db         *postgres.DB
+		blockChain core.BlockChain
+	)
+
+	BeforeEach(func() {
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err = getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+		db = test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+	})
+
 	It("fetches and transforms a Flip Tend event from Kovan chain", func() {
 		blockNumber := int64(8935601)
 		config := tend.TendConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
-		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockchain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
@@ -48,7 +56,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -70,15 +78,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
-		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockchain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
@@ -87,7 +87,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -109,15 +109,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
-		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockchain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
@@ -126,7 +118,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

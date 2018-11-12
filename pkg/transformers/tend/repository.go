@@ -26,7 +26,7 @@ type TendRepository struct {
 	db *postgres.DB
 }
 
-func (repository TendRepository) Create(headerId int64, models []interface{}) error {
+func (repository TendRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -39,10 +39,16 @@ func (repository TendRepository) Create(headerId int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, TendModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, tend.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9)`,
-			headerId, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
+			headerID, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
 		)
 
 		if err != nil {
@@ -51,7 +57,7 @@ func (repository TendRepository) Create(headerId int64, models []interface{}) er
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.TendChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.TendChecked)
 	if err != nil {
 		tx.Rollback()
 		return err

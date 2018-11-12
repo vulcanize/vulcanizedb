@@ -21,11 +21,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var _ = Describe("VatFlux Repository", func() {

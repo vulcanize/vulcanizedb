@@ -20,7 +20,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
@@ -34,6 +33,7 @@ func getClients(ipc string) (client.RpcClient, *ethclient.Client, error) {
 	}
 	return client.NewRpcClient(raw, ipc), ethclient.NewClient(raw), nil
 }
+
 func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (core.BlockChain, error) {
 	client := client.NewEthClient(ethClient)
 	node := node.MakeNode(rpcClient)
@@ -42,8 +42,12 @@ func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (cor
 	return blockChain, nil
 }
 
-func persistHeader(db *postgres.DB, blockNumber int64) error {
+func persistHeader(db *postgres.DB, blockNumber int64, blockChain core.BlockChain) error {
+	header, err := blockChain.GetHeaderByNumber(blockNumber)
+	if err != nil {
+		return err
+	}
 	headerRepository := repositories.NewHeaderRepository(db)
-	_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(blockNumber))
+	_, err = headerRepository.CreateOrUpdateHeader(header)
 	return err
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_slip"
 )
@@ -37,7 +38,7 @@ var EthVatSlipLog = types.Log{
 	BlockNumber: 10,
 	TxHash:      common.HexToHash("0xb114ba306c80c86d51bdbf4a5ac8ed151020cd81b70cfa1dc9822f4a1f73930b"),
 	TxIndex:     3,
-	BlockHash:   common.HexToHash("0x34b7e5ddb3be73257a5a0087f10b8bf68d4df5c8831ec04c63ecae4094de72ad"),
+	BlockHash:   fakes.FakeHash,
 	Index:       2,
 	Removed:     false,
 }

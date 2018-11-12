@@ -63,22 +63,22 @@ var _ = Describe("FlipKick Transformer", func() {
 
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
+		blockChain, err := getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
 
-		db := test_config.NewTestDB(blockchain.Node())
+		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber)
+		err = persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.Transformer{
-			Config:     flip_kick.FlipKickConfig,
+			Config:     config,
 			Converter:  &flip_kick.FlipKickConverter{},
 			Repository: &flip_kick.FlipKickRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

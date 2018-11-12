@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
 )
@@ -37,7 +38,7 @@ var EthVatFoldLog = types.Log{
 	BlockNumber: 8940380,
 	TxHash:      common.HexToHash("0xfb37b7a88aa8ad14538d1e244a55939fa07c1828e5ca8168bf4edd56f5fc4d57"),
 	TxIndex:     8,
-	BlockHash:   common.HexToHash("0xf43ab2fd3cf0a7e08fcc16ec17bbc7f67417a37a4cd978d1d7ca32130c7f64be"),
+	BlockHash:   fakes.FakeHash,
 	Index:       5,
 	Removed:     false,
 }

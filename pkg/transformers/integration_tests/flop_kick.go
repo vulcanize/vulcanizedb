@@ -22,6 +22,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
@@ -32,30 +34,36 @@ import (
 )
 
 var _ = Describe("FlopKick Transformer", func() {
+	var (
+		db         *postgres.DB
+		blockChain core.BlockChain
+	)
+
+	BeforeEach(func() {
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err = getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+		db = test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+	})
+
 	It("fetches and transforms a FlopKick event from Kovan chain", func() {
 		blockNumber := int64(8672119)
 		config := flop_kick.Config
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
-		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockchain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.Transformer{
-			Config:     flop_kick.Config,
+			Config:     config,
 			Converter:  &flop_kick.FlopKickConverter{},
 			Repository: &flop_kick.FlopKickRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -78,24 +86,16 @@ var _ = Describe("FlopKick Transformer", func() {
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockchain, err := getBlockChain(rpcClient, ethClient)
-		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockchain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber)
+		err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.Transformer{
-			Config:     flop_kick.Config,
+			Config:     config,
 			Converter:  &flop_kick.FlopKickConverter{},
 			Repository: &flop_kick.FlopKickRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockchain)
+		transformer := initializer.NewTransformer(db, blockChain)
 		err = transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

@@ -26,5 +26,5 @@ type FlipKickModel struct {
 	Tab              string
 	TransactionIndex uint   `db:"tx_idx"`
 	LogIndex         uint   `db:"log_idx"`
-	Raw              string `db:"raw_log"`
+	Raw              []byte `db:"raw_log"`
 }

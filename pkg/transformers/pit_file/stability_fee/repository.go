@@ -39,6 +39,12 @@ func (repository PitFileStabilityFeeRepository) Create(headerID int64, models []
 			return fmt.Errorf("model of type %T, not %T", model, PitFileStabilityFeeModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, pitFileSF.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_stability_fee (header_id, what, data, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4, $5, $6)`,

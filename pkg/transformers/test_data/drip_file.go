@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
@@ -38,7 +39,7 @@ var EthDripFileIlkLog = types.Log{
 	BlockNumber: 35,
 	TxHash:      common.HexToHash("0xa1c31b7e6389470902237161263558615e60b40f2e63060b2f4aeafe92d57e5f"),
 	TxIndex:     12,
-	BlockHash:   common.HexToHash("0x0188f3ee3cc05aa72457fa328e6a461de31e4cbd429fc37f9a52da4e9773c0b4"),
+	BlockHash:   fakes.FakeHash,
 	Index:       15,
 	Removed:     false,
 }
@@ -65,7 +66,7 @@ var EthDripFileRepoLog = types.Log{
 	BlockNumber: 36,
 	TxHash:      common.HexToHash("0xeeaa16de1d91c239b66773e8c2116a26cfeaaf5d962b31466c9bf047a5caa20f"),
 	TxIndex:     13,
-	BlockHash:   common.HexToHash("0x89de4145ea8e34dfd9db9a7ea34f5be6f1f402e812fd389acca342513b353288"),
+	BlockHash:   fakes.FakeHash,
 	Index:       16,
 	Removed:     false,
 }
@@ -91,7 +92,7 @@ var EthDripFileVowLog = types.Log{
 	BlockNumber: 51,
 	TxHash:      common.HexToHash("0x586e26b71b41fcd6905044dbe8f0cca300517542278f74a9b925c4f800fed85c"),
 	TxIndex:     14,
-	BlockHash:   common.HexToHash("0xbec69b1e93503679c9c006819477b86fe16aaff3a418da1e916c431b68be5522"),
+	BlockHash:   fakes.FakeHash,
 	Index:       17,
 	Removed:     false,
 }
