@@ -23,7 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
 )
 
-var EthFlogLog = types.Log{
+var EthVowFlogLog = types.Log{
 	Address: common.HexToAddress(constants.VowContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x35aee16f00000000000000000000000000000000000000000000000000000000"),
@@ -40,10 +40,10 @@ var EthFlogLog = types.Log{
 	Removed:     false,
 }
 
-var rawFlogLog, _ = json.Marshal(EthFlogLog)
-var FlogModel = vow_flog.VowFlogModel{
+var rawVowFlogLog, _ = json.Marshal(EthVowFlogLog)
+var VowFlogModel = vow_flog.VowFlogModel{
 	Era:              "1337",
-	LogIndex:         EthFlogLog.Index,
-	TransactionIndex: EthFlogLog.TxIndex,
-	Raw:              rawFlogLog,
+	LogIndex:         EthVowFlogLog.Index,
+	TransactionIndex: EthVowFlogLog.TxIndex,
+	Raw:              rawVowFlogLog,
 }
