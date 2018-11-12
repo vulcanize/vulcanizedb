@@ -49,10 +49,10 @@ var _ = Describe("Vow flog converter", func() {
 	})
 
 	It("converts a log to a model", func() {
-		models, err := converter.ToModels([]types.Log{test_data.EthFlogLog})
+		models, err := converter.ToModels([]types.Log{test_data.EthVowFlogLog})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(models)).To(Equal(1))
-		Expect(models[0].(vow_flog.VowFlogModel)).To(Equal(test_data.FlogModel))
+		Expect(models[0].(vow_flog.VowFlogModel)).To(Equal(test_data.VowFlogModel))
 	})
 })
