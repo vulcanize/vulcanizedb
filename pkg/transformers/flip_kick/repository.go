@@ -19,6 +19,8 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type FlipKickRepository struct {
@@ -45,10 +47,7 @@ func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error
 			return err
 		}
 	}
-	_, err = tx.Exec(`INSERT INTO public.checked_headers (header_id, flip_kick_checked)
-			VALUES ($1, $2)
-		ON CONFLICT (header_id) DO
-			UPDATE SET flip_kick_checked = $2`, headerId, true)
+	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.FlipKickChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -57,34 +56,11 @@ func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error
 }
 
 func (fkr FlipKickRepository) MarkHeaderChecked(headerId int64) error {
-	_, err := fkr.db.Exec(`INSERT INTO public.checked_headers (header_id, flip_kick_checked)
-		VALUES ($1, $2)
-	ON CONFLICT (header_id) DO
-		UPDATE SET flip_kick_checked = $2`, headerId, true)
-	return err
+	return shared.MarkHeaderChecked(headerId, fkr.db, constants.FlipKickChecked)
 }
 
 func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	var result []core.Header
-	err := fkr.db.Select(
-		&result,
-		`SELECT headers.id, headers.block_number FROM headers
-               LEFT JOIN checked_headers on headers.id = header_id
-               WHERE (header_id ISNULL OR flip_kick_checked IS FALSE)
-               AND headers.block_number >= $1
-               AND headers.block_number <= $2
-               AND headers.eth_node_fingerprint = $3`,
-		startingBlockNumber,
-		endingBlockNumber,
-		fkr.db.Node.ID,
-	)
-
-	if err != nil {
-		fmt.Println("Error:", err)
-		return result, err
-	}
-
-	return result, nil
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, fkr.db, constants.FlipKickChecked)
 }
 
 func (fkr *FlipKickRepository) SetDB(db *postgres.DB) {

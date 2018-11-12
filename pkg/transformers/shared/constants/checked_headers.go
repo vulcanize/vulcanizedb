@@ -1,6 +1,7 @@
 package constants
 
 var (
+	BiteChecked                = "bite_checked"
 	CatFileChopLumpChecked     = "cat_file_chop_lump_checked"
 	CatFileFlipChecked         = "cat_file_flip_checked"
 	CatFilePitVowChecked       = "cat_file_pit_vow_checked"
@@ -11,6 +12,9 @@ var (
 	DripFileRepoChecked        = "drip_file_repo_checked"
 	DripFileVowChecked         = "drip_file_vow_checked"
 	FlapKickChecked            = "flap_kick_checked"
+	FlipKickChecked            = "flip_kick_checked"
+	FlopKickChecked            = "flop_kick_checked"
+	FrobChecked                = "frob_checked"
 	PitFileDebtCeilingChecked  = "pit_file_debt_ceiling_checked"
 	PitFileIlkChecked          = "pit_file_ilk_checked"
 	PitFileStabilityFeeChecked = "pit_file_stability_fee_checked"
