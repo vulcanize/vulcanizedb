@@ -31,3 +31,37 @@ var (
 	VatTuneLabel             = "vatTune"
 	VowFlogLabel             = "vowFlog"
 )
+
+func AllTransformerLabels() []string {
+	return []string{
+		BiteLabel,
+		CatFileChopLumpLabel,
+		CatFileFlipLabel,
+		CatFilePitVowLabel,
+		DealLabel,
+		DentLabel,
+		DripDripLabel,
+		DripFileIlkLabel,
+		DripFileRepoLabel,
+		DripFileVowLabel,
+		FlapKickLabel,
+		FlipKickLabel,
+		FlopKickLabel,
+		FrobLabel,
+		PitFileDebtCeilingLabel,
+		PitFileIlkLabel,
+		PitFileStabilityFeeLabel,
+		PriceFeedLabel,
+		TendLabel,
+		VatFluxLabel,
+		VatFoldLabel,
+		VatGrabLabel,
+		VatHealLabel,
+		VatInitLabel,
+		VatMoveLabel,
+		VatSlipLabel,
+		VatTollLabel,
+		VatTuneLabel,
+		VowFlogLabel,
+	}
+}
