@@ -39,6 +39,12 @@ func (repository VowFlogRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VowFlogModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, flog.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.vow_flog (header_id, era, log_idx, tx_idx, raw_log)
 			VALUES($1, $2::NUMERIC, $3, $4, $5)`,

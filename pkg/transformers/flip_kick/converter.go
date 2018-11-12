@@ -75,11 +75,10 @@ func (FlipKickConverter) ToModels(entities []interface{}) ([]interface{}, error)
 		end := time.Unix(endValue, 0)
 		urn := common.BytesToAddress(flipKickEntity.Urn[:common.AddressLength]).String()
 		tab := shared.BigIntToString(flipKickEntity.Tab)
-		rawLogJson, err := json.Marshal(flipKickEntity.Raw)
+		rawLog, err := json.Marshal(flipKickEntity.Raw)
 		if err != nil {
 			return nil, err
 		}
-		rawLogString := string(rawLogJson)
 
 		model := FlipKickModel{
 			BidId:            id,
@@ -91,7 +90,7 @@ func (FlipKickConverter) ToModels(entities []interface{}) ([]interface{}, error)
 			Tab:              tab,
 			TransactionIndex: flipKickEntity.TransactionIndex,
 			LogIndex:         flipKickEntity.LogIndex,
-			Raw:              rawLogString,
+			Raw:              rawLog,
 		}
 		models = append(models, model)
 	}

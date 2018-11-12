@@ -35,7 +35,7 @@ import (
 var _ = Describe("Cat File transformer", func() {
 	var (
 		db         *postgres.DB
-		blockchain core.BlockChain
+		blockChain core.BlockChain
 		rpcClient  client.RpcClient
 		err        error
 		ethClient  *ethclient.Client
@@ -44,9 +44,9 @@ var _ = Describe("Cat File transformer", func() {
 	BeforeEach(func() {
 		rpcClient, ethClient, err = getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		blockchain, err = getBlockChain(rpcClient, ethClient)
+		blockChain, err = getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
-		db = test_config.NewTestDB(blockchain.Node())
+		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 	})
 
@@ -54,7 +54,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a chop lump event", func() {
 		// transaction: 0x98574bfba4d05c3875be10d2376e678d005dbebe9a4520363407508fd21f4014
 		chopLumpBlockNumber := int64(8762253)
-		err = persistHeader(db, chopLumpBlockNumber)
+		err = persistHeader(db, chopLumpBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := chop_lump.CatFileChopLumpConfig
@@ -67,7 +67,7 @@ var _ = Describe("Cat File transformer", func() {
 			Repository: &chop_lump.CatFileChopLumpRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -92,7 +92,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a flip event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		flipBlockNumber := int64(8751794)
-		err = persistHeader(db, flipBlockNumber)
+		err = persistHeader(db, flipBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := flip.CatFileFlipConfig
@@ -105,7 +105,7 @@ var _ = Describe("Cat File transformer", func() {
 			Repository: &flip.CatFileFlipRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -122,7 +122,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a pit vow event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		pitVowBlockNumber := int64(8751794)
-		err = persistHeader(db, pitVowBlockNumber)
+		err = persistHeader(db, pitVowBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := pit_vow.CatFilePitVowConfig
@@ -135,7 +135,7 @@ var _ = Describe("Cat File transformer", func() {
 			Repository: &pit_vow.CatFilePitVowRepository{},
 			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockchain)
+		transformer := initializer.NewLogNoteTransformer(db, blockChain)
 		err := transformer.Execute()
 		Expect(err).NotTo(HaveOccurred())
 

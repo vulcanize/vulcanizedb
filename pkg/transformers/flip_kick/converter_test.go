@@ -53,16 +53,13 @@ var _ = Describe("FlipKick Converter", func() {
 		var emptyString = ""
 		var emptyTime = time.Unix(0, 0)
 		var emptyEntity = flip_kick.FlipKickEntity{}
-		var emptyRawLog string
+		var emptyRawLog []byte
+		var err error
 
 		BeforeEach(func() {
 			emptyEntity.Id = big.NewInt(1)
-			var emptyRawLogJson, err = json.Marshal(types.Log{})
+			emptyRawLog, err = json.Marshal(types.Log{})
 			Expect(err).NotTo(HaveOccurred())
-
-			emptyRawLogJson, err = json.Marshal(types.Log{})
-			Expect(err).NotTo(HaveOccurred())
-			emptyRawLog = string(emptyRawLogJson)
 		})
 
 		It("converts an Entity to a Model", func() {

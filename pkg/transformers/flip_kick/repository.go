@@ -27,8 +27,8 @@ type FlipKickRepository struct {
 	db *postgres.DB
 }
 
-func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error {
-	tx, err := fkr.db.Begin()
+func (repository FlipKickRepository) Create(headerID int64, models []interface{}) error {
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -37,17 +37,24 @@ func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error
 		if !ok {
 			return fmt.Errorf("model of type %T, not %T", model, FlipKickModel{})
 		}
-		_, err := tx.Exec(
+
+		err = shared.ValidateHeaderConsistency(headerID, flipKickModel.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		_, err = tx.Exec(
 			`INSERT into maker.flip_kick (header_id, bid_id, lot, bid, gal, "end", urn, tab, tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8::NUMERIC, $9, $10, $11)`,
-			headerId, flipKickModel.BidId, flipKickModel.Lot, flipKickModel.Bid, flipKickModel.Gal, flipKickModel.End, flipKickModel.Urn, flipKickModel.Tab, flipKickModel.TransactionIndex, flipKickModel.LogIndex, flipKickModel.Raw,
+			headerID, flipKickModel.BidId, flipKickModel.Lot, flipKickModel.Bid, flipKickModel.Gal, flipKickModel.End, flipKickModel.Urn, flipKickModel.Tab, flipKickModel.TransactionIndex, flipKickModel.LogIndex, flipKickModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
 	}
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.FlipKickChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlipKickChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -55,14 +62,14 @@ func (fkr FlipKickRepository) Create(headerId int64, models []interface{}) error
 	return tx.Commit()
 }
 
-func (fkr FlipKickRepository) MarkHeaderChecked(headerId int64) error {
-	return shared.MarkHeaderChecked(headerId, fkr.db, constants.FlipKickChecked)
+func (repository FlipKickRepository) MarkHeaderChecked(headerId int64) error {
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.FlipKickChecked)
 }
 
-func (fkr FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, fkr.db, constants.FlipKickChecked)
+func (repository FlipKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.FlipKickChecked)
 }
 
-func (fkr *FlipKickRepository) SetDB(db *postgres.DB) {
-	fkr.db = db
+func (repository *FlipKickRepository) SetDB(db *postgres.DB) {
+	repository.db = db
 }

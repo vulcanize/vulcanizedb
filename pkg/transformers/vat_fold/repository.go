@@ -39,6 +39,12 @@ func (repository VatFoldRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatFoldModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, vatFold.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, log_idx, tx_idx, raw_log)
 				VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

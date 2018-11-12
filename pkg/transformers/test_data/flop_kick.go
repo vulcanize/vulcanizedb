@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flop_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
@@ -37,7 +38,7 @@ var (
 		BlockNumber: 19,
 		TxHash:      common.HexToHash("0xd8fd67b37a6aa64a3cef4937204765183b180d8dc92eecd0d233f445526d31b5"),
 		TxIndex:     flopTxIndex,
-		BlockHash:   common.HexToHash("0x7891fe725691abc5b94113dc2bfa8c3509e1e1d0e0bb74289e3b996c30d00c8c"),
+		BlockHash:   fakes.FakeHash,
 		Index:       32,
 		Removed:     false,
 	}

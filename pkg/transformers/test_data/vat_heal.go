@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_heal"
 )
@@ -35,7 +36,7 @@ var VatHealLog = types.Log{
 	BlockNumber: 10,
 	TxHash:      common.HexToHash("0x991b8079b1333024000dcaf2b00c24c5db0315e112a4ac4d912aa96a602e12b9"),
 	TxIndex:     2,
-	BlockHash:   common.HexToHash("0x0c54bdadb149691a103cfa5ad57329bda1e0fe55f1ba1ce5dd49dc1ecfe03daa"),
+	BlockHash:   fakes.FakeHash,
 	Index:       3,
 	Removed:     false,
 }

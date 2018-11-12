@@ -2,6 +2,7 @@ package common_test
 
 import (
 	"encoding/json"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -25,12 +26,13 @@ var _ = Describe("Block header converter", func() {
 			UncleHash:   common.HexToHash("0xUncle"),
 		}
 		converter := common2.HeaderConverter{}
+		hash := fakes.FakeHash.String()
 
-		coreHeader, err := converter.Convert(gethHeader)
+		coreHeader, err := converter.Convert(gethHeader, hash)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(coreHeader.BlockNumber).To(Equal(gethHeader.Number.Int64()))
-		Expect(coreHeader.Hash).To(Equal(gethHeader.Hash().Hex()))
+		Expect(coreHeader.Hash).To(Equal(hash))
 		Expect(coreHeader.Timestamp).To(Equal(gethHeader.Time.String()))
 	})
 
@@ -38,7 +40,7 @@ var _ = Describe("Block header converter", func() {
 		gethHeader := types.Header{Number: big.NewInt(123)}
 		converter := common2.HeaderConverter{}
 
-		coreHeader, err := converter.Convert(&gethHeader)
+		coreHeader, err := converter.Convert(&gethHeader, fakes.FakeHash.String())
 
 		Expect(err).NotTo(HaveOccurred())
 		expectedJSON, err := json.Marshal(gethHeader)

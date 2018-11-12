@@ -19,13 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
 var (
-	TemporaryFrobBlockHash   = common.HexToHash("0x67ae45eace52de052a0fc58598974b101733f823fc191329ace7aded9a72b84b")
 	TemporaryFrobBlockNumber = int64(13)
 	TemporaryFrobData        = "0x000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000019"
 	TemporaryFrobTransaction = "0xbcff98316acb5732891d1a7e02f23ec12fbf8c231ca4b5530fa7a21c1e9b6aa9"
@@ -38,7 +38,6 @@ var (
 	dart          = big.NewInt(0).SetBytes([]byte{0})
 	iArt          = big.NewInt(25)
 	frobLad       = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 217, 34, 137, 65, 83, 190, 158, 239, 123, 114, 24, 220, 86, 93, 29, 12, 226, 160, 146}
-	gem, _        = big.NewInt(0).SetString("115792089237316195423570985008687907853269984665640564039457584007913129639926", 10)
 	ink           = big.NewInt(15)
 	ilk           = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	frobIlkString = "fake ilk"
@@ -56,7 +55,7 @@ var EthFrobLog = types.Log{
 	BlockNumber: uint64(TemporaryFrobBlockNumber),
 	TxHash:      common.HexToHash(TemporaryFrobTransaction),
 	TxIndex:     123,
-	BlockHash:   TemporaryFrobBlockHash,
+	BlockHash:   fakes.FakeHash,
 	Index:       7,
 	Removed:     false,
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flap_kick"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
@@ -21,7 +22,7 @@ var EthFlapKickLog = types.Log{
 	BlockNumber: 65,
 	TxHash:      common.HexToHash("0xee7930b76b6e93974bd3f37824644ae42a89a3887a1131a7bcb3267ab4dc0169"),
 	TxIndex:     66,
-	BlockHash:   common.HexToHash("0x051525dfb9a524739ae09ec240ecd5ddbc172ccdc2f65670786fa9f37806c378"),
+	BlockHash:   fakes.FakeHash,
 	Index:       67,
 	Removed:     false,
 }

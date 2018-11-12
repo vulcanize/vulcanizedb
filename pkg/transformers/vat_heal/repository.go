@@ -31,7 +31,7 @@ func (repository *VatHealRepository) SetDB(db *postgres.DB) {
 	repository.db = db
 }
 
-func (repository VatHealRepository) Create(headerId int64, models []interface{}) error {
+func (repository VatHealRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -43,16 +43,23 @@ func (repository VatHealRepository) Create(headerId int64, models []interface{})
 			tx.Rollback()
 			return fmt.Errorf("model of type %T, not %T", model, VatHealModel{})
 		}
+
+		err = shared.ValidateHeaderConsistency(headerID, vatHeal.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err := tx.Exec(`INSERT INTO maker.vat_heal (header_id, urn, v, rad, log_idx, tx_idx, raw_log)
 		VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerId, vatHeal.Urn, vatHeal.V, vatHeal.Rad, vatHeal.LogIndex, vatHeal.TransactionIndex, vatHeal.Raw)
+			headerID, vatHeal.Urn, vatHeal.V, vatHeal.Rad, vatHeal.LogIndex, vatHeal.TransactionIndex, vatHeal.Raw)
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.VatHealChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatHealChecked)
 	if err != nil {
 		tx.Rollback()
 		return err

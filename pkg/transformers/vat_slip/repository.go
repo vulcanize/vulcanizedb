@@ -24,6 +24,12 @@ func (repository VatSlipRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatSlipModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, vatSlip.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.vat_slip (header_id, ilk, guy, rad, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

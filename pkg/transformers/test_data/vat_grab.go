@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_grab"
 )
@@ -21,7 +22,7 @@ var EthVatGrabLog = types.Log{
 	BlockNumber: 23,
 	TxHash:      common.HexToHash("0x7cb84c750ce4985f7811abf641d52ffcb35306d943081475226484cf1470c6fa"),
 	TxIndex:     4,
-	BlockHash:   common.HexToHash("0xf5a367d560e14c4658ef85e4877e08b5560a4773b69b39f6b8025910b666fade"),
+	BlockHash:   fakes.FakeHash,
 	Index:       5,
 	Removed:     false,
 }

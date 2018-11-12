@@ -26,7 +26,7 @@ type FlopKickRepository struct {
 	db *postgres.DB
 }
 
-func (repository FlopKickRepository) Create(headerId int64, models []interface{}) error {
+func (repository FlopKickRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -37,10 +37,17 @@ func (repository FlopKickRepository) Create(headerId int64, models []interface{}
 		if !ok {
 			return fmt.Errorf("model of type %T, not %T", flopKick, Model{})
 		}
+
+		err = shared.ValidateHeaderConsistency(headerID, flopKickModel.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.flop_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
-			headerId, flopKickModel.BidId, flopKickModel.Lot, flopKickModel.Bid, flopKickModel.Gal, flopKickModel.End, flopKickModel.TransactionIndex, flopKickModel.LogIndex, flopKickModel.Raw,
+			headerID, flopKickModel.BidId, flopKickModel.Lot, flopKickModel.Bid, flopKickModel.Gal, flopKickModel.End, flopKickModel.TransactionIndex, flopKickModel.LogIndex, flopKickModel.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -48,7 +55,7 @@ func (repository FlopKickRepository) Create(headerId int64, models []interface{}
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.FlopKickChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlopKickChecked)
 	if err != nil {
 		tx.Rollback()
 		return err

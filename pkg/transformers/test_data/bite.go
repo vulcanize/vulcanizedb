@@ -19,13 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
 var (
-	TemporaryBiteBlockHash   = common.HexToHash("0xd130caaccc9203ca63eb149faeb013aed21f0317ce23489c0486da2f9adcd0eb")
 	TemporaryBiteBlockNumber = int64(26)
 	TemporaryBiteData        = "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000005"
 	TemporaryBiteTransaction = "0x5c698f13940a2153440c6d19660878bc90219d9298fdcf37365aa8d88d40fc42"
@@ -38,7 +38,6 @@ var (
 	biteFlip       = big.NewInt(4)
 	biteIArt       = big.NewInt(5)
 	biteRawJson, _ = json.Marshal(EthBiteLog)
-	biteRawString  = string(biteRawJson)
 	biteIlk        = [32]byte{69, 84, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	biteLad        = [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 216, 180, 20, 126, 218, 128, 254, 199, 18, 42, 225, 109, 162, 71, 156, 189, 127, 251}
 	biteIlkString  = "ETH"
@@ -56,7 +55,7 @@ var EthBiteLog = types.Log{
 	BlockNumber: uint64(TemporaryBiteBlockNumber),
 	TxHash:      common.HexToHash(TemporaryBiteTransaction),
 	TxIndex:     111,
-	BlockHash:   TemporaryBiteBlockHash,
+	BlockHash:   fakes.FakeHash,
 	Index:       7,
 	Removed:     false,
 }
@@ -84,5 +83,5 @@ var BiteModel = bite.BiteModel{
 	NFlip:            biteFlip.String(),
 	LogIndex:         EthBiteLog.Index,
 	TransactionIndex: EthBiteLog.TxIndex,
-	Raw:              biteRawString,
+	Raw:              biteRawJson,
 }

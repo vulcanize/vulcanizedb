@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 )
@@ -24,7 +25,7 @@ var EthVatTuneLog = types.Log{
 	BlockNumber: 8761670,
 	TxHash:      common.HexToHash("0x95eb3d6cbd83032efa29714d4a391ce163d7d215db668aadd7d33dd5c20b1ec7"),
 	TxIndex:     0,
-	BlockHash:   common.HexToHash("0xd35188df40a741f4bf4ccacc6be0154e338652660d0b56cc9058c1bca53b09ee"),
+	BlockHash:   fakes.FakeHash,
 	Index:       6,
 	Removed:     false,
 }

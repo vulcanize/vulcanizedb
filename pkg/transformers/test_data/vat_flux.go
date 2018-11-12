@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 )
@@ -37,7 +38,7 @@ var VatFluxLog = types.Log{
 	BlockNumber: 23,
 	TxHash:      common.HexToHash("0xf98681bab9b8c75bd8aa4a7d0a8142ff527c5ea8fa54f3c2835d4533838b2e6f"),
 	TxIndex:     0,
-	BlockHash:   common.HexToHash("0xc3fe212ad4f81ade1265af6de2b4bb50d962b1a4db06aabc982e7f9cb0972c2d"),
+	BlockHash:   fakes.FakeHash,
 	Index:       3,
 	Removed:     false,
 }

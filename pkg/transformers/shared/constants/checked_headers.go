@@ -20,7 +20,7 @@ var (
 	PitFileStabilityFeeChecked = "pit_file_stability_fee_checked"
 	PriceFeedsChecked          = "price_feeds_checked"
 	TendChecked                = "tend_checked"
-  VatFluxChecked             = "vat_flux_checked"
+	VatFluxChecked             = "vat_flux_checked"
 	VatFoldChecked             = "vat_fold_checked"
 	VatGrabChecked             = "vat_grab_checked"
 	VatHealChecked             = "vat_heal_checked"

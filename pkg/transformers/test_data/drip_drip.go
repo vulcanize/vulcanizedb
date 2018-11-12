@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
@@ -35,7 +36,7 @@ var EthDripDripLog = types.Log{
 	BlockNumber: 62,
 	TxHash:      common.HexToHash("0xa34fd5cfcb125ebfc81d33633495701b531753669712092bdb8aa6159a240040"),
 	TxIndex:     10,
-	BlockHash:   common.HexToHash("0x7a2aa72468986774d90dc8c80d436956a5b6a7e5acea430fb8a79f9217ef00a3"),
+	BlockHash:   fakes.FakeHash,
 	Index:       11,
 	Removed:     false,
 }

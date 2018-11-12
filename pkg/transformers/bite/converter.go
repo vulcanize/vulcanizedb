@@ -73,8 +73,7 @@ func (converter BiteConverter) ToModels(entities []interface{}) ([]interface{}, 
 		flip := biteEntity.Flip
 		logIdx := biteEntity.LogIndex
 		txIdx := biteEntity.TransactionIndex
-		rawLogJson, err := json.Marshal(biteEntity.Raw)
-		rawLogString := string(rawLogJson)
+		rawLog, err := json.Marshal(biteEntity.Raw)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +88,7 @@ func (converter BiteConverter) ToModels(entities []interface{}) ([]interface{}, 
 			NFlip:            shared.BigIntToString(flip),
 			LogIndex:         logIdx,
 			TransactionIndex: txIdx,
-			Raw:              rawLogString,
+			Raw:              rawLog,
 		}
 		models = append(models, model)
 	}

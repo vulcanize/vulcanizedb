@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
@@ -36,7 +37,7 @@ var EthPriceFeedLog = types.Log{
 	BlockNumber: blockNumber,
 	TxHash:      common.HexToHash("0xa51a50a2adbfba4e2ab3d72dfd67a21c769f1bc8d2b180663a15500a56cde58f"),
 	TxIndex:     txIndex,
-	BlockHash:   common.HexToHash("0x27ecebbf69eefa3bb3cf65f472322a80ff4946653a50a2171dc605f49829467d"),
+	BlockHash:   fakes.FakeHash,
 	Index:       8,
 	Removed:     false,
 }

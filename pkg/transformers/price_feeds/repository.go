@@ -38,6 +38,12 @@ func (repository PriceFeedRepository) Create(headerID int64, models []interface{
 			return fmt.Errorf("model of type %T, not %T", model, PriceFeedModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, priceUpdate.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, log_idx, tx_idx, raw_log)
 		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`, priceUpdate.BlockNumber, headerID, priceUpdate.MedianizerAddress, priceUpdate.UsdValue, priceUpdate.LogIndex, priceUpdate.TransactionIndex, priceUpdate.Raw)
 		if err != nil {

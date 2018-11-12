@@ -26,7 +26,7 @@ type VatFluxRepository struct {
 	db *postgres.DB
 }
 
-func (repository VatFluxRepository) Create(headerId int64, models []interface{}) error {
+func (repository VatFluxRepository) Create(headerID int64, models []interface{}) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -39,16 +39,22 @@ func (repository VatFluxRepository) Create(headerId int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatFluxModel{})
 		}
 
-		_, err := tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, log_idx, raw_log)
+		err = shared.ValidateHeaderConsistency(headerID, vatFlux.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		_, err = tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, log_idx, raw_log)
 		VALUES($1, $2, $3, $4, $5::NUMERIC, $6, $7, $8)`,
-			headerId, vatFlux.Ilk, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)
+			headerID, vatFlux.Ilk, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.VatFluxChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatFluxChecked)
 	if err != nil {
 		tx.Rollback()
 		return err

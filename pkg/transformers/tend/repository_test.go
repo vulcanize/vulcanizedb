@@ -78,7 +78,7 @@ var _ = Describe("TendRepository", func() {
 			Expect(dbResult.Tic).To(Equal(test_data.TendModel.Tic))
 			Expect(dbResult.LogIndex).To(Equal(test_data.TendModel.LogIndex))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.TendModel.TransactionIndex))
-			Expect(dbResult.Raw).To(MatchJSON(test_data.RawLogNoteJson))
+			Expect(dbResult.Raw).To(MatchJSON(test_data.TendModel.Raw))
 		})
 
 	})

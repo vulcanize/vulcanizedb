@@ -26,8 +26,8 @@ type DentRepository struct {
 	db *postgres.DB
 }
 
-func (r DentRepository) Create(headerId int64, models []interface{}) error {
-	tx, err := r.db.Begin()
+func (repository DentRepository) Create(headerID int64, models []interface{}) error {
+	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -39,10 +39,16 @@ func (r DentRepository) Create(headerId int64, models []interface{}) error {
 			return fmt.Errorf("model of type %T, not %T", model, DentModel{})
 		}
 
+		err = shared.ValidateHeaderConsistency(headerID, dent.Raw, repository.db)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		_, err = tx.Exec(
 			`INSERT into maker.dent (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
 			VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-			headerId, dent.BidId, dent.Lot, dent.Bid, dent.Guy, dent.Tic, dent.LogIndex, dent.TransactionIndex, dent.Raw,
+			headerID, dent.BidId, dent.Lot, dent.Bid, dent.Guy, dent.Tic, dent.LogIndex, dent.TransactionIndex, dent.Raw,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -50,7 +56,7 @@ func (r DentRepository) Create(headerId int64, models []interface{}) error {
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerId, tx, constants.DentChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DentChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -58,12 +64,12 @@ func (r DentRepository) Create(headerId int64, models []interface{}) error {
 	return tx.Commit()
 }
 
-func (r DentRepository) MarkHeaderChecked(headerId int64) error {
-	return shared.MarkHeaderChecked(headerId, r.db, constants.DentChecked)
+func (repository DentRepository) MarkHeaderChecked(headerId int64) error {
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.DentChecked)
 }
 
-func (r DentRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, r.db, constants.DentChecked)
+func (repository DentRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DentChecked)
 }
 
 func (repository *DentRepository) SetDB(db *postgres.DB) {
