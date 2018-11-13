@@ -28,6 +28,7 @@ describe('bootServer', () => {
       options: { 
         pluginHook: jasmine.createSpy('pluginHook'),
         watchPg: true,
+        enableCors: true,
         simpleSubscriptions: true,
         graphiql: true,
         webSocketMiddlewares: [] },

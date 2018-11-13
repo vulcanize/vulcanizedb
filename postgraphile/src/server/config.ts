@@ -28,6 +28,7 @@ export function buildServerConfig(
     pluginHook: pluginHook,
     simpleSubscriptions: true,
     watchPg: true,
+    enableCors: true,
     graphiql: true,
     webSocketMiddlewares: [
       expressSessionHandler,
