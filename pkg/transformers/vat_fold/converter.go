@@ -20,6 +20,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
@@ -35,7 +36,7 @@ func (VatFoldConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 
 		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
 		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()).String()
-		rate := ethLog.Topics[3].Big().String()
+		rate := shared.ConvertToRay(ethLog.Topics[3].Big().String())
 		raw, err := json.Marshal(ethLog)
 
 		if err != nil {
