@@ -12,6 +12,7 @@ export interface PostgraphileOptions {
   pluginHook: PluginHookFn,
   simpleSubscriptions: boolean;
   watchPg: boolean;
+  enableCors: boolean;
   graphiql: boolean;
   // NOTE (jchristie@8thlight.com) Shape of the middlewares is not
   // currently important to this application, but if a need arises,
