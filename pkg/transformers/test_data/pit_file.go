@@ -25,6 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
@@ -48,7 +49,7 @@ var EthPitFileDebtCeilingLog = types.Log{
 var rawPitFileDebtCeilingLog, _ = json.Marshal(EthPitFileDebtCeilingLog)
 var PitFileDebtCeilingModel = debt_ceiling.PitFileDebtCeilingModel{
 	What:             "Line",
-	Data:             big.NewInt(123456).String(),
+	Data:             shared.ConvertToWad(big.NewInt(123456).String()),
 	LogIndex:         EthPitFileDebtCeilingLog.Index,
 	TransactionIndex: EthPitFileDebtCeilingLog.TxIndex,
 	Raw:              rawPitFileDebtCeilingLog,
