@@ -16,16 +16,15 @@ package test_data
 
 import (
 	"encoding/json"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
@@ -80,30 +79,4 @@ var PitFileIlkModel = ilk2.PitFileIlkModel{
 	LogIndex:         EthPitFileIlkLog.Index,
 	TransactionIndex: EthPitFileIlkLog.TxIndex,
 	Raw:              rawPitFileIlkLog,
-}
-
-var EthPitFileStabilityFeeLog = types.Log{
-	Address: common.HexToAddress("0x6b59c42097e2Fff7cad96cb08cEeFd601081aD9c"),
-	Topics: []common.Hash{
-		common.HexToHash("0xd4e8be8300000000000000000000000000000000000000000000000000000000"),
-		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
-		common.HexToHash("0x6472697000000000000000000000000000000000000000000000000000000000"),
-		common.HexToHash("0x0000000000000000000000008e84a1e068d77059cbe263c43ad0cdc130863313"),
-	},
-	Data:        hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000044d4e8be8364726970000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-	BlockNumber: 12,
-	TxHash:      common.HexToHash("0x78cdc62316ccf8e31515d09745cc724f557569f01a557d0d09b1066bf7079fd2"),
-	TxIndex:     222,
-	BlockHash:   fakes.FakeHash,
-	Index:       13,
-	Removed:     false,
-}
-
-var rawPitFileStabilityFeeLog, _ = json.Marshal(EthPitFileStabilityFeeLog)
-var PitFileStabilityFeeModel = stability_fee.PitFileStabilityFeeModel{
-	What:             "drip",
-	Data:             "0x8E84a1e068d77059Cbe263C43AD0cDc130863313",
-	LogIndex:         EthPitFileStabilityFeeLog.Index,
-	TransactionIndex: EthPitFileStabilityFeeLog.TxIndex,
-	Raw:              rawPitFileStabilityFeeLog,
 }

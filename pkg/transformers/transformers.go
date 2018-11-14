@@ -32,7 +32,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/stability_fee"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
@@ -168,13 +167,6 @@ var (
 		Fetcher:    &shared.Fetcher{},
 	}.NewLogNoteTransformer
 
-	PitFileStabilityFeeTransformerInitializer = factories.LogNoteTransformer{
-		Config:     stability_fee.StabilityFeeFileConfig,
-		Converter:  &stability_fee.PitFileStabilityFeeConverter{},
-		Repository: &stability_fee.PitFileStabilityFeeRepository{},
-		Fetcher:    &shared.Fetcher{},
-	}.NewLogNoteTransformer
-
 	PriceFeedTransformerInitializer = factories.LogNoteTransformer{
 		Config:     price_feeds.PriceFeedConfig,
 		Converter:  &price_feeds.PriceFeedConverter{},
@@ -272,7 +264,6 @@ func TransformerInitializers() []shared.TransformerInitializer {
 		FrobTransformerInitializer,
 		PitFileDebtCeilingTransformerInitializer,
 		PitFileIlkTransformerInitializer,
-		PitFileStabilityFeeTransformerInitializer,
 		PriceFeedTransformerInitializer,
 		TendTransformerInitializer,
 		VatGrabTransformerInitializer,

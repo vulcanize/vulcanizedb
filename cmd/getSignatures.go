@@ -50,7 +50,6 @@ func getSignatures() {
 	signatures["LogValueSignature"] = constants.LogValueSignature
 	signatures["PitFileDebtCeilingSignature"] = constants.PitFileDebtCeilingSignature
 	signatures["PitFileIlkSignature"] = constants.PitFileIlkSignature
-	signatures["PitFileStabilityFeeSignature"] = constants.PitFileStabilityFeeSignature
 	signatures["TendFunctionSignature"] = constants.TendFunctionSignature
 	signatures["VatFluxSignature"] = constants.VatFluxSignature
 	signatures["VatFoldSignature"] = constants.VatFoldSignature

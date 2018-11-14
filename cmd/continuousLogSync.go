@@ -108,7 +108,6 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	transformerInitializerMap[constants.FrobLabel] = transformers.FrobTransformerInitializer
 	transformerInitializerMap[constants.PitFileDebtCeilingLabel] = transformers.PitFileDebtCeilingTransformerInitializer
 	transformerInitializerMap[constants.PitFileIlkLabel] = transformers.PitFileIlkTransformerInitializer
-	transformerInitializerMap[constants.PitFileStabilityFeeLabel] = transformers.PitFileStabilityFeeTransformerInitializer
 	transformerInitializerMap[constants.PriceFeedLabel] = transformers.PriceFeedTransformerInitializer
 	transformerInitializerMap[constants.TendLabel] = transformers.TendTransformerInitializer
 	transformerInitializerMap[constants.VatFluxLabel] = transformers.VatFluxTransformerInitializer
