@@ -22,6 +22,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
@@ -36,8 +37,11 @@ func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) 
 		}
 		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
 		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
-		riskBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
-		risk := big.NewInt(0).SetBytes(riskBytes).String()
+		dataBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
+		data, err := getData(dataBytes, what)
+		if err != nil {
+			return nil, err
+		}
 
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
@@ -46,7 +50,7 @@ func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) 
 		model := PitFileIlkModel{
 			Ilk:              ilk,
 			What:             what,
-			Data:             risk,
+			Data:             data,
 			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,
 			Raw:              raw,
@@ -54,6 +58,17 @@ func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) 
 		models = append(models, model)
 	}
 	return models, nil
+}
+
+func getData(dataBytes []byte, what string) (string, error) {
+	n := big.NewInt(0).SetBytes(dataBytes).String()
+	if what == "spot" {
+		return shared.ConvertToRay(n), nil
+	} else if what == "line" {
+		return shared.ConvertToWad(n), nil
+	} else {
+		return "", errors.New("unexpected payload for 'what'")
+	}
 }
 
 func verifyLog(log types.Log) error {
