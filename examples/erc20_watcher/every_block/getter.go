@@ -1,23 +1,25 @@
-// Copyright 2018 Vulcanize
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy og the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS Og ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package every_block
 
 import (
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -33,13 +35,13 @@ type ERC20GetterInterface interface {
 
 // Getter struct
 type ERC20Getter struct {
-	fetcher generic.Fetcher
+	generic.Fetcher
 }
 
 // Initializes and returns a Getter with the given blockchain
 func NewGetter(blockChain core.BlockChain) ERC20Getter {
 	return ERC20Getter{
-		fetcher: generic.Fetcher{
+		Fetcher: generic.Fetcher{
 			BlockChain: blockChain,
 		},
 	}
@@ -47,18 +49,18 @@ func NewGetter(blockChain core.BlockChain) ERC20Getter {
 
 // Public getter methods for calling contract methods
 func (g ERC20Getter) GetTotalSupply(contractAbi, contractAddress string, blockNumber int64) (big.Int, error) {
-	return g.fetcher.FetchBigInt("totalSupply", contractAbi, contractAddress, blockNumber, nil)
+	return g.Fetcher.FetchBigInt("totalSupply", contractAbi, contractAddress, blockNumber, nil)
 }
 
 func (g ERC20Getter) GetBalance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
-	return g.fetcher.FetchBigInt("balanceOf", contractAbi, contractAddress, blockNumber, methodArgs)
+	return g.Fetcher.FetchBigInt("balanceOf", contractAbi, contractAddress, blockNumber, methodArgs)
 }
 
 func (g ERC20Getter) GetAllowance(contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (big.Int, error) {
-	return g.fetcher.FetchBigInt("allowance", contractAbi, contractAddress, blockNumber, methodArgs)
+	return g.Fetcher.FetchBigInt("allowance", contractAbi, contractAddress, blockNumber, methodArgs)
 }
 
 // Method to retrieve the Getter's blockchain
 func (g ERC20Getter) GetBlockChain() core.BlockChain {
-	return g.fetcher.BlockChain
+	return g.Fetcher.BlockChain
 }
