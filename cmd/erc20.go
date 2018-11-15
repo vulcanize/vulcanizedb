@@ -20,20 +20,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered/dai"
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
+	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // erc20Cmd represents the erc20 command
@@ -62,25 +56,14 @@ Expects an ethereum node to be running and requires a .toml config file:
 func watchERC20s() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
-	db, err := postgres.NewDB(databaseConfig, blockChain.Node())
-	if err != nil {
-		log.Fatal("Failed to initialize database.")
-	}
+
+	blockChain := getBlockChain()
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
 	con := generic.DaiConfig
 	con.Filters = constants.DaiERC20Filters
 	watcher := shared.Watcher{
-		DB:         *db,
+		DB:         db,
 		Blockchain: blockChain,
 	}
 
@@ -89,7 +72,7 @@ func watchERC20s() {
 	// collect balances and allowances at every block
 	transformers := append(dai.DaiEventTriggeredTransformerInitializer(), every_block.ERC20EveryBlockTransformerInitializer()...)
 
-	err = watcher.AddTransformers(transformers, con)
+	err := watcher.AddTransformers(transformers, con)
 	if err != nil {
 		log.Fatal(err)
 	}

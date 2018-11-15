@@ -41,6 +41,7 @@ var _ = Describe("Creating contracts", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		contractRepository = repositories.ContractRepository{DB: db}
 	})
 

@@ -47,6 +47,7 @@ func NewEventDataStore(db *postgres.DB) *eventDatastore {
 // Creates a schema for the contract
 // Creates tables for the watched contract events
 // Persists converted event log data into these custom tables
+// Edit this method to accept a single event
 func (d *eventDatastore) PersistContractEvents(con *contract.Contract) error {
 	_, err := d.CreateContractSchema(con.Address)
 	if err != nil {

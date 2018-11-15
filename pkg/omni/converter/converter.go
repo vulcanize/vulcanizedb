@@ -74,26 +74,26 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) 
 
 	strValues := make(map[string]string, len(values))
 
-	for eventName, input := range values {
+	for fieldName, input := range values {
 		// Postgres cannot handle custom types, resolve to strings
 		switch input.(type) {
 		case *big.Int:
 			var b *big.Int
 			b = input.(*big.Int)
-			strValues[eventName] = b.String()
+			strValues[fieldName] = b.String()
 		case common.Address:
 			var a common.Address
 			a = input.(common.Address)
-			strValues[eventName] = a.String()
+			strValues[fieldName] = a.String()
 			c.contractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
 		case common.Hash:
 			var h common.Hash
 			h = input.(common.Hash)
-			strValues[eventName] = h.String()
+			strValues[fieldName] = h.String()
 		case string:
-			strValues[eventName] = input.(string)
+			strValues[fieldName] = input.(string)
 		case bool:
-			strValues[eventName] = strconv.FormatBool(input.(bool))
+			strValues[fieldName] = strconv.FormatBool(input.(bool))
 		default:
 			return errors.New("error: unhandled abi type")
 		}

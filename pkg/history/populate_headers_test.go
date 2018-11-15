@@ -34,17 +34,15 @@ var _ = Describe("Populating headers", func() {
 		headerRepository = fakes.NewMockHeaderRepository()
 	})
 
-	Describe("When 1 missing header", func() {
+	It("returns number of headers added", func() {
+		blockChain := fakes.NewMockBlockChain()
+		blockChain.SetLastBlock(big.NewInt(2))
+		headerRepository.SetMissingBlockNumbers([]int64{2})
 
-		It("returns number of headers added", func() {
-			blockChain := fakes.NewMockBlockChain()
-			blockChain.SetLastBlock(big.NewInt(2))
-			headerRepository.SetMissingBlockNumbers([]int64{2})
+		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
-			headersAdded := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
-
-			Expect(headersAdded).To(Equal(1))
-		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(headersAdded).To(Equal(1))
 	})
 
 	It("adds missing headers to the db", func() {
@@ -52,8 +50,9 @@ var _ = Describe("Populating headers", func() {
 		blockChain.SetLastBlock(big.NewInt(2))
 		headerRepository.SetMissingBlockNumbers([]int64{2})
 
-		history.PopulateMissingHeaders(blockChain, headerRepository, 1)
+		_, err := history.PopulateMissingHeaders(blockChain, headerRepository, 1)
 
+		Expect(err).NotTo(HaveOccurred())
 		headerRepository.AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(1, []int64{2})
 	})
 })
