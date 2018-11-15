@@ -17,11 +17,11 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -61,7 +61,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
-		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot, tic from maker.tend`)
+		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot FROM maker.tend`)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
@@ -69,7 +69,13 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(dbResult[0].BidId).To(Equal("3"))
 		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
-		Expect(dbResult[0].Tic).To(Equal("0"))
+
+		var dbTic int64
+		err = db.Get(&dbTic, `SELECT tic FROM maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		actualTic := 1538490276 + constants.TTL
+		Expect(dbTic).To(Equal(actualTic))
 	})
 
 	It("fetches and transforms a subsequent Flip Tend event from Kovan chain for the same auction", func() {
@@ -92,7 +98,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
-		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot, tic from maker.tend`)
+		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot from maker.tend`)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
@@ -100,7 +106,13 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(dbResult[0].BidId).To(Equal("3"))
 		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
-		Expect(dbResult[0].Tic).To(Equal("0"))
+
+		var dbTic int64
+		err = db.Get(&dbTic, `SELECT tic FROM maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		actualTic := 1538491224 + constants.TTL
+		Expect(dbTic).To(Equal(actualTic))
 	})
 
 	It("fetches and transforms a Flap Tend event from the Kovan chain", func() {
@@ -123,7 +135,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
-		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot, tic from maker.tend`)
+		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot from maker.tend`)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
@@ -131,6 +143,12 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(dbResult[0].BidId).To(Equal("1"))
 		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
-		Expect(dbResult[0].Tic).To(Equal("0"))
+
+		var dbTic int64
+		err = db.Get(&dbTic, `SELECT tic FROM maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		actualTic := 1538992860 + constants.TTL
+		Expect(dbTic).To(Equal(actualTic))
 	})
 })

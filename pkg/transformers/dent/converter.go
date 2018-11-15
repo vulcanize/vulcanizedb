@@ -40,9 +40,6 @@ func (c DentConverter) ToModels(ethLogs []types.Log) (result []interface{}, err 
 		lot := log.Topics[3].Big().String()
 		bidValue := getBidValue(log)
 		guy := common.HexToAddress(log.Topics[1].Hex()).String()
-		tic := "0"
-		//TODO: it is likely that the tic value will need to be added to an emitted event,
-		//so this will need to be updated at that point
 
 		logIndex := log.Index
 		transactionIndex := log.TxIndex
@@ -57,7 +54,6 @@ func (c DentConverter) ToModels(ethLogs []types.Log) (result []interface{}, err 
 			Lot:              lot,
 			Bid:              bidValue,
 			Guy:              guy,
-			Tic:              tic,
 			LogIndex:         logIndex,
 			TransactionIndex: transactionIndex,
 			Raw:              raw,

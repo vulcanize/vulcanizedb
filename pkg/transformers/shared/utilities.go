@@ -15,6 +15,7 @@
 package shared
 
 import (
+	"database/sql"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
@@ -77,4 +78,16 @@ func convert(conversion string, value string, precision int) string {
 		result.Quo(bigFloat, wadBase)
 	}
 	return result.Text('f', precision)
+}
+
+// Grabs the block timestamp for an headerID, and adds the TTL constant
+func GetTicInTx(headerID int64, tx *sql.Tx) (int64, error) {
+	var blockTimestamp int64
+	err := tx.QueryRow(`SELECT block_timestamp FROM public.headers WHERE id = $1;`, headerID).Scan(&blockTimestamp)
+	if err != nil {
+		return 0, err
+	}
+
+	tic := blockTimestamp + constants.TTL
+	return tic, nil
 }

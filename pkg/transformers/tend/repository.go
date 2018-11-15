@@ -32,6 +32,11 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 		return err
 	}
 
+	tic, err := shared.GetTicInTx(headerID, tx)
+	if err != nil {
+		return err
+	}
+
 	for _, model := range models {
 		tend, ok := model.(TendModel)
 		if !ok {
@@ -47,8 +52,8 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 
 		_, err = tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
-        	VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9)`,
-			headerID, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tend.Tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
+			VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
+			headerID, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
 		)
 
 		if err != nil {

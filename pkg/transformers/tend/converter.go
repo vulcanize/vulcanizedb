@@ -40,9 +40,6 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 		lastItem := ethLog.Data[lastDataItemStartIndex:]
 		last := big.NewInt(0).SetBytes(lastItem)
 		bidValue := last.String()
-		tic := "0"
-		//TODO: it is likely that the tic value will need to be added to an emitted event,
-		//so this will need to be updated at that point
 		transactionIndex := ethLog.TxIndex
 		logIndex := ethLog.Index
 
@@ -56,7 +53,6 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 			Lot:              lot,
 			Bid:              bidValue,
 			Guy:              guy,
-			Tic:              tic,
 			LogIndex:         logIndex,
 			TransactionIndex: transactionIndex,
 			Raw:              rawLog,

@@ -68,19 +68,22 @@ var _ = Describe("TendRepository", func() {
 			Expect(count).To(Equal(1))
 
 			dbResult := tend.TendModel{}
-			err = db.Get(&dbResult, `SELECT bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log FROM maker.tend WHERE header_id = $1`, headerID)
+			err = db.Get(&dbResult, `SELECT bid_id, lot, bid, guy, log_idx, tx_idx, raw_log FROM maker.tend WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(dbResult.BidId).To(Equal(test_data.TendModel.BidId))
 			Expect(dbResult.Lot).To(Equal(test_data.TendModel.Lot))
 			Expect(dbResult.Bid).To(Equal(test_data.TendModel.Bid))
 			Expect(dbResult.Guy).To(Equal(test_data.TendModel.Guy))
-			Expect(dbResult.Tic).To(Equal(test_data.TendModel.Tic))
 			Expect(dbResult.LogIndex).To(Equal(test_data.TendModel.LogIndex))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.TendModel.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.TendModel.Raw))
-		})
 
+			var dbTic int64
+			err = db.Get(&dbTic, `SELECT tic FROM maker.tend WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTic).To(Equal(fakes.FakeHeaderTic))
+		})
 	})
 
 	Describe("MarkHeaderChecked", func() {
