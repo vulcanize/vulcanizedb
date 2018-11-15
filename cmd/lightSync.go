@@ -14,6 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Copyright © 2018 Vulcanize
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cmd
 
 import (
@@ -21,17 +35,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -42,16 +51,12 @@ var lightSyncCmd = &cobra.Command{
 	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
 Postgres with block headers.
-
 ./vulcanizedb lightSync --starting-block-number 0 --config public.toml
-
 Expects ethereum node to be running and requires a .toml config:
-
   [database]
   name = "vulcanize_public"
   hostname = "localhost"
   port = 5432
-
   [client]
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
@@ -66,32 +71,20 @@ func init() {
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	missingBlocksPopulated <- history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
+	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
+	if err != nil {
+		log.Fatal("Error populating headers: ", err)
+	}
+	missingBlocksPopulated <- populated
 }
 
 func lightSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	client := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(client)
-	blockChain := geth.NewBlockChain(client, node, transactionConverter)
-
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
-		log.Fatal("geth initial: state sync not finished")
-	}
-	if startingBlockNumber > lastBlock {
-		log.Fatal("starting block number > current block number")
-	}
-
+	blockChain := getBlockChain()
+	validateArgs(blockChain)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
 	headerRepository := repositories.NewHeaderRepository(&db)
 	validator := history.NewHeaderValidator(blockChain, headerRepository, validationWindow)
 	missingBlocksPopulated := make(chan int)
@@ -105,5 +98,15 @@ func lightSync() {
 		case <-missingBlocksPopulated:
 			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
+	}
+}
+
+func validateArgs(blockChain *geth.BlockChain) {
+	lastBlock := blockChain.LastBlock().Int64()
+	if lastBlock == 0 {
+		log.Fatal("geth initial: state sync not finished")
+	}
+	if startingBlockNumber > lastBlock {
+		log.Fatal("starting block number > current block number")
 	}
 }

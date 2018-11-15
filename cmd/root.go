@@ -18,12 +18,20 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
 var (
@@ -108,4 +116,18 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
 	}
+}
+
+func getBlockChain() *geth.BlockChain {
+	rawRpcClient, err := rpc.Dial(ipc)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
+	ethClient := ethclient.NewClient(rawRpcClient)
+	vdbEthClient := client.NewEthClient(ethClient)
+	vdbNode := node.MakeNode(rpcClient)
+	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	return geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }

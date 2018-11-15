@@ -39,6 +39,7 @@ var _ = Describe("Log Filters Repository", func() {
 			ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 		}
 		db = test_config.NewTestDB(node)
+		test_config.CleanTestDB(db)
 		filterRepository = repositories.FilterRepository{DB: db}
 	})
 

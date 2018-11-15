@@ -75,7 +75,7 @@ func SetupBC() core.BlockChain {
 	blockChainClient := client.NewEthClient(ethClient)
 	node := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 	return blockChain
 }
@@ -89,7 +89,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	blockChainClient := client.NewEthClient(ethClient)
 	node := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
