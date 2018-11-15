@@ -17,7 +17,6 @@ var (
 	FrobLabel                = "frob"
 	PitFileDebtCeilingLabel  = "pitFileDebtCeiling"
 	PitFileIlkLabel          = "pitFileIlk"
-	PitFileStabilityFeeLabel = "pitFileStabilityFee"
 	PriceFeedLabel           = "priceFeed"
 	TendLabel                = "tend"
 	VatFluxLabel             = "vatFlux"
@@ -50,7 +49,6 @@ func AllTransformerLabels() []string {
 		FrobLabel,
 		PitFileDebtCeilingLabel,
 		PitFileIlkLabel,
-		PitFileStabilityFeeLabel,
 		PriceFeedLabel,
 		TendLabel,
 		VatFluxLabel,
