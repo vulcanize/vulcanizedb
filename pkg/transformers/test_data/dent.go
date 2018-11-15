@@ -31,7 +31,6 @@ var (
 	dentBidId           = int64(1)
 	dentLot             = "11000000000000000000"
 	dentBid             = "3000000000000000000"
-	DentTic             = "0"
 	dentGuy             = "0x64d922894153BE9EEf7b7218dc565d1D0Ce2a092"
 	dentRawJson, _      = json.Marshal(DentLog)
 )
@@ -58,7 +57,6 @@ var DentModel = dent.DentModel{
 	Lot:              dentLot,
 	Bid:              dentBid,
 	Guy:              dentGuy,
-	Tic:              DentTic,
 	LogIndex:         DentLog.Index,
 	TransactionIndex: DentLog.TxIndex,
 	Raw:              dentRawJson,

@@ -57,9 +57,9 @@ var _ = Describe("Dent Repository", func() {
 		shared_behaviors.SharedRepositoryCreateBehaviors(&inputs)
 
 		It("persists a dent record", func() {
-			headerId, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err = dentRepository.Create(headerId, []interface{}{test_data.DentModel})
+			err = dentRepository.Create(headerID, []interface{}{test_data.DentModel})
 			Expect(err).NotTo(HaveOccurred())
 
 			var count int
@@ -67,16 +67,20 @@ var _ = Describe("Dent Repository", func() {
 			Expect(count).To(Equal(1))
 
 			var dbResult dent.DentModel
-			err = db.Get(&dbResult, `SELECT bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log FROM maker.dent WHERE header_id = $1`, headerId)
+			err = db.Get(&dbResult, `SELECT bid_id, lot, bid, guy, log_idx, tx_idx, raw_log FROM maker.dent WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbResult.BidId).To(Equal(test_data.DentModel.BidId))
 			Expect(dbResult.Lot).To(Equal(test_data.DentModel.Lot))
 			Expect(dbResult.Bid).To(Equal(test_data.DentModel.Bid))
 			Expect(dbResult.Guy).To(Equal(test_data.DentModel.Guy))
-			Expect(dbResult.Tic).To(Equal(test_data.DentModel.Tic))
 			Expect(dbResult.LogIndex).To(Equal(test_data.DentModel.LogIndex))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.DentModel.TransactionIndex))
 			Expect(dbResult.Raw).To(MatchJSON(test_data.DentModel.Raw))
+
+			var dbTic int64
+			err = db.Get(&dbTic, `SELECT tic FROM maker.dent WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTic).To(Equal(fakes.FakeHeaderTic))
 		})
 	})
 

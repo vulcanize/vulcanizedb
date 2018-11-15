@@ -3,6 +3,7 @@ package integration_tests
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -55,6 +56,13 @@ var _ = Describe("Dent transformer", func() {
 		Expect(dbResult[0].BidId).To(Equal("2"))
 		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000000000000"))
+
+		var dbTic int64
+		err = db.Get(&dbTic, `SELECT tic FROM maker.dent`)
+		Expect(err).NotTo(HaveOccurred())
+
+		actualTic := 1538637780 + constants.TTL
+		Expect(dbTic).To(Equal(actualTic))
 	})
 
 	It("persists a flip dent log event", func() {

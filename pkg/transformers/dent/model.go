@@ -19,7 +19,6 @@ type DentModel struct {
 	Lot              string
 	Bid              string
 	Guy              string
-	Tic              string
 	LogIndex         uint   `db:"log_idx"`
 	TransactionIndex uint   `db:"tx_idx"`
 	Raw              []byte `db:"raw_log"`
