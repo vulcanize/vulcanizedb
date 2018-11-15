@@ -26,6 +26,11 @@ const (
 	GETH NodeType = iota
 	PARITY
 	INFURA
+	GANACHE
+)
+
+const (
+	KOVAN_NETWORK_ID = 42
 )
 
 type Node struct {

@@ -209,6 +209,8 @@ func (tr transformer) Execute() error {
 		}
 
 		// After converting all logs for events of interest, persist all of the data
+		// Change this so that event logs are persisted immediately after being created
+		// So as to prevent a huge growth of data in the contract memory
 		err := tr.PersistContractEvents(con)
 		if err != nil {
 			return err

@@ -61,7 +61,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetStoppedStatus(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -106,7 +106,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetOwner(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -153,7 +153,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetHashName(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -200,7 +200,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetHashSymbol(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -247,7 +247,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetDecimals(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -295,7 +295,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetStringName(constants.TusdAbiString, constants.TusdContractAddress, blockNumber)
 
@@ -342,7 +342,7 @@ var _ = Describe("every_block Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetStringName(constants.TusdAbiString, constants.TusdContractAddress, blockNumber)
 

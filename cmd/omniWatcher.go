@@ -19,23 +19,16 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/transformer"
+	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // omniWatcherCmd represents the omniWatcher command
@@ -92,9 +85,9 @@ func omniWatcher() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	blockChain, db := setupBCandDB()
-
-	t := transformer.NewTransformer(network, blockChain, db)
+	blockChain := getBlockChain()
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	t := transformer.NewTransformer(network, blockChain, &db)
 
 	contractAddresses = append(contractAddresses, contractAddress)
 	for _, addr := range contractAddresses {
@@ -130,24 +123,4 @@ func init() {
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block to begin watching- default is first block the contract exists")
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
-}
-
-func setupBCandDB() (core.BlockChain, *postgres.DB) {
-	rawRpcClient, err := rpc.Dial(ipc)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to initialize rpc client\r\nerr: %v\r\n", err))
-	}
-
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	cli := client.NewEthClient(ethClient)
-	n := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(cli, n, transactionConverter)
-	db, err := postgres.NewDB(databaseConfig, blockChain.Node())
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to initialize database\r\nerr: %v\r\n", err))
-	}
-
-	return blockChain, db
 }

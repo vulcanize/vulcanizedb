@@ -43,7 +43,7 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
 		transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-		blockChain = geth.NewBlockChain(blockChainClient, node, transactionConverter)
+		blockChain = geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 	})
 
 	It("reads two blocks", func(done Done) {

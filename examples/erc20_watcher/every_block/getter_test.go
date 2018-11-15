@@ -61,7 +61,7 @@ var _ = Describe("ERC20 Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 			result, err := realGetter.GetTotalSupply(constants.DaiAbiString, constants.DaiContractAddress, blockNumber)
 
@@ -115,7 +115,7 @@ var _ = Describe("ERC20 Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 
 			testTokenHolderAddress := common.HexToAddress("0x2cccc4b4708b318a6290511aac75d6c3dbe0cf9f")
@@ -179,7 +179,7 @@ var _ = Describe("ERC20 Getter", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, node, transactionConverter)
+			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			realGetter := every_block.NewGetter(blockChain)
 
 			testTokenHolderAddress := common.HexToAddress("0x2cccc4b4708b318a6290511aac75d6c3dbe0cf9f")

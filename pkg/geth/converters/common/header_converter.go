@@ -17,24 +17,25 @@
 package common
 
 import (
-	"bytes"
+	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type HeaderConverter struct{}
 
-func (converter HeaderConverter) Convert(gethHeader *types.Header) (core.Header, error) {
-	writer := new(bytes.Buffer)
-	err := rlp.Encode(writer, &gethHeader)
+func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) (core.Header, error) {
+	rawHeader, err := json.Marshal(gethHeader)
 	if err != nil {
 		panic(err)
 	}
 	coreHeader := core.Header{
-		Hash:        gethHeader.Hash().Hex(),
+		Hash:        blockHash,
 		BlockNumber: gethHeader.Number.Int64(),
-		Raw:         writer.Bytes(),
+		Raw:         rawHeader,
+		Timestamp:   gethHeader.Time.String(),
 	}
 	return coreHeader, nil
 }
