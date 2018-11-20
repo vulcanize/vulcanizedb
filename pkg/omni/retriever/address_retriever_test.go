@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -50,6 +51,7 @@ var _ = Describe("Address Retriever Test", func() {
 	var err error
 	var info *contract.Contract
 	var vulcanizeLogId int64
+	var log *types.Log
 	var r retriever.AddressRetriever
 	var addresses map[common.Address]bool
 	var wantedEvents = []string{"Transfer"}
@@ -63,11 +65,11 @@ var _ = Describe("Address Retriever Test", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		c := converter.NewConverter(info)
-		err = c.Convert(mockEvent, event)
+		log, err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
 
 		dataStore = repository.NewEventDataStore(db)
-		dataStore.PersistContractEvents(info)
+		dataStore.PersistLog(*log, info.Address, info.Name)
 		Expect(err).ToNot(HaveOccurred())
 
 		r = retriever.NewAddressRetriever(db)

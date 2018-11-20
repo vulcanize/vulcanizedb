@@ -33,7 +33,7 @@ import (
 // Converter is used to convert watched event logs to
 // custom logs containing event input name => value maps
 type Converter interface {
-	Convert(watchedEvent core.WatchedEvent, event *types.Event) error
+	Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error)
 	Update(info *contract.Contract)
 }
 
@@ -57,7 +57,7 @@ func (c *converter) CheckInfo() *contract.Contract {
 }
 
 // Convert the given watched event log into a types.Log for the given event
-func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) error {
+func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.contractInfo.Address), c.contractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
 
@@ -69,7 +69,7 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) 
 	log := helpers.ConvertToLog(watchedEvent)
 	err := contract.UnpackLogIntoMap(values, event.Name, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	strValues := make(map[string]string, len(values))
@@ -95,22 +95,22 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event *types.Event) 
 		case bool:
 			strValues[fieldName] = strconv.FormatBool(input.(bool))
 		default:
-			return errors.New("error: unhandled abi type")
+			return nil, errors.New("error: unhandled abi type")
 		}
 	}
 
 	// Only hold onto logs that pass our address filter, if any
-	// Persist log here and don't hold onto it
 	if c.contractInfo.PassesEventFilter(strValues) {
-		eventLog := types.Log{
+		eventLog := &types.Log{
+			Event:  event,
 			Id:     watchedEvent.LogID,
 			Values: strValues,
 			Block:  watchedEvent.BlockNumber,
 			Tx:     watchedEvent.TxHash,
 		}
 
-		event.Logs[watchedEvent.LogID] = eventLog
+		return eventLog, err
 	}
 
-	return nil
+	return nil, nil
 }

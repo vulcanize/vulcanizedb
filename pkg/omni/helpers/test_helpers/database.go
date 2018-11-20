@@ -41,7 +41,7 @@ var ExpectedTransferFilter = filters.LogFilter{
 	Name:      "Transfer",
 	Address:   constants.TusdContractAddress,
 	ToBlock:   -1,
-	FromBlock: 5197514,
+	FromBlock: 6194634,
 	Topics:    core.Topics{constants.TransferEvent.Signature()},
 }
 
@@ -49,7 +49,7 @@ var ExpectedApprovalFilter = filters.LogFilter{
 	Name:      "Approval",
 	Address:   constants.TusdContractAddress,
 	ToBlock:   -1,
-	FromBlock: 5197514,
+	FromBlock: 6194634,
 	Topics:    core.Topics{constants.ApprovalEvent.Signature()},
 }
 
@@ -57,13 +57,19 @@ type TransferLog struct {
 	Id             int64  `db:"id"`
 	VulvanizeLogId int64  `db:"vulcanize_log_id"`
 	TokenName      string `db:"token_name"`
-	TokenAddress   string `db:"token_address"`
-	EventName      string `db:"event_name"`
 	Block          int64  `db:"block"`
 	Tx             string `db:"tx"`
 	From           string `db:"from_"`
 	To             string `db:"to_"`
 	Value          string `db:"value_"`
+}
+
+type BalanceOf struct {
+	Id        int64  `db:"id"`
+	TokenName string `db:"token_name"`
+	Block     int64  `db:"block"`
+	Address   string `db:"who_"`
+	Balance   string `db:"returned"`
 }
 
 func SetupBC() core.BlockChain {
@@ -139,7 +145,7 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 		Address:        constants.TusdContractAddress,
 		Abi:            p.Abi(),
 		ParsedAbi:      p.ParsedAbi(),
-		StartingBlock:  5197514,
+		StartingBlock:  6194634,
 		LastBlock:      6507323,
 		Events:         p.GetEvents(wantedEvents),
 		Methods:        p.GetMethods(wantedMethods),

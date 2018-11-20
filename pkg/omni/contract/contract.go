@@ -34,8 +34,8 @@ type Contract struct {
 	LastBlock      int64
 	Abi            string
 	ParsedAbi      abi.ABI
-	Events         map[string]*types.Event      // Map of events to their names
-	Methods        map[string]*types.Method     // Map of methods to their names
+	Events         map[string]types.Event       // Map of events to their names
+	Methods        map[string]types.Method      // Map of methods to their names
 	Filters        map[string]filters.LogFilter // Map of event filters to their names
 	EventAddrs     map[string]bool              // User-input list of account addresses to watch events for
 	MethodAddrs    map[string]bool              // User-input list of account addresses to poll methods for

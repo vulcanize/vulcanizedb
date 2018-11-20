@@ -29,9 +29,9 @@ type Parser interface {
 	Parse(contractAddr string) error
 	Abi() string
 	ParsedAbi() abi.ABI
-	GetMethods(wanted []string) map[string]*types.Method
-	GetAddrMethods(wanted []string) map[string]*types.Method
-	GetEvents(wanted []string) map[string]*types.Event
+	GetMethods(wanted []string) map[string]types.Method
+	GetAddrMethods(wanted []string) map[string]types.Method
+	GetEvents(wanted []string) map[string]types.Event
 }
 
 type parser struct {
@@ -73,8 +73,8 @@ func (p *parser) Parse(contractAddr string) error {
 // Returns wanted methods, if they meet the criteria, as map of types.Methods
 // Empty wanted array => all methods that fit are returned
 // Nil wanted array => no events are returned
-func (p *parser) GetAddrMethods(wanted []string) map[string]*types.Method {
-	addrMethods := map[string]*types.Method{}
+func (p *parser) GetAddrMethods(wanted []string) map[string]types.Method {
+	addrMethods := map[string]types.Method{}
 	if wanted == nil {
 		return addrMethods
 	}
@@ -103,8 +103,8 @@ func (p *parser) GetAddrMethods(wanted []string) map[string]*types.Method {
 // Returns wanted methods as map of types.Methods
 // Empty wanted array => all events are returned
 // Nil wanted array => no events are returned
-func (p *parser) GetMethods(wanted []string) map[string]*types.Method {
-	methods := map[string]*types.Method{}
+func (p *parser) GetMethods(wanted []string) map[string]types.Method {
+	methods := map[string]types.Method{}
 	if wanted == nil {
 		return methods
 	}
@@ -122,8 +122,8 @@ func (p *parser) GetMethods(wanted []string) map[string]*types.Method {
 // Returns wanted events as map of types.Events
 // Empty wanted array => all events are returned
 // Nil wanted array => no events are returned
-func (p *parser) GetEvents(wanted []string) map[string]*types.Event {
-	events := map[string]*types.Event{}
+func (p *parser) GetEvents(wanted []string) map[string]types.Event {
+	events := map[string]types.Event{}
 	if wanted == nil {
 		return events
 	}
