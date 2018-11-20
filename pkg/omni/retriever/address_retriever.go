@@ -85,7 +85,7 @@ func (r *addressRetriever) retrieveTransferAddresses(con contract.Contract) ([]s
 
 		if field.Type.T == abi.AddressTy { // If they have address type, retrieve those addresses
 			addrs := make([]string, 0)
-			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
+			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s_event", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
 			err := r.DB.Select(&addrs, pgStr)
 			if err != nil {
 				return []string{}, err
@@ -106,7 +106,7 @@ func (r *addressRetriever) retrieveTokenMintees(con contract.Contract) ([]string
 
 		if field.Type.T == abi.AddressTy { // If they have address type, retrieve those addresses
 			addrs := make([]string, 0)
-			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
+			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s_event", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
 			err := r.DB.Select(&addrs, pgStr)
 			if err != nil {
 				return []string{}, err

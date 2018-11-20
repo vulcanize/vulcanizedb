@@ -57,8 +57,8 @@ func (p *parser) Parse() error {
 
 // Returns wanted methods, if they meet the criteria, as map of types.Methods
 // Only returns specified methods
-func (p *parser) GetMethods(wanted []string) map[string]*types.Method {
-	addrMethods := map[string]*types.Method{}
+func (p *parser) GetMethods(wanted []string) map[string]types.Method {
+	addrMethods := map[string]types.Method{}
 
 	for _, m := range p.parsedAbi.Methods {
 		// Only return methods that have less than 3 inputs, 1 output, and wanted
@@ -83,8 +83,8 @@ func (p *parser) GetMethods(wanted []string) map[string]*types.Method {
 
 // Returns wanted events as map of types.Events
 // If no events are specified, all events are returned
-func (p *parser) GetEvents(wanted []string) map[string]*types.Event {
-	events := map[string]*types.Event{}
+func (p *parser) GetEvents(wanted []string) map[string]types.Event {
+	events := map[string]types.Event{}
 
 	for _, e := range p.parsedAbi.Events {
 		if len(wanted) == 0 || stringInSlice(wanted, e.Name) {
