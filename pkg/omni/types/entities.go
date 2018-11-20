@@ -26,16 +26,14 @@ import (
 type Event struct {
 	Name      string
 	Anonymous bool
-	Fields    []*Field
-	Logs      map[int64]Log // Map of VulcanizeIdLog to parsed event log
+	Fields    []Field
 }
 
 type Method struct {
-	Name    string
-	Const   bool
-	Inputs  []*Field
-	Outputs []*Field
-	Results []*Result
+	Name   string
+	Const  bool
+	Args   []Field
+	Return []Field
 }
 
 type Field struct {
@@ -43,15 +41,18 @@ type Field struct {
 	PgType       string // Holds type used when committing data held in this field to postgres
 }
 
-// Struct to hold results from method call with given inputs across different blocks
+// Struct to hold instance of result from method call with given inputs and block
 type Result struct {
-	Inputs  []interface{} // Will only use addresses
-	Outputs map[int64]interface{}
-	PgType  string // Holds output pg type
+	Method
+	Inputs []interface{} // Will only use addresses
+	Output interface{}
+	PgType string // Holds output pg type
+	Block  int64
 }
 
-// Struct to hold event log data data
+// Struct to hold instance of an event log data
 type Log struct {
+	Event
 	Id     int64             // VulcanizeIdLog
 	Values map[string]string // Map of event input names to their values
 	Block  int64
@@ -59,10 +60,10 @@ type Log struct {
 }
 
 // Unpack abi.Event into our custom Event struct
-func NewEvent(e abi.Event) *Event {
-	fields := make([]*Field, len(e.Inputs))
+func NewEvent(e abi.Event) Event {
+	fields := make([]Field, len(e.Inputs))
 	for i, input := range e.Inputs {
-		fields[i] = &Field{}
+		fields[i] = Field{}
 		fields[i].Name = input.Name
 		fields[i].Type = input.Type
 		fields[i].Indexed = input.Indexed
@@ -87,19 +88,18 @@ func NewEvent(e abi.Event) *Event {
 		}
 	}
 
-	return &Event{
+	return Event{
 		Name:      e.Name,
 		Anonymous: e.Anonymous,
 		Fields:    fields,
-		Logs:      map[int64]Log{},
 	}
 }
 
 // Unpack abi.Method into our custom Method struct
-func NewMethod(m abi.Method) *Method {
-	inputs := make([]*Field, len(m.Inputs))
+func NewMethod(m abi.Method) Method {
+	inputs := make([]Field, len(m.Inputs))
 	for i, input := range m.Inputs {
-		inputs[i] = &Field{}
+		inputs[i] = Field{}
 		inputs[i].Name = input.Name
 		inputs[i].Type = input.Type
 		inputs[i].Indexed = input.Indexed
@@ -123,9 +123,9 @@ func NewMethod(m abi.Method) *Method {
 		}
 	}
 
-	outputs := make([]*Field, len(m.Outputs))
+	outputs := make([]Field, len(m.Outputs))
 	for i, output := range m.Outputs {
-		outputs[i] = &Field{}
+		outputs[i] = Field{}
 		outputs[i].Name = output.Name
 		outputs[i].Type = output.Type
 		outputs[i].Indexed = output.Indexed
@@ -149,12 +149,11 @@ func NewMethod(m abi.Method) *Method {
 		}
 	}
 
-	return &Method{
-		Name:    m.Name,
-		Const:   m.Const,
-		Inputs:  inputs,
-		Outputs: outputs,
-		Results: make([]*Result, 0),
+	return Method{
+		Name:   m.Name,
+		Const:  m.Const,
+		Args:   inputs,
+		Return: outputs,
 	}
 }
 
@@ -169,10 +168,10 @@ func (e Event) Sig() string {
 }
 
 func (m Method) Sig() string {
-	types := make([]string, len(m.Inputs))
+	types := make([]string, len(m.Args))
 	i := 0
-	for _, input := range m.Inputs {
-		types[i] = input.Type.String()
+	for _, arg := range m.Args {
+		types[i] = arg.Type.String()
 		i++
 	}
 

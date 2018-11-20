@@ -18,8 +18,6 @@ package repository_test
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,11 +49,11 @@ var _ = Describe("Repository", func() {
 	var db *postgres.DB
 	var dataStore repository.EventDatastore
 	var err error
+	var log *types.Log
 	var con *contract.Contract
 	var vulcanizeLogId int64
 	var wantedEvents = []string{"Transfer"}
-	var event *types.Event
-	rand.Seed(time.Now().UnixNano())
+	var event types.Event
 
 	BeforeEach(func() {
 		db, con = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, []string{})
@@ -66,7 +64,7 @@ var _ = Describe("Repository", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		c := converter.NewConverter(con)
-		err = c.Convert(mockEvent, event)
+		log, err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
 
 		dataStore = repository.NewEventDataStore(db)
@@ -88,25 +86,25 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("CreateContractTable", func() {
+	Describe("CreateEventTable", func() {
 		It("Creates table if it doesn't exist", func() {
 			created, err := dataStore.CreateContractSchema(con.Address)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(created).To(Equal(true))
 
-			created, err = dataStore.CreateEventTable(con.Address, event)
+			created, err = dataStore.CreateEventTable(con.Address, *log)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(created).To(Equal(true))
 
-			created, err = dataStore.CreateEventTable(con.Address, event)
+			created, err = dataStore.CreateEventTable(con.Address, *log)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(created).To(Equal(false))
 		})
 	})
 
-	Describe("PersistContractEvents", func() {
-		It("Persists contract event values into custom tables, adding any addresses to a growing list of contract associated addresses", func() {
-			err = dataStore.PersistContractEvents(con)
+	Describe("PersistLog", func() {
+		It("Persists contract event log values into custom tables, adding any addresses to a growing list of contract associated addresses", func() {
+			err = dataStore.PersistLog(*log, con.Address, con.Name)
 			Expect(err).ToNot(HaveOccurred())
 
 			b, ok := con.TknHolderAddrs["0x000000000000000000000000000000000000Af21"]
@@ -117,9 +115,9 @@ var _ = Describe("Repository", func() {
 			Expect(ok).To(Equal(true))
 			Expect(b).To(Equal(true))
 
-			log := test_helpers.TransferLog{}
+			scanLog := test_helpers.TransferLog{}
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.Transfer", constants.TusdContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.transfer_event", constants.TusdContractAddress)).StructScan(&scanLog)
 			expectedLog := test_helpers.TransferLog{
 				Id:             1,
 				VulvanizeLogId: vulcanizeLogId,
@@ -130,17 +128,17 @@ var _ = Describe("Repository", func() {
 				To:             "0x09BbBBE21a5975cAc061D82f7b843bCE061BA391",
 				Value:          "1097077688018008265106216665536940668749033598146",
 			}
-			Expect(log).To(Equal(expectedLog))
+			Expect(scanLog).To(Equal(expectedLog))
 		})
 
 		It("Doesn't persist duplicate event logs", func() {
 			// Perist once
-			err = dataStore.PersistContractEvents(con)
+			err = dataStore.PersistLog(*log, con.Address, con.Name)
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.TransferLog{}
+			scanLog := test_helpers.TransferLog{}
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.Transfer", constants.TusdContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.transfer_event", constants.TusdContractAddress)).StructScan(&scanLog)
 			expectedLog := test_helpers.TransferLog{
 				Id:             1,
 				VulvanizeLogId: vulcanizeLogId,
@@ -152,21 +150,21 @@ var _ = Describe("Repository", func() {
 				Value:          "1097077688018008265106216665536940668749033598146",
 			}
 
-			Expect(log).To(Equal(expectedLog))
+			Expect(scanLog).To(Equal(expectedLog))
 
-			// Attempt to persist the same contract again
-			err = dataStore.PersistContractEvents(con)
+			// Attempt to persist the same log again
+			err = dataStore.PersistLog(*log, con.Address, con.Name)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Show that no new logs were entered
 			var count int
-			err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM c%s.Transfer", constants.TusdContractAddress))
+			err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM c%s.transfer_event", constants.TusdContractAddress))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(1))
 		})
 
-		It("Fails with empty contract", func() {
-			err = dataStore.PersistContractEvents(&contract.Contract{})
+		It("Fails with empty log", func() {
+			err = dataStore.PersistLog(types.Log{}, con.Address, con.Name)
 			Expect(err).To(HaveOccurred())
 		})
 	})

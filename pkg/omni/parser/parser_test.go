@@ -52,8 +52,8 @@ var _ = Describe("Parser", func() {
 			Expect(ok).To(Equal(false))
 			m, ok := methods["balanceOf"]
 			Expect(ok).To(Equal(true))
-			Expect(len(m.Inputs)).To(Equal(1))
-			Expect(len(m.Outputs)).To(Equal(1))
+			Expect(len(m.Args)).To(Equal(1))
+			Expect(len(m.Return)).To(Equal(1))
 
 			events := mp.GetEvents([]string{"Transfer"})
 			_, ok = events["Mint"]
@@ -130,16 +130,16 @@ var _ = Describe("Parser", func() {
 			m, ok := selectMethods["balanceOf"]
 			Expect(ok).To(Equal(true))
 
-			abiTy := m.Inputs[0].Type.T
+			abiTy := m.Args[0].Type.T
 			Expect(abiTy).To(Equal(abi.AddressTy))
 
-			pgTy := m.Inputs[0].PgType
+			pgTy := m.Args[0].PgType
 			Expect(pgTy).To(Equal("CHARACTER VARYING(66)"))
 
-			abiTy = m.Outputs[0].Type.T
+			abiTy = m.Return[0].Type.T
 			Expect(abiTy).To(Equal(abi.UintTy))
 
-			pgTy = m.Outputs[0].PgType
+			pgTy = m.Return[0].PgType
 			Expect(pgTy).To(Equal("DECIMAL"))
 
 			_, ok = selectMethods["totalSupply"]

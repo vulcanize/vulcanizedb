@@ -17,18 +17,18 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 	"strings"
+
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
 type MethodDatastore interface {
-	PersistContractMethods(con *contract.Contract) error
-	PersistResults(methodName string, con *contract.Contract) error
-	CreateMethodTable(contractName string, method *types.Method) error
-	CreateContractSchema(contractName string) error
+	PersistResult(method types.Result, contractAddr, contractName string) error
+	CreateMethodTable(contractAddr string, method types.Result) (bool, error)
+	CreateContractSchema(contractAddr string) (bool, error)
 }
 
 type methodDatastore struct {
@@ -42,68 +42,96 @@ func NewMethodDatastore(db *postgres.DB) *methodDatastore {
 	}
 }
 
-func (d *methodDatastore) PersistContractMethods(con *contract.Contract) error {
-	err := d.CreateContractSchema(con.Name)
+func (d *methodDatastore) PersistResult(method types.Result, contractAddr, contractName string) error {
+	if len(method.Args) != len(method.Inputs) {
+		return errors.New("error: given number of inputs does not match number of method arguments")
+	}
+	if len(method.Return) != 1 {
+		return errors.New("error: given number of outputs does not match number of method return values")
+	}
+
+	_, err := d.CreateContractSchema(contractAddr)
 	if err != nil {
 		return err
 	}
 
-	for _, method := range con.Methods {
-		err = d.CreateMethodTable(con.Name, method)
-		if err != nil {
-			return err
-		}
-
-		//TODO: Persist method data
-
+	_, err = d.CreateMethodTable(contractAddr, method)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return d.persistResult(method, contractAddr, contractName)
 }
 
 // Creates a custom postgres command to persist logs for the given event
-func (d *methodDatastore) PersistResults(methodName string, con *contract.Contract) error {
-	for _, result := range con.Methods[methodName].Results {
-		println(result)
-		//TODO: Persist result data
+func (d *methodDatastore) persistResult(method types.Result, contractAddr, contractName string) error {
+	// Begin postgres string
+	pgStr := fmt.Sprintf("INSERT INTO c%s.%s_method ", strings.ToLower(contractAddr), strings.ToLower(method.Name))
+	pgStr = pgStr + "(token_name, block"
+
+	// Pack the corresponding variables in a slice
+	var data []interface{}
+	data = append(data,
+		contractName,
+		method.Block)
+
+	// Iterate over method args and return value, adding names
+	// to the string and pushing values to the slice
+	counter := 0 // Keep track of number of inputs
+	for i, arg := range method.Args {
+		counter += 1
+		pgStr = pgStr + fmt.Sprintf(", %s_", strings.ToLower(arg.Name)) // Add underscore after to avoid any collisions with reserved pg words
+		data = append(data, method.Inputs[i])
+	}
+
+	counter += 1
+	pgStr = pgStr + ", returned) VALUES ($1, $2"
+	data = append(data, method.Output)
+
+	// For each input entry we created we add its postgres command variable to the string
+	for i := 0; i < counter; i++ {
+		pgStr = pgStr + fmt.Sprintf(", $%d", i+3)
+	}
+	pgStr = pgStr + ")"
+
+	_, err := d.DB.Exec(pgStr, data...)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // Checks for event table and creates it if it does not already exist
-func (d *methodDatastore) CreateMethodTable(contractAddr string, method *types.Method) error {
+func (d *methodDatastore) CreateMethodTable(contractAddr string, method types.Result) (bool, error) {
 	tableExists, err := d.checkForTable(contractAddr, method.Name)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !tableExists {
 		err = d.newMethodTable(contractAddr, method)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	return nil
+	return !tableExists, nil
 }
 
 // Creates a table for the given contract and event
-func (d *methodDatastore) newMethodTable(contractAddr string, method *types.Method) error {
+func (d *methodDatastore) newMethodTable(contractAddr string, method types.Result) error {
 	// Begin pg string
-	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS _%s.%s ", strings.ToLower(contractAddr), strings.ToLower(method.Name))
+	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS c%s.%s_method ", strings.ToLower(contractAddr), strings.ToLower(method.Name))
 	pgStr = pgStr + "(id SERIAL, token_name CHARACTER VARYING(66) NOT NULL, block INTEGER NOT NULL,"
 
 	// Iterate over method inputs and outputs, using their name and pgType to grow the string
-	for _, input := range method.Inputs {
-		pgStr = pgStr + fmt.Sprintf("%s_ %s NOT NULL,", strings.ToLower(input.Name), input.PgType)
+	for _, arg := range method.Args {
+		pgStr = pgStr + fmt.Sprintf(" %s_ %s NOT NULL,", strings.ToLower(arg.Name), arg.PgType)
 	}
 
-	for _, output := range method.Outputs {
-		pgStr = pgStr + fmt.Sprintf(" %s_ %s NOT NULL,", strings.ToLower(output.Name), output.PgType)
-	}
+	pgStr = pgStr + fmt.Sprintf(" returned %s NOT NULL)", method.Return[0].PgType)
 
-	pgStr = pgStr[:len(pgStr)-1] + ")"
 	_, err := d.DB.Exec(pgStr)
 
 	return err
@@ -111,7 +139,7 @@ func (d *methodDatastore) newMethodTable(contractAddr string, method *types.Meth
 
 // Checks if a table already exists for the given contract and event
 func (d *methodDatastore) checkForTable(contractAddr string, methodName string) (bool, error) {
-	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '_%s' AND table_name = '%s')", strings.ToLower(contractAddr), strings.ToLower(methodName))
+	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'c%s' AND table_name = '%s_method')", strings.ToLower(contractAddr), strings.ToLower(methodName))
 	var exists bool
 	err := d.DB.Get(&exists, pgStr)
 
@@ -119,32 +147,36 @@ func (d *methodDatastore) checkForTable(contractAddr string, methodName string) 
 }
 
 // Checks for contract schema and creates it if it does not already exist
-func (d *methodDatastore) CreateContractSchema(contractName string) error {
-	schemaExists, err := d.checkForSchema(contractName)
+func (d *methodDatastore) CreateContractSchema(contractAddr string) (bool, error) {
+	if contractAddr == "" {
+		return false, errors.New("error: no contract address specified")
+	}
+
+	schemaExists, err := d.checkForSchema(contractAddr)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !schemaExists {
-		err = d.newContractSchema(contractName)
+		err = d.newContractSchema(contractAddr)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	return nil
+	return !schemaExists, nil
 }
 
 // Creates a schema for the given contract
 func (d *methodDatastore) newContractSchema(contractAddr string) error {
-	_, err := d.DB.Exec("CREATE SCHEMA IF NOT EXISTS _" + strings.ToLower(contractAddr))
+	_, err := d.DB.Exec("CREATE SCHEMA IF NOT EXISTS c" + strings.ToLower(contractAddr))
 
 	return err
 }
 
 // Checks if a schema already exists for the given contract
 func (d *methodDatastore) checkForSchema(contractAddr string) (bool, error) {
-	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = '_%s')", strings.ToLower(contractAddr))
+	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'c%s')", strings.ToLower(contractAddr))
 
 	var exists bool
 	err := d.DB.Get(&exists, pgStr)

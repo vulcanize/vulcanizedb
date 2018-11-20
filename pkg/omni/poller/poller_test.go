@@ -17,12 +17,13 @@
 package poller_test
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers"
-	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers/test_helpers"
@@ -33,13 +34,20 @@ var _ = Describe("Poller", func() {
 
 	var p poller.Poller
 	var con *contract.Contract
+	var db *postgres.DB
+	var bc core.BlockChain
 
 	BeforeEach(func() {
-		p = poller.NewPoller(test_helpers.SetupBC())
+		db, bc = test_helpers.SetupDBandBC()
+		p = poller.NewPoller(bc, db)
+	})
+
+	AfterEach(func() {
+		test_helpers.TearDown(db)
 	})
 
 	Describe("PollContract", func() {
-		It("Polls contract methods using token holder address list", func() {
+		It("Polls specified contract methods using contract's token holder address list", func() {
 			con = test_helpers.SetupTusdContract(nil, []string{"balanceOf"})
 			Expect(con.Abi).To(Equal(constants.TusdAbiString))
 			con.StartingBlock = 6707322
@@ -49,36 +57,56 @@ var _ = Describe("Poller", func() {
 				"0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE": true,
 			}
 
-			err := p.PollContract(con)
+			err := p.PollContract(*con)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(con.Methods["balanceOf"].Results)).To(Equal(2))
-			res1 := con.Methods["balanceOf"].Results[0]
-			res2 := con.Methods["balanceOf"].Results[1]
-			expectedRes11 := helpers.BigFromString("66386309548896882859581786")
-			expectedRes12 := helpers.BigFromString("66386309548896882859581786")
-			expectedRes21 := helpers.BigFromString("17982350181394112023885864")
-			expectedRes22 := helpers.BigFromString("17982350181394112023885864")
-			if res1.Inputs[0].(common.Address).String() == "0xfE9e8709d3215310075d67E3ed32A380CCf451C8" {
-				Expect(res2.Inputs[0].(common.Address).String()).To(Equal("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
-				Expect(res1.Outputs[6707322].(*big.Int).String()).To(Equal(expectedRes11.String()))
-				Expect(res1.Outputs[6707323].(*big.Int).String()).To(Equal(expectedRes12.String()))
-				Expect(res2.Outputs[6707322].(*big.Int).String()).To(Equal(expectedRes21.String()))
-				Expect(res2.Outputs[6707323].(*big.Int).String()).To(Equal(expectedRes22.String()))
-			} else {
-				Expect(res2.Inputs[0].(common.Address).String()).To(Equal("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"))
-				Expect(res2.Outputs[6707322].(*big.Int).String()).To(Equal(expectedRes11.String()))
-				Expect(res2.Outputs[6707323].(*big.Int).String()).To(Equal(expectedRes12.String()))
-				Expect(res1.Outputs[6707322].(*big.Int).String()).To(Equal(expectedRes21.String()))
-				Expect(res1.Outputs[6707323].(*big.Int).String()).To(Equal(expectedRes22.String()))
+			scanStruct := test_helpers.BalanceOf{}
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(scanStruct.Balance).To(Equal("66386309548896882859581786"))
+			Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(scanStruct.Balance).To(Equal("66386309548896882859581786"))
+			Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(scanStruct.Balance).To(Equal("17982350181394112023885864"))
+			Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(scanStruct.Balance).To(Equal("17982350181394112023885864"))
+			Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
+		})
+
+		It("Does not poll and persist any methods if none are specified", func() {
+			con = test_helpers.SetupTusdContract(nil, nil)
+			Expect(con.Abi).To(Equal(constants.TusdAbiString))
+			con.StartingBlock = 6707322
+			con.LastBlock = 6707323
+			con.TknHolderAddrs = map[string]bool{
+				"0xfE9e8709d3215310075d67E3ed32A380CCf451C8": true,
+				"0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE": true,
 			}
+
+			err := p.PollContract(*con)
+			Expect(err).ToNot(HaveOccurred())
+
+			scanStruct := test_helpers.BalanceOf{}
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe("PollMethod", func() {
 		It("Polls a single contract method", func() {
 			var name = new(string)
-			err := p.PollMethod(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
+			err := p.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(*name).To(Equal("TrueUSD"))
 		})

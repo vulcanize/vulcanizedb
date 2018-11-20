@@ -34,14 +34,14 @@ import (
 
 var block1 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
-	Number: 5194634,
+	Number: 6194633,
 	Transactions: []core.Transaction{{
 		Hash: "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 			ContractAddress: "",
 			Logs: []core.Log{{
-				BlockNumber: 5194634,
+				BlockNumber: 6194633,
 				TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 				Address:     constants.TusdContractAddress,
 				Topics: core.Topics{
@@ -155,7 +155,7 @@ var _ = Describe("Transformer", func() {
 			c, ok := t.Contracts[constants.TusdContractAddress]
 			Expect(ok).To(Equal(true))
 
-			Expect(c.StartingBlock).To(Equal(int64(5194634)))
+			Expect(c.StartingBlock).To(Equal(int64(6194633)))
 			Expect(c.LastBlock).To(Equal(int64(6194634)))
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
@@ -190,6 +190,7 @@ var _ = Describe("Transformer", func() {
 		It("Transforms watched contract data into custom repositories", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -197,7 +198,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			log := test_helpers.TransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.transfer WHERE block = 6194634", constants.TusdContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.transfer_event WHERE block = 6194634", constants.TusdContractAddress)).StructScan(&log)
 
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.Tx).To(Equal("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee"))
@@ -210,6 +211,7 @@ var _ = Describe("Transformer", func() {
 		It("Keeps track of contract-related addresses while transforming event data", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -232,6 +234,36 @@ var _ = Describe("Transformer", func() {
 
 			_, ok = c.TknHolderAddrs["0x"]
 			Expect(ok).To(Equal(false))
+		})
+
+		It("Polls given methods using generated token holder address", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			res := test_helpers.BalanceOf{}
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0x000000000000000000000000000000000000Af21' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Balance).To(Equal("0"))
+			Expect(res.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Fails if initialization has not been done", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
+
+			err = t.Execute()
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

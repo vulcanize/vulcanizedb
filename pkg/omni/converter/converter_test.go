@@ -76,24 +76,24 @@ var _ = Describe("Converter", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			c := converter.NewConverter(info)
-			err = c.Convert(mockEvent, event)
+			log, err := c.Convert(mockEvent, event)
 			Expect(err).ToNot(HaveOccurred())
 
 			from := common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")
 			to := common.HexToAddress("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")
 			value := helpers.BigFromString("1097077688018008265106216665536940668749033598146")
 
-			v := event.Logs[1].Values["value"]
+			v := log.Values["value"]
 
-			Expect(event.Logs[1].Values["to"]).To(Equal(to.String()))
-			Expect(event.Logs[1].Values["from"]).To(Equal(from.String()))
+			Expect(log.Values["to"]).To(Equal(to.String()))
+			Expect(log.Values["from"]).To(Equal(from.String()))
 			Expect(v).To(Equal(value.String()))
 		})
 
 		It("Fails with an empty contract", func() {
 			event := info.Events["Transfer"]
 			c := converter.NewConverter(&contract.Contract{})
-			err = c.Convert(mockEvent, event)
+			_, err = c.Convert(mockEvent, event)
 			Expect(err).To(HaveOccurred())
 		})
 	})

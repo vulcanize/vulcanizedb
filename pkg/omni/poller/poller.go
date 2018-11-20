@@ -18,37 +18,44 @@ package poller
 
 import (
 	"errors"
+	"fmt"
+	"math/big"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/contract"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/types"
 )
 
 type Poller interface {
-	PollContract(con *contract.Contract) error
-	PollMethod(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
+	PollContract(con contract.Contract) error
+	FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
 }
 
 type poller struct {
+	repository.MethodDatastore
 	bc       core.BlockChain
-	contract *contract.Contract
+	contract contract.Contract
 }
 
-func NewPoller(blockChain core.BlockChain) *poller {
+func NewPoller(blockChain core.BlockChain, db *postgres.DB) *poller {
 
 	return &poller{
-		bc: blockChain,
+		MethodDatastore: repository.NewMethodDatastore(db),
+		bc:              blockChain,
 	}
 }
 
 // Used to call contract's methods found in abi using list of contract-related addresses
-func (p *poller) PollContract(con *contract.Contract) error {
+func (p *poller) PollContract(con contract.Contract) error {
 	p.contract = con
 	// Iterate over each of the contracts methods
 	for _, m := range con.Methods {
-		switch len(m.Inputs) {
+		switch len(m.Args) {
 		case 0:
 			if err := p.pollNoArg(m); err != nil {
 				return err
@@ -71,76 +78,122 @@ func (p *poller) PollContract(con *contract.Contract) error {
 }
 
 // Poll methods that take no arguments
-func (p *poller) pollNoArg(m *types.Method) error {
-	result := &types.Result{
-		Inputs:  nil,
-		Outputs: map[int64]interface{}{},
-		PgType:  m.Outputs[0].PgType,
+func (p *poller) pollNoArg(m types.Method) error {
+	result := types.Result{
+		Method: m,
+		Inputs: nil,
+		PgType: m.Return[0].PgType,
 	}
 
 	for i := p.contract.StartingBlock; i <= p.contract.LastBlock; i++ {
-		var res interface{}
-		err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, result.Inputs, &res, i)
+		var out interface{}
+		err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, nil, &out, i)
+		if err != nil {
+			return errors.New(fmt.Sprintf("poller error calling 0 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+		}
+
+		strOut, err := stringify(out)
 		if err != nil {
 			return err
 		}
-		result.Outputs[i] = res
-	}
 
-	// Persist results now instead of holding onto them
-	m.Results = append(m.Results, result)
+		result.Output = strOut
+		result.Block = i
+
+		// Persist result immediately
+		err = p.PersistResult(result, p.contract.Address, p.contract.Name)
+		if err != nil {
+			return errors.New(fmt.Sprintf("poller error persisting 0 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+		}
+	}
 
 	return nil
 }
 
 // Use token holder address to poll methods that take 1 address argument (e.g. balanceOf)
-func (p *poller) pollSingleArg(m *types.Method) error {
-	for addr := range p.contract.TknHolderAddrs {
-		result := &types.Result{
-			Inputs:  make([]interface{}, 1),
-			Outputs: map[int64]interface{}{},
-			PgType:  m.Outputs[0].PgType,
-		}
-		result.Inputs[0] = common.HexToAddress(addr)
+func (p *poller) pollSingleArg(m types.Method) error {
+	result := types.Result{
+		Method: m,
+		Inputs: make([]interface{}, 1),
+		PgType: m.Return[0].PgType,
+	}
 
+	for addr := range p.contract.TknHolderAddrs {
 		for i := p.contract.StartingBlock; i <= p.contract.LastBlock; i++ {
-			var res interface{}
-			err := p.bc.FetchContractData(constants.TusdAbiString, p.contract.Address, m.Name, result.Inputs, &res, i)
+			hashArgs := []common.Address{common.HexToAddress(addr)}
+			in := make([]interface{}, len(hashArgs))
+			strIn := make([]interface{}, len(hashArgs))
+			for i, s := range hashArgs {
+				in[i] = s
+				strIn[i] = s.String()
+			}
+
+			var out interface{}
+			err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, in, &out, i)
+			if err != nil {
+				return errors.New(fmt.Sprintf("poller error calling 1 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+			}
+
+			strOut, err := stringify(out)
 			if err != nil {
 				return err
 			}
-			result.Outputs[i] = res
-		}
 
-		m.Results = append(m.Results, result)
+			result.Output = strOut
+			result.Block = i
+			result.Inputs = strIn
+
+			err = p.PersistResult(result, p.contract.Address, p.contract.Name)
+			if err != nil {
+				return errors.New(fmt.Sprintf("poller error persisting 1 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+			}
+		}
 	}
 
 	return nil
 }
 
 // Use token holder address to poll methods that take 2 address arguments (e.g. allowance)
-func (p *poller) pollDoubleArg(m *types.Method) error {
+func (p *poller) pollDoubleArg(m types.Method) error {
 	// For a large block range and address list this will take a really, really long time- maybe we should only do 1 arg methods
+	result := types.Result{
+		Method: m,
+		Inputs: make([]interface{}, 2),
+		PgType: m.Return[0].PgType,
+	}
+
 	for addr1 := range p.contract.TknHolderAddrs {
 		for addr2 := range p.contract.TknHolderAddrs {
-			result := &types.Result{
-				Inputs:  make([]interface{}, 2),
-				Outputs: map[int64]interface{}{},
-				PgType:  m.Outputs[0].PgType,
-			}
-			result.Inputs[0] = common.HexToAddress(addr1)
-			result.Inputs[1] = common.HexToAddress(addr2)
-
 			for i := p.contract.StartingBlock; i <= p.contract.LastBlock; i++ {
-				var res interface{}
-				err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, result.Inputs, &res, i)
+				hashArgs := []common.Address{common.HexToAddress(addr1), common.HexToAddress(addr2)}
+				in := make([]interface{}, len(hashArgs))
+				strIn := make([]interface{}, len(hashArgs))
+				for i, s := range hashArgs {
+					in[i] = s
+					strIn[i] = s.String()
+				}
+
+				var out interface{}
+				err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, in, &out, i)
+				if err != nil {
+					return errors.New(fmt.Sprintf("poller error calling 2 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+				}
+
+				strOut, err := stringify(out)
 				if err != nil {
 					return err
 				}
-				result.Outputs[i] = res
+
+				result.Output = strOut
+				result.Block = i
+				result.Inputs = strIn
+
+				err = p.PersistResult(result, p.contract.Address, p.contract.Name)
+				if err != nil {
+					return errors.New(fmt.Sprintf("poller error persisting 2 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", i, m.Name, p.contract.Address, err))
+				}
 			}
 
-			m.Results = append(m.Results, result)
 		}
 	}
 
@@ -148,6 +201,29 @@ func (p *poller) pollDoubleArg(m *types.Method) error {
 }
 
 // This is just a wrapper around the poller blockchain's FetchContractData method
-func (p *poller) PollMethod(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
+func (p *poller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
 	return p.bc.FetchContractData(contractAbi, contractAddress, method, methodArgs, result, blockNumber)
+}
+
+func stringify(input interface{}) (string, error) {
+	switch input.(type) {
+	case *big.Int:
+		var b *big.Int
+		b = input.(*big.Int)
+		return b.String(), nil
+	case common.Address:
+		var a common.Address
+		a = input.(common.Address)
+		return a.String(), nil
+	case common.Hash:
+		var h common.Hash
+		h = input.(common.Hash)
+		return h.String(), nil
+	case string:
+		return input.(string), nil
+	case bool:
+		return strconv.FormatBool(input.(bool)), nil
+	default:
+		return "", errors.New("error: unhandled return type")
+	}
 }
