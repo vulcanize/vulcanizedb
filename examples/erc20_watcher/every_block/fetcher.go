@@ -16,7 +16,7 @@ package every_block
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"math/big"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -50,7 +50,7 @@ func (fe *fetcherError) Error() string {
 
 func newFetcherError(err error, fetchMethod string) *fetcherError {
 	e := fetcherError{err.Error(), fetchMethod}
-	log.Println(e.Error())
+	log.Info(e.Error())
 	return &e
 }
 

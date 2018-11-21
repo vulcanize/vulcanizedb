@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 )
 
 func TestVatToll(t *testing.T) {

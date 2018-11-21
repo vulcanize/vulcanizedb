@@ -16,8 +16,8 @@ package every_block
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"log"
 )
 
 type ERC20RepositoryInterface interface {
