@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"log"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/every_block"

@@ -15,7 +15,7 @@
 package factories
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
 

@@ -16,8 +16,9 @@ package every_block
 
 import (
 	"fmt"
-	"log"
 	"math/big"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"

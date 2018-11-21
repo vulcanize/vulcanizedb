@@ -1,7 +1,7 @@
 package integration_tests
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
