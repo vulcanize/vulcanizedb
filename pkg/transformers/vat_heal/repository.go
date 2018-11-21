@@ -44,12 +44,6 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatHealModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vatHeal.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err := tx.Exec(`INSERT INTO maker.vat_heal (header_id, urn, v, rad, log_idx, tx_idx, raw_log)
 		VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
 			headerID, vatHeal.Urn, vatHeal.V, vatHeal.Rad, vatHeal.LogIndex, vatHeal.TransactionIndex, vatHeal.Raw)

@@ -42,12 +42,6 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, BiteModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, biteModel.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.bite (header_id, ilk, urn, ink, art, iart, tab, nflip, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7::NUMERIC, $8::NUMERIC, $9, $10, $11)`,

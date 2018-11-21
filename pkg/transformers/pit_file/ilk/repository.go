@@ -39,12 +39,6 @@ func (repository PitFileIlkRepository) Create(headerID int64, models []interface
 			return fmt.Errorf("model of type %T, not %T", model, PitFileIlkModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, pitFileIlk.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_ilk (header_id, ilk, what, data, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

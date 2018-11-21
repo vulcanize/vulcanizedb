@@ -15,13 +15,12 @@
 package shared_test
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
@@ -31,18 +30,20 @@ var _ = Describe("Fetcher", func() {
 		It("fetches logs based on the given query", func() {
 			blockChain := fakes.NewMockBlockChain()
 			fetcher := shared.NewFetcher(blockChain)
-			blockNumber := int64(123)
+			header := fakes.FakeHeader
+
 			addresses := []string{"0xfakeAddress", "0xanotherFakeAddress"}
 			topicZeros := [][]common.Hash{{common.BytesToHash([]byte{1, 2, 3, 4, 5})}}
 
-			_, err := fetcher.FetchLogs(addresses, topicZeros, blockNumber)
+			_, err := fetcher.FetchLogs(addresses, topicZeros, header)
 
 			address1 := common.HexToAddress("0xfakeAddress")
 			address2 := common.HexToAddress("0xanotherFakeAddress")
 			Expect(err).NotTo(HaveOccurred())
+
+			blockHash := common.HexToHash(header.Hash)
 			expectedQuery := ethereum.FilterQuery{
-				FromBlock: big.NewInt(blockNumber),
-				ToBlock:   big.NewInt(blockNumber),
+				BlockHash: &blockHash,
 				Addresses: []common.Address{address1, address2},
 				Topics:    topicZeros,
 			}
@@ -54,7 +55,7 @@ var _ = Describe("Fetcher", func() {
 			blockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
 			fetcher := shared.NewFetcher(blockChain)
 
-			_, err := fetcher.FetchLogs([]string{}, [][]common.Hash{}, int64(1))
+			_, err := fetcher.FetchLogs([]string{}, [][]common.Hash{}, core.Header{})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

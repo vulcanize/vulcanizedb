@@ -25,12 +25,6 @@ func (repository VatGrabRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatGrabModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vatGrab.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.vat_grab (header_id, ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log)
 	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)`,

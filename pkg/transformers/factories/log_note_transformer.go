@@ -52,7 +52,7 @@ func (transformer LogNoteTransformer) Execute() error {
 	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
 		// Fetch the missing logs for a given header
-		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header.BlockNumber)
+		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header)
 		if err != nil {
 			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
 			return err

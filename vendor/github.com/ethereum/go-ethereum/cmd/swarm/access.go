@@ -29,7 +29,65 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-var salt = make([]byte, 32)
+var (
+	salt          = make([]byte, 32)
+	accessCommand = cli.Command{
+		CustomHelpTemplate: helpTemplate,
+		Name:               "access",
+		Usage:              "encrypts a reference and embeds it into a root manifest",
+		ArgsUsage:          "<ref>",
+		Description:        "encrypts a reference and embeds it into a root manifest",
+		Subcommands: []cli.Command{
+			{
+				CustomHelpTemplate: helpTemplate,
+				Name:               "new",
+				Usage:              "encrypts a reference and embeds it into a root manifest",
+				ArgsUsage:          "<ref>",
+				Description:        "encrypts a reference and embeds it into a root access manifest and prints the resulting manifest",
+				Subcommands: []cli.Command{
+					{
+						Action:             accessNewPass,
+						CustomHelpTemplate: helpTemplate,
+						Flags: []cli.Flag{
+							utils.PasswordFileFlag,
+							SwarmDryRunFlag,
+						},
+						Name:        "pass",
+						Usage:       "encrypts a reference with a password and embeds it into a root manifest",
+						ArgsUsage:   "<ref>",
+						Description: "encrypts a reference and embeds it into a root access manifest and prints the resulting manifest",
+					},
+					{
+						Action:             accessNewPK,
+						CustomHelpTemplate: helpTemplate,
+						Flags: []cli.Flag{
+							utils.PasswordFileFlag,
+							SwarmDryRunFlag,
+							SwarmAccessGrantKeyFlag,
+						},
+						Name:        "pk",
+						Usage:       "encrypts a reference with the node's private key and a given grantee's public key and embeds it into a root manifest",
+						ArgsUsage:   "<ref>",
+						Description: "encrypts a reference and embeds it into a root access manifest and prints the resulting manifest",
+					},
+					{
+						Action:             accessNewACT,
+						CustomHelpTemplate: helpTemplate,
+						Flags: []cli.Flag{
+							SwarmAccessGrantKeysFlag,
+							SwarmDryRunFlag,
+							utils.PasswordFileFlag,
+						},
+						Name:        "act",
+						Usage:       "encrypts a reference with the node's private key and a given grantee's public key and embeds it into a root manifest",
+						ArgsUsage:   "<ref>",
+						Description: "encrypts a reference and embeds it into a root access manifest and prints the resulting manifest",
+					},
+				},
+			},
+		},
+	}
+)
 
 func init() {
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
@@ -51,18 +109,20 @@ func accessNewPass(ctx *cli.Context) {
 		password  = getPassPhrase("", 0, makePasswordList(ctx))
 		dryRun    = ctx.Bool(SwarmDryRunFlag.Name)
 	)
-	accessKey, ae, err = api.DoPasswordNew(ctx, password, salt)
+	accessKey, ae, err = api.DoPassword(ctx, password, salt)
 	if err != nil {
 		utils.Fatalf("error getting session key: %v", err)
 	}
 	m, err := api.GenerateAccessControlManifest(ctx, ref, accessKey, ae)
+	if err != nil {
+		utils.Fatalf("had an error generating the manifest: %v", err)
+	}
 	if dryRun {
 		err = printManifests(m, nil)
 		if err != nil {
 			utils.Fatalf("had an error printing the manifests: %v", err)
 		}
 	} else {
-		utils.Fatalf("uploading manifests")
 		err = uploadManifests(ctx, m, nil)
 		if err != nil {
 			utils.Fatalf("had an error uploading the manifests: %v", err)
@@ -85,11 +145,14 @@ func accessNewPK(ctx *cli.Context) {
 		granteePublicKey = ctx.String(SwarmAccessGrantKeyFlag.Name)
 		dryRun           = ctx.Bool(SwarmDryRunFlag.Name)
 	)
-	sessionKey, ae, err = api.DoPKNew(ctx, privateKey, granteePublicKey, salt)
+	sessionKey, ae, err = api.DoPK(ctx, privateKey, granteePublicKey, salt)
 	if err != nil {
 		utils.Fatalf("error getting session key: %v", err)
 	}
 	m, err := api.GenerateAccessControlManifest(ctx, ref, sessionKey, ae)
+	if err != nil {
+		utils.Fatalf("had an error generating the manifest: %v", err)
+	}
 	if dryRun {
 		err = printManifests(m, nil)
 		if err != nil {
@@ -110,23 +173,38 @@ func accessNewACT(ctx *cli.Context) {
 	}
 
 	var (
-		ae          *api.AccessEntry
-		actManifest *api.Manifest
-		accessKey   []byte
-		err         error
-		ref         = args[0]
-		grantees    = []string{}
-		actFilename = ctx.String(SwarmAccessGrantKeysFlag.Name)
-		privateKey  = getPrivKey(ctx)
-		dryRun      = ctx.Bool(SwarmDryRunFlag.Name)
+		ae                   *api.AccessEntry
+		actManifest          *api.Manifest
+		accessKey            []byte
+		err                  error
+		ref                  = args[0]
+		pkGrantees           = []string{}
+		passGrantees         = []string{}
+		pkGranteesFilename   = ctx.String(SwarmAccessGrantKeysFlag.Name)
+		passGranteesFilename = ctx.String(utils.PasswordFileFlag.Name)
+		privateKey           = getPrivKey(ctx)
+		dryRun               = ctx.Bool(SwarmDryRunFlag.Name)
 	)
-
-	bytes, err := ioutil.ReadFile(actFilename)
-	if err != nil {
-		utils.Fatalf("had an error reading the grantee public key list")
+	if pkGranteesFilename == "" && passGranteesFilename == "" {
+		utils.Fatalf("you have to provide either a grantee public-keys file or an encryption passwords file (or both)")
 	}
-	grantees = strings.Split(string(bytes), "\n")
-	accessKey, ae, actManifest, err = api.DoACTNew(ctx, privateKey, salt, grantees)
+
+	if pkGranteesFilename != "" {
+		bytes, err := ioutil.ReadFile(pkGranteesFilename)
+		if err != nil {
+			utils.Fatalf("had an error reading the grantee public key list")
+		}
+		pkGrantees = strings.Split(strings.Trim(string(bytes), "\n"), "\n")
+	}
+
+	if passGranteesFilename != "" {
+		bytes, err := ioutil.ReadFile(passGranteesFilename)
+		if err != nil {
+			utils.Fatalf("could not read password filename: %v", err)
+		}
+		passGrantees = strings.Split(strings.Trim(string(bytes), "\n"), "\n")
+	}
+	accessKey, ae, actManifest, err = api.DoACT(ctx, privateKey, salt, pkGrantees, passGrantees)
 	if err != nil {
 		utils.Fatalf("error generating ACT manifest: %v", err)
 	}

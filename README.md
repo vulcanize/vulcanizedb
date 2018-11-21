@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/vulcanizeio/VulcanizeDB](https://badges.gitter.im/vulcanizeio/VulcanizeDB.svg)](https://gitter.im/vulcanizeio/VulcanizeDB?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://travis-ci.org/vulcanize/vulcanizedb.svg?branch=master)](https://travis-ci.org/vulcanize/vulcanizedb)
+[![Build Status](https://travis-ci.com/8thlight/maker-vulcanizedb.svg?branch=staging)](https://travis-ci.com/8thlight/maker-vulcanizedb)
 
 ## About
 
