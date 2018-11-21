@@ -48,7 +48,7 @@ func (transformer Transformer) Execute() error {
 	}
 	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
-		logs, err := transformer.Fetcher.FetchLogs(config.ContractAddresses, topics, header.BlockNumber)
+		logs, err := transformer.Fetcher.FetchLogs(config.ContractAddresses, topics, header)
 		if err != nil {
 			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
 			return err

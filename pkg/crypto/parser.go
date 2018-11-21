@@ -2,7 +2,7 @@ package crypto
 
 import (
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/discover"
+	"github.com/ethereum/go-ethereum/p2p/discv5"
 )
 
 type PublicKeyParser interface {
@@ -16,6 +16,6 @@ func (EthPublicKeyParser) ParsePublicKey(privateKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pubKey := discover.PubkeyID(&np.PublicKey)
+	pubKey := discv5.PubkeyID(&np.PublicKey)
 	return pubKey.String(), nil
 }

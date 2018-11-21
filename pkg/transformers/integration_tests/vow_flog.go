@@ -39,7 +39,7 @@ var _ = Describe("VowFlog LogNoteTransformer", func() {
 		db := test_config.NewTestDB(blockchain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber)
+		err = persistHeader(db, blockNumber, blockchain)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(1).To(Equal(1))
 

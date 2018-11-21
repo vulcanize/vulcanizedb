@@ -44,12 +44,6 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, TendModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, tend.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
 			VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,

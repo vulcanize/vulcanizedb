@@ -15,7 +15,6 @@
 package shared_behaviors
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -24,7 +23,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/rand"
@@ -101,35 +99,6 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
-		})
-
-		Describe("when log's block hash does not match associated header's block hash", func() {
-			var (
-				differentHeaderID int64
-				err               error
-			)
-
-			BeforeEach(func() {
-				differentHeader := fakes.FakeHeader
-				differentHeader.BlockNumber = fakes.FakeHeader.BlockNumber + 1
-				differentHeader.Hash = common.BytesToHash(append(fakes.FakeHash.Bytes(), 1)).String()
-				differentHeaderID, err = headerRepository.CreateOrUpdateHeader(differentHeader)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = repository.Create(differentHeaderID, []interface{}{logEventModel})
-			})
-
-			It("returns error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(shared.ErrHeaderMismatch))
-			})
-
-			It("removes header", func() {
-				var headerIDs []int64
-				err = db.Select(&headerIDs, `SELECT id FROM public.headers`)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(headerIDs).NotTo(ContainElement(differentHeaderID))
-			})
 		})
 
 		It("allows for multiple log events of the same type in one transaction if they have different log indexes", func() {

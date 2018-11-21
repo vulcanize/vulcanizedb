@@ -29,10 +29,10 @@ type MockLogFetcher struct {
 	SetBcCalled              bool
 }
 
-func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
+func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error) {
 	mlf.FetchedContractAddresses = append(mlf.FetchedContractAddresses, contractAddresses)
 	mlf.FetchedTopics = topics
-	mlf.FetchedBlocks = append(mlf.FetchedBlocks, blockNumber)
+	mlf.FetchedBlocks = append(mlf.FetchedBlocks, header.BlockNumber)
 
 	return mlf.FetchedLogs, mlf.fetcherError
 }

@@ -15,8 +15,6 @@
 package shared
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -25,7 +23,7 @@ import (
 )
 
 type LogFetcher interface {
-	FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error)
+	FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error)
 }
 
 type SettableLogFetcher interface {
@@ -47,12 +45,11 @@ func NewFetcher(blockchain core.BlockChain) Fetcher {
 	}
 }
 
-func (fetcher Fetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, blockNumber int64) ([]types.Log, error) {
-	block := big.NewInt(blockNumber)
+func (fetcher Fetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error) {
 	addresses := hexStringsToAddresses(contractAddresses)
+	blockHash := common.HexToHash(header.Hash)
 	query := ethereum.FilterQuery{
-		FromBlock: block,
-		ToBlock:   block,
+		BlockHash: &blockHash,
 		Addresses: addresses,
 		Topics:    topics,
 	}

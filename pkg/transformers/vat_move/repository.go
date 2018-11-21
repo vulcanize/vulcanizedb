@@ -39,12 +39,6 @@ func (repository VatMoveRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatMoveModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vatMove.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_move (header_id, src, dst, rad, log_idx, tx_idx, raw_log)
 				VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

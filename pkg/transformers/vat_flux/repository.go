@@ -39,12 +39,6 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatFluxModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vatFlux.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, log_idx, raw_log)
 		VALUES($1, $2, $3, $4, $5::NUMERIC, $6, $7, $8)`,
 			headerID, vatFlux.Ilk, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)

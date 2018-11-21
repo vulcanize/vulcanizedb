@@ -39,12 +39,6 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 			return fmt.Errorf("model of type %T, not %T", model, CatFileChopLumpModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, chopLump.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,

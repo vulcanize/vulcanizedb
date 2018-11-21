@@ -38,12 +38,6 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 			return fmt.Errorf("model of type %T, not %T", model, CatFilePitVowModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vow.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = repository.db.Exec(
 			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4, $5, $6)`,

@@ -39,12 +39,6 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 			return fmt.Errorf("model of type %T, not %T", model, PitFileDebtCeilingModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, pitFileDC.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.pit_file_debt_ceiling (header_id, what, data, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3::NUMERIC, $4, $5, $6)`,

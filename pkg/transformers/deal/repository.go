@@ -39,12 +39,6 @@ func (repository DealRepository) Create(headerID int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, DealModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, dealModel.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.deal (header_id, bid_id, contract_address, log_idx, tx_idx, raw_log)
 					 VALUES($1, $2, $3, $4, $5, $6)`,

@@ -37,12 +37,6 @@ func (repository *FlapKickRepository) Create(headerID int64, models []interface{
 			return fmt.Errorf("model of type %T, not %T", model, FlapKickModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, flapKickModel.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT into maker.flap_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,

@@ -39,12 +39,6 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatInitModel{})
 		}
 
-		err = shared.ValidateHeaderConsistency(headerID, vatInit.Raw, repository.db)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		_, err = tx.Exec(
 			`INSERT INTO maker.vat_init (header_id, ilk, log_idx, tx_idx, raw_log)
 			VALUES($1, $2, $3, $4, $5)`,
