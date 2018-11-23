@@ -102,7 +102,7 @@ func (abi ABI) UnpackIntoMap(v map[string]interface{}, name string, output []byt
 		if len(output)%32 != 0 {
 			return fmt.Errorf("abi: improperly formatted output")
 		}
-		return method.Outputs.Unpack(v, output)
+		return method.Outputs.UnpackIntoMap(v, output)
 	} else if event, ok := abi.Events[name]; ok {
 		return event.Inputs.UnpackIntoMap(v, output)
 	}
@@ -155,6 +155,9 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 // MethodById looks up a method by the 4-byte id
 // returns nil if none found
 func (abi *ABI) MethodById(sigdata []byte) (*Method, error) {
+	if len(sigdata) < 4 {
+		return nil, fmt.Errorf("data too short (% bytes) for abi method lookup", len(sigdata))
+	}
 	for _, method := range abi.Methods {
 		if bytes.Equal(method.Id(), sigdata[:4]) {
 			return &method, nil
