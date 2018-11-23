@@ -31,7 +31,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
 )
 
 var transferEntity = &dai.TransferEntity{

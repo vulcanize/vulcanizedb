@@ -31,7 +31,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 )
 
 var _ = Describe("every_block Getter", func() {

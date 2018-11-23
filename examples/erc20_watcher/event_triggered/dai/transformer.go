@@ -27,7 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 )
 
 type ERC20EventTransformer struct {

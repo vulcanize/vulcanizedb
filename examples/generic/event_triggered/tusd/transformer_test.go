@@ -23,7 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/generic/event_triggered/tusd"
 	"github.com/vulcanize/vulcanizedb/examples/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 )
 
 var blockID1 = int64(5428074)
