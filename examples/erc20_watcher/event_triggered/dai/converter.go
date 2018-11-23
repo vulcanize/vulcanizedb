@@ -24,8 +24,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
 )
 
 // Converter converts a raw event log into its corresponding entity

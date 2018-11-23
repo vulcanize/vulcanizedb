@@ -25,8 +25,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/examples/erc20_watcher/event_triggered/dai"
 	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
 )
 
 var expectedTransferModel = event_triggered.TransferModel{

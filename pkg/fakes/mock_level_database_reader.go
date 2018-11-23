@@ -98,10 +98,10 @@ func (mldr *MockLevelDatabaseReader) GetBlockReceipts(hash common.Hash, number u
 	return mldr.returnReceipts
 }
 
-func (mldr *MockLevelDatabaseReader) GetBlockNumber(hash common.Hash) uint64 {
+func (mldr *MockLevelDatabaseReader) GetBlockNumber(hash common.Hash) *uint64 {
 	mldr.getBlockNumberCalled = true
 	mldr.getBlockNumberPassedHash = hash
-	return mldr.returnBlockNumber
+	return &mldr.returnBlockNumber
 }
 
 func (mldr *MockLevelDatabaseReader) GetCanonicalHash(number uint64) common.Hash {

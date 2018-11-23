@@ -27,14 +27,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // omniWatcherCmd represents the omniWatcher command
 var omniWatcherCmd = &cobra.Command{
 	Use:   "omniWatcher",
-	Short: "Watches events at the provided contract address",
+	Short: "Watches events at the provided contract address using fully synced vDB",
 	Long: `Uses input contract address and event filters to watch events
 
 Expects an ethereum node to be running
