@@ -111,14 +111,14 @@ func (f *Fetcher) FetchAddress(method, contractAbi, contractAddress string, bloc
 	f.ContractAddress = contractAddress
 	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
 
-	adr := common.StringToAddress("test_address")
+	adr := common.HexToAddress("test_address")
 
 	if method == "owner" {
 		f.owner = adr
 
 		return f.owner, nil
 	}
-	return common.StringToAddress(""), errors.New("invalid method argument")
+	return common.HexToAddress(""), errors.New("invalid method argument")
 }
 
 func (f *Fetcher) FetchString(method, contractAbi, contractAddress string, blockNumber int64, methodArgs []interface{}) (string, error) {
@@ -148,15 +148,15 @@ func (f *Fetcher) FetchHash(method, contractAbi, contractAddress string, blockNu
 	f.FetchedBlocks = append(f.FetchedBlocks, blockNumber)
 
 	if method == "name" {
-		f.hashName = common.StringToHash("test_name")
+		f.hashName = common.HexToHash("test_name")
 
 		return f.hashName, nil
 	}
 
 	if method == "symbol" {
-		f.hashSymbol = common.StringToHash("test_symbol")
+		f.hashSymbol = common.HexToHash("test_symbol")
 
 		return f.hashSymbol, nil
 	}
-	return common.StringToHash(""), errors.New("invalid method argument")
+	return common.HexToHash(""), errors.New("invalid method argument")
 }

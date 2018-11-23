@@ -18,7 +18,7 @@ package generic
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 )
 
 var DaiConfig = shared.ContractConfig{

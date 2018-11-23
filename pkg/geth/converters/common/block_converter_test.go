@@ -234,7 +234,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				CumulativeGasUsed: uint64(7996119),
 				GasUsed:           uint64(21000),
 				Logs:              []*types.Log{},
-				Status:            uint(1),
+				Status:            uint64(1),
 				TxHash:            gethTransaction.Hash(),
 			}
 
