@@ -30,6 +30,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Transformer", func() {
@@ -95,8 +96,8 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock2)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
 			err = t.Init()
@@ -120,8 +121,8 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Does nothing if watched events are unset", func() {
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock2)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
 			t := transformer.NewTransformer("", blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
@@ -133,8 +134,8 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Execute", func() {
 		BeforeEach(func() {
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(test_helpers.TransferBlock2)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
@@ -148,7 +149,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			log := test_helpers.TransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.transfer_event WHERE block = 6194634", constants.TusdContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.transfer_event WHERE block = 6194634", constants.TusdContractAddress)).StructScan(&log)
 
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.Tx).To(Equal("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee"))
@@ -198,12 +199,12 @@ var _ = Describe("Transformer", func() {
 
 			res := test_helpers.BalanceOf{}
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0x000000000000000000000000000000000000Af21' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0x000000000000000000000000000000000000Af21' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Balance).To(Equal("0"))
 			Expect(res.TokenName).To(Equal("TrueUSD"))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM c%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6194634'", constants.TusdContractAddress)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 		})
 

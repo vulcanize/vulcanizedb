@@ -22,6 +22,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Contract", func() {
@@ -38,11 +39,11 @@ var _ = Describe("Contract", func() {
 
 			val, ok := info.Filters["Transfer"]
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(test_helpers.ExpectedTransferFilter))
+			Expect(val).To(Equal(mocks.ExpectedTransferFilter))
 
 			val, ok = info.Filters["Approval"]
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(test_helpers.ExpectedApprovalFilter))
+			Expect(val).To(Equal(mocks.ExpectedApprovalFilter))
 
 			val, ok = info.Filters["Mint"]
 			Expect(ok).To(Equal(false))
