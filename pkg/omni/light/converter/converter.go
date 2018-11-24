@@ -17,16 +17,22 @@
 package converter
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"math/big"
+	"strconv"
 
-	geth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
 type Converter interface {
-	Convert(log geth.Log, event types.Event) (*types.Log, error)
+	Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error)
 	Update(info *contract.Contract)
 }
 
@@ -45,6 +51,66 @@ func (c *converter) Update(info *contract.Contract) {
 }
 
 // Convert the given watched event log into a types.Log for the given event
-func (c *converter) Convert(log geth.Log, event types.Event) (*types.Log, error) {
-	return nil, errors.New("implement me")
+func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
+	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	returnLogs := make([]types.Log, 0, len(logs))
+	for _, log := range logs {
+		values := make(map[string]interface{})
+		for _, field := range event.Fields {
+			var i interface{}
+			values[field.Name] = i
+		}
+
+		err := contract.UnpackLogIntoMap(values, event.Name, log)
+		if err != nil {
+			return nil, err
+		}
+
+		strValues := make(map[string]string, len(values))
+		for fieldName, input := range values {
+			// Postgres cannot handle custom types, resolve everything to strings
+			switch input.(type) {
+			case *big.Int:
+				b := input.(*big.Int)
+				strValues[fieldName] = b.String()
+			case common.Address:
+				a := input.(common.Address)
+				strValues[fieldName] = a.String()
+				c.ContractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
+			case common.Hash:
+				h := input.(common.Hash)
+				strValues[fieldName] = h.String()
+			case string:
+				strValues[fieldName] = input.(string)
+			case bool:
+				strValues[fieldName] = strconv.FormatBool(input.(bool))
+			case []byte:
+				b := input.([]byte)
+				strValues[fieldName] = string(b)
+			case byte:
+				b := input.(byte)
+				strValues[fieldName] = string(b)
+			default:
+				return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
+			}
+		}
+
+		// Only hold onto logs that pass our address filter, if any
+		if c.ContractInfo.PassesEventFilter(strValues) {
+			raw, err := json.Marshal(log)
+			if err != nil {
+				return nil, err
+			}
+
+			returnLogs = append(returnLogs, types.Log{
+				LogIndex:         log.Index,
+				Values:           strValues,
+				Raw:              raw,
+				TransactionIndex: log.TxIndex,
+				Id:               headerID,
+			})
+		}
+	}
+
+	return returnLogs, nil
 }

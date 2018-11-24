@@ -20,16 +20,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/full/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/full/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/full/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/retriever"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
 var mockEvent = core.WatchedEvent{
@@ -68,11 +68,11 @@ var _ = Describe("Address Retriever Test", func() {
 		log, err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
 
-		dataStore = repository.NewEventRepository(db)
-		dataStore.PersistLog(*log, info.Address, info.Name)
+		dataStore = repository.NewEventRepository(db, types.FullSync)
+		dataStore.PersistLogs([]types.Log{*log}, event, info.Address, info.Name)
 		Expect(err).ToNot(HaveOccurred())
 
-		r = retriever.NewAddressRetriever(db)
+		r = retriever.NewAddressRetriever(db, types.FullSync)
 	})
 
 	AfterEach(func() {

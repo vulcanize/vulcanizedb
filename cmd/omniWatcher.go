@@ -17,11 +17,8 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -57,29 +54,6 @@ Requires a .toml config file:
 func omniWatcher() {
 	if contractAddress == "" && len(contractAddresses) == 0 {
 		log.Fatal("Contract address required")
-	}
-
-	if len(contractEvents) == 0 || len(contractMethods) == 0 {
-		var str string
-		for str != "y" {
-			reader := bufio.NewReader(os.Stdin)
-			if len(contractEvents) == 0 && len(contractMethods) == 0 {
-				fmt.Print("Warning: no events or methods specified.\n Proceed to watch every event and poll no methods? (Y/n)\n> ")
-			} else if len(contractEvents) == 0 {
-				fmt.Print("Warning: no events specified.\n Proceed to watch every event? (Y/n)\n> ")
-			} else {
-				fmt.Print("Warning: no methods specified.\n Proceed to poll no methods? (Y/n)\n> ")
-			}
-			resp, err := reader.ReadBytes('\n')
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			str = strings.ToLower(string(resp))
-			if str == "n" {
-				return
-			}
-		}
 	}
 
 	ticker := time.NewTicker(5 * time.Second)
@@ -122,5 +96,5 @@ func init() {
 	omniWatcherCmd.Flags().StringArrayVarP(&methodAddrs, "method-filter-addresses", "g", []string{}, "Account addresses to poll methods with; default is to poll with all found token holder addresses")
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block to begin watching- default is first block the contract exists")
-	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
+	omniWatcherCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
 }

@@ -23,7 +23,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
 )
 
@@ -181,7 +181,7 @@ var _ = Describe("Parser", func() {
 			wanted := []string{"isApprovedForAll", "supportsInterface", "getApproved", "totalSupply", "balanceOf"}
 
 			methods := p.GetMethods(wanted)
-			selectMethods := p.GetAddrMethods(wanted)
+			selectMethods := p.GetSelectMethods(wanted)
 
 			_, ok := selectMethods["totalSupply"]
 			Expect(ok).To(Equal(true))

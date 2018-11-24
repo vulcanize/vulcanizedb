@@ -9,10 +9,10 @@
 Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
 
 ## Dependencies
- - Go 1.9+
+ - Go 1.11+
  - Postgres 10
  - Ethereum Node
-   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8+)
+   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.18+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
 
 ## Project Setup

@@ -19,18 +19,17 @@ package transformer
 import (
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/full/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/full/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/full/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/poller"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
 // Requires a fully synced vDB and a running eth node (or infura)
@@ -71,14 +70,14 @@ type transformer struct {
 // Transformer takes in config for blockchain, database, and network id
 func NewTransformer(network string, BC core.BlockChain, DB *postgres.DB) *transformer {
 	return &transformer{
-		Poller:                 poller.NewPoller(BC, DB),
+		Poller:                 poller.NewPoller(BC, DB, types.FullSync),
 		Parser:                 parser.NewParser(network),
 		BlockRetriever:         retriever.NewBlockRetriever(DB),
 		Converter:              converter.NewConverter(&contract.Contract{}),
 		Contracts:              map[string]*contract.Contract{},
 		WatchedEventRepository: repositories.WatchedEventRepository{DB: DB},
 		FilterRepository:       repositories.FilterRepository{DB: DB},
-		EventRepository:        repository.NewEventRepository(DB),
+		EventRepository:        repository.NewEventRepository(DB, types.FullSync),
 		WatchedEvents:          map[string][]string{},
 		WantedMethods:          map[string][]string{},
 		ContractRanges:         map[string][2]int64{},
@@ -144,7 +143,7 @@ func (t *transformer) Init() error {
 			StartingBlock:  firstBlock,
 			LastBlock:      lastBlock,
 			Events:         t.GetEvents(subset),
-			Methods:        t.GetAddrMethods(t.WantedMethods[contractAddr]),
+			Methods:        t.GetSelectMethods(t.WantedMethods[contractAddr]),
 			EventAddrs:     EventAddrs,
 			MethodAddrs:    MethodAddrs,
 			TknHolderAddrs: map[string]bool{},
@@ -184,27 +183,26 @@ func (tr transformer) Execute() error {
 		tr.Update(con)
 
 		// Iterate through contract filters and get watched event logs
-		for eventName, filter := range con.Filters {
+		for eventName := range con.Filters {
 			watchedEvents, err := tr.GetWatchedEvents(eventName)
 			if err != nil {
-				log.Println(fmt.Sprintf("Error fetching events for %s:", filter.Name), err)
 				return err
 			}
 
 			// Iterate over watched event logs
 			for _, we := range watchedEvents {
 				// Convert them to our custom log type
-				log, err := tr.Converter.Convert(*we, con.Events[eventName])
+				cstm, err := tr.Converter.Convert(*we, con.Events[eventName])
 				if err != nil {
 					return err
 				}
-				if log == nil {
-					break
+				if cstm == nil {
+					continue
 				}
 
 				// If log is not empty, immediately persist in repo
 				// Run this in seperate goroutine?
-				err = tr.PersistLog(*log, con.Address, con.Name)
+				err = tr.PersistLogs([]types.Log{*cstm}, con.Events[eventName], con.Address, con.Name)
 				if err != nil {
 					return err
 				}

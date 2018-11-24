@@ -21,28 +21,41 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/golang-lru"
+
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
+
+const methodCacheSize = 1000
 
 type MethodRepository interface {
 	PersistResult(method types.Result, contractAddr, contractName string) error
 	CreateMethodTable(contractAddr string, method types.Result) (bool, error)
 	CreateContractSchema(contractAddr string) (bool, error)
+	CheckSchemaCache(key string) (interface{}, bool)
+	CheckTableCache(key string) (interface{}, bool)
 }
 
 type methodRepository struct {
 	*postgres.DB
+	mode    types.Mode
+	schemas *lru.Cache // Cache names of recently used schemas to minimize db connections
+	tables  *lru.Cache // Cache names of recently used tables to minimize db connections
 }
 
-func NewMethodRepository(db *postgres.DB) *methodRepository {
-
+func NewMethodRepository(db *postgres.DB, mode types.Mode) *methodRepository {
+	ccs, _ := lru.New(contractCacheSize)
+	mcs, _ := lru.New(methodCacheSize)
 	return &methodRepository{
-		DB: db,
+		DB:      db,
+		mode:    mode,
+		schemas: ccs,
+		tables:  mcs,
 	}
 }
 
-func (d *methodRepository) PersistResult(method types.Result, contractAddr, contractName string) error {
+func (r *methodRepository) PersistResult(method types.Result, contractAddr, contractName string) error {
 	if len(method.Args) != len(method.Inputs) {
 		return errors.New("error: given number of inputs does not match number of method arguments")
 	}
@@ -50,51 +63,48 @@ func (d *methodRepository) PersistResult(method types.Result, contractAddr, cont
 		return errors.New("error: given number of outputs does not match number of method return values")
 	}
 
-	_, err := d.CreateContractSchema(contractAddr)
+	_, err := r.CreateContractSchema(contractAddr)
 	if err != nil {
 		return err
 	}
 
-	_, err = d.CreateMethodTable(contractAddr, method)
+	_, err = r.CreateMethodTable(contractAddr, method)
 	if err != nil {
 		return err
 	}
 
-	return d.persistResult(method, contractAddr, contractName)
+	return r.persistResult(method, contractAddr, contractName)
 }
 
 // Creates a custom postgres command to persist logs for the given event
-func (d *methodRepository) persistResult(method types.Result, contractAddr, contractName string) error {
+func (r *methodRepository) persistResult(method types.Result, contractAddr, contractName string) error {
 	// Begin postgres string
-	pgStr := fmt.Sprintf("INSERT INTO c%s.%s_method ", strings.ToLower(contractAddr), strings.ToLower(method.Name))
+	pgStr := fmt.Sprintf("INSERT INTO %s_%s.%s_method ", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(method.Name))
 	pgStr = pgStr + "(token_name, block"
+	ml := len(method.Args)
 
-	// Pack the corresponding variables in a slice
-	var data []interface{}
+	// Preallocate slice of needed size and proceed to pack variables into it in same order they appear in string
+	data := make([]interface{}, 0, 3+ml)
 	data = append(data,
 		contractName,
 		method.Block)
 
 	// Iterate over method args and return value, adding names
 	// to the string and pushing values to the slice
-	counter := 0 // Keep track of number of inputs
 	for i, arg := range method.Args {
-		counter += 1
 		pgStr = pgStr + fmt.Sprintf(", %s_", strings.ToLower(arg.Name)) // Add underscore after to avoid any collisions with reserved pg words
 		data = append(data, method.Inputs[i])
 	}
-
-	counter += 1
 	pgStr = pgStr + ", returned) VALUES ($1, $2"
 	data = append(data, method.Output)
 
 	// For each input entry we created we add its postgres command variable to the string
-	for i := 0; i < counter; i++ {
+	for i := 0; i <= ml; i++ {
 		pgStr = pgStr + fmt.Sprintf(", $%d", i+3)
 	}
 	pgStr = pgStr + ")"
 
-	_, err := d.DB.Exec(pgStr, data...)
+	_, err := r.DB.Exec(pgStr, data...)
 	if err != nil {
 		return err
 	}
@@ -103,26 +113,35 @@ func (d *methodRepository) persistResult(method types.Result, contractAddr, cont
 }
 
 // Checks for event table and creates it if it does not already exist
-func (d *methodRepository) CreateMethodTable(contractAddr string, method types.Result) (bool, error) {
-	tableExists, err := d.checkForTable(contractAddr, method.Name)
+func (r *methodRepository) CreateMethodTable(contractAddr string, method types.Result) (bool, error) {
+	tableID := fmt.Sprintf("%s_%s.%s_method", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(method.Name))
+
+	// Check cache before querying pq to see if table exists
+	_, ok := r.tables.Get(tableID)
+	if ok {
+		return false, nil
+	}
+	tableExists, err := r.checkForTable(contractAddr, method.Name)
 	if err != nil {
 		return false, err
 	}
-
 	if !tableExists {
-		err = d.newMethodTable(contractAddr, method)
+		err = r.newMethodTable(tableID, method)
 		if err != nil {
 			return false, err
 		}
 	}
 
+	// Add schema name to cache
+	r.tables.Add(tableID, true)
+
 	return !tableExists, nil
 }
 
 // Creates a table for the given contract and event
-func (d *methodRepository) newMethodTable(contractAddr string, method types.Result) error {
+func (r *methodRepository) newMethodTable(tableID string, method types.Result) error {
 	// Begin pg string
-	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS c%s.%s_method ", strings.ToLower(contractAddr), strings.ToLower(method.Name))
+	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ", tableID)
 	pgStr = pgStr + "(id SERIAL, token_name CHARACTER VARYING(66) NOT NULL, block INTEGER NOT NULL,"
 
 	// Iterate over method inputs and outputs, using their name and pgType to grow the string
@@ -132,54 +151,69 @@ func (d *methodRepository) newMethodTable(contractAddr string, method types.Resu
 
 	pgStr = pgStr + fmt.Sprintf(" returned %s NOT NULL)", method.Return[0].PgType)
 
-	_, err := d.DB.Exec(pgStr)
+	_, err := r.DB.Exec(pgStr)
 
 	return err
 }
 
 // Checks if a table already exists for the given contract and event
-func (d *methodRepository) checkForTable(contractAddr string, methodName string) (bool, error) {
-	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'c%s' AND table_name = '%s_method')", strings.ToLower(contractAddr), strings.ToLower(methodName))
+func (r *methodRepository) checkForTable(contractAddr string, methodName string) (bool, error) {
+	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '%s_%s' AND table_name = '%s_method')", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(methodName))
 	var exists bool
-	err := d.DB.Get(&exists, pgStr)
+	err := r.DB.Get(&exists, pgStr)
 
 	return exists, err
 }
 
 // Checks for contract schema and creates it if it does not already exist
-func (d *methodRepository) CreateContractSchema(contractAddr string) (bool, error) {
+func (r *methodRepository) CreateContractSchema(contractAddr string) (bool, error) {
 	if contractAddr == "" {
 		return false, errors.New("error: no contract address specified")
 	}
 
-	schemaExists, err := d.checkForSchema(contractAddr)
+	// Check cache before querying pq to see if schema exists
+	_, ok := r.schemas.Get(contractAddr)
+	if ok {
+		return false, nil
+	}
+	schemaExists, err := r.checkForSchema(contractAddr)
 	if err != nil {
 		return false, err
 	}
-
 	if !schemaExists {
-		err = d.newContractSchema(contractAddr)
+		err = r.newContractSchema(contractAddr)
 		if err != nil {
 			return false, err
 		}
 	}
 
+	// Add schema name to cache
+	r.schemas.Add(contractAddr, true)
+
 	return !schemaExists, nil
 }
 
 // Creates a schema for the given contract
-func (d *methodRepository) newContractSchema(contractAddr string) error {
-	_, err := d.DB.Exec("CREATE SCHEMA IF NOT EXISTS c" + strings.ToLower(contractAddr))
+func (r *methodRepository) newContractSchema(contractAddr string) error {
+	_, err := r.DB.Exec("CREATE SCHEMA IF NOT EXISTS " + r.mode.String() + "_" + strings.ToLower(contractAddr))
 
 	return err
 }
 
 // Checks if a schema already exists for the given contract
-func (d *methodRepository) checkForSchema(contractAddr string) (bool, error) {
-	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'c%s')", strings.ToLower(contractAddr))
+func (r *methodRepository) checkForSchema(contractAddr string) (bool, error) {
+	pgStr := fmt.Sprintf("SELECT EXISTS (SELECT schema_name FROM information_schema.schemata WHERE schema_name = '%s_%s')", r.mode.String(), strings.ToLower(contractAddr))
 
 	var exists bool
-	err := d.DB.Get(&exists, pgStr)
+	err := r.DB.Get(&exists, pgStr)
 
 	return exists, err
+}
+
+func (r *methodRepository) CheckSchemaCache(key string) (interface{}, bool) {
+	return r.schemas.Get(key)
+}
+
+func (r *methodRepository) CheckTableCache(key string) (interface{}, bool) {
+	return r.tables.Get(key)
 }

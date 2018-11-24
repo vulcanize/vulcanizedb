@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/light/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Block Retriever", func() {
@@ -43,9 +44,9 @@ var _ = Describe("Block Retriever", func() {
 
 	Describe("RetrieveFirstBlock", func() {
 		It("Retrieves block number of earliest header in the database", func() {
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader2)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader3)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
 
 			i, err := r.RetrieveFirstBlock()
 			Expect(err).NotTo(HaveOccurred())
@@ -60,9 +61,9 @@ var _ = Describe("Block Retriever", func() {
 
 	Describe("RetrieveMostRecentBlock", func() {
 		It("Retrieves the latest header's block number", func() {
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader2)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader3)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
 
 			i, err := r.RetrieveMostRecentBlock()
 			Expect(err).ToNot(HaveOccurred())

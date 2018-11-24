@@ -14,4 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository_test
+package retriever_test
+
+import (
+	"io/ioutil"
+	"log"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestRetriever(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Address Retriever Suite Test")
+}
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

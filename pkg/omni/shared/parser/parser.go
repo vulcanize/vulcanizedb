@@ -17,9 +17,13 @@
 package parser
 
 import (
+	"errors"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
@@ -30,7 +34,7 @@ type Parser interface {
 	Abi() string
 	ParsedAbi() abi.ABI
 	GetMethods(wanted []string) map[string]types.Method
-	GetAddrMethods(wanted []string) map[string]types.Method
+	GetSelectMethods(wanted []string) map[string]types.Method
 	GetEvents(wanted []string) map[string]types.Event
 }
 
@@ -59,28 +63,42 @@ func (p *parser) ParsedAbi() abi.ABI {
 // Retrieves and parses the abi string
 // for the given contract address
 func (p *parser) Parse(contractAddr string) error {
+	knownAbi, err := p.lookUp(contractAddr)
+	if err == nil {
+		p.abi = knownAbi
+		p.parsedAbi, err = geth.ParseAbi(knownAbi)
+		return err
+	}
+
 	abiStr, err := p.client.GetAbi(contractAddr)
 	if err != nil {
 		return err
 	}
-
 	p.abi = abiStr
 	p.parsedAbi, err = geth.ParseAbi(abiStr)
 
 	return err
 }
 
+func (p *parser) lookUp(contractAddr string) (string, error) {
+	if v, ok := constants.Abis[common.HexToAddress(contractAddr)]; ok {
+		return v, nil
+	}
+
+	return "", errors.New("ABI not present in lookup tabe")
+}
+
 // Returns wanted methods, if they meet the criteria, as map of types.Methods
 // Empty wanted array => all methods that fit are returned
 // Nil wanted array => no events are returned
-func (p *parser) GetAddrMethods(wanted []string) map[string]types.Method {
+func (p *parser) GetSelectMethods(wanted []string) map[string]types.Method {
 	addrMethods := map[string]types.Method{}
 	if wanted == nil {
-		return addrMethods
+		return nil
 	}
 
 	for _, m := range p.parsedAbi.Methods {
-		// Only return methods that have less than 3 inputs, 1 output, and wanted
+		// Only return methods that have less than 3 inputs, 1 output
 		if len(m.Inputs) < 3 && len(m.Outputs) == 1 && (len(wanted) == 0 || stringInSlice(wanted, m.Name)) {
 			addrsOnly := true
 			for _, input := range m.Inputs {
@@ -139,7 +157,7 @@ func (p *parser) GetEvents(wanted []string) map[string]types.Event {
 }
 
 func wantType(arg abi.Argument) bool {
-	wanted := []byte{abi.UintTy, abi.IntTy, abi.BoolTy, abi.StringTy, abi.AddressTy, abi.HashTy}
+	wanted := []byte{abi.UintTy, abi.IntTy, abi.BoolTy, abi.StringTy, abi.AddressTy, abi.HashTy, abi.BytesTy, abi.FixedBytesTy, abi.FixedPointTy}
 	for _, ty := range wanted {
 		if arg.Type.T == ty {
 			return true
