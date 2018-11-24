@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package test_helpers
+package mocks
 
 import (
 	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
@@ -125,4 +129,45 @@ var MockHeader3 = core.Header{
 	BlockNumber: 6194634,
 	Raw:         rawFakeHeader,
 	Timestamp:   "50000030",
+}
+
+var MockTransferLog1 = types.Log{
+	Index:       1,
+	Address:     common.HexToAddress(constants.TusdContractAddress),
+	BlockNumber: 5488076,
+	TxIndex:     110,
+	TxHash:      common.HexToHash("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae"),
+	Topics: []common.Hash{
+		common.HexToHash(constants.TransferEvent.Signature()),
+		common.HexToHash("0x000000000000000000000000000000000000000000000000000000000000af21"),
+		common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391"),
+	},
+	Data: hexutil.MustDecode("0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe"),
+}
+
+var MockTransferLog2 = types.Log{
+	Index:       3,
+	Address:     common.HexToAddress(constants.TusdContractAddress),
+	BlockNumber: 5488077,
+	TxIndex:     2,
+	TxHash:      common.HexToHash("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae"),
+	Topics: []common.Hash{
+		common.HexToHash(constants.TransferEvent.Signature()),
+		common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391"),
+		common.HexToHash("0x000000000000000000000000000000000000000000000000000000000000af21"),
+	},
+	Data: hexutil.MustDecode("0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe"),
+}
+
+var MockMintLog = types.Log{
+	Index:       10,
+	Address:     common.HexToAddress(constants.TusdContractAddress),
+	BlockNumber: 548808,
+	TxIndex:     50,
+	TxHash:      common.HexToHash("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6minty"),
+	Topics: []common.Hash{
+		common.HexToHash(constants.MintEvent.Signature()),
+		common.HexToHash("0x000000000000000000000000000000000000000000000000000000000000af21"),
+	},
+	Data: hexutil.MustDecode("0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe"),
 }

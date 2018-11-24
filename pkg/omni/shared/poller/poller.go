@@ -42,10 +42,10 @@ type poller struct {
 	contract contract.Contract
 }
 
-func NewPoller(blockChain core.BlockChain, db *postgres.DB) *poller {
+func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *poller {
 
 	return &poller{
-		MethodRepository: repository.NewMethodRepository(db),
+		MethodRepository: repository.NewMethodRepository(db, mode),
 		bc:               blockChain,
 	}
 }

@@ -25,40 +25,41 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Converter", func() {
-	var info *contract.Contract
+	var con *contract.Contract
 	var wantedEvents = []string{"Transfer"}
 	var err error
 
 	BeforeEach(func() {
-		info = test_helpers.SetupTusdContract(wantedEvents, []string{})
+		con = test_helpers.SetupTusdContract(wantedEvents, []string{})
 	})
 
 	Describe("Update", func() {
-		It("Updates contract info held by the converter", func() {
-			c := converter.NewConverter(info)
-			Expect(c.ContractInfo).To(Equal(info))
+		It("Updates contract con held by the converter", func() {
+			c := converter.NewConverter(con)
+			Expect(c.ContractInfo).To(Equal(con))
 
-			info := test_helpers.SetupTusdContract([]string{}, []string{})
-			c.Update(info)
-			Expect(c.ContractInfo).To(Equal(info))
+			con := test_helpers.SetupTusdContract([]string{}, []string{})
+			c.Update(con)
+			Expect(c.ContractInfo).To(Equal(con))
 		})
 	})
 
 	Describe("Convert", func() {
 		It("Converts a watched event log to mapping of event input names to values", func() {
-			_, ok := info.Events["Approval"]
+			_, ok := con.Events["Approval"]
 			Expect(ok).To(Equal(false))
 
-			event, ok := info.Events["Transfer"]
+			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
-			err = info.GenerateFilters()
+			err = con.GenerateFilters()
 			Expect(err).ToNot(HaveOccurred())
 
-			c := converter.NewConverter(info)
-			log, err := c.Convert(test_helpers.MockTranferEvent, event)
+			c := converter.NewConverter(con)
+			log, err := c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).ToNot(HaveOccurred())
 
 			from := common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")
@@ -72,10 +73,36 @@ var _ = Describe("Converter", func() {
 			Expect(v).To(Equal(value.String()))
 		})
 
+		It("Keeps track of addresses it sees to grow a token holder address list for the contract", func() {
+			event, ok := con.Events["Transfer"]
+			Expect(ok).To(Equal(true))
+
+			c := converter.NewConverter(con)
+			_, err := c.Convert(mocks.MockTranferEvent, event)
+			Expect(err).ToNot(HaveOccurred())
+
+			b, ok := con.TknHolderAddrs["0x000000000000000000000000000000000000Af21"]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = con.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			_, ok = con.TknHolderAddrs["0x"]
+			Expect(ok).To(Equal(false))
+
+			_, ok = con.TknHolderAddrs[""]
+			Expect(ok).To(Equal(false))
+
+			_, ok = con.TknHolderAddrs["0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP"]
+			Expect(ok).To(Equal(false))
+		})
+
 		It("Fails with an empty contract", func() {
-			event := info.Events["Transfer"]
+			event := con.Events["Transfer"]
 			c := converter.NewConverter(&contract.Contract{})
-			_, err = c.Convert(test_helpers.MockTranferEvent, event)
+			_, err = c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).To(HaveOccurred())
 		})
 	})
