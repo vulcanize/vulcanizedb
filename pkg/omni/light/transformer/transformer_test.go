@@ -17,9 +17,7 @@
 package transformer_test
 
 import (
-	"math/rand"
-	"time"
-
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/light/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Transformer", func() {
@@ -36,7 +35,7 @@ var _ = Describe("Transformer", func() {
 	var err error
 	var blockChain core.BlockChain
 	var headerRepository repositories.HeaderRepository
-	rand.Seed(time.Now().UnixNano())
+	var headerID int64
 
 	BeforeEach(func() {
 		db, blockChain = test_helpers.SetupDBandBC()
@@ -94,8 +93,8 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader3)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
 			err = t.Init()
@@ -111,7 +110,7 @@ var _ = Describe("Transformer", func() {
 			Expect(c.Address).To(Equal(constants.TusdContractAddress))
 		})
 
-		It("Fails to initialize if first and most recent blocks cannot be fetched from vDB", func() {
+		It("Fails to initialize if first and most recent block numbers cannot be fetched from vDB headers table", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
 			err = t.Init()
@@ -119,8 +118,8 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Does nothing if watched events are unset", func() {
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(test_helpers.MockHeader3)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
 			t := transformer.NewTransformer("", blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
@@ -131,6 +130,96 @@ var _ = Describe("Transformer", func() {
 	})
 
 	Describe("Execute", func() {
+		BeforeEach(func() {
+			header1, err := blockChain.GetHeaderByNumber(6791668)
+			Expect(err).ToNot(HaveOccurred())
+			header2, err := blockChain.GetHeaderByNumber(6791669)
+			Expect(err).ToNot(HaveOccurred())
+			header3, err := blockChain.GetHeaderByNumber(6791670)
+			Expect(err).ToNot(HaveOccurred())
+			headerRepository.CreateOrUpdateHeader(header1)
+			headerID, err = headerRepository.CreateOrUpdateHeader(header2)
+			Expect(err).ToNot(HaveOccurred())
+			headerRepository.CreateOrUpdateHeader(header3)
+		})
 
+		It("Transforms watched contract data into custom repositories", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
+
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			log := test_helpers.LightTransferLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", constants.TusdContractAddress)).StructScan(&log)
+
+			// We don't know vulcID, so compare individual fields instead of complete structures
+			Expect(log.HeaderID).To(Equal(headerID))
+			Expect(log.From).To(Equal("0x1062a747393198f70F71ec65A582423Dba7E5Ab3"))
+			Expect(log.To).To(Equal("0x2930096dB16b4A44Ecd4084EA4bd26F7EeF1AEf0"))
+			Expect(log.Value).To(Equal("9998940000000000000000"))
+		})
+
+		It("Keeps track of contract-related addresses while transforming event data", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			c, ok := t.Contracts[constants.TusdContractAddress]
+			Expect(ok).To(Equal(true))
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			b, ok := c.TknHolderAddrs["0x1062a747393198f70F71ec65A582423Dba7E5Ab3"]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = c.TknHolderAddrs["0x2930096dB16b4A44Ecd4084EA4bd26F7EeF1AEf0"]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			_, ok = c.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843b1234567890"]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.TknHolderAddrs["0x"]
+			Expect(ok).To(Equal(false))
+		})
+
+		It("Polls given methods using generated token holder address", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			res := test_helpers.BalanceOf{}
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Balance).To(Equal("55849938025000000000000"))
+			Expect(res.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&res)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Fails if initialization has not been done", func() {
+			t := transformer.NewTransformer("", blockChain, db)
+			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t.SetMethods(constants.TusdContractAddress, nil)
+
+			err = t.Execute()
+			Expect(err).To(HaveOccurred())
+		})
 	})
 })

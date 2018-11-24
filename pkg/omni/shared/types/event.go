@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/i-norden/go-ethereum/core/types"
 )
 
 type Event struct {
@@ -37,7 +36,6 @@ type Field struct {
 
 // Struct to hold instance of an event log data
 type Log struct {
-	Event
 	Id     int64             // VulcanizeIdLog for full sync and header ID for light sync omni watcher
 	Values map[string]string // Map of event input names to their values
 
@@ -48,7 +46,7 @@ type Log struct {
 	// Used for lightSync only
 	LogIndex         uint
 	TransactionIndex uint
-	Raw              types.Log
+	Raw              []byte // json.Unmarshalled byte array of geth/core/types.Log{}
 }
 
 // Unpack abi.Event into our custom Event struct

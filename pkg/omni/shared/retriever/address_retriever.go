@@ -18,6 +18,7 @@ package retriever
 
 import (
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -28,19 +29,19 @@ import (
 )
 
 // Address retriever is used to retrieve the addresses associated with a contract
-// It requires a vDB synced database with blocks, transactions, receipts, logs,
-// AND all of the targeted events persisted
 type AddressRetriever interface {
 	RetrieveTokenHolderAddresses(info contract.Contract) (map[common.Address]bool, error)
 }
 
 type addressRetriever struct {
-	db *postgres.DB
+	db   *postgres.DB
+	mode types.Mode
 }
 
-func NewAddressRetriever(db *postgres.DB) (r *addressRetriever) {
+func NewAddressRetriever(db *postgres.DB, mode types.Mode) (r *addressRetriever) {
 	return &addressRetriever{
-		db: db,
+		db:   db,
+		mode: mode,
 	}
 }
 
@@ -84,7 +85,7 @@ func (r *addressRetriever) retrieveTransferAddresses(con contract.Contract) ([]s
 
 		if field.Type.T == abi.AddressTy { // If they have address type, retrieve those addresses
 			addrs := make([]string, 0)
-			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s_event", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
+			pgStr := fmt.Sprintf("SELECT %s_ FROM %s_%s.%s_event", strings.ToLower(field.Name), r.mode.String(), strings.ToLower(con.Address), strings.ToLower(event.Name))
 			err := r.db.Select(&addrs, pgStr)
 			if err != nil {
 				return []string{}, err
@@ -105,7 +106,7 @@ func (r *addressRetriever) retrieveTokenMintees(con contract.Contract) ([]string
 
 		if field.Type.T == abi.AddressTy { // If they have address type, retrieve those addresses
 			addrs := make([]string, 0)
-			pgStr := fmt.Sprintf("SELECT %s_ FROM c%s.%s_event", strings.ToLower(field.Name), strings.ToLower(con.Address), strings.ToLower(event.Name))
+			pgStr := fmt.Sprintf("SELECT %s_ FROM %s_%s.%s_event", strings.ToLower(field.Name), r.mode.String(), strings.ToLower(con.Address), strings.ToLower(event.Name))
 			err := r.db.Select(&addrs, pgStr)
 			if err != nil {
 				return []string{}, err

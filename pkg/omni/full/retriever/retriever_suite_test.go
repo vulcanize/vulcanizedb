@@ -27,7 +27,7 @@ import (
 
 func TestRetriever(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Full Retriever Suite Test")
+	RunSpecs(t, "Full Block Number Retriever Suite Test")
 }
 
 var _ = BeforeSuite(func() {
