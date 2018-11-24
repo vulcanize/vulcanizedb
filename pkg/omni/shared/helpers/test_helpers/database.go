@@ -33,7 +33,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 type TransferLog struct {
@@ -45,6 +45,18 @@ type TransferLog struct {
 	From           string `db:"from_"`
 	To             string `db:"to_"`
 	Value          string `db:"value_"`
+}
+
+type LightTransferLog struct {
+	Id        int64  `db:"id"`
+	HeaderID  int64  `db:"header_id"`
+	TokenName string `db:"token_name"`
+	LogIndex  int64  `db:"log_idx"`
+	TxIndex   int64  `db:"tx_idx"`
+	From      string `db:"from_"`
+	To        string `db:"to_"`
+	Value     string `db:"value_"`
+	RawLog    []byte `db:"raw_log"`
 }
 
 type BalanceOf struct {
@@ -119,8 +131,8 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 }
 
 func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract {
-	p := parser.NewParser("")
-	err := p.Parse(constants.TusdContractAddress)
+	p := mocks.NewParser(constants.TusdAbiString)
+	err := p.Parse()
 	Expect(err).ToNot(HaveOccurred())
 
 	return &contract.Contract{
@@ -139,25 +151,40 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 }
 
 func TearDown(db *postgres.DB) {
-	_, err := db.Query(`DELETE FROM blocks`)
+	tx, err := db.Begin()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DELETE FROM headers`)
+	_, err = tx.Exec(`DELETE FROM blocks`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DELETE FROM checked_headers`)
+	_, err = tx.Exec(`DELETE FROM headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DELETE FROM logs`)
+	_, err = tx.Exec(`DELETE FROM checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DELETE FROM transactions`)
+	_, err = tx.Exec(`DELETE FROM logs`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DELETE FROM receipts`)
+	_, err = tx.Exec(`DELETE FROM transactions`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Query(`DROP SCHEMA IF EXISTS c0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	_, err = tx.Exec(`DELETE FROM receipts`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = tx.Commit()
 	Expect(err).NotTo(HaveOccurred())
 }
 

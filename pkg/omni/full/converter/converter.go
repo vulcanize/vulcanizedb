@@ -74,22 +74,25 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		// Postgres cannot handle custom types, resolve to strings
 		switch input.(type) {
 		case *big.Int:
-			var b *big.Int
-			b = input.(*big.Int)
+			b := input.(*big.Int)
 			strValues[fieldName] = b.String()
 		case common.Address:
-			var a common.Address
-			a = input.(common.Address)
+			a := input.(common.Address)
 			strValues[fieldName] = a.String()
 			c.ContractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
 		case common.Hash:
-			var h common.Hash
-			h = input.(common.Hash)
+			h := input.(common.Hash)
 			strValues[fieldName] = h.String()
 		case string:
 			strValues[fieldName] = input.(string)
 		case bool:
 			strValues[fieldName] = strconv.FormatBool(input.(bool))
+		case []byte:
+			b := input.([]byte)
+			strValues[fieldName] = string(b)
+		case byte:
+			b := input.(byte)
+			strValues[fieldName] = string(b)
 		default:
 			return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
 		}
@@ -98,7 +101,6 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 	// Only hold onto logs that pass our address filter, if any
 	if c.ContractInfo.PassesEventFilter(strValues) {
 		eventLog := &types.Log{
-			Event:  event,
 			Id:     watchedEvent.LogID,
 			Values: strValues,
 			Block:  watchedEvent.BlockNumber,

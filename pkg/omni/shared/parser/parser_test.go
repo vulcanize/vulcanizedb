@@ -23,7 +23,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
 )
 

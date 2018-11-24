@@ -19,6 +19,8 @@ package transformer
 import (
 	"errors"
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -31,12 +33,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/poller"
+	srep "github.com/vulcanize/vulcanizedb/pkg/omni/shared/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
 // Requires a light synced vDB (headers) and a running eth node (or infura)
 type transformer struct {
 	// Database interfaces
-	repository.EventRepository  // Holds transformed watched event log data
+	srep.EventRepository        // Holds transformed watched event log data
 	repository.HeaderRepository // Interface for interaction with header repositories
 
 	// Pre-processing interfaces
@@ -72,14 +76,14 @@ type transformer struct {
 func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transformer {
 
 	return &transformer{
-		Poller:           poller.NewPoller(bc, db),
+		Poller:           poller.NewPoller(bc, db, types.LightSync),
 		Fetcher:          fetcher.NewFetcher(bc),
 		Parser:           parser.NewParser(network),
 		HeaderRepository: repository.NewHeaderRepository(db),
 		BlockRetriever:   retriever.NewBlockRetriever(db),
 		Converter:        converter.NewConverter(&contract.Contract{}),
 		Contracts:        map[string]*contract.Contract{},
-		EventRepository:  repository.NewEventRepository(db),
+		EventRepository:  srep.NewEventRepository(db, types.LightSync),
 		WatchedEvents:    map[string][]string{},
 		WantedMethods:    map[string][]string{},
 		ContractRanges:   map[string][2]int64{},
@@ -93,7 +97,7 @@ func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transf
 // Uses parser to pull event info from abi
 // Use this info to generate event filters
 func (tr *transformer) Init() error {
-
+	// Iterate through all internal contract addresses
 	for contractAddr, subset := range tr.WatchedEvents {
 		// Get Abi
 		err := tr.Parser.Parse(contractAddr)
@@ -101,7 +105,7 @@ func (tr *transformer) Init() error {
 			return err
 		}
 
-		// Get first block for contract and most recent block for the chain
+		// Get first block and most recent block number in the header repo
 		firstBlock, err := tr.BlockRetriever.RetrieveFirstBlock()
 		if err != nil {
 			return err
@@ -111,7 +115,7 @@ func (tr *transformer) Init() error {
 			return err
 		}
 
-		// Set to specified range if it falls within the contract's bounds
+		// Set to specified range if it falls within the bounds
 		if firstBlock < tr.ContractRanges[contractAddr][0] {
 			firstBlock = tr.ContractRanges[contractAddr][0]
 		}
@@ -126,7 +130,7 @@ func (tr *transformer) Init() error {
 			return errors.New(fmt.Sprintf("unable to fetch contract name: %v\r\n", err))
 		}
 
-		// Remove any accidental duplicate inputs in filter addresses
+		// Remove any potential accidental duplicate inputs in filter addresses
 		EventAddrs := map[string]bool{}
 		for _, addr := range tr.EventAddrs[contractAddr] {
 			EventAddrs[addr] = true
@@ -142,6 +146,7 @@ func (tr *transformer) Init() error {
 			Network:        tr.Network,
 			Address:        contractAddr,
 			Abi:            tr.Abi(),
+			ParsedAbi:      tr.ParsedAbi(),
 			StartingBlock:  firstBlock,
 			LastBlock:      lastBlock,
 			Events:         tr.GetEvents(subset),
@@ -151,7 +156,7 @@ func (tr *transformer) Init() error {
 			TknHolderAddrs: map[string]bool{},
 		}
 
-		// Store contract info for further processing
+		// Store contract info for execution
 		tr.Contracts[contractAddr] = info
 	}
 
@@ -160,28 +165,39 @@ func (tr *transformer) Init() error {
 
 func (tr *transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
-		return errors.New("error: transformer has no initialized contracts to work with")
+		return errors.New("error: transformer has no initialized contracts")
 	}
 	// Iterate through all internal contracts
 	for _, con := range tr.Contracts {
-
 		// Update converter with current contract
 		tr.Update(con)
 
+		// Iterate through events
 		for _, event := range con.Events {
-			topics := [][]common.Hash{{common.HexToHash(event.Sig())}}
-			eventId := event.Name + "_" + con.Address
+			// Filter using the event signature
+			topics := [][]common.Hash{{common.HexToHash(helpers.GenerateSignature(event.Sig()))}}
+
+			// Generate eventID and use it to create a checked_header column if one does not already exist
+			eventId := strings.ToLower(event.Name + "_" + con.Address)
+			if err := tr.AddCheckColumn(eventId); err != nil {
+				return err
+			}
+
+			// Find unchecked headers for this event
 			missingHeaders, err := tr.MissingHeaders(con.StartingBlock, con.LastBlock, eventId)
 			if err != nil {
 				return err
 			}
 
+			// Iterate over headers
 			for _, header := range missingHeaders {
+				// And fetch event logs using the header, contract address, and topics filter
 				logs, err := tr.FetchLogs([]string{con.Address}, topics, header)
 				if err != nil {
 					return err
 				}
 
+				// Mark the header checked for this eventID and continue to next iteration if no logs are found
 				if len(logs) < 1 {
 					err = tr.MarkHeaderChecked(header.Id, eventId)
 					if err != nil {
@@ -191,21 +207,27 @@ func (tr *transformer) Execute() error {
 					continue
 				}
 
-				for _, l := range logs {
-					mapping, err := tr.Convert(l, event)
-					if err != nil {
-						return err
-					}
-					if mapping == nil {
-						break
-					}
+				// Convert logs into custom type
+				convertedLogs, err := tr.Convert(logs, event, header.Id)
+				if err != nil {
+					return err
+				}
+				if len(convertedLogs) < 1 {
+					continue
+				}
 
-					err = tr.PersistLog(*mapping, con.Address, con.Name)
-					if err != nil {
-						return err
-					}
+				// If logs aren't empty, persist them
+				err = tr.PersistLogs(convertedLogs, event, con.Address, con.Name)
+				if err != nil {
+					return err
 				}
 			}
+		}
+		// After persisting all watched event logs
+		// poller polls select contract methods
+		// and persists the results into custom pg tables
+		if err := tr.PollContract(*con); err != nil {
+			return err
 		}
 	}
 
