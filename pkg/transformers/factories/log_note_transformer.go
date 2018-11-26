@@ -15,7 +15,7 @@
 package factories
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -41,7 +41,7 @@ func (transformer LogNoteTransformer) Execute() error {
 	transformerName := transformer.Config.TransformerName
 	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
 	if err != nil {
-		log.Printf("Error fetching mising headers in %v transformer: %v \n", transformerName, err)
+		log.Printf("Error fetching mising headers in %v transformer: %v", transformerName, err)
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (transformer LogNoteTransformer) Execute() error {
 	// (Double-array structure required for go-ethereum FilterQuery)
 	var topic = [][]common.Hash{{common.HexToHash(transformer.Config.Topic)}}
 
-	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
+	log.Printf("Fetching %v event logs for %d headers", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
 		// Fetch the missing logs for a given header
 		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header)

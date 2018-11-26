@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jmoiron/sqlx"
 

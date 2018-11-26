@@ -1,7 +1,7 @@
 package test_config
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 
 	. "github.com/onsi/gomega"

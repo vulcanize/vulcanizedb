@@ -16,9 +16,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"

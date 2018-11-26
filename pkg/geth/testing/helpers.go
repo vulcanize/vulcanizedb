@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
