@@ -1,8 +1,8 @@
 package vat_grab_test
 
 import (
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"

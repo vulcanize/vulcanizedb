@@ -15,9 +15,9 @@
 package cmd
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"log"
 )
 
 // getSignaturesCmd represents the getSignatures command

@@ -15,13 +15,12 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -55,7 +54,7 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 }
@@ -102,7 +101,7 @@ func initConfig() {
 	} else {
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 			os.Exit(1)
 		}
 
@@ -113,7 +112,7 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
+		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
 	}
 }
 

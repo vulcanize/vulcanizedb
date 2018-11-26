@@ -15,10 +15,10 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
