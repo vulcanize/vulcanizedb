@@ -16,16 +16,17 @@ package shared
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type Transformer interface {
-	Execute() error
+	Execute(logs []types.Log, missingHeaders []core.Header) error
 }
 
-type TransformerInitializer func(db *postgres.DB, blockChain core.BlockChain) Transformer
+type TransformerInitializer func(db *postgres.DB) Transformer
 
 type TransformerConfig struct {
 	TransformerName     string
