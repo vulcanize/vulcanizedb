@@ -15,9 +15,8 @@
 package factories
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -28,34 +27,20 @@ type Transformer struct {
 	Config     shared.TransformerConfig
 	Converter  Converter
 	Repository Repository
-	Fetcher    shared.SettableLogFetcher
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB, bc core.BlockChain) shared.Transformer {
+func (transformer Transformer) NewTransformer(db *postgres.DB) shared.Transformer {
 	transformer.Repository.SetDB(db)
-	transformer.Fetcher.SetBC(bc)
 	return transformer
 }
 
-func (transformer Transformer) Execute() error {
+func (transformer Transformer) Execute(logs []types.Log, missingHeaders []core.Header) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
-	topics := [][]common.Hash{{common.HexToHash(config.Topic)}}
-	missingHeaders, err := transformer.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
-	if err != nil {
-		log.Printf("Error fetching missing headers in %v transformer: %v \n", transformerName, err)
-		return err
-	}
-	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
-	for _, header := range missingHeaders {
-		logs, err := transformer.Fetcher.FetchLogs(config.ContractAddresses, topics, header)
-		if err != nil {
-			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
-			return err
-		}
 
+	for _, header := range missingHeaders {
 		if len(logs) < 1 {
-			err = transformer.Repository.MarkHeaderChecked(header.Id)
+			err := transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
 				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 				return err

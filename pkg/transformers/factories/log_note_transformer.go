@@ -15,9 +15,8 @@
 package factories
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -28,38 +27,19 @@ type LogNoteTransformer struct {
 	Config     shared.TransformerConfig
 	Converter  LogNoteConverter
 	Repository Repository
-	Fetcher    shared.SettableLogFetcher
 }
 
-func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB, bc core.BlockChain) shared.Transformer {
+func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB) shared.Transformer {
 	transformer.Repository.SetDB(db)
-	transformer.Fetcher.SetBC(bc)
 	return transformer
 }
 
-func (transformer LogNoteTransformer) Execute() error {
+func (transformer LogNoteTransformer) Execute(logs []types.Log, missingHeaders []core.Header) error {
 	transformerName := transformer.Config.TransformerName
-	missingHeaders, err := transformer.Repository.MissingHeaders(transformer.Config.StartingBlockNumber, transformer.Config.EndingBlockNumber)
-	if err != nil {
-		log.Printf("Error fetching missing headers in %v transformer: %v", transformerName, err)
-		return err
-	}
 
-	// Grab event signature from transformer config
-	// (Double-array structure required for go-ethereum FilterQuery)
-	var topic = [][]common.Hash{{common.HexToHash(transformer.Config.Topic)}}
-
-	log.Printf("Fetching %v event logs for %d headers", transformerName, len(missingHeaders))
 	for _, header := range missingHeaders {
-		// Fetch the missing logs for a given header
-		matchingLogs, err := transformer.Fetcher.FetchLogs(transformer.Config.ContractAddresses, topic, header)
-		if err != nil {
-			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
-			return err
-		}
-
 		// No matching logs, mark the header as checked for this type of logs
-		if len(matchingLogs) < 1 {
+		if len(logs) < 1 {
 			err := transformer.Repository.MarkHeaderChecked(header.Id)
 			if err != nil {
 				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
@@ -69,7 +49,7 @@ func (transformer LogNoteTransformer) Execute() error {
 			continue
 		}
 
-		models, err := transformer.Converter.ToModels(matchingLogs)
+		models, err := transformer.Converter.ToModels(logs)
 		if err != nil {
 			log.Printf("Error converting logs in %v: %v", transformerName, err)
 			return err
