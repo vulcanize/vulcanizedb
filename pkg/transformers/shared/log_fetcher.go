@@ -22,8 +22,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// TODO Check if Fetcher can be simplified with aggregate logic
+
 type LogFetcher interface {
-	FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error)
+	FetchLogs(contractAddresses []common.Address, topics []common.Hash, missingHeader core.Header) ([]types.Log, error)
 }
 
 type SettableLogFetcher interface {
@@ -45,23 +47,21 @@ func NewFetcher(blockchain core.BlockChain) Fetcher {
 	}
 }
 
-func (fetcher Fetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error) {
-	addresses := hexStringsToAddresses(contractAddresses)
+// Checks all topic0s, on all addresses, fetching matching logs for the given header
+func (fetcher Fetcher) FetchLogs(addresses []common.Address, topic0s []common.Hash, header core.Header) ([]types.Log, error) {
 	blockHash := common.HexToHash(header.Hash)
 	query := ethereum.FilterQuery{
 		BlockHash: &blockHash,
 		Addresses: addresses,
-		Topics:    topics,
-	}
-	return fetcher.blockChain.GetEthLogsWithCustomQuery(query)
-}
-
-func hexStringsToAddresses(hexStrings []string) []common.Address {
-	var addresses []common.Address
-	for _, hexString := range hexStrings {
-		address := common.HexToAddress(hexString)
-		addresses = append(addresses, address)
+		// Search for _any_ of the topics in topic0 position; see docs on `FilterQuery`
+		Topics: [][]common.Hash{topic0s},
 	}
 
-	return addresses
+	logs, err := fetcher.blockChain.GetEthLogsWithCustomQuery(query)
+	if err != nil {
+		// TODO review aggregate fetching error handling
+		return []types.Log{}, err
+	}
+
+	return logs, nil
 }
