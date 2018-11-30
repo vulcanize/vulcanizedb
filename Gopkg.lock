@@ -161,14 +161,6 @@
   revision = "dceda08e705b2acee36aab47d765ed801f64cfc7"
 
 [[projects]]
-  digest = "1:c205f1963071408c1fac73c1b37c86ef9b98d80f17e690a2239853cde255ad3d"
-  name = "github.com/i-norden/go-ethereum"
-  packages = ["core/types"]
-  pruneopts = ""
-  revision = "58632d44021bf095b43a1bb2443e6e3690a94739"
-  version = "v1.8.18"
-
-[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
@@ -491,7 +483,7 @@
     "github.com/ethereum/go-ethereum/p2p/discover",
     "github.com/ethereum/go-ethereum/params",
     "github.com/ethereum/go-ethereum/rpc",
-    "github.com/i-norden/go-ethereum/core/types",
+    "github.com/ethereum/go-ethereum/core/types",
     "github.com/jmoiron/sqlx",
     "github.com/lib/pq",
     "github.com/mitchellh/go-homedir",
