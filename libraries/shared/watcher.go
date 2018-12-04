@@ -71,9 +71,7 @@ func (watcher *Watcher) Execute() error {
 		chunkedLogs := watcher.Chunker.ChunkLogs(logs)
 
 		for _, transformer := range watcher.Transformers {
-			// TODO delegate log chunks to respective transformers
-			// Need to get the transformer name... :/
-			logChunk := chunkedLogs["transformerName"]
+			logChunk := chunkedLogs[transformer.Name()]
 			err = transformer.Execute(logChunk, header)
 		}
 	}
