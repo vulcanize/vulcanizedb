@@ -86,14 +86,4 @@ var _ = Describe("Bite repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &biteRepository,
-			RepositoryTwo: &bite.BiteRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

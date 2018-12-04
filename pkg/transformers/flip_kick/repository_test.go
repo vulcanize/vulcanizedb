@@ -87,15 +87,6 @@ var _ = Describe("FlipKick Repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("missing headers", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &flipKickRepository,
-			RepositoryTwo: &flip_kick.FlipKickRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })
 
 func assertDBRecordCount(db *postgres.DB, dbTable string, expectedCount int) {
