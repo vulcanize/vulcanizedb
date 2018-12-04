@@ -85,13 +85,4 @@ var _ = Describe("FlopRepository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &flop_kick.FlopKickRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

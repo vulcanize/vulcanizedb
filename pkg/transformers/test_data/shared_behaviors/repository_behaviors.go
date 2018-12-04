@@ -17,7 +17,6 @@ package shared_behaviors
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -25,7 +24,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/rand"
 )
 
 var (
@@ -132,7 +130,8 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 	})
 }
 
-func SharedRepositoryMissingHeadersBehaviors(inputs *MissingHeadersBehaviorInputs) {
+// Saved, will base tests of aggregate fetching on this
+/*func SharedRepositoryMissingHeadersBehaviors(inputs *MissingHeadersBehaviorInputs) {
 	Describe("MissingHeaders", func() {
 		var (
 			repository               = inputs.Repository
@@ -211,7 +210,7 @@ func SharedRepositoryMissingHeadersBehaviors(inputs *MissingHeadersBehaviorInput
 			Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
 		})
 	})
-}
+}*/
 
 func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehaviorInputs) {
 	var repository = inputs.Repository
