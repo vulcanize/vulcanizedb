@@ -34,39 +34,34 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) shared.Transforme
 	return transformer
 }
 
-func (transformer Transformer) Execute(logs []types.Log, missingHeaders []core.Header) error {
+func (transformer Transformer) Execute(logs []types.Log, header core.Header) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
 
-	for _, header := range missingHeaders {
-		if len(logs) < 1 {
-			err := transformer.Repository.MarkHeaderChecked(header.Id)
-			if err != nil {
-				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
-				return err
-			}
-
-			continue
-		}
-
-		entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
+	if len(logs) < 1 {
+		err := transformer.Repository.MarkHeaderChecked(header.Id)
 		if err != nil {
-			log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
+			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 			return err
 		}
+	}
 
-		models, err := transformer.Converter.ToModels(entities)
-		if err != nil {
-			log.Printf("Error converting entities to models in %v: %v", transformerName, err)
-			return err
-		}
+	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
+	if err != nil {
+		log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
+		return err
+	}
 
-		err = transformer.Repository.Create(header.Id, models)
-		if err != nil {
-			log.Printf("Error persisting %v record: %v", transformerName, err)
-			return err
-		}
+	models, err := transformer.Converter.ToModels(entities)
+	if err != nil {
+		log.Printf("Error converting entities to models in %v: %v", transformerName, err)
+		return err
+	}
 
+	err = transformer.Repository.Create(header.Id, models)
+	if err != nil {
+		log.Printf("Error persisting %v record: %v", transformerName, err)
+		return err
 	}
 
 	return nil
