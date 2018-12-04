@@ -24,6 +24,7 @@ import (
 
 type Transformer interface {
 	Execute(logs []types.Log, header core.Header) error
+	Name() string
 }
 
 type TransformerInitializer func(db *postgres.DB) Transformer

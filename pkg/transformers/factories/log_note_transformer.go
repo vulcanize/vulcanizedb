@@ -59,3 +59,7 @@ func (transformer LogNoteTransformer) Execute(logs []types.Log, header core.Head
 	}
 	return nil
 }
+
+func (transformer LogNoteTransformer) Name() string {
+	return transformer.Config.TransformerName
+}

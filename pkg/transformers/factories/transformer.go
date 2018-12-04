@@ -66,3 +66,7 @@ func (transformer Transformer) Execute(logs []types.Log, header core.Header) err
 
 	return nil
 }
+
+func (transformer Transformer) Name() string {
+	return transformer.Config.TransformerName
+}

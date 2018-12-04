@@ -26,7 +26,6 @@ func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, checkedHeadersCo
 }
 
 // Treats a header as missing if it's not in the headers table, or not checked for some log type
-// TODO Revisit definition of "checked header
 func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, notCheckedSQL string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
