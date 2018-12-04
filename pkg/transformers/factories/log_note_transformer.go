@@ -34,32 +34,28 @@ func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB) sha
 	return transformer
 }
 
-func (transformer LogNoteTransformer) Execute(logs []types.Log, missingHeaders []core.Header) error {
+func (transformer LogNoteTransformer) Execute(logs []types.Log, header core.Header) error {
 	transformerName := transformer.Config.TransformerName
 
-	for _, header := range missingHeaders {
-		// No matching logs, mark the header as checked for this type of logs
-		if len(logs) < 1 {
-			err := transformer.Repository.MarkHeaderChecked(header.Id)
-			if err != nil {
-				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
-				return err
-			}
-			// Continue with the next header; nothing to persist
-			continue
-		}
-
-		models, err := transformer.Converter.ToModels(logs)
+	// No matching logs, mark the header as checked for this type of logs
+	if len(logs) < 1 {
+		err := transformer.Repository.MarkHeaderChecked(header.Id)
 		if err != nil {
-			log.Printf("Error converting logs in %v: %v", transformerName, err)
+			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 			return err
 		}
+	}
 
-		err = transformer.Repository.Create(header.Id, models)
-		if err != nil {
-			log.Printf("Error persisting %v record: %v", transformerName, err)
-			return err
-		}
+	models, err := transformer.Converter.ToModels(logs)
+	if err != nil {
+		log.Printf("Error converting logs in %v: %v", transformerName, err)
+		return err
+	}
+
+	err = transformer.Repository.Create(header.Id, models)
+	if err != nil {
+		log.Printf("Error persisting %v record: %v", transformerName, err)
+		return err
 	}
 	return nil
 }

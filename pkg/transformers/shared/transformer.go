@@ -23,7 +23,7 @@ import (
 )
 
 type Transformer interface {
-	Execute(logs []types.Log, missingHeaders []core.Header) error
+	Execute(logs []types.Log, header core.Header) error
 }
 
 type TransformerInitializer func(db *postgres.DB) Transformer
