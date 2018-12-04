@@ -16,7 +16,6 @@ package debt_ceiling
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -62,10 +61,6 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 
 func (repository PitFileDebtCeilingRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.PitFileDebtCeilingChecked)
-}
-
-func (repository PitFileDebtCeilingRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PitFileDebtCeilingChecked)
 }
 
 func (repository *PitFileDebtCeilingRepository) SetDB(db *postgres.DB) {

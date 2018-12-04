@@ -16,7 +16,6 @@ package flip
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -59,10 +58,6 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 
 func (repository CatFileFlipRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFileFlipChecked)
-}
-
-func (repository CatFileFlipRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileFlipChecked)
 }
 
 func (repository *CatFileFlipRepository) SetDB(db *postgres.DB) {

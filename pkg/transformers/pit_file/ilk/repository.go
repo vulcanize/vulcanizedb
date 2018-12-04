@@ -16,7 +16,6 @@ package ilk
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -60,10 +59,6 @@ func (repository PitFileIlkRepository) Create(headerID int64, models []interface
 
 func (repository PitFileIlkRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.PitFileIlkChecked)
-}
-
-func (repository PitFileIlkRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PitFileIlkChecked)
 }
 
 func (repository *PitFileIlkRepository) SetDB(db *postgres.DB) {

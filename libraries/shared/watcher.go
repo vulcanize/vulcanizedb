@@ -51,9 +51,14 @@ func (watcher *Watcher) AddTransformers(us []shared.TransformerInitializer) {
 }
 
 func (watcher *Watcher) Execute() error {
-	// TODO Solve checkedHeadersColumn issue
+	checkedColumnNames, err := shared.GetCheckedColumnNames(&watcher.DB)
+	if err != nil {
+		return err
+	}
+	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames)
+
 	// TODO Handle start and end numbers in transformers?
-	missingHeaders, err := shared.MissingHeaders(0, -1, &watcher.DB, "")
+	missingHeaders, err := shared.MissingHeaders(0, -1, &watcher.DB, notCheckedSQL)
 
 	for _, header := range missingHeaders {
 		// TODO Extend FetchLogs for doing several blocks at a time
