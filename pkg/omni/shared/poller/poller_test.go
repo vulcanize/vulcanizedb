@@ -19,6 +19,7 @@ package poller_test
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -54,10 +55,7 @@ var _ = Describe("Poller", func() {
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
 				con.LastBlock = 6707323
-				con.TknHolderAddrs = map[string]bool{
-					"0xfE9e8709d3215310075d67E3ed32A380CCf451C8": true,
-					"0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE": true,
-				}
+				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
 				err := p.PollContract(*con)
 				Expect(err).ToNot(HaveOccurred())
@@ -90,10 +88,7 @@ var _ = Describe("Poller", func() {
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
 				con.LastBlock = 6707323
-				con.TknHolderAddrs = map[string]bool{
-					"0xfE9e8709d3215310075d67E3ed32A380CCf451C8": true,
-					"0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE": true,
-				}
+				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
 				err := p.PollContract(*con)
 				Expect(err).ToNot(HaveOccurred())

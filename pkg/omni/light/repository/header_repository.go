@@ -18,6 +18,7 @@ package repository
 
 import (
 	"database/sql"
+
 	"github.com/hashicorp/golang-lru"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -85,7 +86,8 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber int64, endingBlock
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR ` + eventID + ` IS FALSE)
 				AND headers.block_number >= $1
-				AND headers.eth_node_fingerprint = $2`
+				AND headers.eth_node_fingerprint = $2
+				ORDER BY headers.block_number`
 		err = r.db.Select(&result, query, startingBlockNumber, r.db.Node.ID)
 	} else {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
@@ -93,7 +95,8 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber int64, endingBlock
 				WHERE (header_id ISNULL OR ` + eventID + ` IS FALSE)
 				AND headers.block_number >= $1
 				AND headers.block_number <= $2
-				AND headers.eth_node_fingerprint = $3`
+				AND headers.eth_node_fingerprint = $3
+				ORDER BY headers.block_number`
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
 

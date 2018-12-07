@@ -136,17 +136,19 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	Expect(err).ToNot(HaveOccurred())
 
 	return &contract.Contract{
-		Name:           "TrueUSD",
-		Address:        constants.TusdContractAddress,
-		Abi:            p.Abi(),
-		ParsedAbi:      p.ParsedAbi(),
-		StartingBlock:  6194634,
-		LastBlock:      6507323,
-		Events:         p.GetEvents(wantedEvents),
-		Methods:        p.GetMethods(wantedMethods),
-		EventAddrs:     map[string]bool{},
-		MethodAddrs:    map[string]bool{},
-		TknHolderAddrs: map[string]bool{},
+		Name:          "TrueUSD",
+		Address:       constants.TusdContractAddress,
+		Abi:           p.Abi(),
+		ParsedAbi:     p.ParsedAbi(),
+		StartingBlock: 6194634,
+		LastBlock:     6507323,
+		Events:        p.GetEvents(wantedEvents),
+		Methods:       p.GetMethods(wantedMethods),
+		MethodArgs:    map[string]bool{},
+		FilterArgs:    map[string]bool{},
+		EmittedAddrs:  map[interface{}]bool{},
+		EmittedBytes:  map[interface{}]bool{},
+		EmittedHashes: map[interface{}]bool{},
 	}
 }
 
@@ -178,10 +180,10 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = tx.Commit()

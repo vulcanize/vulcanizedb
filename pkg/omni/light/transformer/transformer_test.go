@@ -18,6 +18,8 @@ package transformer_test
 
 import (
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -59,8 +61,8 @@ var _ = Describe("Transformer", func() {
 		It("Sets which account addresses to watch events for", func() {
 			eventAddrs := []string{"test1", "test2"}
 			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEventAddrs(constants.TusdContractAddress, eventAddrs)
-			Expect(t.EventAddrs[constants.TusdContractAddress]).To(Equal(eventAddrs))
+			t.SetEventArgs(constants.TusdContractAddress, eventAddrs)
+			Expect(t.EventArgs[constants.TusdContractAddress]).To(Equal(eventAddrs))
 		})
 	})
 
@@ -77,8 +79,8 @@ var _ = Describe("Transformer", func() {
 		It("Sets which account addresses to poll methods against", func() {
 			methodAddrs := []string{"test1", "test2"}
 			t := transformer.NewTransformer("", blockChain, db)
-			t.SetMethodAddrs(constants.TusdContractAddress, methodAddrs)
-			Expect(t.MethodAddrs[constants.TusdContractAddress]).To(Equal(methodAddrs))
+			t.SetMethodArgs(constants.TusdContractAddress, methodAddrs)
+			Expect(t.MethodArgs[constants.TusdContractAddress]).To(Equal(methodAddrs))
 		})
 	})
 
@@ -164,10 +166,10 @@ var _ = Describe("Transformer", func() {
 			Expect(log.Value).To(Equal("9998940000000000000000"))
 		})
 
-		It("Keeps track of contract-related addresses while transforming event data", func() {
+		It("Keeps track of contract-related addresses while transforming event data if they need to be used for later method polling", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, nil)
+			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -177,18 +179,24 @@ var _ = Describe("Transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			b, ok := c.TknHolderAddrs["0x1062a747393198f70F71ec65A582423Dba7E5Ab3"]
+			b, ok := c.EmittedAddrs[common.HexToAddress("0x1062a747393198f70F71ec65A582423Dba7E5Ab3")]
 			Expect(ok).To(Equal(true))
 			Expect(b).To(Equal(true))
 
-			b, ok = c.TknHolderAddrs["0x2930096dB16b4A44Ecd4084EA4bd26F7EeF1AEf0"]
+			b, ok = c.EmittedAddrs[common.HexToAddress("0x2930096dB16b4A44Ecd4084EA4bd26F7EeF1AEf0")]
 			Expect(ok).To(Equal(true))
 			Expect(b).To(Equal(true))
 
-			_, ok = c.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843b1234567890"]
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843b1234567890")]
 			Expect(ok).To(Equal(false))
 
-			_, ok = c.TknHolderAddrs["0x"]
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.EmittedAddrs[""]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP")]
 			Expect(ok).To(Equal(false))
 		})
 
@@ -203,6 +211,17 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.BalanceOf{}
+
+			c, ok := t.Contracts[constants.TusdContractAddress]
+			Expect(ok).To(Equal(true))
+
+			b, ok := c.EmittedAddrs[common.HexToAddress("0x1062a747393198f70F71ec65A582423Dba7E5Ab3")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = c.EmittedAddrs[common.HexToAddress("0x2930096dB16b4A44Ecd4084EA4bd26F7EeF1AEf0")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
