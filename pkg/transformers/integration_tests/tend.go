@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -28,8 +29,13 @@ import (
 
 var _ = Describe("Tend LogNoteTransformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		config      shared.TransformerConfig
+		fetcher     shared.Fetcher
+		initializer factories.LogNoteTransformer
+		addresses   []common.Address
+		topics      []common.Hash
 	)
 
 	BeforeEach(func() {
@@ -39,25 +45,31 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		fetcher = shared.NewFetcher(blockChain)
+		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		topics = []common.Hash{common.HexToHash(config.Topic)}
+
+		initializer = factories.LogNoteTransformer{
+			Config:     tend.TendConfig,
+			Converter:  &tend.TendConverter{},
+			Repository: &tend.TendRepository{},
+		}
 	})
 
 	It("fetches and transforms a Flip Tend event from Kovan chain", func() {
 		blockNumber := int64(8935601)
-		config := tend.TendConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Fetcher:    &shared.Fetcher{},
-			Converter:  &tend.TendConverter{},
-			Repository: &tend.TendRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
@@ -80,21 +92,17 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 
 	It("fetches and transforms a subsequent Flip Tend event from Kovan chain for the same auction", func() {
 		blockNumber := int64(8935731)
-		config := tend.TendConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Fetcher:    &shared.Fetcher{},
-			Converter:  &tend.TendConverter{},
-			Repository: &tend.TendRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
@@ -117,21 +125,17 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 
 	It("fetches and transforms a Flap Tend event from the Kovan chain", func() {
 		blockNumber := int64(9003177)
-		config := tend.TendConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Fetcher:    &shared.Fetcher{},
-			Converter:  &tend.TendConverter{},
-			Repository: &tend.TendRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel

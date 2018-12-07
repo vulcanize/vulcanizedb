@@ -34,12 +34,12 @@ func NewWatcher(db postgres.DB, bc core.BlockChain) Watcher {
 	fetcher := shared.NewFetcher(bc)
 
 	return Watcher{
-		DB: db,
+		DB:         db,
 		Blockchain: bc,
-		Fetcher: fetcher,
-		Chunker: chunker,
-		Addresses: contractAddresses,
-		Topics: topic0s,
+		Fetcher:    fetcher,
+		Chunker:    chunker,
+		Addresses:  contractAddresses,
+		Topics:     topic0s,
 	}
 }
 

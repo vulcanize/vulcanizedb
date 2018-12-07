@@ -79,7 +79,7 @@ var (
 		Repository: &flop_kick.FlopKickRepository{},
 	}
 
-	customEventTransformers = []factories.Transformer {
+	customEventTransformers = []factories.Transformer{
 		BiteTransformer,
 		FlapKickTransformer,
 		FlipKickTransformer,
@@ -228,7 +228,7 @@ var (
 		Repository: &vat_flux.VatFluxRepository{},
 	}
 
-	logNoteTransformers = []factories.LogNoteTransformer {
+	logNoteTransformers = []factories.LogNoteTransformer{
 		CatFileChopLumpTransformer,
 		CatFileFlipTransformer,
 		CatFilePitVowTransformer,

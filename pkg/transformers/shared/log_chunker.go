@@ -27,7 +27,7 @@ type LogChunker struct {
 // Initialises a chunker by creating efficient lookup maps
 func NewLogChunker(transformerConfigs []TransformerConfig) LogChunker {
 	addressToNames := map[string][]string{}
-	nameToTopic0   := map[string]common.Hash{}
+	nameToTopic0 := map[string]common.Hash{}
 
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {

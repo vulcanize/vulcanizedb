@@ -33,8 +33,11 @@ import (
 
 var _ = Describe("Frob Transformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		fetcher     shared.Fetcher
+		config      shared.TransformerConfig
+		initializer factories.Transformer
 	)
 
 	BeforeEach(func() {
@@ -44,25 +47,32 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		fetcher = shared.NewFetcher(blockChain)
+		config = frob.FrobConfig
+		initializer = factories.Transformer{
+			Config:     config,
+			Converter:  &frob.FrobConverter{},
+			Repository: &frob.FrobRepository{},
+		}
 	})
 
 	It("fetches and transforms a Frob event from Kovan chain", func() {
 		blockNumber := int64(8935258)
-		config := frob.FrobConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
-			Config:     config,
-			Converter:  &frob.FrobConverter{},
-			Repository: &frob.FrobRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []frob.FrobModel

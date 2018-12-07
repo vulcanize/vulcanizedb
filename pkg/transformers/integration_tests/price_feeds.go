@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,8 +30,11 @@ import (
 
 var _ = Describe("Price feeds transformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		config      shared.TransformerConfig
+		fetcher     shared.Fetcher
+		initializer factories.LogNoteTransformer
 	)
 
 	BeforeEach(func() {
@@ -40,30 +44,36 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+		config = price_feeds.PriceFeedConfig
+		fetcher = shared.NewFetcher(blockChain)
+
+		initializer = factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &price_feeds.PriceFeedConverter{},
+			Repository: &price_feeds.PriceFeedRepository{},
+		}
 	})
 
 	It("persists a ETH/USD price feed event", func() {
 		blockNumber := int64(8763054)
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{constants.PipContractAddress}
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.ContractAddresses = []string{constants.PipContractAddress}
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &price_feeds.PriceFeedConverter{},
-			Repository: &price_feeds.PriceFeedRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(initializer.Config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 
 		Expect(err).NotTo(HaveOccurred())
 		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("207.314891143000011198"))
 		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
@@ -71,26 +81,24 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a MKR/USD price feed event", func() {
 		blockNumber := int64(8763059)
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{constants.PepContractAddress}
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.ContractAddresses = []string{constants.PepContractAddress}
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &price_feeds.PriceFeedConverter{},
-			Repository: &price_feeds.PriceFeedRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(initializer.Config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 
 		Expect(err).NotTo(HaveOccurred())
 		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("391.803979212000001553"))
 		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
@@ -98,26 +106,24 @@ var _ = Describe("Price feeds transformer", func() {
 
 	It("persists a REP/USD price feed event", func() {
 		blockNumber := int64(8763062)
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		config := price_feeds.PriceFeedConfig
-		config.ContractAddresses = []string{constants.RepContractAddress}
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.ContractAddresses = []string{constants.RepContractAddress}
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		transformerInitializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &price_feeds.PriceFeedConverter{},
-			Repository: &price_feeds.PriceFeedRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := transformerInitializer.NewLogNoteTransformer(db, blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 
 		Expect(err).NotTo(HaveOccurred())
 		var model price_feeds.PriceFeedModel
-		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, config.StartingBlockNumber)
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("12.816928482699999847"))
 		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))

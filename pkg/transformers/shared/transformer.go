@@ -47,3 +47,10 @@ func HexToString(byteString string) string {
 	value := common.HexToHash(byteString)
 	return value.Big().String()
 }
+
+func HexStringsToAddresses(strings []string) (addresses []common.Address) {
+	for _, hexString := range strings {
+		addresses = append(addresses, common.HexToAddress(hexString))
+	}
+	return
+}
