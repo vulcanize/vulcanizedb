@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 
 	. "github.com/onsi/ginkgo"
@@ -41,17 +42,23 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_tune.VatTuneConverter{},
 			Repository: &vat_tune.VatTuneRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []vat_tune.VatTuneModel

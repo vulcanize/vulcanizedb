@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,8 +30,13 @@ import (
 
 var _ = Describe("Deal transformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		config      shared.TransformerConfig
+		initializer factories.LogNoteTransformer
+		fetcher     shared.Fetcher
+		addresses   []common.Address
+		topics      []common.Hash
 	)
 
 	BeforeEach(func() {
@@ -40,26 +46,35 @@ var _ = Describe("Deal transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		config = deal.DealConfig
+
+		initializer = factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &deal.DealConverter{},
+			Repository: &deal.DealRepository{},
+		}
+
+		fetcher = shared.NewFetcher(blockChain)
+		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		topics = []common.Hash{common.HexToHash(config.Topic)}
+
 	})
 
 	It("persists a flip deal log event", func() {
 		// transaction: 0x05b5eabac2ace136f0f7e0efc61d7d42abe8e8938cc0f04fbf1a6ba545d59e58
 		flipBlockNumber := int64(8958007)
-		err := persistHeader(db, flipBlockNumber, blockChain)
+		header, err := persistHeader(db, flipBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := deal.DealConfig
-		config.StartingBlockNumber = flipBlockNumber
-		config.EndingBlockNumber = flipBlockNumber
+		initializer.Config.StartingBlockNumber = flipBlockNumber
+		initializer.Config.EndingBlockNumber = flipBlockNumber
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &deal.DealConverter{},
-			Repository: &deal.DealRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []deal.DealModel
@@ -77,21 +92,17 @@ var _ = Describe("Deal transformer", func() {
 
 	It("persists a flap deal log event", func() {
 		flapBlockNumber := int64(9004628)
-		err := persistHeader(db, flapBlockNumber, blockChain)
+		header, err := persistHeader(db, flapBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := deal.DealConfig
-		config.StartingBlockNumber = flapBlockNumber
-		config.EndingBlockNumber = flapBlockNumber
+		initializer.Config.StartingBlockNumber = flapBlockNumber
+		initializer.Config.EndingBlockNumber = flapBlockNumber
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &deal.DealConverter{},
-			Repository: &deal.DealRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []deal.DealModel

@@ -1,6 +1,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -15,8 +16,14 @@ import (
 
 var _ = Describe("Dent transformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		fetcher     shared.Fetcher
+		transformer shared.Transformer
+		config      shared.TransformerConfig
+		addresses   []common.Address
+		topics      []common.Hash
+		initializer factories.LogNoteTransformer
 	)
 
 	BeforeEach(func() {
@@ -26,25 +33,31 @@ var _ = Describe("Dent transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		config = dent.DentConfig
+		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		topics = []common.Hash{common.HexToHash(config.Topic)}
+		fetcher = shared.NewFetcher(blockChain)
+
+		initializer = factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &dent.DentConverter{},
+			Repository: &dent.DentRepository{},
+		}
 	})
 
 	It("persists a flop dent log event", func() {
 		blockNumber := int64(8955613)
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := dent.DentConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Converter:  &dent.DentConverter{},
-			Repository: &dent.DentRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []dent.DentModel

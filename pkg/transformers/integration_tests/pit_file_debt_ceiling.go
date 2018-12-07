@@ -15,8 +15,11 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
@@ -25,31 +28,44 @@ import (
 )
 
 var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
+	var (
+		db         *postgres.DB
+		blockChain core.BlockChain
+	)
+
+	BeforeEach(func() {
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err = getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+		db = test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+	})
+
 	It("fetches and transforms a PitFileDebtCeiling event from Kovan chain", func() {
 		blockNumber := int64(8535578)
 		config := debt_ceiling.DebtCeilingFileConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockChain, err := getBlockChain(rpcClient, ethClient)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		db := test_config.NewTestDB(blockChain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber, blockChain)
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &shared.Fetcher{},
 			Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
 			Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []debt_ceiling.PitFileDebtCeilingModel

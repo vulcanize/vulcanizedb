@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 
 	. "github.com/onsi/ginkgo"
@@ -41,17 +42,23 @@ var _ = Describe("Vat Grab Transformer", func() {
 		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &vat_grab.VatGrabConverter{},
 			Repository: &vat_grab.VatGrabRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}.NewLogNoteTransformer(db, blockChain)
+		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute()
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []vat_grab.VatGrabModel

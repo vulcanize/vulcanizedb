@@ -42,12 +42,13 @@ func getBlockChain(rpcClient client.RpcClient, ethClient *ethclient.Client) (cor
 	return blockChain, nil
 }
 
-func persistHeader(db *postgres.DB, blockNumber int64, blockChain core.BlockChain) error {
+// Persist the header for a given block to postgres. Returns the header if successful.
+func persistHeader(db *postgres.DB, blockNumber int64, blockChain core.BlockChain) (core.Header, error) {
 	header, err := blockChain.GetHeaderByNumber(blockNumber)
 	if err != nil {
-		return err
+		return core.Header{}, err
 	}
 	headerRepository := repositories.NewHeaderRepository(db)
 	_, err = headerRepository.CreateOrUpdateHeader(header)
-	return err
+	return header, err
 }
