@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -137,15 +138,15 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("Persists contract event log values into custom tables, adding any addresses to a growing list of contract associated addresses", func() {
+			It("Persists contract event log values into custom tables", func() {
 				err = dataStore.PersistLogs([]types.Log{*log}, event, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				b, ok := con.TknHolderAddrs["0x000000000000000000000000000000000000Af21"]
+				b, ok := con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
 				Expect(ok).To(Equal(true))
 				Expect(b).To(Equal(true))
 
-				b, ok = con.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"]
+				b, ok = con.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391")]
 				Expect(ok).To(Equal(true))
 				Expect(b).To(Equal(true))
 

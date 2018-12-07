@@ -69,7 +69,9 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 	}
 
 	strValues := make(map[string]string, len(values))
-
+	seenBytes := make([]interface{}, 0, len(values))
+	seenAddrs := make([]interface{}, 0, len(values))
+	seenHashes := make([]interface{}, 0, len(values))
 	for fieldName, input := range values {
 		// Postgres cannot handle custom types, resolve to strings
 		switch input.(type) {
@@ -79,10 +81,11 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		case common.Address:
 			a := input.(common.Address)
 			strValues[fieldName] = a.String()
-			c.ContractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
+			seenAddrs = append(seenAddrs, a)
 		case common.Hash:
 			h := input.(common.Hash)
 			strValues[fieldName] = h.String()
+			seenHashes = append(seenHashes, h)
 		case string:
 			strValues[fieldName] = input.(string)
 		case bool:
@@ -90,6 +93,7 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		case []byte:
 			b := input.([]byte)
 			strValues[fieldName] = string(b)
+			seenBytes = append(seenBytes, b)
 		case byte:
 			b := input.(byte)
 			strValues[fieldName] = string(b)
@@ -105,6 +109,17 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 			Values: strValues,
 			Block:  watchedEvent.BlockNumber,
 			Tx:     watchedEvent.TxHash,
+		}
+
+		// Cache emitted values if their caching is turned on
+		if c.ContractInfo.EmittedAddrs != nil {
+			c.ContractInfo.AddEmittedAddr(seenAddrs...)
+		}
+		if c.ContractInfo.EmittedHashes != nil {
+			c.ContractInfo.AddEmittedHash(seenHashes...)
+		}
+		if c.ContractInfo.EmittedBytes != nil {
+			c.ContractInfo.AddEmittedBytes(seenBytes...)
 		}
 
 		return eventLog, nil

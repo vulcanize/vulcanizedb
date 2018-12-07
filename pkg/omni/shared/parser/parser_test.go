@@ -174,14 +174,14 @@ var _ = Describe("Parser", func() {
 	})
 
 	Describe("GetAddrMethods", func() {
-		It("Parses and returns only methods whose inputs, if any, are all addresses", func() {
+		It("Parses and returns only methods whose inputs, if any, are all of type address, hash or []byte", func() {
 			contractAddr := "0xDdE2D979e8d39BB8416eAfcFC1758f3CaB2C9C72"
 			err = p.Parse(contractAddr)
 			Expect(err).ToNot(HaveOccurred())
 			wanted := []string{"isApprovedForAll", "supportsInterface", "getApproved", "totalSupply", "balanceOf"}
 
 			methods := p.GetMethods(wanted)
-			selectMethods := p.GetAddrMethods(wanted)
+			selectMethods := p.GetSelectMethods(wanted)
 
 			_, ok := selectMethods["totalSupply"]
 			Expect(ok).To(Equal(true))
@@ -199,7 +199,7 @@ var _ = Describe("Parser", func() {
 			Expect(ok).To(Equal(true))
 
 			_, ok = selectMethods["supportsInterface"]
-			Expect(ok).To(Equal(false))
+			Expect(ok).To(Equal(true))
 			_, ok = methods["supportsInterface"]
 			Expect(ok).To(Equal(true))
 

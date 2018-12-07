@@ -18,7 +18,7 @@ package transformer
 
 import (
 	"errors"
-	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -63,8 +63,11 @@ type transformer struct {
 
 	// Lists of addresses to filter event or method data
 	// before persisting; if empty no filter is applied
-	EventAddrs  map[string][]string
-	MethodAddrs map[string][]string
+	EventArgs  map[string][]string
+	MethodArgs map[string][]string
+
+	// Whether or not to create a list of token holder addresses for the contract in postgres
+	CreateAddrList map[string]bool
 }
 
 // Transformer takes in config for blockchain, database, and network id
@@ -81,8 +84,8 @@ func NewTransformer(network string, BC core.BlockChain, DB *postgres.DB) *transf
 		WatchedEvents:          map[string][]string{},
 		WantedMethods:          map[string][]string{},
 		ContractRanges:         map[string][2]int64{},
-		EventAddrs:             map[string][]string{},
-		MethodAddrs:            map[string][]string{},
+		EventArgs:              map[string][]string{},
+		MethodArgs:             map[string][]string{},
 	}
 }
 
@@ -116,25 +119,22 @@ func (t *transformer) Init() error {
 			lastBlock = t.ContractRanges[contractAddr][1]
 		}
 
-		// Get contract name
+		// Get contract name if it has one
 		var name = new(string)
-		err = t.FetchContractData(t.Abi(), contractAddr, "name", nil, &name, lastBlock)
-		if err != nil {
-			return errors.New(fmt.Sprintf("unable to fetch contract name: %v\r\n", err))
-		}
+		t.FetchContractData(t.Abi(), contractAddr, "name", nil, &name, lastBlock)
 
-		// Remove any accidental duplicate inputs in filter addresses
-		EventAddrs := map[string]bool{}
-		for _, addr := range t.EventAddrs[contractAddr] {
-			EventAddrs[addr] = true
+		// Remove any potential accidental duplicate inputs in arg filter values
+		eventArgs := map[string]bool{}
+		for _, arg := range t.EventArgs[contractAddr] {
+			eventArgs[arg] = true
 		}
-		MethodAddrs := map[string]bool{}
-		for _, addr := range t.MethodAddrs[contractAddr] {
-			MethodAddrs[addr] = true
+		methodArgs := map[string]bool{}
+		for _, arg := range t.MethodArgs[contractAddr] {
+			methodArgs[arg] = true
 		}
 
 		// Aggregate info into contract object
-		info := &contract.Contract{
+		info := contract.Contract{
 			Name:           *name,
 			Network:        t.Network,
 			Address:        contractAddr,
@@ -143,11 +143,11 @@ func (t *transformer) Init() error {
 			StartingBlock:  firstBlock,
 			LastBlock:      lastBlock,
 			Events:         t.GetEvents(subset),
-			Methods:        t.GetAddrMethods(t.WantedMethods[contractAddr]),
-			EventAddrs:     EventAddrs,
-			MethodAddrs:    MethodAddrs,
-			TknHolderAddrs: map[string]bool{},
-		}
+			Methods:        t.GetSelectMethods(t.WantedMethods[contractAddr]),
+			FilterArgs:     eventArgs,
+			MethodArgs:     methodArgs,
+			CreateAddrList: t.CreateAddrList[contractAddr],
+		}.Init()
 
 		// Use info to create filters
 		err = info.GenerateFilters()
@@ -222,26 +222,31 @@ func (tr transformer) Execute() error {
 }
 
 // Used to set which contract addresses and which of their events to watch
-func (t *transformer) SetEvents(contractAddr string, filterSet []string) {
-	t.WatchedEvents[contractAddr] = filterSet
+func (tr *transformer) SetEvents(contractAddr string, filterSet []string) {
+	tr.WatchedEvents[contractAddr] = filterSet
 }
 
 // Used to set subset of account addresses to watch events for
-func (t *transformer) SetEventAddrs(contractAddr string, filterSet []string) {
-	t.EventAddrs[contractAddr] = filterSet
+func (tr *transformer) SetEventArgs(contractAddr string, filterSet []string) {
+	tr.EventArgs[contractAddr] = filterSet
 }
 
 // Used to set which contract addresses and which of their methods to call
-func (t *transformer) SetMethods(contractAddr string, filterSet []string) {
-	t.WantedMethods[contractAddr] = filterSet
+func (tr *transformer) SetMethods(contractAddr string, filterSet []string) {
+	tr.WantedMethods[contractAddr] = filterSet
 }
 
 // Used to set subset of account addresses to poll methods on
-func (t *transformer) SetMethodAddrs(contractAddr string, filterSet []string) {
-	t.MethodAddrs[contractAddr] = filterSet
+func (tr *transformer) SetMethodArgs(contractAddr string, filterSet []string) {
+	tr.MethodArgs[contractAddr] = filterSet
 }
 
 // Used to set the block range to watch for a given address
-func (t *transformer) SetRange(contractAddr string, rng [2]int64) {
-	t.ContractRanges[contractAddr] = rng
+func (tr *transformer) SetRange(contractAddr string, rng [2]int64) {
+	tr.ContractRanges[contractAddr] = rng
+}
+
+// Used to set the block range to watch for a given address
+func (tr *transformer) SetCreateAddrList(contractAddr string, on bool) {
+	tr.CreateAddrList[contractAddr] = on
 }

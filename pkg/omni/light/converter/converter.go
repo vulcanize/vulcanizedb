@@ -25,6 +25,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
@@ -67,6 +68,9 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 		}
 
 		strValues := make(map[string]string, len(values))
+		seenBytes := make([]interface{}, 0, len(values))
+		seenAddrs := make([]interface{}, 0, len(values))
+		seenHashes := make([]interface{}, 0, len(values))
 		for fieldName, input := range values {
 			// Postgres cannot handle custom types, resolve everything to strings
 			switch input.(type) {
@@ -76,17 +80,19 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			case common.Address:
 				a := input.(common.Address)
 				strValues[fieldName] = a.String()
-				c.ContractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
+				seenAddrs = append(seenAddrs, a)
 			case common.Hash:
 				h := input.(common.Hash)
 				strValues[fieldName] = h.String()
+				seenHashes = append(seenHashes, h)
 			case string:
 				strValues[fieldName] = input.(string)
 			case bool:
 				strValues[fieldName] = strconv.FormatBool(input.(bool))
 			case []byte:
 				b := input.([]byte)
-				strValues[fieldName] = string(b)
+				strValues[fieldName] = hexutil.Encode(b)
+				seenBytes = append(seenBytes, b)
 			case byte:
 				b := input.(byte)
 				strValues[fieldName] = string(b)
@@ -109,6 +115,17 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 				TransactionIndex: log.TxIndex,
 				Id:               headerID,
 			})
+
+			// Cache emitted values if their caching is turned on
+			if c.ContractInfo.EmittedAddrs != nil {
+				c.ContractInfo.AddEmittedAddr(seenAddrs...)
+			}
+			if c.ContractInfo.EmittedHashes != nil {
+				c.ContractInfo.AddEmittedHash(seenHashes...)
+			}
+			if c.ContractInfo.EmittedBytes != nil {
+				c.ContractInfo.AddEmittedBytes(seenBytes...)
+			}
 		}
 	}
 

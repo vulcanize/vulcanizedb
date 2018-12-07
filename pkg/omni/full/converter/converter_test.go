@@ -81,21 +81,21 @@ var _ = Describe("Converter", func() {
 			_, err := c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).ToNot(HaveOccurred())
 
-			b, ok := con.TknHolderAddrs["0x000000000000000000000000000000000000Af21"]
+			b, ok := con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
 			Expect(ok).To(Equal(true))
 			Expect(b).To(Equal(true))
 
-			b, ok = con.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"]
+			b, ok = con.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391")]
 			Expect(ok).To(Equal(true))
 			Expect(b).To(Equal(true))
 
-			_, ok = con.TknHolderAddrs["0x"]
+			_, ok = con.EmittedAddrs[common.HexToAddress("0x")]
 			Expect(ok).To(Equal(false))
 
-			_, ok = con.TknHolderAddrs[""]
+			_, ok = con.EmittedAddrs[""]
 			Expect(ok).To(Equal(false))
 
-			_, ok = con.TknHolderAddrs["0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP"]
+			_, ok = con.EmittedAddrs[common.HexToAddress("0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP")]
 			Expect(ok).To(Equal(false))
 		})
 

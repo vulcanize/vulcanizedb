@@ -20,6 +20,8 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
@@ -38,13 +40,42 @@ type Contract struct {
 	ParsedAbi      abi.ABI                      // Parsed abi
 	Events         map[string]types.Event       // Map of events to their names
 	Methods        map[string]types.Method      // Map of methods to their names
-	Filters        map[string]filters.LogFilter // Map of event filters to their names
-	EventAddrs     map[string]bool              // User-input list of account addresses to watch events for
-	MethodAddrs    map[string]bool              // User-input list of account addresses to poll methods for
-	TknHolderAddrs map[string]bool              // List of all contract-associated addresses, populated as events are transformed
+	Filters        map[string]filters.LogFilter // Map of event filters to their names; used only for full sync watcher
+	FilterArgs     map[string]bool              // User-input list of values to filter event logs for
+	MethodArgs     map[string]bool              // User-input list of values to limit method polling to
+	EmittedAddrs   map[interface{}]bool         // List of all unique addresses collected from converted event logs
+	EmittedBytes   map[interface{}]bool         // List of all unique bytes collected from converted event logs
+	EmittedHashes  map[interface{}]bool         // List of all unique hashes collected from converted event logs
+	CreateAddrList bool                         // Whether or not to persist address list to postgres
 }
 
-// Use contract info to generate event filters
+// If we will be calling methods that use addr, hash, or byte arrays
+// as arguments then we initialize map to hold these types of values
+func (c Contract) Init() *Contract {
+	for _, method := range c.Methods {
+		for _, arg := range method.Args {
+			switch arg.Type.T {
+			case abi.AddressTy:
+				c.EmittedAddrs = map[interface{}]bool{}
+			case abi.HashTy:
+				c.EmittedHashes = map[interface{}]bool{}
+			case abi.BytesTy, abi.FixedBytesTy:
+				c.EmittedBytes = map[interface{}]bool{}
+			default:
+			}
+		}
+	}
+
+	// If we are creating an address list in postgres
+	// we initialize the map despite what method call, if any
+	if c.CreateAddrList {
+		c.EmittedAddrs = map[interface{}]bool{}
+	}
+
+	return &c
+}
+
+// Use contract info to generate event filters - full sync omni watcher only
 func (c *Contract) GenerateFilters() error {
 	c.Filters = map[string]filters.LogFilter{}
 
@@ -65,39 +96,45 @@ func (c *Contract) GenerateFilters() error {
 	return nil
 }
 
-// Returns true if address is in list of addresses to
+// Returns true if address is in list of arguments to
 // filter events for or if no filtering is specified
-func (c *Contract) IsEventAddr(addr string) bool {
-	if c.EventAddrs == nil {
+func (c *Contract) WantedEventArg(arg string) bool {
+	if c.FilterArgs == nil {
 		return false
-	} else if len(c.EventAddrs) == 0 {
+	} else if len(c.FilterArgs) == 0 {
 		return true
-	} else if a, ok := c.EventAddrs[addr]; ok {
+	} else if a, ok := c.FilterArgs[arg]; ok {
 		return a
 	}
 
 	return false
 }
 
-// Returns true if address is in list of addresses to
-// poll methods for or if no filtering is specified
-func (c *Contract) IsMethodAddr(addr string) bool {
-	if c.MethodAddrs == nil {
+// Returns true if address is in list of arguments to
+// poll methods with or if no filtering is specified
+func (c *Contract) WantedMethodArg(arg interface{}) bool {
+	if c.MethodArgs == nil {
 		return false
-	} else if len(c.MethodAddrs) == 0 {
+	} else if len(c.MethodArgs) == 0 {
 		return true
-	} else if a, ok := c.MethodAddrs[addr]; ok {
+	}
+
+	// resolve interface to one of the three types we handle as arguments
+	str := StringifyArg(arg)
+
+	// See if it's hex string has been filtered for
+	if a, ok := c.MethodArgs[str]; ok {
 		return a
 	}
 
 	return false
 }
 
-// Returns true if mapping value matches filtered for address or if not filter exists
+// Returns true if any mapping value matches filtered for address or if no filter exists
 // Used to check if an event log name-value mapping should be filtered or not
 func (c *Contract) PassesEventFilter(args map[string]string) bool {
 	for _, arg := range args {
-		if c.IsEventAddr(arg) {
+		if c.WantedEventArg(arg) {
 			return true
 		}
 	}
@@ -105,10 +142,47 @@ func (c *Contract) PassesEventFilter(args map[string]string) bool {
 	return false
 }
 
-// Used to add an address to the token holder address list
-// if it is on the method polling list or the filter is open
-func (c *Contract) AddTokenHolderAddress(addr string) {
-	if c.TknHolderAddrs != nil && c.IsMethodAddr(addr) {
-		c.TknHolderAddrs[addr] = true
+// Add event emitted address to our list if it passes filter and method polling is on
+func (c *Contract) AddEmittedAddr(addresses ...interface{}) {
+	for _, addr := range addresses {
+		if c.WantedMethodArg(addr) && c.Methods != nil {
+			c.EmittedAddrs[addr] = true
+		}
 	}
+}
+
+// Add event emitted hash to our list if it passes filter and method polling is on
+func (c *Contract) AddEmittedHash(hashes ...interface{}) {
+	for _, hash := range hashes {
+		if c.WantedMethodArg(hash) && c.Methods != nil {
+			c.EmittedHashes[hash] = true
+		}
+	}
+}
+
+// Add event emitted bytes to our list if it passes filter and method polling is on
+func (c *Contract) AddEmittedBytes(byteArrays ...interface{}) {
+	for _, bytes := range byteArrays {
+		if c.WantedMethodArg(bytes) && c.Methods != nil {
+			c.EmittedBytes[bytes] = true
+		}
+	}
+}
+
+func StringifyArg(arg interface{}) (str string) {
+	switch arg.(type) {
+	case string:
+		str = arg.(string)
+	case common.Address:
+		a := arg.(common.Address)
+		str = a.String()
+	case common.Hash:
+		a := arg.(common.Hash)
+		str = a.String()
+	case []byte:
+		a := arg.([]byte)
+		str = hexutil.Encode(a)
+	}
+
+	return
 }

@@ -67,8 +67,8 @@ func omniWatcher() {
 	for _, addr := range contractAddresses {
 		t.SetEvents(addr, contractEvents)
 		t.SetMethods(addr, contractMethods)
-		t.SetEventAddrs(addr, eventAddrs)
-		t.SetMethodAddrs(addr, methodAddrs)
+		t.SetEventArgs(addr, eventArgs)
+		t.SetMethodArgs(addr, methodArgs)
 		t.SetRange(addr, [2]int64{startingBlockNumber, endingBlockNumber})
 	}
 
@@ -90,11 +90,12 @@ func init() {
 
 	omniWatcherCmd.Flags().StringVarP(&contractAddress, "contract-address", "a", "", "Single address to generate watchers for")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractAddresses, "contract-addresses", "l", []string{}, "list of addresses to use; warning: watcher targets the same events and methods for each address")
-	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "contract-events", "e", []string{}, "Subset of events to watch; by default all events are watched")
-	omniWatcherCmd.Flags().StringArrayVarP(&contractMethods, "contract-methods", "m", nil, "Subset of methods to poll; by default no methods are polled")
-	omniWatcherCmd.Flags().StringArrayVarP(&eventAddrs, "event-filter-addresses", "f", []string{}, "Account addresses to persist event data for; default is to persist for all found token holder addresses")
-	omniWatcherCmd.Flags().StringArrayVarP(&methodAddrs, "method-filter-addresses", "g", []string{}, "Account addresses to poll methods with; default is to poll with all found token holder addresses")
+	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "events", "e", []string{}, "Subset of events to watch; by default all events are watched")
+	omniWatcherCmd.Flags().StringArrayVarP(&contractMethods, "methods", "m", nil, "Subset of methods to poll; by default no methods are polled")
+	omniWatcherCmd.Flags().StringArrayVarP(&eventArgs, "event-args", "f", []string{}, "Argument values to filter event logs for; will only persist event logs that emit at least one of the value specified")
+	omniWatcherCmd.Flags().StringArrayVarP(&methodArgs, "method-args", "g", []string{}, "Argument values to limit methods to; will only call methods with emitted values that were specified here")
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block to begin watching- default is first block the contract exists")
 	omniWatcherCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
+	omniWatcherCmd.Flags().BoolVarP(&createAddrList, "create-address-list", "c", false, "Set to true to persist address seen in emitted events into the database")
 }
