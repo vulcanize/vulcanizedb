@@ -17,6 +17,7 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -46,10 +47,8 @@ func backfillMakerLogs() {
 		log.Fatal("Failed to initialize database.")
 	}
 
-	watcher := shared.Watcher{
-		DB:         *db,
-		Blockchain: blockChain,
-	}
+	fetcher := shared2.NewFetcher(blockChain)
+	watcher := shared.NewWatcher(db, fetcher)
 
 	watcher.AddTransformers(transformers.TransformerInitializers())
 	watcher.Execute()

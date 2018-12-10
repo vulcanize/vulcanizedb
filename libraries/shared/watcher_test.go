@@ -77,7 +77,7 @@ var _ = Describe("Watcher", func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
 			mockFetcher = &mocks.MockLogFetcher{}
-			watcher = shared.NewWatcher(*db, nil, mockFetcher)
+			watcher = shared.NewWatcher(db, mockFetcher)
 			headerRepository = repositories.NewHeaderRepository(db)
 			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
