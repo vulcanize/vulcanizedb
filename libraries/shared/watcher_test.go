@@ -41,10 +41,9 @@ func fakeTransformerInitializer(db *postgres.DB) shared2.Transformer {
 }
 
 var _ = Describe("Watcher", func() {
-	// TODO Add test for watcher setting the BC
-	// TODO Add tests for log chunk delegation
-	// TODO Add tests for aggregate fetching
-	// TODO Add tests for MissingHeaders
+	It("initialises correctly", func() {
+		// TODO Test watcher initialisation
+	})
 
 	It("adds transformers", func() {
 		watcher := shared.Watcher{}
@@ -101,6 +100,26 @@ var _ = Describe("Watcher", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(fakeTransformer.executeWasCalled).To(BeFalse())
+		})
+
+		It("calls MissingHeaders", func() {
+			// TODO Tests for calling MissingHeaders
+		})
+
+		It("returns an error if missingHeaders returns an error", func() {
+			// TODO Test for propagating missingHeaders error
+		})
+
+		It("calls the log fetcher", func() {
+			// TODO Test for calling FetchLogs
+		})
+
+		It("returns an error if the log fetcher returns an error", func() {
+			// TODO Test for propagating log fetcher error
+		})
+
+		It("passes only relevant logs to each transformer", func() {
+			// TODO Test log delegation
 		})
 	})
 })

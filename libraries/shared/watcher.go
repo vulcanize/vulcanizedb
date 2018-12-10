@@ -56,12 +56,17 @@ func (watcher *Watcher) Execute() error {
 
 	// TODO Handle start and end numbers in transformers?
 	missingHeaders, err := shared.MissingHeaders(0, -1, watcher.DB, notCheckedSQL)
+	if err != nil {
+		log.Error("Fetching of missing headers failed in watcher!")
+		return err
+	}
 
 	for _, header := range missingHeaders {
 		// TODO Extend FetchLogs for doing several blocks at a time
 		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 		if err != nil {
 			// TODO Handle fetch error in watcher
+			log.Error("Error while fetching logs in watcher")
 			return err
 		}
 
