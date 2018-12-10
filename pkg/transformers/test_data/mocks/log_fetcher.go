@@ -21,7 +21,7 @@ import (
 )
 
 type MockLogFetcher struct {
-	FetchedContractAddresses [][]string
+	FetchedContractAddresses [][]common.Address
 	FetchedTopics            [][]common.Hash
 	FetchedBlocks            []int64
 	fetcherError             error
@@ -29,9 +29,9 @@ type MockLogFetcher struct {
 	SetBcCalled              bool
 }
 
-func (mlf *MockLogFetcher) FetchLogs(contractAddresses []string, topics [][]common.Hash, header core.Header) ([]types.Log, error) {
+func (mlf *MockLogFetcher) FetchLogs(contractAddresses []common.Address, topics []common.Hash, header core.Header) ([]types.Log, error) {
 	mlf.FetchedContractAddresses = append(mlf.FetchedContractAddresses, contractAddresses)
-	mlf.FetchedTopics = topics
+	mlf.FetchedTopics = [][]common.Hash{topics}
 	mlf.FetchedBlocks = append(mlf.FetchedBlocks, header.BlockNumber)
 
 	return mlf.FetchedLogs, mlf.fetcherError

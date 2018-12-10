@@ -44,6 +44,7 @@ func (transformer Transformer) Execute(logs []types.Log, header core.Header) err
 			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 			return err
 		}
+		return nil
 	}
 
 	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)

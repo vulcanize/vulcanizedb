@@ -2,6 +2,7 @@ package shared
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
@@ -18,7 +19,7 @@ type Watcher struct {
 	Topics       []common.Hash
 }
 
-func NewWatcher(db postgres.DB, bc core.BlockChain) Watcher {
+func NewWatcher(db postgres.DB, bc core.BlockChain, fetcher shared.LogFetcher) Watcher {
 	transformerConfigs := transformers.TransformerConfigs()
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
@@ -31,7 +32,6 @@ func NewWatcher(db postgres.DB, bc core.BlockChain) Watcher {
 	}
 
 	chunker := shared.NewLogChunker(transformerConfigs)
-	fetcher := shared.NewFetcher(bc)
 
 	return Watcher{
 		DB:         db,
@@ -73,6 +73,10 @@ func (watcher *Watcher) Execute() error {
 		for _, transformer := range watcher.Transformers {
 			logChunk := chunkedLogs[transformer.Name()]
 			err = transformer.Execute(logChunk, header)
+			if err != nil {
+				log.Error("%v transformer failed to execute: %v", transformer.Name(), err)
+				return err
+			}
 		}
 	}
 	return err
