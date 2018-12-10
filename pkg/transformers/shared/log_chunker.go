@@ -19,9 +19,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// TODO Add unit tests for LogChunker
+
 type LogChunker struct {
-	addressToNames map[string][]string
-	nameToTopic0   map[string]common.Hash
+	AddressToNames map[string][]string
+	NameToTopic0   map[string]common.Hash
 }
 
 // Initialises a chunker by creating efficient lookup maps
@@ -37,21 +39,22 @@ func NewLogChunker(transformerConfigs []TransformerConfig) LogChunker {
 	}
 
 	return LogChunker{
-		addressToNames,
-		nameToTopic0,
+		AddressToNames: addressToNames,
+		NameToTopic0: nameToTopic0,
 	}
 }
 
-// Goes through an array of logs, associating relevant logs with transformers
-func (chunker LogChunker) ChunkLogs(logs []types.Log) (chunks map[string][]types.Log) {
+// Goes through an array of logs, associating relevant logs (matching addresses and topic) with transformers
+func (chunker LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
+	chunks := map[string][]types.Log{}
 	for _, log := range logs {
 		// Topic0 is not unique to each transformer, also need to consider the contract address
-		relevantTransformers := chunker.addressToNames[log.Address.String()]
+		relevantTransformers := chunker.AddressToNames[log.Address.String()]
 		for _, transformer := range relevantTransformers {
-			if chunker.nameToTopic0[transformer] == log.Topics[0] {
+			if chunker.NameToTopic0[transformer] == log.Topics[0] {
 				chunks[transformer] = append(chunks[transformer], log)
 			}
 		}
 	}
-	return
+	return chunks
 }
