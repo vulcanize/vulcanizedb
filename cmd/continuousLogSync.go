@@ -58,9 +58,11 @@ func syncMakerLogs() {
 		log.Fatal("Failed to initialize database.")
 	}
 
+	fetcher := shared2.NewFetcher(blockChain)
+
 	watcher := shared.Watcher{
-		DB:         *db,
-		Blockchain: blockChain,
+		DB:      db,
+		Fetcher: fetcher,
 	}
 
 	transformerInititalizers := getTransformerInititalizers(transformerNames)
