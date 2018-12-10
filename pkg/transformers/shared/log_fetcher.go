@@ -22,23 +22,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// TODO Check if Fetcher can be simplified with aggregate logic
-
 type LogFetcher interface {
 	FetchLogs(contractAddresses []common.Address, topics []common.Hash, missingHeader core.Header) ([]types.Log, error)
 }
 
-type SettableLogFetcher interface {
-	LogFetcher
-	SetBC(bc core.BlockChain)
-}
-
 type Fetcher struct {
 	blockChain core.BlockChain
-}
-
-func (fetcher *Fetcher) SetBC(bc core.BlockChain) {
-	fetcher.blockChain = bc
 }
 
 func NewFetcher(blockchain core.BlockChain) Fetcher {
