@@ -49,6 +49,7 @@ func persistHeader(db *postgres.DB, blockNumber int64, blockChain core.BlockChai
 		return core.Header{}, err
 	}
 	headerRepository := repositories.NewHeaderRepository(db)
-	_, err = headerRepository.CreateOrUpdateHeader(header)
+	id, err := headerRepository.CreateOrUpdateHeader(header)
+	header.Id = id
 	return header, err
 }
