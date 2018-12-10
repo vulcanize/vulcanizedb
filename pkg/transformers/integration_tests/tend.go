@@ -46,12 +46,14 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
+		config = tend.TendConfig
+
 		fetcher = shared.NewFetcher(blockChain)
 		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 
 		initializer = factories.LogNoteTransformer{
-			Config:     tend.TendConfig,
+			Config:     config,
 			Converter:  &tend.TendConverter{},
 			Repository: &tend.TendRepository{},
 		}
