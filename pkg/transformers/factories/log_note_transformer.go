@@ -44,6 +44,7 @@ func (transformer LogNoteTransformer) Execute(logs []types.Log, header core.Head
 			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
 			return err
 		}
+		return nil
 	}
 
 	models, err := transformer.Converter.ToModels(logs)

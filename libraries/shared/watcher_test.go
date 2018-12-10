@@ -11,6 +11,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -45,7 +46,7 @@ var _ = Describe("Watcher", func() {
 	// TODO Add tests for aggregate fetching
 	// TODO Add tests for MissingHeaders
 
-	It("Adds transformers", func() {
+	It("adds transformers", func() {
 		watcher := shared.Watcher{}
 
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
@@ -54,7 +55,7 @@ var _ = Describe("Watcher", func() {
 		Expect(watcher.Transformers).To(ConsistOf(&MockTransformer{}))
 	})
 
-	It("Adds transformers from multiple sources", func() {
+	It("adds transformers from multiple sources", func() {
 		watcher := shared.Watcher{}
 
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
@@ -69,12 +70,14 @@ var _ = Describe("Watcher", func() {
 			watcher          shared.Watcher
 			fakeTransformer  *MockTransformer
 			headerRepository repositories.HeaderRepository
+			mockFetcher      shared2.LogFetcher
 		)
 
 		BeforeEach(func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
-			watcher = shared.NewWatcher(*db, nil)
+			mockFetcher = &mocks.MockLogFetcher{}
+			watcher = shared.NewWatcher(*db, nil, mockFetcher)
 			headerRepository = repositories.NewHeaderRepository(db)
 			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
