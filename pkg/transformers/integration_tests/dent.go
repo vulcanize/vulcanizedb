@@ -57,6 +57,7 @@ var _ = Describe("Dent transformer", func() {
 		logs, err := fetcher.FetchLogs(addresses, topics, header)
 		Expect(err).NotTo(HaveOccurred())
 
+		transformer = initializer.NewLogNoteTransformer(db)
 		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 

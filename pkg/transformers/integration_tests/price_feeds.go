@@ -35,6 +35,7 @@ var _ = Describe("Price feeds transformer", func() {
 		config      shared.TransformerConfig
 		fetcher     shared.Fetcher
 		initializer factories.LogNoteTransformer
+		topics      []common.Hash
 	)
 
 	BeforeEach(func() {
@@ -44,7 +45,10 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
 		config = price_feeds.PriceFeedConfig
+		topics = []common.Hash{common.HexToHash(config.Topic)}
+
 		fetcher = shared.NewFetcher(blockChain)
 
 		initializer = factories.LogNoteTransformer{
@@ -58,13 +62,14 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763054)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		initializer.Config.ContractAddresses = []string{constants.PipContractAddress}
+		addresses := []string{constants.PipContractAddress}
+		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(initializer.Config.ContractAddresses),
-			[]common.Hash{common.HexToHash(config.Topic)},
+			shared.HexStringsToAddresses(addresses),
+			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -76,20 +81,21 @@ var _ = Describe("Price feeds transformer", func() {
 		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("207.314891143000011198"))
-		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
+		Expect(model.MedianizerAddress).To(Equal(addresses[0]))
 	})
 
 	It("persists a MKR/USD price feed event", func() {
 		blockNumber := int64(8763059)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		initializer.Config.ContractAddresses = []string{constants.PepContractAddress}
+		addresses := []string{constants.PepContractAddress}
+		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(initializer.Config.ContractAddresses),
-			[]common.Hash{common.HexToHash(config.Topic)},
+			shared.HexStringsToAddresses(addresses),
+			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -101,20 +107,21 @@ var _ = Describe("Price feeds transformer", func() {
 		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("391.803979212000001553"))
-		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
+		Expect(model.MedianizerAddress).To(Equal(addresses[0]))
 	})
 
 	It("persists a REP/USD price feed event", func() {
 		blockNumber := int64(8763062)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		initializer.Config.ContractAddresses = []string{constants.RepContractAddress}
+		addresses := []string{constants.RepContractAddress}
+		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
-			[]common.Hash{common.HexToHash(config.Topic)},
+			shared.HexStringsToAddresses(addresses),
+			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -126,6 +133,6 @@ var _ = Describe("Price feeds transformer", func() {
 		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(model.UsdValue).To(Equal("12.816928482699999847"))
-		Expect(model.MedianizerAddress).To(Equal(config.ContractAddresses[0]))
+		Expect(model.MedianizerAddress).To(Equal(addresses[0]))
 	})
 })
