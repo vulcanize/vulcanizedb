@@ -26,7 +26,14 @@ import (
 )
 
 var _ = Describe("Fetcher", func() {
+	Describe("Iinitialisation", func() {
+		It("creates correct lookup maps", func() {
+
+		})
+	})
+
 	Describe("FetchLogs", func() {
+		// TODO Add tests for aggregate fetching
 		It("fetches logs based on the given query", func() {
 			blockChain := fakes.NewMockBlockChain()
 			fetcher := shared.NewFetcher(blockChain)
