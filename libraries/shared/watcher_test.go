@@ -143,10 +143,10 @@ var _ = Describe("Watcher", func() {
 
 			configA := shared2.TransformerConfig{TransformerName: "transformerA",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
-				Topic: "0xA"}
+				Topic:             "0xA"}
 			configB := shared2.TransformerConfig{TransformerName: "transformerB",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000b"},
-				Topic: "0xB"}
+				Topic:             "0xB"}
 			configs := []shared2.TransformerConfig{configA, configB}
 
 			logA := types.Log{Address: common.HexToAddress("0xA"),

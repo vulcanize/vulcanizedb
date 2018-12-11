@@ -25,7 +25,7 @@ type Watcher struct {
 }
 
 func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository,
-		transformerConfigs []shared.TransformerConfig) Watcher {
+	transformerConfigs []shared.TransformerConfig) Watcher {
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
 

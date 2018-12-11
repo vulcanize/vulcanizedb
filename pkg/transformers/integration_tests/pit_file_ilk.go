@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
@@ -26,37 +28,46 @@ import (
 )
 
 var _ = Describe("PitFileIlk LogNoteTransformer", func() {
-	It("fetches and transforms a Pit.file ilk 'spot' event from Kovan", func() {
-		blockNumber := int64(9103223)
-		config := ilk.IlkFileConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+	var (
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		initializer factories.LogNoteTransformer
+		addresses   []common.Address
+		topics      []common.Hash
+	)
 
+	BeforeEach(func() {
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		blockChain, err := getBlockChain(rpcClient, ethClient)
+		blockChain, err = getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
-
-		db := test_config.NewTestDB(blockChain.Node())
+		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+		config := ilk.IlkFileConfig
 
-		header, err := persistHeader(db, blockNumber, blockChain)
-		Expect(err).NotTo(HaveOccurred())
+		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		topics = []common.Hash{common.HexToHash(config.Topic)}
 
-		initializer := factories.LogNoteTransformer{
+		initializer = factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &ilk.PitFileIlkConverter{},
 			Repository: &ilk.PitFileIlkRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db)
+	})
 
-		fetcher := shared.NewFetcher(blockChain)
-		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
-			[]common.Hash{common.HexToHash(config.Topic)},
-			header)
+	It("fetches and transforms a Pit.file ilk 'spot' event from Kovan", func() {
+		blockNumber := int64(9103223)
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
 		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -72,29 +83,18 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 
 	It("fetches and transforms a Pit.file ilk 'line' event from Kovan", func() {
 		blockNumber := int64(8762253)
-		config := ilk.IlkFileConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockChain, err := getBlockChain(rpcClient, ethClient)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		db := test_config.NewTestDB(blockChain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber, blockChain)
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
-			Config:     config,
-			Fetcher:    &shared.Fetcher{},
-			Converter:  &ilk.PitFileIlkConverter{},
-			Repository: &ilk.PitFileIlkRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []ilk.PitFileIlkModel
