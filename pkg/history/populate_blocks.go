@@ -1,7 +1,7 @@
 package history
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -10,7 +10,6 @@ import (
 func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, startingBlockNumber int64) int {
 	lastBlock := blockchain.LastBlock().Int64()
 	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
-	log.SetPrefix("")
 	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
 	RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
 	return len(blockRange)

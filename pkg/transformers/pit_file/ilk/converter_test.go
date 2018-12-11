@@ -47,13 +47,49 @@ var _ = Describe("Pit file ilk converter", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("converts a log to an model", func() {
+	It("returns error if 'what' field is unknown", func() {
+		log := types.Log{
+			Address: test_data.EthPitFileIlkLineLog.Address,
+			Topics: []common.Hash{
+				test_data.EthPitFileIlkLineLog.Topics[0],
+				test_data.EthPitFileIlkLineLog.Topics[1],
+				test_data.EthPitFileIlkLineLog.Topics[2],
+				common.HexToHash("0x1111111100000000000000000000000000000000000000000000000000000000"),
+			},
+			Data:        test_data.EthPitFileIlkLineLog.Data,
+			BlockNumber: test_data.EthPitFileIlkLineLog.BlockNumber,
+			TxHash:      test_data.EthPitFileIlkLineLog.TxHash,
+			TxIndex:     test_data.EthPitFileIlkLineLog.TxIndex,
+			BlockHash:   test_data.EthPitFileIlkLineLog.BlockHash,
+			Index:       test_data.EthPitFileIlkLineLog.Index,
+		}
 		converter := ilk.PitFileIlkConverter{}
 
-		models, err := converter.ToModels([]types.Log{test_data.EthPitFileIlkLog})
+		_, err := converter.ToModels([]types.Log{log})
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(len(models)).To(Equal(1))
-		Expect(models[0].(ilk.PitFileIlkModel)).To(Equal(test_data.PitFileIlkModel))
+		Expect(err).To(HaveOccurred())
 	})
+
+	Describe("when log is valid", func() {
+		It("converts to model with data converted to ray when what is 'spot'", func() {
+			converter := ilk.PitFileIlkConverter{}
+
+			models, err := converter.ToModels([]types.Log{test_data.EthPitFileIlkSpotLog})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(models)).To(Equal(1))
+			Expect(models[0].(ilk.PitFileIlkModel)).To(Equal(test_data.PitFileIlkSpotModel))
+		})
+
+		It("converts to model with data converted to wad when what is 'line'", func() {
+			converter := ilk.PitFileIlkConverter{}
+
+			models, err := converter.ToModels([]types.Log{test_data.EthPitFileIlkLineLog})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(models)).To(Equal(1))
+			Expect(models[0].(ilk.PitFileIlkModel)).To(Equal(test_data.PitFileIlkLineModel))
+		})
+	})
+
 })

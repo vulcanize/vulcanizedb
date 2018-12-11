@@ -6,7 +6,7 @@ password = "vulcanize"
 port = 5432
 
 [client]
-ipcPath = "http://147.75.64.249:8545"
+ipcPath = "http://147.75.199.135:8545"
 
 [datadog]
 name = "maker_vdb_staging"

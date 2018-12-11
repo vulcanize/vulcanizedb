@@ -15,13 +15,12 @@
 package debt_ceiling
 
 import (
-	"encoding/json"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"math/big"
-
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type PitFileDebtCeilingConverter struct{}
@@ -34,7 +33,7 @@ func (PitFileDebtCeilingConverter) ToModels(ethLogs []types.Log) ([]interface{},
 			return nil, err
 		}
 		what := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
-		data := big.NewInt(0).SetBytes(ethLog.Topics[3].Bytes()).String()
+		data := shared.ConvertToWad(ethLog.Topics[3].Big().String())
 
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
