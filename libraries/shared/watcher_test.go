@@ -2,6 +2,7 @@ package shared_test
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -10,6 +11,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -42,7 +44,28 @@ func fakeTransformerInitializer(db *postgres.DB) shared2.Transformer {
 
 var _ = Describe("Watcher", func() {
 	It("initialises correctly", func() {
-		// TODO Test watcher initialisation
+		db := test_config.NewTestDB(core.Node{ID: "testNode"})
+		fetcher := mocks.MockLogFetcher{}
+		repository := &mocks.MockWatcherRepository{}
+		configA := shared2.TransformerConfig{
+			ContractAddresses: []string{"0xA"},
+			Topic: "0xA",
+		}
+		configB := shared2.TransformerConfig{
+			ContractAddresses: []string{"0xB"},
+			Topic: "0xB",
+		}
+		configs := []shared2.TransformerConfig{configA, configB}
+		watcher := shared.NewWatcher(db, &fetcher, repository, configs)
+
+		Expect(watcher.DB).To(Equal(db))
+		Expect(watcher.Fetcher).NotTo(BeNil())
+		Expect(watcher.Chunker).NotTo(BeNil())
+		Expect(watcher.Repository).To(Equal(repository))
+		Expect(watcher.Topics).To(And(
+			ContainElement(common.HexToHash("0xA")), ContainElement(common.HexToHash("0xB"))))
+		Expect(watcher.Addresses).To(And(
+			ContainElement(common.HexToAddress("0xA")), ContainElement(common.HexToAddress("0xB"))))
 	})
 
 	It("adds transformers", func() {
@@ -69,22 +92,26 @@ var _ = Describe("Watcher", func() {
 			watcher          shared.Watcher
 			fakeTransformer  *MockTransformer
 			headerRepository repositories.HeaderRepository
-			mockFetcher      shared2.LogFetcher
+			mockFetcher      mocks.MockLogFetcher
+			repository mocks.MockWatcherRepository
 		)
 
 		BeforeEach(func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
-			mockFetcher = &mocks.MockLogFetcher{}
-			watcher = shared.NewWatcher(db, mockFetcher)
+			mockFetcher = mocks.MockLogFetcher{}
 			headerRepository = repositories.NewHeaderRepository(db)
 			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
+
+			repository = mocks.MockWatcherRepository{}
+			watcher = shared.NewWatcher(db, &mockFetcher, &repository, transformers.TransformerConfigs())
 		})
 
 		It("executes each transformer", func() {
 			fakeTransformer = &MockTransformer{}
 			watcher.Transformers = []shared2.Transformer{fakeTransformer}
+			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
 
@@ -95,6 +122,7 @@ var _ = Describe("Watcher", func() {
 		It("returns an error if transformer returns an error", func() {
 			fakeTransformer = &MockTransformer{executeError: errors.New("Something bad happened")}
 			watcher.Transformers = []shared2.Transformer{fakeTransformer}
+			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
 
@@ -102,24 +130,65 @@ var _ = Describe("Watcher", func() {
 			Expect(fakeTransformer.executeWasCalled).To(BeFalse())
 		})
 
-		It("calls MissingHeaders", func() {
-			// TODO Tests for calling MissingHeaders
-		})
-
-		It("returns an error if missingHeaders returns an error", func() {
-			// TODO Test for propagating missingHeaders error
-		})
-
-		It("calls the log fetcher", func() {
-			// TODO Test for calling FetchLogs
-		})
-
-		It("returns an error if the log fetcher returns an error", func() {
-			// TODO Test for propagating log fetcher error
-		})
-
 		It("passes only relevant logs to each transformer", func() {
 			// TODO Test log delegation
+		})
+
+		Describe("uses the repository correctly:", func() {
+
+			It("calls MissingHeaders", func() {
+				err := watcher.Execute()
+				Expect(err).To(Not(HaveOccurred()))
+				Expect(repository.MissingHeadersCalled).To(BeTrue())
+			})
+
+			It("propagates MissingHeaders errors", func() {
+				missingHeadersError := errors.New("MissingHeadersError")
+				repository.MissingHeadersError = missingHeadersError
+
+				err := watcher.Execute()
+				Expect(err).To(MatchError(missingHeadersError))
+			})
+
+			It("calls CreateNotCheckedSQL", func() {
+				err := watcher.Execute()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repository.CreateNotCheckedSQLCalled).To(BeTrue())
+			})
+
+			It("calls GetCheckedColumnNames", func() {
+				err := watcher.Execute()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repository.GetCheckedColumnNamesCalled).To(BeTrue())
+			})
+
+			It("propagates GetCheckedColumnNames errors", func() {
+				getCheckedColumnNamesError := errors.New("GetCheckedColumnNamesError")
+				repository.GetCheckedColumnNamesError = getCheckedColumnNamesError
+
+				err := watcher.Execute()
+				Expect(err).To(MatchError(getCheckedColumnNamesError))
+			})
+		})
+
+		Describe("uses the LogFetcher correctly:", func() {
+			BeforeEach(func() {
+				repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+			})
+
+			It("fetches logs", func() {
+				err := watcher.Execute()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockFetcher.FetchLogsCalled).To(BeTrue())
+			})
+
+			It("propagates log fetcher errors", func() {
+				fetcherError := errors.New("FetcherError")
+				mockFetcher.SetFetcherError(fetcherError)
+
+				err := watcher.Execute()
+				Expect(err).To(MatchError(fetcherError))
+			})
 		})
 	})
 })

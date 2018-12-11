@@ -27,12 +27,14 @@ type MockLogFetcher struct {
 	fetcherError             error
 	FetchedLogs              []types.Log
 	SetBcCalled              bool
+	FetchLogsCalled          bool
 }
 
 func (mlf *MockLogFetcher) FetchLogs(contractAddresses []common.Address, topics []common.Hash, header core.Header) ([]types.Log, error) {
 	mlf.FetchedContractAddresses = append(mlf.FetchedContractAddresses, contractAddresses)
 	mlf.FetchedTopics = [][]common.Hash{topics}
 	mlf.FetchedBlocks = append(mlf.FetchedBlocks, header.BlockNumber)
+	mlf.FetchLogsCalled = true
 
 	return mlf.FetchedLogs, mlf.fetcherError
 }

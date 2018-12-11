@@ -71,7 +71,7 @@ var _ = Describe("Log chunker", func() {
 			logs := []types.Log{log1, log2, log3, log4, log5}
 			chunks := chunker.ChunkLogs(logs)
 
-			Expect(chunks["TransformerA"]).To(And(ContainElement(log1),ContainElement(log4)))
+			Expect(chunks["TransformerA"]).To(And(ContainElement(log1), ContainElement(log4)))
 			Expect(chunks["TransformerB"]).To(BeEmpty())
 			Expect(chunks["TransformerC"]).To(ContainElement(log5))
 		})

@@ -5,7 +5,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
@@ -25,8 +24,8 @@ type Watcher struct {
 	Repository   WatcherRepository
 }
 
-func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository) Watcher {
-	transformerConfigs := transformers.TransformerConfigs()
+func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository,
+		transformerConfigs []shared.TransformerConfig) Watcher {
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
 
