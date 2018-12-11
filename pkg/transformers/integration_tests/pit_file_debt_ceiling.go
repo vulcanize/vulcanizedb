@@ -74,6 +74,6 @@ var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
 
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].What).To(Equal("Line"))
-		Expect(dbResult[0].Data).To(Equal("10000000000000000000000000"))
+		Expect(dbResult[0].Data).To(Equal("10000000.000000000000000000"))
 	})
 })

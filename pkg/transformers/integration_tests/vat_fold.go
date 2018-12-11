@@ -43,7 +43,7 @@ var _ = Describe("VatFold Transformer", func() {
 	})
 
 	It("transforms VatFold log events", func() {
-		blockNumber := int64(9051149)
+		blockNumber := int64(9367233)
 		config := vat_fold.VatFoldConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
@@ -75,6 +75,6 @@ var _ = Describe("VatFold Transformer", func() {
 		dbResult := dbResults[0]
 		Expect(dbResult.Ilk).To(Equal("REP"))
 		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
-		Expect(dbResult.Rate).To(Equal("0"))
+		Expect(dbResult.Rate).To(Equal("0.000000000000000000000000000"))
 	})
 })

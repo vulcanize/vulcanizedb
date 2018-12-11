@@ -44,12 +44,12 @@ var _ = Describe("Pit file ilk repository", func() {
 	})
 
 	Describe("Create", func() {
-		modelWithDifferentLogIdx := test_data.PitFileIlkModel
+		modelWithDifferentLogIdx := test_data.PitFileIlkSpotModel
 		modelWithDifferentLogIdx.LogIndex = modelWithDifferentLogIdx.LogIndex + 1
 		inputs := shared_behaviors.CreateBehaviorInputs{
 			CheckedHeaderColumnName:  constants.PitFileIlkChecked,
 			LogEventTableName:        "maker.pit_file_ilk",
-			TestModel:                test_data.PitFileIlkModel,
+			TestModel:                test_data.PitFileIlkSpotModel,
 			ModelWithDifferentLogIdx: modelWithDifferentLogIdx,
 			Repository:               &pitFileIlkRepository,
 		}
@@ -59,18 +59,18 @@ var _ = Describe("Pit file ilk repository", func() {
 		It("adds a pit file ilk event", func() {
 			headerID, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
-			err = pitFileIlkRepository.Create(headerID, []interface{}{test_data.PitFileIlkModel})
+			err = pitFileIlkRepository.Create(headerID, []interface{}{test_data.PitFileIlkSpotModel})
 
 			Expect(err).NotTo(HaveOccurred())
 			var dbPitFile ilk.PitFileIlkModel
 			err = db.Get(&dbPitFile, `SELECT ilk, what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbPitFile.Ilk).To(Equal(test_data.PitFileIlkModel.Ilk))
-			Expect(dbPitFile.What).To(Equal(test_data.PitFileIlkModel.What))
-			Expect(dbPitFile.Data).To(Equal(test_data.PitFileIlkModel.Data))
-			Expect(dbPitFile.LogIndex).To(Equal(test_data.PitFileIlkModel.LogIndex))
-			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.PitFileIlkModel.TransactionIndex))
-			Expect(dbPitFile.Raw).To(MatchJSON(test_data.PitFileIlkModel.Raw))
+			Expect(dbPitFile.Ilk).To(Equal(test_data.PitFileIlkSpotModel.Ilk))
+			Expect(dbPitFile.What).To(Equal(test_data.PitFileIlkSpotModel.What))
+			Expect(dbPitFile.Data).To(Equal(test_data.PitFileIlkSpotModel.Data))
+			Expect(dbPitFile.LogIndex).To(Equal(test_data.PitFileIlkSpotModel.LogIndex))
+			Expect(dbPitFile.TransactionIndex).To(Equal(test_data.PitFileIlkSpotModel.TransactionIndex))
+			Expect(dbPitFile.Raw).To(MatchJSON(test_data.PitFileIlkSpotModel.Raw))
 		})
 	})
 
