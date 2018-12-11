@@ -52,7 +52,7 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.BiteChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.BiteChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -62,5 +62,5 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 }
 
 func (repository BiteRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.BiteChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.BiteChecked)
 }

@@ -3,10 +3,17 @@ package shared
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
+
+type WatcherRepository interface {
+	GetCheckedColumnNames(db *postgres.DB) ([]string, error)
+	CreateNotCheckedSQL(boolColumns []string) string
+	MissingHeaders(startingBlockNumber int64, endingBlockNumber int64, db *postgres.DB, notCheckedSQL string) ([]core.Header, error)
+}
 
 type Watcher struct {
 	Transformers []shared.Transformer
@@ -15,9 +22,10 @@ type Watcher struct {
 	Chunker      shared.LogChunker
 	Addresses    []common.Address
 	Topics       []common.Hash
+	Repository   WatcherRepository
 }
 
-func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher) Watcher {
+func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository) Watcher {
 	transformerConfigs := transformers.TransformerConfigs()
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
@@ -32,11 +40,12 @@ func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher) Watcher {
 	chunker := shared.NewLogChunker(transformerConfigs)
 
 	return Watcher{
-		DB:        db,
-		Fetcher:   fetcher,
-		Chunker:   chunker,
-		Addresses: contractAddresses,
-		Topics:    topic0s,
+		DB:         db,
+		Fetcher:    fetcher,
+		Chunker:    chunker,
+		Addresses:  contractAddresses,
+		Topics:     topic0s,
+		Repository: repository,
 	}
 }
 
@@ -48,14 +57,14 @@ func (watcher *Watcher) AddTransformers(us []shared.TransformerInitializer) {
 }
 
 func (watcher *Watcher) Execute() error {
-	checkedColumnNames, err := shared.GetCheckedColumnNames(watcher.DB)
+	checkedColumnNames, err := watcher.Repository.GetCheckedColumnNames(watcher.DB)
 	if err != nil {
 		return err
 	}
-	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames)
+	notCheckedSQL := watcher.Repository.CreateNotCheckedSQL(checkedColumnNames)
 
-	// TODO Handle start and end numbers in transformers?
-	missingHeaders, err := shared.MissingHeaders(0, -1, watcher.DB, notCheckedSQL)
+	// TODO Handle start and end numbers in transformers
+	missingHeaders, err := watcher.Repository.MissingHeaders(0, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
 		log.Error("Fetching of missing headers failed in watcher!")
 		return err
@@ -66,7 +75,7 @@ func (watcher *Watcher) Execute() error {
 		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 		if err != nil {
 			// TODO Handle fetch error in watcher
-			log.Error("Error while fetching logs in watcher")
+			log.Error("Error while fetching logs for header %v in watcher", header.Id)
 			return err
 		}
 
@@ -76,7 +85,7 @@ func (watcher *Watcher) Execute() error {
 			logChunk := chunkedLogs[transformer.Name()]
 			err = transformer.Execute(logChunk, header)
 			if err != nil {
-				log.Error("%v transformer failed to execute: %v", transformer.Name(), err)
+				log.Error("%v transformer failed to execute in watcher: %v", transformer.Name(), err)
 				return err
 			}
 		}

@@ -50,7 +50,7 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.PitFileDebtCeilingChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.PitFileDebtCeilingChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,7 +60,7 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 }
 
 func (repository PitFileDebtCeilingRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.PitFileDebtCeilingChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.PitFileDebtCeilingChecked)
 }
 
 func (repository *PitFileDebtCeilingRepository) SetDB(db *postgres.DB) {

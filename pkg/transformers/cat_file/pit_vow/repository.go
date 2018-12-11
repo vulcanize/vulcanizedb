@@ -48,7 +48,7 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.CatFilePitVowChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.CatFilePitVowChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -57,7 +57,7 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 }
 
 func (repository CatFilePitVowRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFilePitVowChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.CatFilePitVowChecked)
 }
 
 func (repository *CatFilePitVowRepository) SetDB(db *postgres.DB) {

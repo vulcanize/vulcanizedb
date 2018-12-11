@@ -50,7 +50,7 @@ func (repository VowFlogRepository) Create(headerID int64, models []interface{})
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VowFlogChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.VowFlogChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,7 +60,7 @@ func (repository VowFlogRepository) Create(headerID int64, models []interface{})
 }
 
 func (repository VowFlogRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.VowFlogChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.VowFlogChecked)
 }
 
 func (repository *VowFlogRepository) SetDB(db *postgres.DB) {

@@ -50,7 +50,7 @@ func (repository VatMoveRepository) Create(headerID int64, models []interface{})
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatMoveChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatMoveChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,7 +60,7 @@ func (repository VatMoveRepository) Create(headerID int64, models []interface{})
 }
 
 func (repository VatMoveRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatMoveChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.VatMoveChecked)
 }
 
 func (repository *VatMoveRepository) SetDB(db *postgres.DB) {
