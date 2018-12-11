@@ -19,8 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// TODO Add unit tests for LogChunker
-
 type LogChunker struct {
 	AddressToNames map[string][]string
 	NameToTopic0   map[string]common.Hash
@@ -40,7 +38,7 @@ func NewLogChunker(transformerConfigs []TransformerConfig) LogChunker {
 
 	return LogChunker{
 		AddressToNames: addressToNames,
-		NameToTopic0: nameToTopic0,
+		NameToTopic0:   nameToTopic0,
 	}
 }
 
