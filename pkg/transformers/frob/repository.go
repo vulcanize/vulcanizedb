@@ -46,7 +46,7 @@ func (repository FrobRepository) Create(headerID int64, models []interface{}) er
 			return err
 		}
 	}
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FrobChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.FrobChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -55,7 +55,7 @@ func (repository FrobRepository) Create(headerID int64, models []interface{}) er
 }
 
 func (repository FrobRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.FrobChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.FrobChecked)
 }
 
 func (repository *FrobRepository) SetDB(db *postgres.DB) {

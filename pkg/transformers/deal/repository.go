@@ -49,7 +49,7 @@ func (repository DealRepository) Create(headerID int64, models []interface{}) er
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DealChecked)
+	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.DealChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -58,7 +58,7 @@ func (repository DealRepository) Create(headerID int64, models []interface{}) er
 }
 
 func (repository DealRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.MarkHeaderChecked(headerID, repository.db, constants.DealChecked)
+	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.DealChecked)
 }
 
 func (repository *DealRepository) SetDB(db *postgres.DB) {

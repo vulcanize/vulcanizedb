@@ -27,7 +27,7 @@ var _ = Describe("Repository utilities", func() {
 			db := test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
 			expectedColumnNames := getExpectedColumnNames()
-			actualColumnNames, err := shared.GetCheckedColumnNames(db)
+			actualColumnNames, err := shared.Repository{}.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualColumnNames).To(Equal(expectedColumnNames))
 		})
@@ -37,20 +37,20 @@ var _ = Describe("Repository utilities", func() {
 		It("generates a correct SQL string for one column", func() {
 			columns := []string{"columnA"}
 			expected := "NOT (columnA)"
-			actual := shared.CreateNotCheckedSQL(columns)
+			actual := shared.Repository{}.CreateNotCheckedSQL(columns)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("generates a correct SQL string for several columns", func() {
 			columns := []string{"columnA", "columnB"}
 			expected := "NOT (columnA AND columnB)"
-			actual := shared.CreateNotCheckedSQL(columns)
+			actual := shared.Repository{}.CreateNotCheckedSQL(columns)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("defaults to FALSE when there are no columns", func() {
 			expected := "FALSE"
-			actual := shared.CreateNotCheckedSQL([]string{})
+			actual := shared.Repository{}.CreateNotCheckedSQL([]string{})
 			Expect(actual).To(Equal(expected))
 		})
 	})
