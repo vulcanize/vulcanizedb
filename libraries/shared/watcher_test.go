@@ -22,6 +22,7 @@ type MockTransformer struct {
 	executeError     error
 	passedLogs       []types.Log
 	passedHeader     core.Header
+	transformerName  string
 }
 
 func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
@@ -35,7 +36,11 @@ func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
 }
 
 func (mh *MockTransformer) Name() string {
-	return "MockTransformer"
+	return mh.transformerName
+}
+
+func (mh *MockTransformer) SetTransformerName(name string) {
+	mh.transformerName = name
 }
 
 func fakeTransformerInitializer(db *postgres.DB) shared2.Transformer {
@@ -49,11 +54,11 @@ var _ = Describe("Watcher", func() {
 		repository := &mocks.MockWatcherRepository{}
 		configA := shared2.TransformerConfig{
 			ContractAddresses: []string{"0xA"},
-			Topic: "0xA",
+			Topic:             "0xA",
 		}
 		configB := shared2.TransformerConfig{
 			ContractAddresses: []string{"0xB"},
-			Topic: "0xB",
+			Topic:             "0xB",
 		}
 		configs := []shared2.TransformerConfig{configA, configB}
 		watcher := shared.NewWatcher(db, &fetcher, repository, configs)
@@ -93,7 +98,7 @@ var _ = Describe("Watcher", func() {
 			fakeTransformer  *MockTransformer
 			headerRepository repositories.HeaderRepository
 			mockFetcher      mocks.MockLogFetcher
-			repository mocks.MockWatcherRepository
+			repository       mocks.MockWatcherRepository
 		)
 
 		BeforeEach(func() {
@@ -131,7 +136,33 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("passes only relevant logs to each transformer", func() {
-			// TODO Test log delegation
+			transformerA := &MockTransformer{}
+			transformerA.SetTransformerName("transformerA")
+			transformerB := &MockTransformer{}
+			transformerB.SetTransformerName("transformerB")
+
+			configA := shared2.TransformerConfig{TransformerName: "transformerA",
+				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
+				Topic: "0xA"}
+			configB := shared2.TransformerConfig{TransformerName: "transformerB",
+				ContractAddresses: []string{"0x000000000000000000000000000000000000000b"},
+				Topic: "0xB"}
+			configs := []shared2.TransformerConfig{configA, configB}
+
+			logA := types.Log{Address: common.HexToAddress("0xA"),
+				Topics: []common.Hash{common.HexToHash("0xA")}}
+			logB := types.Log{Address: common.HexToAddress("0xB"),
+				Topics: []common.Hash{common.HexToHash("0xB")}}
+			mockFetcher.SetFetchedLogs([]types.Log{logA, logB})
+
+			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+			watcher = shared.NewWatcher(db, &mockFetcher, &repository, configs)
+			watcher.Transformers = []shared2.Transformer{transformerA, transformerB}
+
+			err := watcher.Execute()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(transformerA.passedLogs).To(Equal([]types.Log{logA}))
+			Expect(transformerB.passedLogs).To(Equal([]types.Log{logB}))
 		})
 
 		Describe("uses the repository correctly:", func() {
