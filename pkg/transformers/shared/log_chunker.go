@@ -19,31 +19,37 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+type Chunker interface {
+	AddConfigs(transformerConfigs []TransformerConfig)
+	ChunkLogs(logs []types.Log) map[string][]types.Log
+}
+
 type LogChunker struct {
 	AddressToNames map[string][]string
 	NameToTopic0   map[string]common.Hash
 }
 
-// Initialises a chunker by creating efficient lookup maps
-func NewLogChunker(transformerConfigs []TransformerConfig) LogChunker {
-	addressToNames := map[string][]string{}
-	nameToTopic0 := map[string]common.Hash{}
+// Returns a new log chunker with initialised maps.
+// Needs to have configs added with `AddConfigs` to consider logs for the respective transformer.
+func NewLogChunker() *LogChunker {
+	return &LogChunker{
+		AddressToNames: map[string][]string{},
+		NameToTopic0:   map[string]common.Hash{},
+	}
+}
 
+// Configures the chunker by adding more addreses and topics to consider.
+func (chunker *LogChunker) AddConfigs(transformerConfigs []TransformerConfig) {
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {
-			addressToNames[address] = append(addressToNames[address], config.TransformerName)
-			nameToTopic0[config.TransformerName] = common.HexToHash(config.Topic)
+			chunker.AddressToNames[address] = append(chunker.AddressToNames[address], config.TransformerName)
+			chunker.NameToTopic0[config.TransformerName] = common.HexToHash(config.Topic)
 		}
-	}
-
-	return LogChunker{
-		AddressToNames: addressToNames,
-		NameToTopic0:   nameToTopic0,
 	}
 }
 
 // Goes through an array of logs, associating relevant logs (matching addresses and topic) with transformers
-func (chunker LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
+func (chunker *LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
 	chunks := map[string][]types.Log{}
 	for _, log := range logs {
 		// Topic0 is not unique to each transformer, also need to consider the contract address

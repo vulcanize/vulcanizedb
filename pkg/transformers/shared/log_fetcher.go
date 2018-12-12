@@ -30,8 +30,8 @@ type Fetcher struct {
 	blockChain core.BlockChain
 }
 
-func NewFetcher(blockchain core.BlockChain) Fetcher {
-	return Fetcher{
+func NewFetcher(blockchain core.BlockChain) *Fetcher {
+	return &Fetcher{
 		blockChain: blockchain,
 	}
 }
