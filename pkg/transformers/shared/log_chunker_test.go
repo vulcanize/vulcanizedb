@@ -25,7 +25,7 @@ import (
 var _ = Describe("Log chunker", func() {
 	var (
 		configs []shared.TransformerConfig
-		chunker shared.LogChunker
+		chunker *shared.LogChunker
 	)
 
 	BeforeEach(func() {
@@ -47,7 +47,8 @@ var _ = Describe("Log chunker", func() {
 		}
 
 		configs = []shared.TransformerConfig{configA, configB, configC}
-		chunker = shared.NewLogChunker(configs)
+		chunker = shared.NewLogChunker()
+		chunker.AddConfigs(configs)
 	})
 
 	Describe("initialisation", func() {
@@ -63,6 +64,20 @@ var _ = Describe("Log chunker", func() {
 				"TransformerB": common.HexToHash("0xB"),
 				"TransformerC": common.HexToHash("0xC"),
 			}))
+		})
+	})
+
+	Describe("AddConfigs", func() {
+		It("can add more configs later", func() {
+			configD := shared.TransformerConfig{
+				TransformerName:   "TransformerD",
+				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
+				Topic:             "0xD",
+			}
+			chunker.AddConfigs([]shared.TransformerConfig{configD})
+
+			Expect(chunker.AddressToNames).To(ContainElement([]string{"TransformerD"}))
+			Expect(chunker.NameToTopic0).To(ContainElement(common.HexToHash("0xD")))
 		})
 	})
 

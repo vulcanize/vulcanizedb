@@ -32,7 +32,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		db          *postgres.DB
 		blockChain  core.BlockChain
 		config      shared.TransformerConfig
-		fetcher     shared.Fetcher
+		fetcher     *shared.Fetcher
 		initializer factories.LogNoteTransformer
 		addresses   []common.Address
 		topics      []common.Hash

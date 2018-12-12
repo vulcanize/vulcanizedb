@@ -18,7 +18,7 @@ var _ = Describe("Dent transformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		fetcher     shared.Fetcher
+		fetcher     *shared.Fetcher
 		transformer shared.Transformer
 		config      shared.TransformerConfig
 		addresses   []common.Address

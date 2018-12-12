@@ -11,7 +11,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -47,48 +46,51 @@ func fakeTransformerInitializer(db *postgres.DB) shared2.Transformer {
 	return &MockTransformer{}
 }
 
+var fakeTransformerConfig = []shared2.TransformerConfig{{
+	TransformerName:   "FakeTransformer",
+	ContractAddresses: []string{"FakeAddress"},
+	Topic:             "FakeTopic",
+}}
+
 var _ = Describe("Watcher", func() {
 	It("initialises correctly", func() {
 		db := test_config.NewTestDB(core.Node{ID: "testNode"})
-		fetcher := mocks.MockLogFetcher{}
+		fetcher := &mocks.MockLogFetcher{}
 		repository := &mocks.MockWatcherRepository{}
-		configA := shared2.TransformerConfig{
-			ContractAddresses: []string{"0xA"},
-			Topic:             "0xA",
-		}
-		configB := shared2.TransformerConfig{
-			ContractAddresses: []string{"0xB"},
-			Topic:             "0xB",
-		}
-		configs := []shared2.TransformerConfig{configA, configB}
-		watcher := shared.NewWatcher(db, &fetcher, repository, configs)
+		chunker := shared2.NewLogChunker()
+
+		watcher := shared.NewWatcher(db, fetcher, repository, chunker)
 
 		Expect(watcher.DB).To(Equal(db))
-		Expect(watcher.Fetcher).NotTo(BeNil())
-		Expect(watcher.Chunker).NotTo(BeNil())
+		Expect(watcher.Fetcher).To(Equal(fetcher))
+		Expect(watcher.Chunker).To(Equal(chunker))
 		Expect(watcher.Repository).To(Equal(repository))
-		Expect(watcher.Topics).To(And(
-			ContainElement(common.HexToHash("0xA")), ContainElement(common.HexToHash("0xB"))))
-		Expect(watcher.Addresses).To(And(
-			ContainElement(common.HexToAddress("0xA")), ContainElement(common.HexToAddress("0xB"))))
 	})
 
 	It("adds transformers", func() {
-		watcher := shared.Watcher{}
+		chunker := shared2.NewLogChunker()
+		watcher := shared.NewWatcher(nil, nil, nil, chunker)
 
-		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer}, fakeTransformerConfig)
 
 		Expect(len(watcher.Transformers)).To(Equal(1))
 		Expect(watcher.Transformers).To(ConsistOf(&MockTransformer{}))
+		Expect(watcher.Topics).To(Equal([]common.Hash{common.HexToHash("FakeTopic")}))
+		Expect(watcher.Addresses).To(Equal([]common.Address{common.HexToAddress("FakeAddress")}))
 	})
 
 	It("adds transformers from multiple sources", func() {
-		watcher := shared.Watcher{}
+		chunker := shared2.NewLogChunker()
+		watcher := shared.NewWatcher(nil, nil, nil, chunker)
 
-		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
-		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer})
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer}, fakeTransformerConfig)
+		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformerInitializer}, fakeTransformerConfig)
 
 		Expect(len(watcher.Transformers)).To(Equal(2))
+		Expect(watcher.Topics).To(Equal([]common.Hash{common.HexToHash("FakeTopic"),
+			common.HexToHash("FakeTopic")}))
+		Expect(watcher.Addresses).To(Equal([]common.Address{common.HexToAddress("FakeAddress"),
+			common.HexToAddress("FakeAddress")}))
 	})
 
 	Describe("with missing headers", func() {
@@ -99,6 +101,7 @@ var _ = Describe("Watcher", func() {
 			headerRepository repositories.HeaderRepository
 			mockFetcher      mocks.MockLogFetcher
 			repository       mocks.MockWatcherRepository
+			chunker          *shared2.LogChunker
 		)
 
 		BeforeEach(func() {
@@ -108,9 +111,10 @@ var _ = Describe("Watcher", func() {
 			headerRepository = repositories.NewHeaderRepository(db)
 			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
+			chunker = shared2.NewLogChunker()
 
 			repository = mocks.MockWatcherRepository{}
-			watcher = shared.NewWatcher(db, &mockFetcher, &repository, transformers.TransformerConfigs())
+			watcher = shared.NewWatcher(db, &mockFetcher, &repository, chunker)
 		})
 
 		It("executes each transformer", func() {
@@ -155,8 +159,10 @@ var _ = Describe("Watcher", func() {
 				Topics: []common.Hash{common.HexToHash("0xB")}}
 			mockFetcher.SetFetchedLogs([]types.Log{logA, logB})
 
+			chunker.AddConfigs(configs)
+
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
-			watcher = shared.NewWatcher(db, &mockFetcher, &repository, configs)
+			watcher = shared.NewWatcher(db, &mockFetcher, &repository, chunker)
 			watcher.Transformers = []shared2.Transformer{transformerA, transformerB}
 
 			err := watcher.Execute()
