@@ -35,7 +35,7 @@ var _ = Describe("Frob Transformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		fetcher     shared.Fetcher
+		fetcher     *shared.Fetcher
 		config      shared.TransformerConfig
 		initializer factories.Transformer
 	)

@@ -33,7 +33,7 @@ var _ = Describe("Price feeds transformer", func() {
 		db          *postgres.DB
 		blockChain  core.BlockChain
 		config      shared.TransformerConfig
-		fetcher     shared.Fetcher
+		fetcher     *shared.Fetcher
 		initializer factories.LogNoteTransformer
 		topics      []common.Hash
 	)

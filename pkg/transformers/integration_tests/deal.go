@@ -34,7 +34,7 @@ var _ = Describe("Deal transformer", func() {
 		blockChain  core.BlockChain
 		config      shared.TransformerConfig
 		initializer factories.LogNoteTransformer
-		fetcher     shared.Fetcher
+		fetcher     *shared.Fetcher
 		addresses   []common.Address
 		topics      []common.Hash
 	)

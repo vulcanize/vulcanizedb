@@ -40,7 +40,7 @@ var _ = Describe("Cat File transformer", func() {
 		rpcClient  client.RpcClient
 		err        error
 		ethClient  *ethclient.Client
-		fetcher    shared.Fetcher
+		fetcher    *shared.Fetcher
 	)
 
 	BeforeEach(func() {
