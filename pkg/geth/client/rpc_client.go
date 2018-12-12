@@ -35,3 +35,7 @@ func (client RpcClient) IpcPath() string {
 func (client RpcClient) SupportedModules() (map[string]string, error) {
 	return client.client.SupportedModules()
 }
+
+func (client RpcClient) BatchCall(batch []rpc.BatchElem) error {
+	return client.client.BatchCall(batch)
+}
