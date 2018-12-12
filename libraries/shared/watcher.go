@@ -18,41 +18,46 @@ type Watcher struct {
 	Transformers []shared.Transformer
 	DB           *postgres.DB
 	Fetcher      shared.LogFetcher
-	Chunker      shared.LogChunker
+	Chunker      shared.Chunker
 	Addresses    []common.Address
 	Topics       []common.Hash
 	Repository   WatcherRepository
 }
 
-func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository,
-	transformerConfigs []shared.TransformerConfig) Watcher {
+func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository, chunker shared.Chunker) Watcher {
+	return Watcher{
+		DB:         db,
+		Fetcher:    fetcher,
+		Chunker:    chunker,
+		Repository: repository,
+	}
+}
+
+// Adds transformers to the watcher, each needs an initializer and the associated config.
+// This also changes the configuration of the chunker, so that it will consider the new transformers.
+func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitializer, configs []shared.TransformerConfig) {
+	if len(initializers) != len(configs) {
+		panic("Mismatch in number of transformers initializers and configs!")
+	}
+
+	for _, initializer := range initializers {
+		transformer := initializer(watcher.DB)
+		watcher.Transformers = append(watcher.Transformers, transformer)
+	}
+
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
 
-	for _, config := range transformerConfigs {
+	for _, config := range configs {
 		for _, address := range config.ContractAddresses {
 			contractAddresses = append(contractAddresses, common.HexToAddress(address))
 		}
 		topic0s = append(topic0s, common.HexToHash(config.Topic))
 	}
 
-	chunker := shared.NewLogChunker(transformerConfigs)
-
-	return Watcher{
-		DB:         db,
-		Fetcher:    fetcher,
-		Chunker:    chunker,
-		Addresses:  contractAddresses,
-		Topics:     topic0s,
-		Repository: repository,
-	}
-}
-
-func (watcher *Watcher) AddTransformers(us []shared.TransformerInitializer) {
-	for _, transformerInitializer := range us {
-		transformer := transformerInitializer(watcher.DB)
-		watcher.Transformers = append(watcher.Transformers, transformer)
-	}
+	watcher.Addresses = append(watcher.Addresses, contractAddresses...)
+	watcher.Topics = append(watcher.Topics, topic0s...)
+	watcher.Chunker.AddConfigs(configs)
 }
 
 func (watcher *Watcher) Execute() error {

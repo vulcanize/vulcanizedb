@@ -47,11 +47,12 @@ func backfillMakerLogs() {
 		log.Fatal("Failed to initialize database.")
 	}
 
-	repository := shared2.Repository{}
+	repository := &shared2.Repository{}
 	fetcher := shared2.NewFetcher(blockChain)
-	watcher := shared.NewWatcher(db, fetcher, repository, transformers.TransformerConfigs())
+	chunker := shared2.NewLogChunker()
+	watcher := shared.NewWatcher(db, fetcher, repository, chunker)
 
-	watcher.AddTransformers(transformers.TransformerInitializers())
+	watcher.AddTransformers(transformers.TransformerInitializers(), transformers.TransformerConfigs())
 	watcher.Execute()
 }
 
