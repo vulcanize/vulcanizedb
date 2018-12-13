@@ -49,11 +49,13 @@ func backfillMakerLogs() {
 
 	repository := &shared2.Repository{}
 	fetcher := shared2.NewFetcher(blockChain)
-	chunker := shared2.NewLogChunker()
-	watcher := shared.NewWatcher(db, fetcher, repository, chunker)
+	watcher := shared.NewWatcher(db, fetcher, repository)
 
-	watcher.AddTransformers(transformers.TransformerInitializers(), transformers.TransformerConfigs())
-	watcher.Execute()
+	watcher.AddTransformers(transformers.TransformerInitializers())
+	err = watcher.Execute()
+	if err != nil {
+		// TODO Handle watcher error in backfillMakerLogs
+	}
 }
 
 func init() {

@@ -68,6 +68,10 @@ func (transformer Transformer) Execute(logs []types.Log, header core.Header) err
 	return nil
 }
 
-func (transformer Transformer) Name() string {
+func (transformer Transformer) GetName() string {
 	return transformer.Config.TransformerName
+}
+
+func (transformer Transformer) GetConfig() shared.TransformerConfig {
+	return transformer.Config
 }
