@@ -17,11 +17,95 @@ package shared_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/rand"
 )
 
 var _ = Describe("Repository utilities", func() {
+	Describe("MissingHeaders", func() {
+		var (
+			db                       *postgres.DB
+			repository               shared.Repository
+			repositoryTwo            shared.Repository
+			headerRepository         datastore.HeaderRepository
+			startingBlockNumber      int64
+			endingBlockNumber        int64
+			eventSpecificBlockNumber int64
+			blockNumbers             []int64
+			headerIDs                []int64
+			notCheckedSQL            string
+			err                      error
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(test_config.NewTestNode())
+			test_config.CleanTestDB(db)
+			repository = shared.Repository{}
+			repositoryTwo = shared.Repository{}
+			headerRepository = repositories.NewHeaderRepository(db)
+
+			columnNames, err := repository.GetCheckedColumnNames(db)
+			Expect(err).NotTo(HaveOccurred())
+			notCheckedSQL = repository.CreateNotCheckedSQL(columnNames)
+
+			startingBlockNumber = rand.Int63()
+			eventSpecificBlockNumber = startingBlockNumber + 1
+			endingBlockNumber = startingBlockNumber + 2
+			outOfRangeBlockNumber := endingBlockNumber + 1
+
+			blockNumbers = []int64{startingBlockNumber, eventSpecificBlockNumber, endingBlockNumber, outOfRangeBlockNumber}
+
+			headerIDs = []int64{}
+			for _, n := range blockNumbers {
+				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
+				headerIDs = append(headerIDs, headerID)
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+
+		It("only treats headers as checked if the event specific logs have been checked", func() {
+			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
+			Expect(err).NotTo(HaveOccurred())
+
+			headers, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(headers)).To(Equal(3))
+			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
+			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
+			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
+		})
+
+		It("only returns headers associated with the current node", func() {
+			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
+			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
+			for _, n := range blockNumbers {
+				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n + 10))
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			Expect(err).NotTo(HaveOccurred())
+			nodeOneMissingHeaders, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(nodeOneMissingHeaders)).To(Equal(3))
+			Expect(nodeOneMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
+			Expect(nodeOneMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
+			Expect(nodeOneMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
+
+			nodeTwoMissingHeaders, err := repositoryTwo.MissingHeaders(startingBlockNumber, endingBlockNumber+10, dbTwo, notCheckedSQL)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(nodeTwoMissingHeaders)).To(Equal(3))
+			Expect(nodeTwoMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(eventSpecificBlockNumber+10), Equal(endingBlockNumber+10)))
+			Expect(nodeTwoMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(eventSpecificBlockNumber+10), Equal(endingBlockNumber+10)))
+		})
+	})
+
 	Describe("GetCheckedColumnNames", func() {
 		It("gets the column names from checked_headers", func() {
 			db := test_config.NewTestDB(test_config.NewTestNode())
