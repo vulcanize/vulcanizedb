@@ -1,12 +1,12 @@
 package shared
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"strings"
 )
 
 type Repository struct{}
@@ -85,18 +85,19 @@ func (_ Repository) GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 // Ex: ["columnA", "columnB"] => "NOT (columnA AND columnB)"
 //     [] => "FALSE"
 func (_ Repository) CreateNotCheckedSQL(boolColumns []string) string {
-	var result strings.Builder
+	var result bytes.Buffer
 
 	if len(boolColumns) == 0 {
 		return "FALSE"
 	}
 
 	result.WriteString("NOT (")
+	// Loop excluding last column name
 	for _, column := range boolColumns[:len(boolColumns)-1] {
 		result.WriteString(fmt.Sprintf("%v AND ", column))
 	}
 
-	// No trailing "OR" for last column name
+	// No trailing "OR" for the last column name
 	result.WriteString(fmt.Sprintf("%v)", boolColumns[len(boolColumns)-1]))
 
 	return result.String()
