@@ -92,7 +92,6 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 	initializerMap := make(map[string]shared2.TransformerInitializer)
 
 	initializerMap[constants.BiteLabel] = transformers.BiteTransformer.NewTransformer
-	initializerMap[constants.BiteLabel] = transformers.BiteTransformer.NewTransformer
 	initializerMap[constants.CatFileChopLumpLabel] = transformers.CatFileChopLumpTransformer.NewLogNoteTransformer
 	initializerMap[constants.CatFileFlipLabel] = transformers.CatFileFlipTransformer.NewLogNoteTransformer
 	initializerMap[constants.CatFilePitVowLabel] = transformers.CatFilePitVowTransformer.NewLogNoteTransformer
