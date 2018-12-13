@@ -24,7 +24,8 @@ type Watcher struct {
 	Repository   WatcherRepository
 }
 
-func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository, chunker shared.Chunker) Watcher {
+func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRepository) Watcher {
+	chunker := shared.NewLogChunker()
 	return Watcher{
 		DB:         db,
 		Fetcher:    fetcher,
@@ -33,25 +34,21 @@ func NewWatcher(db *postgres.DB, fetcher shared.LogFetcher, repository WatcherRe
 	}
 }
 
-// Adds transformers to the watcher, each needs an initializer and the associated config.
-// This also changes the configuration of the chunker, so that it will consider the new transformers.
-func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitializer, configs []shared.TransformerConfig) {
-	if len(initializers) != len(configs) {
-		panic("Mismatch in number of transformers initializers and configs!")
-	}
+// Adds transformers to the watcher and updates the chunker, so that it will consider the new transformers.
+func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitializer) {
+	var contractAddresses []common.Address
+	var topic0s []common.Hash
+	var configs []shared.TransformerConfig
 
 	for _, initializer := range initializers {
 		transformer := initializer(watcher.DB)
 		watcher.Transformers = append(watcher.Transformers, transformer)
-	}
 
-	var contractAddresses []common.Address
-	var topic0s []common.Hash
+		config := transformer.GetConfig()
+		configs = append(configs, config)
 
-	for _, config := range configs {
-		for _, address := range config.ContractAddresses {
-			contractAddresses = append(contractAddresses, common.HexToAddress(address))
-		}
+		addresses := shared.HexStringsToAddresses(config.ContractAddresses)
+		contractAddresses = append(contractAddresses, addresses...)
 		topic0s = append(topic0s, common.HexToHash(config.Topic))
 	}
 
@@ -85,11 +82,14 @@ func (watcher *Watcher) Execute() error {
 
 		chunkedLogs := watcher.Chunker.ChunkLogs(logs)
 
+		// Can't quit early and mark as checked if there are no logs. If we are running continuousLogSync,
+		// not all logs we're interested in might have been fetched.
 		for _, transformer := range watcher.Transformers {
-			logChunk := chunkedLogs[transformer.Name()]
+			transformerName := transformer.GetConfig().TransformerName
+			logChunk := chunkedLogs[transformerName]
 			err = transformer.Execute(logChunk, header)
 			if err != nil {
-				log.Error("%v transformer failed to execute in watcher: %v", transformer.Name(), err)
+				log.Error("%v transformer failed to execute in watcher: %v", transformerName, err)
 				return err
 			}
 		}

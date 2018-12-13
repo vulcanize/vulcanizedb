@@ -267,15 +267,3 @@ func TransformerInitializers() (initializers []shared.TransformerInitializer) {
 	}
 	return
 }
-
-// `TransformerConfigs` returns the config structs for all available transformers
-func TransformerConfigs() (allConfigs []shared.TransformerConfig) {
-	for _, transformer := range logNoteTransformers {
-		allConfigs = append(allConfigs, transformer.Config)
-	}
-
-	for _, transformer := range logNoteTransformers {
-		allConfigs = append(allConfigs, transformer.Config)
-	}
-	return
-}
