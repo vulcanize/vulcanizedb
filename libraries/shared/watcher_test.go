@@ -16,42 +16,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-type MockTransformer struct {
-	executeWasCalled bool
-	executeError     error
-	passedLogs       []types.Log
-	passedHeader     core.Header
-	config           shared2.TransformerConfig
-}
-
-func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
-	if mh.executeError != nil {
-		return mh.executeError
-	}
-	mh.executeWasCalled = true
-	mh.passedLogs = logs
-	mh.passedHeader = header
-	return nil
-}
-
-func (mh *MockTransformer) GetConfig() shared2.TransformerConfig {
-	return mh.config
-}
-
-func (mh *MockTransformer) SetTransformerConfig(config shared2.TransformerConfig) {
-	mh.config = config
-}
-
-func (mh *MockTransformer) FakeTransformerInitializer(db *postgres.DB) shared2.Transformer {
-	return mh
-}
-
-var fakeTransformerConfig = shared2.TransformerConfig{
-	TransformerName:   "FakeTransformer",
-	ContractAddresses: []string{"FakeAddress"},
-	Topic:             "FakeTopic",
-}
-
 var _ = Describe("Watcher", func() {
 	It("initialises correctly", func() {
 		db := test_config.NewTestDB(core.Node{ID: "testNode"})
@@ -68,8 +32,8 @@ var _ = Describe("Watcher", func() {
 
 	It("adds transformers", func() {
 		watcher := shared.NewWatcher(nil, nil, nil)
-		fakeTransformer := &MockTransformer{}
-		fakeTransformer.SetTransformerConfig(fakeTransformerConfig)
+		fakeTransformer := &mocks.MockTransformer{}
+		fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
 		Expect(len(watcher.Transformers)).To(Equal(1))
@@ -80,11 +44,11 @@ var _ = Describe("Watcher", func() {
 
 	It("adds transformers from multiple sources", func() {
 		watcher := shared.NewWatcher(nil, nil, nil)
-		fakeTransformer1 := &MockTransformer{}
-		fakeTransformer1.SetTransformerConfig(fakeTransformerConfig)
+		fakeTransformer1 := &mocks.MockTransformer{}
+		fakeTransformer1.SetTransformerConfig(mocks.FakeTransformerConfig)
 
-		fakeTransformer2 := &MockTransformer{}
-		fakeTransformer2.SetTransformerConfig(fakeTransformerConfig)
+		fakeTransformer2 := &mocks.MockTransformer{}
+		fakeTransformer2.SetTransformerConfig(mocks.FakeTransformerConfig)
 
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer1.FakeTransformerInitializer})
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer2.FakeTransformerInitializer})
@@ -100,7 +64,7 @@ var _ = Describe("Watcher", func() {
 		var (
 			db               *postgres.DB
 			watcher          shared.Watcher
-			fakeTransformer  *MockTransformer
+			fakeTransformer  *mocks.MockTransformer
 			headerRepository repositories.HeaderRepository
 			mockFetcher      mocks.MockLogFetcher
 			repository       mocks.MockWatcherRepository
@@ -119,30 +83,30 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("executes each transformer", func() {
-			fakeTransformer = &MockTransformer{}
+			fakeTransformer = &mocks.MockTransformer{}
 			watcher.Transformers = []shared2.Transformer{fakeTransformer}
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeTransformer.executeWasCalled).To(BeTrue())
+			Expect(fakeTransformer.ExecuteWasCalled).To(BeTrue())
 		})
 
 		It("returns an error if transformer returns an error", func() {
-			fakeTransformer = &MockTransformer{executeError: errors.New("Something bad happened")}
+			fakeTransformer = &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
 			watcher.Transformers = []shared2.Transformer{fakeTransformer}
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
 
 			Expect(err).To(HaveOccurred())
-			Expect(fakeTransformer.executeWasCalled).To(BeFalse())
+			Expect(fakeTransformer.ExecuteWasCalled).To(BeFalse())
 		})
 
 		It("passes only relevant logs to each transformer", func() {
-			transformerA := &MockTransformer{}
-			transformerB := &MockTransformer{}
+			transformerA := &mocks.MockTransformer{}
+			transformerB := &mocks.MockTransformer{}
 
 			configA := shared2.TransformerConfig{TransformerName: "transformerA",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
@@ -167,8 +131,8 @@ var _ = Describe("Watcher", func() {
 
 			err := watcher.Execute()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(transformerA.passedLogs).To(Equal([]types.Log{logA}))
-			Expect(transformerB.passedLogs).To(Equal([]types.Log{logB}))
+			Expect(transformerA.PassedLogs).To(Equal([]types.Log{logA}))
+			Expect(transformerB.PassedLogs).To(Equal([]types.Log{logB}))
 		})
 
 		Describe("uses the repository correctly:", func() {
