@@ -66,8 +66,12 @@ type transformer struct {
 	EventArgs  map[string][]string
 	MethodArgs map[string][]string
 
-	// Whether or not to create a list of token holder addresses for the contract in postgres
+	// Whether or not to create a list of emitted address or hashes for the contract in postgres
 	CreateAddrList map[string]bool
+	CreateHashList map[string]bool
+
+	// Method piping on/off for a contract
+	Piping map[string]bool
 }
 
 // Transformer takes in config for blockchain, database, and network id
@@ -86,6 +90,9 @@ func NewTransformer(network string, BC core.BlockChain, DB *postgres.DB) *transf
 		ContractRanges:         map[string][2]int64{},
 		EventArgs:              map[string][]string{},
 		MethodArgs:             map[string][]string{},
+		CreateAddrList:         map[string]bool{},
+		CreateHashList:         map[string]bool{},
+		Piping:                 map[string]bool{},
 	}
 }
 
@@ -147,6 +154,8 @@ func (t *transformer) Init() error {
 			FilterArgs:     eventArgs,
 			MethodArgs:     methodArgs,
 			CreateAddrList: t.CreateAddrList[contractAddr],
+			CreateHashList: t.CreateHashList[contractAddr],
+			Piping:         t.Piping[contractAddr],
 		}.Init()
 
 		// Use info to create filters
@@ -157,7 +166,10 @@ func (t *transformer) Init() error {
 
 		// Iterate over filters and push them to the repo using filter repository interface
 		for _, filter := range info.Filters {
-			t.CreateFilter(filter)
+			err = t.CreateFilter(filter)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Store contract info for further processing
@@ -246,7 +258,17 @@ func (tr *transformer) SetRange(contractAddr string, rng [2]int64) {
 	tr.ContractRanges[contractAddr] = rng
 }
 
-// Used to set the block range to watch for a given address
+// Used to set whether or not to persist an account address list
 func (tr *transformer) SetCreateAddrList(contractAddr string, on bool) {
 	tr.CreateAddrList[contractAddr] = on
+}
+
+// Used to set whether or not to persist an hash list
+func (tr *transformer) SetCreateHashList(contractAddr string, on bool) {
+	tr.CreateHashList[contractAddr] = on
+}
+
+// Used to turn method piping on for a contract
+func (tr *transformer) SetPiping(contractAddr string, on bool) {
+	tr.Piping[contractAddr] = on
 }

@@ -56,25 +56,18 @@ func (p *parser) Parse() error {
 }
 
 // Returns wanted methods, if they meet the criteria, as map of types.Methods
-// Only returns specified methods
-func (p *parser) GetMethods(wanted []string) map[string]types.Method {
+// Empty wanted array => all methods that fit are returned
+// Nil wanted array => no events are returned
+func (p *parser) GetSelectMethods(wanted []string) map[string]types.Method {
 	addrMethods := map[string]types.Method{}
+	if wanted == nil {
+		return nil
+	}
 
 	for _, m := range p.parsedAbi.Methods {
-		// Only return methods that have less than 3 inputs, 1 output, and wanted
-		if len(m.Inputs) < 3 && len(m.Outputs) == 1 && stringInSlice(wanted, m.Name) {
-			addrsOnly := true
-			for _, input := range m.Inputs {
-				if input.Type.T != abi.AddressTy {
-					addrsOnly = false
-				}
-			}
-
-			// Only return methods if inputs are all of type address and output is of the accepted types
-			if addrsOnly && wantType(m.Outputs[0]) {
-				method := types.NewMethod(m)
-				addrMethods[method.Name] = method
-			}
+		if okInputTypes(m, wanted) {
+			wantedMethod := types.NewMethod(m)
+			addrMethods[wantedMethod.Name] = wantedMethod
 		}
 	}
 
@@ -110,6 +103,49 @@ func wantType(arg abi.Argument) bool {
 func stringInSlice(list []string, s string) bool {
 	for _, b := range list {
 		if b == s {
+			return true
+		}
+	}
+
+	return false
+}
+
+func okInputTypes(m abi.Method, wanted []string) bool {
+	// Only return method if it has less than 3 arguments, a single output value, and it is a method we want or we want all methods (empty 'wanted' slice)
+	if len(m.Inputs) < 3 && len(m.Outputs) == 1 && (len(wanted) == 0 || stringInSlice(wanted, m.Name)) {
+		// Only return methods if inputs are all of accepted types and output is of the accepted types
+		if !okReturnType(m.Outputs[0]) {
+			return false
+		}
+		for _, input := range m.Inputs {
+			switch input.Type.T {
+			case abi.AddressTy, abi.HashTy, abi.BytesTy, abi.FixedBytesTy:
+			default:
+				return false
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func okReturnType(arg abi.Argument) bool {
+	wantedTypes := []byte{
+		abi.UintTy,
+		abi.IntTy,
+		abi.BoolTy,
+		abi.StringTy,
+		abi.AddressTy,
+		abi.HashTy,
+		abi.BytesTy,
+		abi.FixedBytesTy,
+		abi.FixedPointTy,
+	}
+
+	for _, ty := range wantedTypes {
+		if arg.Type.T == ty {
 			return true
 		}
 	}

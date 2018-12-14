@@ -112,7 +112,6 @@ func (r *methodRepository) persistResults(results []types.Result, methodInfo typ
 		// Add this query to the transaction
 		_, err = tx.Exec(pgStr, data...)
 		if err != nil {
-			println("howdy")
 			tx.Rollback()
 			return err
 		}

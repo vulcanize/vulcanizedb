@@ -20,10 +20,13 @@ package transformer
 // data for any contract and persists it to custom postgres tables in vDB
 type Transformer interface {
 	SetEvents(contractAddr string, filterSet []string)
-	SetEventAddrs(contractAddr string, filterSet []string)
+	SetEventArgs(contractAddr string, filterSet []string)
 	SetMethods(contractAddr string, filterSet []string)
-	SetMethodAddrs(contractAddr string, filterSet []string)
-	SetRange(contractAddr string, rng []int64)
+	SetMethodArgs(contractAddr string, filterSet []string)
+	SetRange(contractAddr string, rng [2]int64)
+	SetCreateAddrList(contractAddr string, on bool)
+	SetCreateHashList(contractAddr string, on bool)
+	SetPiping(contractAddr string, on bool)
 	Init() error
 	Execute() error
 }

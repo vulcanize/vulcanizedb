@@ -24,7 +24,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
+	ft "github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
+	lt "github.com/vulcanize/vulcanizedb/pkg/omni/light/transformer"
+	st "github.com/vulcanize/vulcanizedb/pkg/omni/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -51,6 +53,18 @@ Requires a .toml config file:
 	},
 }
 
+var (
+	network           string
+	contractAddress   string
+	contractAddresses []string
+	contractEvents    []string
+	contractMethods   []string
+	eventArgs         []string
+	methodArgs        []string
+	methodPiping      bool
+	mode              string
+)
+
 func omniWatcher() {
 	if contractAddress == "" && len(contractAddresses) == 0 {
 		log.Fatal("Contract address required")
@@ -61,7 +75,16 @@ func omniWatcher() {
 
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	t := transformer.NewTransformer(network, blockChain, &db)
+
+	var t st.Transformer
+	switch mode {
+	case "light":
+		t = lt.NewTransformer(network, blockChain, &db)
+	case "full":
+		t = ft.NewTransformer(network, blockChain, &db)
+	default:
+		log.Fatal("Invalid mode")
+	}
 
 	contractAddresses = append(contractAddresses, contractAddress)
 	for _, addr := range contractAddresses {
@@ -70,6 +93,7 @@ func omniWatcher() {
 		t.SetEventArgs(addr, eventArgs)
 		t.SetMethodArgs(addr, methodArgs)
 		t.SetRange(addr, [2]int64{startingBlockNumber, endingBlockNumber})
+		t.SetPiping(addr, methodPiping)
 	}
 
 	err := t.Init()
@@ -88,6 +112,7 @@ func omniWatcher() {
 func init() {
 	rootCmd.AddCommand(omniWatcherCmd)
 
+	omniWatcherCmd.Flags().StringVarP(&mode, "mode", "o", "light", "'light' or 'full' mode to work with either light synced or fully synced vDB (default is light)")
 	omniWatcherCmd.Flags().StringVarP(&contractAddress, "contract-address", "a", "", "Single address to generate watchers for")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractAddresses, "contract-addresses", "l", []string{}, "list of addresses to use; warning: watcher targets the same events and methods for each address")
 	omniWatcherCmd.Flags().StringArrayVarP(&contractEvents, "events", "e", []string{}, "Subset of events to watch; by default all events are watched")
@@ -97,5 +122,5 @@ func init() {
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block to begin watching- default is first block the contract exists")
 	omniWatcherCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
-	omniWatcherCmd.Flags().BoolVarP(&createAddrList, "create-address-list", "c", false, "Set to true to persist address seen in emitted events into the database")
+	omniWatcherCmd.Flags().BoolVarP(&methodPiping, "piping", "p", false, "Turn on method output piping: methods listed first will be polled first and their output used as input to subsequent methods")
 }

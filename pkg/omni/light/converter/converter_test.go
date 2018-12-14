@@ -31,15 +31,13 @@ import (
 
 var _ = Describe("Converter", func() {
 	var con *contract.Contract
-	var wantedEvents = []string{"Transfer", "Mint"}
+	var tusdWantedEvents = []string{"Transfer", "Mint"}
+	var ensWantedEvents = []string{"NewOwner"}
 	var err error
-
-	BeforeEach(func() {
-		con = test_helpers.SetupTusdContract(wantedEvents, []string{})
-	})
 
 	Describe("Update", func() {
 		It("Updates contract info held by the converter", func() {
+			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
 			c := converter.NewConverter(con)
 			Expect(c.ContractInfo).To(Equal(con))
 
@@ -51,6 +49,7 @@ var _ = Describe("Converter", func() {
 
 	Describe("Convert", func() {
 		It("Converts a watched event log to mapping of event input names to values", func() {
+			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
 			_, ok := con.Events["Approval"]
 			Expect(ok).To(Equal(false))
 
@@ -76,7 +75,8 @@ var _ = Describe("Converter", func() {
 			Expect(logs[1].Id).To(Equal(int64(232)))
 		})
 
-		It("Keeps track of addresses it sees to grow a token holder address list for the contract", func() {
+		It("Keeps track of addresses it sees if they will be used for method polling", func() {
+			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{"balanceOf"})
 			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
 
@@ -99,6 +99,45 @@ var _ = Describe("Converter", func() {
 			Expect(ok).To(Equal(false))
 
 			_, ok = con.EmittedAddrs[common.HexToAddress("0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = con.EmittedHashes[common.HexToHash("0x000000000000000000000000c02aaa39b223helloa0e5c4f27ead9083c752553")]
+			Expect(ok).To(Equal(false))
+		})
+
+		It("Keeps track of hashes it sees if they will be used for method polling", func() {
+			con = test_helpers.SetupENSContract(ensWantedEvents, []string{"owner"})
+			event, ok := con.Events["NewOwner"]
+			Expect(ok).To(Equal(true))
+
+			c := converter.NewConverter(con)
+			_, err := c.Convert([]types.Log{mocks.MockNewOwnerLog1, mocks.MockNewOwnerLog2}, event, 232)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(con.EmittedHashes)).To(Equal(3))
+
+			b, ok := con.EmittedHashes[common.HexToHash("0x000000000000000000000000c02aaa39b223helloa0e5c4f27ead9083c752553")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = con.EmittedHashes[common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = con.EmittedHashes[common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba400")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			_, ok = con.EmittedHashes[common.HexToHash("0x9dd48thiscc444isc242510c0made03upa5975cac061dhashb843bce061ba400")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = con.EmittedHashes[common.HexToAddress("0x")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = con.EmittedHashes[""]
+			Expect(ok).To(Equal(false))
+
+			// Does not keep track of emitted addresses if the methods provided will not use them
+			_, ok = con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
 			Expect(ok).To(Equal(false))
 		})
 
