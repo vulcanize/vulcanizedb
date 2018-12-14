@@ -55,7 +55,6 @@ func (chunker *LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
 		// Topic0 is not unique to each transformer, also need to consider the contract address
 		relevantTransformers := chunker.AddressToNames[log.Address.String()]
 
-		// TODO What should happen if log can't be assigned?
 		for _, transformer := range relevantTransformers {
 			if chunker.NameToTopic0[transformer] == log.Topics[0] {
 				chunks[transformer] = append(chunks[transformer], log)
