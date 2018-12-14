@@ -19,6 +19,7 @@ package converter
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 	"strconv"
 
@@ -69,7 +70,6 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 	}
 
 	strValues := make(map[string]string, len(values))
-	seenBytes := make([]interface{}, 0, len(values))
 	seenAddrs := make([]interface{}, 0, len(values))
 	seenHashes := make([]interface{}, 0, len(values))
 	for fieldName, input := range values {
@@ -92,8 +92,10 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 			strValues[fieldName] = strconv.FormatBool(input.(bool))
 		case []byte:
 			b := input.([]byte)
-			strValues[fieldName] = string(b)
-			seenBytes = append(seenBytes, b)
+			strValues[fieldName] = hexutil.Encode(b)
+			if len(b) == 32 {
+				seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
+			}
 		case byte:
 			b := input.(byte)
 			strValues[fieldName] = string(b)
@@ -117,9 +119,6 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		}
 		if c.ContractInfo.EmittedHashes != nil {
 			c.ContractInfo.AddEmittedHash(seenHashes...)
-		}
-		if c.ContractInfo.EmittedBytes != nil {
-			c.ContractInfo.AddEmittedBytes(seenBytes...)
 		}
 
 		return eventLog, nil

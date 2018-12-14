@@ -139,21 +139,21 @@ false
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
 ## omniWatcher and lightOmniWatcher 
-These commands require a pre-synced (full or light, respectively) vulcanizeDB 
+These commands require a pre-synced (full or light, respectively) vulcanizeDB (see above sections)
 To watch all events of a contract:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address>`
+    - Or `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address>`
 To watch contracts on a network other than mainnet, use the network flag:
     - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --network <ropsten, kovan, or rinkeby>`
 To watch events within a certain block range use the starting block and ending block flags:
     - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#> --ending-block-number <#>`
-To watch only select events use the contract events flag:
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --contract-events <EventName1> --contract-events <EventName2>`
-To watch all events and poll select methods with the addresses emitted by those events:
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --contract-methods <methodName1> --contract-methods <methodName2>`
-To watch select event and poll select method:
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --contract-events <EventName> --contract-methods <methodName>`
-To watch all types of events of the contract but only persist the ones that emit one of the filtered-for addresses:
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --event-filter-addresses <account address 1> --event-filter-addresses <account address 2>` 
-To watch all events of the contract but only poll a select method with specified addresses:
-    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --method-filter-addresses <account address 1> --method-filter-addresses <account address 2>` 
+To watch only specified events use the events flag:
+    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2>`
+To watch events and poll the specified methods with any addresses and hashes emitted by the watched events utilize the methods flag:
+    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName1> --methods <methodName2>`
+To watch specified events and poll the specified method with any addresses and hashes emiited by the watched events:
+    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`
+To watch all types of events of the contract but only persist the ones that emit one of the filtered-for argument values:
+    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --event-args <arg1> --event-args <arg2>` 
+To watch all events of the contract but only poll the specified method with specified argument values (if they are emitted from the watched events):
+    - Execute `./vulcanizedb lightOmniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName> --method-args <arg1> --method-args <arg2>` 

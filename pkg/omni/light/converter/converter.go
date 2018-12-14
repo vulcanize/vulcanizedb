@@ -68,7 +68,6 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 		}
 
 		strValues := make(map[string]string, len(values))
-		seenBytes := make([]interface{}, 0, len(values))
 		seenAddrs := make([]interface{}, 0, len(values))
 		seenHashes := make([]interface{}, 0, len(values))
 		for fieldName, input := range values {
@@ -92,7 +91,9 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			case []byte:
 				b := input.([]byte)
 				strValues[fieldName] = hexutil.Encode(b)
-				seenBytes = append(seenBytes, b)
+				if len(b) == 32 {
+					seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
+				}
 			case byte:
 				b := input.(byte)
 				strValues[fieldName] = string(b)
@@ -122,9 +123,6 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			}
 			if c.ContractInfo.EmittedHashes != nil {
 				c.ContractInfo.AddEmittedHash(seenHashes...)
-			}
-			if c.ContractInfo.EmittedBytes != nil {
-				c.ContractInfo.AddEmittedBytes(seenBytes...)
 			}
 		}
 	}

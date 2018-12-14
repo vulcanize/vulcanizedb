@@ -70,9 +70,19 @@ type transformer struct {
 	EventArgs  map[string][]string
 	MethodArgs map[string][]string
 
-	// Whether or not to create a list of token holder addresses for the contract in postgres
+	// Whether or not to create a list of emitted address or hashes for the contract in postgres
 	CreateAddrList map[string]bool
+	CreateHashList map[string]bool
+
+	// Method piping on/off for a contract
+	Piping map[string]bool
 }
+
+// Order-of-operations:
+// 1. Create new transformer
+// 2. Load contract addresses and their parameters
+// 3. Init
+// 3. Execute
 
 // Transformer takes in config for blockchain, database, and network id
 func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transformer {
@@ -92,6 +102,8 @@ func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transf
 		EventArgs:        map[string][]string{},
 		MethodArgs:       map[string][]string{},
 		CreateAddrList:   map[string]bool{},
+		CreateHashList:   map[string]bool{},
+		Piping:           map[string]bool{},
 	}
 }
 
@@ -154,6 +166,8 @@ func (tr *transformer) Init() error {
 			FilterArgs:     eventArgs,
 			MethodArgs:     methodArgs,
 			CreateAddrList: tr.CreateAddrList[contractAddr],
+			CreateHashList: tr.CreateHashList[contractAddr],
+			Piping:         tr.Piping[contractAddr],
 		}.Init()
 	}
 
@@ -164,24 +178,31 @@ func (tr *transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts")
 	}
-	// Iterate through all internal contracts
+	// Iterate through all initialized contracts
 	for _, con := range tr.Contracts {
 		// Update converter with current contract
-		tr.Update(con)
-
+		tr.Converter.Update(con)
+		// This is so that same header slice is retrieved for each event iteration
+		last, err := tr.BlockRetriever.RetrieveMostRecentBlock()
+		if err != nil {
+			return err
+		}
 		// Iterate through events
+		eventIds := make([]string, 0, len(con.Events))
 		for _, event := range con.Events {
 			// Filter using the event signature
 			topics := [][]common.Hash{{common.HexToHash(helpers.GenerateSignature(event.Sig()))}}
 
 			// Generate eventID and use it to create a checked_header column if one does not already exist
 			eventId := strings.ToLower(event.Name + "_" + con.Address)
-			if err := tr.AddCheckColumn(eventId); err != nil {
+			eventIds = append(eventIds, eventId)
+			err := tr.HeaderRepository.AddCheckColumn(eventId)
+			if err != nil {
 				return err
 			}
 
 			// Find unchecked headers for this event
-			missingHeaders, err := tr.MissingHeaders(con.StartingBlock, con.LastBlock, eventId)
+			missingHeaders, err := tr.HeaderRepository.MissingHeaders(con.StartingBlock, last, eventId)
 			if err != nil {
 				return err
 			}
@@ -189,14 +210,14 @@ func (tr *transformer) Execute() error {
 			// Iterate over headers
 			for _, header := range missingHeaders {
 				// And fetch event logs using the header, contract address, and topics filter
-				logs, err := tr.FetchLogs([]string{con.Address}, topics, header)
+				logs, err := tr.Fetcher.FetchLogs([]string{con.Address}, topics, header)
 				if err != nil {
 					return err
 				}
 
 				// Mark the header checked for this eventID and continue to next iteration if no logs are found
 				if len(logs) < 1 {
-					err = tr.MarkHeaderChecked(header.Id, eventId)
+					err = tr.HeaderRepository.MarkHeaderChecked(header.Id, eventId)
 					if err != nil {
 						return err
 					}
@@ -204,7 +225,7 @@ func (tr *transformer) Execute() error {
 				}
 
 				// Convert logs into custom type
-				convertedLogs, err := tr.Convert(logs, event, header.Id)
+				convertedLogs, err := tr.Converter.Convert(logs, event, header.Id)
 				if err != nil {
 					return err
 				}
@@ -213,18 +234,46 @@ func (tr *transformer) Execute() error {
 				}
 
 				// If logs aren't empty, persist them
-				err = tr.PersistLogs(convertedLogs, event, con.Address, con.Name)
+				err = tr.EventRepository.PersistLogs(convertedLogs, event, con.Address, con.Name)
 				if err != nil {
-					return err
-				}
-
-				// Poll contract methods at this header's block height
-				// with arguments collected from event logs up to this point
-				if err := tr.PollContractAt(*con, header.BlockNumber); err != nil {
 					return err
 				}
 			}
 		}
+
+		if len(con.Methods) == 0 {
+			continue
+		}
+
+		// Create checked_headers columns for each method id
+		methodIds := make([]string, 0, len(con.Methods))
+		for _, m := range con.Methods {
+			methodId := strings.ToLower(m.Name + "_" + con.Address)
+			err = tr.HeaderRepository.AddCheckColumn(methodId)
+			if err != nil {
+				return err
+			}
+			methodIds = append(methodIds, methodId)
+		}
+
+		// Retrieve headers that have been checked for all events but haven not been checked for the methods
+		missingHeaders, err := tr.HeaderRepository.MissingMethodsCheckedEventsIntersection(con.StartingBlock, last, methodIds, eventIds)
+		if err != nil {
+			return err
+		}
+		// Poll over the missing headers
+		for _, header := range missingHeaders {
+			err = tr.Poller.PollContractAt(*con, header.BlockNumber)
+			if err != nil {
+				return err
+			}
+		}
+		// Mark those headers checked for the methods
+		err = tr.HeaderRepository.MarkHeadersChecked(missingHeaders, methodIds)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -255,7 +304,17 @@ func (tr *transformer) SetRange(contractAddr string, rng [2]int64) {
 	tr.ContractRanges[contractAddr] = rng
 }
 
-// Used to set the block range to watch for a given address
+// Used to set whether or not to persist an account address list
 func (tr *transformer) SetCreateAddrList(contractAddr string, on bool) {
 	tr.CreateAddrList[contractAddr] = on
+}
+
+// Used to set whether or not to persist an hash list
+func (tr *transformer) SetCreateHashList(contractAddr string, on bool) {
+	tr.CreateHashList[contractAddr] = on
+}
+
+// Used to turn method piping on for a contract
+func (tr *transformer) SetPiping(contractAddr string, on bool) {
+	tr.Piping[contractAddr] = on
 }

@@ -42,14 +42,6 @@ var (
 	startingBlockNumber int64
 	syncAll             bool
 	endingBlockNumber   int64
-	network             string
-	contractAddress     string
-	contractAddresses   []string
-	contractEvents      []string
-	contractMethods     []string
-	eventArgs           []string
-	methodArgs          []string
-	createAddrList      bool
 )
 
 var rootCmd = &cobra.Command{

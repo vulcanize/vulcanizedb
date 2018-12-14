@@ -18,7 +18,6 @@ package contract
 
 import (
 	"errors"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -44,23 +43,22 @@ type Contract struct {
 	FilterArgs     map[string]bool              // User-input list of values to filter event logs for
 	MethodArgs     map[string]bool              // User-input list of values to limit method polling to
 	EmittedAddrs   map[interface{}]bool         // List of all unique addresses collected from converted event logs
-	EmittedBytes   map[interface{}]bool         // List of all unique bytes collected from converted event logs
 	EmittedHashes  map[interface{}]bool         // List of all unique hashes collected from converted event logs
 	CreateAddrList bool                         // Whether or not to persist address list to postgres
+	CreateHashList bool                         // Whether or not to persist hash list to postgres
+	Piping         bool                         // Whether or not to pipe method results forward as arguments to subsequent methods
 }
 
 // If we will be calling methods that use addr, hash, or byte arrays
-// as arguments then we initialize map to hold these types of values
+// as arguments then we initialize maps to hold these types of values
 func (c Contract) Init() *Contract {
 	for _, method := range c.Methods {
 		for _, arg := range method.Args {
 			switch arg.Type.T {
 			case abi.AddressTy:
 				c.EmittedAddrs = map[interface{}]bool{}
-			case abi.HashTy:
+			case abi.HashTy, abi.BytesTy, abi.FixedBytesTy:
 				c.EmittedHashes = map[interface{}]bool{}
-			case abi.BytesTy, abi.FixedBytesTy:
-				c.EmittedBytes = map[interface{}]bool{}
 			default:
 			}
 		}
@@ -156,15 +154,6 @@ func (c *Contract) AddEmittedHash(hashes ...interface{}) {
 	for _, hash := range hashes {
 		if c.WantedMethodArg(hash) && c.Methods != nil {
 			c.EmittedHashes[hash] = true
-		}
-	}
-}
-
-// Add event emitted bytes to our list if it passes filter and method polling is on
-func (c *Contract) AddEmittedBytes(byteArrays ...interface{}) {
-	for _, bytes := range byteArrays {
-		if c.WantedMethodArg(bytes) && c.Methods != nil {
-			c.EmittedBytes[bytes] = true
 		}
 	}
 }

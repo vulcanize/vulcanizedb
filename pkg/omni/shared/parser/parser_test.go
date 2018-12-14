@@ -47,7 +47,7 @@ var _ = Describe("Parser", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(parsedAbi).To(Equal(expectedAbi))
 
-			methods := mp.GetMethods([]string{"balanceOf"})
+			methods := mp.GetSelectMethods([]string{"balanceOf"})
 			_, ok := methods["totalSupply"]
 			Expect(ok).To(Equal(false))
 			m, ok := methods["balanceOf"]

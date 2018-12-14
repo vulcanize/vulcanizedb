@@ -129,9 +129,7 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 	// the correct argument set to iterate over
 	var args map[interface{}]bool
 	switch m.Args[0].Type.T {
-	case abi.FixedBytesTy, abi.BytesTy:
-		args = p.contract.EmittedBytes
-	case abi.HashTy:
+	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
 		args = p.contract.EmittedHashes
 	case abi.AddressTy:
 		args = p.contract.EmittedAddrs
@@ -182,9 +180,7 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 	// the correct argument sets to iterate over
 	var firstArgs map[interface{}]bool
 	switch m.Args[0].Type.T {
-	case abi.FixedBytesTy, abi.BytesTy:
-		firstArgs = p.contract.EmittedBytes
-	case abi.HashTy:
+	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
 		firstArgs = p.contract.EmittedHashes
 	case abi.AddressTy:
 		firstArgs = p.contract.EmittedAddrs
@@ -195,9 +191,7 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 
 	var secondArgs map[interface{}]bool
 	switch m.Args[1].Type.T {
-	case abi.FixedBytesTy, abi.BytesTy:
-		secondArgs = p.contract.EmittedBytes
-	case abi.HashTy:
+	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
 		secondArgs = p.contract.EmittedHashes
 	case abi.AddressTy:
 		secondArgs = p.contract.EmittedAddrs
