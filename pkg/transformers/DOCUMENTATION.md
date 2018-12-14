@@ -25,7 +25,7 @@ The transformer process for each of these different log types is the same, excep
 ## Creating a Transformer
 
 1. Pull an example event (from kovan / ganache etc.)
-1. Add event sig to [`constants.go`](./shared/constants.go)
+1. Add event & method sig, contract address, `checked_headers` column name, and label to relevant files in [`constants`](./shared/constants)
 1. Write a test for the event sig in [`event_signature_generator_test.go`](./shared/event_signature_generator_test.go)
 1. Create DB table (using [`create_migration`](../../scripts/create_migration))
 1. Create columns in `checked_headers` in the _same_ migration
@@ -36,23 +36,23 @@ The transformer process for each of these different log types is the same, excep
 1. Write repository + repository tests
 1. Create converter + repository mocks
 1. Create an config object [`shared.TransformerConfig`](./shared/transformer.go) in `config.go`
-1. Create transformer + transformer tests
-1. Wire up transformer in [`transformers.go`](./transformers.go)
+1. Wire up transformer in [`transformers.go`](./transformers.go), remembering to add it to `TransformerInitializers()`
 1. Wire up transformer in [`continuousLogSync.go`](../../cmd/continuousLogSync.go)
 1. Manually trigger an event and check that it gets persisted to postgres
+1. Create an integration test for the shiny new transformer in [`integration_tests`](./integration_tests)
 
 **Fetching Logs**
 
 1. Generate an example raw log event, by either:
 
-   - Pulling the log directly from the Kovan deployment ([constants.go](https://github.com/8thlight/maker-vulcanizedb/blob/master/pkg/transformers/shared/constants.go)).
+   - Pulling the log directly from the Kovan deployment ([address.go](https://github.com/8thlight/maker-vulcanizedb/blob/master/pkg/transformers/shared/constants/address.go)).
    - Deploying the contract to a local chain and emiting the event manually.
 
 1. Fetch the logs from the chain based on the example event's topic zero:
 
-   - The topic zero is based on the keccak-256 hash of the log event's method signature. These are located in [`pkg/transformers/shared/constants.go`](./shared/constants.go).
-   - Most transformers use `shared.LogFetcher` to fetch all logs that match the given topic zero for that log event.
-   - Since there are multiple price feed contract address that all use the same `LogValue` event, we have a special implementation of a fetcher specifically for price feeds that can query using all of the contract addresses at once, thus only needing to make one call to the blockchain.
+   - The topic zero is based on the keccak-256 hash of the log event's method signature. These are located in [`pkg/transformers/shared/constants/signature.go`](./shared/constants/signature.go).
+   - Fetching is done in batch from the [`watcher`](../../libraries/shared/watcher.go).
+   - The logs are then chunked up by the [`chunker`](./shared/log_chunker.go) before being delegated to each transformer.
 
 **Coverting logs**
 
@@ -105,8 +105,7 @@ The transformer process for each of these different log types is the same, excep
   - The `checked_headers` table allows us to keep track of which headers have been checked for a given log type.
 - To create a new migration file: `./scripts/create_migration create_flop_kick`
   - See `db/migrations/1536942529_create_flop_kick.up.sql`.
-  - The specific log event tables are all created in the `maker`
-    schema.
+  - The specific log event tables are all created in the `maker` schema.
   - There is a one-many association between `headers` and the log
     event tables. This is so that if a header is removed due to a reorg, the associated log event records are also removed.
 - To run the migrations: `make migrate HOST=local_host PORT=5432 NAME=vulcanize_private`
@@ -120,7 +119,7 @@ The transformer process for each of these different log types is the same, excep
 
 **Wire each component up in the transformer**
 
-- We use a TransformerInitializer struct for each transformer so that we can inject ethRPC and postgresDB connections as well as configuration data (including the contract address, block range, etc.) into the transformer. The TransformerInitializer interface is defined in `pkg/transformers/shared/transformer.go`.
+- We use a [`TransformerInitializer`](./shared/transformer.go) struct for each transformer so that we can inject ethRPC and postgresDB connections as well as configuration data (including the contract address, block range, etc.) into the transformer.
 - See any of `pkg/transformers/flop_kick/transformer.go`
 - All of the transformers are then initialized in `pkg/transformers/transformers.go` with their configuration.
 - The transformers can be executed by using the `continuousLogSync` command, which can be configured to run specific transformers or all transformers.
