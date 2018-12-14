@@ -51,6 +51,18 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	return numbers
 }
 
+func (repository HeaderRepository) HeaderExists(blockNumber int64) (bool, error) {
+	_, err := repository.GetHeader(blockNumber)
+	if err != nil {
+		if headerDoesNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
 func headerMustBeReplaced(hash string, header core.Header) bool {
 	return hash != header.Hash
 }
