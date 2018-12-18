@@ -195,8 +195,8 @@ func (tr transformer) Execute() error {
 		tr.Update(con)
 
 		// Iterate through contract filters and get watched event logs
-		for eventName := range con.Filters {
-			watchedEvents, err := tr.GetWatchedEvents(eventName)
+		for eventSig, filter := range con.Filters {
+			watchedEvents, err := tr.GetWatchedEvents(filter.Name)
 			if err != nil {
 				return err
 			}
@@ -204,7 +204,7 @@ func (tr transformer) Execute() error {
 			// Iterate over watched event logs
 			for _, we := range watchedEvents {
 				// Convert them to our custom log type
-				cstm, err := tr.Converter.Convert(*we, con.Events[eventName])
+				cstm, err := tr.Converter.Convert(*we, con.Events[eventSig])
 				if err != nil {
 					return err
 				}
@@ -214,7 +214,7 @@ func (tr transformer) Execute() error {
 
 				// If log is not empty, immediately persist in repo
 				// Run this in seperate goroutine?
-				err = tr.PersistLogs([]types.Log{*cstm}, con.Events[eventName], con.Address, con.Name)
+				err = tr.PersistLogs([]types.Log{*cstm}, con.Events[eventSig], con.Address, con.Name)
 				if err != nil {
 					return err
 				}

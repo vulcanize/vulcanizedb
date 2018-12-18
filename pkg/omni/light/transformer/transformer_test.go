@@ -333,7 +333,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("It does not perist events if they do not pass the emitted arg filter", func() {
+		It("It does not persist events if they do not pass the emitted arg filter", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
 			t.SetMethods(constants.EnsContractAddress, nil)

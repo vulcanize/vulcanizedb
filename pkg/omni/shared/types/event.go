@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Event struct {
@@ -83,12 +85,12 @@ func NewEvent(e abi.Event) Event {
 	}
 }
 
-func (e Event) Sig() string {
+func (e Event) Sig() common.Hash {
 	types := make([]string, len(e.Fields))
 
 	for i, input := range e.Fields {
 		types[i] = input.Type.String()
 	}
 
-	return fmt.Sprintf("%v(%v)", e.Name, strings.Join(types, ","))
+	return common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprintf("%v(%v)", e.Name, strings.Join(types, ",")))))
 }

@@ -255,7 +255,16 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr`)
 	Expect(err).NotTo(HaveOccurred())
 
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr2`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr3`)
+	Expect(err).NotTo(HaveOccurred())
+
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS balanceof_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
