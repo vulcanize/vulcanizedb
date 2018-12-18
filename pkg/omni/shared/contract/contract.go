@@ -24,7 +24,6 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
@@ -39,7 +38,7 @@ type Contract struct {
 	ParsedAbi      abi.ABI                      // Parsed abi
 	Events         map[string]types.Event       // Map of events to their names
 	Methods        map[string]types.Method      // Map of methods to their names
-	Filters        map[string]filters.LogFilter // Map of event filters to their names; used only for full sync watcher
+	Filters        map[string]filters.LogFilter // Map of event filters to their event names; used only for full sync watcher
 	FilterArgs     map[string]bool              // User-input list of values to filter event logs for
 	MethodArgs     map[string]bool              // User-input list of values to limit method polling to
 	EmittedAddrs   map[interface{}]bool         // List of all unique addresses collected from converted event logs
@@ -79,11 +78,11 @@ func (c *Contract) GenerateFilters() error {
 
 	for name, event := range c.Events {
 		c.Filters[name] = filters.LogFilter{
-			Name:      name,
+			Name:      event.Name,
 			FromBlock: c.StartingBlock,
 			ToBlock:   -1,
 			Address:   c.Address,
-			Topics:    core.Topics{helpers.GenerateSignature(event.Sig())}, // move generate signatrue to pkg
+			Topics:    core.Topics{event.Sig().Hex()},
 		}
 	}
 	// If no filters were generated, throw an error (no point in continuing with this contract)

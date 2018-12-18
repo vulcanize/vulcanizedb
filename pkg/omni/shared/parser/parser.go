@@ -102,8 +102,7 @@ func (p *parser) GetSelectMethods(wanted []string) map[string]types.Method {
 
 	for _, m := range p.parsedAbi.Methods {
 		if okInputTypes(m, wanted) {
-			wantedMethod := types.NewMethod(m)
-			addrMethods[wantedMethod.Name] = wantedMethod
+			addrMethods[m.Name] = types.NewMethod(m)
 		}
 	}
 
