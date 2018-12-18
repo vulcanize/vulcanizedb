@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -177,58 +178,90 @@ func (tr *transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts")
 	}
-	// Iterate through all initialized contracts
-	for _, con := range tr.Contracts {
-		// Update converter with current contract
-		tr.Converter.Update(con)
 
-		// Iterate through events
+	cLen := len(tr.Contracts)
+	contractAddresses := make([]string, 0, cLen)   // Holds all contract addresses, for batch fetching of logs
+	sortedIds := make(map[string][]string)         // Map to sort event column ids by contract, for post fetch processing
+	eventIds := make([]string, 0)                  // Holds event column ids across all contract, for batch fetching of headers
+	eventFilters := make([]common.Hash, 0)         // Holds topic hashes across all contracts, for batch fetching of logs
+	sortedLogs := make(map[string][]gethTypes.Log) // Map to sort batch fetched logs by which contract they belong to, for post fetch processing
+	var start, end int64                           // Hold the lowest starting block and the highest ending block
+	start = 100000000
+	end = -1
+
+	// Cycle through all contracts and extract info needed for fetching and post-processing
+	for _, con := range tr.Contracts {
 		eLen := len(con.Events)
-		eventIds := make([]string, 0, eLen)
-		eventTopics := make([][]common.Hash, 0, eLen)
+		sortedLogs[con.Address] = []gethTypes.Log{}
+		sortedIds[con.Address] = make([]string, 0, eLen)
 		for _, event := range con.Events {
-			// Append this event sig to the filters
-			eventTopics = append(eventTopics, []common.Hash{event.Sig()})
 			// Generate eventID and use it to create a checked_header column if one does not already exist
 			eventId := strings.ToLower(event.Name + "_" + con.Address)
 			err := tr.HeaderRepository.AddCheckColumn(eventId)
 			if err != nil {
 				return err
 			}
-			// Keep track of this event id
+			// Keep track of this event id; sorted and unsorted
+			sortedIds[con.Address] = append(sortedIds[con.Address], eventId)
 			eventIds = append(eventIds, eventId)
+			// Append this event sig to the filters
+			eventFilters = append(eventFilters, event.Sig())
 		}
+		contractAddresses = append(contractAddresses, con.Address)
+		// Update start to the lowest block and end to the highest block
+		if con.StartingBlock < start {
+			start = con.StartingBlock
+		}
+		if con.LastBlock > end {
+			end = con.LastBlock
+		}
+	}
 
-		// Find unchecked headers for all events
-		missingHeaders, err := tr.HeaderRepository.MissingHeadersForAll(con.StartingBlock, con.LastBlock, eventIds)
+	// Find unchecked headers for all events across all contracts
+	missingHeaders, err := tr.HeaderRepository.MissingHeadersForAll(start, end, eventIds)
+	if err != nil {
+		return err
+	}
+
+	// Iterate over headers
+	for _, header := range missingHeaders {
+		// And fetch all event logs across contracts at this header
+		allLogs, err := tr.Fetcher.FetchLogs(contractAddresses, eventFilters, header)
 		if err != nil {
 			return err
 		}
-		// Iterate over headers
-		for _, header := range missingHeaders {
-			// And fetch all event logs for this contract using this header
-			logs, err := tr.Fetcher.FetchLogs([]string{con.Address}, eventTopics, header)
+
+		// Mark the header checked for all of these eventIDs and continue to next iteration if no logs are found
+		if len(allLogs) < 1 {
+			err = tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, eventIds)
 			if err != nil {
 				return err
 			}
+			continue
+		}
 
-			// Mark the header checked for all of these eventIDs and continue to next iteration if no logs are found
-			if len(logs) < 1 {
-				err = tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, eventIds)
-				if err != nil {
-					return err
-				}
-				continue
-			}
+		// Sort logs by the contract they belong to
+		for _, log := range allLogs {
+			sortedLogs[log.Address.Hex()] = append(sortedLogs[log.Address.Hex()], log)
+		}
+
+		// Process logs for each contract
+		for conAddr, logs := range sortedLogs {
+			// Configure converter with this contract
+			con := tr.Contracts[conAddr]
+			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (event => []types.Log)
 			convertedLogs, err := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
 			if err != nil {
 				return err
 			}
-			for name, logs := range convertedLogs {
+
+			// Cycle through each type of event log and persist them
+			for eventName, logs := range convertedLogs {
+				// If logs are empty, mark checked
 				if len(logs) < 1 {
-					eventId := strings.ToLower(name + "_" + con.Address)
+					eventId := strings.ToLower(eventName + "_" + con.Address)
 					err = tr.HeaderRepository.MarkHeaderChecked(header.Id, eventId)
 					if err != nil {
 						return err
@@ -237,48 +270,48 @@ func (tr *transformer) Execute() error {
 				}
 				// If logs aren't empty, persist them
 				// Headers are marked checked in the persistlogs transactions
-				err = tr.EventRepository.PersistLogs(logs, con.Events[name], con.Address, con.Name)
+				err = tr.EventRepository.PersistLogs(logs, con.Events[eventName], con.Address, con.Name)
 				if err != nil {
 					return err
 				}
 			}
-		}
 
-		if len(con.Methods) == 0 {
-			continue
-		}
+			// Skip method polling processes if no methods are specified
+			if len(con.Methods) == 0 {
+				continue
+			}
 
-		// Create checked_headers columns for each method id
-		methodIds := make([]string, 0, len(con.Methods))
-		for _, m := range con.Methods {
-			methodId := strings.ToLower(m.Name + "_" + con.Address)
-			err = tr.HeaderRepository.AddCheckColumn(methodId)
+			// Create checked_headers columns for each method id and generate list of all method ids
+			methodIds := make([]string, 0, len(con.Methods))
+			for _, m := range con.Methods {
+				methodId := strings.ToLower(m.Name + "_" + con.Address)
+				err = tr.HeaderRepository.AddCheckColumn(methodId)
+				if err != nil {
+					return err
+				}
+				methodIds = append(methodIds, methodId)
+			}
+
+			// Retrieve headers that have been checked for all of this contract's events but haven not been checked for this contract's methods
+			missingHeaders, err = tr.HeaderRepository.MissingMethodsCheckedEventsIntersection(con.StartingBlock, con.LastBlock, methodIds, sortedIds[conAddr])
 			if err != nil {
 				return err
 			}
-			methodIds = append(methodIds, methodId)
-		}
 
-		// Retrieve headers that have been checked for all events but haven not been checked for the methods
-		missingHeaders, err = tr.HeaderRepository.MissingMethodsCheckedEventsIntersection(con.StartingBlock, con.LastBlock, methodIds, eventIds)
-		if err != nil {
-			return err
-		}
+			// Poll over the missing headers
+			for _, header := range missingHeaders {
+				err = tr.Poller.PollContractAt(*con, header.BlockNumber)
+				if err != nil {
+					return err
+				}
+			}
 
-		// Poll over the missing headers
-		for _, header := range missingHeaders {
-			err = tr.Poller.PollContractAt(*con, header.BlockNumber)
+			// Mark those headers checked for the methods
+			err = tr.HeaderRepository.MarkHeadersCheckedForAll(missingHeaders, methodIds)
 			if err != nil {
 				return err
 			}
 		}
-
-		// Mark those headers checked for the methods
-		err = tr.HeaderRepository.MarkHeadersCheckedForAll(missingHeaders, methodIds)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	return nil
