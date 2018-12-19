@@ -46,7 +46,6 @@ type poller struct {
 }
 
 func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *poller {
-
 	return &poller{
 		MethodRepository: repository.NewMethodRepository(db, mode),
 		bc:               blockChain,
@@ -105,6 +104,8 @@ func (p *poller) pollNoArgAt(m types.Method, bn int64) error {
 		return err
 	}
 
+	// Cache returned value if piping is turned on
+	p.cache(out)
 	result.Output = strOut
 
 	// Persist result immediately
@@ -129,7 +130,7 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 	// the correct argument set to iterate over
 	var args map[interface{}]bool
 	switch m.Args[0].Type.T {
-	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
+	case abi.HashTy, abi.FixedBytesTy:
 		args = p.contract.EmittedHashes
 	case abi.AddressTy:
 		args = p.contract.EmittedAddrs
@@ -152,13 +153,15 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 		if err != nil {
 			return err
 		}
+		p.cache(out)
 
+		// Write inputs and outputs to result and append result to growing set
 		result.Inputs = strIn
 		result.Output = strOut
 		results = append(results, result)
 	}
 
-	// Persist results as batch
+	// Persist result set as batch
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
 		return errors.New(fmt.Sprintf("poller error persisting 1 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
@@ -180,7 +183,7 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 	// the correct argument sets to iterate over
 	var firstArgs map[interface{}]bool
 	switch m.Args[0].Type.T {
-	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
+	case abi.HashTy, abi.FixedBytesTy:
 		firstArgs = p.contract.EmittedHashes
 	case abi.AddressTy:
 		firstArgs = p.contract.EmittedAddrs
@@ -191,7 +194,7 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 
 	var secondArgs map[interface{}]bool
 	switch m.Args[1].Type.T {
-	case abi.HashTy, abi.FixedBytesTy, abi.BytesTy:
+	case abi.HashTy, abi.FixedBytesTy:
 		secondArgs = p.contract.EmittedHashes
 	case abi.AddressTy:
 		secondArgs = p.contract.EmittedAddrs
@@ -218,6 +221,8 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 				return err
 			}
 
+			p.cache(out)
+
 			result.Output = strOut
 			result.Inputs = strIn
 			results = append(results, result)
@@ -236,6 +241,28 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 // This is just a wrapper around the poller blockchain's FetchContractData method
 func (p *poller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
 	return p.bc.FetchContractData(contractAbi, contractAddress, method, methodArgs, result, blockNumber)
+}
+
+// This is used to cache an method return value if method piping is turned on
+func (p *poller) cache(out interface{}) {
+	// Cache returned value if piping is turned on
+	if p.contract.Piping {
+		switch out.(type) {
+		case common.Hash:
+			if p.contract.EmittedHashes != nil {
+				p.contract.AddEmittedHash(out.(common.Hash))
+			}
+		case []byte:
+			if p.contract.EmittedHashes != nil && len(out.([]byte)) == 32 {
+				p.contract.AddEmittedHash(common.BytesToHash(out.([]byte)))
+			}
+		case common.Address:
+			if p.contract.EmittedAddrs != nil {
+				p.contract.AddEmittedAddr(out.(common.Address))
+			}
+		default:
+		}
+	}
 }
 
 func stringify(input interface{}) (string, error) {

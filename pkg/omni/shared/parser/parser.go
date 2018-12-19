@@ -33,8 +33,8 @@ type Parser interface {
 	Parse(contractAddr string) error
 	Abi() string
 	ParsedAbi() abi.ABI
-	GetMethods(wanted []string) map[string]types.Method
-	GetSelectMethods(wanted []string) map[string]types.Method
+	GetMethods(wanted []string) []types.Method
+	GetSelectMethods(wanted []string) []types.Method
 	GetEvents(wanted []string) map[string]types.Event
 }
 
@@ -91,37 +91,38 @@ func (p *parser) lookUp(contractAddr string) (string, error) {
 	return "", errors.New("ABI not present in lookup tabe")
 }
 
-// Returns wanted methods, if they meet the criteria, as map of types.Methods
-// Empty wanted array => all methods that fit are returned
+// Returns only specified methods, if they meet the criteria
+// Returns as array with methods in same order they were specified
 // Nil wanted array => no events are returned
-func (p *parser) GetSelectMethods(wanted []string) map[string]types.Method {
-	addrMethods := map[string]types.Method{}
-	if wanted == nil {
+func (p *parser) GetSelectMethods(wanted []string) []types.Method {
+	wLen := len(wanted)
+	if wLen == 0 {
 		return nil
 	}
-
+	methods := make([]types.Method, wLen)
 	for _, m := range p.parsedAbi.Methods {
-		if okInputTypes(m, wanted) {
-			addrMethods[m.Name] = types.NewMethod(m)
+		for i, name := range wanted {
+			if name == m.Name && okTypes(m, wanted) {
+				methods[i] = types.NewMethod(m)
+			}
 		}
 	}
 
-	return addrMethods
+	return methods
 }
 
-// Returns wanted methods as map of types.Methods
-// Empty wanted array => all events are returned
-// Nil wanted array => no events are returned
-func (p *parser) GetMethods(wanted []string) map[string]types.Method {
-	methods := map[string]types.Method{}
+// Returns wanted methods
+// Empty wanted array => all methods are returned
+// Nil wanted array => no methods are returned
+func (p *parser) GetMethods(wanted []string) []types.Method {
 	if wanted == nil {
-		return methods
+		return nil
 	}
-
+	methods := make([]types.Method, 0)
 	length := len(wanted)
 	for _, m := range p.parsedAbi.Methods {
 		if length == 0 || stringInSlice(wanted, m.Name) {
-			methods[m.Name] = types.NewMethod(m)
+			methods = append(methods, types.NewMethod(m))
 		}
 	}
 
@@ -169,7 +170,7 @@ func okReturnType(arg abi.Argument) bool {
 	return false
 }
 
-func okInputTypes(m abi.Method, wanted []string) bool {
+func okTypes(m abi.Method, wanted []string) bool {
 	// Only return method if it has less than 3 arguments, a single output value, and it is a method we want or we want all methods (empty 'wanted' slice)
 	if len(m.Inputs) < 3 && len(m.Outputs) == 1 && (len(wanted) == 0 || stringInSlice(wanted, m.Name)) {
 		// Only return methods if inputs are all of accepted types and output is of the accepted types
@@ -178,12 +179,18 @@ func okInputTypes(m abi.Method, wanted []string) bool {
 		}
 		for _, input := range m.Inputs {
 			switch input.Type.T {
-			case abi.AddressTy, abi.HashTy, abi.BytesTy, abi.FixedBytesTy:
+			// Addresses are properly labeled and caught
+			// But hashes tend to not be explicitly labeled and caught
+			// Instead bytes32 are assumed to be hashes
+			case abi.AddressTy, abi.HashTy:
+			case abi.FixedBytesTy:
+				if input.Type.Size != 32 {
+					return false
+				}
 			default:
 				return false
 			}
 		}
-
 		return true
 	}
 

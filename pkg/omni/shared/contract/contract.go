@@ -36,8 +36,8 @@ type Contract struct {
 	LastBlock      int64                        // Most recent block on the network
 	Abi            string                       // Abi string
 	ParsedAbi      abi.ABI                      // Parsed abi
-	Events         map[string]types.Event       // Map of events to their names
-	Methods        map[string]types.Method      // Map of methods to their names
+	Events         map[string]types.Event       // List of events to watch
+	Methods        []types.Method               // List of methods to poll
 	Filters        map[string]filters.LogFilter // Map of event filters to their event names; used only for full sync watcher
 	FilterArgs     map[string]bool              // User-input list of values to filter event logs for
 	MethodArgs     map[string]bool              // User-input list of values to limit method polling to

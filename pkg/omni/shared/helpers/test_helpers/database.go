@@ -90,6 +90,14 @@ type BalanceOf struct {
 	Balance   string `db:"returned"`
 }
 
+type Resolver struct {
+	Id        int64  `db:"id"`
+	TokenName string `db:"token_name"`
+	Block     int64  `db:"block"`
+	Node      string `db:"node_"`
+	Address   string `db:"returned"`
+}
+
 type Owner struct {
 	Id        int64  `db:"id"`
 	TokenName string `db:"token_name"`
@@ -261,10 +269,28 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr3`)
 	Expect(err).NotTo(HaveOccurred())
 
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr2`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr3`)
+	Expect(err).NotTo(HaveOccurred())
+
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS balanceof_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS newowner_0x314159265dd8dbb310642f98f50c066173c1259b`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS owner_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS owner_0x314159265dd8dbb310642f98f50c066173c1259b`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)

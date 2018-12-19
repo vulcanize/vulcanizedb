@@ -48,6 +48,7 @@ var _ = Describe("Repository", func() {
 	var con *contract.Contract
 	var vulcanizeLogId int64
 	var wantedEvents = []string{"Transfer"}
+	var wantedMethods = []string{"balanceOf"}
 	var event types.Event
 	var headerID int64
 	var mockEvent = mocks.MockTranferEvent
@@ -55,7 +56,7 @@ var _ = Describe("Repository", func() {
 	var mockLog2 = mocks.MockTransferLog2
 
 	BeforeEach(func() {
-		db, con = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, []string{})
+		db, con = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, wantedMethods)
 		mockEvent.LogID = vulcanizeLogId
 
 		event = con.Events["Transfer"]

@@ -34,7 +34,7 @@ var _ = Describe("Converter", func() {
 	var err error
 
 	BeforeEach(func() {
-		con = test_helpers.SetupTusdContract(wantedEvents, []string{})
+		con = test_helpers.SetupTusdContract(wantedEvents, []string{"balanceOf"})
 	})
 
 	Describe("Update", func() {

@@ -41,7 +41,8 @@ var _ = Describe("Repository", func() {
 
 	BeforeEach(func() {
 		con = test_helpers.SetupTusdContract([]string{}, []string{"balanceOf"})
-		method = con.Methods["balanceOf"]
+		Expect(len(con.Methods)).To(Equal(1))
+		method = con.Methods[0]
 		mockResult = types.Result{
 			Method: method,
 			PgType: method.Return[0].PgType,
