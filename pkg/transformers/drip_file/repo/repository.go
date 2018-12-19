@@ -19,6 +19,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"log"
 )
 
 type DripFileRepoRepository struct {
@@ -26,34 +27,43 @@ type DripFileRepoRepository struct {
 }
 
 func (repository DripFileRepoRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 
 	for _, model := range models {
 		repo, ok := model.(DripFileRepoModel)
 		if !ok {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Println("failed to rollback ", rollbackErr)
+			}
 			return fmt.Errorf("model of type %T, not %T", model, DripFileRepoModel{})
 		}
 
-		_, err = tx.Exec(
+		_, execErr := tx.Exec(
 			`INSERT into maker.drip_file_repo (header_id, what, data, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3::NUMERIC, $4, $5, $6)`,
 			headerID, repo.What, repo.Data, repo.LogIndex, repo.TransactionIndex, repo.Raw,
 		)
 
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Println("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DripFileRepoChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DripFileRepoChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Println("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 
 	return tx.Commit()
