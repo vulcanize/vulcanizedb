@@ -19,12 +19,12 @@ package converter
 import (
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
@@ -57,12 +57,6 @@ func (c *converter) Update(info *contract.Contract) {
 func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
-
-	for _, field := range event.Fields {
-		var i interface{}
-		values[field.Name] = i
-	}
-
 	log := helpers.ConvertToLog(watchedEvent)
 	err := contract.UnpackLogIntoMap(values, event.Name, log)
 	if err != nil {
@@ -93,7 +87,7 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		case []byte:
 			b := input.([]byte)
 			strValues[fieldName] = hexutil.Encode(b)
-			if len(b) == 32 {
+			if len(b) == 32 { // collect byte arrays of size 32 as hashes
 				seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
 			}
 		case byte:

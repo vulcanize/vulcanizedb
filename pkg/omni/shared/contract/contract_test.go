@@ -208,7 +208,7 @@ var _ = Describe("Contract", func() {
 			info = &contract.Contract{}
 			info.FilterArgs = map[string]bool{}
 			info.MethodArgs = map[string]bool{}
-			info.Methods = map[string]types.Method{}
+			info.Methods = []types.Method{}
 			info.EmittedAddrs = map[interface{}]bool{}
 		})
 

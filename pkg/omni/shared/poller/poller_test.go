@@ -50,7 +50,7 @@ var _ = Describe("Poller", func() {
 		})
 
 		Describe("PollContract", func() {
-			It("Polls specified contract methods using contract's token holder address list", func() {
+			It("Polls specified contract methods using contract's argument list", func() {
 				con = test_helpers.SetupTusdContract(nil, []string{"balanceOf"})
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
@@ -122,8 +122,8 @@ var _ = Describe("Poller", func() {
 			})
 		})
 
-		Describe("PollMethod", func() {
-			It("Polls a single contract method", func() {
+		Describe("FetchContractData", func() {
+			It("Calls a single contract method", func() {
 				var name = new(string)
 				err := p.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
 				Expect(err).ToNot(HaveOccurred())
@@ -209,10 +209,44 @@ var _ = Describe("Poller", func() {
 				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).To(HaveOccurred())
 			})
+
+			It("Caches returned values of the appropriate types for downstream method polling if method piping is turned on", func() {
+				con = test_helpers.SetupENSContract(nil, []string{"resolver"})
+				Expect(con.Abi).To(Equal(constants.ENSAbiString))
+				con.StartingBlock = 6921967
+				con.LastBlock = 6921968
+				con.EmittedAddrs = map[interface{}]bool{}
+				con.Piping = false
+				con.AddEmittedHash(common.HexToHash("0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8"))
+				err := p.PollContract(*con)
+				Expect(err).ToNot(HaveOccurred())
+
+				scanStruct := test_helpers.Resolver{}
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(scanStruct.Address).To(Equal("0x5FfC014343cd971B7eb70732021E26C35B744cc4"))
+				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
+				Expect(len(con.EmittedAddrs)).To(Equal(0)) // With piping off the address is not saved
+
+				test_helpers.TearDown(db)
+				db, bc = test_helpers.SetupDBandBC()
+				p = poller.NewPoller(bc, db, types.LightSync)
+
+				con.Piping = true
+				err = p.PollContract(*con)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(scanStruct.Address).To(Equal("0x5FfC014343cd971B7eb70732021E26C35B744cc4"))
+				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
+				Expect(len(con.EmittedAddrs)).To(Equal(1)) // With piping on it is saved
+				Expect(con.EmittedAddrs[common.HexToAddress("0x5FfC014343cd971B7eb70732021E26C35B744cc4")]).To(Equal(true))
+			})
 		})
 
-		Describe("PollMethod", func() {
-			It("Polls a single contract method", func() {
+		Describe("FetchContractData", func() {
+			It("Calls a single contract method", func() {
 				var name = new(string)
 				err := p.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
 				Expect(err).ToNot(HaveOccurred())

@@ -131,7 +131,7 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 	return returnLogs, nil
 }
 
-// Convert the given watched event logs into types.Logs
+// Convert the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
 func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
@@ -142,21 +142,16 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 			// If the log is of this event type, process it as such
 			if event.Sig() == log.Topics[0] {
 				values := make(map[string]interface{})
-				for _, field := range event.Fields {
-					var i interface{}
-					values[field.Name] = i
-				}
-
 				err := contract.UnpackLogIntoMap(values, event.Name, log)
 				if err != nil {
 					return nil, err
 				}
-
+				// Postgres cannot handle custom types, so we will resolve everything to strings
 				strValues := make(map[string]string, len(values))
+				// Keep track of addresses and hashes emitted from events
 				seenAddrs := make([]interface{}, 0, len(values))
 				seenHashes := make([]interface{}, 0, len(values))
 				for fieldName, input := range values {
-					// Postgres cannot handle custom types, resolve everything to strings
 					switch input.(type) {
 					case *big.Int:
 						b := input.(*big.Int)
@@ -176,8 +171,8 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 					case []byte:
 						b := input.([]byte)
 						strValues[fieldName] = hexutil.Encode(b)
-						if len(b) == 32 {
-							seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
+						if len(b) == 32 { // collect byte arrays of size 32 as hashes
+							seenHashes = append(seenHashes, common.BytesToHash(b))
 						}
 					case byte:
 						b := input.(byte)
@@ -187,7 +182,7 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 					}
 				}
 
-				// Only hold onto logs that pass our address filter, if any
+				// Only hold onto logs that pass our argument filter, if any
 				if c.ContractInfo.PassesEventFilter(strValues) {
 					raw, err := json.Marshal(log)
 					if err != nil {
@@ -202,7 +197,7 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 						Id:               headerID,
 					})
 
-					// Cache emitted values if their caching is turned on
+					// Cache emitted values that pass the argument filter if their caching is turned on
 					if c.ContractInfo.EmittedAddrs != nil {
 						c.ContractInfo.AddEmittedAddr(seenAddrs...)
 					}
@@ -215,8 +210,4 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 	}
 
 	return eventsToLogs, nil
-}
-
-func (c *converter) handleDSNote() {
-
 }
