@@ -46,7 +46,7 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 			VALUES($1, $2, $3, $4, $5, $6, $7)`,
 			headerID, flip.Ilk, flip.What, flip.Flip, flip.TransactionIndex, flip.LogIndex, flip.Raw,
 		)
-		if execErr  != nil {
+		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
 				log.Println("failed to rollback ", rollbackErr)
