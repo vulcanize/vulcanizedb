@@ -19,6 +19,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"log"
 )
 
 type CatFilePitVowRepository struct {
@@ -26,32 +27,41 @@ type CatFilePitVowRepository struct {
 }
 
 func (repository CatFilePitVowRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 	for _, model := range models {
 		vow, ok := model.(CatFilePitVowModel)
 		if !ok {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Println("failed to rollback ", rollbackErr)
+			}
 			return fmt.Errorf("model of type %T, not %T", model, CatFilePitVowModel{})
 		}
 
-		_, err = repository.db.Exec(
+		_, execErr := repository.db.Exec(
 			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4, $5, $6)`,
 			headerID, vow.What, vow.Data, vow.TransactionIndex, vow.LogIndex, vow.Raw,
 		)
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Println("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.CatFilePitVowChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.CatFilePitVowChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Println("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 	return tx.Commit()
 }
