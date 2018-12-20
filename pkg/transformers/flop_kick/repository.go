@@ -16,10 +16,10 @@ package flop_kick
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"log"
 )
 
 type FlopKickRepository struct {
@@ -46,7 +46,7 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -56,7 +56,7 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}

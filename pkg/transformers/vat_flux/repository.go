@@ -16,10 +16,10 @@ package vat_flux
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"log"
 )
 
 type VatFluxRepository struct {
@@ -37,7 +37,7 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 		if !ok {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return fmt.Errorf("model of type %T, not %T", model, VatFluxModel{})
 		}
@@ -48,7 +48,7 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -58,7 +58,7 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}
