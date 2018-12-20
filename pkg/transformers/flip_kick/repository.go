@@ -16,7 +16,7 @@ package flip_kick
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -46,7 +46,7 @@ func (repository FlipKickRepository) Create(headerID int64, models []interface{}
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -55,7 +55,7 @@ func (repository FlipKickRepository) Create(headerID int64, models []interface{}
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}

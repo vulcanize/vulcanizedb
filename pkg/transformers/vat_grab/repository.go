@@ -2,7 +2,7 @@ package vat_grab
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -23,7 +23,7 @@ func (repository VatGrabRepository) Create(headerID int64, models []interface{})
 		if !ok {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return fmt.Errorf("model of type %T, not %T", model, VatGrabModel{})
 		}
@@ -36,7 +36,7 @@ func (repository VatGrabRepository) Create(headerID int64, models []interface{})
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -45,7 +45,7 @@ func (repository VatGrabRepository) Create(headerID int64, models []interface{})
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}

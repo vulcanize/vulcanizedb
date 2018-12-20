@@ -16,10 +16,10 @@ package bite
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"log"
 )
 
 type BiteRepository struct {
@@ -40,7 +40,7 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 		if !ok {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return fmt.Errorf("model of type %T, not %T", model, BiteModel{})
 		}
@@ -53,7 +53,7 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -63,7 +63,7 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}

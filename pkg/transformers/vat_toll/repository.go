@@ -2,10 +2,10 @@ package vat_toll
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"log"
 )
 
 type VatTollRepository struct {
@@ -22,7 +22,7 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 		if !ok {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return fmt.Errorf("model of type %T, not %T", model, VatTollModel{})
 		}
@@ -35,7 +35,7 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Println("failed to rollback ", rollbackErr)
+				log.Error("failed to rollback ", rollbackErr)
 			}
 			return execErr
 		}
@@ -45,7 +45,7 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 	if checkHeaderErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Println("failed to rollback ", rollbackErr)
+			log.Error("failed to rollback ", rollbackErr)
 		}
 		return checkHeaderErr
 	}
