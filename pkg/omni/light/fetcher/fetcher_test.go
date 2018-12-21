@@ -37,7 +37,7 @@ var _ = Describe("Fetcher", func() {
 			addresses := []string{"0xfakeAddress", "0xanotherFakeAddress"}
 			topicZeros := [][]common.Hash{{common.BytesToHash([]byte{1, 2, 3, 4, 5})}}
 
-			_, err := fetcher.FetchLogs(addresses, topicZeros, header)
+			_, err := fetcher.FetchLogs(addresses, []common.Hash{common.BytesToHash([]byte{1, 2, 3, 4, 5})}, header)
 
 			address1 := common.HexToAddress("0xfakeAddress")
 			address2 := common.HexToAddress("0xanotherFakeAddress")
@@ -57,7 +57,7 @@ var _ = Describe("Fetcher", func() {
 			blockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
 			fetcher := fetcher.NewFetcher(blockChain)
 
-			_, err := fetcher.FetchLogs([]string{}, [][]common.Hash{}, core.Header{})
+			_, err := fetcher.FetchLogs([]string{}, []common.Hash{}, core.Header{})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

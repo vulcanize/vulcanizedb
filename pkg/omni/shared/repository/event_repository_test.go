@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -47,6 +48,7 @@ var _ = Describe("Repository", func() {
 	var con *contract.Contract
 	var vulcanizeLogId int64
 	var wantedEvents = []string{"Transfer"}
+	var wantedMethods = []string{"balanceOf"}
 	var event types.Event
 	var headerID int64
 	var mockEvent = mocks.MockTranferEvent
@@ -54,7 +56,7 @@ var _ = Describe("Repository", func() {
 	var mockLog2 = mocks.MockTransferLog2
 
 	BeforeEach(func() {
-		db, con = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, []string{})
+		db, con = test_helpers.SetupTusdRepo(&vulcanizeLogId, wantedEvents, wantedMethods)
 		mockEvent.LogID = vulcanizeLogId
 
 		event = con.Events["Transfer"]
@@ -137,15 +139,15 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("Persists contract event log values into custom tables, adding any addresses to a growing list of contract associated addresses", func() {
+			It("Persists contract event log values into custom tables", func() {
 				err = dataStore.PersistLogs([]types.Log{*log}, event, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				b, ok := con.TknHolderAddrs["0x000000000000000000000000000000000000Af21"]
+				b, ok := con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
 				Expect(ok).To(Equal(true))
 				Expect(b).To(Equal(true))
 
-				b, ok = con.TknHolderAddrs["0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"]
+				b, ok = con.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391")]
 				Expect(ok).To(Equal(true))
 				Expect(b).To(Equal(true))
 

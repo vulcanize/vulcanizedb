@@ -30,8 +30,8 @@ import (
 const methodCacheSize = 1000
 
 type MethodRepository interface {
-	PersistResult(method types.Result, contractAddr, contractName string) error
-	CreateMethodTable(contractAddr string, method types.Result) (bool, error)
+	PersistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error
+	CreateMethodTable(contractAddr string, method types.Method) (bool, error)
 	CreateContractSchema(contractAddr string) (bool, error)
 	CheckSchemaCache(key string) (interface{}, bool)
 	CheckTableCache(key string) (interface{}, bool)
@@ -55,65 +55,73 @@ func NewMethodRepository(db *postgres.DB, mode types.Mode) *methodRepository {
 	}
 }
 
-func (r *methodRepository) PersistResult(method types.Result, contractAddr, contractName string) error {
-	if len(method.Args) != len(method.Inputs) {
-		return errors.New("error: given number of inputs does not match number of method arguments")
+// Creates a schema for the contract if needed
+// Creates table for the contract method if needed
+// Persists method polling data into this custom table
+func (r *methodRepository) PersistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error {
+	if len(results) == 0 {
+		return errors.New("method repository error: passed empty results slice")
 	}
-	if len(method.Return) != 1 {
-		return errors.New("error: given number of outputs does not match number of method return values")
-	}
-
 	_, err := r.CreateContractSchema(contractAddr)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.CreateMethodTable(contractAddr, method)
+	_, err = r.CreateMethodTable(contractAddr, methodInfo)
 	if err != nil {
 		return err
 	}
 
-	return r.persistResult(method, contractAddr, contractName)
+	return r.persistResults(results, methodInfo, contractAddr, contractName)
 }
 
 // Creates a custom postgres command to persist logs for the given event
-func (r *methodRepository) persistResult(method types.Result, contractAddr, contractName string) error {
-	// Begin postgres string
-	pgStr := fmt.Sprintf("INSERT INTO %s_%s.%s_method ", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(method.Name))
-	pgStr = pgStr + "(token_name, block"
-	ml := len(method.Args)
-
-	// Preallocate slice of needed size and proceed to pack variables into it in same order they appear in string
-	data := make([]interface{}, 0, 3+ml)
-	data = append(data,
-		contractName,
-		method.Block)
-
-	// Iterate over method args and return value, adding names
-	// to the string and pushing values to the slice
-	for i, arg := range method.Args {
-		pgStr = pgStr + fmt.Sprintf(", %s_", strings.ToLower(arg.Name)) // Add underscore after to avoid any collisions with reserved pg words
-		data = append(data, method.Inputs[i])
-	}
-	pgStr = pgStr + ", returned) VALUES ($1, $2"
-	data = append(data, method.Output)
-
-	// For each input entry we created we add its postgres command variable to the string
-	for i := 0; i <= ml; i++ {
-		pgStr = pgStr + fmt.Sprintf(", $%d", i+3)
-	}
-	pgStr = pgStr + ")"
-
-	_, err := r.DB.Exec(pgStr, data...)
+func (r *methodRepository) persistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error {
+	tx, err := r.DB.Begin()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	for _, result := range results {
+		// Begin postgres string
+		pgStr := fmt.Sprintf("INSERT INTO %s_%s.%s_method ", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(result.Name))
+		pgStr = pgStr + "(token_name, block"
+		ml := len(result.Args)
+
+		// Preallocate slice of needed capacity and proceed to pack variables into it in same order they appear in string
+		data := make([]interface{}, 0, 3+ml)
+		data = append(data,
+			contractName,
+			result.Block)
+
+		// Iterate over method args and return value, adding names
+		// to the string and pushing values to the slice
+		for i, arg := range result.Args {
+			pgStr = pgStr + fmt.Sprintf(", %s_", strings.ToLower(arg.Name)) // Add underscore after to avoid any collisions with reserved pg words
+			data = append(data, result.Inputs[i])
+		}
+		pgStr = pgStr + ", returned) VALUES ($1, $2"
+		data = append(data, result.Output)
+
+		// For each input entry we created we add its postgres command variable to the string
+		for i := 0; i <= ml; i++ {
+			pgStr = pgStr + fmt.Sprintf(", $%d", i+3)
+		}
+		pgStr = pgStr + ")"
+
+		// Add this query to the transaction
+		_, err = tx.Exec(pgStr, data...)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // Checks for event table and creates it if it does not already exist
-func (r *methodRepository) CreateMethodTable(contractAddr string, method types.Result) (bool, error) {
+func (r *methodRepository) CreateMethodTable(contractAddr string, method types.Method) (bool, error) {
 	tableID := fmt.Sprintf("%s_%s.%s_method", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(method.Name))
 
 	// Check cache before querying pq to see if table exists
@@ -139,7 +147,7 @@ func (r *methodRepository) CreateMethodTable(contractAddr string, method types.R
 }
 
 // Creates a table for the given contract and event
-func (r *methodRepository) newMethodTable(tableID string, method types.Result) error {
+func (r *methodRepository) newMethodTable(tableID string, method types.Method) error {
 	// Begin pg string
 	pgStr := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ", tableID)
 	pgStr = pgStr + "(id SERIAL, token_name CHARACTER VARYING(66) NOT NULL, block INTEGER NOT NULL,"

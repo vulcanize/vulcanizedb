@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Event struct {
@@ -59,7 +61,7 @@ func NewEvent(e abi.Event) Event {
 		fields[i].Indexed = input.Indexed
 		// Fill in pg type based on abi type
 		switch fields[i].Type.T {
-		case abi.StringTy, abi.HashTy, abi.AddressTy:
+		case abi.HashTy, abi.AddressTy:
 			fields[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
 			fields[i].PgType = "DECIMAL"
@@ -71,8 +73,6 @@ func NewEvent(e abi.Event) Event {
 			fields[i].PgType = "TEXT[]"
 		case abi.FixedPointTy:
 			fields[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
-		case abi.FunctionTy:
-			fields[i].PgType = "TEXT"
 		default:
 			fields[i].PgType = "TEXT"
 		}
@@ -85,12 +85,12 @@ func NewEvent(e abi.Event) Event {
 	}
 }
 
-func (e Event) Sig() string {
+func (e Event) Sig() common.Hash {
 	types := make([]string, len(e.Fields))
 
 	for i, input := range e.Fields {
 		types[i] = input.Type.String()
 	}
 
-	return fmt.Sprintf("%v(%v)", e.Name, strings.Join(types, ","))
+	return common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprintf("%v(%v)", e.Name, strings.Join(types, ",")))))
 }
