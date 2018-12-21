@@ -34,6 +34,10 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 
 	tic, getTicErr := shared.GetTicInTx(headerID, tx)
 	if getTicErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
 		return getTicErr
 	}
 
