@@ -42,7 +42,7 @@ func (r *blockRetriever) RetrieveFirstBlock() (int64, error) {
 	var firstBlock int
 	err := r.db.Get(
 		&firstBlock,
-		"SELECT block_number FROM headers ORDER BY block_number ASC LIMIT 1",
+		"SELECT block_number FROM headers ORDER BY block_number LIMIT 1",
 	)
 
 	return int64(firstBlock), err

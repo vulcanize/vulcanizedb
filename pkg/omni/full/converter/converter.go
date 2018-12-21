@@ -24,6 +24,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
@@ -56,12 +57,6 @@ func (c *converter) Update(info *contract.Contract) {
 func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
-
-	for _, field := range event.Fields {
-		var i interface{}
-		values[field.Name] = i
-	}
-
 	log := helpers.ConvertToLog(watchedEvent)
 	err := contract.UnpackLogIntoMap(values, event.Name, log)
 	if err != nil {
@@ -69,7 +64,8 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 	}
 
 	strValues := make(map[string]string, len(values))
-
+	seenAddrs := make([]interface{}, 0, len(values))
+	seenHashes := make([]interface{}, 0, len(values))
 	for fieldName, input := range values {
 		// Postgres cannot handle custom types, resolve to strings
 		switch input.(type) {
@@ -79,17 +75,21 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 		case common.Address:
 			a := input.(common.Address)
 			strValues[fieldName] = a.String()
-			c.ContractInfo.AddTokenHolderAddress(a.String()) // cache address in a list of contract's token holder addresses
+			seenAddrs = append(seenAddrs, a)
 		case common.Hash:
 			h := input.(common.Hash)
 			strValues[fieldName] = h.String()
+			seenHashes = append(seenHashes, h)
 		case string:
 			strValues[fieldName] = input.(string)
 		case bool:
 			strValues[fieldName] = strconv.FormatBool(input.(bool))
 		case []byte:
 			b := input.([]byte)
-			strValues[fieldName] = string(b)
+			strValues[fieldName] = hexutil.Encode(b)
+			if len(b) == 32 { // collect byte arrays of size 32 as hashes
+				seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
+			}
 		case byte:
 			b := input.(byte)
 			strValues[fieldName] = string(b)
@@ -105,6 +105,14 @@ func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 			Values: strValues,
 			Block:  watchedEvent.BlockNumber,
 			Tx:     watchedEvent.TxHash,
+		}
+
+		// Cache emitted values if their caching is turned on
+		if c.ContractInfo.EmittedAddrs != nil {
+			c.ContractInfo.AddEmittedAddr(seenAddrs...)
+		}
+		if c.ContractInfo.EmittedHashes != nil {
+			c.ContractInfo.AddEmittedHash(seenHashes...)
 		}
 
 		return eventLog, nil

@@ -47,6 +47,17 @@ type TransferLog struct {
 	Value          string `db:"value_"`
 }
 
+type NewOwnerLog struct {
+	Id             int64  `db:"id"`
+	VulvanizeLogId int64  `db:"vulcanize_log_id"`
+	TokenName      string `db:"token_name"`
+	Block          int64  `db:"block"`
+	Tx             string `db:"tx"`
+	Node           string `db:"node_"`
+	Label          string `db:"label_"`
+	Owner          string `db:"owner_"`
+}
+
 type LightTransferLog struct {
 	Id        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
@@ -59,12 +70,40 @@ type LightTransferLog struct {
 	RawLog    []byte `db:"raw_log"`
 }
 
+type LightNewOwnerLog struct {
+	Id        int64  `db:"id"`
+	HeaderID  int64  `db:"header_id"`
+	TokenName string `db:"token_name"`
+	LogIndex  int64  `db:"log_idx"`
+	TxIndex   int64  `db:"tx_idx"`
+	Node      string `db:"node_"`
+	Label     string `db:"label_"`
+	Owner     string `db:"owner_"`
+	RawLog    []byte `db:"raw_log"`
+}
+
 type BalanceOf struct {
 	Id        int64  `db:"id"`
 	TokenName string `db:"token_name"`
 	Block     int64  `db:"block"`
 	Address   string `db:"who_"`
 	Balance   string `db:"returned"`
+}
+
+type Resolver struct {
+	Id        int64  `db:"id"`
+	TokenName string `db:"token_name"`
+	Block     int64  `db:"block"`
+	Node      string `db:"node_"`
+	Address   string `db:"returned"`
+}
+
+type Owner struct {
+	Id        int64  `db:"id"`
+	TokenName string `db:"token_name"`
+	Block     int64  `db:"block"`
+	Node      string `db:"node_"`
+	Address   string `db:"returned"`
 }
 
 func SetupBC() core.BlockChain {
@@ -135,19 +174,65 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	err := p.Parse()
 	Expect(err).ToNot(HaveOccurred())
 
-	return &contract.Contract{
-		Name:           "TrueUSD",
-		Address:        constants.TusdContractAddress,
-		Abi:            p.Abi(),
-		ParsedAbi:      p.ParsedAbi(),
-		StartingBlock:  6194634,
-		LastBlock:      6507323,
-		Events:         p.GetEvents(wantedEvents),
-		Methods:        p.GetMethods(wantedMethods),
-		EventAddrs:     map[string]bool{},
-		MethodAddrs:    map[string]bool{},
-		TknHolderAddrs: map[string]bool{},
-	}
+	return contract.Contract{
+		Name:          "TrueUSD",
+		Address:       constants.TusdContractAddress,
+		Abi:           p.Abi(),
+		ParsedAbi:     p.ParsedAbi(),
+		StartingBlock: 6194634,
+		LastBlock:     6507323,
+		Events:        p.GetEvents(wantedEvents),
+		Methods:       p.GetSelectMethods(wantedMethods),
+		MethodArgs:    map[string]bool{},
+		FilterArgs:    map[string]bool{},
+	}.Init()
+}
+
+func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
+	db, err := postgres.NewDB(config.Database{
+		Hostname: "localhost",
+		Name:     "vulcanize_private",
+		Port:     5432,
+	}, core.Node{})
+	Expect(err).NotTo(HaveOccurred())
+
+	receiptRepository := repositories.ReceiptRepository{DB: db}
+	logRepository := repositories.LogRepository{DB: db}
+	blockRepository := *repositories.NewBlockRepository(db)
+
+	blockNumber := rand.Int63()
+	blockId := CreateBlock(blockNumber, blockRepository)
+
+	receipts := []core.Receipt{{Logs: []core.Log{{}}}}
+
+	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM logs`)
+	Expect(err).ToNot(HaveOccurred())
+
+	info := SetupENSContract(wantedEvents, wantedMethods)
+
+	return db, info
+}
+
+func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
+	p := mocks.NewParser(constants.ENSAbiString)
+	err := p.Parse()
+	Expect(err).ToNot(HaveOccurred())
+
+	return contract.Contract{
+		Name:          "ENS-Registry",
+		Address:       constants.EnsContractAddress,
+		Abi:           p.Abi(),
+		ParsedAbi:     p.ParsedAbi(),
+		StartingBlock: 6194634,
+		LastBlock:     6507323,
+		Events:        p.GetEvents(wantedEvents),
+		Methods:       p.GetSelectMethods(wantedMethods),
+		MethodArgs:    map[string]bool{},
+		FilterArgs:    map[string]bool{},
+	}.Init()
 }
 
 func TearDown(db *postgres.DB) {
@@ -166,6 +251,9 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM logs`)
 	Expect(err).NotTo(HaveOccurred())
 
+	_, err = tx.Exec(`DELETE FROM log_filters`)
+	Expect(err).NotTo(HaveOccurred())
+
 	_, err = tx.Exec(`DELETE FROM transactions`)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -175,13 +263,46 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr`)
 	Expect(err).NotTo(HaveOccurred())
 
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr2`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS eventName_contractAddr3`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr2`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS methodname_contractaddr3`)
+	Expect(err).NotTo(HaveOccurred())
+
 	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS balanceof_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E CASCADE`)
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS newowner_0x314159265dd8dbb310642f98f50c066173c1259b`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS owner_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`ALTER TABLE public.checked_headers DROP COLUMN IF EXISTS owner_0x314159265dd8dbb310642f98f50c066173c1259b`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x314159265dd8dbb310642f98f50c066173c1259b CASCADE`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x314159265dd8dbb310642f98f50c066173c1259b CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = tx.Commit()

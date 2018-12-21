@@ -19,12 +19,12 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/light/repository"
 	"strings"
 
 	"github.com/hashicorp/golang-lru"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/light/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
@@ -65,12 +65,8 @@ func NewEventRepository(db *postgres.DB, mode types.Mode) *eventRepository {
 // Creates table for the watched contract event if needed
 // Persists converted event log data into this custom table
 func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	if logs == nil {
-		return errors.New("event repository error: passed a nil log slice")
-	}
-
 	if len(logs) == 0 {
-		return errors.New("event repository error: passed an empty log slice")
+		return errors.New("event repository error: passed empty logs slice")
 	}
 	_, err := r.CreateContractSchema(contractAddr)
 	if err != nil {
@@ -112,7 +108,7 @@ func (r *eventRepository) persistLightSyncLogs(logs []types.Log, eventInfo types
 		pgStr = pgStr + "(header_id, token_name, raw_log, log_idx, tx_idx"
 		el := len(event.Values)
 
-		// Pack the corresponding variables in a slice
+		// Preallocate slice of needed capacity and proceed to pack variables into it in same order they appear in string
 		data := make([]interface{}, 0, 5+el)
 		data = append(data,
 			event.Id,
@@ -134,6 +130,7 @@ func (r *eventRepository) persistLightSyncLogs(logs []types.Log, eventInfo types
 		}
 		pgStr = pgStr + ")"
 
+		// Add this query to the transaction
 		_, err = tx.Exec(pgStr, data...)
 		if err != nil {
 			tx.Rollback()
@@ -141,8 +138,9 @@ func (r *eventRepository) persistLightSyncLogs(logs []types.Log, eventInfo types
 		}
 	}
 
+	// Mark header as checked for this eventId
 	eventId := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	err = repository.MarkHeaderCheckedInTransaction(logs[0].Id, tx, eventId)
+	err = repository.MarkHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
 	if err != nil {
 		tx.Rollback()
 		return err

@@ -55,30 +55,42 @@ func (p *parser) Parse() error {
 	return err
 }
 
-// Returns wanted methods, if they meet the criteria, as map of types.Methods
-// Only returns specified methods
-func (p *parser) GetMethods(wanted []string) map[string]types.Method {
-	addrMethods := map[string]types.Method{}
-
+// Returns only specified methods, if they meet the criteria
+// Returns as array with methods in same order they were specified
+// Nil wanted array => no events are returned
+func (p *parser) GetSelectMethods(wanted []string) []types.Method {
+	wLen := len(wanted)
+	if wLen == 0 {
+		return nil
+	}
+	methods := make([]types.Method, wLen)
 	for _, m := range p.parsedAbi.Methods {
-		// Only return methods that have less than 3 inputs, 1 output, and wanted
-		if len(m.Inputs) < 3 && len(m.Outputs) == 1 && stringInSlice(wanted, m.Name) {
-			addrsOnly := true
-			for _, input := range m.Inputs {
-				if input.Type.T != abi.AddressTy {
-					addrsOnly = false
-				}
-			}
-
-			// Only return methods if inputs are all of type address and output is of the accepted types
-			if addrsOnly && wantType(m.Outputs[0]) {
-				method := types.NewMethod(m)
-				addrMethods[method.Name] = method
+		for i, name := range wanted {
+			if name == m.Name && okTypes(m, wanted) {
+				methods[i] = types.NewMethod(m)
 			}
 		}
 	}
 
-	return addrMethods
+	return methods
+}
+
+// Returns wanted methods
+// Empty wanted array => all methods are returned
+// Nil wanted array => no methods are returned
+func (p *parser) GetMethods(wanted []string) []types.Method {
+	if wanted == nil {
+		return nil
+	}
+	methods := make([]types.Method, 0)
+	length := len(wanted)
+	for _, m := range p.parsedAbi.Methods {
+		if length == 0 || stringInSlice(wanted, m.Name) {
+			methods = append(methods, types.NewMethod(m))
+		}
+	}
+
+	return methods
 }
 
 // Returns wanted events as map of types.Events
@@ -96,10 +108,9 @@ func (p *parser) GetEvents(wanted []string) map[string]types.Event {
 	return events
 }
 
-func wantType(arg abi.Argument) bool {
-	wanted := []byte{abi.UintTy, abi.IntTy, abi.BoolTy, abi.StringTy, abi.AddressTy, abi.HashTy}
-	for _, ty := range wanted {
-		if arg.Type.T == ty {
+func stringInSlice(list []string, s string) bool {
+	for _, b := range list {
+		if b == s {
 			return true
 		}
 	}
@@ -107,9 +118,42 @@ func wantType(arg abi.Argument) bool {
 	return false
 }
 
-func stringInSlice(list []string, s string) bool {
-	for _, b := range list {
-		if b == s {
+func okTypes(m abi.Method, wanted []string) bool {
+	// Only return method if it has less than 3 arguments, a single output value, and it is a method we want or we want all methods (empty 'wanted' slice)
+	if len(m.Inputs) < 3 && len(m.Outputs) == 1 && (len(wanted) == 0 || stringInSlice(wanted, m.Name)) {
+		// Only return methods if inputs are all of accepted types and output is of the accepted types
+		if !okReturnType(m.Outputs[0]) {
+			return false
+		}
+		for _, input := range m.Inputs {
+			switch input.Type.T {
+			case abi.AddressTy, abi.HashTy, abi.BytesTy, abi.FixedBytesTy:
+			default:
+				return false
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func okReturnType(arg abi.Argument) bool {
+	wantedTypes := []byte{
+		abi.UintTy,
+		abi.IntTy,
+		abi.BoolTy,
+		abi.StringTy,
+		abi.AddressTy,
+		abi.HashTy,
+		abi.BytesTy,
+		abi.FixedBytesTy,
+		abi.FixedPointTy,
+	}
+
+	for _, ty := range wantedTypes {
+		if arg.Type.T == ty {
 			return true
 		}
 	}

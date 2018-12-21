@@ -18,7 +18,6 @@ package constants
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers"
@@ -32,6 +31,7 @@ const (
 	ApprovalEvent Event = 1
 	BurnEvent     Event = 2
 	MintEvent     Event = 3
+	NewOwnerEvent Event = 4
 )
 
 func (e Event) String() string {
@@ -40,9 +40,10 @@ func (e Event) String() string {
 		"Approval",
 		"Burn",
 		"Mint",
+		"NewOwner",
 	}
 
-	if e < TransferEvent || e > MintEvent {
+	if e < TransferEvent || e > NewOwnerEvent {
 		return "Unknown"
 	}
 
@@ -55,9 +56,10 @@ func (e Event) Signature() string {
 		helpers.GenerateSignature("Approval(address,address,uint256)"),
 		helpers.GenerateSignature("Burn(address,uint256)"),
 		helpers.GenerateSignature("Mint(address,uint256)"),
+		helpers.GenerateSignature("NewOwner(bytes32,bytes32,address)"),
 	}
 
-	if e < TransferEvent || e > MintEvent {
+	if e < TransferEvent || e > NewOwnerEvent {
 		return "Unknown"
 	}
 

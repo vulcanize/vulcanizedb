@@ -25,6 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
 )
 
 var _ = Describe("Parser", func() {
@@ -47,16 +48,15 @@ var _ = Describe("Parser", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(parsedAbi).To(Equal(expectedAbi))
 
-			methods := mp.GetMethods([]string{"balanceOf"})
-			_, ok := methods["totalSupply"]
-			Expect(ok).To(Equal(false))
-			m, ok := methods["balanceOf"]
-			Expect(ok).To(Equal(true))
-			Expect(len(m.Args)).To(Equal(1))
-			Expect(len(m.Return)).To(Equal(1))
+			methods := mp.GetSelectMethods([]string{"balanceOf"})
+			Expect(len(methods)).To(Equal(1))
+			balOf := methods[0]
+			Expect(balOf.Name).To(Equal("balanceOf"))
+			Expect(len(balOf.Args)).To(Equal(1))
+			Expect(len(balOf.Return)).To(Equal(1))
 
 			events := mp.GetEvents([]string{"Transfer"})
-			_, ok = events["Mint"]
+			_, ok := events["Mint"]
 			Expect(ok).To(Equal(false))
 			e, ok := events["Transfer"]
 			Expect(ok).To(Equal(true))
@@ -119,99 +119,108 @@ var _ = Describe("Parser", func() {
 		})
 	})
 
+	Describe("GetSelectMethods", func() {
+		It("Parses and returns only methods specified in passed array", func() {
+			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			err = p.Parse(contractAddr)
+			Expect(err).ToNot(HaveOccurred())
+
+			methods := p.GetSelectMethods([]string{"balanceOf"})
+			Expect(len(methods)).To(Equal(1))
+
+			balOf := methods[0]
+			Expect(balOf.Name).To(Equal("balanceOf"))
+			Expect(len(balOf.Args)).To(Equal(1))
+			Expect(len(balOf.Return)).To(Equal(1))
+
+			abiTy := balOf.Args[0].Type.T
+			Expect(abiTy).To(Equal(abi.AddressTy))
+
+			pgTy := balOf.Args[0].PgType
+			Expect(pgTy).To(Equal("CHARACTER VARYING(66)"))
+
+			abiTy = balOf.Return[0].Type.T
+			Expect(abiTy).To(Equal(abi.UintTy))
+
+			pgTy = balOf.Return[0].PgType
+			Expect(pgTy).To(Equal("DECIMAL"))
+
+		})
+
+		It("Parses and returns methods in the order they were specified", func() {
+			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			err = p.Parse(contractAddr)
+			Expect(err).ToNot(HaveOccurred())
+
+			selectMethods := p.GetSelectMethods([]string{"balanceOf", "allowance"})
+			Expect(len(selectMethods)).To(Equal(2))
+
+			balOf := selectMethods[0]
+			allow := selectMethods[1]
+
+			Expect(balOf.Name).To(Equal("balanceOf"))
+			Expect(allow.Name).To(Equal("allowance"))
+		})
+
+		It("Returns nil if given a nil or empty array", func() {
+			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			err = p.Parse(contractAddr)
+			Expect(err).ToNot(HaveOccurred())
+
+			var nilArr []types.Method
+			selectMethods := p.GetSelectMethods([]string{})
+			Expect(selectMethods).To(Equal(nilArr))
+			selectMethods = p.GetMethods(nil)
+			Expect(selectMethods).To(Equal(nilArr))
+		})
+
+	})
+
 	Describe("GetMethods", func() {
 		It("Parses and returns only methods specified in passed array", func() {
 			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 			err = p.Parse(contractAddr)
 			Expect(err).ToNot(HaveOccurred())
 
-			selectMethods := p.GetMethods([]string{"balanceOf"})
+			methods := p.GetMethods([]string{"balanceOf"})
+			Expect(len(methods)).To(Equal(1))
 
-			m, ok := selectMethods["balanceOf"]
-			Expect(ok).To(Equal(true))
+			balOf := methods[0]
+			Expect(balOf.Name).To(Equal("balanceOf"))
+			Expect(len(balOf.Args)).To(Equal(1))
+			Expect(len(balOf.Return)).To(Equal(1))
 
-			abiTy := m.Args[0].Type.T
+			abiTy := balOf.Args[0].Type.T
 			Expect(abiTy).To(Equal(abi.AddressTy))
 
-			pgTy := m.Args[0].PgType
+			pgTy := balOf.Args[0].PgType
 			Expect(pgTy).To(Equal("CHARACTER VARYING(66)"))
 
-			abiTy = m.Return[0].Type.T
+			abiTy = balOf.Return[0].Type.T
 			Expect(abiTy).To(Equal(abi.UintTy))
 
-			pgTy = m.Return[0].PgType
+			pgTy = balOf.Return[0].PgType
 			Expect(pgTy).To(Equal("DECIMAL"))
 
-			_, ok = selectMethods["totalSupply"]
-			Expect(ok).To(Equal(false))
 		})
 
-		It("Parses and returns all methods if passed an empty array", func() {
+		It("Returns nil if given a nil array", func() {
+			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			err = p.Parse(contractAddr)
+			Expect(err).ToNot(HaveOccurred())
+
+			var nilArr []types.Method
+			selectMethods := p.GetMethods(nil)
+			Expect(selectMethods).To(Equal(nilArr))
+		})
+
+		It("Returns every method if given an empty array", func() {
 			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 			err = p.Parse(contractAddr)
 			Expect(err).ToNot(HaveOccurred())
 
 			selectMethods := p.GetMethods([]string{})
-
-			_, ok := selectMethods["balanceOf"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["totalSupply"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["allowance"]
-			Expect(ok).To(Equal(true))
-		})
-
-		It("Parses and returns no methods if pass a nil array", func() {
-			contractAddr := "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-
-			selectMethods := p.GetMethods(nil)
-			Expect(len(selectMethods)).To(Equal(0))
-		})
-	})
-
-	Describe("GetAddrMethods", func() {
-		It("Parses and returns only methods whose inputs, if any, are all addresses", func() {
-			contractAddr := "0xDdE2D979e8d39BB8416eAfcFC1758f3CaB2C9C72"
-			err = p.Parse(contractAddr)
-			Expect(err).ToNot(HaveOccurred())
-			wanted := []string{"isApprovedForAll", "supportsInterface", "getApproved", "totalSupply", "balanceOf"}
-
-			methods := p.GetMethods(wanted)
-			selectMethods := p.GetSelectMethods(wanted)
-
-			_, ok := selectMethods["totalSupply"]
-			Expect(ok).To(Equal(true))
-			_, ok = methods["totalSupply"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["balanceOf"]
-			Expect(ok).To(Equal(true))
-			_, ok = methods["balanceOf"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["isApprovedForAll"]
-			Expect(ok).To(Equal(true))
-			_, ok = methods["isApprovedForAll"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["supportsInterface"]
-			Expect(ok).To(Equal(false))
-			_, ok = methods["supportsInterface"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["getApproved"]
-			Expect(ok).To(Equal(false))
-			_, ok = methods["getApproved"]
-			Expect(ok).To(Equal(true))
-
-			_, ok = selectMethods["name"]
-			Expect(ok).To(Equal(false))
-			_, ok = methods["name"]
-			Expect(ok).To(Equal(false))
+			Expect(len(selectMethods)).To(Equal(22))
 		})
 	})
 })

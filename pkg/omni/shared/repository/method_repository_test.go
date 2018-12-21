@@ -41,7 +41,8 @@ var _ = Describe("Repository", func() {
 
 	BeforeEach(func() {
 		con = test_helpers.SetupTusdContract([]string{}, []string{"balanceOf"})
-		method = con.Methods["balanceOf"]
+		Expect(len(con.Methods)).To(Equal(1))
+		method = con.Methods[0]
 		mockResult = types.Result{
 			Method: method,
 			PgType: method.Return[0].PgType,
@@ -95,11 +96,11 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, mockResult)
+				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, mockResult)
+				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(false))
 			})
@@ -113,7 +114,7 @@ var _ = Describe("Repository", func() {
 				_, ok := dataStore.CheckTableCache(tableID)
 				Expect(ok).To(Equal(false))
 
-				created, err = dataStore.CreateMethodTable(con.Address, mockResult)
+				created, err = dataStore.CreateMethodTable(con.Address, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
@@ -125,7 +126,7 @@ var _ = Describe("Repository", func() {
 
 		Describe("PersistResult", func() {
 			It("Persists result from method polling in custom pg table", func() {
-				err = dataStore.PersistResult(mockResult, con.Address, con.Name)
+				err = dataStore.PersistResults([]types.Result{mockResult}, method, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -142,7 +143,7 @@ var _ = Describe("Repository", func() {
 			})
 
 			It("Fails with empty result", func() {
-				err = dataStore.PersistResult(types.Result{}, con.Address, con.Name)
+				err = dataStore.PersistResults([]types.Result{}, method, con.Address, con.Name)
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -184,11 +185,11 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, mockResult)
+				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, mockResult)
+				created, err = dataStore.CreateMethodTable(constants.TusdContractAddress, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(false))
 			})
@@ -202,7 +203,7 @@ var _ = Describe("Repository", func() {
 				_, ok := dataStore.CheckTableCache(tableID)
 				Expect(ok).To(Equal(false))
 
-				created, err = dataStore.CreateMethodTable(con.Address, mockResult)
+				created, err = dataStore.CreateMethodTable(con.Address, method)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
@@ -214,7 +215,7 @@ var _ = Describe("Repository", func() {
 
 		Describe("PersistResult", func() {
 			It("Persists result from method polling in custom pg table for light sync mode vDB", func() {
-				err = dataStore.PersistResult(mockResult, con.Address, con.Name)
+				err = dataStore.PersistResults([]types.Result{mockResult}, method, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -231,7 +232,7 @@ var _ = Describe("Repository", func() {
 			})
 
 			It("Fails with empty result", func() {
-				err = dataStore.PersistResult(types.Result{}, con.Address, con.Name)
+				err = dataStore.PersistResults([]types.Result{}, method, con.Address, con.Name)
 				Expect(err).To(HaveOccurred())
 			})
 		})

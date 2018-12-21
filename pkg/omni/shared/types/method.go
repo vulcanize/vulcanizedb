@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Method struct {
@@ -48,7 +50,7 @@ func NewMethod(m abi.Method) Method {
 		inputs[i].Type = input.Type
 		inputs[i].Indexed = input.Indexed
 		switch inputs[i].Type.T {
-		case abi.StringTy, abi.HashTy, abi.AddressTy:
+		case abi.HashTy, abi.AddressTy:
 			inputs[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
 			inputs[i].PgType = "DECIMAL"
@@ -60,8 +62,6 @@ func NewMethod(m abi.Method) Method {
 			inputs[i].PgType = "TEXT[]"
 		case abi.FixedPointTy:
 			inputs[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
-		case abi.FunctionTy:
-			inputs[i].PgType = "TEXT"
 		default:
 			inputs[i].PgType = "TEXT"
 		}
@@ -74,7 +74,7 @@ func NewMethod(m abi.Method) Method {
 		outputs[i].Type = output.Type
 		outputs[i].Indexed = output.Indexed
 		switch outputs[i].Type.T {
-		case abi.StringTy, abi.HashTy, abi.AddressTy:
+		case abi.HashTy, abi.AddressTy:
 			outputs[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
 			outputs[i].PgType = "DECIMAL"
@@ -86,8 +86,6 @@ func NewMethod(m abi.Method) Method {
 			outputs[i].PgType = "TEXT[]"
 		case abi.FixedPointTy:
 			outputs[i].PgType = "MONEY" // use shopspring/decimal for fixed point numbers in go and money type in postgres?
-		case abi.FunctionTy:
-			outputs[i].PgType = "TEXT"
 		default:
 			outputs[i].PgType = "TEXT"
 		}
@@ -101,7 +99,7 @@ func NewMethod(m abi.Method) Method {
 	}
 }
 
-func (m Method) Sig() string {
+func (m Method) Sig() common.Hash {
 	types := make([]string, len(m.Args))
 	i := 0
 	for _, arg := range m.Args {
@@ -109,5 +107,5 @@ func (m Method) Sig() string {
 		i++
 	}
 
-	return fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ","))
+	return common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ",")))))
 }
