@@ -150,8 +150,8 @@ Or if you are using a full synced vDB, change the mode to full:
 To watch contracts on a network other than mainnet, use the network flag:  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --network <ropsten, kovan, or rinkeby>`  
     
-To watch events within a certain block range use the starting block and ending block flags:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#> --ending-block-number <#>`  
+To watch events starting at a certain block use the starting block flag:
+    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#>`
     
 To watch only specified events use the events flag:  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2>`  

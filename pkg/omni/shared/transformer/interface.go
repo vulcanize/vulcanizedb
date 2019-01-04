@@ -23,7 +23,7 @@ type Transformer interface {
 	SetEventArgs(contractAddr string, filterSet []string)
 	SetMethods(contractAddr string, filterSet []string)
 	SetMethodArgs(contractAddr string, filterSet []string)
-	SetRange(contractAddr string, rng [2]int64)
+	SetStartingBlock(contractAddr string, start int64)
 	SetCreateAddrList(contractAddr string, on bool)
 	SetCreateHashList(contractAddr string, on bool)
 	SetPiping(contractAddr string, on bool)

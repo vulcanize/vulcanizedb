@@ -193,7 +193,6 @@ func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.
 // Returns true if it created a new table; returns false if table already existed
 func (r *eventRepository) CreateEventTable(contractAddr string, event types.Event) (bool, error) {
 	tableID := fmt.Sprintf("%s_%s.%s_event", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(event.Name))
-
 	// Check cache before querying pq to see if table exists
 	_, ok := r.tables.Get(tableID)
 	if ok {
