@@ -17,9 +17,9 @@
 package every_block
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 

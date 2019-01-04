@@ -18,6 +18,7 @@ package transformer
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -58,8 +59,8 @@ type transformer struct {
 	WatchedEvents map[string][]string // Default/empty event list means all are watched
 	WantedMethods map[string][]string // Default/empty method list means none are polled
 
-	// Block ranges to watch contracts
-	ContractRanges map[string][2]int64
+	// Starting block for contracts
+	ContractStart map[string]int64
 
 	// Lists of addresses to filter event or method data
 	// before persisting; if empty no filter is applied
@@ -87,7 +88,7 @@ func NewTransformer(network string, BC core.BlockChain, DB *postgres.DB) *transf
 		EventRepository:        repository.NewEventRepository(DB, types.FullSync),
 		WatchedEvents:          map[string][]string{},
 		WantedMethods:          map[string][]string{},
-		ContractRanges:         map[string][2]int64{},
+		ContractStart:          map[string]int64{},
 		EventArgs:              map[string][]string{},
 		MethodArgs:             map[string][]string{},
 		CreateAddrList:         map[string]bool{},
@@ -108,7 +109,7 @@ func (t *transformer) Init() error {
 			return err
 		}
 
-		// Get first block for contract and most recent block for the chain
+		// Get first block and most recent block number in the header repo
 		firstBlock, err := t.BlockRetriever.RetrieveFirstBlock(contractAddr)
 		if err != nil {
 			return err
@@ -118,12 +119,9 @@ func (t *transformer) Init() error {
 			return err
 		}
 
-		// Set to specified range if it falls within the contract's bounds
-		if firstBlock < t.ContractRanges[contractAddr][0] {
-			firstBlock = t.ContractRanges[contractAddr][0]
-		}
-		if lastBlock > t.ContractRanges[contractAddr][1] && t.ContractRanges[contractAddr][1] > firstBlock {
-			lastBlock = t.ContractRanges[contractAddr][1]
+		// Set to specified range if it falls within the bounds
+		if firstBlock < t.ContractStart[contractAddr] {
+			firstBlock = t.ContractStart[contractAddr]
 		}
 
 		// Get contract name if it has one
@@ -190,7 +188,6 @@ func (tr transformer) Execute() error {
 	}
 	// Iterate through all internal contracts
 	for _, con := range tr.Contracts {
-
 		// Update converter with current contract
 		tr.Update(con)
 
@@ -235,40 +232,40 @@ func (tr transformer) Execute() error {
 
 // Used to set which contract addresses and which of their events to watch
 func (tr *transformer) SetEvents(contractAddr string, filterSet []string) {
-	tr.WatchedEvents[contractAddr] = filterSet
+	tr.WatchedEvents[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to watch events for
 func (tr *transformer) SetEventArgs(contractAddr string, filterSet []string) {
-	tr.EventArgs[contractAddr] = filterSet
+	tr.EventArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set which contract addresses and which of their methods to call
 func (tr *transformer) SetMethods(contractAddr string, filterSet []string) {
-	tr.WantedMethods[contractAddr] = filterSet
+	tr.WantedMethods[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to poll methods on
 func (tr *transformer) SetMethodArgs(contractAddr string, filterSet []string) {
-	tr.MethodArgs[contractAddr] = filterSet
+	tr.MethodArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set the block range to watch for a given address
-func (tr *transformer) SetRange(contractAddr string, rng [2]int64) {
-	tr.ContractRanges[contractAddr] = rng
+func (tr *transformer) SetStartingBlock(contractAddr string, start int64) {
+	tr.ContractStart[strings.ToLower(contractAddr)] = start
 }
 
 // Used to set whether or not to persist an account address list
 func (tr *transformer) SetCreateAddrList(contractAddr string, on bool) {
-	tr.CreateAddrList[contractAddr] = on
+	tr.CreateAddrList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to set whether or not to persist an hash list
 func (tr *transformer) SetCreateHashList(contractAddr string, on bool) {
-	tr.CreateHashList[contractAddr] = on
+	tr.CreateHashList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to turn method piping on for a contract
 func (tr *transformer) SetPiping(contractAddr string, on bool) {
-	tr.Piping[contractAddr] = on
+	tr.Piping[strings.ToLower(contractAddr)] = on
 }

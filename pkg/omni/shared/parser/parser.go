@@ -93,7 +93,7 @@ func (p *parser) lookUp(contractAddr string) (string, error) {
 
 // Returns only specified methods, if they meet the criteria
 // Returns as array with methods in same order they were specified
-// Nil wanted array => no events are returned
+// Nil or empty wanted array => no events are returned
 func (p *parser) GetSelectMethods(wanted []string) []types.Method {
 	wLen := len(wanted)
 	if wLen == 0 {

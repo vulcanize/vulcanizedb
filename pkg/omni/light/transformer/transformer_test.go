@@ -18,6 +18,7 @@ package transformer_test
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
@@ -38,6 +39,8 @@ var _ = Describe("Transformer", func() {
 	var blockChain core.BlockChain
 	var headerRepository repositories.HeaderRepository
 	var headerID, headerID2 int64
+	var ensAddr = strings.ToLower(constants.EnsContractAddress)
+	var tusdAddr = strings.ToLower(constants.TusdContractAddress)
 
 	BeforeEach(func() {
 		db, blockChain = test_helpers.SetupDBandBC()
@@ -53,7 +56,7 @@ var _ = Describe("Transformer", func() {
 			watchedEvents := []string{"Transfer", "Mint"}
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEvents(constants.TusdContractAddress, watchedEvents)
-			Expect(t.WatchedEvents[constants.TusdContractAddress]).To(Equal(watchedEvents))
+			Expect(t.WatchedEvents[tusdAddr]).To(Equal(watchedEvents))
 		})
 	})
 
@@ -62,7 +65,7 @@ var _ = Describe("Transformer", func() {
 			eventAddrs := []string{"test1", "test2"}
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetEventArgs(constants.TusdContractAddress, eventAddrs)
-			Expect(t.EventArgs[constants.TusdContractAddress]).To(Equal(eventAddrs))
+			Expect(t.EventArgs[tusdAddr]).To(Equal(eventAddrs))
 		})
 	})
 
@@ -71,7 +74,7 @@ var _ = Describe("Transformer", func() {
 			watchedMethods := []string{"balanceOf", "totalSupply"}
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetMethods(constants.TusdContractAddress, watchedMethods)
-			Expect(t.WantedMethods[constants.TusdContractAddress]).To(Equal(watchedMethods))
+			Expect(t.WantedMethods[tusdAddr]).To(Equal(watchedMethods))
 		})
 	})
 
@@ -80,16 +83,15 @@ var _ = Describe("Transformer", func() {
 			methodAddrs := []string{"test1", "test2"}
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetMethodArgs(constants.TusdContractAddress, methodAddrs)
-			Expect(t.MethodArgs[constants.TusdContractAddress]).To(Equal(methodAddrs))
+			Expect(t.MethodArgs[tusdAddr]).To(Equal(methodAddrs))
 		})
 	})
 
-	Describe("SetRange", func() {
+	Describe("SetStartingBlock", func() {
 		It("Sets the block range that the contract should be watched within", func() {
-			rng := [2]int64{1, 100000}
 			t := transformer.NewTransformer("", blockChain, db)
-			t.SetRange(constants.TusdContractAddress, rng)
-			Expect(t.ContractRanges[constants.TusdContractAddress]).To(Equal(rng))
+			t.SetStartingBlock(constants.TusdContractAddress, 11)
+			Expect(t.ContractStart[tusdAddr]).To(Equal(int64(11)))
 		})
 	})
 
@@ -97,7 +99,7 @@ var _ = Describe("Transformer", func() {
 		It("Sets the block range that the contract should be watched within", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetCreateAddrList(constants.TusdContractAddress, true)
-			Expect(t.CreateAddrList[constants.TusdContractAddress]).To(Equal(true))
+			Expect(t.CreateAddrList[tusdAddr]).To(Equal(true))
 		})
 	})
 
@@ -105,7 +107,7 @@ var _ = Describe("Transformer", func() {
 		It("Sets the block range that the contract should be watched within", func() {
 			t := transformer.NewTransformer("", blockChain, db)
 			t.SetCreateHashList(constants.TusdContractAddress, true)
-			Expect(t.CreateHashList[constants.TusdContractAddress]).To(Equal(true))
+			Expect(t.CreateHashList[tusdAddr]).To(Equal(true))
 		})
 	})
 
@@ -118,14 +120,14 @@ var _ = Describe("Transformer", func() {
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
-			c, ok := t.Contracts[constants.TusdContractAddress]
+			c, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(true))
 
 			Expect(c.StartingBlock).To(Equal(int64(6194632)))
-			Expect(c.LastBlock).To(Equal(int64(6194634)))
+			Expect(c.LastBlock).To(Equal(int64(-1)))
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
-			Expect(c.Address).To(Equal(constants.TusdContractAddress))
+			Expect(c.Address).To(Equal(tusdAddr))
 		})
 
 		It("Fails to initialize if first and most recent block numbers cannot be fetched from vDB headers table", func() {
@@ -142,7 +144,7 @@ var _ = Describe("Transformer", func() {
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
-			_, ok := t.Contracts[constants.TusdContractAddress]
+			_, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(false))
 		})
 	})
@@ -171,7 +173,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			log := test_helpers.LightTransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", constants.TusdContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", tusdAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.HeaderID).To(Equal(headerID))
@@ -186,7 +188,7 @@ var _ = Describe("Transformer", func() {
 			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
-			c, ok := t.Contracts[constants.TusdContractAddress]
+			c, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(true))
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -232,12 +234,12 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.BalanceOf{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", tusdAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Balance).To(Equal("55849938025000000000000"))
 			Expect(res.TokenName).To(Equal("TrueUSD"))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", tusdAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -274,7 +276,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			log := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", constants.EnsContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.HeaderID).To(Equal(headerID))
@@ -289,7 +291,7 @@ var _ = Describe("Transformer", func() {
 			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
-			c, ok := t.Contracts[constants.EnsContractAddress]
+			c, ok := t.Contracts[ensAddr]
 			Expect(ok).To(Equal(true))
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -319,17 +321,17 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHIS288IS625bFAKE' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHIS288IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -344,7 +346,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			log := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", constants.EnsContractAddress)).StructScan(&log)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -359,12 +361,12 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -405,7 +407,7 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			newOwnerLog := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", constants.EnsContractAddress)).StructScan(&newOwnerLog)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(newOwnerLog.HeaderID).To(Equal(headerID2))
@@ -414,7 +416,7 @@ var _ = Describe("Transformer", func() {
 			Expect(newOwnerLog.Owner).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 
 			transferLog := test_helpers.LightTransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", constants.TusdContractAddress)).StructScan(&transferLog)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(transferLog.HeaderID).To(Equal(headerID))
@@ -431,9 +433,9 @@ var _ = Describe("Transformer", func() {
 			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
-			ens, ok := t.Contracts[constants.EnsContractAddress]
+			ens, ok := t.Contracts[ensAddr]
 			Expect(ok).To(Equal(true))
-			tusd, ok := t.Contracts[constants.TusdContractAddress]
+			tusd, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(true))
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
@@ -479,26 +481,26 @@ var _ = Describe("Transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			owner := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(owner.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner.Address).To(Equal("0x0000000000000000000000000000000000000000"))
 			Expect(owner.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHIS288IS625bFAKE' AND block = '6885696'", constants.EnsContractAddress)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHIS288IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).To(HaveOccurred())
 
 			bal := test_helpers.BalanceOf{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&bal)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", tusdAddr)).StructScan(&bal)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bal.Balance).To(Equal("55849938025000000000000"))
 			Expect(bal.TokenName).To(Equal("TrueUSD"))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", constants.TusdContractAddress)).StructScan(&bal)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", tusdAddr)).StructScan(&bal)
 			Expect(err).To(HaveOccurred())
 		})
 	})

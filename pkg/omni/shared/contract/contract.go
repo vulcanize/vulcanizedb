@@ -81,7 +81,7 @@ func (c *Contract) GenerateFilters() error {
 			Name:      event.Name,
 			FromBlock: c.StartingBlock,
 			ToBlock:   -1,
-			Address:   c.Address,
+			Address:   common.HexToAddress(c.Address).Hex(),
 			Topics:    core.Topics{event.Sig().Hex()},
 		}
 	}

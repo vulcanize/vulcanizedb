@@ -19,6 +19,7 @@ package retriever_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -97,7 +98,7 @@ var _ = Describe("Block Retriever", func() {
 			blockRepository.CreateOrUpdateBlock(block2)
 			blockRepository.CreateOrUpdateBlock(block3)
 
-			i, err := r.RetrieveFirstBlock(constants.TusdContractAddress)
+			i, err := r.RetrieveFirstBlock(strings.ToLower(constants.TusdContractAddress))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(i).To(Equal(int64(2)))
 		})

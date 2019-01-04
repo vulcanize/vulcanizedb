@@ -54,7 +54,7 @@ func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (in
 		&firstBlock,
 		`SELECT number FROM blocks
 		       WHERE id = (SELECT block_id FROM receipts
-               	           WHERE contract_address = $1
+               	           WHERE lower(contract_address) = $1
 		                   ORDER BY block_id ASC
 					       LIMIT 1)`,
 		contractAddr,
@@ -68,7 +68,7 @@ func (r *blockRetriever) retrieveFirstBlockFromLogs(contractAddr string) (int64,
 	var firstBlock int
 	err := r.db.Get(
 		&firstBlock,
-		"SELECT block_number FROM logs WHERE address = $1 ORDER BY block_number ASC LIMIT 1",
+		"SELECT block_number FROM logs WHERE lower(address) = $1 ORDER BY block_number ASC LIMIT 1",
 		contractAddr,
 	)
 

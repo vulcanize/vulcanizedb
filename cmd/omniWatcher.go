@@ -92,8 +92,8 @@ func omniWatcher() {
 		t.SetMethods(addr, contractMethods)
 		t.SetEventArgs(addr, eventArgs)
 		t.SetMethodArgs(addr, methodArgs)
-		t.SetRange(addr, [2]int64{startingBlockNumber, endingBlockNumber})
 		t.SetPiping(addr, methodPiping)
+		t.SetStartingBlock(addr, startingBlockNumber)
 	}
 
 	err := t.Init()
@@ -121,6 +121,5 @@ func init() {
 	omniWatcherCmd.Flags().StringArrayVarP(&methodArgs, "method-args", "g", []string{}, "Argument values to limit methods to; will only call methods with emitted values that were specified here")
 	omniWatcherCmd.Flags().StringVarP(&network, "network", "n", "", `Network the contract is deployed on; options: "ropsten", "kovan", and "rinkeby"; default is mainnet"`)
 	omniWatcherCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block to begin watching- default is first block the contract exists")
-	omniWatcherCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "d", -1, "Block to end watching- default is most recent block")
 	omniWatcherCmd.Flags().BoolVarP(&methodPiping, "piping", "p", false, "Turn on method output piping: methods listed first will be polled first and their output used as input to subsequent methods")
 }
