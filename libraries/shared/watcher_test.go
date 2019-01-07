@@ -2,6 +2,7 @@ package shared_test
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
@@ -19,19 +20,17 @@ import (
 var _ = Describe("Watcher", func() {
 	It("initialises correctly", func() {
 		db := test_config.NewTestDB(core.Node{ID: "testNode"})
-		fetcher := &mocks.MockLogFetcher{}
-		repository := &mocks.MockWatcherRepository{}
+		bc := fakes.NewMockBlockChain()
 
-		watcher := shared.NewWatcher(db, fetcher, repository)
+		watcher := shared.NewWatcher(db, bc)
 
 		Expect(watcher.DB).To(Equal(db))
-		Expect(watcher.Fetcher).To(Equal(fetcher))
+		Expect(watcher.Fetcher).NotTo(BeNil())
 		Expect(watcher.Chunker).NotTo(BeNil())
-		Expect(watcher.Repository).To(Equal(repository))
 	})
 
 	It("adds transformers", func() {
-		watcher := shared.NewWatcher(nil, nil, nil)
+		watcher := shared.NewWatcher(nil, nil)
 		fakeTransformer := &mocks.MockTransformer{}
 		fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
@@ -43,7 +42,7 @@ var _ = Describe("Watcher", func() {
 	})
 
 	It("adds transformers from multiple sources", func() {
-		watcher := shared.NewWatcher(nil, nil, nil)
+		watcher := shared.NewWatcher(nil, nil)
 		fakeTransformer1 := &mocks.MockTransformer{}
 		fakeTransformer1.SetTransformerConfig(mocks.FakeTransformerConfig)
 
@@ -64,22 +63,22 @@ var _ = Describe("Watcher", func() {
 		var (
 			db               *postgres.DB
 			watcher          shared.Watcher
+			mockBlockChain   fakes.MockBlockChain
 			fakeTransformer  *mocks.MockTransformer
 			headerRepository repositories.HeaderRepository
-			mockFetcher      mocks.MockLogFetcher
 			repository       mocks.MockWatcherRepository
 		)
 
 		BeforeEach(func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
-			mockFetcher = mocks.MockLogFetcher{}
+			mockBlockChain = fakes.MockBlockChain{}
 			headerRepository = repositories.NewHeaderRepository(db)
 			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 
 			repository = mocks.MockWatcherRepository{}
-			watcher = shared.NewWatcher(db, &mockFetcher, &repository)
+			watcher = shared.NewWatcher(db, &mockBlockChain)
 		})
 
 		It("executes each transformer", func() {
@@ -122,10 +121,10 @@ var _ = Describe("Watcher", func() {
 				Topics: []common.Hash{common.HexToHash("0xA")}}
 			logB := types.Log{Address: common.HexToAddress("0xB"),
 				Topics: []common.Hash{common.HexToHash("0xB")}}
-			mockFetcher.SetFetchedLogs([]types.Log{logA, logB})
+			mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{logA, logB})
 
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
-			watcher = shared.NewWatcher(db, &mockFetcher, &repository)
+			watcher = shared.NewWatcher(db, &mockBlockChain)
 			watcher.AddTransformers([]shared2.TransformerInitializer{
 				transformerA.FakeTransformerInitializer, transformerB.FakeTransformerInitializer})
 
@@ -133,43 +132,6 @@ var _ = Describe("Watcher", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(transformerA.PassedLogs).To(Equal([]types.Log{logA}))
 			Expect(transformerB.PassedLogs).To(Equal([]types.Log{logB}))
-		})
-
-		Describe("uses the repository correctly:", func() {
-
-			It("calls MissingHeaders", func() {
-				err := watcher.Execute()
-				Expect(err).To(Not(HaveOccurred()))
-				Expect(repository.MissingHeadersCalled).To(BeTrue())
-			})
-
-			It("propagates MissingHeaders errors", func() {
-				missingHeadersError := errors.New("MissingHeadersError")
-				repository.MissingHeadersError = missingHeadersError
-
-				err := watcher.Execute()
-				Expect(err).To(MatchError(missingHeadersError))
-			})
-
-			It("calls CreateNotCheckedSQL", func() {
-				err := watcher.Execute()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repository.CreateNotCheckedSQLCalled).To(BeTrue())
-			})
-
-			It("calls GetCheckedColumnNames", func() {
-				err := watcher.Execute()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repository.GetCheckedColumnNamesCalled).To(BeTrue())
-			})
-
-			It("propagates GetCheckedColumnNames errors", func() {
-				getCheckedColumnNamesError := errors.New("GetCheckedColumnNamesError")
-				repository.GetCheckedColumnNamesError = getCheckedColumnNamesError
-
-				err := watcher.Execute()
-				Expect(err).To(MatchError(getCheckedColumnNamesError))
-			})
 		})
 
 		Describe("uses the LogFetcher correctly:", func() {
@@ -180,12 +142,18 @@ var _ = Describe("Watcher", func() {
 			It("fetches logs", func() {
 				err := watcher.Execute()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mockFetcher.FetchLogsCalled).To(BeTrue())
+
+				fakeHash := common.HexToHash(fakes.FakeHeader.Hash)
+				mockBlockChain.AssertGetEthLogsWithCustomQueryCalledWith(ethereum.FilterQuery{
+					BlockHash: &fakeHash,
+					Addresses: nil,
+					Topics:    [][]common.Hash{nil},
+				})
 			})
 
 			It("propagates log fetcher errors", func() {
 				fetcherError := errors.New("FetcherError")
-				mockFetcher.SetFetcherError(fetcherError)
+				mockBlockChain.SetGetEthLogsWithCustomQueryErr(fetcherError)
 
 				err := watcher.Execute()
 				Expect(err).To(MatchError(fetcherError))
