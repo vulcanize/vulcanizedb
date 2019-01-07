@@ -41,6 +41,7 @@ type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	GetHeader(blockNumber int64) (core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
+	HeaderExists(blockNumber int64) (bool, error)
 }
 
 type LogRepository interface {
