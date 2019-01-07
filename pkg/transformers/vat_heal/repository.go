@@ -52,7 +52,7 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 		}
 	}
 
-	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatHealChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatHealChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -61,5 +61,5 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 }
 
 func (repository VatHealRepository) MarkHeaderChecked(headerId int64) error {
-	return shared.Repository{}.MarkHeaderChecked(headerId, repository.db, constants.VatHealChecked)
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.VatHealChecked)
 }

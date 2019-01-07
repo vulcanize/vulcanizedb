@@ -45,7 +45,7 @@ func (repository PriceFeedRepository) Create(headerID int64, models []interface{
 		}
 	}
 
-	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.PriceFeedsChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.PriceFeedsChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -54,7 +54,7 @@ func (repository PriceFeedRepository) Create(headerID int64, models []interface{
 }
 
 func (repository PriceFeedRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.PriceFeedsChecked)
+	return shared.MarkHeaderChecked(headerID, repository.db, constants.PriceFeedsChecked)
 }
 
 func (repository *PriceFeedRepository) SetDB(db *postgres.DB) {

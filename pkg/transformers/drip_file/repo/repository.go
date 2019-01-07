@@ -50,7 +50,7 @@ func (repository DripFileRepoRepository) Create(headerID int64, models []interfa
 		}
 	}
 
-	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.DripFileRepoChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DripFileRepoChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -60,7 +60,7 @@ func (repository DripFileRepoRepository) Create(headerID int64, models []interfa
 }
 
 func (repository DripFileRepoRepository) MarkHeaderChecked(headerID int64) error {
-	return shared.Repository{}.MarkHeaderChecked(headerID, repository.db, constants.DripFileRepoChecked)
+	return shared.MarkHeaderChecked(headerID, repository.db, constants.DripFileRepoChecked)
 }
 
 func (repository *DripFileRepoRepository) SetDB(db *postgres.DB) {

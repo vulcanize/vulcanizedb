@@ -48,7 +48,7 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 		}
 	}
 
-	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlopKickChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlopKickChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -58,7 +58,7 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 }
 
 func (repository FlopKickRepository) MarkHeaderChecked(headerId int64) error {
-	return shared.Repository{}.MarkHeaderChecked(headerId, repository.db, constants.FlopKickChecked)
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.FlopKickChecked)
 }
 
 func (repository *FlopKickRepository) SetDB(db *postgres.DB) {
