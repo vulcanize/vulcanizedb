@@ -31,8 +31,6 @@ var _ = Describe("Repository utilities", func() {
 	Describe("MissingHeaders", func() {
 		var (
 			db                       *postgres.DB
-			repository               shared.Repository
-			repositoryTwo            shared.Repository
 			headerRepository         datastore.HeaderRepository
 			startingBlockNumber      int64
 			endingBlockNumber        int64
@@ -46,13 +44,11 @@ var _ = Describe("Repository utilities", func() {
 		BeforeEach(func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
-			repository = shared.Repository{}
-			repositoryTwo = shared.Repository{}
 			headerRepository = repositories.NewHeaderRepository(db)
 
-			columnNames, err := repository.GetCheckedColumnNames(db)
+			columnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
-			notCheckedSQL = repository.CreateNotCheckedSQL(columnNames)
+			notCheckedSQL = shared.CreateNotCheckedSQL(columnNames)
 
 			startingBlockNumber = rand.Int63()
 			eventSpecificBlockNumber = startingBlockNumber + 1
@@ -73,7 +69,7 @@ var _ = Describe("Repository utilities", func() {
 			_, err = db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
 			Expect(err).NotTo(HaveOccurred())
 
-			headers, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
+			headers, err := shared.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(headers)).To(Equal(3))
@@ -91,14 +87,14 @@ var _ = Describe("Repository utilities", func() {
 			}
 
 			Expect(err).NotTo(HaveOccurred())
-			nodeOneMissingHeaders, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
+			nodeOneMissingHeaders, err := shared.MissingHeaders(startingBlockNumber, endingBlockNumber, db, notCheckedSQL)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeOneMissingHeaders)).To(Equal(3))
 			Expect(nodeOneMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
 			Expect(nodeOneMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
 			Expect(nodeOneMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
 
-			nodeTwoMissingHeaders, err := repositoryTwo.MissingHeaders(startingBlockNumber, endingBlockNumber+10, dbTwo, notCheckedSQL)
+			nodeTwoMissingHeaders, err := shared.MissingHeaders(startingBlockNumber, endingBlockNumber+10, dbTwo, notCheckedSQL)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(nodeTwoMissingHeaders)).To(Equal(3))
 			Expect(nodeTwoMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(eventSpecificBlockNumber+10), Equal(endingBlockNumber+10)))
@@ -111,7 +107,7 @@ var _ = Describe("Repository utilities", func() {
 			db := test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
 			expectedColumnNames := getExpectedColumnNames()
-			actualColumnNames, err := shared.Repository{}.GetCheckedColumnNames(db)
+			actualColumnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualColumnNames).To(Equal(expectedColumnNames))
 		})
@@ -121,20 +117,20 @@ var _ = Describe("Repository utilities", func() {
 		It("generates a correct SQL string for one column", func() {
 			columns := []string{"columnA"}
 			expected := "NOT (columnA)"
-			actual := shared.Repository{}.CreateNotCheckedSQL(columns)
+			actual := shared.CreateNotCheckedSQL(columns)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("generates a correct SQL string for several columns", func() {
 			columns := []string{"columnA", "columnB"}
 			expected := "NOT (columnA AND columnB)"
-			actual := shared.Repository{}.CreateNotCheckedSQL(columns)
+			actual := shared.CreateNotCheckedSQL(columns)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("defaults to FALSE when there are no columns", func() {
 			expected := "FALSE"
-			actual := shared.Repository{}.CreateNotCheckedSQL([]string{})
+			actual := shared.CreateNotCheckedSQL([]string{})
 			Expect(actual).To(Equal(expected))
 		})
 	})
