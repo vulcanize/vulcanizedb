@@ -9,9 +9,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository struct{}
-
-func (_ Repository) MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn string) error {
+func MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn string) error {
 	_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO
@@ -19,7 +17,7 @@ func (_ Repository) MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHe
 	return err
 }
 
-func (_ Repository) MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, checkedHeadersColumn string) error {
+func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, checkedHeadersColumn string) error {
 	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO
@@ -28,7 +26,7 @@ func (_ Repository) MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, c
 }
 
 // Treats a header as missing if it's not in the headers table, or not checked for some log type
-func (_ Repository) MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, notCheckedSQL string) ([]core.Header, error) {
+func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, notCheckedSQL string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
 	var err error
@@ -53,7 +51,7 @@ func (_ Repository) MissingHeaders(startingBlockNumber, endingBlockNumber int64,
 	return result, err
 }
 
-func (_ Repository) GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
+func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 	// Query returns `[]driver.Value`, nullable polymorphic interface
 	var queryResult []driver.Value
 	columnNamesQuery :=
@@ -84,7 +82,7 @@ func (_ Repository) GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 // Defaults to FALSE when no columns are provided.
 // Ex: ["columnA", "columnB"] => "NOT (columnA AND columnB)"
 //     [] => "FALSE"
-func (_ Repository) CreateNotCheckedSQL(boolColumns []string) string {
+func CreateNotCheckedSQL(boolColumns []string) string {
 	var result bytes.Buffer
 
 	if len(boolColumns) == 0 {

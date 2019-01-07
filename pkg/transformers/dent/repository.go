@@ -54,7 +54,7 @@ func (repository DentRepository) Create(headerID int64, models []interface{}) er
 		}
 	}
 
-	err = shared.Repository{}.MarkHeaderCheckedInTransaction(headerID, tx, constants.DentChecked)
+	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DentChecked)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -63,7 +63,7 @@ func (repository DentRepository) Create(headerID int64, models []interface{}) er
 }
 
 func (repository DentRepository) MarkHeaderChecked(headerId int64) error {
-	return shared.Repository{}.MarkHeaderChecked(headerId, repository.db, constants.DentChecked)
+	return shared.MarkHeaderChecked(headerId, repository.db, constants.DentChecked)
 }
 
 func (repository *DentRepository) SetDB(db *postgres.DB) {
