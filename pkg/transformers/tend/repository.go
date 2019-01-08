@@ -16,7 +16,6 @@ package tend
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -66,10 +65,6 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 
 func (repository TendRepository) MarkHeaderChecked(headerId int64) error {
 	return shared.MarkHeaderChecked(headerId, repository.db, constants.TendChecked)
-}
-
-func (repository TendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.TendChecked)
 }
 
 func (repository *TendRepository) SetDB(db *postgres.DB) {

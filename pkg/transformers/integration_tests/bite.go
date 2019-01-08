@@ -45,17 +45,24 @@ var _ = Describe("Bite Transformer", func() {
 		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.Transformer{
 			Config:     config,
 			Converter:  &bite.BiteConverter{},
 			Repository: &bite.BiteRepository{},
-			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewTransformer(db, blockChain)
-		err = transformer.Execute()
+		transformer := initializer.NewTransformer(db)
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []bite.BiteModel

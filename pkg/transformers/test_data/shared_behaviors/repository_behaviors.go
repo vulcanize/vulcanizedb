@@ -17,7 +17,6 @@ package shared_behaviors
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -25,7 +24,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/rand"
 )
 
 var (
@@ -61,7 +59,7 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 		var logEventModel = inputs.TestModel
 
 		BeforeEach(func() {
-			headerRepository = GetHeaderRepository()
+			headerRepository = getHeaderRepository()
 			headerID, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -132,94 +130,13 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 	})
 }
 
-func SharedRepositoryMissingHeadersBehaviors(inputs *MissingHeadersBehaviorInputs) {
-	Describe("MissingHeaders", func() {
-		var (
-			repository               = inputs.Repository
-			startingBlockNumber      int64
-			endingBlockNumber        int64
-			eventSpecificBlockNumber int64
-			blockNumbers             []int64
-			headerIDs                []int64
-		)
-
-		BeforeEach(func() {
-			headerRepository = GetHeaderRepository()
-			startingBlockNumber = rand.Int63()
-			eventSpecificBlockNumber = startingBlockNumber + 1
-			endingBlockNumber = startingBlockNumber + 2
-			outOfRangeBlockNumber := endingBlockNumber + 1
-
-			blockNumbers = []int64{startingBlockNumber, eventSpecificBlockNumber, endingBlockNumber, outOfRangeBlockNumber}
-
-			headerIDs = []int64{}
-			for _, n := range blockNumbers {
-				headerID, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				headerIDs = append(headerIDs, headerID)
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-
-		It("returns headers that haven't been checked", func() {
-			err := repository.MarkHeaderChecked(headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(2))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-		})
-
-		It("only treats headers as checked if the event specific logs have been checked", func() {
-			_, err := db.Exec(`INSERT INTO public.checked_headers (header_id) VALUES ($1)`, headerIDs[1])
-			Expect(err).NotTo(HaveOccurred())
-
-			headers, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(headers)).To(Equal(3))
-			Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
-			Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
-			Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(eventSpecificBlockNumber)))
-		})
-
-		It("only returns headers associated with the current node", func() {
-			dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
-			headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
-			for _, n := range blockNumbers {
-				_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-				Expect(err).NotTo(HaveOccurred())
-			}
-			repositoryTwo := inputs.RepositoryTwo
-			repositoryTwo.SetDB(dbTwo)
-
-			err := repository.MarkHeaderChecked(headerIDs[0])
-			Expect(err).NotTo(HaveOccurred())
-			nodeOneMissingHeaders, err := repository.MissingHeaders(startingBlockNumber, endingBlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeOneMissingHeaders)).To(Equal(2))
-			Expect(nodeOneMissingHeaders[0].BlockNumber).To(Or(Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
-			Expect(nodeOneMissingHeaders[1].BlockNumber).To(Or(Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
-
-			nodeTwoMissingHeaders, err := repositoryTwo.MissingHeaders(startingBlockNumber, endingBlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(nodeTwoMissingHeaders)).To(Equal(3))
-			Expect(nodeTwoMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
-			Expect(nodeTwoMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
-			Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(eventSpecificBlockNumber), Equal(endingBlockNumber)))
-		})
-	})
-}
-
 func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehaviorInputs) {
 	var repository = inputs.Repository
 	var checkedHeaderColumn = inputs.CheckedHeaderColumnName
 
 	Describe("MarkHeaderChecked", func() {
 		BeforeEach(func() {
-			headerRepository = GetHeaderRepository()
+			headerRepository = getHeaderRepository()
 			headerId, err = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -257,7 +174,7 @@ func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehav
 	})
 }
 
-func GetHeaderRepository() repositories.HeaderRepository {
+func getHeaderRepository() repositories.HeaderRepository {
 	db = test_config.NewTestDB(test_config.NewTestNode())
 	test_config.CleanTestDB(db)
 

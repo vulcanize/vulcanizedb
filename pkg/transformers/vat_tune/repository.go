@@ -2,7 +2,6 @@ package vat_tune
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,10 +44,6 @@ func (repository VatTuneRepository) Create(headerID int64, models []interface{})
 
 func (repository VatTuneRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatTuneChecked)
-}
-
-func (repository VatTuneRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatTuneChecked)
 }
 
 func (repository *VatTuneRepository) SetDB(db *postgres.DB) {

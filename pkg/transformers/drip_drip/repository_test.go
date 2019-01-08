@@ -80,13 +80,4 @@ var _ = Describe("Drip drip repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &dripDripRepository,
-			RepositoryTwo: &drip_drip.DripDripRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

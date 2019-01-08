@@ -83,15 +83,6 @@ var _ = Describe("VatHeal Repository", func() {
 		})
 	})
 
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &vat_heal.VatHealRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
-
 	Describe("MarkCheckedHeader", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
 			CheckedHeaderColumnName: constants.VatHealChecked,

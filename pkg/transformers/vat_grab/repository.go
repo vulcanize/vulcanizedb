@@ -3,7 +3,6 @@ package vat_grab
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,10 +44,6 @@ func (repository VatGrabRepository) Create(headerID int64, models []interface{})
 
 func (repository VatGrabRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatGrabChecked)
-}
-
-func (repository VatGrabRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatGrabChecked)
 }
 
 func (repository *VatGrabRepository) SetDB(db *postgres.DB) {

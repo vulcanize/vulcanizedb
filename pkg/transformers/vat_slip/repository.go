@@ -2,7 +2,6 @@ package vat_slip
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,10 +45,6 @@ func (repository VatSlipRepository) Create(headerID int64, models []interface{})
 
 func (repository VatSlipRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatSlipChecked)
-}
-
-func (repository VatSlipRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatSlipChecked)
 }
 
 func (repository *VatSlipRepository) SetDB(db *postgres.DB) {
