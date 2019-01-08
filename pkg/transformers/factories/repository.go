@@ -15,13 +15,11 @@
 package factories
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type Repository interface {
 	Create(headerID int64, models []interface{}) error
 	MarkHeaderChecked(headerID int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
 	SetDB(db *postgres.DB)
 }

@@ -83,12 +83,4 @@ var _ = Describe("Cat file flip repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &catFileFlipRepository,
-			RepositoryTwo: &flip.CatFileFlipRepository{},
-		}
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

@@ -17,7 +17,6 @@ package vat_heal
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -59,10 +58,6 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 		return err
 	}
 	return tx.Commit()
-}
-
-func (repository VatHealRepository) MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlock, endingBlock, repository.db, constants.VatHealChecked)
 }
 
 func (repository VatHealRepository) MarkHeaderChecked(headerId int64) error {

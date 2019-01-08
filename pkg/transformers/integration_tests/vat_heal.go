@@ -40,17 +40,23 @@ var _ = Describe("VatHeal Transformer", func() {
 		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := factories.LogNoteTransformer{
 			Config:     config,
 			Converter:  &vat_heal.VatHealConverter{},
 			Repository: &vat_heal.VatHealRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}.NewLogNoteTransformer(db, blockChain)
+		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute()
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResults []vat_heal.VatHealModel

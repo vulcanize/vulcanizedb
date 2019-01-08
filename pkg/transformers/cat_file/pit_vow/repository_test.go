@@ -81,13 +81,4 @@ var _ = Describe("Cat file pit vow repository", func() {
 		}
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &catFilePitVowRepository,
-			RepositoryTwo: &pit_vow.CatFilePitVowRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

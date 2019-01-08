@@ -1,6 +1,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -18,31 +19,38 @@ var _ = Describe("Vat slip transformer", func() {
 		blockChain core.BlockChain
 	)
 
-	It("persists vat slip event", func() {
+	BeforeEach(func() {
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
 		blockChain, err = getBlockChain(rpcClient, ethClient)
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+	})
 
+	It("persists vat slip event", func() {
 		blockNumber := int64(8953655)
 		config := vat_slip.VatSlipConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_slip.VatSlipConverter{},
 			Repository: &vat_slip.VatSlipRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
+		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute()
+		err = transformer.Execute(logs, header)
 
 		Expect(err).NotTo(HaveOccurred())
 		var headerID int64

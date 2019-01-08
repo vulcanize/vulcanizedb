@@ -72,15 +72,6 @@ var _ = Describe("Vat init repository", func() {
 		})
 	})
 
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &vat_init.VatInitRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
-
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
 			CheckedHeaderColumnName: constants.VatInitChecked,

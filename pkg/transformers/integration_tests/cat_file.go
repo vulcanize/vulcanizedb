@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"sort"
@@ -39,6 +40,7 @@ var _ = Describe("Cat File transformer", func() {
 		rpcClient  client.RpcClient
 		err        error
 		ethClient  *ethclient.Client
+		fetcher    *shared.Fetcher
 	)
 
 	BeforeEach(func() {
@@ -48,13 +50,15 @@ var _ = Describe("Cat File transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		fetcher = shared.NewFetcher(blockChain)
 	})
 
 	// Cat contract Kovan address: 0x2f34f22a00ee4b7a8f8bbc4eaee1658774c624e0
 	It("persists a chop lump event", func() {
 		// transaction: 0x98574bfba4d05c3875be10d2376e678d005dbebe9a4520363407508fd21f4014
 		chopLumpBlockNumber := int64(8762253)
-		err = persistHeader(db, chopLumpBlockNumber, blockChain)
+		header, err := persistHeader(db, chopLumpBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := chop_lump.CatFileChopLumpConfig
@@ -65,10 +69,16 @@ var _ = Describe("Cat File transformer", func() {
 			Config:     config,
 			Converter:  &chop_lump.CatFileChopLumpConverter{},
 			Repository: &chop_lump.CatFileChopLumpRepository{},
-			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err := transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []chop_lump.CatFileChopLumpModel
@@ -92,7 +102,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a flip event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		flipBlockNumber := int64(8751794)
-		err = persistHeader(db, flipBlockNumber, blockChain)
+		header, err := persistHeader(db, flipBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := flip.CatFileFlipConfig
@@ -103,10 +113,17 @@ var _ = Describe("Cat File transformer", func() {
 			Config:     config,
 			Converter:  &flip.CatFileFlipConverter{},
 			Repository: &flip.CatFileFlipRepository{},
-			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err := transformer.Execute()
+
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flip.CatFileFlipModel
@@ -122,7 +139,7 @@ var _ = Describe("Cat File transformer", func() {
 	It("persists a pit vow event", func() {
 		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
 		pitVowBlockNumber := int64(8751794)
-		err = persistHeader(db, pitVowBlockNumber, blockChain)
+		header, err := persistHeader(db, pitVowBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
 		config := pit_vow.CatFilePitVowConfig
@@ -133,10 +150,16 @@ var _ = Describe("Cat File transformer", func() {
 			Config:     config,
 			Converter:  &pit_vow.CatFilePitVowConverter{},
 			Repository: &pit_vow.CatFilePitVowRepository{},
-			Fetcher:    &shared.Fetcher{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err := transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []pit_vow.CatFilePitVowModel
