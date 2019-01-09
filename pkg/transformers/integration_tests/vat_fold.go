@@ -18,39 +18,53 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/test_config"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
-	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("VatFold Transformer", func() {
+	var (
+		db         *postgres.DB
+		blockChain core.BlockChain
+	)
+
+	BeforeEach(func() {
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err = getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+		db = test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+	})
+
 	It("transforms VatFold log events", func() {
 		blockNumber := int64(9367233)
 		config := vat_fold.VatFoldConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
-		rpcClient, ethClient, err := getClients(ipc)
-		Expect(err).NotTo(HaveOccurred())
-		blockChain, err := getBlockChain(rpcClient, ethClient)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		db := test_config.NewTestDB(blockChain.Node())
-		test_config.CleanTestDB(db)
-
-		err = persistHeader(db, blockNumber, blockChain)
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.LogNoteTransformer{
+		transformer := factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_fold.VatFoldConverter{},
 			Repository: &vat_fold.VatFoldRepository{},
-		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResults []vat_fold.VatFoldModel

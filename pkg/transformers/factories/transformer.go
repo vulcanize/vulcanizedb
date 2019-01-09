@@ -15,9 +15,8 @@
 package factories
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -28,61 +27,51 @@ type Transformer struct {
 	Config     shared.TransformerConfig
 	Converter  Converter
 	Repository Repository
-	Fetcher    shared.SettableLogFetcher
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB, bc core.BlockChain) shared.Transformer {
+func (transformer Transformer) NewTransformer(db *postgres.DB) shared.Transformer {
 	transformer.Repository.SetDB(db)
-	transformer.Fetcher.SetBC(bc)
 	return transformer
 }
 
-func (transformer Transformer) Execute() error {
+func (transformer Transformer) Execute(logs []types.Log, header core.Header) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
-	topics := [][]common.Hash{{common.HexToHash(config.Topic)}}
-	missingHeaders, err := transformer.Repository.MissingHeaders(config.StartingBlockNumber, config.EndingBlockNumber)
+
+	if len(logs) < 1 {
+		err := transformer.Repository.MarkHeaderChecked(header.Id)
+		if err != nil {
+			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
+			return err
+		}
+		return nil
+	}
+
+	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
 	if err != nil {
-		log.Printf("Error fetching missing headers in %v transformer: %v \n", transformerName, err)
+		log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
 		return err
 	}
-	log.Printf("Fetching %v event logs for %d headers \n", transformerName, len(missingHeaders))
-	for _, header := range missingHeaders {
-		logs, err := transformer.Fetcher.FetchLogs(config.ContractAddresses, topics, header)
-		if err != nil {
-			log.Printf("Error fetching matching logs in %v transformer: %v", transformerName, err)
-			return err
-		}
 
-		if len(logs) < 1 {
-			err = transformer.Repository.MarkHeaderChecked(header.Id)
-			if err != nil {
-				log.Printf("Error marking header as checked in %v: %v", transformerName, err)
-				return err
-			}
+	models, err := transformer.Converter.ToModels(entities)
+	if err != nil {
+		log.Printf("Error converting entities to models in %v: %v", transformerName, err)
+		return err
+	}
 
-			continue
-		}
-
-		entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
-		if err != nil {
-			log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
-			return err
-		}
-
-		models, err := transformer.Converter.ToModels(entities)
-		if err != nil {
-			log.Printf("Error converting entities to models in %v: %v", transformerName, err)
-			return err
-		}
-
-		err = transformer.Repository.Create(header.Id, models)
-		if err != nil {
-			log.Printf("Error persisting %v record: %v", transformerName, err)
-			return err
-		}
-
+	err = transformer.Repository.Create(header.Id, models)
+	if err != nil {
+		log.Printf("Error persisting %v record: %v", transformerName, err)
+		return err
 	}
 
 	return nil
+}
+
+func (transformer Transformer) GetName() string {
+	return transformer.Config.TransformerName
+}
+
+func (transformer Transformer) GetConfig() shared.TransformerConfig {
+	return transformer.Config
 }

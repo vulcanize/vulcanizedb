@@ -74,15 +74,6 @@ var _ = Describe("Drip file vow repository", func() {
 	})
 
 	Describe("MarkHeaderChecked", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &dripFileVowRepository,
-			RepositoryTwo: &vow.DripFileVowRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
-
-	Describe("MissingHeaders", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
 			CheckedHeaderColumnName: constants.DripFileVowChecked,
 			Repository:              &dripFileVowRepository,

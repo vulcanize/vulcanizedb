@@ -16,7 +16,6 @@ package pit_vow
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -59,10 +58,6 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 
 func (repository CatFilePitVowRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFilePitVowChecked)
-}
-
-func (repository CatFilePitVowRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFilePitVowChecked)
 }
 
 func (repository *CatFilePitVowRepository) SetDB(db *postgres.DB) {

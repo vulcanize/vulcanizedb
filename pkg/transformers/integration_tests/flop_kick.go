@@ -35,8 +35,13 @@ import (
 
 var _ = Describe("FlopKick Transformer", func() {
 	var (
-		db         *postgres.DB
-		blockChain core.BlockChain
+		db          *postgres.DB
+		blockChain  core.BlockChain
+		config      shared.TransformerConfig
+		initializer factories.Transformer
+		fetcher     shared.LogFetcher
+		addresses   []common.Address
+		topics      []common.Hash
 	)
 
 	BeforeEach(func() {
@@ -46,25 +51,33 @@ var _ = Describe("FlopKick Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		config = flop_kick.Config
+
+		initializer = factories.Transformer{
+			Config:     config,
+			Converter:  &flop_kick.FlopKickConverter{},
+			Repository: &flop_kick.FlopKickRepository{},
+		}
+
+		fetcher = shared.NewFetcher(blockChain)
+		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		topics = []common.Hash{common.HexToHash(config.Topic)}
 	})
 
 	It("fetches and transforms a FlopKick event from Kovan chain", func() {
 		blockNumber := int64(8672119)
-		config := flop_kick.Config
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
-			Config:     config,
-			Converter:  &flop_kick.FlopKickConverter{},
-			Repository: &flop_kick.FlopKickRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flop_kick.Model
@@ -82,21 +95,17 @@ var _ = Describe("FlopKick Transformer", func() {
 
 	It("fetches and transforms another FlopKick event from Kovan chain", func() {
 		blockNumber := int64(8955611)
-		config := flop_kick.Config
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
 
-		err := persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		initializer := factories.Transformer{
-			Config:     config,
-			Converter:  &flop_kick.FlopKickConverter{},
-			Repository: &flop_kick.FlopKickRepository{},
-			Fetcher:    &shared.Fetcher{},
-		}
-		transformer := initializer.NewTransformer(db, blockChain)
-		err = transformer.Execute()
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewTransformer(db)
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flop_kick.Model

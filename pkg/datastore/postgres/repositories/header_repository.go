@@ -3,7 +3,6 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -49,6 +48,18 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	  ) `,
 		startingBlockNumber, endingBlockNumber, nodeID)
 	return numbers
+}
+
+func (repository HeaderRepository) HeaderExists(blockNumber int64) (bool, error) {
+	_, err := repository.GetHeader(blockNumber)
+	if err != nil {
+		if headerDoesNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func headerMustBeReplaced(hash string, header core.Header) bool {

@@ -16,7 +16,6 @@ package vow
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -61,10 +60,6 @@ func (repository DripFileVowRepository) Create(headerID int64, models []interfac
 
 func (repository DripFileVowRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.DripFileVowChecked)
-}
-
-func (repository DripFileVowRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DripFileVowChecked)
 }
 
 func (repository *DripFileVowRepository) SetDB(db *postgres.DB) {
