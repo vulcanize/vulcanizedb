@@ -15,6 +15,7 @@
 package integration_tests
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -39,17 +40,24 @@ var _ = Describe("VatFlux LogNoteTransformer", func() {
 		db := test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		err = persistHeader(db, blockNumber, blockChain)
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
 		Expect(err).NotTo(HaveOccurred())
 
 		initializer := factories.LogNoteTransformer{
 			Config:     config,
-			Fetcher:    &shared.Fetcher{},
 			Converter:  &vat_flux.VatFluxConverter{},
 			Repository: &vat_flux.VatFluxRepository{},
 		}
-		transformer := initializer.NewLogNoteTransformer(db, blockChain)
-		err = transformer.Execute()
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []vat_flux.VatFluxModel

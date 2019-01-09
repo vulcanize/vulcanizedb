@@ -86,15 +86,6 @@ var _ = Describe("VatFlux Repository", func() {
 		})
 	})
 
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &vat_flux.VatFluxRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
-
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
 			CheckedHeaderColumnName: constants.VatFluxChecked,

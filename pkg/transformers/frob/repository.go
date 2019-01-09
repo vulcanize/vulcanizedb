@@ -17,7 +17,6 @@ package frob
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -57,10 +56,6 @@ func (repository FrobRepository) Create(headerID int64, models []interface{}) er
 
 func (repository FrobRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.FrobChecked)
-}
-
-func (repository FrobRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.FrobChecked)
 }
 
 func (repository *FrobRepository) SetDB(db *postgres.DB) {

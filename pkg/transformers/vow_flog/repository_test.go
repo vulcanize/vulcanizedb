@@ -80,13 +80,4 @@ var _ = Describe("Vow flog repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &vow_flog.VowFlogRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

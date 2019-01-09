@@ -87,13 +87,4 @@ var _ = Describe("Flap Kick Repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &flapKickRepository,
-			RepositoryTwo: &flap_kick.FlapKickRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

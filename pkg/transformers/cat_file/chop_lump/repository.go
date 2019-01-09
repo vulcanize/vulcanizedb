@@ -16,7 +16,6 @@ package chop_lump
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -60,10 +59,6 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 
 func (repository CatFileChopLumpRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFileChopLumpChecked)
-}
-
-func (repository CatFileChopLumpRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileChopLumpChecked)
 }
 
 func (repository *CatFileChopLumpRepository) SetDB(db *postgres.DB) {

@@ -81,13 +81,4 @@ var _ = Describe("Pit file debt ceiling repository", func() {
 
 		shared_behaviors.SharedRepositoryMarkHeaderCheckedBehaviors(&inputs)
 	})
-
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &pitFileDebtCeilingRepository,
-			RepositoryTwo: &debt_ceiling.PitFileDebtCeilingRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
 })

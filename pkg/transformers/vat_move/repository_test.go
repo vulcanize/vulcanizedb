@@ -71,15 +71,6 @@ var _ = Describe("Vat Move", func() {
 		})
 	})
 
-	Describe("MissingHeaders", func() {
-		inputs := shared_behaviors.MissingHeadersBehaviorInputs{
-			Repository:    &repository,
-			RepositoryTwo: &vat_move.VatMoveRepository{},
-		}
-
-		shared_behaviors.SharedRepositoryMissingHeadersBehaviors(&inputs)
-	})
-
 	Describe("MarkHeaderChecked", func() {
 		inputs := shared_behaviors.MarkedHeaderCheckedBehaviorInputs{
 			CheckedHeaderColumnName: constants.VatMoveChecked,
