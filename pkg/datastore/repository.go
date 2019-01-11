@@ -40,7 +40,7 @@ type FilterRepository interface {
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	GetHeader(blockNumber int64) (core.Header, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
 	HeaderExists(blockNumber int64) (bool, error)
 }
 
