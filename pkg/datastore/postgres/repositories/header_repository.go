@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -38,16 +39,21 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 	return header, err
 }
 
-func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64 {
+func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
 	numbers := make([]int64, 0)
-	repository.database.Select(&numbers, `SELECT all_block_numbers
+	err := repository.database.Select(&numbers, `SELECT all_block_numbers
 	  FROM (
 		  SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
 	  WHERE all_block_numbers NOT IN (
 		  SELECT block_number FROM headers WHERE eth_node_fingerprint = $3
 	  ) `,
 		startingBlockNumber, endingBlockNumber, nodeID)
-	return numbers
+	if err != nil {
+		log.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
+			startingBlockNumber, endingBlockNumber, nodeID)
+		return []int64{}, err
+	}
+	return numbers, nil
 }
 
 func (repository HeaderRepository) HeaderExists(blockNumber int64) (bool, error) {

@@ -41,8 +41,8 @@ func (*MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	return core.Header{BlockNumber: blockNumber}, nil
 }
 
-func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64 {
-	return repository.missingBlockNumbers
+func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
+	return repository.missingBlockNumbers, nil
 }
 
 func (repository *MockHeaderRepository) HeaderExists(blockNumber int64) (bool, error) {
