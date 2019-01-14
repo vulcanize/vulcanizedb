@@ -16,6 +16,7 @@ package flip_kick
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -27,9 +28,9 @@ type FlipKickRepository struct {
 }
 
 func (repository FlipKickRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 	for _, model := range models {
 		flipKickModel, ok := model.(FlipKickModel)
@@ -37,20 +38,26 @@ func (repository FlipKickRepository) Create(headerID int64, models []interface{}
 			return fmt.Errorf("model of type %T, not %T", model, FlipKickModel{})
 		}
 
-		_, err = tx.Exec(
+		_, execErr := tx.Exec(
 			`INSERT into maker.flip_kick (header_id, bid_id, lot, bid, gal, "end", urn, tab, tx_idx, log_idx, raw_log)
         VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8::NUMERIC, $9, $10, $11)`,
 			headerID, flipKickModel.BidId, flipKickModel.Lot, flipKickModel.Bid, flipKickModel.Gal, flipKickModel.End, flipKickModel.Urn, flipKickModel.Tab, flipKickModel.TransactionIndex, flipKickModel.LogIndex, flipKickModel.Raw,
 		)
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlipKickChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.FlipKickChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 	return tx.Commit()
 }

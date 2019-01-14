@@ -16,6 +16,7 @@ package tend
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -26,39 +27,52 @@ type TendRepository struct {
 }
 
 func (repository TendRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 
-	tic, err := shared.GetTicInTx(headerID, tx)
-	if err != nil {
-		return err
+	tic, getTicErr := shared.GetTicInTx(headerID, tx)
+	if getTicErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
+		return getTicErr
 	}
 
 	for _, model := range models {
 		tend, ok := model.(TendModel)
 		if !ok {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
 			return fmt.Errorf("model of type %T, not %T", model, TendModel{})
 		}
 
-		_, err = tx.Exec(
+		_, execErr := tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
 			VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
 			headerID, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
 		)
 
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.TendChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.TendChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 	return tx.Commit()
 }

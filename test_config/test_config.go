@@ -111,6 +111,7 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM watched_contracts")
 }
 
+// Returns a new test node, with the same ID
 func NewTestNode() core.Node {
 	return core.Node{
 		GenesisBlock: "GENESIS",

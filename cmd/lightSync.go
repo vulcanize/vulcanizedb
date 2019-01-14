@@ -81,9 +81,15 @@ func lightSync() {
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateHeaders()
+			window, err := validator.ValidateHeaders()
+			if err != nil {
+				log.Error("ValidateHeaders failed in lightSync: ", err)
+			}
 			window.Log(os.Stdout)
-		case <-missingBlocksPopulated:
+		case n := <-missingBlocksPopulated:
+			if n == 0 {
+				time.Sleep(3 * time.Second)
+			}
 			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}

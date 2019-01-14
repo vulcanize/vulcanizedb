@@ -11,13 +11,20 @@ import (
 func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
 	lastBlock := blockchain.LastBlock().Int64()
 	headerAlreadyExists, err := headerRepository.HeaderExists(lastBlock)
+
 	if err != nil {
+		log.Error("Error in checking header in PopulateMissingHeaders: ", err)
 		return 0, err
 	} else if headerAlreadyExists {
 		return 0, nil
 	}
 
-	blockNumbers := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
+	if err != nil {
+		log.Error("Error getting missing block numbers in PopulateMissingHeaders: ", err)
+		return 0, err
+	}
+
 	log.Printf("Backfilling %d blocks\n\n", len(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockchain, headerRepository, blockNumbers)
 	if err != nil {
