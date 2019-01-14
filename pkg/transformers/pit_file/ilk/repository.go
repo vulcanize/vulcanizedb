@@ -16,6 +16,7 @@ package ilk
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -26,33 +27,42 @@ type PitFileIlkRepository struct {
 }
 
 func (repository PitFileIlkRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 
 	for _, model := range models {
 		pitFileIlk, ok := model.(PitFileIlkModel)
 		if !ok {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
 			return fmt.Errorf("model of type %T, not %T", model, PitFileIlkModel{})
 		}
 
-		_, err = tx.Exec(
+		_, execErr := tx.Exec(
 			`INSERT into maker.pit_file_ilk (header_id, ilk, what, data, log_idx, tx_idx, raw_log)
         VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
 			headerID, pitFileIlk.Ilk, pitFileIlk.What, pitFileIlk.Data, pitFileIlk.LogIndex, pitFileIlk.TransactionIndex, pitFileIlk.Raw,
 		)
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.PitFileIlkChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.PitFileIlkChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 	return tx.Commit()
 }

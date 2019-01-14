@@ -16,6 +16,7 @@ package vat_move
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -26,34 +27,43 @@ type VatMoveRepository struct {
 }
 
 func (repository VatMoveRepository) Create(headerID int64, models []interface{}) error {
-	tx, err := repository.db.Begin()
-	if err != nil {
-		return err
+	tx, dBaseErr := repository.db.Begin()
+	if dBaseErr != nil {
+		return dBaseErr
 	}
 
 	for _, model := range models {
 		vatMove, ok := model.(VatMoveModel)
 		if !ok {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
 			return fmt.Errorf("model of type %T, not %T", model, VatMoveModel{})
 		}
 
-		_, err = tx.Exec(
+		_, execErr := tx.Exec(
 			`INSERT INTO maker.vat_move (header_id, src, dst, rad, log_idx, tx_idx, raw_log)
 				VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
 			headerID, vatMove.Src, vatMove.Dst, vatMove.Rad, vatMove.LogIndex, vatMove.TransactionIndex, vatMove.Raw,
 		)
 
-		if err != nil {
-			tx.Rollback()
-			return err
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return execErr
 		}
 	}
 
-	err = shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatMoveChecked)
-	if err != nil {
-		tx.Rollback()
-		return err
+	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.VatMoveChecked)
+	if checkHeaderErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error("failed to rollback ", rollbackErr)
+		}
+		return checkHeaderErr
 	}
 
 	return tx.Commit()

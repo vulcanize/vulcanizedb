@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 func MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn string) error {
@@ -99,4 +100,15 @@ func CreateNotCheckedSQL(boolColumns []string) string {
 	result.WriteString(fmt.Sprintf("%v)", boolColumns[len(boolColumns)-1]))
 
 	return result.String()
+}
+
+func GetTicInTx(headerID int64, tx *sql.Tx) (int64, error) {
+	var blockTimestamp int64
+	err := tx.QueryRow(`SELECT block_timestamp FROM public.headers WHERE id = $1;`, headerID).Scan(&blockTimestamp)
+	if err != nil {
+		return 0, err
+	}
+
+	tic := blockTimestamp + constants.TTL
+	return tic, nil
 }

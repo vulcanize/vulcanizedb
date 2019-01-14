@@ -1,6 +1,7 @@
 package history
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
@@ -19,9 +20,13 @@ func NewHeaderValidator(blockChain core.BlockChain, repository datastore.HeaderR
 	}
 }
 
-func (validator HeaderValidator) ValidateHeaders() ValidationWindow {
+func (validator HeaderValidator) ValidateHeaders() (ValidationWindow, error) {
 	window := MakeValidationWindow(validator.blockChain, validator.windowSize)
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
-	RetrieveAndUpdateHeaders(validator.blockChain, validator.headerRepository, blockNumbers)
-	return window
+	_, err := RetrieveAndUpdateHeaders(validator.blockChain, validator.headerRepository, blockNumbers)
+	if err != nil {
+		log.Error("Error in ValidateHeaders: ", err)
+		return ValidationWindow{}, err
+	}
+	return window, nil
 }
