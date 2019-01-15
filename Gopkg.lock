@@ -2,6 +2,17 @@
 
 
 [[projects]]
+  digest = "1:48a213e9dc4880bbbd6999309a476fa4d3cc67560aa7127154cf8ea95bd464c2"
+  name = "github.com/allegro/bigcache"
+  packages = [
+    ".",
+    "queue",
+  ]
+  pruneopts = ""
+  revision = "f31987a23e44c5121ef8c8b2f2ea2e8ffa37b068"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:a313376bcbcce8ae8bddb8089a7293e0473a0f8e9e3710d6244e09e81875ccf0"
   name = "github.com/aristanetworks/goarista"
@@ -26,7 +37,7 @@
   version = "v1.7.1"
 
 [[projects]]
-  digest = "1:c205f1963071408c1fac73c1b37c86ef9b98d80f17e690a2239853cde255ad3d"
+  digest = "1:a9c8210eb5d36a9a6e66953dc3d3cabd3afbbfb4f50baab0db1af1b723254b82"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -64,8 +75,8 @@
     "trie",
   ]
   pruneopts = ""
-  revision = "58632d44021bf095b43a1bb2443e6e3690a94739"
-  version = "v1.8.18"
+  revision = "24d727b6d6e2c0cde222fa12155c4a6db5caaf2e"
+  version = "v1.8.20"
 
 [[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
@@ -537,6 +548,7 @@
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/ethclient",
     "github.com/ethereum/go-ethereum/ethdb",
+    "github.com/ethereum/go-ethereum/log",
     "github.com/ethereum/go-ethereum/p2p",
     "github.com/ethereum/go-ethereum/p2p/discv5",
     "github.com/ethereum/go-ethereum/params",
