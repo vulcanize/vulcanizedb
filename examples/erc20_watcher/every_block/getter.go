@@ -19,8 +19,8 @@ package every_block
 import (
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/fetcher"
 )
 
 // Getter serves as a higher level data fetcher that invokes its underlying Fetcher methods for a given contract method
@@ -35,13 +35,13 @@ type ERC20GetterInterface interface {
 
 // Getter struct
 type ERC20Getter struct {
-	generic.Fetcher
+	fetcher.Fetcher
 }
 
 // Initializes and returns a Getter with the given blockchain
 func NewGetter(blockChain core.BlockChain) ERC20Getter {
 	return ERC20Getter{
-		Fetcher: generic.Fetcher{
+		Fetcher: fetcher.Fetcher{
 			BlockChain: blockChain,
 		},
 	}
