@@ -42,7 +42,7 @@
   name = "github.com/lib/pq"
 
 [[constraint]]
-  name = "gopkg.in/Sirupsen/logrus.v1"
+  name = "github.com/sirupsen/logrus"
   version = "1.2.0"
 
 [[constraint]]
@@ -51,4 +51,4 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  version = "1.8.18"
+  version = "1.8.20"

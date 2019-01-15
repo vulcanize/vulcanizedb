@@ -290,7 +290,7 @@ func TestRequestFromPeers(t *testing.T) {
 		Peer:      protocolsPeer,
 	}, to)
 	to.On(peer)
-	r := NewRegistry(addr.ID(), delivery, nil, nil, nil)
+	r := NewRegistry(addr.ID(), delivery, nil, nil, nil, nil)
 
 	// an empty priorityQueue has to be created to prevent a goroutine being called after the test has finished
 	sp := &Peer{
@@ -331,7 +331,7 @@ func TestRequestFromPeersWithLightNode(t *testing.T) {
 		Peer:      protocolsPeer,
 	}, to)
 	to.On(peer)
-	r := NewRegistry(addr.ID(), delivery, nil, nil, nil)
+	r := NewRegistry(addr.ID(), delivery, nil, nil, nil, nil)
 	// an empty priorityQueue has to be created to prevent a goroutine being called after the test has finished
 	sp := &Peer{
 		Peer:     protocolsPeer,
@@ -453,6 +453,8 @@ func TestDeliveryFromNodes(t *testing.T) {
 }
 
 func testDeliveryFromNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck bool) {
+
+	t.Skip("temporarily disabled as simulations.WaitTillHealthy cannot be trusted")
 	sim := simulation.New(map[string]simulation.ServiceFunc{
 		"streamer": func(ctx *adapters.ServiceContext, bucket *sync.Map) (s node.Service, cleanup func(), err error) {
 			node := ctx.Config.Node()
@@ -480,7 +482,7 @@ func testDeliveryFromNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck
 				SkipCheck: skipCheck,
 				Syncing:   SyncingDisabled,
 				Retrieval: RetrievalEnabled,
-			})
+			}, nil)
 			bucket.Store(bucketKeyRegistry, r)
 
 			fileStore := storage.NewFileStore(netStore, storage.NewFileStoreParams())
@@ -565,13 +567,13 @@ func testDeliveryFromNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck
 		disconnections := sim.PeerEvents(
 			context.Background(),
 			sim.NodeIDs(),
-			simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeDrop),
+			simulation.NewPeerEventsFilter().Drop(),
 		)
 
 		go func() {
 			for d := range disconnections {
 				if d.Error != nil {
-					log.Error("peer drop", "node", d.NodeID, "peer", d.Event.Peer)
+					log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
 					t.Fatal(d.Error)
 				}
 			}
@@ -655,7 +657,7 @@ func benchmarkDeliveryFromNodes(b *testing.B, nodes, conns, chunkCount int, skip
 				Syncing:         SyncingDisabled,
 				Retrieval:       RetrievalDisabled,
 				SyncUpdateDelay: 0,
-			})
+			}, nil)
 
 			fileStore := storage.NewFileStore(netStore, storage.NewFileStoreParams())
 			bucket.Store(bucketKeyFileStore, fileStore)
@@ -697,13 +699,13 @@ func benchmarkDeliveryFromNodes(b *testing.B, nodes, conns, chunkCount int, skip
 		disconnections := sim.PeerEvents(
 			context.Background(),
 			sim.NodeIDs(),
-			simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeDrop),
+			simulation.NewPeerEventsFilter().Drop(),
 		)
 
 		go func() {
 			for d := range disconnections {
 				if d.Error != nil {
-					log.Error("peer drop", "node", d.NodeID, "peer", d.Event.Peer)
+					log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
 					b.Fatal(d.Error)
 				}
 			}
