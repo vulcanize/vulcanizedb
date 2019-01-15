@@ -70,6 +70,7 @@ func (e Event) Signature() string {
 var DaiContractAddress = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 var TusdContractAddress = "0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E"
 var EnsContractAddress = "0x314159265dD8dbb310642f98f50C066173C1259b"
+var PublicResolverAddress = "0x1da022710dF5002339274AaDEe8D58218e9D6AB5"
 
 // Contract Owner
 var DaiContractOwner = "0x0000000000000000000000000000000000000000"

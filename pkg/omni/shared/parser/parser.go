@@ -31,6 +31,7 @@ import (
 // It is dependent on etherscan's api
 type Parser interface {
 	Parse(contractAddr string) error
+	ParseAbiStr(abiStr string) error
 	Abi() string
 	ParsedAbi() abi.ABI
 	GetMethods(wanted []string) []types.Method
@@ -77,6 +78,15 @@ func (p *parser) Parse(contractAddr string) error {
 		return err
 	}
 	//TODO: Implement other ways to fetch abi
+	p.abi = abiStr
+	p.parsedAbi, err = geth.ParseAbi(abiStr)
+
+	return err
+}
+
+// Loads and parses an abi from a given abi string
+func (p *parser) ParseAbiStr(abiStr string) error {
+	var err error
 	p.abi = abiStr
 	p.parsedAbi, err = geth.ParseAbi(abiStr)
 

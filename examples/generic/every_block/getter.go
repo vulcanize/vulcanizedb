@@ -17,12 +17,12 @@
 package every_block
 
 import (
-	"github.com/vulcanize/vulcanizedb/examples/generic"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/fetcher"
 )
 
 // Getter serves as a higher level data fetcher that invokes its underlying Fetcher methods for a given contract method
@@ -41,13 +41,13 @@ type GenericGetterInterface interface {
 
 // Getter struct
 type GenericGetter struct {
-	generic.Fetcher // Underlying Fetcher
+	fetcher.Fetcher // Underlying Fetcher
 }
 
 // Initializes and returns a Getter with the given blockchain
 func NewGetter(blockChain core.BlockChain) GenericGetter {
 	return GenericGetter{
-		Fetcher: generic.Fetcher{
+		Fetcher: fetcher.Fetcher{
 			BlockChain: blockChain,
 		},
 	}
