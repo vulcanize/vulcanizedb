@@ -94,8 +94,8 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 		return headers, err
 	}
 
-	for index, _ := range blockNumbers {
-		header, _ := blockChain.headerConverter.Convert(&POWHeaders[index], POWHeaders[index].Hash().String())
+	for _, POWHeader := range POWHeaders {
+		header, _ := blockChain.headerConverter.Convert(&POWHeader, POWHeader.Hash().String())
 
 		headers = append(headers, header)
 	}
@@ -159,9 +159,8 @@ func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []cor
 		return headers, err
 	}
 
-	for index, _ := range blockNumbers {
+	for _, POAHeader := range POAHeaders {
 		var header core.Header
-		var POAHeader = POAHeaders[index]
 		//Header.Number of the newest block will return nil.
 		if _, err := strconv.ParseUint(POAHeader.Number.ToInt().String(), 16, 64); err == nil {
 			header, _ = blockChain.headerConverter.Convert(&types.Header{
