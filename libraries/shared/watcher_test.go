@@ -59,12 +59,33 @@ var _ = Describe("Watcher", func() {
 			common.HexToAddress("FakeAddress")}))
 	})
 
+	It("calculates earliest starting block number", func() {
+		fakeTransformer1 := &mocks.MockTransformer{}
+		fakeTransformer1.SetTransformerConfig(shared2.TransformerConfig{StartingBlockNumber: 5})
+
+		fakeTransformer2 := &mocks.MockTransformer{}
+		fakeTransformer2.SetTransformerConfig(shared2.TransformerConfig{StartingBlockNumber: 3})
+
+		watcher := shared.NewWatcher(nil, nil)
+		watcher.AddTransformers([]shared2.TransformerInitializer{
+			fakeTransformer1.FakeTransformerInitializer,
+			fakeTransformer2.FakeTransformerInitializer,
+		})
+
+		Expect(*watcher.StartingBlock).To(Equal(int64(3)))
+	})
+
+	It("returns an error when run without transformers", func() {
+		watcher := shared.NewWatcher(nil, nil)
+		err := watcher.Execute()
+		Expect(err).To(MatchError("No transformers added to watcher"))
+	})
+
 	Describe("with missing headers", func() {
 		var (
 			db               *postgres.DB
 			watcher          shared.Watcher
 			mockBlockChain   fakes.MockBlockChain
-			fakeTransformer  *mocks.MockTransformer
 			headerRepository repositories.HeaderRepository
 			repository       mocks.MockWatcherRepository
 		)
@@ -82,8 +103,8 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("executes each transformer", func() {
-			fakeTransformer = &mocks.MockTransformer{}
-			watcher.Transformers = []shared2.Transformer{fakeTransformer}
+			fakeTransformer := &mocks.MockTransformer{}
+			watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
@@ -93,8 +114,8 @@ var _ = Describe("Watcher", func() {
 		})
 
 		It("returns an error if transformer returns an error", func() {
-			fakeTransformer = &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
-			watcher.Transformers = []shared2.Transformer{fakeTransformer}
+			fakeTransformer := &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
+			watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := watcher.Execute()
@@ -135,19 +156,27 @@ var _ = Describe("Watcher", func() {
 		})
 
 		Describe("uses the LogFetcher correctly:", func() {
+			var fakeTransformer mocks.MockTransformer
 			BeforeEach(func() {
 				repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+				fakeTransformer = mocks.MockTransformer{}
 			})
 
-			It("fetches logs", func() {
+			It("fetches logs for added transformers", func() {
+				addresses := []string{"0xA", "0xB"}
+				topic := "0x1"
+				fakeTransformer.SetTransformerConfig(shared2.TransformerConfig{
+					Topic: topic, ContractAddresses: addresses})
+				watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+
 				err := watcher.Execute()
 				Expect(err).NotTo(HaveOccurred())
 
 				fakeHash := common.HexToHash(fakes.FakeHeader.Hash)
 				mockBlockChain.AssertGetEthLogsWithCustomQueryCalledWith(ethereum.FilterQuery{
 					BlockHash: &fakeHash,
-					Addresses: nil,
-					Topics:    [][]common.Hash{nil},
+					Addresses: shared2.HexStringsToAddresses(addresses),
+					Topics:    [][]common.Hash{{common.HexToHash(topic)}},
 				})
 			})
 
@@ -155,6 +184,7 @@ var _ = Describe("Watcher", func() {
 				fetcherError := errors.New("FetcherError")
 				mockBlockChain.SetGetEthLogsWithCustomQueryErr(fetcherError)
 
+				watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 				err := watcher.Execute()
 				Expect(err).To(MatchError(fetcherError))
 			})

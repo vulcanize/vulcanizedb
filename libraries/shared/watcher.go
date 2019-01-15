@@ -1,20 +1,22 @@
 package shared
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type Watcher struct {
-	Transformers []shared.Transformer
-	DB           *postgres.DB
-	Fetcher      shared.LogFetcher
-	Chunker      shared.Chunker
-	Addresses    []common.Address
-	Topics       []common.Hash
+	Transformers  []shared.Transformer
+	DB            *postgres.DB
+	Fetcher       shared.LogFetcher
+	Chunker       shared.Chunker
+	Addresses     []common.Address
+	Topics        []common.Hash
+	StartingBlock *int64
 }
 
 func NewWatcher(db *postgres.DB, bc core.BlockChain) Watcher {
@@ -40,6 +42,12 @@ func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitial
 		config := transformer.GetConfig()
 		configs = append(configs, config)
 
+		if watcher.StartingBlock == nil {
+			watcher.StartingBlock = &config.StartingBlockNumber
+		} else if earlierStartingBlockNumber(config.StartingBlockNumber, *watcher.StartingBlock) {
+			watcher.StartingBlock = &config.StartingBlockNumber
+		}
+
 		addresses := shared.HexStringsToAddresses(config.ContractAddresses)
 		contractAddresses = append(contractAddresses, addresses...)
 		topic0s = append(topic0s, common.HexToHash(config.Topic))
@@ -51,14 +59,17 @@ func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitial
 }
 
 func (watcher *Watcher) Execute() error {
+	if watcher.Transformers == nil {
+		return fmt.Errorf("No transformers added to watcher")
+	}
+
 	checkedColumnNames, err := shared.GetCheckedColumnNames(watcher.DB)
 	if err != nil {
 		return err
 	}
 	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames)
 
-	// TODO Handle start and end numbers in transformers
-	missingHeaders, err := shared.MissingHeaders(0, -1, watcher.DB, notCheckedSQL)
+	missingHeaders, err := shared.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
 		log.Error("Fetching of missing headers failed in watcher!")
 		return err
@@ -69,7 +80,7 @@ func (watcher *Watcher) Execute() error {
 		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 		if err != nil {
 			// TODO Handle fetch error in watcher
-			log.Error("Error while fetching logs for header %v in watcher", header.Id)
+			log.Errorf("Error while fetching logs for header %v in watcher", header.Id)
 			return err
 		}
 
@@ -82,10 +93,14 @@ func (watcher *Watcher) Execute() error {
 			logChunk := chunkedLogs[transformerName]
 			err = transformer.Execute(logChunk, header)
 			if err != nil {
-				log.Error("%v transformer failed to execute in watcher: %v", transformerName, err)
+				log.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
 				return err
 			}
 		}
 	}
 	return err
+}
+
+func earlierStartingBlockNumber(transformerBlock, watcherBlock int64) bool {
+	return transformerBlock < watcherBlock
 }

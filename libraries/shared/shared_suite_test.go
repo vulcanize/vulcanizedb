@@ -1,6 +1,8 @@
 package shared_test
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -11,3 +13,7 @@ func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Shared Suite")
 }
+
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})
