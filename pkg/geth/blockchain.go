@@ -95,9 +95,11 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 	}
 
 	for _, POWHeader := range POWHeaders {
-		header, _ := blockChain.headerConverter.Convert(&POWHeader, POWHeader.Hash().String())
+		if POWHeader.Number != nil {
+			header, _ := blockChain.headerConverter.Convert(&POWHeader, POWHeader.Hash().String())
 
-		headers = append(headers, header)
+			headers = append(headers, header)
+		}
 	}
 
 	return headers, err
