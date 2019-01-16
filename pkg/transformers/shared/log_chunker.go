@@ -17,6 +17,7 @@ package shared
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"strings"
 )
 
 type Chunker interface {
@@ -42,7 +43,8 @@ func NewLogChunker() *LogChunker {
 func (chunker *LogChunker) AddConfigs(transformerConfigs []TransformerConfig) {
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {
-			chunker.AddressToNames[address] = append(chunker.AddressToNames[address], config.TransformerName)
+			var lowerCaseAddress = strings.ToLower(address)
+			chunker.AddressToNames[lowerCaseAddress] = append(chunker.AddressToNames[lowerCaseAddress], config.TransformerName)
 			chunker.NameToTopic0[config.TransformerName] = common.HexToHash(config.Topic)
 		}
 	}
@@ -53,7 +55,7 @@ func (chunker *LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
 	chunks := map[string][]types.Log{}
 	for _, log := range logs {
 		// Topic0 is not unique to each transformer, also need to consider the contract address
-		relevantTransformers := chunker.AddressToNames[log.Address.String()]
+		relevantTransformers := chunker.AddressToNames[strings.ToLower(log.Address.String())]
 
 		for _, transformer := range relevantTransformers {
 			if chunker.NameToTopic0[transformer] == log.Topics[0] {

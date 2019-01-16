@@ -54,9 +54,9 @@ var _ = Describe("Log chunker", func() {
 	Describe("initialisation", func() {
 		It("creates lookup maps correctly", func() {
 			Expect(chunker.AddressToNames).To(Equal(map[string][]string{
-				"0x00000000000000000000000000000000000000A1": []string{"TransformerA"},
-				"0x00000000000000000000000000000000000000A2": []string{"TransformerA", "TransformerC"},
-				"0x00000000000000000000000000000000000000B1": []string{"TransformerB"},
+				"0x00000000000000000000000000000000000000a1": []string{"TransformerA"},
+				"0x00000000000000000000000000000000000000a2": []string{"TransformerA", "TransformerC"},
+				"0x00000000000000000000000000000000000000b1": []string{"TransformerB"},
 			}))
 
 			Expect(chunker.NameToTopic0).To(Equal(map[string]common.Hash{
@@ -78,6 +78,17 @@ var _ = Describe("Log chunker", func() {
 
 			Expect(chunker.AddressToNames).To(ContainElement([]string{"TransformerD"}))
 			Expect(chunker.NameToTopic0).To(ContainElement(common.HexToHash("0xD")))
+		})
+
+		It("lower cases address", func() {
+			configD := shared.TransformerConfig{
+				TransformerName:   "TransformerD",
+				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
+				Topic:             "0xD",
+			}
+			chunker.AddConfigs([]shared.TransformerConfig{configD})
+
+			Expect(chunker.AddressToNames["0x000000000000000000000000000000000000000d"]).To(Equal([]string{"TransformerD"}))
 		})
 	})
 
