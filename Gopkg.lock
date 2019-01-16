@@ -37,7 +37,7 @@
   version = "v1.7.1"
 
 [[projects]]
-  digest = "1:a9c8210eb5d36a9a6e66953dc3d3cabd3afbbfb4f50baab0db1af1b723254b82"
+  digest = "1:3d26f660432345429f6b09595e4707ee12745547323bcd1dc91457125aefeedc"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -56,7 +56,6 @@
     "crypto",
     "crypto/ecies",
     "crypto/secp256k1",
-    "crypto/sha3",
     "ethclient",
     "ethdb",
     "event",
@@ -75,8 +74,8 @@
     "trie",
   ]
   pruneopts = ""
-  revision = "24d727b6d6e2c0cde222fa12155c4a6db5caaf2e"
-  version = "v1.8.20"
+  revision = "9dc5d1a915ac0e0bd8429d6ac41df50eec91de5f"
+  version = "v1.8.21"
 
 [[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
@@ -416,15 +415,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:61a86f0be8b466d6e3fbdabb155aaa4006137cb5e3fd3b949329d103fa0ceb0f"
+  digest = "1:59b49c47c11a48f1054529207f65907c014ecf5f9a7c0d9c0f1616dec7b062ed"
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
     "scrypt",
+    "sha3",
     "ssh/terminal",
   ]
   pruneopts = ""
-  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
+  revision = "ff983b9c42bc9fbf91556e191cc8efb585c16908"
 
 [[projects]]
   branch = "master"
@@ -548,7 +548,6 @@
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/ethclient",
     "github.com/ethereum/go-ethereum/ethdb",
-    "github.com/ethereum/go-ethereum/log",
     "github.com/ethereum/go-ethereum/p2p",
     "github.com/ethereum/go-ethereum/p2p/discv5",
     "github.com/ethereum/go-ethereum/params",

@@ -19,9 +19,11 @@ package stream
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -53,7 +55,6 @@ func TestIntervalsLiveAndHistory(t *testing.T) {
 
 func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 
-	t.Skip("temporarily disabled as simulations.WaitTillHealthy cannot be trusted")
 	nodes := 2
 	chunkCount := dataChunkCount
 	externalStreamName := "externalStream"
@@ -114,11 +115,11 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+	if _, err := sim.WaitTillHealthy(ctx); err != nil {
 		t.Fatal(err)
 	}
 
-	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) error {
+	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) (err error) {
 		nodeIDs := sim.UpNodeIDs()
 		storer := nodeIDs[0]
 		checker := nodeIDs[1]
@@ -163,11 +164,19 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 			return err
 		}
 
+		var disconnected atomic.Value
 		go func() {
 			for d := range disconnections {
 				if d.Error != nil {
 					log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
-					t.Fatal(d.Error)
+					disconnected.Store(true)
+				}
+			}
+		}()
+		defer func() {
+			if err != nil {
+				if yes, ok := disconnected.Load().(bool); ok && yes {
+					err = errors.New("disconnect events received")
 				}
 			}
 		}()
