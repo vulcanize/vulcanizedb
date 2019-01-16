@@ -18,11 +18,13 @@ package stream
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,10 +45,10 @@ import (
 const dataChunkCount = 200
 
 func TestSyncerSimulation(t *testing.T) {
-	testSyncBetweenNodes(t, 2, 1, dataChunkCount, true, 1)
-	testSyncBetweenNodes(t, 4, 1, dataChunkCount, true, 1)
-	testSyncBetweenNodes(t, 8, 1, dataChunkCount, true, 1)
-	testSyncBetweenNodes(t, 16, 1, dataChunkCount, true, 1)
+	testSyncBetweenNodes(t, 2, dataChunkCount, true, 1)
+	testSyncBetweenNodes(t, 4, dataChunkCount, true, 1)
+	testSyncBetweenNodes(t, 8, dataChunkCount, true, 1)
+	testSyncBetweenNodes(t, 16, dataChunkCount, true, 1)
 }
 
 func createMockStore(globalStore mock.GlobalStorer, id enode.ID, addr *network.BzzAddr) (lstore storage.ChunkStore, datadir string, err error) {
@@ -67,9 +69,8 @@ func createMockStore(globalStore mock.GlobalStorer, id enode.ID, addr *network.B
 	return lstore, datadir, nil
 }
 
-func testSyncBetweenNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck bool, po uint8) {
+func testSyncBetweenNodes(t *testing.T, nodes, chunkCount int, skipCheck bool, po uint8) {
 
-	t.Skip("temporarily disabled as simulations.WaitTillHealthy cannot be trusted")
 	sim := simulation.New(map[string]simulation.ServiceFunc{
 		"streamer": func(ctx *adapters.ServiceContext, bucket *sync.Map) (s node.Service, cleanup func(), err error) {
 			var store storage.ChunkStore
@@ -130,7 +131,7 @@ func testSyncBetweenNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck 
 	if err != nil {
 		t.Fatal(err)
 	}
-	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) error {
+	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) (err error) {
 		nodeIDs := sim.UpNodeIDs()
 
 		nodeIndex := make(map[enode.ID]int)
@@ -144,11 +145,19 @@ func testSyncBetweenNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck 
 			simulation.NewPeerEventsFilter().Drop(),
 		)
 
+		var disconnected atomic.Value
 		go func() {
 			for d := range disconnections {
 				if d.Error != nil {
 					log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
-					t.Fatal(d.Error)
+					disconnected.Store(true)
+				}
+			}
+		}()
+		defer func() {
+			if err != nil {
+				if yes, ok := disconnected.Load().(bool); ok && yes {
+					err = errors.New("disconnect events received")
 				}
 			}
 		}()
@@ -180,7 +189,7 @@ func testSyncBetweenNodes(t *testing.T, nodes, conns, chunkCount int, skipCheck 
 			}
 		}
 		// here we distribute chunks of a random file into stores 1...nodes
-		if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+		if _, err := sim.WaitTillHealthy(ctx); err != nil {
 			return err
 		}
 
