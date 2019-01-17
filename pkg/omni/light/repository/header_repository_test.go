@@ -32,6 +32,7 @@ import (
 
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
+	var bc core.BlockChain
 	var omniHeaderRepo repository.HeaderRepository   // omni/light header repository
 	var coreHeaderRepo repositories.HeaderRepository // pkg/datastore header repository
 	var eventIDs = []string{
@@ -46,7 +47,7 @@ var _ = Describe("Repository", func() {
 	}
 
 	BeforeEach(func() {
-		db, _ = test_helpers.SetupDBandBC()
+		db, bc = test_helpers.SetupDBandBC()
 		omniHeaderRepo = repository.NewHeaderRepository(db)
 		coreHeaderRepo = repositories.NewHeaderRepository(db)
 	})
@@ -120,7 +121,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
@@ -130,7 +131,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -142,12 +143,24 @@ var _ = Describe("Repository", func() {
 			Expect(h3.BlockNumber).To(Equal(int64(6194634)))
 		})
 
+		It("Returns only contiguous chunks of headers", func() {
+			addDiscontinuousHeaders(coreHeaderRepo)
+			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(missingHeaders)).To(Equal(2))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
+		})
+
 		It("Fails if eventID does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
 			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, "notEventId")
+			_, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, "notEventId")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -158,14 +171,14 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194630, 6194635, eventIDs)
+			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			err = omniHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194630, 6194635, eventIDs)
+			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -174,9 +187,33 @@ var _ = Describe("Repository", func() {
 			err = omniHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[2])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194630, 6194635, eventIDs)
+			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194633, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
+		})
+
+		It("Returns only contiguous chunks of headers", func() {
+			addDiscontinuousHeaders(coreHeaderRepo)
+			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+
+			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(missingHeaders)).To(Equal(2))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
+		})
+
+		It("Returns at most 100 headers", func() {
+			add102Headers(coreHeaderRepo, bc)
+			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+
+			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194733, eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(missingHeaders)).To(Equal(100))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
 		})
 
 		It("Fails if one of the eventIDs does not yet exist in check_headers table", func() {
@@ -185,7 +222,7 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			badEventIDs := append(eventIDs, "notEventId")
 
-			_, err = omniHeaderRepo.MissingHeadersForAll(6194630, 6194635, badEventIDs)
+			_, err = omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, badEventIDs)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -196,7 +233,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -204,7 +241,7 @@ var _ = Describe("Repository", func() {
 			err = omniHeaderRepo.MarkHeaderChecked(headerID, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -214,7 +251,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -222,7 +259,7 @@ var _ = Describe("Repository", func() {
 			err = omniHeaderRepo.MarkHeaderChecked(headerID, "notEventId")
 			Expect(err).To(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
@@ -234,7 +271,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194630, 6194635, eventIDs)
+			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -242,7 +279,7 @@ var _ = Describe("Repository", func() {
 			err = omniHeaderRepo.MarkHeaderCheckedForAll(headerID, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -261,7 +298,7 @@ var _ = Describe("Repository", func() {
 			for _, id := range methodIDs {
 				err := omniHeaderRepo.AddCheckColumn(id)
 				Expect(err).ToNot(HaveOccurred())
-				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, id)
+				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(3))
 			}
@@ -269,7 +306,7 @@ var _ = Describe("Repository", func() {
 			err := omniHeaderRepo.MarkHeadersCheckedForAll(missingHeaders, methodIDs)
 			Expect(err).ToNot(HaveOccurred())
 			for _, id := range methodIDs {
-				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194630, 6194635, id)
+				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(0))
 			}
@@ -286,7 +323,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194630, 6194635, eventIDs[0])
+			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -301,7 +338,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			intersectionHeaders, err := omniHeaderRepo.MissingMethodsCheckedEventsIntersection(6194630, 6194635, methodIDs, eventIDs)
+			intersectionHeaders, err := omniHeaderRepo.MissingMethodsCheckedEventsIntersection(6194632, 6194635, methodIDs, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(intersectionHeaders)).To(Equal(1))
 			Expect(intersectionHeaders[0].Id).To(Equal(headerID2))
@@ -314,4 +351,19 @@ func addHeaders(coreHeaderRepo repositories.HeaderRepository) {
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+}
+
+func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
+	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
+	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
+	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+}
+
+func add102Headers(coreHeaderRepo repositories.HeaderRepository, blockChain core.BlockChain) {
+	for i := 6194632; i < 6194733; i++ {
+		header, err := blockChain.GetHeaderByNumber(int64(i))
+		Expect(err).ToNot(HaveOccurred())
+		_, err = coreHeaderRepo.CreateOrUpdateHeader(header)
+		Expect(err).ToNot(HaveOccurred())
+	}
 }

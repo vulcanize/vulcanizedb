@@ -53,6 +53,7 @@ func NewHeaderRepository(db *postgres.DB) *headerRepository {
 	}
 }
 
+// Adds a checked_header column for the provided column id
 func (r *headerRepository) AddCheckColumn(id string) error {
 	// Check cache to see if column already exists before querying pg
 	_, ok := r.columns.Get(id)
@@ -73,6 +74,7 @@ func (r *headerRepository) AddCheckColumn(id string) error {
 	return nil
 }
 
+// Adds a checked_header column for all of the provided column ids
 func (r *headerRepository) AddCheckColumns(ids []string) error {
 	var err error
 	baseQuery := "ALTER TABLE public.checked_headers"
@@ -96,6 +98,7 @@ func (r *headerRepository) AddCheckColumns(ids []string) error {
 	return err
 }
 
+// Marks the header checked for the provided column id
 func (r *headerRepository) MarkHeaderChecked(headerID int64, id string) error {
 	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, `+id+`)
 		VALUES ($1, $2) 
@@ -105,6 +108,7 @@ func (r *headerRepository) MarkHeaderChecked(headerID int64, id string) error {
 	return err
 }
 
+// Marks the header checked for all of the provided column ids
 func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string) error {
 	pgStr := "INSERT INTO public.checked_headers (header_id, "
 	for _, id := range ids {
@@ -124,6 +128,7 @@ func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string)
 	return err
 }
 
+// Marks all of the provided headers checked for each of the provided column ids
 func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids []string) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -154,6 +159,7 @@ func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids [
 	return tx.Commit()
 }
 
+// Returns missing headers for the provided checked_headers column id
 func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64, id string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -165,7 +171,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 				WHERE (header_id ISNULL OR ` + id + ` IS FALSE)
 				AND headers.block_number >= $1
 				AND headers.eth_node_fingerprint = $2
-				ORDER BY headers.block_number`
+				ORDER BY headers.block_number LIMIT 100`
 		err = r.db.Select(&result, query, startingBlockNumber, r.db.Node.ID)
 	} else {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
@@ -174,13 +180,14 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 				AND headers.block_number >= $1
 				AND headers.block_number <= $2
 				AND headers.eth_node_fingerprint = $3
-				ORDER BY headers.block_number`
+				ORDER BY headers.block_number LIMIT 100`
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
 
-	return result, err
+	return contiguousHeaders(result, startingBlockNumber), err
 }
 
+// Returns missing headers for all of the provided checked_headers column ids
 func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlockNumber int64, ids []string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -196,21 +203,42 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 	if endingBlockNumber == -1 {
 		endStr := `) AND headers.block_number >= $1
 				  AND headers.eth_node_fingerprint = $2
-				  ORDER BY headers.block_number`
+				  ORDER BY headers.block_number LIMIT 100`
 		query = baseQuery + endStr
 		err = r.db.Select(&result, query, startingBlockNumber, r.db.Node.ID)
 	} else {
 		endStr := `) AND headers.block_number >= $1
 				  AND headers.block_number <= $2
 				  AND headers.eth_node_fingerprint = $3
-				  ORDER BY headers.block_number`
+				  ORDER BY headers.block_number LIMIT 100`
 		query = baseQuery + endStr
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
 
-	return result, err
+	return contiguousHeaders(result, startingBlockNumber), err
 }
 
+// Takes in an ordered sequence of headers and returns only the first contiguous segment
+// Enforce continuity with previous segment with the appropriate startingBlockNumber
+func contiguousHeaders(headers []core.Header, startingBlockNumber int64) []core.Header {
+	if len(headers) < 1 {
+		return headers
+	}
+	previousHeader := headers[0].BlockNumber
+	if previousHeader != startingBlockNumber {
+		return []core.Header{}
+	}
+	for i := 1; i < len(headers); i++ {
+		previousHeader++
+		if headers[i].BlockNumber != previousHeader {
+			return headers[:i]
+		}
+	}
+
+	return headers
+}
+
+// Returns headers that have been checked for all of the provided event ids but not for the provided method ids
 func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -231,14 +259,14 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 	if endingBlockNumber == -1 {
 		endStr := `AND headers.block_number >= $1
 				  AND headers.eth_node_fingerprint = $2
-				  ORDER BY headers.block_number`
+				  ORDER BY headers.block_number LIMIT 100`
 		query = baseQuery + endStr
 		err = r.db.Select(&result, query, startingBlockNumber, r.db.Node.ID)
 	} else {
 		endStr := `AND headers.block_number >= $1
 				  AND headers.block_number <= $2
 				  AND headers.eth_node_fingerprint = $3
-				  ORDER BY headers.block_number`
+				  ORDER BY headers.block_number LIMIT 100`
 		query = baseQuery + endStr
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
@@ -246,10 +274,12 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 	return result, err
 }
 
+// Check the repositories column id cache for a value
 func (r *headerRepository) CheckCache(key string) (interface{}, bool) {
 	return r.columns.Get(key)
 }
 
+// Used to mark a header checked as part of some external transaction so as to group into one commit
 func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, eventID string) error {
 	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+eventID+`)
 		VALUES ($1, $2) 
