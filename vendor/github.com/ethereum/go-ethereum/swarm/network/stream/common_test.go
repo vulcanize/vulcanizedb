@@ -35,10 +35,8 @@ import (
 	p2ptest "github.com/ethereum/go-ethereum/p2p/testing"
 	"github.com/ethereum/go-ethereum/swarm/network"
 	"github.com/ethereum/go-ethereum/swarm/network/simulation"
-	"github.com/ethereum/go-ethereum/swarm/pot"
 	"github.com/ethereum/go-ethereum/swarm/state"
 	"github.com/ethereum/go-ethereum/swarm/storage"
-	mockdb "github.com/ethereum/go-ethereum/swarm/storage/mock/db"
 	"github.com/ethereum/go-ethereum/swarm/testutil"
 	colorable "github.com/mattn/go-colorable"
 )
@@ -58,7 +56,7 @@ var (
 	bucketKeyRegistry  = simulation.BucketKey("registry")
 
 	chunkSize = 4096
-	pof       = pot.DefaultPof(256)
+	pof       = network.Pof
 )
 
 func init() {
@@ -67,21 +65,6 @@ func init() {
 
 	log.PrintOrigins(true)
 	log.Root().SetHandler(log.LvlFilterHandler(log.Lvl(*loglevel), log.StreamHandler(colorable.NewColorableStderr(), log.TerminalFormat(true))))
-}
-
-func createGlobalStore() (string, *mockdb.GlobalStore, error) {
-	var globalStore *mockdb.GlobalStore
-	globalStoreDir, err := ioutil.TempDir("", "global.store")
-	if err != nil {
-		log.Error("Error initiating global store temp directory!", "err", err)
-		return "", nil, err
-	}
-	globalStore, err = mockdb.NewGlobalStore(globalStoreDir)
-	if err != nil {
-		log.Error("Error initiating global store!", "err", err)
-		return "", nil, err
-	}
-	return globalStoreDir, globalStore, nil
 }
 
 func newStreamerTester(t *testing.T, registryOptions *RegistryOptions) (*p2ptest.ProtocolTester, *Registry, *storage.LocalStore, func(), error) {
@@ -114,7 +97,7 @@ func newStreamerTester(t *testing.T, registryOptions *RegistryOptions) (*p2ptest
 
 	delivery := NewDelivery(to, netStore)
 	netStore.NewNetFetcherFunc = network.NewFetcherFactory(delivery.RequestFromPeers, true).New
-	streamer := NewRegistry(addr.ID(), delivery, netStore, state.NewInmemoryStore(), registryOptions)
+	streamer := NewRegistry(addr.ID(), delivery, netStore, state.NewInmemoryStore(), registryOptions, nil)
 	teardown := func() {
 		streamer.Close()
 		removeDataDir()

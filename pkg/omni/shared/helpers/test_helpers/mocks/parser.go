@@ -63,11 +63,11 @@ func (p *parser) GetSelectMethods(wanted []string) []types.Method {
 	if wLen == 0 {
 		return nil
 	}
-	methods := make([]types.Method, wLen)
+	methods := make([]types.Method, 0, wLen)
 	for _, m := range p.parsedAbi.Methods {
-		for i, name := range wanted {
+		for _, name := range wanted {
 			if name == m.Name && okTypes(m, wanted) {
-				methods[i] = types.NewMethod(m)
+				methods = append(methods, types.NewMethod(m))
 			}
 		}
 	}

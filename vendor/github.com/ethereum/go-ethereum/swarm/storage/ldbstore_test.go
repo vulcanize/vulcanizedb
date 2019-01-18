@@ -79,14 +79,6 @@ func testPoFunc(k Address) (ret uint8) {
 	return uint8(Proximity(basekey, k[:]))
 }
 
-func (db *testDbStore) close() {
-	db.Close()
-	err := os.RemoveAll(db.dir)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func testDbStoreRandom(n int, chunksize int64, mock bool, t *testing.T) {
 	db, cleanup, err := newTestDbStore(mock, true)
 	defer cleanup()
@@ -344,17 +336,18 @@ func TestLDBStoreWithoutCollectGarbage(t *testing.T) {
 func TestLDBStoreCollectGarbage(t *testing.T) {
 
 	// below max ronud
-	cap := defaultMaxGCRound / 2
+	initialCap := defaultMaxGCRound / 100
+	cap := initialCap / 2
 	t.Run(fmt.Sprintf("A/%d/%d", cap, cap*4), testLDBStoreCollectGarbage)
 	t.Run(fmt.Sprintf("B/%d/%d", cap, cap*4), testLDBStoreRemoveThenCollectGarbage)
 
 	// at max round
-	cap = defaultMaxGCRound
+	cap = initialCap
 	t.Run(fmt.Sprintf("A/%d/%d", cap, cap*4), testLDBStoreCollectGarbage)
 	t.Run(fmt.Sprintf("B/%d/%d", cap, cap*4), testLDBStoreRemoveThenCollectGarbage)
 
 	// more than max around, not on threshold
-	cap = defaultMaxGCRound * 1.1
+	cap = initialCap + 500
 	t.Run(fmt.Sprintf("A/%d/%d", cap, cap*4), testLDBStoreCollectGarbage)
 	t.Run(fmt.Sprintf("B/%d/%d", cap, cap*4), testLDBStoreRemoveThenCollectGarbage)
 
@@ -452,7 +445,7 @@ func TestLDBStoreAddRemove(t *testing.T) {
 	log.Info("ldbstore", "entrycnt", ldb.entryCnt, "accesscnt", ldb.accessCnt)
 
 	for i := 0; i < n; i++ {
-		ret, err := ldb.Get(nil, chunks[i].Address())
+		ret, err := ldb.Get(context.TODO(), chunks[i].Address())
 
 		if i%2 == 0 {
 			// expect even chunks to be missing
@@ -578,7 +571,7 @@ func testLDBStoreRemoveThenCollectGarbage(t *testing.T) {
 // TestLDBStoreCollectGarbageAccessUnlikeIndex tests garbage collection where accesscount differs from indexcount
 func TestLDBStoreCollectGarbageAccessUnlikeIndex(t *testing.T) {
 
-	capacity := defaultMaxGCRound * 2
+	capacity := defaultMaxGCRound / 100 * 2
 	n := capacity - 1
 
 	ldb, cleanup := newLDBStore(t)
@@ -760,6 +753,38 @@ func TestCleanIndex(t *testing.T) {
 		if binTotal != 3 {
 			t.Fatalf("expected sum of bin indices to be 3, was %d", binTotal)
 		}
+	}
+
+	// check that the iterator quits properly
+	chunks, err = mputRandomChunks(ldb, 4100, 4096)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	po = ldb.po(chunks[4099].Address()[:])
+	dataKey = make([]byte, 10)
+	dataKey[0] = keyData
+	dataKey[1] = byte(po)
+	binary.BigEndian.PutUint64(dataKey[2:], 4099+3)
+	if _, err := ldb.db.Get(dataKey); err != nil {
+		t.Fatal(err)
+	}
+	if err := ldb.db.Delete(dataKey); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ldb.CleanGCIndex(); err != nil {
+		t.Fatal(err)
+	}
+
+	// entrycount should now be one less of added chunks
+	c, err = ldb.db.Get(keyEntryCnt)
+	if err != nil {
+		t.Fatalf("expected gc 2 idx to be present: %v", idxKey)
+	}
+	entryCount = binary.BigEndian.Uint64(c)
+	if entryCount != 4099+2 {
+		t.Fatalf("expected entrycnt to be 2, was %d", c)
 	}
 }
 

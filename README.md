@@ -138,8 +138,11 @@ false
 
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
-## omniWatcher and lightOmniWatcher 
-These commands require a pre-synced (full or light) vulcanizeDB (see above sections) 
+## omniWatcher
+This command allows for generic watching of any Ethereum contract provided only the contract's address and additional optional filtering information  
+Currently the contract's ABI must be available on etherscan or manually added  
+This command will index watched events and polled methods using Postgres tables automatically generated from the ABI  
+This command requires a pre-synced (full or light) vulcanizeDB (see above sections)  
  
 To watch all events of a contract using a light synced vDB:  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`  
@@ -170,4 +173,47 @@ To watch all types of events of the contract but only persist the ones that emit
     
 To watch all events of the contract but only poll the specified method with specified argument values (if they are emitted from the watched events):  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName> --method-args <arg1> --method-args <arg2>`  
+
+### omniWatcher output    
+
+Watched events and methods are transformed and persisted in auto-generated Postgres schemas and tables  
+Schemas are created for each contract, with the naming convention `<sync-type>_<lowercase contract-address>`   
+e.g. for the TrueUSD contract in lightSync mode we would generate a schema named `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e`  
+Under this schema, tables are generated for watched events as `<lowercase event name>_event` and for polled methods as `<lowercase method name>_method`  
+e.g. if we watch Transfer and Mint events of the TrueUSD contract and poll its balanceOf method using the addresses we find emitted from those events we produce a schema with three tables:  
+
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`  
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`  
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`  
+
+The 'method' and 'event' identifiers are tacked onto the end of the table names to prevent collisions between methods and events of the same name  
+
+Column id's and types are also auto-generated based on the event and method argument names, resulting in tables such as  
+
+Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"  
+
+|  Column    |         Type          | Collation | Nullable |                                           Default                                           | Storage  | Stats target | Description  
+|:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
+| id         | integer               |           | not null | nextval('light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event_id_seq'::regclass) | plain    |              |             |
+| header_id  | integer               |           | not null |                                                                                             | plain    |              |             |
+| token_name | character varying(66) |           | not null |                                                                                             | extended |              |             |
+| raw_log    | jsonb                 |           |          |                                                                                             | extended |              |             |
+| log_idx    | integer               |           | not null |                                                                                             | plain    |              |             |
+| tx_idx     | integer               |           | not null |                                                                                             | plain    |              |             |
+| from_      | character varying(66) |           | not null |                                                                                             | extended |              |             |
+| to_        | character varying(66) |           | not null |                                                                                             | extended |              |             |
+| value_     | numeric               |           | not null |                                                                                             | main     |              |             |
+     
+and   
+
+Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"  
+
+|   Column   |         Type          | Collation | Nullable |                                            Default                                            | Storage  | Stats target | Description |
+|:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
+| id         | integer               |           | not null | nextval('light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method_id_seq'::regclass) | plain    |              |             |
+| token_name | character varying(66) |           | not null |                                                                                               | extended |              |             |
+| block      | integer               |           | not null |                                                                                               | plain    |              |             |
+| who_       | character varying(66) |           | not null |                                                                                               | extended |              |             |
+| returned   | numeric               |           | not null |                                                                                               | main     |              |             |
     
+The addition of '_' after table names is to prevent collisions with reserved Postgres words  

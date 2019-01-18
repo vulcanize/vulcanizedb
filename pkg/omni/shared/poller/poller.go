@@ -54,7 +54,10 @@ func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *po
 
 func (p *poller) PollContract(con contract.Contract) error {
 	for i := con.StartingBlock; i <= con.LastBlock; i++ {
-		p.PollContractAt(con, i)
+		if err := p.PollContractAt(con, i); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -160,7 +163,6 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 		result.Output = strOut
 		results = append(results, result)
 	}
-
 	// Persist result set as batch
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
@@ -204,7 +206,6 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 	}
 
 	results := make([]types.Result, 0, len(firstArgs)*len(secondArgs))
-
 	for arg1 := range firstArgs {
 		for arg2 := range secondArgs {
 			in := []interface{}{arg1, arg2}
@@ -229,7 +230,6 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 
 		}
 	}
-
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
 		return errors.New(fmt.Sprintf("poller error persisting 2 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))

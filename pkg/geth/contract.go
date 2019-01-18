@@ -43,7 +43,11 @@ func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, 
 	if err != nil {
 		return err
 	}
-	output, err := blockChain.callContract(address, input, big.NewInt(blockNumber))
+	var bn *big.Int
+	if blockNumber > 0 {
+		bn = big.NewInt(blockNumber)
+	}
+	output, err := blockChain.callContract(address, input, bn)
 	if err != nil {
 		return err
 	}

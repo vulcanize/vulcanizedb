@@ -226,3 +226,4 @@ func parseTopicsIntoMap(out map[string]interface{}, fields abi.Arguments, topics
 
 	return nil
 }
+

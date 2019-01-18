@@ -19,15 +19,16 @@ package stream
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/simulations/adapters"
 	"github.com/ethereum/go-ethereum/swarm/network"
@@ -53,6 +54,7 @@ func TestIntervalsLiveAndHistory(t *testing.T) {
 }
 
 func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
+
 	nodes := 2
 	chunkCount := dataChunkCount
 	externalStreamName := "externalStream"
@@ -85,7 +87,7 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 				Retrieval: RetrievalDisabled,
 				Syncing:   SyncingRegisterOnly,
 				SkipCheck: skipCheck,
-			})
+			}, nil)
 			bucket.Store(bucketKeyRegistry, r)
 
 			r.RegisterClientFunc(externalStreamName, func(p *Peer, t string, live bool) (Client, error) {
@@ -113,11 +115,11 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+	if _, err := sim.WaitTillHealthy(ctx); err != nil {
 		t.Fatal(err)
 	}
 
-	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) error {
+	result := sim.Run(ctx, func(ctx context.Context, sim *simulation.Simulation) (err error) {
 		nodeIDs := sim.UpNodeIDs()
 		storer := nodeIDs[0]
 		checker := nodeIDs[1]
@@ -154,7 +156,7 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 		disconnections := sim.PeerEvents(
 			context.Background(),
 			sim.NodeIDs(),
-			simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeDrop),
+			simulation.NewPeerEventsFilter().Drop(),
 		)
 
 		err = registry.Subscribe(storer, NewStream(externalStreamName, "", live), history, Top)
@@ -162,11 +164,19 @@ func testIntervals(t *testing.T, live bool, history *Range, skipCheck bool) {
 			return err
 		}
 
+		var disconnected atomic.Value
 		go func() {
 			for d := range disconnections {
 				if d.Error != nil {
-					log.Error("peer drop", "node", d.NodeID, "peer", d.Event.Peer)
-					t.Fatal(d.Error)
+					log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
+					disconnected.Store(true)
+				}
+			}
+		}()
+		defer func() {
+			if err != nil {
+				if yes, ok := disconnected.Load().(bool); ok && yes {
+					err = errors.New("disconnect events received")
 				}
 			}
 		}()
