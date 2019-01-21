@@ -75,6 +75,15 @@ func (chain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, 
 	return core.Header{BlockNumber: blockNumber}, nil
 }
 
+func (chain *MockBlockChain) GetHeaderByNumbers(blockNumbers []int64) ([]core.Header, error) {
+	var headers []core.Header
+	for _, blockNumber := range blockNumbers {
+		var header = core.Header{BlockNumber: int64(blockNumber)}
+		headers = append(headers, header)
+	}
+	return headers, nil
+}
+
 func (chain *MockBlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
 	return []core.Log{}, nil
 }

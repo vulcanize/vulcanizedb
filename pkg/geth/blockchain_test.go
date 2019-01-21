@@ -5,12 +5,12 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	vulcCore "github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -71,12 +71,21 @@ var _ = Describe("Geth blockchain", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
 			})
+
+			It("fetches headers with multiple blocks", func() {
+				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, cold_db.NewColdDbTransactionConverter())
+
+				_, err := blockChain.GetHeaderByNumbers([]int64{100, 99})
+
+				Expect(err).NotTo(HaveOccurred())
+				mockRpcClient.AssertBatchCalledWith("eth_getBlockByNumber", 2)
+			})
 		})
 
 		Describe("POA/Kovan", func() {
 			It("fetches header from rpcClient", func() {
 				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
-				blockNumber := hexutil.Big(*big.NewInt(123))
+				blockNumber := hexutil.Big(*big.NewInt(100))
 				mockRpcClient.SetReturnPOAHeader(vulcCore.POAHeader{Number: &blockNumber})
 				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, cold_db.NewColdDbTransactionConverter())
 
@@ -105,6 +114,18 @@ var _ = Describe("Geth blockchain", func() {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(geth.ErrEmptyHeader))
+			})
+
+			It("returns multiple headers with multiple blocknumbers", func() {
+				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				blockNumber := hexutil.Big(*big.NewInt(100))
+				mockRpcClient.SetReturnPOAHeaders([]vulcCore.POAHeader{{Number: &blockNumber}})
+				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, cold_db.NewColdDbTransactionConverter())
+
+				_, err := blockChain.GetHeaderByNumbers([]int64{100, 99})
+
+				Expect(err).NotTo(HaveOccurred())
+				mockRpcClient.AssertBatchCalledWith("eth_getBlockByNumber", 2)
 			})
 		})
 	})

@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 type MockEthClient struct {
@@ -24,12 +25,16 @@ type MockEthClient struct {
 	headerByNumberPassedContext context.Context
 	headerByNumberPassedNumber  *big.Int
 	headerByNumberReturnHeader  *types.Header
+	headerByNumbersReturnHeader []*types.Header
+	headerByNumbersPassedNumber []*big.Int
 	filterLogsErr               error
 	filterLogsPassedContext     context.Context
 	filterLogsPassedQuery       ethereum.FilterQuery
 	filterLogsReturnLogs        []types.Log
 	transactionReceipts         map[string]*types.Receipt
 	err                         error
+	passedBatch                 []client.BatchElem
+	passedMethod                string
 	transactionSenderErr        error
 	transactionReceiptErr       error
 }
@@ -55,6 +60,8 @@ func NewMockEthClient() *MockEthClient {
 		filterLogsReturnLogs:        nil,
 		transactionReceipts:         make(map[string]*types.Receipt),
 		err:                         nil,
+		passedBatch:                 nil,
+		passedMethod:                "123",
 	}
 }
 
@@ -80,6 +87,10 @@ func (client *MockEthClient) SetHeaderByNumberErr(err error) {
 
 func (client *MockEthClient) SetHeaderByNumberReturnHeader(header *types.Header) {
 	client.headerByNumberReturnHeader = header
+}
+
+func (client *MockEthClient) SetHeaderByNumbersReturnHeader(headers []*types.Header) {
+	client.headerByNumbersReturnHeader = headers
 }
 
 func (client *MockEthClient) SetFilterLogsErr(err error) {
@@ -111,6 +122,13 @@ func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.Call
 	return client.callContractReturnBytes, client.callContractErr
 }
 
+func (client *MockEthClient) BatchCall(batch []client.BatchElem) error {
+	client.passedBatch = batch
+	client.passedMethod = batch[0].Method
+
+	return nil
+}
+
 func (client *MockEthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	client.blockByNumberPassedContext = ctx
 	client.blockByNumberPassedNumber = number
@@ -121,6 +139,11 @@ func (client *MockEthClient) HeaderByNumber(ctx context.Context, number *big.Int
 	client.headerByNumberPassedContext = ctx
 	client.headerByNumberPassedNumber = number
 	return client.headerByNumberReturnHeader, client.headerByNumberErr
+}
+
+func (client *MockEthClient) HeaderByNumbers(numbers []*big.Int) ([]*types.Header, error) {
+	client.headerByNumbersPassedNumber = numbers
+	return client.headerByNumbersReturnHeader, client.headerByNumberErr
 }
 
 func (client *MockEthClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
@@ -156,7 +179,15 @@ func (client *MockEthClient) AssertHeaderByNumberCalledWith(ctx context.Context,
 	Expect(client.headerByNumberPassedNumber).To(Equal(number))
 }
 
+func (client *MockEthClient) AssertHeaderByNumbersCalledWith(number []*big.Int) {
+	Expect(client.headerByNumbersPassedNumber).To(Equal(number))
+}
+
 func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q ethereum.FilterQuery) {
 	Expect(client.filterLogsPassedContext).To(Equal(ctx))
 	Expect(client.filterLogsPassedQuery).To(Equal(q))
+}
+
+func (client *MockEthClient) AssertBatchCalledWith(method string) {
+	Expect(client.passedMethod).To(Equal(method))
 }

@@ -10,6 +10,13 @@ type RpcClient struct {
 	ipcPath string
 }
 
+type BatchElem struct {
+	Method string
+	Args   []interface{}
+	Result interface{}
+	Error  error
+}
+
 func NewRpcClient(client *rpc.Client, ipcPath string) RpcClient {
 	return RpcClient{
 		client:  client,
@@ -34,4 +41,15 @@ func (client RpcClient) IpcPath() string {
 
 func (client RpcClient) SupportedModules() (map[string]string, error) {
 	return client.client.SupportedModules()
+}
+
+func (client RpcClient) BatchCall(batch []BatchElem) error {
+	var rpcBatch []rpc.BatchElem
+	for index, batchElem := range batch {
+		rpcBatch[index].Result = batchElem.Result
+		rpcBatch[index].Method = batchElem.Method
+		rpcBatch[index].Args = batchElem.Args
+		rpcBatch[index].Error = batchElem.Error
+	}
+	return client.client.BatchCall(rpcBatch)
 }

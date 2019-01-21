@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 type MockRpcClient struct {
@@ -18,7 +19,11 @@ type MockRpcClient struct {
 	passedContext    context.Context
 	passedMethod     string
 	passedResult     interface{}
+	passedBatch      []client.BatchElem
+	lengthOfBatch    int
 	returnPOAHeader  core.POAHeader
+	returnPOAHeaders []core.POAHeader
+	returnPOWHeaders []*types.Header
 	supportedModules map[string]string
 }
 
@@ -28,6 +33,27 @@ func NewMockRpcClient() *MockRpcClient {
 
 func (client *MockRpcClient) SetIpcPath(ipcPath string) {
 	client.ipcPath = ipcPath
+}
+
+func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
+	client.passedBatch = batch
+	client.passedMethod = batch[0].Method
+	client.lengthOfBatch = len(batch)
+
+	for _, batchElem := range batch {
+		client.passedContext = context.Background()
+		client.passedResult = &batchElem.Result
+		client.passedMethod = batchElem.Method
+		if p, ok := batchElem.Result.(*types.Header); ok {
+			*p = types.Header{Number: big.NewInt(100)}
+		}
+		if p, ok := batchElem.Result.(*core.POAHeader); ok {
+
+			*p = client.returnPOAHeader
+		}
+	}
+
+	return nil
 }
 
 func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
@@ -42,14 +68,16 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 		}
 	case "eth_getBlockByNumber":
 		if p, ok := result.(*types.Header); ok {
-			*p = types.Header{Number: big.NewInt(123)}
+			*p = types.Header{Number: big.NewInt(100)}
 		}
 		if p, ok := result.(*core.POAHeader); ok {
+
 			*p = client.returnPOAHeader
 		}
 		if client.callContextErr != nil {
 			return client.callContextErr
 		}
+
 	case "parity_versionInfo":
 		if p, ok := result.(*core.ParityNodeInfo); ok {
 			*p = core.ParityNodeInfo{
@@ -94,8 +122,24 @@ func (client *MockRpcClient) SetReturnPOAHeader(header core.POAHeader) {
 	client.returnPOAHeader = header
 }
 
+func (client *MockRpcClient) SetReturnPOWHeaders(headers []*types.Header) {
+	client.returnPOWHeaders = headers
+}
+
+func (client *MockRpcClient) SetReturnPOAHeaders(headers []core.POAHeader) {
+	client.returnPOAHeaders = headers
+}
+
 func (client *MockRpcClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
 	Expect(client.passedContext).To(Equal(ctx))
 	Expect(client.passedResult).To(BeAssignableToTypeOf(result))
+	Expect(client.passedMethod).To(Equal(method))
+}
+
+func (client *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch int) {
+	Expect(client.lengthOfBatch).To(Equal(lengthOfBatch))
+	for _, batch := range client.passedBatch {
+		Expect(batch.Method).To(Equal(method))
+	}
 	Expect(client.passedMethod).To(Equal(method))
 }
