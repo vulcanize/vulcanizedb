@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 type MockEthClient struct {
@@ -33,7 +33,7 @@ type MockEthClient struct {
 	filterLogsReturnLogs        []types.Log
 	transactionReceipts         map[string]*types.Receipt
 	err                         error
-	passedBatch                 []rpc.BatchElem
+	passedBatch                 []client.BatchElem
 	passedMethod                string
 	transactionSenderErr        error
 	transactionReceiptErr       error
@@ -122,7 +122,7 @@ func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.Call
 	return client.callContractReturnBytes, client.callContractErr
 }
 
-func (client *MockEthClient) BatchCall(batch []rpc.BatchElem) error {
+func (client *MockEthClient) BatchCall(batch []client.BatchElem) error {
 	client.passedBatch = batch
 	client.passedMethod = batch[0].Method
 
