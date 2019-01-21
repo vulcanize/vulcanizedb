@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	. "github.com/onsi/gomega"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 type MockRpcClient struct {
@@ -19,7 +19,7 @@ type MockRpcClient struct {
 	passedContext    context.Context
 	passedMethod     string
 	passedResult     interface{}
-	passedBatch      []rpc.BatchElem
+	passedBatch      []client.BatchElem
 	lengthOfBatch    int
 	returnPOAHeader  core.POAHeader
 	returnPOAHeaders []core.POAHeader
@@ -35,7 +35,7 @@ func (client *MockRpcClient) SetIpcPath(ipcPath string) {
 	client.ipcPath = ipcPath
 }
 
-func (client *MockRpcClient) BatchCall(batch []rpc.BatchElem) error {
+func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
 	client.passedBatch = batch
 	client.passedMethod = batch[0].Method
 	client.lengthOfBatch = len(batch)

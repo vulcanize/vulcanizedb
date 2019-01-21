@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 	"golang.org/x/net/context"
 	"strconv"
@@ -68,7 +68,7 @@ func (blockChain *BlockChain) getPOWHeader(blockNumber int64) (header core.Heade
 }
 
 func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []core.Header, err error) {
-	var batch []rpc.BatchElem
+	var batch []client.BatchElem
 	var POWHeaders [MAX_BATCH_SIZE]types.Header
 	includeTransactions := false
 
@@ -80,7 +80,7 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 
 		blockNumberArg := hexutil.EncodeBig(big.NewInt(blockNumber))
 
-		batchElem := rpc.BatchElem{
+		batchElem := client.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Result: &POWHeaders[index],
 			Args:   []interface{}{blockNumberArg, includeTransactions},
@@ -135,7 +135,7 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 
 func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []core.Header, err error) {
 
-	var batch []rpc.BatchElem
+	var batch []client.BatchElem
 	var POAHeaders [MAX_BATCH_SIZE]core.POAHeader
 	includeTransactions := false
 
@@ -147,7 +147,7 @@ func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []cor
 
 		blockNumberArg := hexutil.EncodeBig(big.NewInt(blockNumber))
 
-		batchElem := rpc.BatchElem{
+		batchElem := client.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Result: &POAHeaders[index],
 			Args:   []interface{}{blockNumberArg, includeTransactions},
