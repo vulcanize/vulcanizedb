@@ -18,6 +18,7 @@ CREATE TABLE maker.frob (
 ALTER TABLE public.checked_headers
   ADD COLUMN frob_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.frob;
 

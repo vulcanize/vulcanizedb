@@ -18,6 +18,7 @@ CREATE TABLE maker.bite (
 ALTER TABLE public.checked_headers
   ADD COLUMN bite_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.bite;
 

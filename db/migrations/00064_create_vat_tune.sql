@@ -17,6 +17,7 @@ CREATE TABLE maker.vat_tune (
 ALTER TABLE public.checked_headers
   ADD COLUMN vat_tune_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.vat_tune;
 ALTER TABLE public.checked_headers

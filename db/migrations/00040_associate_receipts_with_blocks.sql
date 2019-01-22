@@ -1,6 +1,4 @@
 -- +goose Up
-BEGIN;
-
 ALTER TABLE receipts
   ADD COLUMN block_id INT;
 
@@ -21,12 +19,8 @@ ON DELETE CASCADE;
 ALTER TABLE receipts
   DROP COLUMN transaction_id;
 
-COMMIT;
-
 
 -- +goose Down
-BEGIN;
-
 ALTER TABLE receipts
   ADD COLUMN transaction_id INT;
 
@@ -46,5 +40,3 @@ ON DELETE CASCADE;
 
 ALTER TABLE receipts
   DROP COLUMN block_id;
-
-COMMIT;

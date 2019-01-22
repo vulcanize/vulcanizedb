@@ -7,9 +7,8 @@ CREATE TABLE token_supply (
   CONSTRAINT blocks_fk FOREIGN KEY (block_id)
   REFERENCES blocks (id)
   ON DELETE CASCADE
-)
+);
 
 
 -- +goose Down
--- +goose Up
 DROP TABLE token_supply;

@@ -12,6 +12,7 @@ CREATE TABLE maker.vow_flog (
 ALTER TABLE public.checked_headers
   ADD COLUMN vow_flog_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.vow_flog;
 ALTER TABLE public.checked_headers

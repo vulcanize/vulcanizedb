@@ -1,5 +1,4 @@
 -- +goose Up
-BEGIN;
 ALTER TABLE logs
     DROP CONSTRAINT log_uc;
 
@@ -12,11 +11,8 @@ FOREIGN KEY (receipt_id)
 REFERENCES receipts (id)
 ON DELETE CASCADE;
 
-COMMIT;
 
 -- +goose Down
-BEGIN;
-
 ALTER TABLE logs
   DROP CONSTRAINT receipts_fk;
 
@@ -25,5 +21,3 @@ ALTER TABLE logs
 
 ALTER TABLE logs
   ADD CONSTRAINT log_uc UNIQUE (block_number, index);
-
-COMMIT;

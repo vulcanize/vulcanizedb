@@ -16,6 +16,7 @@ CREATE TABLE maker.flop_kick (
 ALTER TABLE public.checked_headers
   ADD COLUMN flop_kick_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.flop_kick;
 ALTER TABLE public.checked_headers

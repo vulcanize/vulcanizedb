@@ -1,5 +1,4 @@
 -- +goose Up
-BEGIN;
 ALTER TABLE blocks
   RENAME COLUMN block_number TO number;
 
@@ -38,21 +37,9 @@ ALTER TABLE blocks
 
 ALTER TABLE blocks
   RENAME COLUMN block_uncles_reward TO uncles_reward;
-COMMIT;
-
-
-
-
-
-
-
-
-
-
 
 
 -- +goose Down
-BEGIN;
 ALTER TABLE blocks
   RENAME COLUMN number TO block_number;
 
@@ -91,4 +78,3 @@ ALTER TABLE blocks
 
 ALTER TABLE blocks
   RENAME COLUMN uncles_reward TO block_uncles_reward;
-COMMIT;

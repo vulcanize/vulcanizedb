@@ -12,6 +12,7 @@ CREATE TABLE maker.drip_drip (
 ALTER TABLE public.checked_headers
   ADD COLUMN drip_drip_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.drip_drip;
 

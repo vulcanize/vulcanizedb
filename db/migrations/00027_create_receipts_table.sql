@@ -15,8 +15,5 @@ CREATE TABLE receipts
 );
 
 
-
-
 -- +goose Down
 DROP TABLE receipts;
-
