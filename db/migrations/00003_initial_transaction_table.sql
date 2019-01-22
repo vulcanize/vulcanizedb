@@ -8,7 +8,7 @@ CREATE TABLE transactions
   tx_gaslimit NUMERIC,
   tx_gasprice NUMERIC,
   tx_value NUMERIC
-)
+);
 
 -- +goose Down
-DROP TABLE transactions
+DROP TABLE transactions;

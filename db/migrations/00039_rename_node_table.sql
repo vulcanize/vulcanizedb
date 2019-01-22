@@ -1,5 +1,4 @@
 -- +goose Up
-BEGIN;
 ALTER TABLE public.nodes RENAME TO eth_nodes;
 
 ALTER TABLE public.eth_nodes RENAME COLUMN node_id TO eth_node_id;
@@ -19,10 +18,8 @@ ALTER TABLE public.blocks
   ADD CONSTRAINT node_fk
 FOREIGN KEY (eth_node_id) REFERENCES eth_nodes (id) ON DELETE CASCADE;
 
-COMMIT;
 
 -- +goose Down
-BEGIN;
 ALTER TABLE public.eth_nodes
   RENAME TO nodes;
 
@@ -44,4 +41,3 @@ ALTER TABLE public.blocks DROP CONSTRAINT node_fk;
 ALTER TABLE public.blocks
   ADD CONSTRAINT node_fk
 FOREIGN KEY (node_id) REFERENCES nodes (id) ON DELETE CASCADE;
-COMMIT;

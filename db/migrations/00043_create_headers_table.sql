@@ -12,5 +12,6 @@ CREATE TABLE public.headers (
   ON DELETE CASCADE
 );
 
+
 -- +goose Down
 DROP TABLE public.headers;

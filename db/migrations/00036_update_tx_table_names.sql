@@ -1,5 +1,4 @@
 -- +goose Up
-BEGIN;
 ALTER TABLE transactions
   RENAME COLUMN tx_hash TO hash;
 
@@ -17,12 +16,9 @@ ALTER TABLE transactions
 
 ALTER TABLE transactions
   RENAME COLUMN tx_input_data TO input_data;
-COMMIT;
 
 
 -- +goose Down
--- +goose Up
-BEGIN;
 ALTER TABLE transactions
   RENAME COLUMN hash TO tx_hash;
 
@@ -40,4 +36,3 @@ ALTER TABLE transactions
 
 ALTER TABLE transactions
   RENAME COLUMN input_data TO tx_input_data;
-COMMIT;

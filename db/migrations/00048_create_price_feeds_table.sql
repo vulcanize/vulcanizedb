@@ -11,5 +11,6 @@ CREATE TABLE maker.price_feeds (
   UNIQUE (header_id, medianizer_address, tx_idx, log_idx)
 );
 
+
 -- +goose Down
 DROP TABLE maker.price_feeds;

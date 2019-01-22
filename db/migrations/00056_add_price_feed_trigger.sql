@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION notify_pricefeed() RETURNS trigger AS $$
 BEGIN
   PERFORM pg_notify(
@@ -8,6 +9,7 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 CREATE TRIGGER notify_pricefeeds
   AFTER INSERT ON maker.price_feeds

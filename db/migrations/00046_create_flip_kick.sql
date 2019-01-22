@@ -18,6 +18,7 @@ CREATE TABLE maker.flip_kick (
 ALTER TABLE public.checked_headers
   ADD COLUMN flip_kick_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.flip_kick;
 

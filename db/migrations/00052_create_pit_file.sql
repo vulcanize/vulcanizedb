@@ -42,6 +42,7 @@ ALTER TABLE public.checked_headers
 ALTER TABLE public.checked_headers
   ADD COLUMN pit_file_stability_fee_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.pit_file_ilk;
 DROP TABLE maker.pit_file_stability_fee;

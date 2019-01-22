@@ -14,6 +14,7 @@ CREATE TABLE maker.vat_slip (
 ALTER TABLE public.checked_headers
   ADD COLUMN vat_slip_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.vat_slip;
 ALTER TABLE public.checked_headers

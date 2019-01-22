@@ -1,5 +1,5 @@
 -- +goose Up
-ALTER TABLE blocks ADD COLUMN id SERIAL PRIMARY KEY
+ALTER TABLE blocks ADD COLUMN id SERIAL PRIMARY KEY;
 
 -- +goose Down
-ALTER TABLE blocks DROP id
+ALTER TABLE blocks DROP id;

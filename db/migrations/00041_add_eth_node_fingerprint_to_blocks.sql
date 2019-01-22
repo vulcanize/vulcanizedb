@@ -1,6 +1,4 @@
 -- +goose Up
-BEGIN;
-
 ALTER TABLE blocks
   ADD COLUMN eth_node_fingerprint VARCHAR(128);
 
@@ -12,7 +10,6 @@ UPDATE blocks
 ALTER TABLE blocks
   ALTER COLUMN eth_node_fingerprint SET NOT NULL;
 
-COMMIT;
 
 -- +goose Down
 ALTER TABLE blocks

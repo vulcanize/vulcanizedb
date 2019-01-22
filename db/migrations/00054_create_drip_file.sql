@@ -42,6 +42,7 @@ ALTER TABLE public.checked_headers
 ALTER TABLE public.checked_headers
   ADD COLUMN drip_file_vow_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
+
 -- +goose Down
 DROP TABLE maker.drip_file_ilk;
 DROP TABLE maker.drip_file_repo;
