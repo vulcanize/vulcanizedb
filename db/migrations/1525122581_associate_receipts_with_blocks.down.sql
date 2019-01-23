@@ -3,6 +3,8 @@ BEGIN;
 ALTER TABLE receipts
   ADD COLUMN transaction_id INT;
 
+CREATE INDEX transaction_id_index ON receipts (transaction_id);
+
 UPDATE receipts
   SET transaction_id = (
     SELECT id FROM transactions WHERE transactions.hash = receipts.tx_hash
