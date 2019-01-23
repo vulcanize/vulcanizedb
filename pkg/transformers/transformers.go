@@ -48,221 +48,277 @@ import (
 )
 
 // Custom event transformers
-var (
-	BiteTransformer = factories.Transformer{
-		Config:     bite.BiteConfig,
+func GetBiteTransformer() factories.Transformer {
+	return factories.Transformer{
+		Config:     bite.GetBiteConfig(),
 		Converter:  &bite.BiteConverter{},
 		Repository: &bite.BiteRepository{},
 	}
+}
 
-	FlapKickTransformer = factories.Transformer{
-		Config:     flap_kick.FlapKickConfig,
+func GetFlapKickTransformer() factories.Transformer {
+	return factories.Transformer{
+		Config:     flap_kick.GetFlapKickConfig(),
 		Converter:  &flap_kick.FlapKickConverter{},
 		Repository: &flap_kick.FlapKickRepository{},
 	}
+}
 
-	FlipKickTransformer = factories.Transformer{
-		Config:     flip_kick.FlipKickConfig,
+func GetFlipKickTransformer() factories.Transformer {
+	return factories.Transformer{
+		Config:     flip_kick.GetFlipKickConfig(),
 		Converter:  &flip_kick.FlipKickConverter{},
 		Repository: &flip_kick.FlipKickRepository{},
 	}
+}
 
-	FrobTransformer = factories.Transformer{
-		Config:     frob.FrobConfig,
+func GetFrobTransformer() factories.Transformer {
+	return factories.Transformer{
+		Config:     frob.GetFrobConfig(),
 		Converter:  &frob.FrobConverter{},
 		Repository: &frob.FrobRepository{},
 	}
+}
 
-	FlopKickTransformer = factories.Transformer{
-		Config:     flop_kick.Config,
+func GetFlopKickTransformer() factories.Transformer {
+	return factories.Transformer{
+		Config:     flop_kick.GetFlopKickConfig(),
 		Converter:  &flop_kick.FlopKickConverter{},
 		Repository: &flop_kick.FlopKickRepository{},
 	}
+}
 
-	customEventTransformers = []factories.Transformer{
-		BiteTransformer,
-		FlapKickTransformer,
-		FlipKickTransformer,
-		FrobTransformer,
-		FlopKickTransformer,
+func getCustomEventTransformers() []factories.Transformer {
+	return []factories.Transformer{
+		GetBiteTransformer(),
+		GetFlapKickTransformer(),
+		GetFlipKickTransformer(),
+		GetFrobTransformer(),
+		GetFlopKickTransformer(),
 	}
-)
+}
 
 // LogNote transformers
-var (
-	CatFileChopLumpTransformer = factories.LogNoteTransformer{
-		Config:     chop_lump.CatFileChopLumpConfig,
+func GetCatFileChopLumpTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     chop_lump.GetCatFileChopLumpConfig(),
 		Converter:  &chop_lump.CatFileChopLumpConverter{},
 		Repository: &chop_lump.CatFileChopLumpRepository{},
 	}
+}
 
-	CatFileFlipTransformer = factories.LogNoteTransformer{
-		Config:     flip.CatFileFlipConfig,
+func GetCatFileFlipTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     flip.GetCatFileFlipConfig(),
 		Converter:  &flip.CatFileFlipConverter{},
 		Repository: &flip.CatFileFlipRepository{},
 	}
+}
 
-	CatFilePitVowTransformer = factories.LogNoteTransformer{
-		Config:     pit_vow.CatFilePitVowConfig,
+func GetCatFilePitVowTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     pit_vow.GetCatFilePitVowConfig(),
 		Converter:  &pit_vow.CatFilePitVowConverter{},
 		Repository: &pit_vow.CatFilePitVowRepository{},
 	}
+}
 
-	DealTransformer = factories.LogNoteTransformer{
-		Config:     deal.DealConfig,
+func GetDealTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     deal.GetDealConfig(),
 		Converter:  &deal.DealConverter{},
 		Repository: &deal.DealRepository{},
 	}
+}
 
-	DentTransformer = factories.LogNoteTransformer{
-		Config:     dent.DentConfig,
+func GetDentTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     dent.GetDentConfig(),
 		Converter:  &dent.DentConverter{},
 		Repository: &dent.DentRepository{},
 	}
+}
 
-	DripDripTransformer = factories.LogNoteTransformer{
-		Config:     drip_drip.DripDripConfig,
+func GetDripDripTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     drip_drip.GetDripDripConfig(),
 		Converter:  &drip_drip.DripDripConverter{},
 		Repository: &drip_drip.DripDripRepository{},
 	}
+}
 
-	DripFileIlkTransformer = factories.LogNoteTransformer{
-		Config:     ilk2.DripFileIlkConfig,
+func GetDripFileIlkTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     ilk2.GetDripFileIlkConfig(),
 		Converter:  &ilk2.DripFileIlkConverter{},
 		Repository: &ilk2.DripFileIlkRepository{},
 	}
+}
 
-	DripFileRepoTransformer = factories.LogNoteTransformer{
-		Config:     repo.DripFileRepoConfig,
+func GetDripFileRepoTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     repo.GetDripFileRepoConfig(),
 		Converter:  &repo.DripFileRepoConverter{},
 		Repository: &repo.DripFileRepoRepository{},
 	}
+}
 
-	DripFileVowTransfromer = factories.LogNoteTransformer{
-		Config:     vow.DripFileVowConfig,
+func GetDripFileVowTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vow.GetDripFileVowConfig(),
 		Converter:  &vow.DripFileVowConverter{},
 		Repository: &vow.DripFileVowRepository{},
 	}
+}
 
-	FlogTransformer = factories.LogNoteTransformer{
-		Config:     vow_flog.VowFlogConfig,
+func GetFlogTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vow_flog.GetVowFlogConfig(),
 		Converter:  &vow_flog.VowFlogConverter{},
 		Repository: &vow_flog.VowFlogRepository{},
 	}
+}
 
-	PitFileDebtCeilingTransformer = factories.LogNoteTransformer{
-		Config:     debt_ceiling.DebtCeilingFileConfig,
+func GetPitFileDebtCeilingTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     debt_ceiling.GetDebtCeilingFileConfig(),
 		Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
 		Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
 	}
+}
 
-	PitFileIlkTransformer = factories.LogNoteTransformer{
-		Config:     ilk.IlkFileConfig,
+func GetPitFileIlkTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     ilk.GetIlkFileConfig(),
 		Converter:  &ilk.PitFileIlkConverter{},
 		Repository: &ilk.PitFileIlkRepository{},
 	}
+}
 
-	PriceFeedTransformer = factories.LogNoteTransformer{
-		Config:     price_feeds.PriceFeedConfig,
+func GetPriceFeedTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     price_feeds.GetPriceFeedConfig(),
 		Converter:  &price_feeds.PriceFeedConverter{},
 		Repository: &price_feeds.PriceFeedRepository{},
 	}
+}
 
-	TendTransformer = factories.LogNoteTransformer{
-		Config:     tend.TendConfig,
+func GetTendTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     tend.GetTendConfig(),
 		Converter:  &tend.TendConverter{},
 		Repository: &tend.TendRepository{},
 	}
+}
 
-	VatInitTransformer = factories.LogNoteTransformer{
-		Config:     vat_init.VatInitConfig,
+func GetVatInitTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_init.GetVatInitConfig(),
 		Converter:  &vat_init.VatInitConverter{},
 		Repository: &vat_init.VatInitRepository{},
 	}
+}
 
-	VatGrabTransformer = factories.LogNoteTransformer{
-		Config:     vat_grab.VatGrabConfig,
+func GetVatGrabTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_grab.GetVatGrabConfig(),
 		Converter:  &vat_grab.VatGrabConverter{},
 		Repository: &vat_grab.VatGrabRepository{},
 	}
+}
 
-	VatFoldTransformer = factories.LogNoteTransformer{
-		Config:     vat_fold.VatFoldConfig,
+func GetVatFoldTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_fold.GetVatFoldConfig(),
 		Converter:  &vat_fold.VatFoldConverter{},
 		Repository: &vat_fold.VatFoldRepository{},
 	}
+}
 
-	VatHealTransformer = factories.LogNoteTransformer{
-		Config:     vat_heal.VatHealConfig,
+func GetVatHealTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_heal.GetVatHealConfig(),
 		Converter:  &vat_heal.VatHealConverter{},
 		Repository: &vat_heal.VatHealRepository{},
 	}
+}
 
-	VatMoveTransformer = factories.LogNoteTransformer{
-		Config:     vat_move.VatMoveConfig,
+func GetVatMoveTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_move.GetVatMoveConfig(),
 		Converter:  &vat_move.VatMoveConverter{},
 		Repository: &vat_move.VatMoveRepository{},
 	}
+}
 
-	VatSlipTransformer = factories.LogNoteTransformer{
-		Config:     vat_slip.VatSlipConfig,
+func GetVatSlipTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_slip.GetVatSlipConfig(),
 		Converter:  &vat_slip.VatSlipConverter{},
 		Repository: &vat_slip.VatSlipRepository{},
 	}
+}
 
-	VatTollTransformer = factories.LogNoteTransformer{
-		Config:     vat_toll.VatTollConfig,
+func GetVatTollTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_toll.GetVatTollConfig(),
 		Converter:  &vat_toll.VatTollConverter{},
 		Repository: &vat_toll.VatTollRepository{},
 	}
+}
 
-	VatTuneTransformer = factories.LogNoteTransformer{
-		Config:     vat_tune.VatTuneConfig,
+func GetVatTuneTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_tune.GetVatTuneConfig(),
 		Converter:  &vat_tune.VatTuneConverter{},
 		Repository: &vat_tune.VatTuneRepository{},
 	}
+}
 
-	VatFluxTransformer = factories.LogNoteTransformer{
-		Config:     vat_flux.VatFluxConfig,
+func GetVatFluxTransformer() factories.LogNoteTransformer {
+	return factories.LogNoteTransformer{
+		Config:     vat_flux.GetVatFluxConfig(),
 		Converter:  &vat_flux.VatFluxConverter{},
 		Repository: &vat_flux.VatFluxRepository{},
 	}
+}
 
-	logNoteTransformers = []factories.LogNoteTransformer{
-		CatFileChopLumpTransformer,
-		CatFileFlipTransformer,
-		CatFilePitVowTransformer,
-		DealTransformer,
-		DentTransformer,
-		DripDripTransformer,
-		DripFileIlkTransformer,
-		DripFileRepoTransformer,
-		DripFileVowTransfromer,
-		FlogTransformer,
-		PitFileDebtCeilingTransformer,
-		PitFileIlkTransformer,
-		PriceFeedTransformer,
-		TendTransformer,
-		VatInitTransformer,
-		VatGrabTransformer,
-		VatFoldTransformer,
-		VatHealTransformer,
-		VatMoveTransformer,
-		VatSlipTransformer,
-		VatTollTransformer,
-		VatTuneTransformer,
-		VatFluxTransformer,
+func getLogNoteTransformers() []factories.LogNoteTransformer {
+	return []factories.LogNoteTransformer{
+		GetCatFileChopLumpTransformer(),
+		GetCatFileFlipTransformer(),
+		GetCatFilePitVowTransformer(),
+		GetDealTransformer(),
+		GetDentTransformer(),
+		GetDripDripTransformer(),
+		GetDripFileIlkTransformer(),
+		GetDripFileRepoTransformer(),
+		GetDripFileVowTransformer(),
+		GetFlogTransformer(),
+		GetPitFileDebtCeilingTransformer(),
+		GetPitFileIlkTransformer(),
+		GetPriceFeedTransformer(),
+		GetTendTransformer(),
+		GetVatInitTransformer(),
+		GetVatGrabTransformer(),
+		GetVatFoldTransformer(),
+		GetVatHealTransformer(),
+		GetVatMoveTransformer(),
+		GetVatSlipTransformer(),
+		GetVatTollTransformer(),
+		GetVatTuneTransformer(),
+		GetVatFluxTransformer(),
 	}
-)
+}
 
 // `TransformerInitializers` returns a list of functions, that given a db pointer
 // will return a `shared.Transformer`
 func TransformerInitializers() (initializers []shared.TransformerInitializer) {
-	for _, transformer := range logNoteTransformers {
+	for _, transformer := range getLogNoteTransformers() {
 		initializers = append(initializers, transformer.NewLogNoteTransformer)
 	}
 
-	for _, transformer := range customEventTransformers {
+	for _, transformer := range getCustomEventTransformers() {
 		initializers = append(initializers, transformer.NewTransformer)
 	}
 	return

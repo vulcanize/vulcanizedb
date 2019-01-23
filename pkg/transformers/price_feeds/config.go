@@ -19,15 +19,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var PriceFeedConfig = shared.TransformerConfig{
-	TransformerName: constants.PriceFeedLabel,
-	ContractAddresses: []string{
-		constants.PepContractAddress,
-		constants.PipContractAddress,
-		constants.RepContractAddress,
-	},
-	ContractAbi:         constants.MedianizerABI,
-	Topic:               constants.LogValueSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetPriceFeedConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName: constants.PriceFeedLabel,
+		ContractAddresses: []string{
+			constants.PepContractAddress(), constants.PipContractAddress(), constants.RepContractAddress(),
+		},
+		ContractAbi: constants.MedianizerABI(),
+		Topic:       constants.GetLogValueSignature(),
+		StartingBlockNumber: shared.MinInt64([]int64{
+			constants.PepDeploymentBlock(), constants.PipDeploymentBlock(), constants.RepDeploymentBlock(),
+		}),
+		EndingBlockNumber: -1,
+	}
 }

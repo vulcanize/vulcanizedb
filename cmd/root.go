@@ -15,11 +15,11 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -75,7 +75,7 @@ func database(cmd *cobra.Command, args []string) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "environment/public.toml", "config file location")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
@@ -99,20 +99,19 @@ func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".vulcanizedb")
+		noConfigError := "No config file passed with --config flag"
+		fmt.Println("Error: ", noConfigError)
+		log.Fatal(noConfigError)
+		os.Exit(1)
 	}
-
-	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
 		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
+	} else {
+		invalidConfigError := "Couldn't read config file"
+		fmt.Println("Error: ", invalidConfigError)
+		log.Fatal(invalidConfigError)
+		os.Exit(1)
 	}
 }
 

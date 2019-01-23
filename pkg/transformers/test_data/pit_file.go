@@ -26,11 +26,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var EthPitFileDebtCeilingLog = types.Log{
-	Address: common.HexToAddress(constants.PitContractAddress),
+	Address: common.HexToAddress(KovanPitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x29ae811400000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -56,7 +55,7 @@ var PitFileDebtCeilingModel = debt_ceiling.PitFileDebtCeilingModel{
 }
 
 var EthPitFileIlkLineLog = types.Log{
-	Address: common.HexToAddress(constants.PitContractAddress),
+	Address: common.HexToAddress(KovanPitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -83,7 +82,7 @@ var PitFileIlkLineModel = ilk2.PitFileIlkModel{
 }
 
 var EthPitFileIlkSpotLog = types.Log{
-	Address: common.HexToAddress(constants.PitContractAddress),
+	Address: common.HexToAddress(KovanPitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),

@@ -88,34 +88,34 @@ func getTransformerInitializers(transformerNames []string) []shared2.Transformer
 func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer {
 	initializerMap := make(map[string]shared2.TransformerInitializer)
 
-	initializerMap[constants.BiteLabel] = transformers.BiteTransformer.NewTransformer
-	initializerMap[constants.CatFileChopLumpLabel] = transformers.CatFileChopLumpTransformer.NewLogNoteTransformer
-	initializerMap[constants.CatFileFlipLabel] = transformers.CatFileFlipTransformer.NewLogNoteTransformer
-	initializerMap[constants.CatFilePitVowLabel] = transformers.CatFilePitVowTransformer.NewLogNoteTransformer
-	initializerMap[constants.DealLabel] = transformers.DealTransformer.NewLogNoteTransformer
-	initializerMap[constants.DentLabel] = transformers.DentTransformer.NewLogNoteTransformer
-	initializerMap[constants.DripDripLabel] = transformers.DripDripTransformer.NewLogNoteTransformer
-	initializerMap[constants.DripFileIlkLabel] = transformers.DripFileIlkTransformer.NewLogNoteTransformer
-	initializerMap[constants.DripFileRepoLabel] = transformers.DripFileRepoTransformer.NewLogNoteTransformer
-	initializerMap[constants.DripFileVowLabel] = transformers.DripFileVowTransfromer.NewLogNoteTransformer
-	initializerMap[constants.FlapKickLabel] = transformers.FlapKickTransformer.NewTransformer
-	initializerMap[constants.FlipKickLabel] = transformers.FlipKickTransformer.NewTransformer
-	initializerMap[constants.FlopKickLabel] = transformers.FlopKickTransformer.NewTransformer
-	initializerMap[constants.FrobLabel] = transformers.FrobTransformer.NewTransformer
-	initializerMap[constants.PitFileDebtCeilingLabel] = transformers.PitFileDebtCeilingTransformer.NewLogNoteTransformer
-	initializerMap[constants.PitFileIlkLabel] = transformers.PitFileIlkTransformer.NewLogNoteTransformer
-	initializerMap[constants.PriceFeedLabel] = transformers.PriceFeedTransformer.NewLogNoteTransformer
-	initializerMap[constants.TendLabel] = transformers.TendTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatFluxLabel] = transformers.VatFluxTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatFoldLabel] = transformers.VatFoldTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatGrabLabel] = transformers.VatGrabTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatHealLabel] = transformers.VatHealTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatInitLabel] = transformers.VatInitTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatMoveLabel] = transformers.VatMoveTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatSlipLabel] = transformers.VatSlipTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatTollLabel] = transformers.VatTollTransformer.NewLogNoteTransformer
-	initializerMap[constants.VatTuneLabel] = transformers.VatTuneTransformer.NewLogNoteTransformer
-	initializerMap[constants.VowFlogLabel] = transformers.FlogTransformer.NewLogNoteTransformer
+	initializerMap[constants.BiteLabel] = transformers.GetBiteTransformer().NewTransformer
+	initializerMap[constants.CatFileChopLumpLabel] = transformers.GetCatFileChopLumpTransformer().NewLogNoteTransformer
+	initializerMap[constants.CatFileFlipLabel] = transformers.GetCatFileFlipTransformer().NewLogNoteTransformer
+	initializerMap[constants.CatFilePitVowLabel] = transformers.GetCatFilePitVowTransformer().NewLogNoteTransformer
+	initializerMap[constants.DealLabel] = transformers.GetDealTransformer().NewLogNoteTransformer
+	initializerMap[constants.DentLabel] = transformers.GetDentTransformer().NewLogNoteTransformer
+	initializerMap[constants.DripDripLabel] = transformers.GetDripDripTransformer().NewLogNoteTransformer
+	initializerMap[constants.DripFileIlkLabel] = transformers.GetDripFileIlkTransformer().NewLogNoteTransformer
+	initializerMap[constants.DripFileRepoLabel] = transformers.GetDripFileRepoTransformer().NewLogNoteTransformer
+	initializerMap[constants.DripFileVowLabel] = transformers.GetDripFileVowTransformer().NewLogNoteTransformer
+	initializerMap[constants.FlapKickLabel] = transformers.GetFlapKickTransformer().NewTransformer
+	initializerMap[constants.FlipKickLabel] = transformers.GetFlipKickTransformer().NewTransformer
+	initializerMap[constants.FlopKickLabel] = transformers.GetFlopKickTransformer().NewTransformer
+	initializerMap[constants.FrobLabel] = transformers.GetFrobTransformer().NewTransformer
+	initializerMap[constants.PitFileDebtCeilingLabel] = transformers.GetPitFileDebtCeilingTransformer().NewLogNoteTransformer
+	initializerMap[constants.PitFileIlkLabel] = transformers.GetPitFileIlkTransformer().NewLogNoteTransformer
+	initializerMap[constants.PriceFeedLabel] = transformers.GetPriceFeedTransformer().NewLogNoteTransformer
+	initializerMap[constants.TendLabel] = transformers.GetTendTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatFluxLabel] = transformers.GetVatFluxTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatFoldLabel] = transformers.GetVatFoldTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatGrabLabel] = transformers.GetVatGrabTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatHealLabel] = transformers.GetVatHealTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatInitLabel] = transformers.GetVatInitTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatMoveLabel] = transformers.GetVatMoveTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatSlipLabel] = transformers.GetVatSlipTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatTollLabel] = transformers.GetVatTollTransformer().NewLogNoteTransformer
+	initializerMap[constants.VatTuneLabel] = transformers.GetVatTuneTransformer().NewLogNoteTransformer
+	initializerMap[constants.VowFlogLabel] = transformers.GetFlogTransformer().NewLogNoteTransformer
 
 	return initializerMap
 }

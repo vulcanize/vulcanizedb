@@ -52,7 +52,14 @@ var _ = Describe("FlopKick Transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = flop_kick.Config
+		config = shared.TransformerConfig{
+			TransformerName:     constants.FlopKickLabel,
+			ContractAddresses:   []string{test_data.KovanFlopperContractAddress},
+			ContractAbi:         test_data.KovanFlopperABI,
+			Topic:               test_data.KovanFlopKickSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
 
 		initializer = factories.Transformer{
 			Config:     config,
@@ -121,8 +128,8 @@ var _ = Describe("FlopKick Transformer", func() {
 	})
 
 	It("unpacks an flop kick event log", func() {
-		address := common.HexToAddress(constants.FlopperContractAddress)
-		abi, err := geth.ParseAbi(constants.FlopperABI)
+		address := common.HexToAddress(test_data.KovanFlopperContractAddress)
+		abi, err := geth.ParseAbi(test_data.KovanFlopperABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

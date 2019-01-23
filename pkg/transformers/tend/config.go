@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var TendConfig = shared.TransformerConfig{
-	TransformerName:     constants.TendLabel,
-	ContractAddresses:   []string{constants.FlapperContractAddress, constants.FlipperContractAddress},
-	ContractAbi:         constants.FlipperABI,
-	Topic:               constants.TendFunctionSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetTendConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.TendLabel,
+		ContractAddresses:   []string{constants.FlapperContractAddress(), constants.FlipperContractAddress()},
+		ContractAbi:         constants.FlipperABI(),
+		Topic:               constants.GetTendFunctionSignature(),
+		StartingBlockNumber: shared.MinInt64([]int64{constants.FlapperDeploymentBlock(), constants.FlipperDeploymentBlock()}),
+		EndingBlockNumber:   -1,
+	}
 }

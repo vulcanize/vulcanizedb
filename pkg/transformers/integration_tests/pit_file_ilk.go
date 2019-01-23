@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
@@ -43,7 +45,14 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
-		config := ilk.IlkFileConfig
+		config := shared.TransformerConfig{
+			TransformerName:     constants.PitFileIlkLabel,
+			ContractAddresses:   []string{test_data.KovanPitContractAddress},
+			ContractAbi:         test_data.KovanPitABI,
+			Topic:               test_data.KovanPitFileIlkSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
 
 		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}

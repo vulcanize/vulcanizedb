@@ -21,11 +21,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var BiteConfig = shared.TransformerConfig{
-	TransformerName:     constants.BiteLabel,
-	ContractAddresses:   []string{constants.CatContractAddress},
-	ContractAbi:         constants.CatABI,
-	Topic:               constants.BiteSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetBiteConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.BiteLabel,
+		ContractAddresses:   []string{constants.CatContractAddress()},
+		ContractAbi:         constants.CatABI(),
+		Topic:               constants.GetBiteSignature(),
+		StartingBlockNumber: constants.CatDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

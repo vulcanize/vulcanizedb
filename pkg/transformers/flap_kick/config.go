@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var FlapKickConfig = shared.TransformerConfig{
-	TransformerName:     constants.FlapKickLabel,
-	ContractAddresses:   []string{constants.FlapperContractAddress},
-	ContractAbi:         constants.FlapperABI,
-	Topic:               constants.FlapKickSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetFlapKickConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.FlapKickLabel,
+		ContractAddresses:   []string{constants.FlapperContractAddress()},
+		ContractAbi:         constants.FlapperABI(),
+		Topic:               constants.GetFlapKickSignature(),
+		StartingBlockNumber: constants.FlapperDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

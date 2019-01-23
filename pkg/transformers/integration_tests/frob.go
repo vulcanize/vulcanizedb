@@ -49,7 +49,15 @@ var _ = Describe("Frob Transformer", func() {
 		test_config.CleanTestDB(db)
 
 		fetcher = shared.NewFetcher(blockChain)
-		config = frob.FrobConfig
+		config = shared.TransformerConfig{
+			TransformerName:     constants.FrobLabel,
+			ContractAddresses:   []string{test_data.KovanPitContractAddress},
+			ContractAbi:         test_data.KovanPitABI,
+			Topic:               test_data.KovanFrobSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
+
 		initializer = factories.Transformer{
 			Config:     config,
 			Converter:  &frob.FrobConverter{},
@@ -90,8 +98,8 @@ var _ = Describe("Frob Transformer", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(constants.PitContractAddress)
-		abi, err := geth.ParseAbi(constants.PitABI)
+		address := common.HexToAddress(test_data.KovanPitContractAddress)
+		abi, err := geth.ParseAbi(test_data.KovanPitABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

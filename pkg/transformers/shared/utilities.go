@@ -78,3 +78,16 @@ func convert(conversion string, value string, precision int) string {
 	}
 	return result.Text('f', precision)
 }
+
+func MinInt64(ints []int64) (min int64) {
+	if len(ints) == 0 {
+		return 0
+	}
+	min = ints[0]
+	for _, i := range ints {
+		if i < min {
+			min = i
+		}
+	}
+	return
+}

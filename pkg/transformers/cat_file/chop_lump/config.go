@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var CatFileChopLumpConfig = shared.TransformerConfig{
-	TransformerName:     constants.CatFileChopLumpLabel,
-	ContractAddresses:   []string{constants.CatContractAddress},
-	ContractAbi:         constants.CatABI,
-	Topic:               constants.CatFileChopLumpSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetCatFileChopLumpConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.CatFileChopLumpLabel,
+		ContractAddresses:   []string{constants.CatContractAddress()},
+		ContractAbi:         constants.CatABI(),
+		Topic:               constants.GetCatFileChopLumpSignature(),
+		StartingBlockNumber: constants.CatDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }
