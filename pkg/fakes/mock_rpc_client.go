@@ -158,4 +158,3 @@ func (client *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch 
 	}
 	Expect(client.passedMethod).To(Equal(method))
 }
-

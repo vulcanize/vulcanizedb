@@ -20,12 +20,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -131,4 +131,3 @@ func getBlockChain() *geth.BlockChain {
 	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
 	return geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }
-

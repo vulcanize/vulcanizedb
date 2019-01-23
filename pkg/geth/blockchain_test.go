@@ -21,11 +21,11 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	vulcCore "github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"

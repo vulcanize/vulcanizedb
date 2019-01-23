@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/vulcanizeio/VulcanizeDB](https://badges.gitter.im/vulcanizeio/VulcanizeDB.svg)](https://gitter.im/vulcanizeio/VulcanizeDB?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://travis-ci.com/8thlight/maker-vulcanizedb.svg?token=Wi4xzpyShmtvqatRBWkU&branch=staging)](https://travis-ci.com/8thlight/maker-vulcanizedb)
+[![Build Status](https://travis-ci.com/vulcanize/maker-vulcanizedb.svg?token=MKcE2K7CRvKtdxSSnbap&branch=staging)](https://travis-ci.com/vulcanize/maker-vulcanizedb)
 
 ## About
 
@@ -12,7 +12,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
  - Go 1.11+
  - Postgres 10
  - Ethereum Node
-   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.18+)
+   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.21+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
 
 ## Project Setup
@@ -167,7 +167,7 @@ If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_
 1. `go get -u github.com/pressly/sup/cmd/sup`
 1. `sup staging deploy`
 
-## omniWatcher and lightOmniWatcher 
+## omniWatcher 
 These commands require a pre-synced (full or light) vulcanizeDB (see above sections) 
  
 To watch all events of a contract using a light synced vDB:  

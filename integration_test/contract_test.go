@@ -97,7 +97,7 @@ var _ = Describe("Reading contracts", func() {
 			contract := testing.SampleContract()
 			var balance = new(big.Int)
 
-		    args := make([]interface{}, 1)
+			args := make([]interface{}, 1)
 			args[0] = common.HexToHash("0xd26114cd6ee289accf82350c8d8487fedb8a0c07")
 
 			err = blockChain.FetchContractData(contract.Abi, "0xd26114cd6ee289accf82350c8d8487fedb8a0c07", "balanceOf", args, &balance, 5167471)
