@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var FrobConfig = shared.TransformerConfig{
-	TransformerName:     constants.FrobLabel,
-	ContractAddresses:   []string{constants.PitContractAddress},
-	ContractAbi:         constants.PitABI,
-	Topic:               constants.FrobSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetFrobConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.FrobLabel,
+		ContractAddresses:   []string{constants.PitContractAddress()},
+		ContractAbi:         constants.PitABI(),
+		Topic:               constants.GetFrobSignature(),
+		StartingBlockNumber: constants.PitDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

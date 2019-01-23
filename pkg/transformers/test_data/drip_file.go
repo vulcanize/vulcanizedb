@@ -23,12 +23,11 @@ import (
 	ilk2 "github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/repo"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
 var EthDripFileIlkLog = types.Log{
-	Address: common.HexToAddress(constants.DripContractAddress),
+	Address: common.HexToAddress(KovanDripContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x1a0b287e00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -55,7 +54,7 @@ var DripFileIlkModel = ilk2.DripFileIlkModel{
 }
 
 var EthDripFileRepoLog = types.Log{
-	Address: common.HexToAddress(constants.DripContractAddress),
+	Address: common.HexToAddress(KovanDripContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x29ae811400000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),
@@ -81,7 +80,7 @@ var DripFileRepoModel = repo.DripFileRepoModel{
 }
 
 var EthDripFileVowLog = types.Log{
-	Address: common.HexToAddress(constants.DripContractAddress),
+	Address: common.HexToAddress(KovanDripContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xe9b674b900000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"),

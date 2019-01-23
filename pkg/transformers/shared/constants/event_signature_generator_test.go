@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("Event signature generator", func() {
@@ -93,7 +94,7 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the cat contract", func() {
 				It("gets the file method signature", func() {
 					expected := "file(bytes32,bytes32,address)"
-					actual := constants.GetSolidityMethodSignature(constants.CatABI, "file")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanCatABI, "file")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -102,14 +103,14 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the drip contract", func() {
 				It("gets the drip method signature", func() {
 					expected := "drip(bytes32)"
-					actual := constants.GetSolidityMethodSignature(constants.DripABI, "drip")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanDripABI, "drip")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the file method signature", func() {
 					expected := "file(bytes32,uint256)"
-					actual := constants.GetSolidityMethodSignature(constants.DripABI, "file")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanDripABI, "file")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -118,21 +119,21 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the flipper contract", func() {
 				It("gets the deal method signature", func() {
 					expected := "deal(uint256)"
-					actual := constants.GetSolidityMethodSignature(constants.FlipperABI, "deal")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanFlipperABI, "deal")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the dent method signature", func() {
 					expected := "dent(uint256,uint256,uint256)"
-					actual := constants.GetSolidityMethodSignature(constants.FlipperABI, "dent")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanFlipperABI, "dent")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the tend method signature", func() {
 					expected := "tend(uint256,uint256,uint256)"
-					actual := constants.GetSolidityMethodSignature(constants.FlipperABI, "tend")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanFlipperABI, "tend")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -141,7 +142,7 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the pit contract", func() {
 				It("gets the file method signature", func() {
 					expected := "file(bytes32,address)"
-					actual := constants.GetSolidityMethodSignature(constants.PitABI, "file")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanPitABI, "file")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -150,63 +151,63 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the vat contract", func() {
 				It("gets the init method signature", func() {
 					expected := "init(bytes32)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "init")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "init")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the heal method signature", func() {
 					expected := "heal(bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "heal")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "heal")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the fold method signature", func() {
 					expected := "fold(bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "fold")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "fold")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the flux method signature", func() {
 					expected := "flux(bytes32,bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "flux")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "flux")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the grab method signature", func() {
 					expected := "grab(bytes32,bytes32,bytes32,bytes32,int256,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "grab")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "grab")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the move method signature", func() {
 					expected := "move(bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "move")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "move")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the slip method signature", func() {
 					expected := "slip(bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "slip")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "slip")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the toll method signature", func() {
 					expected := "toll(bytes32,bytes32,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "toll")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "toll")
 
 					Expect(expected).To(Equal(actual))
 				})
 
 				It("gets the tune method signature", func() {
 					expected := "tune(bytes32,bytes32,bytes32,bytes32,int256,int256)"
-					actual := constants.GetSolidityMethodSignature(constants.VatABI, "tune")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVatABI, "tune")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -215,7 +216,7 @@ var _ = Describe("Event signature generator", func() {
 			Describe("from the vow contract", func() {
 				It("gets the flog method signature", func() {
 					expected := "flog(uint48)"
-					actual := constants.GetSolidityMethodSignature(constants.VowABI, "flog")
+					actual := constants.GetSolidityMethodSignature(test_data.KovanVowABI, "flog")
 
 					Expect(expected).To(Equal(actual))
 				})
@@ -225,42 +226,42 @@ var _ = Describe("Event signature generator", func() {
 		Describe("it handles events", func() {
 			It("gets the Bite event signature", func() {
 				expected := "Bite(bytes32,bytes32,uint256,uint256,uint256,uint256,uint256)"
-				actual := constants.GetSolidityMethodSignature(constants.CatABI, "Bite")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanCatABI, "Bite")
 
 				Expect(expected).To(Equal(actual))
 			})
 
 			It("gets the flap Kick event signature", func() {
 				expected := "Kick(uint256,uint256,uint256,address,uint48)"
-				actual := constants.GetSolidityMethodSignature(constants.FlapperABI, "Kick")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanFlapperABI, "Kick")
 
 				Expect(expected).To(Equal(actual))
 			})
 
 			It("gets the flip Kick event signature", func() {
 				expected := "Kick(uint256,uint256,uint256,address,uint48,bytes32,uint256)"
-				actual := constants.GetSolidityMethodSignature(constants.FlipperABI, "Kick")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanFlipperABI, "Kick")
 
 				Expect(expected).To(Equal(actual))
 			})
 
 			It("gets the flop Kick event signature", func() {
 				expected := "Kick(uint256,uint256,uint256,address,uint48)"
-				actual := constants.GetSolidityMethodSignature(constants.FlopperABI, "Kick")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanFlopperABI, "Kick")
 
 				Expect(expected).To(Equal(actual))
 			})
 
 			It("gets the pit frob event signature", func() {
 				expected := "Frob(bytes32,bytes32,uint256,uint256,int256,int256,uint256)"
-				actual := constants.GetSolidityMethodSignature(constants.PitABI, "Frob")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanPitABI, "Frob")
 
 				Expect(expected).To(Equal(actual))
 			})
 
 			It("gets the log value method signature", func() {
 				expected := "LogValue(bytes32)"
-				actual := constants.GetSolidityMethodSignature(constants.MedianizerABI, "LogValue")
+				actual := constants.GetSolidityMethodSignature(test_data.KovanMedianizerABI, "LogValue")
 
 				Expect(expected).To(Equal(actual))
 			})

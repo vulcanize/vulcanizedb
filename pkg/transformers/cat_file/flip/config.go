@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var CatFileFlipConfig = shared.TransformerConfig{
-	TransformerName:     constants.CatFileFlipLabel,
-	ContractAddresses:   []string{constants.CatContractAddress},
-	ContractAbi:         constants.CatABI,
-	Topic:               constants.CatFileFlipSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetCatFileFlipConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.CatFileFlipLabel,
+		ContractAddresses:   []string{constants.CatContractAddress()},
+		ContractAbi:         constants.CatABI(),
+		Topic:               constants.GetCatFileFlipSignature(),
+		StartingBlockNumber: constants.CatDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

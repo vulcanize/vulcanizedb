@@ -33,8 +33,8 @@ import (
 
 var _ = Describe("FlipKick Transformer", func() {
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(constants.FlipperContractAddress)
-		abi, err := geth.ParseAbi(constants.FlipperABI)
+		address := common.HexToAddress(test_data.KovanFlipperContractAddress)
+		abi, err := geth.ParseAbi(test_data.KovanFlipperABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)
@@ -57,9 +57,14 @@ var _ = Describe("FlipKick Transformer", func() {
 
 	It("fetches and transforms a FlipKick event from Kovan chain", func() {
 		blockNumber := int64(8956476)
-		config := flip_kick.FlipKickConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.FlipKickLabel,
+			ContractAddresses:   []string{test_data.KovanFlipperContractAddress},
+			ContractAbi:         test_data.KovanFlipperABI,
+			Topic:               test_data.KovanFlipKickSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())

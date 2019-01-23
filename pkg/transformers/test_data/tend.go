@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 )
 
@@ -38,7 +37,7 @@ var (
 )
 
 var TendLogNote = types.Log{
-	Address: common.HexToAddress(constants.FlipperContractAddress),
+	Address: common.HexToAddress(KovanFlipperContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x4b43ed1200000000000000000000000000000000000000000000000000000000"), //abbreviated tend function signature
 		common.HexToHash("0x0000000000000000000000007d7bee5fcfd8028cf7b00876c5b1421c800561a6"), //msg caller address

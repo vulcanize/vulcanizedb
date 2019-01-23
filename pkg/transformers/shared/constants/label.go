@@ -1,6 +1,6 @@
 package constants
 
-var (
+const (
 	BiteLabel               = "bite"
 	CatFileChopLumpLabel    = "catFileChopLump"
 	CatFileFlipLabel        = "catFileFlip"

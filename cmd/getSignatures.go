@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
@@ -33,37 +33,37 @@ vulcanizedb getSignatures`,
 
 func getSignatures() {
 	signatures := make(map[string]string)
-	signatures["BiteSignature"] = constants.BiteSignature
-	signatures["CatFileChopLumpSignature"] = constants.CatFileChopLumpSignature
-	signatures["CatFileFlipSignature"] = constants.CatFileFlipSignature
-	signatures["CatFilePitVowSignature"] = constants.CatFilePitVowSignature
-	signatures["DealSignature"] = constants.DealSignature
-	signatures["DentFunctionSignature"] = constants.DentFunctionSignature
-	signatures["DripDripSignature"] = constants.DripDripSignature
-	signatures["DripFileIlkSignature"] = constants.DripFileIlkSignature
-	signatures["DripFileRepoSignature"] = constants.DripFileRepoSignature
-	signatures["DripFileVowSignature"] = constants.DripFileVowSignature
-	signatures["FlapKickSignature"] = constants.FlapKickSignature
-	signatures["FlipKickSignature"] = constants.FlipKickSignature
-	signatures["FlopKickSignature"] = constants.FlopKickSignature
-	signatures["FrobSignature"] = constants.FrobSignature
-	signatures["LogValueSignature"] = constants.LogValueSignature
-	signatures["PitFileDebtCeilingSignature"] = constants.PitFileDebtCeilingSignature
-	signatures["PitFileIlkSignature"] = constants.PitFileIlkSignature
-	signatures["TendFunctionSignature"] = constants.TendFunctionSignature
-	signatures["VatFluxSignature"] = constants.VatFluxSignature
-	signatures["VatFoldSignature"] = constants.VatFoldSignature
-	signatures["VatGrabSignature"] = constants.VatGrabSignature
-	signatures["VatHealSignature"] = constants.VatHealSignature
-	signatures["VatInitSignature"] = constants.VatInitSignature
-	signatures["VatMoveSignature"] = constants.VatMoveSignature
-	signatures["VatSlipSignature"] = constants.VatSlipSignature
-	signatures["VatTollSignature"] = constants.VatTollSignature
-	signatures["VatTuneSignature"] = constants.VatTuneSignature
-	signatures["VowFlogSignature"] = constants.VowFlogSignature
+	signatures["BiteSignature"] = constants.GetBiteSignature()
+	signatures["CatFileChopLumpSignature"] = constants.GetCatFileChopLumpSignature()
+	signatures["CatFileFlipSignature"] = constants.GetCatFileFlipSignature()
+	signatures["CatFilePitVowSignature"] = constants.GetCatFilePitVowSignature()
+	signatures["DealSignature"] = constants.GetDealSignature()
+	signatures["DentFunctionSignature"] = constants.GetDentFunctionSignature()
+	signatures["DripDripSignature"] = constants.GetDripDripSignature()
+	signatures["DripFileIlkSignature"] = constants.GetDripFileIlkSignature()
+	signatures["DripFileRepoSignature"] = constants.GetDripFileRepoSignature()
+	signatures["DripFileVowSignature"] = constants.GetDripFileVowSignature()
+	signatures["FlapKickSignature"] = constants.GetFlapKickSignature()
+	signatures["FlipKickSignature"] = constants.GetFlipKickSignature()
+	signatures["FlopKickSignature"] = constants.GetFlopKickSignature()
+	signatures["FrobSignature"] = constants.GetFrobSignature()
+	signatures["LogValueSignature"] = constants.GetLogValueSignature()
+	signatures["PitFileDebtCeilingSignature"] = constants.GetPitFileDebtCeilingSignature()
+	signatures["PitFileIlkSignature"] = constants.GetPitFileIlkSignature()
+	signatures["TendFunctionSignature"] = constants.GetTendFunctionSignature()
+	signatures["VatFluxSignature"] = constants.GetVatFluxSignature()
+	signatures["VatFoldSignature"] = constants.GetVatFoldSignature()
+	signatures["VatGrabSignature"] = constants.GetVatGrabSignature()
+	signatures["VatHealSignature"] = constants.GetVatHealSignature()
+	signatures["VatInitSignature"] = constants.GetVatInitSignature()
+	signatures["VatMoveSignature"] = constants.GetVatMoveSignature()
+	signatures["VatSlipSignature"] = constants.GetVatSlipSignature()
+	signatures["VatTollSignature"] = constants.GetVatTollSignature()
+	signatures["VatTuneSignature"] = constants.GetVatTuneSignature()
+	signatures["VowFlogSignature"] = constants.GetVowFlogSignature()
 
 	for name, sig := range signatures {
-		log.Println(name, ": ", sig)
+		fmt.Println(name, ": ", sig)
 	}
 }
 

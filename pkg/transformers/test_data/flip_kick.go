@@ -25,7 +25,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 var (
@@ -51,9 +50,9 @@ var (
 )
 
 var EthFlipKickLog = types.Log{
-	Address: common.HexToAddress(constants.FlipperContractAddress),
+	Address: common.HexToAddress(KovanFlipperContractAddress),
 	Topics: []common.Hash{
-		common.HexToHash(constants.FlipKickSignature),
+		common.HexToHash("0xbac86238bdba81d21995024470425ecb370078fa62b7271b90cf28cbd1e3e87e"),
 		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
 		common.HexToHash("0x7340e006f4135ba6970d43bf43d88dcad4e7a8ca000000000000000000000000"),
 	},

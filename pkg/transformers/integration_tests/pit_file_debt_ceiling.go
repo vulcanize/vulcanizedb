@@ -22,6 +22,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -44,9 +46,14 @@ var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
 
 	It("fetches and transforms a PitFileDebtCeiling event from Kovan chain", func() {
 		blockNumber := int64(8535578)
-		config := debt_ceiling.DebtCeilingFileConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.PitFileDebtCeilingLabel,
+			ContractAddresses:   []string{test_data.KovanPitContractAddress},
+			ContractAbi:         test_data.KovanPitABI,
+			Topic:               test_data.KovanPitFileDebtCeilingSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())

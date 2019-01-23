@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var DebtCeilingFileConfig = shared.TransformerConfig{
-	TransformerName:     constants.PitFileDebtCeilingLabel,
-	ContractAddresses:   []string{constants.PitContractAddress},
-	ContractAbi:         constants.PitABI,
-	Topic:               constants.PitFileDebtCeilingSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetDebtCeilingFileConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.PitFileDebtCeilingLabel,
+		ContractAddresses:   []string{constants.PitContractAddress()},
+		ContractAbi:         constants.PitABI(),
+		Topic:               constants.GetPitFileDebtCeilingSignature(),
+		StartingBlockNumber: constants.PitDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }
