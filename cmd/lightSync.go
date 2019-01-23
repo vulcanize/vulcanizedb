@@ -37,24 +37,16 @@ var lightSyncCmd = &cobra.Command{
 	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
 Postgres with block headers.
-<<<<<<< HEAD
 
 ./vulcanizedb lightSync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
-=======
-./vulcanizedb lightSync --starting-block-number 0 --config public.toml
-Expects ethereum node to be running and requires a .toml config:
->>>>>>> origin/master
   [database]
   name = "vulcanize_public"
   hostname = "localhost"
   port = 5432
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/master
   [client]
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
