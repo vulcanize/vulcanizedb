@@ -38,7 +38,8 @@ commands:
     run: >
       cd $VDB_PATH &&
       make installtools &&
-      /root/go_projects/bin/migrate -database postgresql://$VDB_PG_USER:$VDB_PG_PW@127.0.0.1:5432/vulcanize_public?sslmode=disable -path ./db/migrations up
+      cd db/migrations &&
+      /root/go_projects/bin/goose postgres "postgresql://$(VDB_PG_USER):$(VDB_PG_PW)@127.0.0.1:5432/vulcanize_public?sslmode=disable" up
   buildPostgraphile:
     desc: build postgraphile app
     run: >

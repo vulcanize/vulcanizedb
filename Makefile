@@ -26,7 +26,7 @@ $(BIN)/gometalinter.v2:
 	$(METALINT) --install
 
 .PHONY: installtools
-installtools: | $(LINT) $(MIGRATE) $(GINKGO) $(DEP)
+installtools: | $(LINT) $(GOOSE) $(GINKGO) $(DEP)
 	echo "Installing tools"
 
 .PHONY: metalint
