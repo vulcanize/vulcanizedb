@@ -7,8 +7,15 @@ ADD . /go/src/github.com/vulcanize/vulcanizedb
 WORKDIR /go/src/github.com/vulcanize/vulcanizedb
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' .
 
+# Build migration tool
+RUN go get -u -d github.com/pressly/goose/cmd/goose
+WORKDIR /go/src/github.com/pressly/goose/cmd/goose
+RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -tags='no_mysql no_sqlite' -o goose
+
 # Second stage
-FROM scratch
+FROM alpine
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/vulcanizedb /app/vulcanizedb
+COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose /app/goose
+COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations/* /app/
 WORKDIR /app
-CMD ["./vulcanizedb", "--help"]
+CMD ["./goose"]
