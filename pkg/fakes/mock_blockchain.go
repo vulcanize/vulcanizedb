@@ -1,3 +1,19 @@
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package fakes
 
 import (
@@ -15,7 +31,7 @@ type MockBlockChain struct {
 	fetchContractDataPassedAbi         string
 	fetchContractDataPassedAddress     string
 	fetchContractDataPassedMethod      string
-	fetchContractDataPassedMethodArg   interface{}
+	fetchContractDataPassedMethodArgs  []interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
 	getBlockByNumberErr                error
@@ -52,14 +68,14 @@ func (chain *MockBlockChain) SetGetEthLogsWithCustomQueryReturnLogs(logs []types
 	chain.logQueryReturnLogs = logs
 }
 
-func (chain *MockBlockChain) FetchContractData(abiJSON, address, method string, methodArg, result interface{}, blockNumber int64) error {
-	chain.fetchContractDataPassedAbi = abiJSON
-	chain.fetchContractDataPassedAddress = address
-	chain.fetchContractDataPassedMethod = method
-	chain.fetchContractDataPassedMethodArg = methodArg
-	chain.fetchContractDataPassedResult = result
-	chain.fetchContractDataPassedBlockNumber = blockNumber
-	return chain.fetchContractDataErr
+func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
+	blockChain.fetchContractDataPassedAbi = abiJSON
+	blockChain.fetchContractDataPassedAddress = address
+	blockChain.fetchContractDataPassedMethod = method
+	blockChain.fetchContractDataPassedMethodArgs = methodArgs
+	blockChain.fetchContractDataPassedResult = result
+	blockChain.fetchContractDataPassedBlockNumber = blockNumber
+	return blockChain.fetchContractDataErr
 }
 
 func (chain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
@@ -100,12 +116,12 @@ func (chain *MockBlockChain) Node() core.Node {
 	return chain.node
 }
 
-func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArg interface{}, result interface{}, blockNumber int64) {
+func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) {
 	Expect(chain.fetchContractDataPassedAbi).To(Equal(abiJSON))
 	Expect(chain.fetchContractDataPassedAddress).To(Equal(address))
 	Expect(chain.fetchContractDataPassedMethod).To(Equal(method))
-	if methodArg != nil {
-		Expect(chain.fetchContractDataPassedMethodArg).To(Equal(methodArg))
+	if methodArgs != nil {
+		Expect(chain.fetchContractDataPassedMethodArgs).To(Equal(methodArgs))
 	}
 	Expect(chain.fetchContractDataPassedResult).To(BeAssignableToTypeOf(result))
 	Expect(chain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
