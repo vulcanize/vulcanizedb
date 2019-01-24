@@ -2,28 +2,34 @@ BIN = $(GOPATH)/bin
 BASE = $(GOPATH)/src/$(PACKAGE)
 PKGS = go list ./... | grep -v "^vendor/"
 
-#Tools
+# Tools
+## Dependency management
 DEP = $(BIN)/dep
 $(BIN)/dep:
 	go get -u github.com/golang/dep/cmd/dep
 
+## Testing library
 GINKGO = $(BIN)/ginkgo
 $(BIN)/ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 
+## Migration tool
 GOOSE = $(BIN)/goose
 $(BIN)/goose:
 	go get -u -d github.com/pressly/goose/cmd/goose
 	go build -tags='no_mysql no_sqlite' -o $(BIN)/goose github.com/pressly/goose
 
+## Source linter
 LINT = $(BIN)/golint
 $(BIN)/golint:
 	go get -u golang.org/x/lint/golint
 
+## Combination linter
 METALINT = $(BIN)/gometalinter.v2
 $(BIN)/gometalinter.v2:
 	go get -u gopkg.in/alecthomas/gometalinter.v2
 	$(METALINT) --install
+
 
 .PHONY: installtools
 installtools: | $(LINT) $(GOOSE) $(GINKGO) $(DEP)
@@ -66,57 +72,75 @@ PORT = 5432
 NAME =
 CONNECT_STRING=postgresql://$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
+# Parameter checks
+## Check that DB variables are provided
 .PHONY: checkdbvars
 checkdbvars:
-	test -n "$(HOST_NAME)" # $$HOST_NAME 
+	test -n "$(HOST_NAME)" # $$HOST_NAME
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
 	@echo $(CONNECT_STRING)
 
+## Check that the migration variable (id/timestamp) is provided
+.PHONY: checkmigration
+checkmigration:
+	test -n "$(MIGRATION)" # $$MIGRATION
 
-# Goose defaults down migrations to 1 step
+# Check that the migration name is provided
+.PHONY: checkmigname
+checkmigname:
+	test -n "$(NAME)" # $$NAME
+
+# Migration operations
+## Rollback the last migration
 .PHONY: rollback
 rollback: $(GOOSE) checkdbvars
 	cd db/migrations;\
 	  $(GOOSE) postgres "$(CONNECT_STRING)" down
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
-.PHONY: checkmigration
-checkmigration:
-	test -n "$(MIGRATION)" # $$MIGRATION
 
-# MIGRATION is either a version integer or a timestamp
+## Rollbackt to a select migration (id/timestamp)
 .PHONY: rollback_to
 rollback_to: $(GOOSE) checkmigration checkdbvars
 	cd db/migrations;\
 	  $(GOOSE) postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
 
+## Apply all migrations not already run
 .PHONY: migrate
 migrate: $(GOOSE) checkdbvars
 	cd db/migrations;\
 	  $(GOOSE) postgres "$(CONNECT_STRING)" up
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
-.PHONY: checkmigname
-checkmigname:
-	test -n "$(NAME)" # $$NAME
-
+## Create a new migration file
 .PHONY: new_migration
 new_migration: $(GOOSE) checkmigname
 	cd db/migrations;\
 	  $(GOOSE) create $(NAME) sql
 
+## Check which migrations are applied at the moment
 .PHONY: migration_status
 migration_status: $(GOOSE) checkdbvars
 	cd db/migrations;\
 	  $(GOOSE) postgres "$(CONNECT_STRING)" status
 
+# Convert timestamped migrations to versioned (to be run in CI);
+# merge timestamped files to prevent conflict
+.PHONY: version_migrations
+version_migrations:
+	cd db/migrations;\
+	  $(GOOSE) fix
+
+# Import a psql schema to the database
 .PHONY: import
 import:
 	test -n "$(NAME)" # $$NAME
 	psql $(NAME) < db/schema.sql
 
-#Rinkeby docker environment
+
+# Docker actions
+## Rinkeby docker environment
 RINKEBY_COMPOSE_FILE=dockerfiles/rinkeby/docker-compose.yml
 
 .PHONY: rinkeby_env_up
