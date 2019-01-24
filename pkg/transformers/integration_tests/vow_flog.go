@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -44,9 +46,14 @@ var _ = Describe("VowFlog LogNoteTransformer", func() {
 
 	It("transforms VowFlog log events", func() {
 		blockNumber := int64(8946819)
-		config := vow_flog.VowFlogConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VowFlogLabel,
+			ContractAddresses:   []string{test_data.KovanVowContractAddress},
+			ContractAbi:         test_data.KovanVowABI,
+			Topic:               test_data.KovanVowFlogSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())

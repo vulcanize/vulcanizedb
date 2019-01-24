@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var IlkFileConfig = shared.TransformerConfig{
-	TransformerName:     constants.PitFileIlkLabel,
-	ContractAddresses:   []string{constants.PitContractAddress},
-	ContractAbi:         constants.PitABI,
-	Topic:               constants.PitFileIlkSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetIlkFileConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.PitFileIlkLabel,
+		ContractAddresses:   []string{constants.PitContractAddress()},
+		ContractAbi:         constants.PitABI(),
+		Topic:               constants.GetPitFileIlkSignature(),
+		StartingBlockNumber: constants.PitDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

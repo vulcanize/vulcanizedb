@@ -17,6 +17,7 @@
 package test_config
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/onsi/gomega"
@@ -84,7 +85,10 @@ func setABIPath() {
 }
 
 func NewTestDB(node core.Node) *postgres.DB {
-	db, _ := postgres.NewDB(DBConfig, node)
+	db, err := postgres.NewDB(DBConfig, node)
+	if err != nil {
+		panic(fmt.Sprintf("Could not create new test db: %v", err))
+	}
 	return db
 }
 

@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"time"
 
@@ -46,9 +48,14 @@ var _ = Describe("FlapKick Transformer", func() {
 
 	It("fetches and transforms a FlapKick event from Kovan chain", func() {
 		blockNumber := int64(9002933)
-		config := flap_kick.FlapKickConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.FlapKickLabel,
+			ContractAddresses:   []string{test_data.KovanFlapperContractAddress},
+			ContractAbi:         test_data.KovanFlapperABI,
+			Topic:               test_data.KovanFlapKickSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())

@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var DripFileIlkConfig = shared.TransformerConfig{
-	TransformerName:     constants.DripFileIlkLabel,
-	ContractAddresses:   []string{constants.DripContractAddress},
-	ContractAbi:         constants.DripABI,
-	Topic:               constants.DripFileIlkSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetDripFileIlkConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.DripFileIlkLabel,
+		ContractAddresses:   []string{constants.DripContractAddress()},
+		ContractAbi:         constants.DripABI(),
+		Topic:               constants.GetDripFileIlkSignature(),
+		StartingBlockNumber: constants.DripDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

@@ -18,13 +18,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -47,7 +48,14 @@ var _ = Describe("Deal transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = deal.DealConfig
+		config = shared.TransformerConfig{
+			TransformerName:     constants.DealLabel,
+			ContractAddresses:   []string{test_data.KovanFlapperContractAddress, test_data.KovanFlipperContractAddress, test_data.KovanFlopperContractAddress},
+			ContractAbi:         test_data.KovanFlipperABI,
+			Topic:               test_data.KovanDealSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
 
 		initializer = factories.LogNoteTransformer{
 			Config:     config,
@@ -83,7 +91,7 @@ var _ = Describe("Deal transformer", func() {
 
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].BidId).To(Equal("6"))
-		Expect(dbResult[0].ContractAddress).To(Equal(constants.FlipperContractAddress))
+		Expect(dbResult[0].ContractAddress).To(Equal(test_data.KovanFlipperContractAddress))
 	})
 
 	It("persists a flop deal log event", func() {
@@ -111,6 +119,6 @@ var _ = Describe("Deal transformer", func() {
 
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].BidId).To(Equal("1"))
-		Expect(dbResult[0].ContractAddress).To(Equal(constants.FlapperContractAddress))
+		Expect(dbResult[0].ContractAddress).To(Equal(test_data.KovanFlapperContractAddress))
 	})
 })

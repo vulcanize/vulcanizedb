@@ -30,10 +30,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
+var testBiteConfig = shared.TransformerConfig{
+	TransformerName:     constants.BiteLabel,
+	ContractAddresses:   []string{test_data.KovanCatContractAddress},
+	ContractAbi:         test_data.KovanCatABI,
+	Topic:               test_data.KovanBiteSignature,
+	StartingBlockNumber: 0,
+	EndingBlockNumber:   -1,
+}
+
 var _ = Describe("Bite Transformer", func() {
 	It("fetches and transforms a Bite event from Kovan chain", func() {
 		blockNumber := int64(8956422)
-		config := bite.BiteConfig
+		config := testBiteConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 
@@ -80,8 +89,8 @@ var _ = Describe("Bite Transformer", func() {
 	})
 
 	It("unpacks an event log", func() {
-		address := common.HexToAddress(constants.CatContractAddress)
-		abi, err := geth.ParseAbi(constants.CatABI)
+		address := common.HexToAddress(test_data.KovanCatContractAddress)
+		abi, err := geth.ParseAbi(test_data.KovanCatABI)
 		Expect(err).NotTo(HaveOccurred())
 
 		contract := bind.NewBoundContract(address, abi, nil, nil, nil)

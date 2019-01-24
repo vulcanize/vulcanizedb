@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -28,9 +30,14 @@ import (
 var _ = Describe("VatFlux LogNoteTransformer", func() {
 	It("transforms VatFlux log events", func() {
 		blockNumber := int64(9004474)
-		config := vat_flux.VatFluxConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatFluxLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatFluxSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())

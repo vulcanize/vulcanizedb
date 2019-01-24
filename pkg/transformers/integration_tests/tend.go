@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -46,7 +47,14 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = tend.TendConfig
+		config = shared.TransformerConfig{
+			TransformerName:     constants.TendLabel,
+			ContractAddresses:   []string{test_data.KovanFlapperContractAddress, test_data.KovanFlipperContractAddress},
+			ContractAbi:         test_data.KovanFlipperABI,
+			Topic:               test_data.KovanTendFunctionSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
 
 		fetcher = shared.NewFetcher(blockChain)
 		addresses = shared.HexStringsToAddresses(config.ContractAddresses)

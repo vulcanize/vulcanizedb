@@ -20,14 +20,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 )
 
 var _ = Describe("Frob converter", func() {
 	var converter = frob.FrobConverter{}
 	It("converts a log to an entity", func() {
-		entities, err := converter.ToEntities(constants.PitABI, []types.Log{test_data.EthFrobLog})
+		entities, err := converter.ToEntities(test_data.KovanPitABI, []types.Log{test_data.EthFrobLog})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(entities)).To(Equal(1))

@@ -16,6 +16,8 @@ package integration_tests
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"math/big"
 
 	. "github.com/onsi/ginkgo"
@@ -30,9 +32,14 @@ import (
 var _ = Describe("VatTune LogNoteTransformer", func() {
 	It("transforms VatTune log events", func() {
 		blockNumber := int64(8761670)
-		config := vat_tune.VatTuneConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatTuneLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatTuneSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		rpcClient, ethClient, err := getClients(ipc)
 		Expect(err).NotTo(HaveOccurred())
