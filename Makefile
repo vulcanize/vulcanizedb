@@ -17,7 +17,7 @@ $(BIN)/ginkgo:
 GOOSE = $(BIN)/goose
 $(BIN)/goose:
 	go get -u -d github.com/pressly/goose/cmd/goose
-	go build -tags='no_mysql no_sqlite' -o $(BIN)/goose github.com/pressly/goose
+	go build -tags='no_mysql no_sqlite' -o $(BIN)/goose github.com/pressly/goose/cmd/goose
 
 ## Source linter
 LINT = $(BIN)/golint
@@ -129,8 +129,7 @@ migration_status: $(GOOSE) checkdbvars
 # merge timestamped files to prevent conflict
 .PHONY: version_migrations
 version_migrations:
-	cd db/migrations;\
-	  $(GOOSE) fix
+	cd db/migrations; $(GOOSE) fix
 
 # Import a psql schema to the database
 .PHONY: import
