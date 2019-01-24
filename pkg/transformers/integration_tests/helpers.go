@@ -26,6 +26,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
+var ipc string
+
 func getClients(ipc string) (client.RpcClient, *ethclient.Client, error) {
 	raw, err := rpc.Dial(ipc)
 	if err != nil {
