@@ -25,11 +25,17 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 1. `createdb vulcanize_public`
 1. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
+    - To rollback a single step: `make rollback NAME=vulcanize_public`
+    - To rollback to a certain migration: `make rollback_to MIGRATION=n NAME=vulcanize_public`
+    - To see status of migrations: `make migration_status NAME=vulcanize_public`
 
     * See below for configuring additional environments
 
-## Create a migration file (up and down)
-1. ./script/create_migrate create_bite_table
+## Create a migration file
+1. `make new_migration NAME=add_columnA_to_table1`
+    - This will create a new timestamped migration file in `db/migrations`
+1. Write the migration code in the created file, under the respective `goose` pragma
+    - Goose automatically runs each migration in a transaction; don't add `BEGIN` and `COMMIT` statements.
 
 ## Configuration
 - To use a local Ethereum node, copy `environments/public.toml.example` to

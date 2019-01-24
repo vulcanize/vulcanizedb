@@ -11,10 +11,10 @@ GINKGO = $(BIN)/ginkgo
 $(BIN)/ginkgo:
 	go get -u github.com/onsi/ginkgo/ginkgo
 
-MIGRATE = $(BIN)/migrate
-$(BIN)/migrate:
-	go get -u -d github.com/mattes/migrate/cli github.com/lib/pq
-	go build -tags 'postgres' -o $(BIN)/migrate github.com/mattes/migrate/cli
+GOOSE = $(BIN)/goose
+$(BIN)/goose:
+	go get -u -d github.com/pressly/goose/cmd/goose
+	go build -tags='no_mysql no_sqlite' -o $(BIN)/goose github.com/pressly/goose
 
 LINT = $(BIN)/golint
 $(BIN)/golint:
@@ -74,15 +74,42 @@ checkdbvars:
 	@echo $(CONNECT_STRING)
 
 
+# Goose defaults down migrations to 1 step
 .PHONY: rollback
-rollback: $(MIGRATE) checkdbvars
-	$(MIGRATE) -database $(CONNECT_STRING) -path ./db/migrations down 1
+rollback: $(GOOSE) checkdbvars
+	cd db/migrations;\
+	  $(GOOSE) postgres "$(CONNECT_STRING)" down
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
+.PHONY: checkmigration
+checkmigration:
+	test -n "$(MIGRATION)" # $$MIGRATION
+
+# MIGRATION is either a version integer or a timestamp
+.PHONY: rollback_to
+rollback_to: $(GOOSE) checkmigration checkdbvars
+	cd db/migrations;\
+	  $(GOOSE) postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
+
 .PHONY: migrate
-migrate: $(MIGRATE) checkdbvars
-	$(MIGRATE) -database $(CONNECT_STRING) -path ./db/migrations up
+migrate: $(GOOSE) checkdbvars
+	cd db/migrations;\
+	  $(GOOSE) postgres "$(CONNECT_STRING)" up
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
+
+.PHONY: checkmigname
+checkmigname:
+	test -n "$(NAME)" # $$NAME
+
+.PHONY: new_migration
+new_migration: $(GOOSE) checkmigname
+	cd db/migrations;\
+	  $(GOOSE) create $(NAME) sql
+
+.PHONY: migration_status
+migration_status: $(GOOSE) checkdbvars
+	cd db/migrations;\
+	  $(GOOSE) postgres "$(CONNECT_STRING)" status
 
 .PHONY: import
 import:
