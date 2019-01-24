@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.3
--- Dumped by pg_dump version 10.5
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 11.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,20 +20,6 @@ SET row_security = off;
 --
 
 CREATE SCHEMA maker;
-
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
@@ -1228,6 +1214,38 @@ CREATE TABLE public.eth_nodes (
 
 
 --
+-- Name: goose_db_version; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.goose_db_version (
+    id integer NOT NULL,
+    version_id bigint NOT NULL,
+    is_applied boolean NOT NULL,
+    tstamp timestamp without time zone DEFAULT now()
+);
+
+
+--
+-- Name: goose_db_version_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.goose_db_version_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: goose_db_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.goose_db_version_id_seq OWNED BY public.goose_db_version.id;
+
+
+--
 -- Name: headers; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1376,16 +1394,6 @@ CREATE SEQUENCE public.receipts_id_seq
 --
 
 ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
-
-
---
--- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.schema_migrations (
-    version bigint NOT NULL,
-    dirty boolean NOT NULL
-);
 
 
 --
@@ -1727,6 +1735,13 @@ ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.eth_nodes ALTER COLUMN id SET DEFAULT nextval('public.nodes_id_seq'::regclass);
+
+
+--
+-- Name: goose_db_version id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goose_db_version ALTER COLUMN id SET DEFAULT nextval('public.goose_db_version_id_seq'::regclass);
 
 
 --
@@ -2275,6 +2290,14 @@ ALTER TABLE ONLY public.eth_nodes
 
 
 --
+-- Name: goose_db_version goose_db_version_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goose_db_version
+    ADD CONSTRAINT goose_db_version_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: headers headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2312,14 +2335,6 @@ ALTER TABLE ONLY public.eth_nodes
 
 ALTER TABLE ONLY public.receipts
     ADD CONSTRAINT receipts_pkey PRIMARY KEY (id);
-
-
---
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --
