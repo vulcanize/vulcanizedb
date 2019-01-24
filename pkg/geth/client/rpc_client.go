@@ -61,11 +61,15 @@ func (client RpcClient) SupportedModules() (map[string]string, error) {
 
 func (client RpcClient) BatchCall(batch []BatchElem) error {
 	var rpcBatch []rpc.BatchElem
-	for index, batchElem := range batch {
-		rpcBatch[index].Result = batchElem.Result
-		rpcBatch[index].Method = batchElem.Method
-		rpcBatch[index].Args = batchElem.Args
-		rpcBatch[index].Error = batchElem.Error
+	for _, batchElem := range batch {
+		var newBatchElem = rpc.BatchElem{
+			Result: batchElem.Result,
+			Method: batchElem.Method,
+			Args:   batchElem.Args,
+			Error:  batchElem.Error,
+		}
+
+		rpcBatch = append(rpcBatch, newBatchElem)
 	}
 	return client.client.BatchCall(rpcBatch)
 }
