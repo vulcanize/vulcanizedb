@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -31,6 +32,7 @@ var _ = Describe("DripDrip Transformer", func() {
 	var (
 		db         *postgres.DB
 		blockChain core.BlockChain
+		config     shared.TransformerConfig
 	)
 
 	BeforeEach(func() {
@@ -40,10 +42,18 @@ var _ = Describe("DripDrip Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
+
+		config = shared.TransformerConfig{
+			ContractAddresses:   []string{test_data.KovanDripContractAddress},
+			ContractAbi:         test_data.KovanDripABI,
+			Topic:               test_data.KovanDripDripSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
 	})
+
 	It("transforms DripDrip log events", func() {
 		blockNumber := int64(8934775)
-		config := drip_drip.DripDripConfig
 		config.StartingBlockNumber = blockNumber
 		config.EndingBlockNumber = blockNumber
 

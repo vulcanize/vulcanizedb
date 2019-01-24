@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var VatHealConfig = shared.TransformerConfig{
-	TransformerName:     constants.VatHealLabel,
-	ContractAddresses:   []string{constants.VatContractAddress},
-	ContractAbi:         constants.VatABI,
-	Topic:               constants.VatHealSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetVatHealConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.VatHealLabel,
+		ContractAddresses:   []string{constants.VatContractAddress()},
+		ContractAbi:         constants.VatABI(),
+		Topic:               constants.GetVatHealSignature(),
+		StartingBlockNumber: constants.VatDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var DentConfig = shared.TransformerConfig{
-	TransformerName:     constants.DentLabel,
-	ContractAddresses:   []string{constants.FlipperContractAddress, constants.FlopperContractAddress},
-	ContractAbi:         constants.FlipperABI,
-	Topic:               constants.DentFunctionSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetDentConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.DentLabel,
+		ContractAddresses:   []string{constants.FlipperContractAddress(), constants.FlopperContractAddress()},
+		ContractAbi:         constants.FlipperABI(),
+		Topic:               constants.GetDentFunctionSignature(),
+		StartingBlockNumber: shared.MinInt64([]int64{constants.FlipperDeploymentBlock(), constants.FlopperDeploymentBlock()}),
+		EndingBlockNumber:   -1,
+	}
 }

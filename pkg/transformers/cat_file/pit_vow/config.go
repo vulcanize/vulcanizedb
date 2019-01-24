@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var CatFilePitVowConfig = shared.TransformerConfig{
-	TransformerName:     constants.CatFilePitVowLabel,
-	ContractAddresses:   []string{constants.CatContractAddress},
-	ContractAbi:         constants.CatABI,
-	Topic:               constants.CatFilePitVowSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetCatFilePitVowConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.CatFilePitVowLabel,
+		ContractAddresses:   []string{constants.CatContractAddress()},
+		ContractAbi:         constants.CatABI(),
+		Topic:               constants.GetCatFilePitVowSignature(),
+		StartingBlockNumber: constants.CatDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

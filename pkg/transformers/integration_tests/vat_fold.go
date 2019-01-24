@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/test_config"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
@@ -44,9 +46,14 @@ var _ = Describe("VatFold Transformer", func() {
 
 	It("transforms VatFold log events", func() {
 		blockNumber := int64(9367233)
-		config := vat_fold.VatFoldConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatFoldLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatFoldSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())

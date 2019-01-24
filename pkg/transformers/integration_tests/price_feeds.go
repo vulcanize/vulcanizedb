@@ -18,13 +18,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -46,7 +47,19 @@ var _ = Describe("Price feeds transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = price_feeds.PriceFeedConfig
+		config = shared.TransformerConfig{
+			TransformerName: constants.PriceFeedLabel,
+			ContractAddresses: []string{
+				test_data.KovanPepContractAddress,
+				test_data.KovanPipContractAddress,
+				test_data.KovanRepContractAddress,
+			},
+			ContractAbi:         test_data.KovanMedianizerABI,
+			Topic:               test_data.KovanLogValueSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
+
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 
 		fetcher = shared.NewFetcher(blockChain)
@@ -62,7 +75,7 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763054)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		addresses := []string{constants.PipContractAddress}
+		addresses := []string{test_data.KovanPipContractAddress}
 		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber
@@ -88,7 +101,7 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763059)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		addresses := []string{constants.PepContractAddress}
+		addresses := []string{test_data.KovanPepContractAddress}
 		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber
@@ -114,7 +127,7 @@ var _ = Describe("Price feeds transformer", func() {
 		blockNumber := int64(8763062)
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
-		addresses := []string{constants.RepContractAddress}
+		addresses := []string{test_data.KovanRepContractAddress}
 		initializer.Config.ContractAddresses = addresses
 		initializer.Config.StartingBlockNumber = blockNumber
 		initializer.Config.EndingBlockNumber = blockNumber

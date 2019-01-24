@@ -19,11 +19,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var DealConfig = shared.TransformerConfig{
-	TransformerName:     constants.DealLabel,
-	ContractAddresses:   []string{constants.FlapperContractAddress, constants.FlipperContractAddress, constants.FlopperContractAddress},
-	ContractAbi:         constants.FlipperABI,
-	Topic:               constants.DealSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetDealConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:   constants.DealLabel,
+		ContractAddresses: []string{constants.FlapperContractAddress(), constants.FlipperContractAddress(), constants.FlopperContractAddress()},
+		ContractAbi:       constants.FlipperABI(),
+		Topic:             constants.GetDealSignature(),
+		StartingBlockNumber: shared.MinInt64([]int64{
+			constants.FlapperDeploymentBlock(), constants.FlipperDeploymentBlock(), constants.FlopperDeploymentBlock()}),
+		EndingBlockNumber: -1,
+	}
 }

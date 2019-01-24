@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/frob"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
 
@@ -45,7 +44,7 @@ var (
 )
 
 var EthFrobLog = types.Log{
-	Address: common.HexToAddress(constants.PitContractAddress),
+	Address: common.HexToAddress(KovanPitContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b"),
 		common.HexToHash("0x66616b6520696c6b000000000000000000000000000000000000000000000000"),

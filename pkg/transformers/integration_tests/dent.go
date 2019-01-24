@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -34,7 +35,15 @@ var _ = Describe("Dent transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = dent.DentConfig
+		config = shared.TransformerConfig{
+			TransformerName:     constants.DentLabel,
+			ContractAddresses:   []string{test_data.KovanFlipperContractAddress, test_data.KovanFlopperContractAddress},
+			ContractAbi:         test_data.KovanFlipperABI,
+			Topic:               test_data.KovanDentFunctionSignature,
+			StartingBlockNumber: 0,
+			EndingBlockNumber:   -1,
+		}
+
 		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 		fetcher = shared.NewFetcher(blockChain)

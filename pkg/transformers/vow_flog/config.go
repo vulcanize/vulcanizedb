@@ -19,11 +19,13 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-var VowFlogConfig = shared.TransformerConfig{
-	TransformerName:     constants.VowFlogLabel,
-	ContractAddresses:   []string{constants.VowContractAddress},
-	ContractAbi:         constants.VowABI,
-	Topic:               constants.VowFlogSignature,
-	StartingBlockNumber: 0,
-	EndingBlockNumber:   -1,
+func GetVowFlogConfig() shared.TransformerConfig {
+	return shared.TransformerConfig{
+		TransformerName:     constants.VowFlogLabel,
+		ContractAddresses:   []string{constants.VowContractAddress()},
+		ContractAbi:         constants.VowABI(),
+		Topic:               constants.GetVowFlogSignature(),
+		StartingBlockNumber: constants.VowDeploymentBlock(),
+		EndingBlockNumber:   -1,
+	}
 }

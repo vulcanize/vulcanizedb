@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -61,9 +63,14 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, chopLumpBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := chop_lump.CatFileChopLumpConfig
-		config.StartingBlockNumber = chopLumpBlockNumber
-		config.EndingBlockNumber = chopLumpBlockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.CatFileChopLumpLabel,
+			ContractAddresses:   []string{test_data.KovanCatContractAddress},
+			ContractAbi:         test_data.KovanCatABI,
+			Topic:               test_data.KovanCatFileChopLumpSignature,
+			StartingBlockNumber: chopLumpBlockNumber,
+			EndingBlockNumber:   chopLumpBlockNumber,
+		}
 
 		initializer := factories.LogNoteTransformer{
 			Config:     config,
@@ -105,9 +112,14 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, flipBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := flip.CatFileFlipConfig
-		config.StartingBlockNumber = flipBlockNumber
-		config.EndingBlockNumber = flipBlockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.CatFileFlipLabel,
+			ContractAddresses:   []string{test_data.KovanCatContractAddress},
+			ContractAbi:         test_data.KovanCatABI,
+			Topic:               test_data.KovanCatFileFlipSignature,
+			StartingBlockNumber: flipBlockNumber,
+			EndingBlockNumber:   flipBlockNumber,
+		}
 
 		initializer := factories.LogNoteTransformer{
 			Config:     config,
@@ -142,9 +154,14 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, pitVowBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := pit_vow.CatFilePitVowConfig
-		config.StartingBlockNumber = pitVowBlockNumber
-		config.EndingBlockNumber = pitVowBlockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.CatFilePitVowLabel,
+			ContractAddresses:   []string{test_data.KovanCatContractAddress},
+			ContractAbi:         test_data.KovanCatABI,
+			Topic:               test_data.KovanCatFilePitVowSignature,
+			StartingBlockNumber: pitVowBlockNumber,
+			EndingBlockNumber:   pitVowBlockNumber,
+		}
 
 		initializer := factories.LogNoteTransformer{
 			Config:     config,

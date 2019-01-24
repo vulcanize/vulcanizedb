@@ -1,32 +1,30 @@
 package constants
 
-var (
-	BiteSignature               = GetEventSignature(biteMethod)
-	CatFileChopLumpSignature    = GetLogNoteSignature(catFileChopLumpMethod)
-	CatFileFlipSignature        = GetLogNoteSignature(catFileFlipMethod)
-	CatFilePitVowSignature      = GetLogNoteSignature(catFilePitVowMethod)
-	DealSignature               = GetLogNoteSignature(dealMethod)
-	DentFunctionSignature       = GetLogNoteSignature(dentMethod)
-	DripDripSignature           = GetLogNoteSignature(dripDripMethod)
-	DripFileIlkSignature        = GetLogNoteSignature(dripFileIlkMethod)
-	DripFileRepoSignature       = GetLogNoteSignature(dripFileRepoMethod)
-	DripFileVowSignature        = GetLogNoteSignature(dripFileVowMethod)
-	FlapKickSignature           = GetEventSignature(flapKickMethod)
-	FlipKickSignature           = GetEventSignature(flipKickMethod)
-	FlopKickSignature           = GetEventSignature(flopKickMethod)
-	FrobSignature               = GetEventSignature(frobMethod)
-	LogValueSignature           = GetEventSignature(logValueMethod)
-	PitFileDebtCeilingSignature = GetLogNoteSignature(pitFileDebtCeilingMethod)
-	PitFileIlkSignature         = GetLogNoteSignature(pitFileIlkMethod)
-	TendFunctionSignature       = GetLogNoteSignature(tendMethod)
-	VatFluxSignature            = GetLogNoteSignature(vatFluxMethod)
-	VatFoldSignature            = GetLogNoteSignature(vatFoldMethod)
-	VatGrabSignature            = GetLogNoteSignature(vatGrabMethod)
-	VatHealSignature            = GetLogNoteSignature(vatHealMethod)
-	VatInitSignature            = GetLogNoteSignature(vatInitMethod)
-	VatMoveSignature            = GetLogNoteSignature(vatMoveMethod)
-	VatSlipSignature            = GetLogNoteSignature(vatSlipMethod)
-	VatTollSignature            = GetLogNoteSignature(vatTollMethod)
-	VatTuneSignature            = GetLogNoteSignature(vatTuneMethod)
-	VowFlogSignature            = GetLogNoteSignature(vowFlogMethod)
-)
+func GetBiteSignature() string               { return GetEventSignature(biteMethod()) }
+func GetCatFileChopLumpSignature() string    { return GetLogNoteSignature(catFileChopLumpMethod()) }
+func GetCatFileFlipSignature() string        { return GetLogNoteSignature(catFileFlipMethod()) }
+func GetCatFilePitVowSignature() string      { return GetLogNoteSignature(catFilePitVowMethod()) }
+func GetDealSignature() string               { return GetLogNoteSignature(dealMethod()) }
+func GetDentFunctionSignature() string       { return GetLogNoteSignature(dentMethod()) }
+func GetDripDripSignature() string           { return GetLogNoteSignature(dripDripMethod()) }
+func GetDripFileIlkSignature() string        { return GetLogNoteSignature(dripFileIlkMethod()) }
+func GetDripFileRepoSignature() string       { return GetLogNoteSignature(dripFileRepoMethod()) }
+func GetDripFileVowSignature() string        { return GetLogNoteSignature(dripFileVowMethod()) }
+func GetFlapKickSignature() string           { return GetEventSignature(flapKickMethod()) }
+func GetFlipKickSignature() string           { return GetEventSignature(flipKickMethod()) }
+func GetFlopKickSignature() string           { return GetEventSignature(flopKickMethod()) }
+func GetFrobSignature() string               { return GetEventSignature(frobMethod()) }
+func GetLogValueSignature() string           { return GetEventSignature(logValueMethod()) }
+func GetPitFileDebtCeilingSignature() string { return GetLogNoteSignature(pitFileDebtCeilingMethod()) }
+func GetPitFileIlkSignature() string         { return GetLogNoteSignature(pitFileIlkMethod()) }
+func GetTendFunctionSignature() string       { return GetLogNoteSignature(tendMethod()) }
+func GetVatFluxSignature() string            { return GetLogNoteSignature(vatFluxMethod()) }
+func GetVatFoldSignature() string            { return GetLogNoteSignature(vatFoldMethod()) }
+func GetVatGrabSignature() string            { return GetLogNoteSignature(vatGrabMethod()) }
+func GetVatHealSignature() string            { return GetLogNoteSignature(vatHealMethod()) }
+func GetVatInitSignature() string            { return GetLogNoteSignature(vatInitMethod()) }
+func GetVatMoveSignature() string            { return GetLogNoteSignature(vatMoveMethod()) }
+func GetVatSlipSignature() string            { return GetLogNoteSignature(vatSlipMethod()) }
+func GetVatTollSignature() string            { return GetLogNoteSignature(vatTollMethod()) }
+func GetVatTuneSignature() string            { return GetLogNoteSignature(vatTuneMethod()) }
+func GetVowFlogSignature() string            { return GetLogNoteSignature(vowFlogMethod()) }

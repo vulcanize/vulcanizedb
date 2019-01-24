@@ -9,12 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_tune"
 )
 
 var EthVatTuneLog = types.Log{
-	Address: common.HexToAddress(constants.VatContractAddress),
+	Address: common.HexToAddress(KovanVatContractAddress),
 	Topics: []common.Hash{
 		common.HexToHash("0x5dd6471a00000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0x4554480000000000000000000000000000000000000000000000000000000000"),

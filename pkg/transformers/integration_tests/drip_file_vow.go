@@ -22,6 +22,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -44,9 +46,14 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 
 	It("transforms DripFileVow log events", func() {
 		blockNumber := int64(8762197)
-		config := vow.DripFileVowConfig
-		config.StartingBlockNumber = blockNumber
-		config.EndingBlockNumber = blockNumber
+		config := shared.TransformerConfig{
+			TransformerName:     constants.DripFileVowLabel,
+			ContractAddresses:   []string{test_data.KovanDripContractAddress},
+			ContractAbi:         test_data.KovanDripABI,
+			Topic:               test_data.KovanDripFileVowSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
 
 		header, err := persistHeader(db, blockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
