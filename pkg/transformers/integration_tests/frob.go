@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"strconv"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -39,7 +40,7 @@ var _ = Describe("Frob Transformer", func() {
 		db          *postgres.DB
 		blockChain  core.BlockChain
 		fetcher     *shared.Fetcher
-		config      shared.TransformerConfig
+		config      shared_t.TransformerConfig
 		initializer factories.Transformer
 	)
 
@@ -52,7 +53,7 @@ var _ = Describe("Frob Transformer", func() {
 		test_config.CleanTestDB(db)
 
 		fetcher = shared.NewFetcher(blockChain)
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			TransformerName:     constants.FrobLabel,
 			ContractAddresses:   []string{test_data.KovanPitContractAddress},
 			ContractAbi:         test_data.KovanPitABI,
@@ -77,7 +78,7 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

@@ -17,24 +17,26 @@
 package factories_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
-	"math/rand"
 )
 
 var _ = Describe("Transformer", func() {
 	var (
 		repository  mocks.MockRepository
 		converter   mocks.MockConverter
-		transformer shared.Transformer
+		transformer shared_t.Transformer
 		headerOne   core.Header
 		config      = test_data.GenericTestConfig
 		logs        = test_data.GenericTestLogs

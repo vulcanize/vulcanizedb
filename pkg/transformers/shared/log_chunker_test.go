@@ -21,34 +21,35 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 var _ = Describe("Log chunker", func() {
 	var (
-		configs []shared.TransformerConfig
+		configs []shared_t.TransformerConfig
 		chunker *shared.LogChunker
 	)
 
 	BeforeEach(func() {
-		configA := shared.TransformerConfig{
+		configA := shared_t.TransformerConfig{
 			TransformerName:   "TransformerA",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A1", "0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xA",
 		}
-		configB := shared.TransformerConfig{
+		configB := shared_t.TransformerConfig{
 			TransformerName:   "TransformerB",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000B1"},
 			Topic:             "0xB",
 		}
 
-		configC := shared.TransformerConfig{
+		configC := shared_t.TransformerConfig{
 			TransformerName:   "TransformerC",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xC",
 		}
 
-		configs = []shared.TransformerConfig{configA, configB, configC}
+		configs = []shared_t.TransformerConfig{configA, configB, configC}
 		chunker = shared.NewLogChunker()
 		chunker.AddConfigs(configs)
 	})
@@ -71,24 +72,24 @@ var _ = Describe("Log chunker", func() {
 
 	Describe("AddConfigs", func() {
 		It("can add more configs later", func() {
-			configD := shared.TransformerConfig{
+			configD := shared_t.TransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]shared.TransformerConfig{configD})
+			chunker.AddConfigs([]shared_t.TransformerConfig{configD})
 
 			Expect(chunker.AddressToNames).To(ContainElement([]string{"TransformerD"}))
 			Expect(chunker.NameToTopic0).To(ContainElement(common.HexToHash("0xD")))
 		})
 
 		It("lower cases address", func() {
-			configD := shared.TransformerConfig{
+			configD := shared_t.TransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]shared.TransformerConfig{configD})
+			chunker.AddConfigs([]shared_t.TransformerConfig{configD})
 
 			Expect(chunker.AddressToNames["0x000000000000000000000000000000000000000d"]).To(Equal([]string{"TransformerD"}))
 		})

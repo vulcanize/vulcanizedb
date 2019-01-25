@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
@@ -34,7 +35,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		config      shared.TransformerConfig
+		config      shared_t.TransformerConfig
 		fetcher     *shared.Fetcher
 		initializer factories.LogNoteTransformer
 		addresses   []common.Address
@@ -49,7 +50,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			TransformerName:     constants.TendLabel,
 			ContractAddresses:   []string{test_data.KovanFlapperContractAddress, test_data.KovanFlipperContractAddress},
 			ContractAbi:         test_data.KovanFlipperABI,
@@ -59,7 +60,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		}
 
 		fetcher = shared.NewFetcher(blockChain)
-		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		addresses = shared_t.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 
 		initializer = factories.LogNoteTransformer{

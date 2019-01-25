@@ -17,12 +17,13 @@
 package dent
 
 import (
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDentConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDentConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.DentLabel,
 		ContractAddresses:   []string{constants.FlipperContractAddress(), constants.FlopperContractAddress()},
 		ContractAbi:         constants.FlipperABI(),

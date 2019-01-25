@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package shared_test
+package watcher_test
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -27,7 +27,7 @@ import (
 
 func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Shared Suite")
+	RunSpecs(t, "Shared Watcher Suite")
 }
 
 var _ = BeforeSuite(func() {

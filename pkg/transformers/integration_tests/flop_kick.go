@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
@@ -39,7 +40,7 @@ var _ = Describe("FlopKick Transformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		config      shared.TransformerConfig
+		config      shared_t.TransformerConfig
 		initializer factories.Transformer
 		fetcher     shared.LogFetcher
 		addresses   []common.Address
@@ -54,7 +55,7 @@ var _ = Describe("FlopKick Transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			TransformerName:     constants.FlopKickLabel,
 			ContractAddresses:   []string{test_data.KovanFlopperContractAddress},
 			ContractAbi:         test_data.KovanFlopperABI,
@@ -70,7 +71,7 @@ var _ = Describe("FlopKick Transformer", func() {
 		}
 
 		fetcher = shared.NewFetcher(blockChain)
-		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		addresses = shared_t.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 	})
 

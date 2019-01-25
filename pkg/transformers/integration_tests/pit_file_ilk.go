@@ -26,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"strconv"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -48,7 +49,7 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.PitFileIlkLabel,
 			ContractAddresses:   []string{test_data.KovanPitContractAddress},
 			ContractAbi:         test_data.KovanPitABI,
@@ -57,7 +58,7 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 			EndingBlockNumber:   -1,
 		}
 
-		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		addresses = shared_t.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 
 		initializer = factories.LogNoteTransformer{

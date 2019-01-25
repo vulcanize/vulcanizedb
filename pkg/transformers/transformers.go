@@ -17,6 +17,7 @@
 package transformers
 
 import (
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/flip"
@@ -35,7 +36,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/ilk"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/price_feeds"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/tend"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_flux"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vat_fold"
@@ -315,7 +315,7 @@ func getLogNoteTransformers() []factories.LogNoteTransformer {
 
 // `TransformerInitializers` returns a list of functions, that given a db pointer
 // will return a `shared.Transformer`
-func TransformerInitializers() (initializers []shared.TransformerInitializer) {
+func TransformerInitializers() (initializers []shared_t.TransformerInitializer) {
 	for _, transformer := range getLogNoteTransformers() {
 		initializers = append(initializers, transformer.NewLogNoteTransformer)
 	}

@@ -20,10 +20,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"strings"
+
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 )
 
 type Chunker interface {
-	AddConfigs(transformerConfigs []TransformerConfig)
+	AddConfigs(transformerConfigs []shared_t.TransformerConfig)
 	ChunkLogs(logs []types.Log) map[string][]types.Log
 }
 
@@ -42,7 +44,7 @@ func NewLogChunker() *LogChunker {
 }
 
 // Configures the chunker by adding more addreses and topics to consider.
-func (chunker *LogChunker) AddConfigs(transformerConfigs []TransformerConfig) {
+func (chunker *LogChunker) AddConfigs(transformerConfigs []shared_t.TransformerConfig) {
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {
 			var lowerCaseAddress = strings.ToLower(address)

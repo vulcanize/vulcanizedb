@@ -17,12 +17,12 @@
 package drip_drip
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDripDripConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDripDripConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		ContractAddresses:   []string{constants.DripContractAddress()},
 		ContractAbi:         constants.DripABI(),
 		Topic:               constants.GetDripDripSignature(),

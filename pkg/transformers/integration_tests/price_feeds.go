@@ -9,6 +9,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
@@ -21,7 +22,7 @@ var _ = Describe("Price feeds transformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		config      shared.TransformerConfig
+		config      shared_t.TransformerConfig
 		fetcher     *shared.Fetcher
 		initializer factories.LogNoteTransformer
 		topics      []common.Hash
@@ -35,7 +36,7 @@ var _ = Describe("Price feeds transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			TransformerName: constants.PriceFeedLabel,
 			ContractAddresses: []string{
 				test_data.KovanPepContractAddress,
@@ -69,7 +70,7 @@ var _ = Describe("Price feeds transformer", func() {
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(addresses),
+			shared_t.HexStringsToAddresses(addresses),
 			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())
@@ -134,7 +135,7 @@ var _ = Describe("Price feeds transformer", func() {
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(addresses),
+			shared_t.HexStringsToAddresses(addresses),
 			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())
@@ -160,7 +161,7 @@ var _ = Describe("Price feeds transformer", func() {
 		initializer.Config.EndingBlockNumber = blockNumber
 
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(addresses),
+			shared_t.HexStringsToAddresses(addresses),
 			topics,
 			header)
 		Expect(err).NotTo(HaveOccurred())

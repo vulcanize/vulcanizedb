@@ -14,12 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package shared
+package watcher
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -27,7 +30,7 @@ import (
 )
 
 type EventWatcher struct {
-	Transformers  []shared.Transformer
+	Transformers  []transformer.Transformer
 	DB            *postgres.DB
 	Fetcher       shared.LogFetcher
 	Chunker       shared.Chunker
@@ -47,16 +50,16 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 }
 
 // Adds transformers to the watcher and updates the chunker, so that it will consider the new transformers.
-func (watcher *EventWatcher) AddTransformers(initializers []shared.TransformerInitializer) {
+func (watcher *EventWatcher) AddTransformers(initializers []transformer.TransformerInitializer) {
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
-	var configs []shared.TransformerConfig
+	var configs []transformer.TransformerConfig
 
 	for _, initializer := range initializers {
-		transformer := initializer(watcher.DB)
-		watcher.Transformers = append(watcher.Transformers, transformer)
+		t := initializer(watcher.DB)
+		watcher.Transformers = append(watcher.Transformers, t)
 
-		config := transformer.GetConfig()
+		config := t.GetConfig()
 		configs = append(configs, config)
 
 		if watcher.StartingBlock == nil {
@@ -65,7 +68,7 @@ func (watcher *EventWatcher) AddTransformers(initializers []shared.TransformerIn
 			watcher.StartingBlock = &config.StartingBlockNumber
 		}
 
-		addresses := shared.HexStringsToAddresses(config.ContractAddresses)
+		addresses := transformer.HexStringsToAddresses(config.ContractAddresses)
 		contractAddresses = append(contractAddresses, addresses...)
 		topic0s = append(topic0s, common.HexToHash(config.Topic))
 	}
@@ -105,10 +108,10 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 		// Can't quit early and mark as checked if there are no logs. If we are running continuousLogSync,
 		// not all logs we're interested in might have been fetched.
-		for _, transformer := range watcher.Transformers {
-			transformerName := transformer.GetConfig().TransformerName
+		for _, t := range watcher.Transformers {
+			transformerName := t.GetConfig().TransformerName
 			logChunk := chunkedLogs[transformerName]
-			err = transformer.Execute(logChunk, header, constants.HeaderMissing)
+			err = t.Execute(logChunk, header, constants.HeaderMissing)
 			if err != nil {
 				log.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
 				return err

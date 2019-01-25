@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/flip_kick"
@@ -59,7 +60,7 @@ var _ = Describe("FlipKick Transformer", func() {
 
 	It("fetches and transforms a FlipKick event from Kovan chain", func() {
 		blockNumber := int64(8956476)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.FlipKickLabel,
 			ContractAddresses:   []string{test_data.KovanFlipperContractAddress},
 			ContractAbi:         test_data.KovanFlipperABI,
@@ -86,7 +87,7 @@ var _ = Describe("FlipKick Transformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

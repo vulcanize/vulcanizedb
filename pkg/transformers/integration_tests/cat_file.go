@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
@@ -66,7 +67,7 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, chopLumpBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.CatFileChopLumpLabel,
 			ContractAddresses:   []string{test_data.KovanCatContractAddress},
 			ContractAbi:         test_data.KovanCatABI,
@@ -162,7 +163,7 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, flipBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.CatFileFlipLabel,
 			ContractAddresses:   []string{test_data.KovanCatContractAddress},
 			ContractAbi:         test_data.KovanCatABI,
@@ -250,7 +251,7 @@ var _ = Describe("Cat File transformer", func() {
 		header, err := persistHeader(db, pitVowBlockNumber, blockChain)
 		Expect(err).NotTo(HaveOccurred())
 
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.CatFilePitVowLabel,
 			ContractAddresses:   []string{test_data.KovanCatContractAddress},
 			ContractAbi:         test_data.KovanCatABI,

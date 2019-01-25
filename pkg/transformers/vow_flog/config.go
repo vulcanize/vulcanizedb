@@ -17,12 +17,12 @@
 package vow_flog
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetVowFlogConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetVowFlogConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.VowFlogLabel,
 		ContractAddresses:   []string{constants.VowContractAddress()},
 		ContractAbi:         constants.VowABI(),

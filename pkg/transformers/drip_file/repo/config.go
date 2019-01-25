@@ -17,12 +17,12 @@
 package repo
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDripFileRepoConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDripFileRepoConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.DripFileRepoLabel,
 		ContractAddresses:   []string{constants.DripContractAddress()},
 		ContractAbi:         constants.DripABI(),

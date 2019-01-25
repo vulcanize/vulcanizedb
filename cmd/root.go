@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/vulcanizedb/pkg/autogen"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
@@ -38,6 +39,7 @@ import (
 var (
 	cfgFile             string
 	databaseConfig      config.Database
+	autogenConfig       autogen.Config
 	ipc                 string
 	levelDbPath         string
 	startingBlockNumber int64
@@ -53,7 +55,7 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:              "vulcanizedb",
-	PersistentPreRun: database,
+	PersistentPreRun: configure,
 }
 
 func Execute() {
@@ -63,7 +65,7 @@ func Execute() {
 	}
 }
 
-func database(cmd *cobra.Command, args []string) {
+func configure(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
@@ -73,6 +75,11 @@ func database(cmd *cobra.Command, args []string) {
 		Port:     viper.GetInt("database.port"),
 		User:     viper.GetString("database.user"),
 		Password: viper.GetString("database.password"),
+	}
+	autogenConfig = autogen.Config{
+		FilePath: viper.GetString("exporter.filePath"),
+		FileName: viper.GetString("exporter.fileName"),
+		Imports:  viper.GetStringMapString("exporter.transformers"),
 	}
 	viper.Set("database.config", databaseConfig)
 }
@@ -93,6 +100,8 @@ func init() {
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("datadog-name", "vulcanize-test", "datadog service name")
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
+	rootCmd.PersistentFlags().String("exporter-path", "~/go/src/github.com/vulcanize/vulcanizedb/plugins", "file path to transformer exporter plugin")
+	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -103,6 +112,8 @@ func init() {
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("datadog.name", rootCmd.PersistentFlags().Lookup("datadog-name"))
 	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
+	viper.BindPFlag("exporter.filePath", rootCmd.PersistentFlags().Lookup("exporter-path"))
+	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
 }
 
 func initConfig() {
