@@ -17,12 +17,12 @@
 package chop_lump
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetCatFileChopLumpConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetCatFileChopLumpConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.CatFileChopLumpLabel,
 		ContractAddresses:   []string{constants.CatContractAddress()},
 		ContractAbi:         constants.CatABI(),

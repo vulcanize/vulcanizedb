@@ -25,6 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/vow_flog"
@@ -48,7 +49,7 @@ var _ = Describe("VowFlog LogNoteTransformer", func() {
 
 	It("transforms VowFlog log events", func() {
 		blockNumber := int64(8946819)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.VowFlogLabel,
 			ContractAddresses:   []string{test_data.KovanVowContractAddress},
 			ContractAbi:         test_data.KovanVowABI,
@@ -62,7 +63,7 @@ var _ = Describe("VowFlog LogNoteTransformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

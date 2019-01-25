@@ -17,12 +17,12 @@
 package debt_ceiling
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDebtCeilingFileConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDebtCeilingFileConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.PitFileDebtCeilingLabel,
 		ContractAddresses:   []string{constants.PitContractAddress()},
 		ContractAbi:         constants.PitABI(),

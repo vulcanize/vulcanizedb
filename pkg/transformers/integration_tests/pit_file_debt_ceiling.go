@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/pit_file/debt_ceiling"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -48,7 +49,7 @@ var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
 
 	It("fetches and transforms a PitFileDebtCeiling event from Kovan chain", func() {
 		blockNumber := int64(8535578)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.PitFileDebtCeilingLabel,
 			ContractAddresses:   []string{test_data.KovanPitContractAddress},
 			ContractAbi:         test_data.KovanPitABI,
@@ -62,7 +63,7 @@ var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

@@ -17,11 +17,12 @@
 package test_data
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/rand"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 )
 
 type GenericModel struct{}
@@ -37,7 +38,7 @@ var GenericTestLogs = []types.Log{{
 	BlockNumber: uint64(startingBlockNumber),
 }}
 
-var GenericTestConfig = shared.TransformerConfig{
+var GenericTestConfig = shared_t.TransformerConfig{
 	TransformerName:     "generic-test-transformer",
 	ContractAddresses:   []string{address},
 	ContractAbi:         randomString(100),

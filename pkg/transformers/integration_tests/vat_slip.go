@@ -8,6 +8,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"strconv"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
@@ -33,7 +34,7 @@ var _ = Describe("Vat slip transformer", func() {
 
 	It("persists vat slip event", func() {
 		blockNumber := int64(8953655)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.VatSlipLabel,
 			ContractAddresses:   []string{test_data.KovanVatContractAddress},
 			ContractAbi:         test_data.KovanVatABI,
@@ -47,7 +48,7 @@ var _ = Describe("Vat slip transformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

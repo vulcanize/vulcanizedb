@@ -17,12 +17,13 @@
 package price_feeds
 
 import (
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetPriceFeedConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetPriceFeedConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName: constants.PriceFeedLabel,
 		ContractAddresses: []string{
 			constants.PepContractAddress(), constants.PipContractAddress(), constants.RepContractAddress(),

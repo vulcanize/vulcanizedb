@@ -20,19 +20,19 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type LogNoteTransformer struct {
-	Config     shared.TransformerConfig
+	Config     shared_t.TransformerConfig
 	Converter  LogNoteConverter
 	Repository Repository
 }
 
-func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB) shared.Transformer {
+func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB) shared_t.Transformer {
 	transformer.Repository.SetDB(db)
 	return transformer
 }
@@ -68,6 +68,6 @@ func (transformer LogNoteTransformer) GetName() string {
 	return transformer.Config.TransformerName
 }
 
-func (transformer LogNoteTransformer) GetConfig() shared.TransformerConfig {
+func (transformer LogNoteTransformer) GetConfig() shared_t.TransformerConfig {
 	return transformer.Config
 }

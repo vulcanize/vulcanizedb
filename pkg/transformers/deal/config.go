@@ -17,12 +17,13 @@
 package deal
 
 import (
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDealConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDealConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:   constants.DealLabel,
 		ContractAddresses: []string{constants.FlapperContractAddress(), constants.FlipperContractAddress(), constants.FlopperContractAddress()},
 		ContractAbi:       constants.FlipperABI(),

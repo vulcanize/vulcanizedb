@@ -24,6 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/bite"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
@@ -33,7 +34,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var testBiteConfig = shared.TransformerConfig{
+var testBiteConfig = shared_t.TransformerConfig{
 	TransformerName:     constants.BiteLabel,
 	ContractAddresses:   []string{test_data.KovanCatContractAddress},
 	ContractAbi:         test_data.KovanCatABI,

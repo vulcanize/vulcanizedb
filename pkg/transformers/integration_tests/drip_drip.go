@@ -20,14 +20,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"strconv"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -36,7 +38,7 @@ var _ = Describe("DripDrip Transformer", func() {
 	var (
 		db         *postgres.DB
 		blockChain core.BlockChain
-		config     shared.TransformerConfig
+		config     shared_t.TransformerConfig
 	)
 
 	BeforeEach(func() {
@@ -47,7 +49,7 @@ var _ = Describe("DripDrip Transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			ContractAddresses:   []string{test_data.KovanDripContractAddress},
 			ContractAbi:         test_data.KovanDripABI,
 			Topic:               test_data.KovanDripDripSignature,
@@ -73,7 +75,7 @@ var _ = Describe("DripDrip Transformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())
@@ -109,7 +111,7 @@ var _ = Describe("DripDrip Transformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

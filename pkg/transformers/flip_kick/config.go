@@ -17,12 +17,12 @@
 package flip_kick
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetFlipKickConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetFlipKickConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.FlipKickLabel,
 		ContractAddresses:   []string{constants.FlipperContractAddress()},
 		ContractAbi:         constants.FlipperABI(),

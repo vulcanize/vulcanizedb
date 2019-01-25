@@ -20,13 +20,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -48,7 +50,7 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 
 	It("transforms DripFileVow log events", func() {
 		blockNumber := int64(8762197)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.DripFileVowLabel,
 			ContractAddresses:   []string{test_data.KovanDripContractAddress},
 			ContractAbi:         test_data.KovanDripABI,
@@ -69,7 +71,7 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())
@@ -88,7 +90,7 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 
 	It("rechecks drip file vow event", func() {
 		blockNumber := int64(8762197)
-		config := shared.TransformerConfig{
+		config := shared_t.TransformerConfig{
 			TransformerName:     constants.DripFileVowLabel,
 			ContractAddresses:   []string{test_data.KovanDripContractAddress},
 			ContractAbi:         test_data.KovanDripABI,
@@ -109,7 +111,7 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 
 		fetcher := shared.NewFetcher(blockChain)
 		logs, err := fetcher.FetchLogs(
-			shared.HexStringsToAddresses(config.ContractAddresses),
+			shared_t.HexStringsToAddresses(config.ContractAddresses),
 			[]common.Hash{common.HexToHash(config.Topic)},
 			header)
 		Expect(err).NotTo(HaveOccurred())

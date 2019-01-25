@@ -17,12 +17,12 @@
 package vow
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetDripFileVowConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetDripFileVowConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.DripFileVowLabel,
 		ContractAddresses:   []string{constants.DripContractAddress()},
 		ContractAbi:         constants.DripABI(),

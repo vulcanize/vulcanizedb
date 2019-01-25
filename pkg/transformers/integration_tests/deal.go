@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/deal"
@@ -35,7 +36,7 @@ var _ = Describe("Deal transformer", func() {
 	var (
 		db          *postgres.DB
 		blockChain  core.BlockChain
-		config      shared.TransformerConfig
+		config      shared_t.TransformerConfig
 		initializer factories.LogNoteTransformer
 		fetcher     *shared.Fetcher
 		addresses   []common.Address
@@ -50,7 +51,7 @@ var _ = Describe("Deal transformer", func() {
 		db = test_config.NewTestDB(blockChain.Node())
 		test_config.CleanTestDB(db)
 
-		config = shared.TransformerConfig{
+		config = shared_t.TransformerConfig{
 			TransformerName:     constants.DealLabel,
 			ContractAddresses:   []string{test_data.KovanFlapperContractAddress, test_data.KovanFlipperContractAddress, test_data.KovanFlopperContractAddress},
 			ContractAbi:         test_data.KovanFlipperABI,
@@ -66,7 +67,7 @@ var _ = Describe("Deal transformer", func() {
 		}
 
 		fetcher = shared.NewFetcher(blockChain)
-		addresses = shared.HexStringsToAddresses(config.ContractAddresses)
+		addresses = shared_t.HexStringsToAddresses(config.ContractAddresses)
 		topics = []common.Hash{common.HexToHash(config.Topic)}
 
 	})

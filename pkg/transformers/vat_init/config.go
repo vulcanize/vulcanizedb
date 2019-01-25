@@ -17,12 +17,12 @@
 package vat_init
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
-func GetVatInitConfig() shared.TransformerConfig {
-	return shared.TransformerConfig{
+func GetVatInitConfig() shared_t.TransformerConfig {
+	return shared_t.TransformerConfig{
 		TransformerName:     constants.VatInitLabel,
 		ContractAddresses:   []string{constants.VatContractAddress()},
 		ContractAbi:         constants.VatABI(),
