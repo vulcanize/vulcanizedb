@@ -17,6 +17,7 @@
 package shared
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"math/big"
 )
@@ -57,6 +58,10 @@ func GetDataBytesAtIndex(n int, logData []byte) []byte {
 		return logData[len(logData)-(3*constants.DataItemLength) : len(logData)-(2*constants.DataItemLength)]
 	}
 	return []byte{}
+}
+
+func GetHexWithoutPrefix(raw []byte) string {
+	return common.Bytes2Hex(raw)
 }
 
 func ConvertToRay(value string) string {

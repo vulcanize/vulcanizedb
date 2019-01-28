@@ -11,6 +11,9 @@
 [datadog]
     name = "maker_vdb_staging"
 
+[filesystem]
+    storageDiffsPath = "INSERT-PATH-TO-STORAGE-DIFFS"
+
 [contract]
     [contract.address]
         cat      = "0x2f34f22a00ee4b7a8f8bbc4eaee1658774c624e0"

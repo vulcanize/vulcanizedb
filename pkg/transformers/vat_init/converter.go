@@ -17,10 +17,10 @@
 package vat_init
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type VatInitConverter struct{}
@@ -32,7 +32,7 @@ func (VatInitConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
 			return nil, err

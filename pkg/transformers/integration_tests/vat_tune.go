@@ -75,7 +75,7 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("ETH"))
+		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Urn).To(Equal("0x4F26FfBe5F04ED43630fdC30A87638d53D0b0876"))
 		Expect(dbResult[0].V).To(Equal("0x4F26FfBe5F04ED43630fdC30A87638d53D0b0876"))
 		Expect(dbResult[0].W).To(Equal("0x4F26FfBe5F04ED43630fdC30A87638d53D0b0876"))

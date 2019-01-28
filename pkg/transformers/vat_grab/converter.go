@@ -1,7 +1,6 @@
 package vat_grab
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,7 +19,7 @@ func (VatGrabConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		urn := common.BytesToAddress(ethLog.Topics[2].Bytes())
 		v := common.BytesToAddress(ethLog.Topics[3].Bytes())
 		wBytes := shared.GetDataBytesAtIndex(-3, ethLog.Data)

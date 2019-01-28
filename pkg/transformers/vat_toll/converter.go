@@ -1,9 +1,9 @@
 package vat_toll
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -18,7 +18,7 @@ func (VatTollConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
 		take := ethLog.Topics[3].Big()
 

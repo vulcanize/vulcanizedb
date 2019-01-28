@@ -35,12 +35,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Watcher", func() {
+var _ = Describe("EventWatcher", func() {
 	It("initialises correctly", func() {
 		db := test_config.NewTestDB(core.Node{ID: "testNode"})
 		bc := fakes.NewMockBlockChain()
 
-		watcher := shared.NewWatcher(db, bc)
+		watcher := shared.NewEventWatcher(db, bc)
 
 		Expect(watcher.DB).To(Equal(db))
 		Expect(watcher.Fetcher).NotTo(BeNil())
@@ -48,7 +48,7 @@ var _ = Describe("Watcher", func() {
 	})
 
 	It("adds transformers", func() {
-		watcher := shared.NewWatcher(nil, nil)
+		watcher := shared.NewEventWatcher(nil, nil)
 		fakeTransformer := &mocks.MockTransformer{}
 		fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 		watcher.AddTransformers([]shared2.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
@@ -60,7 +60,7 @@ var _ = Describe("Watcher", func() {
 	})
 
 	It("adds transformers from multiple sources", func() {
-		watcher := shared.NewWatcher(nil, nil)
+		watcher := shared.NewEventWatcher(nil, nil)
 		fakeTransformer1 := &mocks.MockTransformer{}
 		fakeTransformer1.SetTransformerConfig(mocks.FakeTransformerConfig)
 
@@ -84,7 +84,7 @@ var _ = Describe("Watcher", func() {
 		fakeTransformer2 := &mocks.MockTransformer{}
 		fakeTransformer2.SetTransformerConfig(shared2.TransformerConfig{StartingBlockNumber: 3})
 
-		watcher := shared.NewWatcher(nil, nil)
+		watcher := shared.NewEventWatcher(nil, nil)
 		watcher.AddTransformers([]shared2.TransformerInitializer{
 			fakeTransformer1.FakeTransformerInitializer,
 			fakeTransformer2.FakeTransformerInitializer,
@@ -94,7 +94,7 @@ var _ = Describe("Watcher", func() {
 	})
 
 	It("returns an error when run without transformers", func() {
-		watcher := shared.NewWatcher(nil, nil)
+		watcher := shared.NewEventWatcher(nil, nil)
 		err := watcher.Execute()
 		Expect(err).To(MatchError("No transformers added to watcher"))
 	})
@@ -102,7 +102,7 @@ var _ = Describe("Watcher", func() {
 	Describe("with missing headers", func() {
 		var (
 			db               *postgres.DB
-			watcher          shared.Watcher
+			watcher          shared.EventWatcher
 			mockBlockChain   fakes.MockBlockChain
 			headerRepository repositories.HeaderRepository
 			repository       mocks.MockWatcherRepository
@@ -117,7 +117,7 @@ var _ = Describe("Watcher", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			repository = mocks.MockWatcherRepository{}
-			watcher = shared.NewWatcher(db, &mockBlockChain)
+			watcher = shared.NewEventWatcher(db, &mockBlockChain)
 		})
 
 		It("executes each transformer", func() {
@@ -163,7 +163,7 @@ var _ = Describe("Watcher", func() {
 			mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{logA, logB})
 
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
-			watcher = shared.NewWatcher(db, &mockBlockChain)
+			watcher = shared.NewEventWatcher(db, &mockBlockChain)
 			watcher.AddTransformers([]shared2.TransformerInitializer{
 				transformerA.FakeTransformerInitializer, transformerB.FakeTransformerInitializer})
 

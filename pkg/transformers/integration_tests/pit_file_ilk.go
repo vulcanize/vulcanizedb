@@ -87,7 +87,7 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("ETH"))
+		Expect(dbResult[0].Ilk).To(Equal("0x4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].What).To(Equal("spot"))
 		Expect(dbResult[0].Data).To(Equal("139.840000000000003410605131648"))
 	})
@@ -119,7 +119,7 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 				pitFileIlkLineModel = result
 			}
 		}
-		Expect(pitFileIlkLineModel.Ilk).To(Equal("REP"))
+		Expect(pitFileIlkLineModel.Ilk).To(Equal("0x5245500000000000000000000000000000000000000000000000000000000000"))
 		Expect(pitFileIlkLineModel.Data).To(Equal("2000000.000000000000000000"))
 	})
 })

@@ -1,0 +1,17 @@
+package transformers
+
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories/storage"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/pit"
+)
+
+func GetPitStorageTransformer() storage.Transformer {
+	return storage.Transformer{
+		Address:    common.HexToAddress(constants.PitContractAddress()),
+		Mappings:   &pit.PitMappings{StorageRepository: &maker.MakerStorageRepository{}},
+		Repository: &pit.PitStorageRepository{},
+	}
+}
