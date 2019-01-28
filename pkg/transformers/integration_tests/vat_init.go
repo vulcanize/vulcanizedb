@@ -74,6 +74,6 @@ var _ = Describe("VatInit LogNoteTransformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Ilk).To(Equal("ETH"))
+		Expect(dbResult.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 	})
 })

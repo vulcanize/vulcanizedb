@@ -17,7 +17,6 @@
 package bite
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -64,7 +63,7 @@ func (converter BiteConverter) ToModels(entities []interface{}) ([]interface{}, 
 			return nil, fmt.Errorf("entity of type %T, not %T", entity, BiteEntity{})
 		}
 
-		ilk := string(bytes.Trim(biteEntity.Ilk[:], "\x00"))
+		ilk := common.Bytes2Hex(biteEntity.Ilk[:])
 		urn := common.BytesToAddress(biteEntity.Urn[:]).String()
 		ink := biteEntity.Ink
 		art := biteEntity.Art

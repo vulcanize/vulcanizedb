@@ -29,7 +29,7 @@ var EthVatTollLog = types.Log{
 
 var rawVatTollLog, _ = json.Marshal(EthVatTollLog)
 var VatTollModel = vat_toll.VatTollModel{
-	Ilk:              "fake ilk",
+	Ilk:              "66616b6520696c6b000000000000000000000000000000000000000000000000",
 	Urn:              "0xA3E37186E017747DbA34042e83e3F76Ad3CcE9b0",
 	Take:             big.NewInt(123456789).String(),
 	TransactionIndex: EthVatTollLog.TxIndex,

@@ -38,7 +38,7 @@ func (DripFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error)
 			return nil, err
 		}
 
-		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		vow := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
 		taxBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
 		tax := shared.ConvertToRay(big.NewInt(0).SetBytes(taxBytes).String())

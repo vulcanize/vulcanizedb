@@ -47,7 +47,7 @@ var EthDripFileIlkLog = types.Log{
 
 var rawDripFileIlkLog, _ = json.Marshal(EthDripFileIlkLog)
 var DripFileIlkModel = ilk2.DripFileIlkModel{
-	Ilk:              "fake ilk",
+	Ilk:              "66616b6520696c6b000000000000000000000000000000000000000000000000",
 	Vow:              "fake vow",
 	Tax:              "12300.000000000000000000000000000",
 	LogIndex:         EthDripFileIlkLog.Index,

@@ -40,7 +40,7 @@ func (CatFileChopLumpConverter) ToModels(ethLogs []types.Log) ([]interface{}, er
 		if err != nil {
 			return nil, err
 		}
-		ilk := string(bytes.Trim(ethLog.Topics[2].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
 		dataBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
 		data := big.NewInt(0).SetBytes(dataBytes).String()

@@ -44,7 +44,7 @@ var EthDripDripLog = types.Log{
 
 var rawDripDripLog, _ = json.Marshal(EthDripDripLog)
 var DripDripModel = drip_drip.DripDripModel{
-	Ilk:              "fake ilk",
+	Ilk:              "66616b6520696c6b000000000000000000000000000000000000000000000000",
 	LogIndex:         EthDripDripLog.Index,
 	TransactionIndex: EthDripDripLog.TxIndex,
 	Raw:              rawDripDripLog,

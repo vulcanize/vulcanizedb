@@ -28,7 +28,7 @@ var EthVatGrabLog = types.Log{
 
 var rawVatGrabLog, _ = json.Marshal(EthVatGrabLog)
 var VatGrabModel = vat_grab.VatGrabModel{
-	Ilk:              "REP",
+	Ilk:              "5245500000000000000000000000000000000000000000000000000000000000",
 	Urn:              "0x6a3AE20C315E845B2E398e68EfFe39139eC6060C",
 	V:                "0x2F34f22a00eE4b7a8F8BBC4eAee1658774c624e0",
 	W:                "0x3728e9777B2a0a611ee0F89e00E01044ce4736d1",

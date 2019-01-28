@@ -34,7 +34,7 @@ var dartString = "11579208923731619542357098500868790785326998466564056403945558
 var vatTuneDart, _ = new(big.Int).SetString(dartString, 10)
 var urnAddress = "0x4F26FfBe5F04ED43630fdC30A87638d53D0b0876"
 var VatTuneModel = vat_tune.VatTuneModel{
-	Ilk:              "ETH",
+	Ilk:              "4554480000000000000000000000000000000000000000000000000000000000",
 	Urn:              urnAddress,
 	V:                urnAddress,
 	W:                urnAddress,

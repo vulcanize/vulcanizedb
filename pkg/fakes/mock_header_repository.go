@@ -27,8 +27,11 @@ type MockHeaderRepository struct {
 	createOrUpdateHeaderErr                error
 	createOrUpdateHeaderPassedBlockNumbers []int64
 	createOrUpdateHeaderReturnID           int64
+	getHeaderError                         error
+	getHeaderReturnBlockHash               string
 	missingBlockNumbers                    []int64
 	headerExists                           bool
+	GetHeaderPassedBlockNumber             int64
 }
 
 func NewMockHeaderRepository() *MockHeaderRepository {
@@ -53,8 +56,9 @@ func (repository *MockHeaderRepository) CreateOrUpdateHeader(header core.Header)
 	return repository.createOrUpdateHeaderReturnID, repository.createOrUpdateHeaderErr
 }
 
-func (*MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
-	return core.Header{BlockNumber: blockNumber}, nil
+func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
+	repository.GetHeaderPassedBlockNumber = blockNumber
+	return core.Header{BlockNumber: blockNumber, Hash: repository.getHeaderReturnBlockHash}, repository.getHeaderError
 }
 
 func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
@@ -67,6 +71,14 @@ func (repository *MockHeaderRepository) HeaderExists(blockNumber int64) (bool, e
 
 func (repository *MockHeaderRepository) SetHeaderExists(headerExists bool) {
 	repository.headerExists = headerExists
+}
+
+func (repository *MockHeaderRepository) SetGetHeaderError(err error) {
+	repository.getHeaderError = err
+}
+
+func (repository *MockHeaderRepository) SetGetHeaderReturnBlockHash(hash string) {
+	repository.getHeaderReturnBlockHash = hash
 }
 
 func (repository *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(times int, blockNumbers []int64) {

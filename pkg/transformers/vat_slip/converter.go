@@ -17,11 +17,11 @@
 package vat_slip
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type VatSlipConverter struct{}
@@ -33,7 +33,7 @@ func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		guy := common.BytesToAddress(ethLog.Topics[2].Bytes())
 		rad := ethLog.Topics[3].Big()
 

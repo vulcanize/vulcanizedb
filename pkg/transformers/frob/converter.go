@@ -17,7 +17,6 @@
 package frob
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -68,7 +67,7 @@ func (FrobConverter) ToModels(entities []interface{}) ([]interface{}, error) {
 			return nil, err
 		}
 		model := FrobModel{
-			Ilk:              string(bytes.Trim(frobEntity.Ilk[:], "\x00)")),
+			Ilk:              common.Bytes2Hex(frobEntity.Ilk[:]),
 			Urn:              common.BytesToAddress(frobEntity.Urn[:]).String(),
 			Ink:              frobEntity.Ink.String(),
 			Art:              frobEntity.Art.String(),
