@@ -111,6 +111,9 @@ func initConfig() {
 		os.Exit(1)
 	}
 
+	// Config values from environment overrides file
+	viper.AutomaticEnv()
+
 	if err := viper.ReadInConfig(); err == nil {
 		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
 	} else {
