@@ -3,7 +3,6 @@
 .idea
 bin
 .gitignore
-environments
 integration_test
 LICENSE
 postgraphile
@@ -15,4 +14,3 @@ test_config
 .travis.yml
 vulcanizedb.log
 Dockerfile
-
