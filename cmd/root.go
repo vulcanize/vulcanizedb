@@ -77,9 +77,11 @@ func configure(cmd *cobra.Command, args []string) {
 		Password: viper.GetString("database.password"),
 	}
 	autogenConfig = autogen.Config{
-		FilePath: viper.GetString("exporter.filePath"),
-		FileName: viper.GetString("exporter.fileName"),
-		Imports:  viper.GetStringMapString("exporter.transformers"),
+		FilePath:     viper.GetString("exporter.filePath"),
+		FileName:     viper.GetString("exporter.fileName"),
+		Initializers: viper.GetStringMapString("exporter.transformers"),
+		Dependencies: viper.GetStringMapString("exporter.repositories"),
+		Migrations:   viper.GetStringMapString("exporter.migrations"),
 	}
 	viper.Set("database.config", databaseConfig)
 }

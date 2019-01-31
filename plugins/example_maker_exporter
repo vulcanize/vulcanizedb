@@ -1,0 +1,43 @@
+// This should be the output from running composeAndExecute with compose.toml
+
+package main
+
+import (
+	cat_chop_lump "github.com/vulcanize/mcd_transformers/transformers/cat_file/chop_lump"
+	bite "github.com/vulcanize/mcd_transformers/transformers/bite"
+	cat_flip "github.com/vulcanize/mcd_transformers/transformers/cat_file/flip"
+	cat_pit_vow "github.com/vulcanize/mcd_transformers/transformers/cat_file/pit_vow"
+	deal "github.com/vulcanize/mcd_transformers/transformers/deal"
+	dent "github.com/vulcanize/mcd_transformers/transformers/dent"
+	drip_drip "github.com/vulcanize/mcd_transformers/transformers/drip_drip"
+	drip_file_ilk "github.com/vulcanize/mcd_transformers/transformers/drip_file/ilk"
+	drip_file_repo "github.com/vulcanize/mcd_transformers/transformers/drip_file/repo"
+	drip_file_vow "github.com/vulcanize/mcd_transformers/transformers/drip_file/vow"
+	flap_kick "github.com/vulcanize/mcd_transformers/transformers/flap_kick"
+	flip_kick "github.com/vulcanize/mcd_transformers/transformers/flip_kick"
+	flop_kick "github.com/vulcanize/mcd_transformers/transformers/flop_kick"
+	frob "github.com/vulcanize/mcd_transformers/transformers/frob"
+	pit_file_debt_ceiling "github.com/vulcanize/mcd_transformers/transformers/pit_file/debt_ceiling"
+	pit_file_ilk "github.com/vulcanize/mcd_transformers/transformers/pit_file/ilk"
+	price_feeds "github.com/vulcanize/mcd_transformers/transformers/price_feeds"
+	tend "github.com/vulcanize/mcd_transformers/transformers/tend"
+	vat_flux "github.com/vulcanize/mcd_transformers/transformers/vat_flux"
+	vat_fold "github.com/vulcanize/mcd_transformers/transformers/vat_fold"
+	vat_grab "github.com/vulcanize/mcd_transformers/transformers/vat_grab"
+	vat_heal "github.com/vulcanize/mcd_transformers/transformers/vat_heal"
+	vat_init "github.com/vulcanize/mcd_transformers/transformers/vat_init"
+	vat_move "github.com/vulcanize/mcd_transformers/transformers/vat_move"
+	vat_slip "github.com/vulcanize/mcd_transformers/transformers/vat_slip"
+	vat_toll "github.com/vulcanize/mcd_transformers/transformers/vat_toll"
+	vat_tune "github.com/vulcanize/mcd_transformers/transformers/vat_tune"
+	vow_flog "github.com/vulcanize/mcd_transformers/transformers/vow_flog"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+)
+
+type exporter string
+
+var Exporter exporter
+
+func (e exporter) Export() []transformer.TransformerInitializer {
+	return []transformer.TransformerInitializer{deal.TransformerInitializer, cat_chop_lump.TransformerInitializer, vat_slip.TransformerInitializer, bite.TransformerInitializer, vat_heal.TransformerInitializer, vat_toll.TransformerInitializer, price_feeds.TransformerInitializer, vat_init.TransformerInitializer, cat_pit_vow.TransformerInitializer, drip_drip.TransformerInitializer, vat_grab.TransformerInitializer, tend.TransformerInitializer, pit_file_ilk.TransformerInitializer, vat_fold.TransformerInitializer, vat_tune.TransformerInitializer, dent.TransformerInitializer, vow_flog.TransformerInitializer, flip_kick.TransformerInitializer, vat_flux.TransformerInitializer, frob.TransformerInitializer, flap_kick.TransformerInitializer, drip_file_repo.TransformerInitializer, flop_kick.TransformerInitializer, vat_move.TransformerInitializer, cat_flip.TransformerInitializer, drip_file_ilk.TransformerInitializer, drip_file_vow.TransformerInitializer, pit_file_debt_ceiling.TransformerInitializer}
+}

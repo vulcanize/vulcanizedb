@@ -16,8 +16,50 @@
 
 package autogen
 
+import (
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
+
+	"github.com/vulcanize/vulcanizedb/utils"
+)
+
 type Config struct {
-	Imports  map[string]string // Map of import alias to import path
-	FilePath string
-	FileName string
+	Initializers map[string]string // Map of import aliases to transformer paths
+	Dependencies map[string]string // Map of vendor dep names to their repositories
+	Migrations   map[string]string // Map of migration names to their paths within the vendored deps
+	FilePath     string
+	FileName     string
+}
+
+func (c *Config) GetPluginPaths() (string, string, error) {
+	path, err := utils.CleanPath(c.FilePath)
+	if err != nil {
+		return "", "", err
+	}
+
+	name := strings.Split(c.FileName, ".")[0]
+	goFile := filepath.Join(path, name+".go")
+	soFile := filepath.Join(path, name+".so")
+
+	return goFile, soFile, nil
+}
+
+func (c *Config) GetMigrationsPaths() ([]string, error) {
+	paths := make([]string, 0, len(c.Migrations))
+	for key, relPath := range c.Migrations {
+		repo, ok := c.Dependencies[key]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("migration %s with path %s missing repository", key, relPath))
+		}
+		path := filepath.Join("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor", repo, relPath)
+		cleanPath, err := utils.CleanPath(path)
+		if err != nil {
+			return nil, err
+		}
+		paths = append(paths, cleanPath)
+	}
+
+	return paths, nil
 }

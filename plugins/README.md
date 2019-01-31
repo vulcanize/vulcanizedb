@@ -23,36 +23,54 @@ The config file requires, at a minimum, the below fields:
             transformer1 = "github.com/path/to/transformer1"
             transformer2 = "github.com/path/to/transformer2"
             transformer3 = "github.com/path/to/transformer3"
+            transformer4 = "github.com/different/path/to/transformer1"
+    [exporter.repositories]
+            transformers = "github.com/path/to"
+            transformer4 = "github.com/different/path
+    [exporter.migrations]
+            transformers = "db/migrations"
+            transformer4 = "to/db/migrations"
 ```
 
-In the above, the exporter.transformers are mappings of import aliases to their import paths 
+- `exporter.transformers` are mappings of import aliases to paths to `TransformerInitializer`s  
+    -  Import aliases can be arbitrarily named but note that `interface1` is a reserved alias needed for the generic TransformerInitializer type  
+- `exporter.repositores` are the paths to the repositories which contain the transformers   
+- `exporter.migrations` are the relative paths to the db migrations found within the `exporter.repositores`  
+    - Migrations need to be located in the repos in `exporter.repositores`  
+    - Keys should match the keys for the corresponding repo  
+
 If the individual transformers require additional configuration variables be sure to include them in the .toml file 
 
-The general structure of a plugin .go file, and what we would see with the above config is below   
-Note that `shared_transformer` is a reserved alias needed for the generic TransformerInitializer type:
+The general structure of a plugin .go file, and what we would see with the above config is shown below   
 
 ```go
 package main
 
 import (
-	shared_transformer "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	interface1 "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	transformer1 "github.com/path/to/transformer1"
 	transformer2 "github.com/path/to/transformer2"
 	transformer3 "github.com/path/to/transformer3"
+	transformer4 "github.com/different/path/to/transformer1"
 )
 
 type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []shared_transformer.TransformerInitializer {
-	return []shared_transformer.TransformerInitializer{
+func (e exporter) Export() []interface1.TransformerInitializer {
+	return []interface1.TransformerInitializer{
 		transformer1.TransformerInitializer,
 		transformer2.TransformerInitializer,
 		transformer3.TransformerInitializer,
+		transformer4.TransformerInitializer,
 	}
 }
 ```
 
-As such, to plug in an external transformer all we need to do is create a [package](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/pkg/autogen/test_helpers/bite/initializer.go) that exports a variable `TransformerInitializer` that is of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/transformer.go#L19)   
-As long as the imported transformers abide by the required interfaces, we can execute over any arbitrary set of them  
+As such, to plug in an external transformer we need to create a [package](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/pkg/autogen/test_helpers/bite/initializer.go) that exports a variable `TransformerInitializer` that is of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/transformer.go#L19)   
+As long as the imported transformers abide by the required interfaces, we can execute over any arbitrary set of them   
+Note: currently the transformers must also operate using the watcher's [execution mode](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/watcher.go#L80)  
+
+For each transformer we will also need to create db migrations to run against vulcanizeDB so that we can store the transformed data  
+The migrations needed for a specific transformer need to be included in the same repository as the transformers that require them, and their relative paths in that repo specified in the config as discussed above
