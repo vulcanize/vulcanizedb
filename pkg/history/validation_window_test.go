@@ -1,8 +1,6 @@
 package history_test
 
 import (
-	"bytes"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -33,16 +31,5 @@ var _ = Describe("Validation window", func() {
 		expected := []int64{0, 1, 2, 3, 4, 5}
 
 		Expect(numberOfBlocksCreated).To(Equal(expected))
-	})
-
-	It("logs window message", func() {
-		expectedMessage := &bytes.Buffer{}
-		window := history.ValidationWindow{LowerBound: 5, UpperBound: 7}
-		history.ParsedWindowTemplate.Execute(expectedMessage, window)
-		actualMessage := &bytes.Buffer{}
-
-		window.Log(actualMessage)
-
-		Expect(actualMessage).To(Equal(expectedMessage))
 	})
 })
