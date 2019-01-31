@@ -1,3 +1,3 @@
 ### Test
 
-This empty directory is for holding the output code generated, and then deleted, during the generator_tests
+This empty directory is for holding the temporary .so and .go files generated during the generator_tests

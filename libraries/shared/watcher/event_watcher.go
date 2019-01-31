@@ -22,26 +22,28 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 
+	chunk "github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	fetch "github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	repo "github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type EventWatcher struct {
-	Transformers  []transformer.Transformer
+	Transformers  []transformer.EventTransformer
 	DB            *postgres.DB
-	Fetcher       shared.LogFetcher
-	Chunker       shared.Chunker
+	Fetcher       fetch.LogFetcher
+	Chunker       chunk.Chunker
 	Addresses     []common.Address
 	Topics        []common.Hash
 	StartingBlock *int64
 }
 
 func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
-	chunker := shared.NewLogChunker()
-	fetcher := shared.NewFetcher(bc)
+	chunker := chunk.NewLogChunker()
+	fetcher := fetch.NewFetcher(bc)
 	return EventWatcher{
 		DB:      db,
 		Fetcher: fetcher,
@@ -83,13 +85,13 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 		return fmt.Errorf("No transformers added to watcher")
 	}
 
-	checkedColumnNames, err := shared.GetCheckedColumnNames(watcher.DB)
+	checkedColumnNames, err := repo.GetCheckedColumnNames(watcher.DB)
 	if err != nil {
 		return err
 	}
-	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames, recheckHeaders)
+	notCheckedSQL := repo.CreateNotCheckedSQL(checkedColumnNames, recheckHeaders)
 
-	missingHeaders, err := shared.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
+	missingHeaders, err := repo.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
 		log.Error("Fetching of missing headers failed in watcher!")
 		return err

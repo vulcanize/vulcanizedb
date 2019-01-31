@@ -55,7 +55,7 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:              "vulcanizedb",
-	PersistentPreRun: configure,
+	PersistentPreRun: database,
 }
 
 func Execute() {
@@ -65,7 +65,7 @@ func Execute() {
 	}
 }
 
-func configure(cmd *cobra.Command, args []string) {
+func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
@@ -75,13 +75,6 @@ func configure(cmd *cobra.Command, args []string) {
 		Port:     viper.GetInt("database.port"),
 		User:     viper.GetString("database.user"),
 		Password: viper.GetString("database.password"),
-	}
-	autogenConfig = autogen.Config{
-		FilePath:     viper.GetString("exporter.filePath"),
-		FileName:     viper.GetString("exporter.fileName"),
-		Initializers: viper.GetStringMapString("exporter.transformers"),
-		Dependencies: viper.GetStringMapString("exporter.repositories"),
-		Migrations:   viper.GetStringMapString("exporter.migrations"),
 	}
 	viper.Set("database.config", databaseConfig)
 }

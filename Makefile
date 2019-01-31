@@ -48,16 +48,15 @@ lint:
 
 .PHONY: test
 test: | $(GINKGO) $(LINT)
-	go get -t ./...
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r --skipPackage=integration_tests,integration
+	$(GINKGO) -r
 
 .PHONY: integrationtest
 integrationtest: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r pkg/transformers/integration_tests/ integration_test/
+	$(GINKGO) -r integration_test/
 
 .PHONY: dep
 dep: | $(DEP)
