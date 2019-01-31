@@ -47,11 +47,19 @@ var composeAndExecuteCmd = &cobra.Command{
     ipcPath = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    filePath = "~/go/src/github.com/vulcanize/vulcanizedb/plugins"
-	fileName = "exporter"
+    filePath = "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/"
+    fileName = "exporter"
     [exporter.transformers]
-		transformerImport1 = "github.com/path_to/transformerInitializer1"
-		transformerImport2 = "github.com/path_to/transformerInitializer2"
+            transformer1 = "github.com/path/to/transformer1"
+            transformer2 = "github.com/path/to/transformer2"
+            transformer3 = "github.com/path/to/transformer3"
+            transformer4 = "github.com/different/path/to/transformer1"
+    [exporter.repositories]
+            transformers = "github.com/path/to"
+            transformer4 = "github.com/different/path
+    [exporter.migrations]
+            transformers = "db/migrations"
+            transformer4 = "to/db/migrations"
 
 Note: If any of the imported transformer need additional
 config variables do not forget to include those as well
@@ -66,43 +74,50 @@ loaded into and executed over by a generic watcher`,
 }
 
 func composeAndExecute() {
-	generator := autogen.NewGenerator(autogenConfig)
-	err := generator.GenerateTransformerPlugin()
+	// generate code to build the plugin according to the config file
+	generator := autogen.NewGenerator(autogenConfig, databaseConfig)
+	err := generator.GenerateExporterPlugin()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-
-	blockChain := getBlockChain()
-	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-
-	_, pluginPath, err := autogen.GetPaths(autogenConfig)
+	// Get the plugin path and load the plugin
+	_, pluginPath, err := autogenConfig.GetPluginPaths()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Load the `Exporter` symbol from the plugin
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
 		fmt.Println("plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 
+	// Use the Exporters export method to load the TransformerInitializer set
 	initializers := exporter.Export()
+
+	// Setup bc and db objects
+	blockChain := getBlockChain()
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
+	// Create a watcher and load the TransformerInitializer set into it
 	w := watcher.NewWatcher(&db, blockChain)
 	w.AddTransformers(initializers)
 
+	// Execute over the TransformerInitializer set using the watcher
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
 	for range ticker.C {
 		err := w.Execute()
 		if err != nil {
