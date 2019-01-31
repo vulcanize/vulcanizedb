@@ -17,8 +17,7 @@ The config file requires, at a minimum, the below fields:
     ipcPath = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    filePath = "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/"
-    fileName = "exporter"
+    name = "exporter"
     [exporter.transformers]
             transformer1 = "github.com/path/to/transformer1"
             transformer2 = "github.com/path/to/transformer2"
@@ -70,7 +69,9 @@ func (e exporter) Export() []interface1.TransformerInitializer {
 
 As such, to plug in an external transformer we need to create a [package](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/pkg/autogen/test_helpers/bite/initializer.go) that exports a variable `TransformerInitializer` that is of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/transformer.go#L19)   
 As long as the imported transformers abide by the required interfaces, we can execute over any arbitrary set of them   
-Note: currently the transformers must also operate using the watcher's [execution mode](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/watcher.go#L80)  
+Note: currently the transformers must also operate using this watcher's [execution mode](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/watcher.go#L80), in the future the watcher will become pluggable as well  
 
 For each transformer we will also need to create db migrations to run against vulcanizeDB so that we can store the transformed data  
-The migrations needed for a specific transformer need to be included in the same repository as the transformers that require them, and their relative paths in that repo specified in the config as discussed above
+The migrations needed for a specific transformer need to be included in the same repository as the transformer(s) that require them, and their relative paths in that repo must be specified in the config as discussed above
+
+NOTE: Due to a bug with plugin migrations, currently need to leave the `exporter.migrations` blank and manually run migrations before running composeAndExecute

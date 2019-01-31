@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	. "github.com/dave/jennifer/jen"
 
@@ -50,14 +51,14 @@ func NewGenerator(gc Config, dbc config.Database) *generator {
 }
 
 func (g *generator) GenerateExporterPlugin() error {
-	if g.GenConfig == nil {
-		return errors.New("generator needs a config file")
-	}
-	if g.GenConfig.FilePath == "" {
-		return errors.New("generator is missing file path")
-	}
 	if len(g.GenConfig.Initializers) < 1 {
-		return errors.New("generator needs to be configured with imports")
+		return errors.New("generator needs to be configured with TransformerInitializer import paths")
+	}
+	if len(g.GenConfig.Dependencies) < 1 {
+		return errors.New("generator needs to be configured with root repository path(s)")
+	}
+	if len(g.GenConfig.Migrations) < 1 {
+		fmt.Fprintf(os.Stderr, "warning: no db migration paths have been provided\r\n")
 	}
 
 	// Get plugin file paths
@@ -66,14 +67,8 @@ func (g *generator) GenerateExporterPlugin() error {
 		return err
 	}
 
-	// Clear .go and .so files of the same name if they exist (overwrite)
-	err = utils.ClearFiles(goFile, soFile)
-	if err != nil {
-		return err
-	}
-
 	// Generate Exporter code
-	err = g.generateCode(goFile)
+	err = g.generateCode(goFile, soFile)
 	if err != nil {
 		return err
 	}
@@ -83,24 +78,32 @@ func (g *generator) GenerateExporterPlugin() error {
 	if err != nil {
 		return err
 	}
-	defer g.cleanUp() // Clear these up when we are done building our plugin
+
+	// Clear tmp files and directories when we exit
+	defer g.cleanUp(goFile)
 
 	// Build the .go file into a .so plugin
 	err = exec.Command("go", "build", "-buildmode=plugin", "-o", soFile, goFile).Run()
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("unable to build .so file: %s", err.Error()))
 	}
+
 	// Run migrations only after successfully building .so file
 	return g.runMigrations()
 }
 
 // Generates the plugin code
-func (g *generator) generateCode(goFile string) error {
+func (g *generator) generateCode(goFile, soFile string) error {
+	// Clear .go and .so files of the same name if they exist
+	err := utils.ClearFiles(goFile, soFile)
+	if err != nil {
+		return err
+	}
 	// Begin code generation
 	f := NewFile("main")
 	f.HeaderComment("This exporter is generated to export the configured transformer initializers")
 
-	// Import TransformerInitializers
+	// Import TransformerInitializers specified in config
 	f.ImportAlias("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "interface")
 	for alias, imp := range g.GenConfig.Initializers {
 		f.ImportAlias(imp, alias)
@@ -112,12 +115,10 @@ func (g *generator) generateCode(goFile string) error {
 		importedInitializers = append(importedInitializers, Qual(path, "TransformerInitializer"))
 	}
 
-	// Create Exporter variable with method to export a set of the configured TransformerInitializers
+	// Create Exporter variable with method to export the set of the imported TransformerInitializers
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
-	f.Func().Params(
-		Id("e").Id("exporter"),
-	).Id("Export").Params().Index().Qual(
+	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Index().Qual(
 		"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
 		"TransformerInitializer").Block(
 		Return(Index().Qual(
@@ -126,6 +127,49 @@ func (g *generator) generateCode(goFile string) error {
 
 	// Write code to destination file
 	return f.Save(goFile)
+}
+
+// Sets up temporary vendor libs and migration directories
+func (g *generator) setupTempDirs() error {
+	// TODO: Less hacky way of handling plugin build deps
+	dirPath, err := utils.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/")
+	if err != nil {
+		return err
+	}
+	vendorPath := filepath.Join(dirPath, "vendor")
+
+	// Keep track of where we are writing transformer vendor libs, so that we can remove them afterwards
+	g.tmpVenDirs = make([]string, 0, len(g.GenConfig.Dependencies))
+	// Import transformer dependencies so that we build our plugin
+	for name, importPath := range g.GenConfig.Dependencies {
+		index := strings.Index(importPath, "/")
+		gitPath := importPath[:index] + ":" + importPath[index+1:]
+		importURL := "git@" + gitPath + ".git"
+		depPath := filepath.Join(vendorPath, importPath)
+		err = exec.Command("git", "clone", importURL, depPath).Run()
+		if err != nil {
+			return errors.New(fmt.Sprintf("unable to clone %s transformer dependency: %s", name, err.Error()))
+		}
+
+		err := os.RemoveAll(filepath.Join(depPath, "vendor/"))
+		if err != nil {
+			return err
+		}
+
+		g.tmpVenDirs = append(g.tmpVenDirs, depPath)
+	}
+
+	// Initialize temp directory for transformer migrations
+	g.tmpMigDir, err = utils.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/db/plugin_migrations")
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(g.tmpMigDir)
+	if err != nil {
+		return errors.New(fmt.Sprintf("unable to remove file found at %s where tmp directory needs to be written", g.tmpMigDir))
+	}
+
+	return os.Mkdir(g.tmpMigDir, os.FileMode(0777))
 }
 
 func (g *generator) runMigrations() error {
@@ -149,78 +193,8 @@ func (g *generator) runMigrations() error {
 	}
 
 	// Run the copied migrations
-	location := "file://" + g.tmpMigDir
-	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable up", g.DBConfig.Hostname, g.DBConfig.Port, g.DBConfig.Name)
-	return exec.Command("migrate", "-source", location, pgStr).Run()
-}
-
-// Sets up temporary vendor libs and migration directories
-func (g *generator) setupTempDirs() error {
-	// TODO: Less hacky way of handling plugin build deps
-	dirPath, err := utils.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/")
-	if err != nil {
-		return err
-	}
-	vendorPath := filepath.Join(dirPath, "vendor/")
-
-	/*
-	// Keep track of where we are writing transformer vendor libs, so that we can remove them afterwards
-	g.tmpVenDirs = make([]string, 0, len(g.GenConfig.Dependencies))
-	// Import transformer dependencies so that we build our plugin
-	for _, importPath := range g.GenConfig.Dependencies {
-		importURL := "https://" + importPath + ".git"
-		depPath := filepath.Join(vendorPath, importPath)
-		err = exec.Command("git", "clone", importURL, depPath).Run()
-		if err != nil {
-			return err
-		}
-		err := os.RemoveAll(filepath.Join(depPath, "vendor/"))
-		if err != nil {
-			return err
-		}
-		g.tmpVenDirs = append(g.tmpVenDirs, depPath)
-	}
-	*/
-
-	// Keep track of where we are writing transformer vendor libs, so that we can remove them afterwards
-	g.tmpVenDirs = make([]string, 0, len(g.GenConfig.Dependencies))
-	for _, importPath := range g.GenConfig.Dependencies {
-		depPath := filepath.Join(vendorPath, importPath)
-		g.tmpVenDirs = append(g.tmpVenDirs, depPath)
-	}
-
-	// Dep ensure to make sure vendor pkgs are in place for building the plugin
-	err = exec.Command("dep", "ensure").Run()
-	if err != nil {
-		return errors.New("failed to vendor transformer packages required to build plugin")
-	}
-
-	// Git checkout our head-state vendor libraries
-	// This is necessary because we currently need to manual edit our vendored
-	// go-ethereum abi library to allow for unpacking in empty interfaces and maps
-	// This can be removed once the PRs against geth merged
-	err = exec.Command("git", "checkout", dirPath).Run()
-	if err != nil {
-		return errors.New("failed to checkout vendored go-ethereum lib")
-	}
-
-	// Initialize temp directory for transformer migrations
-	g.tmpMigDir, err = utils.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/db/plugin_migrations")
-	if err != nil {
-		return err
-	}
-	stat, err := os.Stat(g.tmpMigDir)
-	if err == nil {
-		if !stat.IsDir() {
-			return errors.New(fmt.Sprintf("file %s found where directory is expected", stat.Name()))
-		}
-	} else if os.IsNotExist(err) {
-		os.Mkdir(g.tmpMigDir, os.FileMode(0777))
-	} else {
-		return err
-	}
-
-	return nil
+	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", g.DBConfig.Hostname, g.DBConfig.Port, g.DBConfig.Name)
+	return exec.Command("migrate", "-path", g.tmpMigDir, "-database", pgStr, "up").Run()
 }
 
 func (g *generator) createMigrationCopies(paths []string) error {
@@ -230,21 +204,19 @@ func (g *generator) createMigrationCopies(paths []string) error {
 			return err
 		}
 		for _, file := range dir {
-			if file.IsDir() || len(file.Name()) < 15 { // (10 digit unix time stamp + x + .sql) is bare minimum
+			if file.IsDir() || len(file.Name()) < 15 || filepath.Ext(file.Name()) != ".sql" { // (10 digit unix time stamp + x + .sql) is bare minimum
 				continue
 			}
 			_, err := strconv.Atoi(file.Name()[:10])
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "migration file name %s does not posses 10 digit timestamp prefix", file.Name())
+				fmt.Fprintf(os.Stderr, "migration file name %s does not posses 10 digit timestamp prefix\r\n", file.Name())
 				continue
 			}
-			if filepath.Ext(file.Name()) == "sql" {
-				src := filepath.Join(path, file.Name())
-				dst := filepath.Join(g.tmpMigDir, "1"+file.Name())
-				err = utils.CopyFile(src, dst)
-				if err != nil {
-					return err
-				}
+			src := filepath.Join(path, file.Name())
+			dst := filepath.Join(g.tmpMigDir, "1"+file.Name())
+			err = utils.CopyFile(src, dst)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -252,7 +224,14 @@ func (g *generator) createMigrationCopies(paths []string) error {
 	return nil
 }
 
-func (g *generator) cleanUp() error {
+func (g *generator) cleanUp(goFile string) error {
+	if !g.GenConfig.Save {
+		err := utils.ClearFiles(goFile)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, venDir := range g.tmpVenDirs {
 		err := os.RemoveAll(venDir)
 		if err != nil {

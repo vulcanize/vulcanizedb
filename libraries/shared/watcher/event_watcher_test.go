@@ -25,14 +25,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 

@@ -26,11 +26,12 @@ import (
 )
 
 type Config struct {
-	Initializers map[string]string // Map of import aliases to transformer paths
+	Initializers map[string]string // Map of import aliases to transformer initializer paths
 	Dependencies map[string]string // Map of vendor dep names to their repositories
-	Migrations   map[string]string // Map of migration names to their paths within the vendored deps
+	Migrations   map[string]string // Map of vendor dep names to relative path from repository to db migrations
 	FilePath     string
 	FileName     string
+	Save         bool
 }
 
 func (c *Config) GetPluginPaths() (string, string, error) {

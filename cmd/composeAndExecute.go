@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
@@ -47,8 +48,7 @@ var composeAndExecuteCmd = &cobra.Command{
     ipcPath = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    filePath = "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/"
-    fileName = "exporter"
+    name = "exporter"
     [exporter.transformers]
             transformer1 = "github.com/path/to/transformer1"
             transformer2 = "github.com/path/to/transformer2"
@@ -75,9 +75,20 @@ loaded into and executed over by a generic watcher`,
 
 func composeAndExecute() {
 	// generate code to build the plugin according to the config file
+	autogenConfig = autogen.Config{
+		FilePath:     "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins",
+		FileName:     viper.GetString("exporter.name"),
+		Save:         viper.GetBool("exporter.save"),
+		Initializers: viper.GetStringMapString("exporter.transformers"),
+		Dependencies: viper.GetStringMapString("exporter.repositories"),
+		Migrations:   viper.GetStringMapString("exporter.migrations"),
+	}
+
+	fmt.Println("generating plugin")
 	generator := autogen.NewGenerator(autogenConfig, databaseConfig)
 	err := generator.GenerateExporterPlugin()
 	if err != nil {
+		fmt.Println("generating plugin failed")
 		log.Fatal(err)
 	}
 
@@ -86,14 +97,21 @@ func composeAndExecute() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if !autogenConfig.Save {
+		defer utils.ClearFiles(pluginPath)
+	}
+	fmt.Println("opening plugin")
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
+		fmt.Println("opening pluggin failed")
 		log.Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
+	fmt.Println("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
+		fmt.Println("loading Exporter symbol failed")
 		log.Fatal(err)
 	}
 
@@ -116,6 +134,7 @@ func composeAndExecute() {
 	w.AddTransformers(initializers)
 
 	// Execute over the TransformerInitializer set using the watcher
+	fmt.Println("executing transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {

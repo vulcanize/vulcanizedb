@@ -12,8 +12,8 @@
     name     = "maker_vdb_staging"
 
 [exporter]
-    filePath = "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/"
-    fileName = "exporter"
+    name     = "exporter"
+    save     = false
     [exporter.transformers]
             bite                  = "github.com/vulcanize/mcd_transformers/transformers/bite"
             cat_chop_lump         = "github.com/vulcanize/mcd_transformers/transformers/cat_file/chop_lump"
@@ -45,8 +45,6 @@
             vow_flog              = "github.com/vulcanize/mcd_transformers/transformers/vow_flog"
      [exporter.repositories]
             mcd_transformers      = "github.com/vulcanize/mcd_transformers"
-     [exporter.migrations]
-            mcd_transformers      = "db/migrations"
 
 [contract]
     [contract.address]
