@@ -1,8 +1,8 @@
 package history
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"io"
 	"text/template"
 )
 
@@ -36,6 +36,7 @@ func MakeRange(min, max int64) []int64 {
 	return a
 }
 
-func (window ValidationWindow) Log(out io.Writer) {
-	ParsedWindowTemplate.Execute(out, window)
+func (window ValidationWindow) GetString() string {
+	return fmt.Sprintf("Validating Blocks |%v|-- Validation Window --|%v}|",
+		window.LowerBound, window.UpperBound)
 }
