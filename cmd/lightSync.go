@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -87,7 +86,7 @@ func lightSync() {
 			if err != nil {
 				log.Error("ValidateHeaders failed in lightSync: ", err)
 			}
-			window.Log(os.Stdout)
+			log.Info(window.GetString())
 		case n := <-missingBlocksPopulated:
 			if n == 0 {
 				time.Sleep(3 * time.Second)

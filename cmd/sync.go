@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -87,7 +86,7 @@ func sync() {
 		select {
 		case <-ticker.C:
 			window := validator.ValidateBlocks()
-			window.Log(os.Stdout)
+			log.Info(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}
