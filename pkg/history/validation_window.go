@@ -1,8 +1,24 @@
+// VulcanizeDB
+// Copyright © 2018 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package history
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"io"
 	"text/template"
 )
 
@@ -36,6 +52,7 @@ func MakeRange(min, max int64) []int64 {
 	return a
 }
 
-func (window ValidationWindow) Log(out io.Writer) {
-	ParsedWindowTemplate.Execute(out, window)
+func (window ValidationWindow) GetString() string {
+	return fmt.Sprintf("Validating Blocks |%v|-- Validation Window --|%v}|",
+		window.LowerBound, window.UpperBound)
 }

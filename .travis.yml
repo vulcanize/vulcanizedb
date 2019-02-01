@@ -1,7 +1,7 @@
 dist: trusty
 language: go
 go:
-  - 1.9
+  - 1.11
 services:
   - postgresql
 addons:
