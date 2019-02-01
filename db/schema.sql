@@ -2678,4 +2678,3 @@ ALTER TABLE ONLY public.logs
 --
 -- PostgreSQL database dump complete
 --
-

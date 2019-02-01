@@ -10,8 +10,6 @@ import (
 	"io/ioutil"
 )
 
-var ipc string
-
 func TestIntegrationTests(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "IntegrationTests Suite")

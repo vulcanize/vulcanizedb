@@ -118,6 +118,17 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:9c776d7d9c54b7ed89f119e449983c3f24c0023e75001d6092442412ebca6b94"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru",
+  ]
+  pruneopts = ""
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+
+[[projects]]
   digest = "1:d14365c51dd1d34d5c79833ec91413bfbb166be978724f15701e17080dc06dec"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -552,6 +563,7 @@
     "github.com/ethereum/go-ethereum/p2p/discv5",
     "github.com/ethereum/go-ethereum/params",
     "github.com/ethereum/go-ethereum/rpc",
+    "github.com/hashicorp/golang-lru",
     "github.com/jmoiron/sqlx",
     "github.com/lib/pq",
     "github.com/mitchellh/go-homedir",
