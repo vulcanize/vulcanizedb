@@ -7,10 +7,7 @@ S
 By default, vDB is configured towards the Kovan deploy. The configuration values can be overridden using environment variables, using the same hierarchical naming pattern but in CAPS and using underscores. For example, the contract address for the `Pit` can be set with the variable `CONTRACT_ADDRESS_PIT="0x123..."`.
 
 ## To use the container:
-1. Setup a postgres database with owner `vulcanize`
-  * `vulcanize` does not _have_ to be owner, but otherwise permissions for
-    connection, tables, and sequences need to be added for the `public` and
-    `maker` schemas manually when the migrations have been run.
+1. Setup a postgres database with superuser `vulcanize`
 2. Set the env variables `DATABASE_NAME`, `DATABASE_HOSTNAME`,
   `DATABASE_PORT`, `DATABASE_USER` & `DATABASE_PASSWORD`
 3. Run the DB migrations:
@@ -26,7 +23,9 @@ e`
   * `rc-service continuousLogSync start`
 
 ### Automated
-The steps above have been rolled into a script: `/app/startup_script.sh`, which just assumes the DB env variables have been set, and defaults the rest to Kovan according to `environments/staging.toml`.
+The steps above have been rolled into a script: `/app/startup_script.sh`, which just assumes the DB env variables have been set, and defaults the rest to Kovan according to `environments/staging.toml`. This can be called with something like:
+
+`docker run -d -e DATABASE_NAME=vulcanize_pubic -e DATABASE_HOSTNAME=localhost -e DATABASE_PORT=5432 -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize ./startup_script.sh`
 
 ### Logging
 When running, vDB services log to `/vulcanizedb.log`.
