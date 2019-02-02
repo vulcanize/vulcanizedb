@@ -1,1 +1,0 @@
-DROP INDEX tx_to_index;

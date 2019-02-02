@@ -1,1 +1,0 @@
-CREATE INDEX transaction_id_index ON receipts (transaction_id);
