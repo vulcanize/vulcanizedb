@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package autogen
+package config
 
 import (
 	"errors"
@@ -22,10 +22,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vulcanize/vulcanizedb/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 )
 
-type Config struct {
+type Plugin struct {
 	Initializers map[string]string // Map of import aliases to transformer initializer paths
 	Dependencies map[string]string // Map of vendor dep names to their repositories
 	Migrations   map[string]string // Map of vendor dep names to relative path from repository to db migrations
@@ -34,8 +34,8 @@ type Config struct {
 	Save         bool
 }
 
-func (c *Config) GetPluginPaths() (string, string, error) {
-	path, err := utils.CleanPath(c.FilePath)
+func (c *Plugin) GetPluginPaths() (string, string, error) {
+	path, err := helpers.CleanPath(c.FilePath)
 	if err != nil {
 		return "", "", err
 	}
@@ -47,7 +47,7 @@ func (c *Config) GetPluginPaths() (string, string, error) {
 	return goFile, soFile, nil
 }
 
-func (c *Config) GetMigrationsPaths() ([]string, error) {
+func (c *Plugin) GetMigrationsPaths() ([]string, error) {
 	paths := make([]string, 0, len(c.Migrations))
 	for key, relPath := range c.Migrations {
 		repo, ok := c.Dependencies[key]
@@ -55,7 +55,7 @@ func (c *Config) GetMigrationsPaths() ([]string, error) {
 			return nil, errors.New(fmt.Sprintf("migration %s with path %s missing repository", key, relPath))
 		}
 		path := filepath.Join("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor", repo, relPath)
-		cleanPath, err := utils.CleanPath(path)
+		cleanPath, err := helpers.CleanPath(path)
 		if err != nil {
 			return nil, err
 		}

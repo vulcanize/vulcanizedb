@@ -27,7 +27,9 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/autogen"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -75,7 +77,7 @@ loaded into and executed over by a generic watcher`,
 
 func composeAndExecute() {
 	// generate code to build the plugin according to the config file
-	autogenConfig = autogen.Config{
+	genConfig = config.Plugin{
 		FilePath:     "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins",
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
@@ -85,25 +87,28 @@ func composeAndExecute() {
 	}
 
 	fmt.Println("generating plugin")
-	generator := autogen.NewGenerator(autogenConfig, databaseConfig)
-	err := generator.GenerateExporterPlugin()
+	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		fmt.Println("generating plugin failed")
+		log.Fatal(err)
+	}
+	err = generator.GenerateExporterPlugin()
+	if err != nil {
+		fmt.Fprint(os.Stderr, "generating plugin failed")
 		log.Fatal(err)
 	}
 
 	// Get the plugin path and load the plugin
-	_, pluginPath, err := autogenConfig.GetPluginPaths()
+	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !autogenConfig.Save {
-		defer utils.ClearFiles(pluginPath)
+	if !genConfig.Save {
+		defer helpers.ClearFiles(pluginPath)
 	}
 	fmt.Println("opening plugin")
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		fmt.Println("opening pluggin failed")
+		fmt.Fprint(os.Stderr, "opening pluggin failed")
 		log.Fatal(err)
 	}
 
@@ -111,14 +116,14 @@ func composeAndExecute() {
 	fmt.Println("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		fmt.Println("loading Exporter symbol failed")
+		fmt.Fprint(os.Stderr, "loading Exporter symbol failed")
 		log.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		fmt.Println("plugged-in symbol not of type Exporter")
+		fmt.Fprint(os.Stderr, "plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 

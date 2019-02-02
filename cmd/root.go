@@ -28,7 +28,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/vulcanizedb/pkg/autogen"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
@@ -39,7 +38,7 @@ import (
 var (
 	cfgFile             string
 	databaseConfig      config.Database
-	autogenConfig       autogen.Config
+	genConfig           config.Plugin
 	ipc                 string
 	levelDbPath         string
 	startingBlockNumber int64
