@@ -12,7 +12,7 @@ addons:
 go_import_path: github.com/vulcanize/vulcanizedb
 
 before_install:
-  # ginkgo golint dep migrate
+  # ginkgo golint dep goose
   - make installtools
   - bash ./scripts/install-postgres-10.sh
   - npm install -g ganache-cli
@@ -23,6 +23,7 @@ before_install:
 before_script:
   - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
+  - make version_migrations
   - make migrate NAME=vulcanize_private
   - bash ./pkg/transformers/start_test_chain.sh
   - cd postgraphile && yarn
