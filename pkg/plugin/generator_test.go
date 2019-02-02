@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package autogen_test
+package plugin_test
 
 import (
 	"plugin"
@@ -25,26 +25,33 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/autogen"
-	"github.com/vulcanize/vulcanizedb/pkg/autogen/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/utils"
+	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers"
 )
 
-var genConfig = autogen.Config{
+var genConfig = config.Plugin{
 	Initializers: map[string]string{
-		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite",
-		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal",
+		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
+		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
 	},
 	Dependencies: map[string]string{
 		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
 	},
+	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
 	FileName: "externalTestTransformerSet",
-	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/autogen/test_helpers/test",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
 	Save:     false,
+}
+
+var dbConfig = config.Database{
+	Hostname: "localhost",
+	Port:     5432,
+	Name:     "vulcanize_private",
 }
 
 type Exporter interface {
@@ -52,7 +59,7 @@ type Exporter interface {
 }
 
 var _ = Describe("Generator test", func() {
-	var g autogen.Generator
+	var g p2.Generator
 	var goPath, soPath string
 	var err error
 	var bc core.BlockChain
@@ -65,13 +72,14 @@ var _ = Describe("Generator test", func() {
 	BeforeEach(func() {
 		goPath, soPath, err = genConfig.GetPluginPaths()
 		Expect(err).ToNot(HaveOccurred())
-		g = autogen.NewGenerator(genConfig, config.Database{})
+		g, err = p2.NewGenerator(genConfig, dbConfig)
+		Expect(err).ToNot(HaveOccurred())
 		err = g.GenerateExporterPlugin()
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		err := utils.ClearFiles(goPath, soPath)
+		err := helpers.ClearFiles(goPath, soPath)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

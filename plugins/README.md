@@ -25,7 +25,7 @@ The config file requires, at a minimum, the below fields:
             transformer4 = "github.com/different/path/to/transformer1"
     [exporter.repositories]
             transformers = "github.com/path/to"
-            transformer4 = "github.com/different/path
+            transformer4 = "github.com/different/path"
     [exporter.migrations]
             transformers = "db/migrations"
             transformer4 = "to/db/migrations"
