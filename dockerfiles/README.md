@@ -25,7 +25,7 @@ e`
 ### Automated
 The steps above have been rolled into a script: `/app/startup_script.sh`, which just assumes the DB env variables have been set, and defaults the rest to Kovan according to `environments/staging.toml`. This can be called with something like:
 
-`docker run -d -e DATABASE_NAME=vulcanize_pubic -e DATABASE_HOSTNAME=localhost -e DATABASE_PORT=5432 -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize ./startup_script.sh`
+`docker run -d -e DATABASE_NAME=vulcanize_public -e DATABASE_HOSTNAME=localhost -e DATABASE_PORT=5432 -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize [container name] ./startup_script.sh`
 
 ### Logging
 When running, vDB services log to `/vulcanizedb.log`.

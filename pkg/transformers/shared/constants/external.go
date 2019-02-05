@@ -30,11 +30,12 @@ func getEnvironmentString(key string) string {
 	return value
 }
 
+// Returns an int from the environment, defaulting to 0 if it does not exist
 func getEnvironmentInt64(key string) int64 {
 	initConfig()
 	value := viper.GetInt64(key)
 	if value == -1 {
-		panic(fmt.Sprintf("No environment configuration variable set for key: \"%v\"", key))
+		return 0
 	}
 	return value
 }
