@@ -24,8 +24,14 @@ const (
 	Address
 )
 
+type Key int
+
+const (
+	Ilk Key = iota
+)
+
 type StorageValueMetadata struct {
 	Name string
-	Key  string
+	Keys map[Key]string
 	Type ValueType
 }
