@@ -42,7 +42,7 @@ var (
 	ink           = big.NewInt(15)
 	ilk           = [32]byte{102, 97, 107, 101, 32, 105, 108, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	frobIlkString = "66616b6520696c6b000000000000000000000000000000000000000000000000"
-	frobUrnString = "0x64d922894153BE9EEf7b7218dc565d1D0Ce2a092"
+	frobUrnString = "00000000000000000000000064d922894153be9eef7b7218dc565d1d0ce2a092"
 )
 
 var EthFrobLog = types.Log{

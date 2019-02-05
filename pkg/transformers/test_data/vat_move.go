@@ -46,8 +46,8 @@ var EthVatMoveLog = types.Log{
 
 var rawVatMoveLog, _ = json.Marshal(EthVatMoveLog)
 var VatMoveModel = vat_move.VatMoveModel{
-	Src:              "0xA730d1FF8B6Bc74a26d54c20a9dda539909BaB0e",
-	Dst:              "0xB730D1fF8b6BC74a26D54c20a9ddA539909BAb0e",
+	Src:              "000000000000000000000000a730d1ff8b6bc74a26d54c20a9dda539909bab0e",
+	Dst:              "000000000000000000000000b730d1ff8b6bc74a26d54c20a9dda539909bab0e",
 	Rad:              "42",
 	LogIndex:         EthVatMoveLog.Index,
 	TransactionIndex: EthVatMoveLog.TxIndex,
