@@ -5,7 +5,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -22,10 +21,10 @@ func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return nil, err
 		}
 		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
-		urn := common.BytesToAddress(ethLog.Topics[2].Bytes())
-		v := common.BytesToAddress(ethLog.Topics[3].Bytes())
+		urn := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
+		v := shared.GetHexWithoutPrefix(ethLog.Topics[3].Bytes())
 		wBytes := shared.GetDataBytesAtIndex(-3, ethLog.Data)
-		w := common.BytesToAddress(wBytes)
+		w := shared.GetHexWithoutPrefix(wBytes)
 		dinkBytes := shared.GetDataBytesAtIndex(-2, ethLog.Data)
 		dink := big.NewInt(0).SetBytes(dinkBytes)
 		dartBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)
@@ -37,9 +36,9 @@ func (VatTuneConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 		model := VatTuneModel{
 			Ilk:              ilk,
-			Urn:              urn.String(),
-			V:                v.String(),
-			W:                w.String(),
+			Urn:              urn,
+			V:                v,
+			W:                w,
 			Dink:             dink.String(),
 			Dart:             dart.String(),
 			TransactionIndex: ethLog.TxIndex,

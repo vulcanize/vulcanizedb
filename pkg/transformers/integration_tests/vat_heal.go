@@ -74,8 +74,8 @@ var _ = Describe("VatHeal Transformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
-		Expect(dbResult.V).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
+		Expect(dbResult.Urn).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
+		Expect(dbResult.V).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
 		Expect(dbResult.Rad).To(Equal("1000000000000000000000000000"))
 	})
 
@@ -135,8 +135,8 @@ var _ = Describe("VatHeal Transformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
-		Expect(dbResult.V).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
+		Expect(dbResult.Urn).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
+		Expect(dbResult.V).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
 		Expect(dbResult.Rad).To(Equal("1000000000000000000000000000"))
 	})
 })
