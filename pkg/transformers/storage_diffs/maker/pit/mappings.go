@@ -40,7 +40,7 @@ var (
 	DripKey      = common.HexToHash(storage_diffs.IndexFive)
 	DripMetadata = shared.StorageValueMetadata{
 		Name: PitDrip,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Address,
 	}
 
@@ -50,7 +50,7 @@ var (
 	LineKey      = common.HexToHash(storage_diffs.IndexThree)
 	LineMetadata = shared.StorageValueMetadata{
 		Name: PitLine,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Uint256,
 	}
 
@@ -58,7 +58,7 @@ var (
 	LiveKey      = common.HexToHash(storage_diffs.IndexTwo)
 	LiveMetadata = shared.StorageValueMetadata{
 		Name: PitLive,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Uint256,
 	}
 
@@ -66,7 +66,7 @@ var (
 	VatKey      = common.HexToHash(storage_diffs.IndexFour)
 	VatMetadata = shared.StorageValueMetadata{
 		Name: PitVat,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Address,
 	}
 )
@@ -126,7 +126,7 @@ func getSpotKey(ilk string) common.Hash {
 func getSpotMetadata(ilk string) shared.StorageValueMetadata {
 	return shared.StorageValueMetadata{
 		Name: IlkSpot,
-		Key:  ilk,
+		Keys: map[shared.Key]string{shared.Ilk: ilk},
 		Type: shared.Uint256,
 	}
 }
@@ -140,7 +140,7 @@ func getLineKey(ilk string) common.Hash {
 func getLineMetadata(ilk string) shared.StorageValueMetadata {
 	return shared.StorageValueMetadata{
 		Name: IlkLine,
-		Key:  ilk,
+		Keys: map[shared.Key]string{shared.Ilk: ilk},
 		Type: shared.Uint256,
 	}
 }

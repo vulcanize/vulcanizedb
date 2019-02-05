@@ -52,7 +52,7 @@ var _ = Describe("Pit storage mappings", func() {
 			ilkSpotKey := common.BytesToHash(crypto.Keccak256(common.FromHex("0x" + fakeIlk + pit.IlkSpotIndex)))
 			expectedMetadata := shared.StorageValueMetadata{
 				Name: pit.IlkSpot,
-				Key:  fakeIlk,
+				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
 				Type: shared.Uint256,
 			}
 
@@ -70,7 +70,7 @@ var _ = Describe("Pit storage mappings", func() {
 			ilkLineKey := common.BytesToHash(incrementedIlkSpot.Bytes())
 			expectedMetadata := shared.StorageValueMetadata{
 				Name: pit.IlkLine,
-				Key:  fakeIlk,
+				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
 				Type: shared.Uint256,
 			}
 

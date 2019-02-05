@@ -48,7 +48,7 @@ var _ = Describe("Pit storage repository", func() {
 		expectedLine := "12345"
 		ilkLineMetadata := shared.StorageValueMetadata{
 			Name: pit.IlkLine,
-			Key:  expectedIlk,
+			Keys: map[shared.Key]string{shared.Ilk: expectedIlk},
 			Type: shared.Uint256,
 		}
 		err = repo.Create(blockNumber, blockHash, ilkLineMetadata, expectedLine)
@@ -73,7 +73,7 @@ var _ = Describe("Pit storage repository", func() {
 		expectedSpot := "12345"
 		ilkSpotMetadata := shared.StorageValueMetadata{
 			Name: pit.IlkSpot,
-			Key:  expectedIlk,
+			Keys: map[shared.Key]string{shared.Ilk: expectedIlk},
 			Type: shared.Uint256,
 		}
 		err = repo.Create(blockNumber, blockHash, ilkSpotMetadata, expectedSpot)
