@@ -17,7 +17,6 @@
 package vat_fold
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -35,7 +34,7 @@ func (VatFoldConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return nil, err
 		}
 
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()).String()
 		rate := shared.ConvertToRay(ethLog.Topics[3].Big().String())
 		raw, err := json.Marshal(ethLog)

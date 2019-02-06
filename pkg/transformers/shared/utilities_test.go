@@ -62,4 +62,12 @@ var _ = Describe("Shared utilities", func() {
 			Expect(wadTwo).To(Equal("1.234567890123456690"))
 		})
 	})
+
+	Describe("getting hex without prefix", func() {
+		It("returns bytes as hex without 0x prefix", func() {
+			raw := common.HexToHash("0x4554480000000000000000000000000000000000000000000000000000000000").Bytes()
+			result := shared.GetHexWithoutPrefix(raw)
+			Expect(result).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		})
+	})
 })

@@ -40,6 +40,7 @@ var (
 	ipc                 string
 	levelDbPath         string
 	startingBlockNumber int64
+	storageDiffsPath    string
 	syncAll             bool
 	endingBlockNumber   int64
 )
@@ -64,6 +65,7 @@ func Execute() {
 func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
+	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	databaseConfig = config.Database{
 		Name:     viper.GetString("database.name"),
 		Hostname: viper.GetString("database.hostname"),
@@ -86,6 +88,7 @@ func init() {
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("datadog-name", "vulcanize-test", "datadog service name")
+	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -95,6 +98,7 @@ func init() {
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("datadog.name", rootCmd.PersistentFlags().Lookup("datadog-name"))
+	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
 }
 
 func initConfig() {

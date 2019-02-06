@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.5
--- Dumped by pg_dump version 11.1
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,6 +20,20 @@ SET row_security = off;
 --
 
 CREATE SCHEMA maker;
+
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
@@ -560,6 +574,38 @@ ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
 
 
 --
+-- Name: pit_drip; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_drip (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    drip text
+);
+
+
+--
+-- Name: pit_drip_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_drip_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_drip_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_drip_id_seq OWNED BY maker.pit_drip.id;
+
+
+--
 -- Name: pit_file_debt_ceiling; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -628,6 +674,168 @@ CREATE SEQUENCE maker.pit_file_ilk_id_seq
 --
 
 ALTER SEQUENCE maker.pit_file_ilk_id_seq OWNED BY maker.pit_file_ilk.id;
+
+
+--
+-- Name: pit_ilk_line; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_ilk_line (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ilk text,
+    line numeric NOT NULL
+);
+
+
+--
+-- Name: pit_ilk_line_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_ilk_line_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_ilk_line_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_ilk_line_id_seq OWNED BY maker.pit_ilk_line.id;
+
+
+--
+-- Name: pit_ilk_spot; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_ilk_spot (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ilk text,
+    spot numeric NOT NULL
+);
+
+
+--
+-- Name: pit_ilk_spot_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_ilk_spot_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_ilk_spot_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_ilk_spot_id_seq OWNED BY maker.pit_ilk_spot.id;
+
+
+--
+-- Name: pit_line; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_line (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    line numeric NOT NULL
+);
+
+
+--
+-- Name: pit_line_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_line_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_line_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_line_id_seq OWNED BY maker.pit_line.id;
+
+
+--
+-- Name: pit_live; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_live (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    live numeric NOT NULL
+);
+
+
+--
+-- Name: pit_live_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_live_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_live_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_live_id_seq OWNED BY maker.pit_live.id;
+
+
+--
+-- Name: pit_vat; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.pit_vat (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    vat text
+);
+
+
+--
+-- Name: pit_vat_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.pit_vat_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pit_vat_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.pit_vat_id_seq OWNED BY maker.pit_vat.id;
 
 
 --
@@ -1619,6 +1827,13 @@ ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_s
 
 
 --
+-- Name: pit_drip id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_drip ALTER COLUMN id SET DEFAULT nextval('maker.pit_drip_id_seq'::regclass);
+
+
+--
 -- Name: pit_file_debt_ceiling id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -1630,6 +1845,41 @@ ALTER TABLE ONLY maker.pit_file_debt_ceiling ALTER COLUMN id SET DEFAULT nextval
 --
 
 ALTER TABLE ONLY maker.pit_file_ilk ALTER COLUMN id SET DEFAULT nextval('maker.pit_file_ilk_id_seq'::regclass);
+
+
+--
+-- Name: pit_ilk_line id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_line ALTER COLUMN id SET DEFAULT nextval('maker.pit_ilk_line_id_seq'::regclass);
+
+
+--
+-- Name: pit_ilk_spot id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_spot ALTER COLUMN id SET DEFAULT nextval('maker.pit_ilk_spot_id_seq'::regclass);
+
+
+--
+-- Name: pit_line id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_line ALTER COLUMN id SET DEFAULT nextval('maker.pit_line_id_seq'::regclass);
+
+
+--
+-- Name: pit_live id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_live ALTER COLUMN id SET DEFAULT nextval('maker.pit_live_id_seq'::regclass);
+
+
+--
+-- Name: pit_vat id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_vat ALTER COLUMN id SET DEFAULT nextval('maker.pit_vat_id_seq'::regclass);
 
 
 --
@@ -2018,6 +2268,14 @@ ALTER TABLE ONLY maker.frob
 
 
 --
+-- Name: pit_drip pit_drip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_drip
+    ADD CONSTRAINT pit_drip_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: pit_file_debt_ceiling pit_file_debt_ceiling_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -2047,6 +2305,46 @@ ALTER TABLE ONLY maker.pit_file_ilk
 
 ALTER TABLE ONLY maker.pit_file_ilk
     ADD CONSTRAINT pit_file_ilk_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_ilk_line pit_ilk_line_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_line
+    ADD CONSTRAINT pit_ilk_line_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_ilk_spot pit_ilk_spot_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_spot
+    ADD CONSTRAINT pit_ilk_spot_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_line pit_line_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_line
+    ADD CONSTRAINT pit_line_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_live pit_live_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_live
+    ADD CONSTRAINT pit_live_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pit_vat pit_vat_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_vat
+    ADD CONSTRAINT pit_vat_pkey PRIMARY KEY (id);
 
 
 --
@@ -2678,3 +2976,4 @@ ALTER TABLE ONLY public.logs
 --
 -- PostgreSQL database dump complete
 --
+

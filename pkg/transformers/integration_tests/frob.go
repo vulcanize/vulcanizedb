@@ -94,7 +94,7 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(dbResult[0].Dart).To(Equal("0"))
 		Expect(dbResult[0].Dink).To(Equal("10000000000000"))
 		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
-		Expect(dbResult[0].Ilk).To(Equal("ETH"))
+		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
 		Expect(dbResult[0].Urn).To(Equal("0xc8E093e5f3F9B5Aa6A6b33ea45960b93C161430C"))
 	})

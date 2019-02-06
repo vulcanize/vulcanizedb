@@ -46,7 +46,7 @@ var EthVatSlipLog = types.Log{
 
 var rawVatSlipLog, _ = json.Marshal(EthVatSlipLog)
 var VatSlipModel = vat_slip.VatSlipModel{
-	Ilk:              "fake ilk",
+	Ilk:              "66616b6520696c6b000000000000000000000000000000000000000000000000",
 	Guy:              common.HexToAddress("0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6").String(),
 	Rad:              "987654321",
 	TransactionIndex: EthVatSlipLog.TxIndex,

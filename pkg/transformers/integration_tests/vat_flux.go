@@ -74,7 +74,7 @@ var _ = Describe("VatFlux LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("REP"))
+		Expect(dbResult[0].Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Src).To(Equal("0xC0851F73CC8DD5c0765E71980eC7E7Fd1EF74434"))
 		Expect(dbResult[0].Dst).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
 		Expect(dbResult[0].Rad).To(Equal("1800000000000000000000000000000000000000000000"))

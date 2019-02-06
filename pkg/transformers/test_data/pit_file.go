@@ -75,7 +75,7 @@ var EthPitFileIlkLineLog = types.Log{
 
 var rawPitFileIlkLineLog, _ = json.Marshal(EthPitFileIlkLineLog)
 var PitFileIlkLineModel = ilk2.PitFileIlkModel{
-	Ilk:              "fake ilk",
+	Ilk:              "0x66616b6520696c6b000000000000000000000000000000000000000000000000",
 	What:             "line",
 	Data:             "0.000001000000000000",
 	LogIndex:         EthPitFileIlkLineLog.Index,
@@ -102,7 +102,7 @@ var EthPitFileIlkSpotLog = types.Log{
 
 var rawPitFileIlkSpotLog, _ = json.Marshal(EthPitFileIlkSpotLog)
 var PitFileIlkSpotModel = ilk2.PitFileIlkModel{
-	Ilk:              "fake ilk",
+	Ilk:              "0x66616b6520696c6b000000000000000000000000000000000000000000000000",
 	What:             "spot",
 	Data:             "0.000000000000001000000000000",
 	LogIndex:         EthPitFileIlkSpotLog.Index,
