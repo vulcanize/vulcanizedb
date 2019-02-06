@@ -17,6 +17,7 @@
 package pit
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 )
@@ -44,7 +45,7 @@ func (repository PitStorageRepository) Create(blockNumber int, blockHash string,
 	case PitVat:
 		return repository.insertPitVat(blockNumber, blockHash, value.(string))
 	default:
-		panic("unrecognized storage metadata name")
+		panic(fmt.Sprintf("unrecognized pit contract storage name: %s", metadata.Name))
 	}
 }
 
