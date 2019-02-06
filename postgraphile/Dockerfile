@@ -6,4 +6,4 @@ COPY . /app
 run yarn install
 RUN ["./node_modules/typescript/bin/tsc"]
 EXPOSE 3000
-CMD ["node", "/app/build/dist/src/index.js"]
+CMD ["node", "/app/build/dist/index.js"]

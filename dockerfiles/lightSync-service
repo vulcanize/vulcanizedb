@@ -1,6 +1,0 @@
-#!/sbin/openrc-run
-command=/app/vulcanizedb
-command_args="lightSync --config /app/environments/staging.toml &"
-pidfile=
-name="lightSync"
-description="runs vDB in lightSync mode using staging.toml"

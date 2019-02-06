@@ -6,23 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var initialized = false
-
-func initConfig() {
-	if initialized {
-		return
-	}
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
-	} else {
-		panic(fmt.Sprintf("Could not find environment file: %v", err))
-	}
-	initialized = true
-}
-
 func getEnvironmentString(key string) string {
-	initConfig()
 	value := viper.GetString(key)
 	if value == "" {
 		panic(fmt.Sprintf("No environment configuration variable set for key: \"%v\"", key))
@@ -32,7 +16,6 @@ func getEnvironmentString(key string) string {
 
 // Returns an int from the environment, defaulting to 0 if it does not exist
 func getEnvironmentInt64(key string) int64 {
-	initConfig()
 	value := viper.GetInt64(key)
 	if value == -1 {
 		return 0
