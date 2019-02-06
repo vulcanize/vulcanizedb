@@ -47,7 +47,7 @@ func backfillMakerLogs() {
 		log.Fatal("Failed to initialize database.")
 	}
 
-	watcher := shared.NewWatcher(db, blockChain)
+	watcher := shared.NewEventWatcher(db, blockChain)
 
 	watcher.AddTransformers(transformers.TransformerInitializers())
 	err = watcher.Execute()

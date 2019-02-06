@@ -52,7 +52,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
+	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		blockNumber, repository.database.Node.ID)
 	return header, err
 }

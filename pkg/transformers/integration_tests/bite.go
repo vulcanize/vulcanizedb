@@ -83,7 +83,7 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Art).To(Equal("149846666666666655744"))
 		Expect(dbResult[0].IArt).To(Equal("1645356666666666655736"))
-		Expect(dbResult[0].Ilk).To(Equal("ETH"))
+		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Ink).To(Equal("1000000000000000000"))
 		Expect(dbResult[0].NFlip).To(Equal("2"))
 		Expect(dbResult[0].Tab).To(Equal("149846666666666655744"))

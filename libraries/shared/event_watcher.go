@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
-type Watcher struct {
+type EventWatcher struct {
 	Transformers  []shared.Transformer
 	DB            *postgres.DB
 	Fetcher       shared.LogFetcher
@@ -35,10 +35,10 @@ type Watcher struct {
 	StartingBlock *int64
 }
 
-func NewWatcher(db *postgres.DB, bc core.BlockChain) Watcher {
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 	chunker := shared.NewLogChunker()
 	fetcher := shared.NewFetcher(bc)
-	return Watcher{
+	return EventWatcher{
 		DB:      db,
 		Fetcher: fetcher,
 		Chunker: chunker,
@@ -46,7 +46,7 @@ func NewWatcher(db *postgres.DB, bc core.BlockChain) Watcher {
 }
 
 // Adds transformers to the watcher and updates the chunker, so that it will consider the new transformers.
-func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitializer) {
+func (watcher *EventWatcher) AddTransformers(initializers []shared.TransformerInitializer) {
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
 	var configs []shared.TransformerConfig
@@ -74,7 +74,7 @@ func (watcher *Watcher) AddTransformers(initializers []shared.TransformerInitial
 	watcher.Chunker.AddConfigs(configs)
 }
 
-func (watcher *Watcher) Execute() error {
+func (watcher *EventWatcher) Execute() error {
 	if watcher.Transformers == nil {
 		return fmt.Errorf("No transformers added to watcher")
 	}

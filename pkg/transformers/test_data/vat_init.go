@@ -46,7 +46,7 @@ var EthVatInitLog = types.Log{
 
 var rawVatInitLog, _ = json.Marshal(EthVatInitLog)
 var VatInitModel = vat_init.VatInitModel{
-	Ilk:              "fake ilk",
+	Ilk:              "66616b6520696c6b000000000000000000000000000000000000000000000000",
 	LogIndex:         EthVatInitLog.Index,
 	TransactionIndex: EthVatInitLog.TxIndex,
 	Raw:              rawVatInitLog,

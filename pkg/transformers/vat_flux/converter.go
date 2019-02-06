@@ -17,7 +17,6 @@
 package vat_flux
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -36,7 +35,7 @@ func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return nil, err
 		}
 
-		ilk := string(bytes.Trim(ethLog.Topics[1].Bytes(), "\x00"))
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		src := common.BytesToAddress(ethLog.Topics[2].Bytes())
 		dst := common.BytesToAddress(ethLog.Topics[3].Bytes())
 		radBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)

@@ -75,7 +75,7 @@ var _ = Describe("Vat Grab Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("REP"))
+		Expect(dbResult[0].Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Urn).To(Equal("0x6a3AE20C315E845B2E398e68EfFe39139eC6060C"))
 		Expect(dbResult[0].V).To(Equal("0x2F34f22a00eE4b7a8F8BBC4eAee1658774c624e0")) //cat contract address
 		Expect(dbResult[0].W).To(Equal("0x3728e9777B2a0a611ee0F89e00E01044ce4736d1"))

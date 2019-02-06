@@ -66,7 +66,7 @@ var _ = Describe("Vat slip transformer", func() {
 		var model vat_slip.VatSlipModel
 		err = db.Get(&model, `SELECT ilk, guy, rad, tx_idx FROM maker.vat_slip WHERE header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model.Ilk).To(Equal("ETH"))
+		Expect(model.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(model.Guy).To(Equal("0xDA15dCE70ab462E66779f23ee14F21d993789eE3"))
 		Expect(model.Rad).To(Equal("100000000000000000000000000000000000000000000000"))
 		Expect(model.TransactionIndex).To(Equal(uint(0)))

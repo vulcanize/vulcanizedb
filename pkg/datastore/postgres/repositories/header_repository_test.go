@@ -188,9 +188,11 @@ var _ = Describe("Block header repository", func() {
 			dbHeader, err := repo.GetHeader(header.BlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(dbHeader.Id).NotTo(BeZero())
 			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
 			Expect(dbHeader.Hash).To(Equal(header.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
+			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
 		It("does not return header for a different node fingerprint", func() {
