@@ -21,9 +21,9 @@ set +e
 ./goose postgres "$CONNECT_STRING" up
 if [ $? -eq 0 ]; then
   # Fire up the services
-  rc-service lightSync start
-  rc-service continuousLogSync start
+  ./vulcanizedb lightSync --config environments/staging.toml &
+  ./vulcanizedb continuousLogSync --config environments/staging.toml &
 else
   echo "Could not run migrations. Are the database details correct?"
 fi
-
+wait

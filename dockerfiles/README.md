@@ -19,14 +19,14 @@ e`
   * `CONTRACT_ABI_[CONTRACT NAME]="ABI STRING"`
   * `CONTRACT_DEPLOYMENT-BLOCK_[CONTRACT NAME]=0` (doesn't really matter on a short chain, just avoids long unnecessary searching)
 6. Start the `lightSync` and `continuousLogSync` services:
-  * `rc-service lightSync start`
-  * `rc-service continuousLogSync start`
+  * `./vulcanizedb lightSync --config environments/staging.toml`
+  * `./vulcanizedb continuousLogSync --config environments/staging.toml`
 
 ### Automated
 The steps above have been rolled into a script: `/app/startup_script.sh`, which just assumes the DB env variables have been set, and defaults the rest to Kovan according to `environments/staging.toml`. This can be called with something like:
 
-`docker run -d -e DATABASE_NAME=vulcanize_public -e DATABASE_HOSTNAME=localhost -e DATABASE_PORT=5432 -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize [container name] ./startup_script.sh`
+`docker run -d -e DATABASE_NAME=vulcanize_public -e DATABASE_HOSTNAME=localhost -e DATABASE_PORT=5432 -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize m0ar/images:vDB`
 
 ### Logging
-When running, vDB services log to `/vulcanizedb.log`.
+When running, vDB services log to `/app/vulcanizedb.log`.
 
