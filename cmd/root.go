@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -78,6 +79,9 @@ func database(cmd *cobra.Command, args []string) {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	// When searching for env variables, replace dots in config keys with underscores
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
@@ -110,9 +114,6 @@ func initConfig() {
 		log.Fatal(noConfigError)
 		os.Exit(1)
 	}
-
-	// Config values from environment overrides file
-	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
 		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
