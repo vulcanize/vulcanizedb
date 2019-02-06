@@ -16,7 +16,9 @@
 
 package shared
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ErrContractNotFound struct {
 	Contract string
@@ -34,6 +36,14 @@ type ErrHeaderMismatch struct {
 
 func (e ErrHeaderMismatch) Error() string {
 	return fmt.Sprintf("header hash in row does not match db at height %d - row: %s, db: %s", e.BlockHeight, e.DbHash, e.DiffHash)
+}
+
+type ErrMetadataMalformed struct {
+	MissingData Key
+}
+
+func (e ErrMetadataMalformed) Error() string {
+	return fmt.Sprintf("storage metadata malformed: missing %s", e.MissingData)
 }
 
 type ErrRowMalformed struct {

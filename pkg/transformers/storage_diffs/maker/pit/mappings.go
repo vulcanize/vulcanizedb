@@ -18,12 +18,10 @@ package pit
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
-	"math/big"
 )
 
 const (
@@ -118,29 +116,19 @@ func getStaticMappings() map[common.Hash]shared.StorageValueMetadata {
 }
 
 func getSpotKey(ilk string) common.Hash {
-	keyBytes := common.FromHex("0x" + ilk + IlkSpotIndex)
-	encoded := crypto.Keccak256(keyBytes)
-	return common.BytesToHash(encoded)
+	return storage_diffs.GetMapping(IlkSpotIndex, ilk)
 }
 
 func getSpotMetadata(ilk string) shared.StorageValueMetadata {
-	return shared.StorageValueMetadata{
-		Name: IlkSpot,
-		Keys: map[shared.Key]string{shared.Ilk: ilk},
-		Type: shared.Uint256,
-	}
+	keys := map[shared.Key]string{shared.Ilk: ilk}
+	return shared.GetStorageValueMetadata(IlkSpot, keys, shared.Uint256)
 }
 
 func getLineKey(ilk string) common.Hash {
-	spotMappingAsInt := big.NewInt(0).SetBytes(getSpotKey(ilk).Bytes())
-	incrementedByOne := big.NewInt(0).Add(spotMappingAsInt, big.NewInt(1))
-	return common.BytesToHash(incrementedByOne.Bytes())
+	return storage_diffs.GetIncrementedKey(getSpotKey(ilk), 1)
 }
 
 func getLineMetadata(ilk string) shared.StorageValueMetadata {
-	return shared.StorageValueMetadata{
-		Name: IlkLine,
-		Keys: map[shared.Key]string{shared.Ilk: ilk},
-		Type: shared.Uint256,
-	}
+	keys := map[shared.Key]string{shared.Ilk: ilk}
+	return shared.GetStorageValueMetadata(IlkLine, keys, shared.Uint256)
 }
