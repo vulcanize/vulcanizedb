@@ -58,21 +58,23 @@ func (w *writer) WritePlugin() error {
 		f.ImportAlias(imp, alias)
 	}
 
-	// Collect TransformerInitializer names
-	importedInitializers := make([]Code, 0, len(w.GenConfig.Initializers))
-	for _, path := range w.GenConfig.Initializers {
-		importedInitializers = append(importedInitializers, Qual(path, "TransformerInitializer"))
-	}
+	// Collect initializer code
+	ethEventInitializers, ethStorageInitializers, _, _ := w.sortTransformers()
 
-	// Create Exporter variable with method to export the set of the imported TransformerInitializers
+	// Create Exporter variable with method to export the set of the imported storage and event transformer initializers
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
 	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Index().Qual(
 		"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-		"TransformerInitializer").Block(
+		"TransformerInitializer").Index().Qual(
+		"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+		"StorageTransformerInitializer").Block(
 		Return(Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"TransformerInitializer").Values(importedInitializers...))) // Exports the collected TransformerInitializers
+			"TransformerInitializer").Values(ethEventInitializers...)),
+		Index().Qual(
+			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+			"StorageTransformerInitializer").Values(ethStorageInitializers...)) // Exports the collected initializers
 
 	// Write code to destination file
 	err = f.Save(goFile)
@@ -80,6 +82,31 @@ func (w *writer) WritePlugin() error {
 		return errors.New(fmt.Sprintf("failed to save generated .go file: %s\r\n%s", goFile, err.Error()))
 	}
 	return nil
+}
+
+func (w *writer) sortTransformers() ([]Code, []Code, []Code, []Code) {
+	// Collect code for various initializers
+	importedEthEventInitializers := make([]Code, 0)
+	importerEthStorageInitializers := make([]Code, 0)
+	importedIpfsEventInitializers := make([]Code, 0)
+	importerIpfsStorageInitializers := make([]Code, 0)
+	for name, path := range w.GenConfig.Initializers {
+		switch w.GenConfig.Types[name] {
+		case config.EthEvent:
+			importedEthEventInitializers = append(importedEthEventInitializers, Qual(path, "TransformerInitializer"))
+		case config.EthStorage:
+			importerEthStorageInitializers = append(importerEthStorageInitializers, Qual(path, "StorageTransformerInitializer"))
+		case config.IpfsEvent:
+			//importedIpfsEventInitializers = append(importedIpfsEventInitializers, Qual(path, "IpfsEventTransformerInitializer"))
+		case config.IpfsStorage:
+			//importerIpfsStorageInitializers = append(importerIpfsStorageInitializers, Qual(path, "IpfsStorageTransformerInitializer"))
+		}
+	}
+
+	return importedEthEventInitializers,
+		importerEthStorageInitializers,
+		importedIpfsEventInitializers,
+		importerIpfsStorageInitializers
 }
 
 func (w *writer) setupFilePath() (string, error) {

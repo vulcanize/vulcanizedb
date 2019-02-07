@@ -26,9 +26,10 @@ import (
 )
 
 type Plugin struct {
-	Initializers map[string]string // Map of import aliases to transformer initializer paths
-	Dependencies map[string]string // Map of vendor dep names to their repositories
-	Migrations   map[string]string // Map of vendor dep names to relative path from repository to db migrations
+	Initializers map[string]string     // Map of import aliases to transformer initializer paths
+	Dependencies map[string]string     // Map of vendor dep names to their repositories
+	Migrations   map[string]string     // Map of vendor dep names to relative path from repository to db migrations
+	Types        map[string]PluginType // Map of import aliases to their transformer initializer type (e.g. eth-event vs eth-storage)
 	FilePath     string
 	FileName     string
 	Save         bool
@@ -63,4 +64,46 @@ func (c *Plugin) GetMigrationsPaths() ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+type PluginType int
+
+const (
+	UnknownTransformerType PluginType = iota + 1
+	EthEvent
+	EthStorage
+	IpfsEvent
+	IpfsStorage
+)
+
+func (pt PluginType) String() string {
+	names := [...]string{
+		"eth_event",
+		"eth_storage",
+		"ipfs_event",
+		"ipfs_storage",
+	}
+
+	if pt > IpfsStorage || pt < EthEvent {
+		return "Unknown"
+	}
+
+	return names[pt]
+}
+
+func GetPluginType(str string) PluginType {
+	types := [...]PluginType{
+		EthEvent,
+		EthStorage,
+		IpfsEvent,
+		IpfsStorage,
+	}
+
+	for _, ty := range types {
+		if ty.String() == str && ty.String() != "Unknown" {
+			return ty
+		}
+	}
+
+	return UnknownTransformerType
 }
