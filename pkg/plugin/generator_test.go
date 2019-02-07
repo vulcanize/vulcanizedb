@@ -16,7 +16,7 @@
 
 package plugin_test
 
-/* comment out til mcd_transformers is updated
+/*
 import (
 	"plugin"
 
@@ -30,6 +30,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers"
@@ -40,11 +41,51 @@ var genConfig = config.Plugin{
 		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
 		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
 	},
+	Types: map[string]config.PluginType{
+		"bite": config.EthEvent,
+		"deal": config.EthEvent,
+	},
 	Dependencies: map[string]string{
 		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
 	},
 	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
-	FileName: "externalTestTransformerSet",
+	FileName: "testEventTransformerSet",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:     false,
+}
+
+var genStorageConfig = config.Plugin{
+	Initializers: map[string]string{
+		"pit": "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
+	},
+	Types: map[string]config.PluginType{
+		"pit": config.EthStorage,
+	},
+	Dependencies: map[string]string{
+		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
+	},
+	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
+	FileName: "testStorageTransformerSet",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:     false,
+}
+
+var combinedConfig = config.Plugin{
+	Initializers: map[string]string{
+		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
+		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
+		"pit":  "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
+	},
+	Types: map[string]config.PluginType{
+		"bite": config.EthEvent,
+		"deal": config.EthEvent,
+		"pit":  config.EthStorage,
+	},
+	Dependencies: map[string]string{
+		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
+	},
+	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
+	FileName: "testStorageTransformerSet",
 	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
 	Save:     false,
 }
@@ -56,7 +97,7 @@ var dbConfig = config.Database{
 }
 
 type Exporter interface {
-	Export() []transformer.TransformerInitializer
+	Export() ([]transformer.TransformerInitializer, []transformer.StorageTransformerInitializer)
 }
 
 var _ = Describe("Generator test", func() {
@@ -70,83 +111,221 @@ var _ = Describe("Generator test", func() {
 	viper.SetConfigName("compose")
 	viper.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 
-	BeforeEach(func() {
-		goPath, soPath, err = genConfig.GetPluginPaths()
-		Expect(err).ToNot(HaveOccurred())
-		g, err = p2.NewGenerator(genConfig, dbConfig)
-		Expect(err).ToNot(HaveOccurred())
-		err = g.GenerateExporterPlugin()
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := helpers.ClearFiles(goPath, soPath)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	Describe("GenerateTransformerPlugin", func() {
-		It("It bundles the specified transformer initializers into a Exporter object and creates .so", func() {
-			plug, err := plugin.Open(soPath)
+	Describe("Event Transformers only", func() {
+		BeforeEach(func() {
+			goPath, soPath, err = genConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
-			symExporter, err := plug.Lookup("Exporter")
+			g, err = p2.NewGenerator(genConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
-			exporter, ok := symExporter.(Exporter)
-			Expect(ok).To(Equal(true))
-			initializers := exporter.Export()
-			Expect(len(initializers)).To(Equal(2))
+			err = g.GenerateExporterPlugin()
+			Expect(err).ToNot(HaveOccurred())
+		})
+		AfterEach(func() {
+			err := helpers.ClearFiles(goPath, soPath)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Loads our generated Exporter and uses it to import an arbitrary set of TransformerInitializers that we can execute over", func() {
-			db, bc = test_helpers.SetupDBandBC()
-			defer test_helpers.TearDown(db)
+		Describe("GenerateTransformerPlugin", func() {
+			It("It bundles the specified  TransformerInitializers into a Exporter object and creates .so", func() {
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				initializers, store := exporter.Export()
+				Expect(len(initializers)).To(Equal(2))
+				Expect(len(store)).To(Equal(0))
+			})
 
-			hr = repositories.NewHeaderRepository(db)
-			header1, err := bc.GetHeaderByNumber(9377319)
-			Expect(err).ToNot(HaveOccurred())
-			headerID, err = hr.CreateOrUpdateHeader(header1)
-			Expect(err).ToNot(HaveOccurred())
+			It("Loads our generated Exporter and uses it to import an arbitrary set of TransformerInitializers that we can execute over", func() {
+				db, bc = test_helpers.SetupDBandBC()
+				defer test_helpers.TearDown(db)
 
-			plug, err := plugin.Open(soPath)
-			Expect(err).ToNot(HaveOccurred())
-			symExporter, err := plug.Lookup("Exporter")
-			Expect(err).ToNot(HaveOccurred())
-			exporter, ok := symExporter.(Exporter)
-			Expect(ok).To(Equal(true))
-			initializers := exporter.Export()
+				hr = repositories.NewHeaderRepository(db)
+				header1, err := bc.GetHeaderByNumber(9377319)
+				Expect(err).ToNot(HaveOccurred())
+				headerID, err = hr.CreateOrUpdateHeader(header1)
+				Expect(err).ToNot(HaveOccurred())
 
-			w := watcher.NewWatcher(db, bc)
-			w.AddTransformers(initializers)
-			err = w.Execute()
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				initializers, _ := exporter.Export()
+
+				w := watcher.NewWatcher(db, bc)
+				w.AddTransformers(initializers)
+				err = w.Execute()
+				Expect(err).ToNot(HaveOccurred())
+
+				type model struct {
+					Ilk              string
+					Urn              string
+					Ink              string
+					Art              string
+					IArt             string
+					Tab              string
+					NFlip            string
+					LogIndex         uint   `db:"log_idx"`
+					TransactionIndex uint   `db:"tx_idx"`
+					Raw              []byte `db:"raw_log"`
+					Id               int64  `db:"id"`
+					HeaderId         int64  `db:"header_id"`
+				}
+
+				returned := model{}
+
+				err = db.Get(&returned, `SELECT * FROM maker.bite WHERE header_id = $1`, headerID)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(returned.Ilk).To(Equal("ETH"))
+				Expect(returned.Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+				Expect(returned.Ink).To(Equal("80000000000000000000"))
+				Expect(returned.Art).To(Equal("11000000000000000000000"))
+				Expect(returned.IArt).To(Equal("12496609999999999999992"))
+				Expect(returned.Tab).To(Equal("11000000000000000000000"))
+				Expect(returned.NFlip).To(Equal("7"))
+				Expect(returned.TransactionIndex).To(Equal(uint(1)))
+				Expect(returned.LogIndex).To(Equal(uint(4)))
+			})
+		})
+	})
+
+	Describe("Storage Transformers only", func() {
+		BeforeEach(func() {
+			goPath, soPath, err = genConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
-
-			type model struct {
-				Ilk              string
-				Urn              string
-				Ink              string
-				Art              string
-				IArt             string
-				Tab              string
-				NFlip            string
-				LogIndex         uint   `db:"log_idx"`
-				TransactionIndex uint   `db:"tx_idx"`
-				Raw              []byte `db:"raw_log"`
-				Id               int64  `db:"id"`
-				HeaderId         int64  `db:"header_id"`
-			}
-
-			returned := model{}
-
-			err = db.Get(&returned, `SELECT * FROM maker.bite WHERE header_id = $1`, headerID)
+			g, err = p2.NewGenerator(genStorageConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(returned.Ilk).To(Equal("ETH"))
-			Expect(returned.Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
-			Expect(returned.Ink).To(Equal("80000000000000000000"))
-			Expect(returned.Art).To(Equal("11000000000000000000000"))
-			Expect(returned.IArt).To(Equal("12496609999999999999992"))
-			Expect(returned.Tab).To(Equal("11000000000000000000000"))
-			Expect(returned.NFlip).To(Equal("7"))
-			Expect(returned.TransactionIndex).To(Equal(uint(1)))
-			Expect(returned.LogIndex).To(Equal(uint(4)))
+			err = g.GenerateExporterPlugin()
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := helpers.ClearFiles(goPath, soPath)
+			Expect(err).ToNot(HaveOccurred())
+		})
+		Describe("GenerateTransformerPlugin", func() {
+			It("It bundles the specified  StorageTransformerInitializers into a Exporter object and creates .so", func() {
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				event, initializers := exporter.Export()
+				Expect(len(initializers)).To(Equal(1))
+				Expect(len(event)).To(Equal(0))
+			})
+
+			It("Loads our generated Exporter and uses it to import an arbitrary set of StorageTransformerInitializers that we can execute over", func() {
+				db, bc = test_helpers.SetupDBandBC()
+				defer test_helpers.TearDown(db)
+
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				_, initializers := exporter.Export()
+
+				tailer := fs.FileTailer{Path: viper.GetString("filesystem.storageDiffsPath")}
+				w := watcher.NewStorageWatcher(tailer, db)
+				w.AddTransformers(initializers)
+				err = w.Execute()
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("Event and Storage Transformers in same instance", func() {
+		BeforeEach(func() {
+			goPath, soPath, err = genConfig.GetPluginPaths()
+			Expect(err).ToNot(HaveOccurred())
+			g, err = p2.NewGenerator(combinedConfig, dbConfig)
+			Expect(err).ToNot(HaveOccurred())
+			err = g.GenerateExporterPlugin()
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := helpers.ClearFiles(goPath, soPath)
+			Expect(err).ToNot(HaveOccurred())
+		})
+		Describe("GenerateTransformerPlugin", func() {
+			It("It bundles the specified  TransformerInitializers and StorageTransformerInitializers into a Exporter object and creates .so", func() {
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				eventInitializers, storageInitializers := exporter.Export()
+				Expect(len(eventInitializers)).To(Equal(2))
+				Expect(len(storageInitializers)).To(Equal(1))
+			})
+
+			It("Loads our generated Exporter and uses it to import an arbitrary set of TransformerInitializers and StorageTransformerInitializers that we can execute over", func() {
+				db, bc = test_helpers.SetupDBandBC()
+				defer test_helpers.TearDown(db)
+
+				hr = repositories.NewHeaderRepository(db)
+				header1, err := bc.GetHeaderByNumber(9377319)
+				Expect(err).ToNot(HaveOccurred())
+				headerID, err = hr.CreateOrUpdateHeader(header1)
+				Expect(err).ToNot(HaveOccurred())
+
+				plug, err := plugin.Open(soPath)
+				Expect(err).ToNot(HaveOccurred())
+				symExporter, err := plug.Lookup("Exporter")
+				Expect(err).ToNot(HaveOccurred())
+				exporter, ok := symExporter.(Exporter)
+				Expect(ok).To(Equal(true))
+				eventInitializers, storageInitializers := exporter.Export()
+
+				ew := watcher.NewWatcher(db, bc)
+				ew.AddTransformers(eventInitializers)
+				err = ew.Execute()
+				Expect(err).ToNot(HaveOccurred())
+
+				type model struct {
+					Ilk              string
+					Urn              string
+					Ink              string
+					Art              string
+					IArt             string
+					Tab              string
+					NFlip            string
+					LogIndex         uint   `db:"log_idx"`
+					TransactionIndex uint   `db:"tx_idx"`
+					Raw              []byte `db:"raw_log"`
+					Id               int64  `db:"id"`
+					HeaderId         int64  `db:"header_id"`
+				}
+
+				returned := model{}
+
+				err = db.Get(&returned, `SELECT * FROM maker.bite WHERE header_id = $1`, headerID)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(returned.Ilk).To(Equal("ETH"))
+				Expect(returned.Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+				Expect(returned.Ink).To(Equal("80000000000000000000"))
+				Expect(returned.Art).To(Equal("11000000000000000000000"))
+				Expect(returned.IArt).To(Equal("12496609999999999999992"))
+				Expect(returned.Tab).To(Equal("11000000000000000000000"))
+				Expect(returned.NFlip).To(Equal("7"))
+				Expect(returned.TransactionIndex).To(Equal(uint(1)))
+				Expect(returned.LogIndex).To(Equal(uint(4)))
+
+				tailer := fs.FileTailer{Path: viper.GetString("filesystem.storageDiffsPath")}
+				sw := watcher.NewStorageWatcher(tailer, db)
+				sw.AddTransformers(storageInitializers)
+				err = sw.Execute()
+				Expect(err).ToNot(HaveOccurred())
+			})
 		})
 	})
 })
