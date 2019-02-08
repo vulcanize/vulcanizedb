@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
@@ -63,8 +62,8 @@ func (converter BiteConverter) ToModels(entities []interface{}) ([]interface{}, 
 			return nil, fmt.Errorf("entity of type %T, not %T", entity, BiteEntity{})
 		}
 
-		ilk := common.Bytes2Hex(biteEntity.Ilk[:])
-		urn := common.BytesToAddress(biteEntity.Urn[:]).String()
+		ilk := shared.GetHexWithoutPrefix(biteEntity.Ilk[:])
+		urn := shared.GetHexWithoutPrefix(biteEntity.Urn[:])
 		ink := biteEntity.Ink
 		art := biteEntity.Art
 		iArt := biteEntity.IArt

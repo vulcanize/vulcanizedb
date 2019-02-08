@@ -24,8 +24,23 @@ const (
 	Address
 )
 
+type Key string
+
+const (
+	Ilk Key = "ilk"
+	Guy Key = "guy"
+)
+
 type StorageValueMetadata struct {
 	Name string
-	Key  string
+	Keys map[Key]string
 	Type ValueType
+}
+
+func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
+	return StorageValueMetadata{
+		Name: name,
+		Keys: keys,
+		Type: t,
+	}
 }

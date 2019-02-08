@@ -96,7 +96,7 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
 		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
-		Expect(dbResult[0].Urn).To(Equal("0xc8E093e5f3F9B5Aa6A6b33ea45960b93C161430C"))
+		Expect(dbResult[0].Urn).To(Equal("000000000000000000000000c8e093e5f3f9b5aa6a6b33ea45960b93c161430c"))
 	})
 
 	It("rechecks frob event", func() {
@@ -141,7 +141,7 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
 		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
-		Expect(dbResult[0].Urn).To(Equal("0xc8E093e5f3F9B5Aa6A6b33ea45960b93C161430C"))
+		Expect(dbResult[0].Urn).To(Equal("000000000000000000000000c8e093e5f3f9b5aa6a6b33ea45960b93c161430c"))
 	})
 
 	It("unpacks an event log", func() {

@@ -19,7 +19,6 @@ package vat_slip
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
@@ -34,7 +33,7 @@ func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return nil, err
 		}
 		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
-		guy := common.BytesToAddress(ethLog.Topics[2].Bytes())
+		guy := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		rad := ethLog.Topics[3].Big()
 
 		raw, err := json.Marshal(ethLog)
@@ -43,7 +42,7 @@ func (VatSlipConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 		model := VatSlipModel{
 			Ilk:              ilk,
-			Guy:              guy.String(),
+			Guy:              guy,
 			Rad:              rad.String(),
 			TransactionIndex: ethLog.TxIndex,
 			LogIndex:         ethLog.Index,

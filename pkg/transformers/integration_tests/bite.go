@@ -87,7 +87,7 @@ var _ = Describe("Bite Transformer", func() {
 		Expect(dbResult[0].Ink).To(Equal("1000000000000000000"))
 		Expect(dbResult[0].NFlip).To(Equal("2"))
 		Expect(dbResult[0].Tab).To(Equal("149846666666666655744"))
-		Expect(dbResult[0].Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Urn).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 	})
 
 	It("unpacks an event log", func() {

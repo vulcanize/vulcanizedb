@@ -41,6 +41,7 @@ func (c DentConverter) ToModels(ethLogs []types.Log) (result []interface{}, err 
 		bidId := log.Topics[2].Big()
 		lot := log.Topics[3].Big().String()
 		bidValue := getBidValue(log)
+		// TODO: verify guy is available on Topics[1] (looks like it may just be an int id)
 		guy := common.HexToAddress(log.Topics[1].Hex()).String()
 
 		logIndex := log.Index

@@ -1,19 +1,51 @@
 package test_helpers
 
-import "github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
+)
 
 type MockMakerStorageRepository struct {
-	GetIlksCalled bool
-	ilks          []string
+	DaiKeys          []string
+	GemKeys          []maker.Urn
+	GetDaiKeysCalled bool
+	GetDaiKeysError  error
+	GetGemKeysCalled bool
+	GetGemKeysError  error
+	GetIlksCalled    bool
+	GetIlksError     error
+	GetSinKeysCalled bool
+	GetSinKeysError  error
+	GetUrnsCalled    bool
+	GetUrnsError     error
+	Ilks             []string
+	SinKeys          []string
+	Urns             []maker.Urn
+}
+
+func (repository *MockMakerStorageRepository) GetDaiKeys() ([]string, error) {
+	repository.GetDaiKeysCalled = true
+	return repository.DaiKeys, repository.GetDaiKeysError
+}
+
+func (repository *MockMakerStorageRepository) GetGemKeys() ([]maker.Urn, error) {
+	repository.GetGemKeysCalled = true
+	return repository.GemKeys, repository.GetGemKeysError
 }
 
 func (repository *MockMakerStorageRepository) GetIlks() ([]string, error) {
 	repository.GetIlksCalled = true
-	return repository.ilks, nil
+	return repository.Ilks, repository.GetIlksError
+}
+
+func (repository *MockMakerStorageRepository) GetSinKeys() ([]string, error) {
+	repository.GetSinKeysCalled = true
+	return repository.SinKeys, repository.GetSinKeysError
+}
+
+func (repository *MockMakerStorageRepository) GetUrns() ([]maker.Urn, error) {
+	repository.GetUrnsCalled = true
+	return repository.Urns, repository.GetUrnsError
 }
 
 func (repository *MockMakerStorageRepository) SetDB(db *postgres.DB) {}
-
-func (repository *MockMakerStorageRepository) SetIlks(ilks []string) {
-	repository.ilks = ilks
-}
