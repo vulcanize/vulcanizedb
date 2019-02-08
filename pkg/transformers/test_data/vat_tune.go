@@ -32,12 +32,12 @@ var EthVatTuneLog = types.Log{
 var rawVatTuneLog, _ = json.Marshal(EthVatTuneLog)
 var dartString = "115792089237316195423570985008687907853269984665640564039455584007913129639936"
 var vatTuneDart, _ = new(big.Int).SetString(dartString, 10)
-var urnAddress = "0x4F26FfBe5F04ED43630fdC30A87638d53D0b0876"
+var urn = "0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"
 var VatTuneModel = vat_tune.VatTuneModel{
 	Ilk:              "4554480000000000000000000000000000000000000000000000000000000000",
-	Urn:              urnAddress,
-	V:                urnAddress,
-	W:                urnAddress,
+	Urn:              urn,
+	V:                urn,
+	W:                urn,
 	Dink:             big.NewInt(0).String(),
 	Dart:             vatTuneDart.String(),
 	TransactionIndex: EthVatTuneLog.TxIndex,

@@ -44,8 +44,8 @@ var VatHealLog = types.Log{
 
 var rawHealLog, _ = json.Marshal(VatHealLog)
 var VatHealModel = vat_heal.VatHealModel{
-	Urn:              "0x7d7bEe5fCfD8028cf7b00876C5b1421c800561A6",
-	V:                "0x7340e006f4135BA6970D43bf43d88DCAD4e7a8CA",
+	Urn:              "0000000000000000000000007d7bee5fcfd8028cf7b00876c5b1421c800561a6",
+	V:                "0000000000000000000000007340e006f4135ba6970d43bf43d88dcad4e7a8ca",
 	Rad:              "120",
 	LogIndex:         VatHealLog.Index,
 	TransactionIndex: VatHealLog.TxIndex,

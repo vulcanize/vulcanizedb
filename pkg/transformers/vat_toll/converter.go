@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -19,7 +18,7 @@ func (VatTollConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return nil, err
 		}
 		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
-		urn := common.BytesToAddress(ethLog.Topics[2].Bytes()[:common.AddressLength])
+		urn := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		take := ethLog.Topics[3].Big()
 
 		raw, err := json.Marshal(ethLog)
@@ -28,7 +27,7 @@ func (VatTollConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 		model := VatTollModel{
 			Ilk:              ilk,
-			Urn:              urn.String(),
+			Urn:              urn,
 			Take:             take.String(),
 			TransactionIndex: ethLog.TxIndex,
 			LogIndex:         ethLog.Index,

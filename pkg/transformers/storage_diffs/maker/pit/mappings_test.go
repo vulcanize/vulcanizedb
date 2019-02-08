@@ -47,12 +47,12 @@ var _ = Describe("Pit storage mappings", func() {
 		It("returns value metadata for spot when ilk in the DB", func() {
 			storageRepository := &test_helpers.MockMakerStorageRepository{}
 			fakeIlk := "fakeIlk"
-			storageRepository.SetIlks([]string{fakeIlk})
+			storageRepository.Ilks = []string{fakeIlk}
 			mappings := pit.PitMappings{StorageRepository: storageRepository}
 			ilkSpotKey := common.BytesToHash(crypto.Keccak256(common.FromHex("0x" + fakeIlk + pit.IlkSpotIndex)))
 			expectedMetadata := shared.StorageValueMetadata{
 				Name: pit.IlkSpot,
-				Key:  fakeIlk,
+				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
 				Type: shared.Uint256,
 			}
 
@@ -62,7 +62,7 @@ var _ = Describe("Pit storage mappings", func() {
 		It("returns value metadata for line when ilk in the DB", func() {
 			storageRepository := &test_helpers.MockMakerStorageRepository{}
 			fakeIlk := "fakeIlk"
-			storageRepository.SetIlks([]string{fakeIlk})
+			storageRepository.Ilks = []string{fakeIlk}
 			mappings := pit.PitMappings{StorageRepository: storageRepository}
 			ilkSpotKeyBytes := crypto.Keccak256(common.FromHex("0x" + fakeIlk + pit.IlkSpotIndex))
 			ilkSpotAsInt := big.NewInt(0).SetBytes(ilkSpotKeyBytes)
@@ -70,7 +70,7 @@ var _ = Describe("Pit storage mappings", func() {
 			ilkLineKey := common.BytesToHash(incrementedIlkSpot.Bytes())
 			expectedMetadata := shared.StorageValueMetadata{
 				Name: pit.IlkLine,
-				Key:  fakeIlk,
+				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
 				Type: shared.Uint256,
 			}
 

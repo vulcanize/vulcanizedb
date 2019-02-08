@@ -19,9 +19,9 @@ package tend
 import (
 	"encoding/json"
 	"errors"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -35,7 +35,7 @@ func (TendConverter) ToModels(ethLogs []types.Log) (results []interface{}, err e
 		}
 
 		bidId := ethLog.Topics[2].Big()
-		guy := common.HexToAddress(ethLog.Topics[1].Hex()).String()
+		guy := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
 		lot := ethLog.Topics[3].Big().String()
 
 		lastDataItemStartIndex := len(ethLog.Data) - 32

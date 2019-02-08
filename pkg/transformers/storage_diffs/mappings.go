@@ -18,8 +18,10 @@ package storage_diffs
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
+	"math/big"
 )
 
 type Mappings interface {
@@ -37,3 +39,21 @@ const (
 	IndexSix   = "0000000000000000000000000000000000000000000000000000000000000006"
 	IndexSeven = "0000000000000000000000000000000000000000000000000000000000000007"
 )
+
+func GetMapping(indexOnContract, key string) common.Hash {
+	keyBytes := common.FromHex("0x" + key + indexOnContract)
+	encoded := crypto.Keccak256(keyBytes)
+	return common.BytesToHash(encoded)
+}
+
+func GetNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
+	primaryMappingIndex := crypto.Keccak256(common.FromHex(primaryKey + indexOnContract))
+	secondaryMappingIndex := crypto.Keccak256(common.FromHex(secondaryKey), primaryMappingIndex)
+	return common.BytesToHash(secondaryMappingIndex)
+}
+
+func GetIncrementedKey(original common.Hash, incrementBy int64) common.Hash {
+	originalMappingAsInt := original.Big()
+	incremented := big.NewInt(0).Add(originalMappingAsInt, big.NewInt(incrementBy))
+	return common.BytesToHash(incremented.Bytes())
+}

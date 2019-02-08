@@ -38,7 +38,7 @@ var (
 	bid       = new(big.Int).SetBytes([]byte{0})
 	gal       = "0x07Fa9eF6609cA7921112231F8f195138ebbA2977"
 	end       = int64(1535991025)
-	urn       = [32]byte{115, 64, 224, 6, 244, 19, 91, 166, 151, 13, 67, 191, 67, 216, 141, 202, 212, 231, 168, 202, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	urnBytes  = [32]byte{115, 64, 224, 6, 244, 19, 91, 166, 151, 13, 67, 191, 67, 216, 141, 202, 212, 231, 168, 202, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	urnString = "0x7340e006f4135BA6970D43bf43d88DCAD4e7a8CA"
 	tabString = "50"
 	tab, _    = new(big.Int).SetString(tabString, 10)
@@ -73,7 +73,7 @@ var FlipKickEntity = flip_kick.FlipKickEntity{
 	Bid:              bid,
 	Gal:              common.HexToAddress(gal),
 	End:              big.NewInt(end),
-	Urn:              urn,
+	Urn:              urnBytes,
 	Tab:              tab,
 	TransactionIndex: EthFlipKickLog.TxIndex,
 	LogIndex:         EthFlipKickLog.Index,

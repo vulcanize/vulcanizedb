@@ -45,8 +45,8 @@ var VatFluxLog = types.Log{
 var rawFluxLog, _ = json.Marshal(VatFluxLog)
 var VatFluxModel = vat_flux.VatFluxModel{
 	Ilk:              "5245500000000000000000000000000000000000000000000000000000000000",
-	Src:              "0x7FA9EF6609Ca7921112231f8f195138ebba29770",
-	Dst:              "0x93086347c52a8878af71bB818509d484c6a2e1bF",
+	Src:              "0000000000000000000000007fa9ef6609ca7921112231f8f195138ebba29770",
+	Dst:              "00000000000000000000000093086347c52a8878af71bb818509d484c6a2e1bf",
 	Rad:              "123",
 	TransactionIndex: VatFluxLog.TxIndex,
 	LogIndex:         VatFluxLog.Index,

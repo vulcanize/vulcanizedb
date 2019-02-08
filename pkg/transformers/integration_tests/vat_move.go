@@ -74,8 +74,8 @@ var _ = Describe("VatMove LogNoteTransformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Src).To(Equal(common.HexToAddress("0x8868bad8e74fca4505676d1b5b21ecc23328d132").String()))
-		Expect(dbResult.Dst).To(Equal(common.HexToAddress("0x0000d8b4147eda80fec7122ae16da2479cbd7ffb").String()))
+		Expect(dbResult.Src).To(Equal("0000000000000000000000008868bad8e74fca4505676d1b5b21ecc23328d132"))
+		Expect(dbResult.Dst).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult.Rad).To(Equal("1000000000000000000000000000000000000000000000"))
 	})
 
@@ -136,8 +136,8 @@ var _ = Describe("VatMove LogNoteTransformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Src).To(Equal(common.HexToAddress("0x8868bad8e74fca4505676d1b5b21ecc23328d132").String()))
-		Expect(dbResult.Dst).To(Equal(common.HexToAddress("0x0000d8b4147eda80fec7122ae16da2479cbd7ffb").String()))
+		Expect(dbResult.Src).To(Equal("0000000000000000000000008868bad8e74fca4505676d1b5b21ecc23328d132"))
+		Expect(dbResult.Dst).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult.Rad).To(Equal("1000000000000000000000000000000000000000000000"))
 	})
 })

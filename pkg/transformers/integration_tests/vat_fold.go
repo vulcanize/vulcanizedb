@@ -83,7 +83,7 @@ var _ = Describe("VatFold Transformer", func() {
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
 		Expect(dbResult.Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
-		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
+		Expect(dbResult.Urn).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
 		Expect(dbResult.Rate).To(Equal("0.000000000000000000000000000"))
 	})
 
@@ -137,7 +137,7 @@ var _ = Describe("VatFold Transformer", func() {
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
 		Expect(dbResult.Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
-		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
+		Expect(dbResult.Urn).To(Equal("0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1"))
 		Expect(dbResult.Rate).To(Equal("0.000000000000000000000000000"))
 	})
 })

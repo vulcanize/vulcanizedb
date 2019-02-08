@@ -17,6 +17,7 @@
 package pit
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 )
@@ -32,9 +33,9 @@ func (repository *PitStorageRepository) SetDB(db *postgres.DB) {
 func (repository PitStorageRepository) Create(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, value interface{}) error {
 	switch metadata.Name {
 	case IlkLine:
-		return repository.insertIlkLine(blockNumber, blockHash, metadata.Key, value.(string))
+		return repository.insertIlkLine(blockNumber, blockHash, metadata.Keys[shared.Ilk], value.(string))
 	case IlkSpot:
-		return repository.insertIlkSpot(blockNumber, blockHash, metadata.Key, value.(string))
+		return repository.insertIlkSpot(blockNumber, blockHash, metadata.Keys[shared.Ilk], value.(string))
 	case PitDrip:
 		return repository.insertPitDrip(blockNumber, blockHash, value.(string))
 	case PitLine:
@@ -44,7 +45,7 @@ func (repository PitStorageRepository) Create(blockNumber int, blockHash string,
 	case PitVat:
 		return repository.insertPitVat(blockNumber, blockHash, value.(string))
 	default:
-		panic("unrecognized storage metadata name")
+		panic(fmt.Sprintf("unrecognized pit contract storage name: %s", metadata.Name))
 	}
 }
 

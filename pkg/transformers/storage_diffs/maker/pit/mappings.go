@@ -18,12 +18,10 @@ package pit
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
-	"math/big"
 )
 
 const (
@@ -40,7 +38,7 @@ var (
 	DripKey      = common.HexToHash(storage_diffs.IndexFive)
 	DripMetadata = shared.StorageValueMetadata{
 		Name: PitDrip,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Address,
 	}
 
@@ -50,7 +48,7 @@ var (
 	LineKey      = common.HexToHash(storage_diffs.IndexThree)
 	LineMetadata = shared.StorageValueMetadata{
 		Name: PitLine,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Uint256,
 	}
 
@@ -58,7 +56,7 @@ var (
 	LiveKey      = common.HexToHash(storage_diffs.IndexTwo)
 	LiveMetadata = shared.StorageValueMetadata{
 		Name: PitLive,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Uint256,
 	}
 
@@ -66,7 +64,7 @@ var (
 	VatKey      = common.HexToHash(storage_diffs.IndexFour)
 	VatMetadata = shared.StorageValueMetadata{
 		Name: PitVat,
-		Key:  "",
+		Keys: nil,
 		Type: shared.Address,
 	}
 )
@@ -118,29 +116,19 @@ func getStaticMappings() map[common.Hash]shared.StorageValueMetadata {
 }
 
 func getSpotKey(ilk string) common.Hash {
-	keyBytes := common.FromHex("0x" + ilk + IlkSpotIndex)
-	encoded := crypto.Keccak256(keyBytes)
-	return common.BytesToHash(encoded)
+	return storage_diffs.GetMapping(IlkSpotIndex, ilk)
 }
 
 func getSpotMetadata(ilk string) shared.StorageValueMetadata {
-	return shared.StorageValueMetadata{
-		Name: IlkSpot,
-		Key:  ilk,
-		Type: shared.Uint256,
-	}
+	keys := map[shared.Key]string{shared.Ilk: ilk}
+	return shared.GetStorageValueMetadata(IlkSpot, keys, shared.Uint256)
 }
 
 func getLineKey(ilk string) common.Hash {
-	spotMappingAsInt := big.NewInt(0).SetBytes(getSpotKey(ilk).Bytes())
-	incrementedByOne := big.NewInt(0).Add(spotMappingAsInt, big.NewInt(1))
-	return common.BytesToHash(incrementedByOne.Bytes())
+	return storage_diffs.GetIncrementedKey(getSpotKey(ilk), 1)
 }
 
 func getLineMetadata(ilk string) shared.StorageValueMetadata {
-	return shared.StorageValueMetadata{
-		Name: IlkLine,
-		Key:  ilk,
-		Type: shared.Uint256,
-	}
+	keys := map[shared.Key]string{shared.Ilk: ilk}
+	return shared.GetStorageValueMetadata(IlkLine, keys, shared.Uint256)
 }

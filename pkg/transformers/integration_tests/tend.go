@@ -91,7 +91,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("4000"))
 		Expect(dbResult[0].BidId).To(Equal("3"))
-		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Guy).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
 
 		var dbTic int64
@@ -137,7 +137,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("4000"))
 		Expect(dbResult[0].BidId).To(Equal("3"))
-		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Guy).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
 
 		var dbTic int64
@@ -170,7 +170,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("4300"))
 		Expect(dbResult[0].BidId).To(Equal("3"))
-		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Guy).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
 
 		var dbTic int64
@@ -203,7 +203,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("1000000000000000"))
 		Expect(dbResult[0].BidId).To(Equal("1"))
-		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Guy).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
 
 		var dbTic int64

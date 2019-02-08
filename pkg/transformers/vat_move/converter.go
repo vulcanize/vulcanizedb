@@ -19,8 +19,8 @@ package vat_move
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 )
 
 type VatMoveConverter struct{}
@@ -33,8 +33,8 @@ func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 			return []interface{}{}, err
 		}
 
-		src := common.BytesToAddress(ethLog.Topics[1].Bytes())
-		dst := common.BytesToAddress(ethLog.Topics[2].Bytes())
+		src := shared2.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
+		dst := shared2.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		rad := ethLog.Topics[3].Big()
 		raw, err := json.Marshal(ethLog)
 		if err != nil {
@@ -42,8 +42,8 @@ func (VatMoveConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 
 		models = append(models, VatMoveModel{
-			Src:              src.String(),
-			Dst:              dst.String(),
+			Src:              src,
+			Dst:              dst,
 			Rad:              rad.String(),
 			LogIndex:         ethLog.Index,
 			TransactionIndex: ethLog.TxIndex,

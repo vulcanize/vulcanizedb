@@ -19,7 +19,6 @@ package vat_flux
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"math/big"
@@ -36,8 +35,8 @@ func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 		}
 
 		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[1].Bytes())
-		src := common.BytesToAddress(ethLog.Topics[2].Bytes())
-		dst := common.BytesToAddress(ethLog.Topics[3].Bytes())
+		src := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
+		dst := shared.GetHexWithoutPrefix(ethLog.Topics[3].Bytes())
 		radBytes := shared.GetDataBytesAtIndex(-1, ethLog.Data)
 		rad := big.NewInt(0).SetBytes(radBytes).String()
 
@@ -52,8 +51,8 @@ func (VatFluxConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
 
 		model := VatFluxModel{
 			Ilk:              ilk,
-			Src:              src.String(),
-			Dst:              dst.String(),
+			Src:              src,
+			Dst:              dst,
 			Rad:              rad,
 			TransactionIndex: ethLog.TxIndex,
 			LogIndex:         ethLog.Index,
