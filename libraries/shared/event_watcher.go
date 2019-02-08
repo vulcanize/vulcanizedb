@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type EventWatcher struct {
@@ -74,7 +75,7 @@ func (watcher *EventWatcher) AddTransformers(initializers []shared.TransformerIn
 	watcher.Chunker.AddConfigs(configs)
 }
 
-func (watcher *EventWatcher) Execute() error {
+func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
 	if watcher.Transformers == nil {
 		return fmt.Errorf("No transformers added to watcher")
 	}
@@ -83,7 +84,7 @@ func (watcher *EventWatcher) Execute() error {
 	if err != nil {
 		return err
 	}
-	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames)
+	notCheckedSQL := shared.CreateNotCheckedSQL(checkedColumnNames, recheckHeaders)
 
 	missingHeaders, err := shared.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
@@ -107,7 +108,7 @@ func (watcher *EventWatcher) Execute() error {
 		for _, transformer := range watcher.Transformers {
 			transformerName := transformer.GetConfig().TransformerName
 			logChunk := chunkedLogs[transformerName]
-			err = transformer.Execute(logChunk, header)
+			err = transformer.Execute(logChunk, header, constants.HeaderMissing)
 			if err != nil {
 				log.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
 				return err

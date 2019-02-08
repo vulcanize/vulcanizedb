@@ -74,8 +74,61 @@ var _ = Describe("PitFileDebtCeiling LogNoteTransformer", func() {
 		}
 		transformer := initializer.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []debt_ceiling.PitFileDebtCeilingModel
+		err = db.Select(&dbResult, `SELECT what, data from maker.pit_file_debt_ceiling`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].What).To(Equal("Line"))
+		Expect(dbResult[0].Data).To(Equal("10000000.000000000000000000"))
+	})
+
+	It("rechecks pit file debt ceiling event", func() {
+		blockNumber := int64(8535578)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.PitFileDebtCeilingLabel,
+			ContractAddresses:   []string{test_data.KovanPitContractAddress},
+			ContractAbi:         test_data.KovanPitABI,
+			Topic:               test_data.KovanPitFileDebtCeilingSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &debt_ceiling.PitFileDebtCeilingConverter{},
+			Repository: &debt_ceiling.PitFileDebtCeilingRepository{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var pitFileDebtCeilingChecked []int
+		err = db.Select(&pitFileDebtCeilingChecked, `SELECT pit_file_debt_ceiling_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(pitFileDebtCeilingChecked[0]).To(Equal(2))
 
 		var dbResult []debt_ceiling.PitFileDebtCeilingModel
 		err = db.Select(&dbResult, `SELECT what, data from maker.pit_file_debt_ceiling`)

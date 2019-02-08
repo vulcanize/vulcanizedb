@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type Transformer struct {
@@ -36,7 +37,7 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) shared.Transforme
 	return transformer
 }
 
-func (transformer Transformer) Execute(logs []types.Log, header core.Header) error {
+func (transformer Transformer) Execute(logs []types.Log, header core.Header, recheckHeaders constants.TransformerExecution) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
 

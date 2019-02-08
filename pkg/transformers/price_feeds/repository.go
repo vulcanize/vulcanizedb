@@ -18,7 +18,10 @@ package price_feeds
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -43,14 +46,13 @@ func (repository PriceFeedRepository) Create(headerID int64, models []interface{
 			return fmt.Errorf("model of type %T, not %T", model, PriceFeedModel{})
 		}
 
-		_, execErr := tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, log_idx, tx_idx, raw_log)
-		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)`, priceUpdate.BlockNumber, headerID, priceUpdate.MedianizerAddress, priceUpdate.UsdValue, priceUpdate.LogIndex, priceUpdate.TransactionIndex, priceUpdate.Raw)
-		if execErr != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				log.Error("failed to rollback ", rollbackErr)
-			}
-			return execErr
+		_, err := tx.Exec(`INSERT INTO maker.price_feeds (block_number, header_id, medianizer_address, usd_value, log_idx, tx_idx, raw_log)
+		VALUES ($1, $2, $3, $4::NUMERIC, $5, $6, $7)
+		ON CONFLICT (header_id, medianizer_address, tx_idx, log_idx) DO UPDATE SET block_number = $1, usd_value = $4, raw_log = $7;`,
+			priceUpdate.BlockNumber, headerID, priceUpdate.MedianizerAddress, priceUpdate.UsdValue, priceUpdate.LogIndex, priceUpdate.TransactionIndex, priceUpdate.Raw)
+		if err != nil {
+			tx.Rollback()
+			return err
 		}
 	}
 
@@ -67,6 +69,14 @@ func (repository PriceFeedRepository) Create(headerID int64, models []interface{
 
 func (repository PriceFeedRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.PriceFeedsChecked)
+}
+
+func (repository PriceFeedRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PriceFeedsChecked)
+}
+
+func (repository PriceFeedRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PriceFeedsChecked)
 }
 
 func (repository *PriceFeedRepository) SetDB(db *postgres.DB) {

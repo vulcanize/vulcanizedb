@@ -18,7 +18,10 @@ package deal
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository DealRepository) Create(headerID int64, models []interface{}) er
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.deal (header_id, bid_id, contract_address, log_idx, tx_idx, raw_log)
-					 VALUES($1, $2, $3, $4, $5, $6)`,
+					VALUES($1, $2, $3, $4, $5, $6)
+					ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET bid_id = $2, contract_address = $3, raw_log = $6;`,
 			headerID, dealModel.BidId, dealModel.ContractAddress, dealModel.LogIndex, dealModel.TransactionIndex, dealModel.Raw,
 		)
 		if execErr != nil {
@@ -71,6 +75,14 @@ func (repository DealRepository) Create(headerID int64, models []interface{}) er
 
 func (repository DealRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.DealChecked)
+}
+
+func (repository DealRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DealChecked)
+}
+
+func (repository DealRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DealChecked)
 }
 
 func (repository *DealRepository) SetDB(db *postgres.DB) {

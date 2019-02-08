@@ -73,8 +73,59 @@ var _ = Describe("VowFlog LogNoteTransformer", func() {
 			Repository: &vow_flog.VowFlogRepository{},
 		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []vow_flog.VowFlogModel
+		err = db.Select(&dbResult, `SELECT era, log_idx, tx_idx from maker.vow_flog`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(dbResult[0].Era).To(Equal("1538558052"))
+		Expect(dbResult[0].LogIndex).To(Equal(uint(2)))
+		Expect(dbResult[0].TransactionIndex).To(Equal(uint(2)))
+	})
+
+	It("rechecks vow flog event", func() {
+		blockNumber := int64(8946819)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VowFlogLabel,
+			ContractAddresses:   []string{test_data.KovanVowContractAddress},
+			ContractAbi:         test_data.KovanVowABI,
+			Topic:               test_data.KovanVowFlogSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+		transformer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vow_flog.VowFlogConverter{},
+			Repository: &vow_flog.VowFlogRepository{},
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var vowFlogChecked []int
+		err = db.Select(&vowFlogChecked, `SELECT vow_flog_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(vowFlogChecked[0]).To(Equal(2))
 
 		var dbResult []vow_flog.VowFlogModel
 		err = db.Select(&dbResult, `SELECT era, log_idx, tx_idx from maker.vow_flog`)

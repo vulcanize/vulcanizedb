@@ -5,6 +5,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type MockTransformer struct {
@@ -15,7 +16,7 @@ type MockTransformer struct {
 	config           shared.TransformerConfig
 }
 
-func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
+func (mh *MockTransformer) Execute(logs []types.Log, header core.Header, recheckHeaders constants.TransformerExecution) error {
 	if mh.ExecuteError != nil {
 		return mh.ExecuteError
 	}

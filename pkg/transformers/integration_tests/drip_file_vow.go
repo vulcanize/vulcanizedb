@@ -24,10 +24,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/vow"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -74,7 +74,7 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []vow.DripFileVowModel
@@ -84,5 +84,50 @@ var _ = Describe("Drip File Vow LogNoteTransformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].What).To(Equal("vow"))
 		Expect(dbResult[0].Data).To(Equal("0x3728e9777B2a0a611ee0F89e00E01044ce4736d1"))
+	})
+
+	It("rechecks drip file vow event", func() {
+		blockNumber := int64(8762197)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.DripFileVowLabel,
+			ContractAddresses:   []string{test_data.KovanDripContractAddress},
+			ContractAbi:         test_data.KovanDripABI,
+			Topic:               test_data.KovanDripFileVowSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vow.DripFileVowConverter{},
+			Repository: &vow.DripFileVowRepository{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var dripfilevowChecked []int
+		err = db.Select(&dripfilevowChecked, `SELECT drip_file_vow_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(dripfilevowChecked[0]).To(Equal(2))
 	})
 })

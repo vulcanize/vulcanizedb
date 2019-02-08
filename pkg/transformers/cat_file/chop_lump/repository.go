@@ -18,7 +18,10 @@ package chop_lump
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx, log_idx, raw_log)
-			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, what = $3, data = $4, raw_log = $7;`,
 			headerID, chopLump.Ilk, chopLump.What, chopLump.Data, chopLump.TransactionIndex, chopLump.LogIndex, chopLump.Raw,
 		)
 		if execErr != nil {
@@ -71,6 +75,14 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 
 func (repository CatFileChopLumpRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFileChopLumpChecked)
+}
+
+func (repository CatFileChopLumpRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileChopLumpChecked)
+}
+
+func (repository CatFileChopLumpRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileChopLumpChecked)
 }
 
 func (repository *CatFileChopLumpRepository) SetDB(db *postgres.DB) {

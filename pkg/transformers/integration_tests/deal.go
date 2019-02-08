@@ -84,7 +84,7 @@ var _ = Describe("Deal transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []deal.DealModel
@@ -94,6 +94,34 @@ var _ = Describe("Deal transformer", func() {
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].BidId).To(Equal("6"))
 		Expect(dbResult[0].ContractAddress).To(Equal(test_data.KovanFlipperContractAddress))
+	})
+
+	It("rechecks flip deal event", func() {
+		// transaction: 0x05b5eabac2ace136f0f7e0efc61d7d42abe8e8938cc0f04fbf1a6ba545d59e58
+		flipBlockNumber := int64(8958007)
+		header, err := persistHeader(db, flipBlockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer.Config.StartingBlockNumber = flipBlockNumber
+		initializer.Config.EndingBlockNumber = flipBlockNumber
+
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, flipBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var dentChecked []int
+		err = db.Select(&dentChecked, `SELECT deal_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("persists a flop deal log event", func() {
@@ -112,7 +140,7 @@ var _ = Describe("Deal transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []deal.DealModel

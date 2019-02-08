@@ -49,6 +49,7 @@ This command expects a light sync to have been run, and the presence of header r
 }
 
 var transformerNames []string
+var recheckHeadersArg bool
 
 func syncMakerLogs() {
 	ticker := time.NewTicker(pollingInterval)
@@ -66,7 +67,11 @@ func syncMakerLogs() {
 	watcher.AddTransformers(initializers)
 
 	for range ticker.C {
-		err = watcher.Execute()
+		if recheckHeadersArg {
+			err = watcher.Execute(constants.HeaderRecheck)
+		} else {
+			err = watcher.Execute(constants.HeaderMissing)
+		}
 		if err != nil {
 			// TODO Handle watcher errors in ContinuousLogSync
 		}
@@ -125,4 +130,5 @@ func buildTransformerInitializerMap() map[string]shared2.TransformerInitializer 
 func init() {
 	rootCmd.AddCommand(continuousLogSyncCmd)
 	continuousLogSyncCmd.Flags().StringSliceVar(&transformerNames, "transformers", []string{"all"}, "transformer names to be run during this command")
+	continuousLogSyncCmd.Flags().BoolVar(&recheckHeadersArg, "recheckHeaders", false, "checks headers that are already checked for each transformer.")
 }

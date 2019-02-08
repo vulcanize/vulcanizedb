@@ -18,7 +18,10 @@ package flop_kick
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -42,7 +45,8 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.flop_kick (header_id, bid_id, lot, bid, gal, "end", tx_idx, log_idx, raw_log)
-        VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
+        VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)
+		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET bid_id = $2, lot = $3, bid = $4, gal = $5, "end" = $6, raw_log = $9;`,
 			headerID, flopKickModel.BidId, flopKickModel.Lot, flopKickModel.Bid, flopKickModel.Gal, flopKickModel.End, flopKickModel.TransactionIndex, flopKickModel.LogIndex, flopKickModel.Raw,
 		)
 		if execErr != nil {
@@ -68,6 +72,14 @@ func (repository FlopKickRepository) Create(headerID int64, models []interface{}
 
 func (repository FlopKickRepository) MarkHeaderChecked(headerId int64) error {
 	return shared.MarkHeaderChecked(headerId, repository.db, constants.FlopKickChecked)
+}
+
+func (repository FlopKickRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.FlopKickChecked)
+}
+
+func (repository FlopKickRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.FlopKickChecked)
 }
 
 func (repository *FlopKickRepository) SetDB(db *postgres.DB) {

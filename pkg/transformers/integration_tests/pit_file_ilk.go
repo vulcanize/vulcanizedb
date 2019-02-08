@@ -79,8 +79,47 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []ilk.PitFileIlkModel
+		err = db.Select(&dbResult, `SELECT ilk, what, data from maker.pit_file_ilk`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Ilk).To(Equal("0x4554480000000000000000000000000000000000000000000000000000000000"))
+		Expect(dbResult[0].What).To(Equal("spot"))
+		Expect(dbResult[0].Data).To(Equal("139.840000000000003410605131648"))
+	})
+
+	It("rechecks pit file ilk event", func() {
+		blockNumber := int64(9103223)
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var pitFileIlkChecked []int
+		err = db.Select(&pitFileIlkChecked, `SELECT pit_file_ilk_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(pitFileIlkChecked[0]).To(Equal(2))
 
 		var dbResult []ilk.PitFileIlkModel
 		err = db.Select(&dbResult, `SELECT ilk, what, data from maker.pit_file_ilk`)
@@ -105,7 +144,7 @@ var _ = Describe("PitFileIlk LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []ilk.PitFileIlkModel

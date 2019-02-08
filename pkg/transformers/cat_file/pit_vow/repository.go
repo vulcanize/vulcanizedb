@@ -18,7 +18,10 @@ package pit_vow
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,7 +48,8 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 
 		_, execErr := repository.db.Exec(
 			`INSERT into maker.cat_file_pit_vow (header_id, what, data, tx_idx, log_idx, raw_log)
-			VALUES($1, $2, $3, $4, $5, $6)`,
+			VALUES($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET what = $2, data = $3, raw_log = $6;`,
 			headerID, vow.What, vow.Data, vow.TransactionIndex, vow.LogIndex, vow.Raw,
 		)
 		if execErr != nil {
@@ -70,6 +74,14 @@ func (repository CatFilePitVowRepository) Create(headerID int64, models []interf
 
 func (repository CatFilePitVowRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFilePitVowChecked)
+}
+
+func (repository CatFilePitVowRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFilePitVowChecked)
+}
+
+func (repository CatFilePitVowRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFilePitVowChecked)
 }
 
 func (repository *CatFilePitVowRepository) SetDB(db *postgres.DB) {

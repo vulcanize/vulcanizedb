@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 type LogNoteTransformer struct {
@@ -36,7 +37,7 @@ func (transformer LogNoteTransformer) NewLogNoteTransformer(db *postgres.DB) sha
 	return transformer
 }
 
-func (transformer LogNoteTransformer) Execute(logs []types.Log, header core.Header) error {
+func (transformer LogNoteTransformer) Execute(logs []types.Log, header core.Header, recheckedHeader constants.TransformerExecution) error {
 	transformerName := transformer.Config.TransformerName
 
 	// No matching logs, mark the header as checked for this type of logs

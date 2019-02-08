@@ -73,8 +73,62 @@ var _ = Describe("VatFold Transformer", func() {
 			Repository: &vat_fold.VatFoldRepository{},
 		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResults []vat_fold.VatFoldModel
+		err = db.Select(&dbResults, `SELECT ilk, urn, rate from maker.vat_fold`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResults)).To(Equal(1))
+		dbResult := dbResults[0]
+		Expect(dbResult.Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
+		Expect(dbResult.Urn).To(Equal(common.HexToAddress("0x0000000000000000000000003728e9777b2a0a611ee0f89e00e01044ce4736d1").String()))
+		Expect(dbResult.Rate).To(Equal("0.000000000000000000000000000"))
+	})
+
+	It("rechecks vat fold event", func() {
+		blockNumber := int64(9367233)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatFoldLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatFoldSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vat_fold.VatFoldConverter{},
+			Repository: &vat_fold.VatFoldRepository{},
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var vatFoldChecked []int
+		err = db.Select(&vatFoldChecked, `SELECT vat_fold_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(vatFoldChecked[0]).To(Equal(2))
 
 		var dbResults []vat_fold.VatFoldModel
 		err = db.Select(&dbResults, `SELECT ilk, urn, rate from maker.vat_fold`)

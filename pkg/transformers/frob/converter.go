@@ -19,8 +19,6 @@ package frob
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -32,7 +30,6 @@ type FrobConverter struct{}
 
 func (FrobConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
 	var entities []interface{}
-	log.Info("blah")
 	for _, ethLog := range ethLogs {
 		entity := FrobEntity{}
 		address := ethLog.Address

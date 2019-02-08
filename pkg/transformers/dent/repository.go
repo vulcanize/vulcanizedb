@@ -18,7 +18,10 @@ package dent
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -55,31 +58,34 @@ func (repository DentRepository) Create(headerID int64, models []interface{}) er
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.dent (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
-			VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET bid_Id = $2, lot = $3, bid = $4, guy = $5, tic = $6, raw_log = $9;`,
 			headerID, dent.BidId, dent.Lot, dent.Bid, dent.Guy, tic, dent.LogIndex, dent.TransactionIndex, dent.Raw,
 		)
 		if execErr != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				log.Error("failed to rollback ", rollbackErr)
-			}
+			tx.Rollback()
 			return execErr
 		}
 	}
 
-	checkHeaderErr := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DentChecked)
-	if checkHeaderErr != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			log.Error("failed to rollback ", rollbackErr)
-		}
-		return checkHeaderErr
+	err := shared.MarkHeaderCheckedInTransaction(headerID, tx, constants.DentChecked)
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 	return tx.Commit()
 }
 
 func (repository DentRepository) MarkHeaderChecked(headerId int64) error {
 	return shared.MarkHeaderChecked(headerId, repository.db, constants.DentChecked)
+}
+
+func (repository DentRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DentChecked)
+}
+
+func (repository DentRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DentChecked)
 }
 
 func (repository *DentRepository) SetDB(db *postgres.DB) {

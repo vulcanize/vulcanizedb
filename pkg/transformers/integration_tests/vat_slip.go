@@ -57,7 +57,7 @@ var _ = Describe("Vat slip transformer", func() {
 			Repository: &vat_slip.VatSlipRepository{},
 		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		var headerID int64
@@ -74,5 +74,63 @@ var _ = Describe("Vat slip transformer", func() {
 		err = db.Get(&headerChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(headerChecked).To(BeTrue())
+	})
+
+	It("rechecks vat slip event", func() {
+		blockNumber := int64(8953655)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatSlipLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatSlipSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vat_slip.VatSlipConverter{},
+			Repository: &vat_slip.VatSlipRepository{},
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var vatSlipChecked []int
+		err = db.Select(&vatSlipChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(vatSlipChecked[0]).To(Equal(2))
+
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+		var model vat_slip.VatSlipModel
+		err = db.Get(&model, `SELECT ilk, guy, rad, tx_idx FROM maker.vat_slip WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		Expect(model.Guy).To(Equal("0xDA15dCE70ab462E66779f23ee14F21d993789eE3"))
+		Expect(model.Rad).To(Equal("100000000000000000000000000000000000000000000000"))
+		Expect(model.TransactionIndex).To(Equal(uint(0)))
+		var headerChecked int
+		err = db.Get(&headerChecked, `SELECT vat_slip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(headerChecked).To(Equal(2))
 	})
 })

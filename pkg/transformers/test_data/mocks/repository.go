@@ -3,6 +3,7 @@ package mocks
 import (
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -11,6 +12,9 @@ type MockRepository struct {
 	markHeaderCheckedError           error
 	MarkHeaderCheckedPassedHeaderIDs []int64
 	CreatedHeaderIds                 []int64
+	missingHeaders                   []core.Header
+	allHeaders                       []core.Header
+	missingHeadersError              error
 	PassedStartingBlockNumber        int64
 	PassedEndingBlockNumber          int64
 	PassedHeaderID                   int64
@@ -33,8 +37,32 @@ func (repository *MockRepository) MarkHeaderChecked(headerID int64) error {
 	return repository.markHeaderCheckedError
 }
 
+func (repository *MockRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	repository.PassedStartingBlockNumber = startingBlockNumber
+	repository.PassedEndingBlockNumber = endingBlockNumber
+	return repository.missingHeaders, repository.missingHeadersError
+}
+
+func (repository *MockRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	repository.PassedStartingBlockNumber = startingBlockNumber
+	repository.PassedEndingBlockNumber = endingBlockNumber
+	return repository.allHeaders, nil
+}
+
 func (repository *MockRepository) SetDB(db *postgres.DB) {
 	repository.SetDbCalled = true
+}
+
+func (repository *MockRepository) SetMissingHeadersError(e error) {
+	repository.missingHeadersError = e
+}
+
+func (repository *MockRepository) SetAllHeaders(headers []core.Header) {
+	repository.allHeaders = headers
+}
+
+func (repository *MockRepository) SetMissingHeaders(headers []core.Header) {
+	repository.missingHeaders = headers
 }
 
 func (repository *MockRepository) SetMarkHeaderCheckedError(e error) {

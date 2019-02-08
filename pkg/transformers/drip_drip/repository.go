@@ -18,7 +18,10 @@ package drip_drip
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,7 +48,8 @@ func (repository DripDripRepository) Create(headerID int64, models []interface{}
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.drip_drip (header_id, ilk, log_idx, tx_idx, raw_log)
-        VALUES($1, $2, $3, $4, $5)`,
+        			VALUES($1, $2, $3, $4, $5)
+					ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk= $2, raw_log = $5;`,
 			headerID, dripDrip.Ilk, dripDrip.LogIndex, dripDrip.TransactionIndex, dripDrip.Raw,
 		)
 		if execErr != nil {
@@ -70,6 +74,14 @@ func (repository DripDripRepository) Create(headerID int64, models []interface{}
 
 func (repository DripDripRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.DripDripChecked)
+}
+
+func (repository DripDripRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DripDripChecked)
+}
+
+func (repository DripDripRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DripDripChecked)
 }
 
 func (repository *DripDripRepository) SetDB(db *postgres.DB) {

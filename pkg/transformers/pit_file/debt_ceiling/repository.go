@@ -18,7 +18,10 @@ package debt_ceiling
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.pit_file_debt_ceiling (header_id, what, data, log_idx, tx_idx, raw_log)
-        VALUES($1, $2, $3::NUMERIC, $4, $5, $6)`,
+        VALUES($1, $2, $3::NUMERIC, $4, $5, $6)
+		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET what = $2, data = $3, raw_log = $6;`,
 			headerID, pitFileDC.What, pitFileDC.Data, pitFileDC.LogIndex, pitFileDC.TransactionIndex, pitFileDC.Raw,
 		)
 
@@ -73,6 +77,14 @@ func (repository PitFileDebtCeilingRepository) Create(headerID int64, models []i
 
 func (repository PitFileDebtCeilingRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.PitFileDebtCeilingChecked)
+}
+
+func (repository PitFileDebtCeilingRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PitFileDebtCeilingChecked)
+}
+
+func (repository PitFileDebtCeilingRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.PitFileDebtCeilingChecked)
 }
 
 func (repository *PitFileDebtCeilingRepository) SetDB(db *postgres.DB) {
