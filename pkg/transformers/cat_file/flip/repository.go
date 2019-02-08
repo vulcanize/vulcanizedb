@@ -18,7 +18,10 @@ package flip
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,7 +48,8 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 
 		_, execErr := repository.db.Exec(
 			`INSERT into maker.cat_file_flip (header_id, ilk, what, flip, tx_idx, log_idx, raw_log)
-			VALUES($1, $2, $3, $4, $5, $6, $7)`,
+			VALUES($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, what = $3, flip = $4, raw_log = $7;`,
 			headerID, flip.Ilk, flip.What, flip.Flip, flip.TransactionIndex, flip.LogIndex, flip.Raw,
 		)
 		if execErr != nil {
@@ -70,6 +74,14 @@ func (repository CatFileFlipRepository) Create(headerID int64, models []interfac
 
 func (repository CatFileFlipRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.CatFileFlipChecked)
+}
+
+func (repository CatFileFlipRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileFlipChecked)
+}
+
+func (repository CatFileFlipRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.CatFileFlipChecked)
 }
 
 func (repository *CatFileFlipRepository) SetDB(db *postgres.DB) {

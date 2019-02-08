@@ -91,7 +91,7 @@ var _ = Describe("FlipKick Transformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flip_kick.FlipKickModel
@@ -104,5 +104,56 @@ var _ = Describe("FlipKick Transformer", func() {
 		Expect(dbResult[0].End.Equal(time.Unix(1538816904, 0))).To(BeTrue())
 		Expect(dbResult[0].Gal).To(Equal("0x3728e9777B2a0a611ee0F89e00E01044ce4736d1"))
 		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
+	})
+
+	It("rechecks flip kick event", func() {
+		blockNumber := int64(8956476)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.FlipKickLabel,
+			ContractAddresses:   []string{test_data.KovanFlipperContractAddress},
+			ContractAbi:         test_data.KovanFlipperABI,
+			Topic:               test_data.KovanFlipKickSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err := getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+		db := test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.Transformer{
+			Config:     config,
+			Converter:  &flip_kick.FlipKickConverter{},
+			Repository: &flip_kick.FlipKickRepository{},
+		}.NewTransformer(db)
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var flipkickChecked []int
+		err = db.Select(&flipkickChecked, `SELECT flip_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(flipkickChecked[0]).To(Equal(2))
 	})
 })

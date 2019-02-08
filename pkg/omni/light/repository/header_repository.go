@@ -61,7 +61,7 @@ func (r *headerRepository) AddCheckColumn(id string) error {
 	}
 
 	pgStr := "ALTER TABLE public.checked_headers ADD COLUMN IF NOT EXISTS "
-	pgStr = pgStr + id + " BOOLEAN NOT NULL DEFAULT FALSE"
+	pgStr = pgStr + id + " INTEGER NOT NULL DEFAULT 0"
 	_, err := r.db.Exec(pgStr)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (r *headerRepository) AddCheckColumns(ids []string) error {
 	for _, id := range ids {
 		_, ok := r.columns.Get(id)
 		if !ok {
-			baseQuery += " ADD COLUMN IF NOT EXISTS " + id + " BOOLEAN NOT NULL DEFAULT FALSE,"
+			baseQuery += " ADD COLUMN IF NOT EXISTS " + id + " INTEGER NOT NULL DEFAULT 0,"
 			input = append(input, id)
 		}
 	}
@@ -100,7 +100,7 @@ func (r *headerRepository) MarkHeaderChecked(headerID int64, id string) error {
 	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, `+id+`)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO
-			UPDATE SET `+id+` = $2`, headerID, true)
+			UPDATE SET `+id+` = checked_headers.`+id+` + 1`, headerID, 1)
 
 	return err
 }
@@ -112,11 +112,11 @@ func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string)
 	}
 	pgStr = pgStr[:len(pgStr)-2] + ") VALUES ($1, "
 	for i := 0; i < len(ids); i++ {
-		pgStr += "true, "
+		pgStr += "1, "
 	}
 	pgStr = pgStr[:len(pgStr)-2] + ") ON CONFLICT (header_id) DO UPDATE SET "
 	for _, id := range ids {
-		pgStr += fmt.Sprintf("%s = true, ", id)
+		pgStr += id + `= checked_headers.` + id + ` + 1, `
 	}
 	pgStr = pgStr[:len(pgStr)-2]
 	_, err := r.db.Exec(pgStr, headerID)
@@ -137,11 +137,11 @@ func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids [
 		}
 		pgStr = pgStr[:len(pgStr)-2] + ") VALUES ($1, "
 		for i := 0; i < len(ids); i++ {
-			pgStr += "true, "
+			pgStr += "1, "
 		}
 		pgStr = pgStr[:len(pgStr)-2] + ") ON CONFLICT (header_id) DO UPDATE SET "
 		for _, id := range ids {
-			pgStr += fmt.Sprintf("%s = true, ", id)
+			pgStr += fmt.Sprintf("%s = checked_headers.%s + 1, ", id, id)
 		}
 		pgStr = pgStr[:len(pgStr)-2]
 		_, err = tx.Exec(pgStr, header.Id)
@@ -162,7 +162,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 	if endingBlockNumber == -1 {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE (header_id ISNULL OR ` + id + ` IS FALSE)
+				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
 				AND headers.eth_node_fingerprint = $2
 				ORDER BY headers.block_number`
@@ -170,7 +170,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 	} else {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE (header_id ISNULL OR ` + id + ` IS FALSE)
+				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
 				AND headers.block_number <= $2
 				AND headers.eth_node_fingerprint = $3
@@ -190,7 +190,7 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 				  LEFT JOIN checked_headers on headers.id = header_id
 				  WHERE (header_id ISNULL`
 	for _, id := range ids {
-		baseQuery += ` OR ` + id + ` IS FALSE`
+		baseQuery += ` OR checked_headers.` + id + `= 0`
 	}
 
 	if endingBlockNumber == -1 {
@@ -220,11 +220,11 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 				  LEFT JOIN checked_headers on headers.id = header_id
 				  WHERE (header_id IS NOT NULL`
 	for _, id := range eventIds {
-		baseQuery += ` AND ` + id + ` IS TRUE`
+		baseQuery += ` AND ` + id + `!=0`
 	}
 	baseQuery += `) AND (`
 	for _, id := range methodIds {
-		baseQuery += id + ` IS FALSE AND `
+		baseQuery += id + ` =0 AND `
 	}
 	baseQuery = baseQuery[:len(baseQuery)-5] + `) `
 
@@ -254,6 +254,6 @@ func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, eventID string) 
 	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+eventID+`)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO
-			UPDATE SET `+eventID+` = $2`, headerID, true)
+			UPDATE SET `+eventID+` = checked_headers.`+eventID+` + 1`, headerID, 1)
 	return err
 }

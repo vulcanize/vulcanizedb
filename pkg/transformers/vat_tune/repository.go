@@ -2,7 +2,10 @@ package vat_tune
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -29,7 +32,8 @@ func (repository VatTuneRepository) Create(headerID int64, models []interface{})
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.vat_tune (header_id, ilk, urn, v, w, dink, dart, tx_idx, log_idx, raw_log)
-	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)`,
+	   VALUES($1, $2, $3, $4, $5, $6::NUMERIC, $7::NUMERIC, $8, $9, $10)
+		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, urn = $3, v = $4, w = $5, dink = $6, dart = $7, raw_log = $10;`,
 			headerID, vatTune.Ilk, vatTune.Urn, vatTune.V, vatTune.W, vatTune.Dink, vatTune.Dart, vatTune.TransactionIndex, vatTune.LogIndex, vatTune.Raw,
 		)
 		if execErr != nil {
@@ -54,6 +58,14 @@ func (repository VatTuneRepository) Create(headerID int64, models []interface{})
 
 func (repository VatTuneRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatTuneChecked)
+}
+
+func (repository VatTuneRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatTuneChecked)
+}
+
+func (repository VatTuneRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatTuneChecked)
 }
 
 func (repository *VatTuneRepository) SetDB(db *postgres.DB) {

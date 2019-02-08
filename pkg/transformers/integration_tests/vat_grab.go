@@ -67,8 +67,76 @@ var _ = Describe("Vat Grab Transformer", func() {
 			Repository: &vat_grab.VatGrabRepository{},
 		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []vat_grab.VatGrabModel
+		err = db.Select(&dbResult, `SELECT ilk, urn, v, w, dink, dart from maker.vat_grab`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
+		Expect(dbResult[0].Urn).To(Equal("0x6a3AE20C315E845B2E398e68EfFe39139eC6060C"))
+		Expect(dbResult[0].V).To(Equal("0x2F34f22a00eE4b7a8F8BBC4eAee1658774c624e0")) //cat contract address
+		Expect(dbResult[0].W).To(Equal("0x3728e9777B2a0a611ee0F89e00E01044ce4736d1"))
+		expectedDink := new(big.Int)
+		expectedDink.SetString("115792089237316195423570985008687907853269984665640564039455584007913129639936", 10)
+		Expect(dbResult[0].Dink).To(Equal(expectedDink.String()))
+		expectedDart := new(big.Int)
+		expectedDart.SetString("115792089237316195423570985008687907853269984665640564039441803007913129639936", 10)
+		Expect(dbResult[0].Dart).To(Equal(expectedDart.String()))
+		Expect(dbResult[0].TransactionIndex).To(Equal(uint(0)))
+	})
+
+	It("rechecks vat grab event", func() {
+		blockNumber := int64(8958230)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatGrabLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatGrabSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err := getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+
+		db := test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+		transformer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vat_grab.VatGrabConverter{},
+			Repository: &vat_grab.VatGrabRepository{},
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var vatGrabChecked []int
+		err = db.Select(&vatGrabChecked, `SELECT vat_grab_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(vatGrabChecked[0]).To(Equal(2))
 
 		var dbResult []vat_grab.VatGrabModel
 		err = db.Select(&dbResult, `SELECT ilk, urn, v, w, dink, dart from maker.vat_grab`)

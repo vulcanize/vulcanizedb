@@ -86,12 +86,53 @@ var _ = Describe("FlopKick Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flop_kick.Model
 		err = db.Select(&dbResult, `SELECT bid, bid_id, "end", gal, lot FROM maker.flop_kick`)
 		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Bid).To(Equal("0"))
+		Expect(dbResult[0].BidId).To(Equal("1"))
+		Expect(dbResult[0].End.Equal(time.Unix(1536726768, 0))).To(BeTrue())
+		Expect(dbResult[0].Gal).To(Equal("0x9B870D55BaAEa9119dBFa71A92c5E26E79C4726d"))
+		// this very large number appears to be derived from the data including: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+		Expect(dbResult[0].Lot).To(Equal("115792089237316195423570985008687907853269984665640564039457584007913129639935"))
+	})
+
+	It("rechecks flop kick event", func() {
+		blockNumber := int64(8672119)
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var dbResult []flop_kick.Model
+		err = db.Select(&dbResult, `SELECT bid, bid_id, "end", gal, lot FROM maker.flop_kick`)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var flopKickChecked []int
+		err = db.Select(&flopKickChecked, `SELECT flop_kick_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(flopKickChecked[0]).To(Equal(2))
 
 		Expect(len(dbResult)).To(Equal(1))
 		Expect(dbResult[0].Bid).To(Equal("0"))
@@ -114,7 +155,7 @@ var _ = Describe("FlopKick Transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flop_kick.Model

@@ -75,9 +75,48 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
+		var model price_feeds.PriceFeedModel
+		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.UsdValue).To(Equal("207.314891143000011198"))
+		Expect(model.MedianizerAddress).To(Equal(addresses[0]))
+	})
+
+	It("rechecks price feed event", func() {
+		blockNumber := int64(8763054)
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+		addresses := []string{test_data.KovanPipContractAddress}
+		initializer.Config.ContractAddresses = addresses
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(addresses),
+			topics,
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var priceFeedChecked []int
+		err = db.Select(&priceFeedChecked, `SELECT price_feeds_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(priceFeedChecked[0]).To(Equal(2))
+
 		var model price_feeds.PriceFeedModel
 		err = db.Get(&model, `SELECT block_number, medianizer_address, usd_value, tx_idx, raw_log FROM maker.price_feeds WHERE block_number = $1`, initializer.Config.StartingBlockNumber)
 		Expect(err).NotTo(HaveOccurred())
@@ -101,7 +140,7 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		var model price_feeds.PriceFeedModel
@@ -127,7 +166,7 @@ var _ = Describe("Price feeds transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		var model price_feeds.PriceFeedModel

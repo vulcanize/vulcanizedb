@@ -18,7 +18,10 @@ package tend
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -55,7 +58,8 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.tend (header_id, bid_id, lot, bid, guy, tic, log_idx, tx_idx, raw_log)
-			VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)`,
+			VALUES($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6, $7, $8, $9)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET bid_id = $2, lot = $3, bid = $4, guy = $5, tic = $6, raw_log = $9;`,
 			headerID, tend.BidId, tend.Lot, tend.Bid, tend.Guy, tic, tend.LogIndex, tend.TransactionIndex, tend.Raw,
 		)
 
@@ -81,6 +85,14 @@ func (repository TendRepository) Create(headerID int64, models []interface{}) er
 
 func (repository TendRepository) MarkHeaderChecked(headerId int64) error {
 	return shared.MarkHeaderChecked(headerId, repository.db, constants.TendChecked)
+}
+
+func (repository TendRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.TendChecked)
+}
+
+func (repository TendRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.TendChecked)
 }
 
 func (repository *TendRepository) SetDB(db *postgres.DB) {

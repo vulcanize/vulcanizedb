@@ -2,7 +2,10 @@ package vat_toll
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -54,6 +57,14 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 
 func (repository VatTollRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatTollChecked)
+}
+
+func (repository VatTollRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatTollChecked)
+}
+
+func (repository VatTollRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatTollChecked)
 }
 
 func (repository *VatTollRepository) SetDB(db *postgres.DB) {

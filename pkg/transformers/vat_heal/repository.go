@@ -20,6 +20,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -50,7 +51,8 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 		}
 
 		_, execErr := tx.Exec(`INSERT INTO maker.vat_heal (header_id, urn, v, rad, log_idx, tx_idx, raw_log)
-		VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
+		VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)
+		ON CONFlICT (header_id, tx_idx, log_idx) DO UPDATE SET urn = $2, v = $3, rad = $4, raw_log = $7;`,
 			headerID, vatHeal.Urn, vatHeal.V, vatHeal.Rad, vatHeal.LogIndex, vatHeal.TransactionIndex, vatHeal.Raw)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
@@ -70,6 +72,14 @@ func (repository VatHealRepository) Create(headerID int64, models []interface{})
 		return checkHeaderErr
 	}
 	return tx.Commit()
+}
+
+func (repository VatHealRepository) MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlock, endingBlock, repository.db, constants.VatHealChecked)
+}
+
+func (repository VatHealRepository) RecheckHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlock, endingBlock, repository.db, constants.VatHealChecked)
 }
 
 func (repository VatHealRepository) MarkHeaderChecked(headerId int64) error {

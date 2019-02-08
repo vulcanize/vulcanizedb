@@ -18,7 +18,10 @@ package vow
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository DripFileVowRepository) Create(headerID int64, models []interfac
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.drip_file_vow (header_id, what, data, log_idx, tx_idx, raw_log)
-        	VALUES($1, $2, $3, $4, $5, $6)`,
+        			VALUES($1, $2, $3, $4, $5, $6)
+					ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET what = $2, data = $3, raw_log = $6;`,
 			headerID, vow.What, vow.Data, vow.LogIndex, vow.TransactionIndex, vow.Raw,
 		)
 		if execErr != nil {
@@ -72,6 +76,14 @@ func (repository DripFileVowRepository) Create(headerID int64, models []interfac
 
 func (repository DripFileVowRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.DripFileVowChecked)
+}
+
+func (repository DripFileVowRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DripFileVowChecked)
+}
+
+func (repository DripFileVowRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.DripFileVowChecked)
 }
 
 func (repository *DripFileVowRepository) SetDB(db *postgres.DB) {

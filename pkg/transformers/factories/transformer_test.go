@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/mocks"
 	"math/rand"
@@ -57,14 +58,14 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		err := transformer.Execute([]types.Log{}, headerOne)
+		err := transformer.Execute([]types.Log{}, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
-		err := transformer.Execute([]types.Log{}, headerOne)
+		err := transformer.Execute([]types.Log{}, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ToEntitiesCalledCounter).To(Equal(0))
@@ -73,7 +74,7 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("does not call repository.MarkCheckedHeader when there are logs", func() {
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		repository.AssertMarkHeaderCheckedNotCalled()
@@ -82,14 +83,14 @@ var _ = Describe("Transformer", func() {
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
-		err := transformer.Execute([]types.Log{}, headerOne)
+		err := transformer.Execute([]types.Log{}, headerOne, constants.HeaderMissing)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("converts an eth log to an entity", func() {
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ContractAbi).To(Equal(config.ContractAbi))
@@ -99,7 +100,7 @@ var _ = Describe("Transformer", func() {
 	It("returns an error if converter fails", func() {
 		converter.ToEntitiesError = fakes.FakeError
 
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -108,7 +109,7 @@ var _ = Describe("Transformer", func() {
 	It("converts an entity to a model", func() {
 		converter.EntitiesToReturn = []interface{}{test_data.GenericEntity{}}
 
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.EntitiesToConvert[0]).To(Equal(test_data.GenericEntity{}))
@@ -118,7 +119,7 @@ var _ = Describe("Transformer", func() {
 		converter.EntitiesToReturn = []interface{}{test_data.GenericEntity{}}
 		converter.ToModelsError = fakes.FakeError
 
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -127,7 +128,7 @@ var _ = Describe("Transformer", func() {
 	It("persists the record", func() {
 		converter.ModelsToReturn = []interface{}{test_data.GenericModel{}}
 
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(headerOne.Id))
@@ -136,7 +137,7 @@ var _ = Describe("Transformer", func() {
 
 	It("returns error if persisting the record fails", func() {
 		repository.SetCreateError(fakes.FakeError)
-		err := transformer.Execute(logs, headerOne)
+		err := transformer.Execute(logs, headerOne, constants.HeaderMissing)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))

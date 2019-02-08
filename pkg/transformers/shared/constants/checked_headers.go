@@ -1,5 +1,13 @@
 package constants
 
+type TransformerExecution bool
+
+const (
+	HeaderRecheck    TransformerExecution = true
+	HeaderMissing    TransformerExecution = false
+	RecheckHeaderCap                      = "4"
+)
+
 var (
 	BiteChecked               = "bite_checked"
 	CatFileChopLumpChecked    = "cat_file_chop_lump_checked"

@@ -39,6 +39,7 @@ type CreateBehaviorInputs struct {
 	CheckedHeaderColumnName  string
 	LogEventTableName        string
 	TestModel                interface{}
+	RecheckTestModel         interface{}
 	ModelWithDifferentLogIdx interface{}
 	Repository               factories.Repository
 }
@@ -70,11 +71,11 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 			err = repository.Create(headerID, []interface{}{logEventModel})
 
 			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
+			var headerChecked int
 			query := `SELECT ` + checkedHeaderColumn + ` FROM public.checked_headers WHERE header_id = $1`
 			err = db.Get(&headerChecked, query, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
+			Expect(headerChecked).To(Equal(1))
 		})
 
 		It("updates the header to checked if checked headers row already exists", func() {
@@ -84,21 +85,11 @@ func SharedRepositoryCreateBehaviors(inputs *CreateBehaviorInputs) {
 			err = repository.Create(headerID, []interface{}{logEventModel})
 
 			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
+			var headerChecked int
 			query := `SELECT ` + checkedHeaderColumn + ` FROM public.checked_headers WHERE header_id = $1`
 			err = db.Get(&headerChecked, query, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
-		})
-
-		It("returns an error if inserting duplicate log events", func() {
-			err = repository.Create(headerID, []interface{}{logEventModel})
-			Expect(err).NotTo(HaveOccurred())
-
-			err = repository.Create(headerID, []interface{}{logEventModel})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("pq: duplicate key value violates unique constraint"))
+			Expect(headerChecked).To(Equal(1))
 		})
 
 		It("allows for multiple log events of the same type in one transaction if they have different log indexes", func() {
@@ -147,11 +138,11 @@ func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehav
 			err = repository.MarkHeaderChecked(headerId)
 
 			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
+			var headerChecked int
 			query := `SELECT ` + checkedHeaderColumn + ` FROM public.checked_headers WHERE header_id = $1`
 			err = db.Get(&headerChecked, query, headerId)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
+			Expect(headerChecked).To(Equal(1))
 		})
 
 		It("updates row when headerID already exists", func() {
@@ -160,11 +151,11 @@ func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehav
 			err = repository.MarkHeaderChecked(headerId)
 
 			Expect(err).NotTo(HaveOccurred())
-			var headerChecked bool
+			var headerChecked int
 			query := `SELECT ` + checkedHeaderColumn + ` FROM public.checked_headers WHERE header_id = $1`
 			err = db.Get(&headerChecked, query, headerId)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(headerChecked).To(BeTrue())
+			Expect(headerChecked).To(Equal(1))
 		})
 
 		It("returns an error if upserting a record fails", func() {
@@ -172,6 +163,18 @@ func SharedRepositoryMarkHeaderCheckedBehaviors(inputs *MarkedHeaderCheckedBehav
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("violates foreign key constraint"))
+		})
+
+		It("increments header checked", func() {
+			err = repository.MarkHeaderChecked(headerId)
+			err = repository.MarkHeaderChecked(headerId)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerChecked int
+			query := `SELECT ` + checkedHeaderColumn + ` FROM public.checked_headers WHERE header_id = $1`
+			err = db.Get(&headerChecked, query, headerId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(headerChecked).To(Equal(2))
 		})
 	})
 }

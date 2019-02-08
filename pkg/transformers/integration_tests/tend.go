@@ -81,11 +81,57 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
 		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot FROM maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResult)).To(Equal(1))
+		Expect(dbResult[0].Bid).To(Equal("4000"))
+		Expect(dbResult[0].BidId).To(Equal("3"))
+		Expect(dbResult[0].Guy).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+		Expect(dbResult[0].Lot).To(Equal("1000000000000000000"))
+
+		var dbTic int64
+		err = db.Get(&dbTic, `SELECT tic FROM maker.tend`)
+		Expect(err).NotTo(HaveOccurred())
+
+		actualTic := 1538490276 + constants.TTL
+		Expect(dbTic).To(Equal(actualTic))
+	})
+
+	It("rechecks tend event", func() {
+		blockNumber := int64(8935601)
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var tendChecked []int
+		err = db.Select(&tendChecked, `SELECT tend_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tendChecked[0]).To(Equal(2))
+
+		var dbResult []tend.TendModel
+		err = db.Select(&dbResult, `SELECT bid, bid_id, guy, lot from maker.tend where header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
@@ -114,7 +160,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel
@@ -147,7 +193,7 @@ var _ = Describe("Tend LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer := initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []tend.TendModel

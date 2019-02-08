@@ -17,6 +17,7 @@
 package shared_test
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -25,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"math/rand"
 )
@@ -50,7 +52,7 @@ var _ = Describe("Repository utilities", func() {
 
 			columnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
-			notCheckedSQL = shared.CreateNotCheckedSQL(columnNames)
+			notCheckedSQL = shared.CreateNotCheckedSQL(columnNames, constants.HeaderMissing)
 
 			startingBlockNumber = rand.Int63()
 			eventSpecificBlockNumber = startingBlockNumber + 1
@@ -118,21 +120,28 @@ var _ = Describe("Repository utilities", func() {
 	Describe("CreateNotCheckedSQL", func() {
 		It("generates a correct SQL string for one column", func() {
 			columns := []string{"columnA"}
-			expected := "NOT (columnA)"
-			actual := shared.CreateNotCheckedSQL(columns)
+			expected := "NOT (columnA!=0)"
+			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderMissing)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("generates a correct SQL string for several columns", func() {
 			columns := []string{"columnA", "columnB"}
-			expected := "NOT (columnA AND columnB)"
-			actual := shared.CreateNotCheckedSQL(columns)
+			expected := "NOT (columnA!=0 AND columnB!=0)"
+			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderMissing)
 			Expect(actual).To(Equal(expected))
 		})
 
 		It("defaults to FALSE when there are no columns", func() {
 			expected := "FALSE"
-			actual := shared.CreateNotCheckedSQL([]string{})
+			actual := shared.CreateNotCheckedSQL([]string{}, constants.HeaderMissing)
+			Expect(actual).To(Equal(expected))
+		})
+
+		It("generates a correct SQL string for rechecking headers", func() {
+			columns := []string{"columnA", "columnB"}
+			expected := fmt.Sprintf("NOT (columnA>=%s AND columnB>=%s)", constants.RecheckHeaderCap, constants.RecheckHeaderCap)
+			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderRecheck)
 			Expect(actual).To(Equal(expected))
 		})
 	})

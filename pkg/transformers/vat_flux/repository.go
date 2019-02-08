@@ -18,7 +18,10 @@ package vat_flux
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -45,7 +48,8 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 		}
 
 		_, execErr := tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, log_idx, raw_log)
-		VALUES($1, $2, $3, $4, $5::NUMERIC, $6, $7, $8)`,
+		VALUES($1, $2, $3, $4, $5::NUMERIC, $6, $7, $8)
+		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, dst = $3, src = $4, rad = $5, raw_log = $8;`,
 			headerID, vatFlux.Ilk, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
@@ -70,6 +74,14 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 
 func (repository VatFluxRepository) MarkHeaderChecked(headerId int64) error {
 	return shared.MarkHeaderChecked(headerId, repository.db, constants.VatFluxChecked)
+}
+
+func (repository VatFluxRepository) MissingHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlock, endingBlock, repository.db, constants.VatFluxChecked)
+}
+
+func (repository VatFluxRepository) RecheckHeaders(startingBlock, endingBlock int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlock, endingBlock, repository.db, constants.VatFluxChecked)
 }
 
 func (repository *VatFluxRepository) SetDB(db *postgres.DB) {

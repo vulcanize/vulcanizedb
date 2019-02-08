@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -76,7 +77,7 @@ var _ = Describe("DripDrip Transformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResults []drip_drip.DripDripModel
@@ -86,5 +87,42 @@ var _ = Describe("DripDrip Transformer", func() {
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
 		Expect(dbResult.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+	})
+
+	It("rechecks drip drip event", func() {
+		blockNumber := int64(8934775)
+		config.StartingBlockNumber = blockNumber
+		config.EndingBlockNumber = blockNumber
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &drip_drip.DripDripConverter{},
+			Repository: &drip_drip.DripDripRepository{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var dripdripChecked []int
+		err = db.Select(&dripdripChecked, `SELECT drip_drip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })

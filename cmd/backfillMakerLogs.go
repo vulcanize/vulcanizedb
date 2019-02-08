@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
 // backfillMakerLogsCmd represents the backfillMakerLogs command
@@ -50,7 +51,7 @@ func backfillMakerLogs() {
 	watcher := shared.NewEventWatcher(db, blockChain)
 
 	watcher.AddTransformers(transformers.TransformerInitializers())
-	err = watcher.Execute()
+	err = watcher.Execute(constants.HeaderMissing)
 	if err != nil {
 		// TODO Handle watcher error in backfillMakerLogs
 	}

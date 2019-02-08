@@ -67,7 +67,7 @@ var _ = Describe("Dent transformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		transformer = initializer.NewLogNoteTransformer(db)
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []dent.DentModel
@@ -86,6 +86,35 @@ var _ = Describe("Dent transformer", func() {
 
 		actualTic := 1538637780 + constants.TTL
 		Expect(dbTic).To(Equal(actualTic))
+	})
+
+	It("rechecks header for flop dent log event", func() {
+		blockNumber := int64(8955613)
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		initializer.Config.StartingBlockNumber = blockNumber
+		initializer.Config.EndingBlockNumber = blockNumber
+
+		logs, err := fetcher.FetchLogs(addresses, topics, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer = initializer.NewLogNoteTransformer(db)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var dentChecked []int
+		err = db.Select(&dentChecked, `SELECT dent_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(dentChecked[0]).To(Equal(2))
 	})
 
 	It("persists a flip dent log event", func() {

@@ -18,7 +18,10 @@ package vat_init
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 
 		_, execErr := tx.Exec(
 			`INSERT INTO maker.vat_init (header_id, ilk, log_idx, tx_idx, raw_log)
-			VALUES($1, $2, $3, $4, $5)`,
+			VALUES($1, $2, $3, $4, $5)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, raw_log = $5;`,
 			headerID, vatInit.Ilk, vatInit.LogIndex, vatInit.TransactionIndex, vatInit.Raw,
 		)
 		if execErr != nil {
@@ -72,6 +76,14 @@ func (repository VatInitRepository) Create(headerID int64, models []interface{})
 
 func (repository VatInitRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VatInitChecked)
+}
+
+func (repository VatInitRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatInitChecked)
+}
+
+func (repository VatInitRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VatInitChecked)
 }
 
 func (repository *VatInitRepository) SetDB(db *postgres.DB) {

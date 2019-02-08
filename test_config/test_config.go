@@ -55,6 +55,7 @@ func setTestConfig() {
 	hn := TestConfig.GetString("database.hostname")
 	port := TestConfig.GetInt("database.port")
 	name := TestConfig.GetString("database.name")
+
 	DBConfig = config.Database{
 		Hostname: hn,
 		Name:     name,

@@ -87,7 +87,7 @@ var _ = Describe("Cat File transformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []chop_lump.CatFileChopLumpModel
@@ -106,6 +106,51 @@ var _ = Describe("Cat File transformer", func() {
 		Expect(dbResult[1].What).To(Equal("chop"))
 		Expect(dbResult[1].Data).To(Equal("1.000000000000000000000000000"))
 		Expect(dbResult[1].LogIndex).To(Equal(uint(4)))
+	})
+
+	It("rechecks header for chop lump event", func() {
+		// transaction: 0x98574bfba4d05c3875be10d2376e678d005dbebe9a4520363407508fd21f4014
+		chopLumpBlockNumber := int64(8762253)
+		header, err := persistHeader(db, chopLumpBlockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		config := shared.TransformerConfig{
+			TransformerName:     constants.CatFileChopLumpLabel,
+			ContractAddresses:   []string{test_data.KovanCatContractAddress},
+			ContractAbi:         test_data.KovanCatABI,
+			Topic:               test_data.KovanCatFileChopLumpSignature,
+			StartingBlockNumber: chopLumpBlockNumber,
+			EndingBlockNumber:   chopLumpBlockNumber,
+		}
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &chop_lump.CatFileChopLumpConverter{},
+			Repository: &chop_lump.CatFileChopLumpRepository{},
+		}
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, chopLumpBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var catChopLumpChecked []int
+		err = db.Select(&catChopLumpChecked, `SELECT cat_file_chop_lump_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(catChopLumpChecked[0]).To(Equal(2))
 	})
 
 	It("persists a flip event", func() {
@@ -137,7 +182,7 @@ var _ = Describe("Cat File transformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []flip.CatFileFlipModel
@@ -148,6 +193,52 @@ var _ = Describe("Cat File transformer", func() {
 		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
 		Expect(dbResult[0].What).To(Equal("flip"))
 		Expect(dbResult[0].Flip).To(Equal("0x32D496Ad866D110060866B7125981C73642cc509"))
+	})
+
+	It("rechecks a flip event", func() {
+		// transaction: 0x44bc18fdb1a5a263db114e7879653304db3e19ceb4e4496f21bc0a76c5faccbe
+		flipBlockNumber := int64(8751794)
+		header, err := persistHeader(db, flipBlockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		config := shared.TransformerConfig{
+			TransformerName:     constants.CatFileFlipLabel,
+			ContractAddresses:   []string{test_data.KovanCatContractAddress},
+			ContractAbi:         test_data.KovanCatABI,
+			Topic:               test_data.KovanCatFileFlipSignature,
+			StartingBlockNumber: flipBlockNumber,
+			EndingBlockNumber:   flipBlockNumber,
+		}
+
+		initializer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &flip.CatFileFlipConverter{},
+			Repository: &flip.CatFileFlipRepository{},
+		}
+
+		transformer := initializer.NewLogNoteTransformer(db)
+
+		logs, err := fetcher.FetchLogs(
+			[]common.Address{common.HexToAddress(config.ContractAddresses[0])},
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderRecheck)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, flipBlockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var catFlipChecked []int
+		err = db.Select(&catFlipChecked, `SELECT cat_file_flip_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(catFlipChecked[0]).To(Equal(2))
 	})
 
 	It("persists a pit vow event", func() {
@@ -178,7 +269,7 @@ var _ = Describe("Cat File transformer", func() {
 			header)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
 
 		var dbResult []pit_vow.CatFilePitVowModel

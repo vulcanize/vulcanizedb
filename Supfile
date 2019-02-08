@@ -57,7 +57,8 @@ commands:
     run: >
       systemctl daemon-reload &&
       sudo systemctl restart vulcanizedb_light_sync.service &&
-      sudo systemctl restart vulcanizedb_log_sync.service
+      sudo systemctl restart vulcanizedb_log_sync.service &&
+      sudo systemctl restart vulcanizedb_recheck_sync.service
   postgraphile:
     desc: start postgraphile
     run: systemctl daemon-reload && sudo systemctl restart postgraphile.service

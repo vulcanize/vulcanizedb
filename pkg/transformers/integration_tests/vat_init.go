@@ -65,8 +65,68 @@ var _ = Describe("VatInit LogNoteTransformer", func() {
 			Repository: &vat_init.VatInitRepository{},
 		}.NewLogNoteTransformer(db)
 
-		err = transformer.Execute(logs, header)
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
 		Expect(err).NotTo(HaveOccurred())
+
+		var dbResults []vat_init.VatInitModel
+		err = db.Select(&dbResults, `SELECT ilk from maker.vat_init`)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(len(dbResults)).To(Equal(1))
+		dbResult := dbResults[0]
+		Expect(dbResult.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+	})
+
+	It("rechecks vat init event", func() {
+		blockNumber := int64(8535561)
+		config := shared.TransformerConfig{
+			TransformerName:     constants.VatInitLabel,
+			ContractAddresses:   []string{test_data.KovanVatContractAddress},
+			ContractAbi:         test_data.KovanVatABI,
+			Topic:               test_data.KovanVatInitSignature,
+			StartingBlockNumber: blockNumber,
+			EndingBlockNumber:   blockNumber,
+		}
+
+		rpcClient, ethClient, err := getClients(ipc)
+		Expect(err).NotTo(HaveOccurred())
+		blockChain, err := getBlockChain(rpcClient, ethClient)
+		Expect(err).NotTo(HaveOccurred())
+
+		db := test_config.NewTestDB(blockChain.Node())
+		test_config.CleanTestDB(db)
+
+		header, err := persistHeader(db, blockNumber, blockChain)
+		Expect(err).NotTo(HaveOccurred())
+
+		fetcher := shared.NewFetcher(blockChain)
+		logs, err := fetcher.FetchLogs(
+			shared.HexStringsToAddresses(config.ContractAddresses),
+			[]common.Hash{common.HexToHash(config.Topic)},
+			header)
+		Expect(err).NotTo(HaveOccurred())
+
+		transformer := factories.LogNoteTransformer{
+			Config:     config,
+			Converter:  &vat_init.VatInitConverter{},
+			Repository: &vat_init.VatInitRepository{},
+		}.NewLogNoteTransformer(db)
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = transformer.Execute(logs, header, constants.HeaderMissing)
+		Expect(err).NotTo(HaveOccurred())
+
+		var headerID int64
+		err = db.Get(&headerID, `SELECT id FROM public.headers WHERE block_number = $1`, blockNumber)
+		Expect(err).NotTo(HaveOccurred())
+
+		var vatInitChecked []int
+		err = db.Select(&vatInitChecked, `SELECT vat_init_checked FROM public.checked_headers WHERE header_id = $1`, headerID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(vatInitChecked[0]).To(Equal(2))
 
 		var dbResults []vat_init.VatInitModel
 		err = db.Select(&dbResults, `SELECT ilk from maker.vat_init`)

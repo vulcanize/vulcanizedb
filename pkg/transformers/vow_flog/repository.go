@@ -18,7 +18,10 @@ package vow_flog
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -46,7 +49,8 @@ func (repository VowFlogRepository) Create(headerID int64, models []interface{})
 
 		_, execErr := tx.Exec(
 			`INSERT into maker.vow_flog (header_id, era, log_idx, tx_idx, raw_log)
-			VALUES($1, $2::NUMERIC, $3, $4, $5)`,
+			VALUES($1, $2::NUMERIC, $3, $4, $5)
+			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET era = $2, raw_log = $5;`,
 			headerID, flog.Era, flog.LogIndex, flog.TransactionIndex, flog.Raw,
 		)
 
@@ -73,6 +77,14 @@ func (repository VowFlogRepository) Create(headerID int64, models []interface{})
 
 func (repository VowFlogRepository) MarkHeaderChecked(headerID int64) error {
 	return shared.MarkHeaderChecked(headerID, repository.db, constants.VowFlogChecked)
+}
+
+func (repository VowFlogRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.MissingHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VowFlogChecked)
+}
+
+func (repository VowFlogRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
+	return shared.RecheckHeaders(startingBlockNumber, endingBlockNumber, repository.db, constants.VowFlogChecked)
 }
 
 func (repository *VowFlogRepository) SetDB(db *postgres.DB) {
