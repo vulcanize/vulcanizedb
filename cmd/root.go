@@ -45,6 +45,7 @@ var (
 	storageDiffsPath    string
 	syncAll             bool
 	endingBlockNumber   int64
+	recheckHeadersArg   bool
 )
 
 const (
