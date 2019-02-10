@@ -47,7 +47,7 @@ Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` ca
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. Execute `createdb vulcanize_public`
 1. Execute `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
-1. Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=<postgres port, default 5432>`
+1. Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=<postgres port, default 5432> DB_USER=<user> DB_PASS=<pass>`
 
     * See below for configuring additional environments
 

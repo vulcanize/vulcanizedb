@@ -59,13 +59,15 @@ build: dep
 HOST_NAME = localhost
 PORT = 5432
 NAME =
-CONNECT_STRING=postgresql://$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
+CONNECT_STRING=postgresql://$(DB_USER):$(DB_PASS)@$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
 .PHONY: checkdbvars
 checkdbvars:
 	test -n "$(HOST_NAME)" # $$HOST_NAME 
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
+	test -n "$(DB_USER)" # $$DB_USER
+	test -n "$(DB_PASS)" # $$DB_PASS
 	@echo $(CONNECT_STRING)
 
 
