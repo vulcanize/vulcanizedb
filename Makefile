@@ -67,7 +67,7 @@ checkdbvars:
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
 	test -n "$(DB_USER)" # $$DB_USER
-	test -n "$(DB_PASS)" # $$DB_PASS
+	#test -n "$(DB_PASS)" # $$DB_PASS
 	@echo $(CONNECT_STRING)
 
 

@@ -16,7 +16,7 @@ before_install:
 
 before_script:
   - sudo -u postgres createdb vulcanize_private
-  - make migrate NAME=vulcanize_private
+  - make migrate NAME=vulcanize_private DB_USER=postgres
 
 script:
   - make test
