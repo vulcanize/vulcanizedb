@@ -18,6 +18,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"log"
 	"os"
 	"plugin"
@@ -151,18 +152,18 @@ func composeAndExecute() {
 	// Use WaitGroup to wait on both goroutines
 	var wg syn.WaitGroup
 	if len(ethEventInitializers) > 0 {
-		w := watcher.NewWatcher(&db, blockChain)
-		w.AddTransformers(ethEventInitializers)
+		ew := watcher.NewEventWatcher(&db, blockChain)
+		ew.AddTransformers(ethEventInitializers)
 		wg.Add(1)
-		go watchEthEvents(&w, &wg)
+		go watchEthEvents(&ew, &wg)
 	}
 
 	if len(ethStorageInitializers) > 0 {
 		tailer := fs.FileTailer{Path: storageDiffsPath}
-		w := watcher.NewStorageWatcher(tailer, &db)
-		w.AddTransformers(ethStorageInitializers)
+		sw := watcher.NewStorageWatcher(tailer, &db)
+		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
-		go watchEthStorage(&w, &wg)
+		go watchEthStorage(&sw, &wg)
 	}
 	wg.Wait()
 }
@@ -173,17 +174,23 @@ type Exporter interface {
 
 func init() {
 	rootCmd.AddCommand(composeAndExecuteCmd)
-	composeAndExecuteCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start transformer execution from")
+	composeAndExecuteCmd.Flags().BoolVar(&recheckHeadersArg, "recheckHeaders", false, "checks headers that are already checked for each transformer.")
 }
 
-func watchEthEvents(w *watcher.Watcher, wg *syn.WaitGroup) {
+func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the TransformerInitializer set using the watcher
-	fmt.Println("executing transformers")
+	fmt.Println("executing event transformers")
+	var recheck constants.TransformerExecution
+	if recheckHeadersArg {
+		recheck = constants.HeaderRecheck
+	} else {
+		recheck = constants.HeaderMissing
+	}
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute()
+		err := w.Execute(recheck)
 		if err != nil {
 			// TODO Handle watcher errors in composeAndExecute
 		}
@@ -193,7 +200,7 @@ func watchEthEvents(w *watcher.Watcher, wg *syn.WaitGroup) {
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the TransformerInitializer set using the watcher
-	fmt.Println("executing transformers")
+	fmt.Println("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
