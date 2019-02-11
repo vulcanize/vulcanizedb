@@ -26,14 +26,14 @@ import (
 
 const (
 	VowVat  = "vat"
-	CowVat  = "cow"
-	RowVat  = "row"
-	SinVat  = "Sin"
-	AshVat  = "ash"
-	WaitVat = "wait"
-	SumpVat = "sump"
-	BumpVat = "bump"
-	HumpVat = "hump"
+	VowCow  = "cow"
+	VowRow  = "row"
+	VowSin  = "Sin"
+	VowAsh  = "ash"
+	VowWait = "wait"
+	VowSump = "sump"
+	VowBump = "bump"
+	VowHump = "hump"
 )
 
 var (
@@ -46,56 +46,56 @@ var (
 
 	CowKey      = common.HexToHash(storage_diffs.IndexTwo)
 	CowMetadata = shared.StorageValueMetadata{
-		Name: CowVat,
+		Name: VowCow,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	RowKey      = common.HexToHash(storage_diffs.IndexThree)
 	RowMetadata = shared.StorageValueMetadata{
-		Name: RowVat,
+		Name: VowRow,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	SinKey      = common.HexToHash(storage_diffs.IndexFive)
 	SinMetadata = shared.StorageValueMetadata{
-		Name: SinVat,
+		Name: VowSin,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	AshKey      = common.HexToHash(storage_diffs.IndexSeven)
 	AshMetadata = shared.StorageValueMetadata{
-		Name: AshVat,
+		Name: VowAsh,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	WaitKey      = common.HexToHash(storage_diffs.IndexEight)
 	WaitMetadata = shared.StorageValueMetadata{
-		Name: WaitVat,
+		Name: VowWait,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	SumpKey      = common.HexToHash(storage_diffs.IndexNine)
 	SumpMetadata = shared.StorageValueMetadata{
-		Name: SumpVat,
+		Name: VowSump,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	BumpKey      = common.HexToHash(storage_diffs.IndexTen)
 	BumpMetadata = shared.StorageValueMetadata{
-		Name: BumpVat,
+		Name: VowBump,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
 
 	HumpKey      = common.HexToHash(storage_diffs.IndexEleven)
 	HumpMetadata = shared.StorageValueMetadata{
-		Name: HumpVat,
+		Name: VowHump,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
