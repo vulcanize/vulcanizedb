@@ -1,0 +1,16 @@
+.git
+.travis.yml
+.idea
+bin
+.gitignore
+integration_test
+LICENSE
+postgraphile
+.private_blockchain_password
+README.md
+scripts
+Supfile
+test_config
+.travis.yml
+vulcanizedb.log
+Dockerfile

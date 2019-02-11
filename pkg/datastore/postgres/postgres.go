@@ -18,6 +18,7 @@ package postgres
 
 import (
 	"errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
@@ -40,6 +41,7 @@ var (
 
 func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	connectString := config.DbConnectionString(databaseConfig)
+	logrus.Info("Using connection string: ", connectString)
 	db, err := sqlx.Connect("postgres", connectString)
 	if err != nil {
 		return &DB{}, ErrDBConnectionFailed
