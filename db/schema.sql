@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
--- Dumped by pg_dump version 10.5
+-- Dumped from database version 10.4
+-- Dumped by pg_dump version 10.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1606,6 +1606,102 @@ ALTER SEQUENCE maker.vat_vice_id_seq OWNED BY maker.vat_vice.id;
 
 
 --
+-- Name: vow_ash; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_ash (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ash text
+);
+
+
+--
+-- Name: vow_ash_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_ash_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_ash_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_ash_id_seq OWNED BY maker.vow_ash.id;
+
+
+--
+-- Name: vow_bump; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_bump (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    bump text
+);
+
+
+--
+-- Name: vow_bump_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_bump_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_bump_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_bump_id_seq OWNED BY maker.vow_bump.id;
+
+
+--
+-- Name: vow_cow; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_cow (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    cow text
+);
+
+
+--
+-- Name: vow_cow_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_cow_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_cow_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_cow_id_seq OWNED BY maker.vow_cow.id;
+
+
+--
 -- Name: vow_flog; Type: TABLE; Schema: maker; Owner: -
 --
 
@@ -1637,6 +1733,198 @@ CREATE SEQUENCE maker.vow_flog_id_seq
 --
 
 ALTER SEQUENCE maker.vow_flog_id_seq OWNED BY maker.vow_flog.id;
+
+
+--
+-- Name: vow_hump; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_hump (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    hump text
+);
+
+
+--
+-- Name: vow_hump_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_hump_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_hump_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_hump_id_seq OWNED BY maker.vow_hump.id;
+
+
+--
+-- Name: vow_row; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_row (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    "row" text
+);
+
+
+--
+-- Name: vow_row_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_row_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_row_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_row_id_seq OWNED BY maker.vow_row.id;
+
+
+--
+-- Name: vow_sin; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_sin (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    sin text
+);
+
+
+--
+-- Name: vow_sin_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_sin_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_sin_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_sin_id_seq OWNED BY maker.vow_sin.id;
+
+
+--
+-- Name: vow_sump; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_sump (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    sump text
+);
+
+
+--
+-- Name: vow_sump_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_sump_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_sump_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_sump_id_seq OWNED BY maker.vow_sump.id;
+
+
+--
+-- Name: vow_vat; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_vat (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    vat text
+);
+
+
+--
+-- Name: vow_vat_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_vat_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_vat_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_vat_id_seq OWNED BY maker.vow_vat.id;
+
+
+--
+-- Name: vow_wait; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.vow_wait (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    wait text
+);
+
+
+--
+-- Name: vow_wait_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.vow_wait_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vow_wait_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.vow_wait_id_seq OWNED BY maker.vow_wait.id;
 
 
 --
@@ -2401,10 +2689,73 @@ ALTER TABLE ONLY maker.vat_vice ALTER COLUMN id SET DEFAULT nextval('maker.vat_v
 
 
 --
+-- Name: vow_ash id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_ash ALTER COLUMN id SET DEFAULT nextval('maker.vow_ash_id_seq'::regclass);
+
+
+--
+-- Name: vow_bump id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_bump ALTER COLUMN id SET DEFAULT nextval('maker.vow_bump_id_seq'::regclass);
+
+
+--
+-- Name: vow_cow id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_cow ALTER COLUMN id SET DEFAULT nextval('maker.vow_cow_id_seq'::regclass);
+
+
+--
 -- Name: vow_flog id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vow_flog ALTER COLUMN id SET DEFAULT nextval('maker.vow_flog_id_seq'::regclass);
+
+
+--
+-- Name: vow_hump id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_hump ALTER COLUMN id SET DEFAULT nextval('maker.vow_hump_id_seq'::regclass);
+
+
+--
+-- Name: vow_row id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_row ALTER COLUMN id SET DEFAULT nextval('maker.vow_row_id_seq'::regclass);
+
+
+--
+-- Name: vow_sin id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_sin ALTER COLUMN id SET DEFAULT nextval('maker.vow_sin_id_seq'::regclass);
+
+
+--
+-- Name: vow_sump id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_sump ALTER COLUMN id SET DEFAULT nextval('maker.vow_sump_id_seq'::regclass);
+
+
+--
+-- Name: vow_vat id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_vat ALTER COLUMN id SET DEFAULT nextval('maker.vow_vat_id_seq'::regclass);
+
+
+--
+-- Name: vow_wait id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_wait ALTER COLUMN id SET DEFAULT nextval('maker.vow_wait_id_seq'::regclass);
 
 
 --
@@ -3053,6 +3404,30 @@ ALTER TABLE ONLY maker.vat_vice
 
 
 --
+-- Name: vow_ash vow_ash_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_ash
+    ADD CONSTRAINT vow_ash_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_bump vow_bump_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_bump
+    ADD CONSTRAINT vow_bump_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_cow vow_cow_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_cow
+    ADD CONSTRAINT vow_cow_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: vow_flog vow_flog_header_id_tx_idx_log_idx_key; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -3066,6 +3441,54 @@ ALTER TABLE ONLY maker.vow_flog
 
 ALTER TABLE ONLY maker.vow_flog
     ADD CONSTRAINT vow_flog_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_hump vow_hump_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_hump
+    ADD CONSTRAINT vow_hump_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_row vow_row_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_row
+    ADD CONSTRAINT vow_row_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_sin vow_sin_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_sin
+    ADD CONSTRAINT vow_sin_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_sump vow_sump_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_sump
+    ADD CONSTRAINT vow_sump_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_vat vow_vat_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_vat
+    ADD CONSTRAINT vow_vat_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vow_wait vow_wait_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vow_wait
+    ADD CONSTRAINT vow_wait_pkey PRIMARY KEY (id);
 
 
 --

@@ -7,6 +7,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/pit"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vat"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vow"
 )
 
 func GetPitStorageTransformer() storage.Transformer {
@@ -22,5 +23,13 @@ func GetVatStorageTransformer() storage.Transformer {
 		Address:    common.HexToAddress(constants.VatContractAddress()),
 		Mappings:   &vat.VatMappings{StorageRepository: &maker.MakerStorageRepository{}},
 		Repository: &vat.VatStorageRepository{},
+	}
+}
+
+func GetVowStorageTransformer() storage.Transformer {
+	return storage.Transformer{
+		Address:    common.HexToAddress(constants.VowContractAddress()),
+		Mappings:   &vow.VowMappings{StorageRepository: &maker.MakerStorageRepository{}},
+		Repository: &vow.VowStorageRepository{},
 	}
 }
