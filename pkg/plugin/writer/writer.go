@@ -26,6 +26,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 )
 
+// Interface for writing a .go file for a simple
+// plugin that exports the set of transformer
+// initializers specified in the config
 type PluginWriter interface {
 	WritePlugin() error
 }
@@ -34,13 +37,14 @@ type writer struct {
 	GenConfig config.Plugin
 }
 
+// Requires populated plugin config
 func NewPluginWriter(gc config.Plugin) *writer {
 	return &writer{
 		GenConfig: gc,
 	}
 }
 
-// Generates the plugin code
+// Generates the plugin code according to config specification
 func (w *writer) WritePlugin() error {
 	// Setup plugin file paths
 	goFile, err := w.setupFilePath()
@@ -52,10 +56,10 @@ func (w *writer) WritePlugin() error {
 	f := NewFile("main")
 	f.HeaderComment("This is a plugin generated to export the configured transformer initializers")
 
-	// Import TransformerInitializers specified in config
+	// Import pkgs for generic TransformerInitializer interface and specific TransformerInitializers specified in config
 	f.ImportAlias("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "interface")
-	for alias, imp := range w.GenConfig.Initializers {
-		f.ImportAlias(imp, alias)
+	for alias, relPath := range w.GenConfig.Initializers {
+		f.ImportAlias(w.makePath(alias, relPath), alias)
 	}
 
 	// Collect initializer code
@@ -64,17 +68,16 @@ func (w *writer) WritePlugin() error {
 	// Create Exporter variable with method to export the set of the imported storage and event transformer initializers
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
-	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Index().Qual(
-		"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-		"TransformerInitializer").Index().Qual(
-		"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-		"StorageTransformerInitializer").Block(
-		Return(Index().Qual(
-			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"TransformerInitializer").Values(ethEventInitializers...)),
+	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Parens(List(
+		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "TransformerInitializer"),
+		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
+	)).Block(Return(
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"StorageTransformerInitializer").Values(ethStorageInitializers...)) // Exports the collected initializers
+			"TransformerInitializer").Values(ethEventInitializers...),
+		Index().Qual(
+			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+			"StorageTransformerInitializer").Values(ethStorageInitializers...))) // Exports the collected initializers
 
 	// Write code to destination file
 	err = f.Save(goFile)
@@ -84,8 +87,8 @@ func (w *writer) WritePlugin() error {
 	return nil
 }
 
+// Collect code for various types of initializers
 func (w *writer) sortTransformers() ([]Code, []Code, []Code, []Code) {
-	// Collect code for various initializers
 	importedEthEventInitializers := make([]Code, 0)
 	importerEthStorageInitializers := make([]Code, 0)
 	importedIpfsEventInitializers := make([]Code, 0)
@@ -109,6 +112,13 @@ func (w *writer) sortTransformers() ([]Code, []Code, []Code, []Code) {
 		importerIpfsStorageInitializers
 }
 
+// Concat relative path with its repo's root path
+func (w *writer) makePath(alias, relPath string) string {
+	pathRoot := w.GenConfig.Dependencies[alias]
+	return pathRoot + "/" + relPath
+}
+
+// Setup the .go, clear old ones if present
 func (w *writer) setupFilePath() (string, error) {
 	goFile, soFile, err := w.GenConfig.GetPluginPaths()
 	if err != nil {

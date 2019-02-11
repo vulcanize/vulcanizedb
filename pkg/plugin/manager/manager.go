@@ -19,16 +19,15 @@ package manager
 import (
 	"errors"
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 )
 
+// Interface for managing the db migrations for plugin transformers
 type MigrationManager interface {
 	RunMigrations() error
 }
@@ -39,6 +38,7 @@ type manager struct {
 	tmpMigDir string
 }
 
+// Manager requires both filled in generator and database configs
 func NewMigrationManager(gc config.Plugin, dbc config.Database) *manager {
 	return &manager{
 		GenConfig: gc,
@@ -47,7 +47,7 @@ func NewMigrationManager(gc config.Plugin, dbc config.Database) *manager {
 }
 
 func (m *manager) RunMigrations() error {
-	// Get paths to db migrations
+	// Get paths to db migrations from the plugin config
 	paths, err := m.GenConfig.GetMigrationsPaths()
 	if err != nil {
 		return err
@@ -55,27 +55,22 @@ func (m *manager) RunMigrations() error {
 	if len(paths) < 1 {
 		return nil
 	}
-
-	// Init directory for temporary copies
+	// Init directory for temporary copies of migrations
 	err = m.setupMigrationEnv()
 	if err != nil {
 		return err
 	}
 	defer m.cleanUp()
-
-	// Create temporary copies of migrations to the temporary migrationDir
-	// These tmps are identical except they have had `1` added in front of their unix_timestamps
-	// As such, they will be ran on top of all core migrations (at least, for the next ~317 years)
-	// But will still be ran in the same order relative to one another
-	// TODO: Less hacky way of handing migrations
+	// Creates copies of migrations for all the plugin's transformers in a tmp dir
 	err = m.createMigrationCopies(paths)
 	if err != nil {
 		return err
 	}
-
-	// Run the copied migrations
+	// Run the copied migrations with goose
 	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	err = exec.Command("migrate", "-path", m.tmpMigDir, "-database", pgStr, "up").Run()
+	cmd := exec.Command("goose", "postgres", pgStr, "up")
+	cmd.Dir = m.tmpMigDir
+	err = cmd.Run()
 	if err != nil {
 		return errors.New(fmt.Sprintf("db migrations for plugin transformers failed: %s", err.Error()))
 	}
@@ -83,8 +78,8 @@ func (m *manager) RunMigrations() error {
 	return nil
 }
 
+// Setup a temporary directory to hold transformer db migrations
 func (m *manager) setupMigrationEnv() error {
-	// Initialize temp directory for transformer migrations
 	var err error
 	m.tmpMigDir, err = helpers.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/db/plugin_migrations")
 	if err != nil {
@@ -102,23 +97,22 @@ func (m *manager) setupMigrationEnv() error {
 	return nil
 }
 
+// Create copies of db migrations from vendored libs
 func (m *manager) createMigrationCopies(paths []string) error {
+	// Iterate through migration paths to find migration directory
 	for _, path := range paths {
 		dir, err := ioutil.ReadDir(path)
 		if err != nil {
 			return err
 		}
+		// For each file in the directory check if it is a migration
 		for _, file := range dir {
-			if file.IsDir() || len(file.Name()) < 15 || filepath.Ext(file.Name()) != ".sql" { // (10 digit unix time stamp + x + .sql) is bare minimum
-				continue
-			}
-			_, err := strconv.Atoi(file.Name()[:10])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "migration file name %s does not posses 10 digit timestamp prefix\r\n", file.Name())
+			if file.IsDir() || filepath.Ext(file.Name()) != ".sql" {
 				continue
 			}
 			src := filepath.Join(path, file.Name())
-			dst := filepath.Join(m.tmpMigDir, "1"+file.Name())
+			dst := filepath.Join(m.tmpMigDir, file.Name())
+			//  and if it is make a copy of it to our tmp migration directory
 			err = helpers.CopyFile(src, dst)
 			if err != nil {
 				return err

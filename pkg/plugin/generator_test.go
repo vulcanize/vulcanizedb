@@ -16,7 +16,6 @@
 
 package plugin_test
 
-/*
 import (
 	"plugin"
 
@@ -24,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
@@ -48,26 +48,28 @@ var genConfig = config.Plugin{
 	Dependencies: map[string]string{
 		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
 	},
-	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
-	FileName: "testEventTransformerSet",
-	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:     false,
+	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
+	FileName:   "testEventTransformerSet",
+	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:       false,
 }
 
 var genStorageConfig = config.Plugin{
 	Initializers: map[string]string{
 		"pit": "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
+		"vat": "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/vat/initializer",
 	},
 	Types: map[string]config.PluginType{
 		"pit": config.EthStorage,
+		"vat": config.EthStorage,
 	},
 	Dependencies: map[string]string{
 		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
 	},
-	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
-	FileName: "testStorageTransformerSet",
-	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:     false,
+	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
+	FileName:   "testStorageTransformerSet",
+	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:       false,
 }
 
 var combinedConfig = config.Plugin{
@@ -75,19 +77,21 @@ var combinedConfig = config.Plugin{
 		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
 		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
 		"pit":  "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
+		"vat":  "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/vat/initializer",
 	},
 	Types: map[string]config.PluginType{
 		"bite": config.EthEvent,
 		"deal": config.EthEvent,
 		"pit":  config.EthStorage,
+		"vat":  config.EthStorage,
 	},
 	Dependencies: map[string]string{
 		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
 	},
-	//Migrations: map[string]string{"mcd_transformers" : "db/migrations"},
-	FileName: "testStorageTransformerSet",
-	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:     false,
+	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
+	FileName:   "testComboTransformerSet",
+	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:       false,
 }
 
 var dbConfig = config.Database{
@@ -156,9 +160,9 @@ var _ = Describe("Generator test", func() {
 				Expect(ok).To(Equal(true))
 				initializers, _ := exporter.Export()
 
-				w := watcher.NewWatcher(db, bc)
+				w := watcher.NewEventWatcher(db, bc)
 				w.AddTransformers(initializers)
-				err = w.Execute()
+				err = w.Execute(constants.HeaderMissing)
 				Expect(err).ToNot(HaveOccurred())
 
 				type model struct {
@@ -180,8 +184,8 @@ var _ = Describe("Generator test", func() {
 
 				err = db.Get(&returned, `SELECT * FROM maker.bite WHERE header_id = $1`, headerID)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(returned.Ilk).To(Equal("ETH"))
-				Expect(returned.Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+				Expect(returned.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+				Expect(returned.Urn).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 				Expect(returned.Ink).To(Equal("80000000000000000000"))
 				Expect(returned.Art).To(Equal("11000000000000000000000"))
 				Expect(returned.IArt).To(Equal("12496609999999999999992"))
@@ -195,7 +199,7 @@ var _ = Describe("Generator test", func() {
 
 	Describe("Storage Transformers only", func() {
 		BeforeEach(func() {
-			goPath, soPath, err = genConfig.GetPluginPaths()
+			goPath, soPath, err = genStorageConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
 			g, err = p2.NewGenerator(genStorageConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
@@ -216,12 +220,12 @@ var _ = Describe("Generator test", func() {
 				exporter, ok := symExporter.(Exporter)
 				Expect(ok).To(Equal(true))
 				event, initializers := exporter.Export()
-				Expect(len(initializers)).To(Equal(1))
+				Expect(len(initializers)).To(Equal(2))
 				Expect(len(event)).To(Equal(0))
 			})
 
 			It("Loads our generated Exporter and uses it to import an arbitrary set of StorageTransformerInitializers that we can execute over", func() {
-				db, bc = test_helpers.SetupDBandBC()
+				db, _ = test_helpers.SetupDBandBC()
 				defer test_helpers.TearDown(db)
 
 				plug, err := plugin.Open(soPath)
@@ -235,15 +239,16 @@ var _ = Describe("Generator test", func() {
 				tailer := fs.FileTailer{Path: viper.GetString("filesystem.storageDiffsPath")}
 				w := watcher.NewStorageWatcher(tailer, db)
 				w.AddTransformers(initializers)
-				err = w.Execute()
-				Expect(err).ToNot(HaveOccurred())
+				// This blocks right now, need to make test file to read from
+				//err = w.Execute()
+				//Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("Event and Storage Transformers in same instance", func() {
 		BeforeEach(func() {
-			goPath, soPath, err = genConfig.GetPluginPaths()
+			goPath, soPath, err = combinedConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
 			g, err = p2.NewGenerator(combinedConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
@@ -265,7 +270,7 @@ var _ = Describe("Generator test", func() {
 				Expect(ok).To(Equal(true))
 				eventInitializers, storageInitializers := exporter.Export()
 				Expect(len(eventInitializers)).To(Equal(2))
-				Expect(len(storageInitializers)).To(Equal(1))
+				Expect(len(storageInitializers)).To(Equal(2))
 			})
 
 			It("Loads our generated Exporter and uses it to import an arbitrary set of TransformerInitializers and StorageTransformerInitializers that we can execute over", func() {
@@ -286,9 +291,9 @@ var _ = Describe("Generator test", func() {
 				Expect(ok).To(Equal(true))
 				eventInitializers, storageInitializers := exporter.Export()
 
-				ew := watcher.NewWatcher(db, bc)
+				ew := watcher.NewEventWatcher(db, bc)
 				ew.AddTransformers(eventInitializers)
-				err = ew.Execute()
+				err = ew.Execute(constants.HeaderMissing)
 				Expect(err).ToNot(HaveOccurred())
 
 				type model struct {
@@ -310,8 +315,8 @@ var _ = Describe("Generator test", func() {
 
 				err = db.Get(&returned, `SELECT * FROM maker.bite WHERE header_id = $1`, headerID)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(returned.Ilk).To(Equal("ETH"))
-				Expect(returned.Urn).To(Equal("0x0000d8b4147eDa80Fec7122AE16DA2479Cbd7ffB"))
+				Expect(returned.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+				Expect(returned.Urn).To(Equal("0000000000000000000000000000d8b4147eda80fec7122ae16da2479cbd7ffb"))
 				Expect(returned.Ink).To(Equal("80000000000000000000"))
 				Expect(returned.Art).To(Equal("11000000000000000000000"))
 				Expect(returned.IArt).To(Equal("12496609999999999999992"))
@@ -323,10 +328,10 @@ var _ = Describe("Generator test", func() {
 				tailer := fs.FileTailer{Path: viper.GetString("filesystem.storageDiffsPath")}
 				sw := watcher.NewStorageWatcher(tailer, db)
 				sw.AddTransformers(storageInitializers)
-				err = sw.Execute()
-				Expect(err).ToNot(HaveOccurred())
+				// This blocks right now, need to make test file to read from
+				//err = w.Execute()
+				//Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
 })
-*/
