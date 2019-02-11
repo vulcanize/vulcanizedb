@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/writer"
 )
 
+// Generator is the top-level interface for creating transformer plugins
 type Generator interface {
 	GenerateExporterPlugin() error
 }
@@ -37,6 +38,7 @@ type generator struct {
 	manager.MigrationManager
 }
 
+// Creates a new generator from a plugin and database config
 func NewGenerator(gc config.Plugin, dbc config.Database) (*generator, error) {
 	if len(gc.Initializers) < 1 {
 		return nil, errors.New("generator needs to be configured with TransformerInitializer import paths")
@@ -49,21 +51,27 @@ func NewGenerator(gc config.Plugin, dbc config.Database) (*generator, error) {
 	}
 	return &generator{
 		PluginWriter:     writer.NewPluginWriter(gc),
-		PluginBuilder:    builder.NewPluginBuilder(gc, dbc),
+		PluginBuilder:    builder.NewPluginBuilder(gc),
 		MigrationManager: manager.NewMigrationManager(gc, dbc),
 	}, nil
 }
 
+// Generates plugin for the transformer initializers specified in the generator config
+// Writes plugin code  => Sets up build environment => Builds .so file => Performs db migrations for the plugin transformers => Clean up
 func (g *generator) GenerateExporterPlugin() error {
+	// Use plugin writer interface to write the plugin code
 	err := g.PluginWriter.WritePlugin()
 	if err != nil {
 		return err
 	}
+	// Clean up temporary files and directories when we are done
 	defer g.PluginBuilder.CleanUp()
+	// Use plugin builder interface to setup build environment and compile .go file into a .so file
 	err = g.PluginBuilder.BuildPlugin()
 	if err != nil {
 		return err
 	}
 
+	// Perform db migrations for the transformers
 	return g.MigrationManager.RunMigrations()
 }

@@ -56,18 +56,18 @@ var composeAndExecuteCmd = &cobra.Command{
 [exporter]
     name = "exporter"
     [exporter.transformers]
-            transformer1 = "github.com/path/to/transformer1"
-            transformer2 = "github.com/path/to/transformer2"
-            transformer3 = "github.com/path/to/transformer3"
-            transformer4 = "github.com/different/path/to/transformer1"
+            transformer1 = "path/to/transformer1"
+            transformer2 = "path/to/transformer2"
+            transformer3 = "path/to/transformer3"
+            transformer4 = "path/to/transformer4"
 	[exporter.types]
             transformer1 = "eth_event"
             transformer2 = "eth_event"
             transformer3 = "eth_event"
             transformer4 = "eth_storage"
     [exporter.repositories]
-            transformers = "github.com/path/to"
-            transformer4 = "github.com/different/path"
+            transformers = "github.com/account/repo"
+            transformer4 = "github.com/account2/repo2"
     [exporter.migrations]
             transformers = "db/migrations"
             transformer4 = "to/db/migrations"

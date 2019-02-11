@@ -27,7 +27,7 @@ import (
 
 func TestRepository(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Gen Suite Test")
+	RunSpecs(t, "Plugin Suite Test")
 }
 
 var _ = BeforeSuite(func() {

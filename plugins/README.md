@@ -7,38 +7,60 @@ The config file requires, at a minimum, the below fields:
 
 ```toml 
 [database]
-    name = "vulcanize_public"
-    hostname = "localhost"
-    user = "vulcanize"
-    password = "vulcanize"
-    port = 5432
+   name = "vulcanize_public"
+   hostname = "localhost"
+   user = "vulcanize"
+   password = "vulcanize"
+   port = 5432
 
 [client]
-    ipcPath = "http://kovan0.vulcanize.io:8545"
+   ipcPath = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    name = "exporter"
-    [exporter.transformers]
-            transformer1 = "github.com/path/to/transformer1"
-            transformer2 = "github.com/path/to/transformer2"
-            transformer3 = "github.com/path/to/transformer3"
-            transformer4 = "github.com/different/path/to/transformer1"
-    [exporter.repositories]
-            transformers = "github.com/path/to"
-            transformer4 = "github.com/different/path"
-    [exporter.migrations]
-            transformers = "db/migrations"
-            transformer4 = "to/db/migrations"
+   name = "exporter"
+   [exporter.transformers]
+           transformer1 = "path/to/transformer1"
+           transformer2 = "path/to/transformer2"
+           transformer3 = "path/to/transformer3"
+           transformer4 = "path/to/transformer4"
+[exporter.types]
+           transformer1 = "eth_event"
+           transformer2 = "eth_event"
+           transformer3 = "eth_event"
+           transformer4 = "eth_storage"
+   [exporter.repositories]
+           transformers = "github.com/account/repo"
+           transformer4 = "github.com/account2/repo2"
+   [exporter.migrations]
+           transformers = "db/migrations"
+           transformer4 = "to/db/migrations"
 ```
-
 - `exporter.transformers` are mappings of import aliases to paths to `TransformerInitializer`s  
     -  Import aliases can be arbitrarily named but note that `interface1` is a reserved alias needed for the generic TransformerInitializer type  
 - `exporter.repositores` are the paths to the repositories which contain the transformers   
 - `exporter.migrations` are the relative paths to the db migrations found within the `exporter.repositores`  
     - Migrations need to be located in the repos in `exporter.repositores`  
     - Keys should match the keys for the corresponding repo  
+    
+Note: If any of the imported transformer need additional
+config variables do not forget to include those as well  
 
-If the individual transformers require additional configuration variables be sure to include them in the .toml file 
+This information is used to write and build a go plugin with a transformer
+set composed from the transformer imports specified in the config file   
+This plugin is loaded and the set of transformer initializers is exported
+from it and loaded into and executed over by the appropriate watcher   
+
+The type of watcher that the transformer works with is specified using the 
+exporter.types config variable as shown above   
+Currently there are watchers for event data from an eth node (eth_event) 
+and storage data from an eth node (eth_storage)   
+In the future there will be watchers for ipfs (ipfs_event and ipfs_storage)   
+
+Transformers of different types can be ran together in the same command using a 
+single config file or in separate command instances using different config files   
+
+Specify config location when executing the command:  
+`./vulcanizedb composeAndExecute --config=./environments/config_name.toml`  
 
 The general structure of a plugin .go file, and what we would see with the above config is shown below   
 
@@ -57,21 +79,24 @@ type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []interface1.TransformerInitializer {
+func (e exporter) Export() []interface1.TransformerInitializer, []interface1.StorageTransformerInitializer {
 	return []interface1.TransformerInitializer{
 		transformer1.TransformerInitializer,
 		transformer2.TransformerInitializer,
 		transformer3.TransformerInitializer,
-		transformer4.TransformerInitializer,
-	}
+	},     []interface1.StorageTransformerInitializer{
+		transformer4.StorageTransformerInitializer,
+    }
 }
 ```
 
-As such, to plug in an external transformer we need to create a [package](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/pkg/autogen/test_helpers/bite/initializer.go) that exports a variable `TransformerInitializer` that is of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/transformer.go#L19)   
-As long as the imported transformers abide by the required interfaces, we can execute over any arbitrary set of them   
-Note: currently the transformers must also operate using this watcher's [execution mode](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/watcher.go#L80), in the future the watcher will become pluggable as well  
-
-For each transformer we will also need to create db migrations to run against vulcanizeDB so that we can store the transformed data  
-The migrations needed for a specific transformer need to be included in the same repository as the transformer(s) that require them, and their relative paths in that repo must be specified in the config as discussed above
-
-NOTE: Due to a bug with plugin migrations, currently need to leave the `exporter.migrations` blank and manually run migrations before running composeAndExecute
+To plug in an external transformer we need to:
+* create a [package](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/pkg/autogen/test_helpers/bite/initializer.go) 
+that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)  
+and [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
+* design the transformers to work in the context of the [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
+or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
+* create db migrations to run against vulcanizeDB so that we can store the transformed data   
+    * store the db migrations required for a transformer in the same repository as the transformer(s) that require them
+    * specify their relative paths in that repo in the config, as discussed above   
+    * NOTE: due to a bug with plugin migrations, currently need to leave the `exporter.migrations` blank and manually run migrations before running composeAndExecute   

@@ -28,6 +28,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 )
 
+// Interface for compile Go code written by the
+// PluginWriter into a shared object (.so file)
+// which can be used loaded as a plugin
 type PluginBuilder interface {
 	BuildPlugin() error
 	CleanUp() error
@@ -35,11 +38,12 @@ type PluginBuilder interface {
 
 type builder struct {
 	GenConfig  config.Plugin
-	tmpVenDirs []string
-	goFile     string
+	tmpVenDirs []string // Keep track of temp vendor directories
+	goFile     string   // Keep track of goFile name
 }
 
-func NewPluginBuilder(gc config.Plugin, dbc config.Database) *builder {
+// Requires populated plugin config
+func NewPluginBuilder(gc config.Plugin) *builder {
 	return &builder{
 		GenConfig:  gc,
 		tmpVenDirs: make([]string, 0, len(gc.Dependencies)),
@@ -70,6 +74,7 @@ func (b *builder) BuildPlugin() error {
 }
 
 // Sets up temporary vendor libs needed for plugin build
+// This is to work around a conflict between plugins and vendoring (https://github.com/golang/go/issues/20481)
 func (b *builder) setupBuildEnv() error {
 	// TODO: Less hacky way of handling plugin build deps
 	vendorPath, err := helpers.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor")
@@ -79,6 +84,11 @@ func (b *builder) setupBuildEnv() error {
 
 	// Import transformer dependencies so that we can build our plugin
 	for name, importPath := range b.GenConfig.Dependencies {
+		// Use dependency paths in config to form git ssh string
+		// TODO: Change this to https once we are no longer working private transformer repos
+		// Right now since vulcanize/mcd_transformers is a private repo we
+		// are using ssh and uploading ssh key to travis for testing
+		// This is slower and more involved than using https urls
 		index := strings.Index(importPath, "/")
 		gitPath := importPath[:index] + ":" + importPath[index+1:]
 		importURL := "git@" + gitPath + ".git"
@@ -87,18 +97,21 @@ func (b *builder) setupBuildEnv() error {
 		if err != nil {
 			return errors.New(fmt.Sprintf("unable to clone %s transformer dependency: %s", name, err.Error()))
 		}
-
 		err := os.RemoveAll(filepath.Join(depPath, "vendor/"))
 		if err != nil {
 			return err
 		}
-
+		// Keep track of this vendor directory to clear later
 		b.tmpVenDirs = append(b.tmpVenDirs, depPath)
 	}
 
 	return nil
 }
 
+// Used to clear all of the tmp vendor libs used to build the plugin
+// Also clears the go file if saving it has not been specified in the config
+// Do not call until after the MigrationManager has performed its operations
+// as it needs to pull the db migrations from the tmpVenDirs
 func (b *builder) CleanUp() error {
 	if !b.GenConfig.Save {
 		err := helpers.ClearFiles(b.goFile)
