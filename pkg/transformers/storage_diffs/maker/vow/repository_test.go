@@ -44,7 +44,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow vat", func() {
-		expectedVat := "yo"
+		expectedVat := "vat"
 
 		err = repo.Create(blockNumber, blockHash, vow.VatMetadata, expectedVat)
 
@@ -59,6 +59,150 @@ var _ = Describe("Vow storage repository test", func() {
 		Expect(result.BlockNumber).To(Equal(blockNumber))
 		Expect(result.BlockHash).To(Equal(blockHash))
 		Expect(result.Vat).To(Equal(expectedVat))
+	})
+
+	It("persists a vow cow", func() {
+		expectedCow := "cow"
+
+		err = repo.Create(blockNumber, blockHash, vow.CowMetadata, expectedCow)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowCow struct {
+			BlockMetadata
+			Cow string
+		}
+		var result VowCow
+		err = db.Get(&result, `SELECT block_number, block_hash, cow from maker.vow_cow`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Cow).To(Equal(expectedCow))
+	})
+
+	It("persists a vow row", func() {
+		expectedRow := "row"
+
+		err = repo.Create(blockNumber, blockHash, vow.RowMetadata, expectedRow)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowRow struct {
+			BlockMetadata
+			Row string
+		}
+		var result VowRow
+		err = db.Get(&result, `SELECT block_number, block_hash, row from maker.vow_row`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Row).To(Equal(expectedRow))
+	})
+
+	It("persists a vow Sin", func() {
+		expectedSow := "sow"
+
+		err = repo.Create(blockNumber, blockHash, vow.SinMetadata, expectedSow)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowSin struct {
+			BlockMetadata
+			Sin string
+		}
+		var result VowSin
+		err = db.Get(&result, `SELECT block_number, block_hash, sin from maker.vow_sin`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Sin).To(Equal(expectedSow))
+	})
+
+	It("persists a vow Ash", func() {
+		expectedAsh := "ash"
+
+		err = repo.Create(blockNumber, blockHash, vow.AshMetadata, expectedAsh)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowAsh struct {
+			BlockMetadata
+			Ash string
+		}
+		var result VowAsh
+		err = db.Get(&result, `SELECT block_number, block_hash, ash from maker.vow_ash`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Ash).To(Equal(expectedAsh))
+	})
+
+	It("persists a vow Wait", func() {
+		expectedWait := "wait"
+
+		err = repo.Create(blockNumber, blockHash, vow.WaitMetadata, expectedWait)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowWait struct {
+			BlockMetadata
+			Wait string
+		}
+		var result VowWait
+		err = db.Get(&result, `SELECT block_number, block_hash, wait from maker.vow_wait`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Wait).To(Equal(expectedWait))
+	})
+
+	It("persists a vow Bump", func() {
+		expectedBump := "bump"
+
+		err = repo.Create(blockNumber, blockHash, vow.BumpMetadata, expectedBump)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowBump struct {
+			BlockMetadata
+			Bump string
+		}
+		var result VowBump
+		err = db.Get(&result, `SELECT block_number, block_hash, bump from maker.vow_bump`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Bump).To(Equal(expectedBump))
+	})
+
+	It("persists a vow Sump", func() {
+		expectedSump := "sump"
+
+		err = repo.Create(blockNumber, blockHash, vow.SumpMetadata, expectedSump)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowSump struct {
+			BlockMetadata
+			Sump string
+		}
+		var result VowSump
+		err = db.Get(&result, `SELECT block_number, block_hash, sump from maker.vow_sump`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Sump).To(Equal(expectedSump))
+	})
+
+	It("persists a vow Hump", func() {
+		expectedHump := "hump"
+
+		err = repo.Create(blockNumber, blockHash, vow.HumpMetadata, expectedHump)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowHump struct {
+			BlockMetadata
+			Hump string
+		}
+		var result VowHump
+		err = db.Get(&result, `SELECT block_number, block_hash, hump from maker.vow_hump`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Hump).To(Equal(expectedHump))
 	})
 })
 
