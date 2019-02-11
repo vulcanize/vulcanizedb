@@ -63,12 +63,12 @@ CREATE TABLE maker.vow_hump (
 );
 
 -- +goose Down
-DROP TABLE maker.vow_vat
-DROP TABLE maker.vow_cow
-DROP TABLE maker.vow_row
-DROP TABLE maker.vow_sin
-DROP TABLE maker.vow_ash
-DROP TABLE maker.vow_wait
-DROP TABLE maker.vow_sump
-DROP TABLE maker.vow_bump
-DROP TABLE maker.vow_hump
+DROP TABLE maker.vow_vat;
+DROP TABLE maker.vow_cow;
+DROP TABLE maker.vow_row;
+DROP TABLE maker.vow_sin;
+DROP TABLE maker.vow_ash;
+DROP TABLE maker.vow_wait;
+DROP TABLE maker.vow_sump;
+DROP TABLE maker.vow_bump;
+DROP TABLE maker.vow_hump;
