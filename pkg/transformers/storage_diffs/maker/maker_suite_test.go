@@ -17,6 +17,8 @@
 package maker_test
 
 import (
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -27,3 +29,7 @@ func TestMaker(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Maker Suite")
 }
+
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})
