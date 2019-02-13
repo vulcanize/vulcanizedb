@@ -39,6 +39,8 @@ func (repository VowStorageRepository) Create(blockNumber int, blockHash string,
 		return repository.insertVowRow(blockNumber, blockHash, value.(string))
 	case VowSin:
 		return repository.insertVowSin(blockNumber, blockHash, value.(string))
+	case VowWoe:
+		return repository.insertVowWoe(blockNumber, blockHash, value.(string))
 	case VowAsh:
 		return repository.insertVowAsh(blockNumber, blockHash, value.(string))
 	case VowWait:
@@ -74,6 +76,12 @@ func (repository VowStorageRepository) insertVowRow(blockNumber int, blockHash s
 
 func (repository VowStorageRepository) insertVowSin(blockNumber int, blockHash string, sin string) error {
 	_, err := repository.db.Exec(`INSERT INTO maker.vow_sin (block_number, block_hash, sin) VALUES ($1, $2, $3)`, blockNumber, blockHash, sin)
+
+	return err
+}
+
+func (repository VowStorageRepository) insertVowWoe(blockNumber int, blockHash string, woe string) error {
+	_, err := repository.db.Exec(`INSERT INTO maker.vow_woe (block_number, block_hash, woe) VALUES ($1, $2, $3)`, blockNumber, blockHash, woe)
 
 	return err
 }

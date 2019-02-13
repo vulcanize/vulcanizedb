@@ -29,6 +29,7 @@ const (
 	VowCow  = "cow"
 	VowRow  = "row"
 	VowSin  = "Sin"
+	VowWoe  = "woe"
 	VowAsh  = "ash"
 	VowWait = "wait"
 	VowSump = "sump"
@@ -48,19 +49,26 @@ var (
 	CowMetadata = shared.StorageValueMetadata{
 		Name: VowCow,
 		Keys: nil,
-		Type: shared.Uint256,
+		Type: shared.Address,
 	}
 
 	RowKey      = common.HexToHash(storage_diffs.IndexThree)
 	RowMetadata = shared.StorageValueMetadata{
 		Name: VowRow,
 		Keys: nil,
-		Type: shared.Uint256,
+		Type: shared.Address,
 	}
 
 	SinKey      = common.HexToHash(storage_diffs.IndexFive)
 	SinMetadata = shared.StorageValueMetadata{
 		Name: VowSin,
+		Keys: nil,
+		Type: shared.Uint256,
+	}
+
+	WoeKey      = common.HexToHash(storage_diffs.IndexSix)
+	WoeMetadata = shared.StorageValueMetadata{
+		Name: VowWoe,
 		Keys: nil,
 		Type: shared.Uint256,
 	}
@@ -127,6 +135,7 @@ func (mappings *VowMappings) loadMappings() error {
 	staticMappings[CowKey] = CowMetadata
 	staticMappings[RowKey] = RowMetadata
 	staticMappings[SinKey] = SinMetadata
+	staticMappings[WoeKey] = WoeMetadata
 	staticMappings[AshKey] = AshMetadata
 	staticMappings[WaitKey] = WaitMetadata
 	staticMappings[SumpKey] = SumpMetadata
