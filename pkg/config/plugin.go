@@ -17,8 +17,6 @@
 package config
 
 import (
-	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -26,13 +24,17 @@ import (
 )
 
 type Plugin struct {
-	Initializers map[string]string     // Map of import aliases to transformer initializer paths
-	Dependencies map[string]string     // Map of vendor dep names to their repositories
-	Migrations   map[string]string     // Map of vendor dep names to relative path from repository to db migrations
-	Types        map[string]PluginType // Map of import aliases to their transformer initializer type (e.g. eth-event vs eth-storage)
+	Transformers map[string]Transformer
 	FilePath     string
 	FileName     string
 	Save         bool
+}
+
+type Transformer struct {
+	Path           string
+	Type           TransformerType
+	MigrationPath  string
+	RepositoryPath string
 }
 
 func (c *Plugin) GetPluginPaths() (string, string, error) {
@@ -48,55 +50,58 @@ func (c *Plugin) GetPluginPaths() (string, string, error) {
 	return goFile, soFile, nil
 }
 
-func (c *Plugin) GetMigrationsPaths() ([]string, error) {
-	paths := make([]string, 0, len(c.Migrations))
-	for key, relPath := range c.Migrations {
-		repo, ok := c.Dependencies[key]
-		if !ok {
-			return nil, errors.New(fmt.Sprintf("migration %s with path %s missing repository", key, relPath))
-		}
-		path := filepath.Join("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor", repo, relPath)
+// Removes duplicate migration paths before returning them
+func (c *Plugin) GetMigrationsPaths() (map[string]bool, error) {
+	paths := make(map[string]bool)
+	for _, transformer := range c.Transformers {
+		repo := transformer.RepositoryPath
+		mig := transformer.MigrationPath
+		path := filepath.Join("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor", repo, mig)
 		cleanPath, err := helpers.CleanPath(path)
 		if err != nil {
 			return nil, err
 		}
-		paths = append(paths, cleanPath)
+		paths[cleanPath] = true
 	}
 
 	return paths, nil
 }
 
-type PluginType int
+// Removes duplicate repo paths before returning them
+func (c *Plugin) GetRepoPaths() map[string]bool {
+	paths := make(map[string]bool)
+	for _, transformer := range c.Transformers {
+		paths[transformer.RepositoryPath] = true
+	}
+
+	return paths
+}
+
+type TransformerType int
 
 const (
-	UnknownTransformerType PluginType = iota + 1
+	UnknownTransformerType TransformerType = iota
 	EthEvent
 	EthStorage
-	IpfsEvent
-	IpfsStorage
 )
 
-func (pt PluginType) String() string {
+func (pt TransformerType) String() string {
 	names := [...]string{
 		"eth_event",
 		"eth_storage",
-		"ipfs_event",
-		"ipfs_storage",
 	}
 
-	if pt > IpfsStorage || pt < EthEvent {
+	if pt > EthStorage || pt < EthEvent {
 		return "Unknown"
 	}
 
 	return names[pt]
 }
 
-func GetPluginType(str string) PluginType {
-	types := [...]PluginType{
+func GetTransformerType(str string) TransformerType {
+	types := [...]TransformerType{
 		EthEvent,
 		EthStorage,
-		IpfsEvent,
-		IpfsStorage,
 	}
 
 	for _, ty := range types {

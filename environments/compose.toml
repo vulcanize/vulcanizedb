@@ -14,66 +14,177 @@
 [exporter]
     name     = "eventTransformerExporter"
     save     = false
-    [exporter.transformers]
-            bite                    = "transformers/bite/initializer"
-            cat_chop_lump           = "transformers/cat_file/chop_lump/initializer"
-            cat_flip                = "transformers/cat_file/flip/initializer"
-            cat_pit_vow             = "transformers/cat_file/pit_vow/initializer"
-            deal                    = "transformers/deal/initializer"
-            dent                    = "transformers/dent/initializer"
-            drip_drip               = "transformers/drip_drip/initializer"
-            drip_file_ilk           = "transformers/drip_file/ilk/initializer"
-            drip_file_repo          = "transformers/drip_file/repo/initializer"
-            drip_file_vow           = "transformers/drip_file/vow/initializer"
-            flap_kick               = "transformers/flap_kick/initializer"
-            flip_kick               = "transformers/flip_kick/initializer"
-            flop_kick               = "transformers/flop_kick/initializer"
-            frob                    = "transformers/frob/initializer"
-            pit_file_debt_ceiling   = "transformers/pit_file/debt_ceiling/initializer"
-            pit_file_ilk            = "transformers/pit_file/ilk/initializer"
-            price_feeds             = "transformers/price_feeds/initializer"
-            tend                    = "transformers/tend/initializer"
-            vat_flux                = "transformers/vat_flux/initializer"
-            vat_fold                = "transformers/vat_fold/initializer"
-            vat_grab                = "transformers/vat_grab/initializer"
-            vat_heal                = "transformers/vat_heal/initializer"
-            vat_init                = "transformers/vat_init/initializer"
-            vat_move                = "transformers/vat_move/initializer"
-            vat_slip                = "transformers/vat_slip/initializer"
-            vat_toll                = "transformers/vat_toll/initializer"
-            vat_tune                = "transformers/vat_tune/initializer"
-            vow_flog                = "transformers/vow_flog/initializer"
-    [exporter.types]
-            bite                    = "eth_event"
-            cat_chop_lump           = "eth_event"
-            cat_flip                = "eth_event"
-            cat_pit_vow             = "eth_event"
-            deal                    = "eth_event"
-            dent                    = "eth_event"
-            drip_drip               = "eth_event"
-            drip_file_ilk           = "eth_event"
-            drip_file_repo          = "eth_event"
-            drip_file_vow           = "eth_event"
-            flap_kick               = "eth_event"
-            flip_kick               = "eth_event"
-            flop_kick               = "eth_event"
-            frob                    = "eth_event"
-            pit_file_debt_ceiling   = "eth_event"
-            pit_file_ilk            = "eth_event"
-            price_feeds             = "eth_event"
-            tend                    = "eth_event"
-            vat_flux                = "eth_event"
-            vat_fold                = "eth_event"
-            vat_grab                = "eth_event"
-            vat_heal                = "eth_event"
-            vat_init                = "eth_event"
-            vat_move                = "eth_event"
-            vat_slip                = "eth_event"
-            vat_toll                = "eth_event"
-            vat_tune                = "eth_event"
-            vow_flog                = "eth_event"
-     [exporter.repositories]
-            mcd__event_transformers = "github.com/vulcanize/mcd_transformers"
+    transformerNames = [
+        "bite",
+        "cat_chop_lump",
+        "cat_flip",
+        "cat_pit_vow",
+        "deal",
+        "dent",
+        "drip_drip",
+        "drip_file_ilk",
+        "drop_file_repo",
+        "drip_file_vow",
+        "flap_kick",
+        "flip_kick",
+        "flop_kick",
+        "frob_kick",
+        "frob",
+        "pit_file_debt_ceiling",
+        "pit_file_ilk",
+        "price_feeds",
+        "tend",
+        "vat_flux",
+        "vat_fold",
+        "vat_grab",
+        "vat_heal",
+        "vat_init",
+        "vat_move",
+        "vat_slip",
+        "vat_toll",
+        "vat_tune",
+        "vow_flog"
+    ]
+    [exporter.bite]
+        path = "transformers/bite/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.cat_chop_lump]
+        path = "transformers/cat_file/chop_lump/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.cat_flip]
+        path = "transformers/cat_file/flip/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.cat_pit_vow]
+        path = "transformers/cat_file/pit_vow/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.deal]
+        path = "transformers/deal/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.dent]
+        path = "transformers/dent/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.drip_drip]
+        path = "transformers/drip_drip/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.drip_file_ilk]
+        path = "transformers/drip_file/ilk/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.drip_file_repo]
+        path = "transformers/drip_file/repo/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.drip_file_vow]
+        path = "transformers/drip_file/vow/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.flap_kick]
+        path = "transformers/flap_kick/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.flip_kick]
+        path = "transformers/flip_kick/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.flop_kick]
+        path = "transformers/flop_kick/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.frob]
+        path = "transformers/frob/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.pit_file_debt_ceiling]
+        path = "transformers/pit_file/debt_ceiling/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.pit_file_ilk]
+        path = "transformers/pit_file/ilk/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.price_feeds]
+        path = "transformers/price_feeds/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.tend]
+        path = "transformers/tend/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_flux]
+        path = "transformers/vat_flux/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_fold]
+        path = "transformers/vat_fold/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_grab]
+        path = "transformers/vat_grab/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_heal]
+        path = "transformers/vat_heal/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_init]
+        path = "transformers/vat_init/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_move]
+        path = "transformers/vat_move/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_slip]
+        path = "transformers/vat_slip/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_toll]
+        path = "transformers/vat_toll/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vat_tune]
+        path = "transformers/vat_tune/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
+    [exporter.vow_flog]
+        path = "transformers/vow_flog/initializer"
+        type = "eth_event"
+        repository = "github.com/vulcanize/mcd_transformers"
+        migrations = "db/migrations"
 
 [filesystem]
     storageDiffsPath = "INSERT-PATH-TO-STORAGE-DIFFS"

@@ -129,7 +129,7 @@ var NewOwnerBlock2 = core.Block{
 }
 
 var ExpectedTransferFilter = filters.LogFilter{
-	Name:      "Transfer",
+	Name:      constants.TusdContractAddress + "_" + "Transfer",
 	Address:   constants.TusdContractAddress,
 	ToBlock:   -1,
 	FromBlock: 6194634,
@@ -137,7 +137,7 @@ var ExpectedTransferFilter = filters.LogFilter{
 }
 
 var ExpectedApprovalFilter = filters.LogFilter{
-	Name:      "Approval",
+	Name:      constants.TusdContractAddress + "_" + "Approval",
 	Address:   constants.TusdContractAddress,
 	ToBlock:   -1,
 	FromBlock: 6194634,

@@ -50,7 +50,7 @@ lint:
 test: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r
+	$(GINKGO) -r --skipPackage=integration_tests,integration
 
 .PHONY: integrationtest
 integrationtest: | $(GINKGO) $(LINT)

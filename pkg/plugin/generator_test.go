@@ -36,62 +36,76 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers"
 )
 
-var genConfig = config.Plugin{
-	Initializers: map[string]string{
-		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
-		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
+var eventConfig = config.Plugin{
+	Transformers: map[string]config.Transformer{
+		"bite": {
+			Path:           "transformers/bite/initializer",
+			Type:           config.EthEvent,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"deal": {
+			Path:           "transformers/deal/initializer",
+			Type:           config.EthEvent,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
 	},
-	Types: map[string]config.PluginType{
-		"bite": config.EthEvent,
-		"deal": config.EthEvent,
-	},
-	Dependencies: map[string]string{
-		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
-	},
-	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
-	FileName:   "testEventTransformerSet",
-	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:       false,
+	FileName: "testEventTransformerSet",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:     false,
 }
 
-var genStorageConfig = config.Plugin{
-	Initializers: map[string]string{
-		"pit": "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
-		"vat": "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/vat/initializer",
+var storageConfig = config.Plugin{
+	Transformers: map[string]config.Transformer{
+		"pit": {
+			Path:           "transformers/storage_diffs/maker/pit/initializer",
+			Type:           config.EthStorage,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"vat": {
+			Path:           "transformers/storage_diffs/maker/vat/initializer",
+			Type:           config.EthStorage,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
 	},
-	Types: map[string]config.PluginType{
-		"pit": config.EthStorage,
-		"vat": config.EthStorage,
-	},
-	Dependencies: map[string]string{
-		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
-	},
-	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
-	FileName:   "testStorageTransformerSet",
-	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:       false,
+	FileName: "testStorageTransformerSet",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:     false,
 }
 
 var combinedConfig = config.Plugin{
-	Initializers: map[string]string{
-		"bite": "github.com/vulcanize/mcd_transformers/transformers/bite/initializer",
-		"deal": "github.com/vulcanize/mcd_transformers/transformers/deal/initializer",
-		"pit":  "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/pit/initializer",
-		"vat":  "github.com/vulcanize/mcd_transformers/transformers/storage_diffs/maker/vat/initializer",
+	Transformers: map[string]config.Transformer{
+		"pit": {
+			Path:           "transformers/storage_diffs/maker/pit/initializer",
+			Type:           config.EthStorage,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"vat": {
+			Path:           "transformers/storage_diffs/maker/vat/initializer",
+			Type:           config.EthStorage,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"bite": {
+			Path:           "transformers/bite/initializer",
+			Type:           config.EthEvent,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"deal": {
+			Path:           "transformers/deal/initializer",
+			Type:           config.EthEvent,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
 	},
-	Types: map[string]config.PluginType{
-		"bite": config.EthEvent,
-		"deal": config.EthEvent,
-		"pit":  config.EthStorage,
-		"vat":  config.EthStorage,
-	},
-	Dependencies: map[string]string{
-		"mcd_transformers": "github.com/vulcanize/mcd_transformers",
-	},
-	Migrations: map[string]string{"mcd_transformers": "db/migrations"},
-	FileName:   "testComboTransformerSet",
-	FilePath:   "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
-	Save:       false,
+	FileName: "testComboTransformerSet",
+	FilePath: "$GOPATH/src/github.com/vulcanize/vulcanizedb/pkg/plugin/test_helpers/test",
+	Save:     false,
 }
 
 var dbConfig = config.Database{
@@ -117,9 +131,9 @@ var _ = Describe("Generator test", func() {
 
 	Describe("Event Transformers only", func() {
 		BeforeEach(func() {
-			goPath, soPath, err = genConfig.GetPluginPaths()
+			goPath, soPath, err = eventConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
-			g, err = p2.NewGenerator(genConfig, dbConfig)
+			g, err = p2.NewGenerator(eventConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
 			err = g.GenerateExporterPlugin()
 			Expect(err).ToNot(HaveOccurred())
@@ -199,9 +213,9 @@ var _ = Describe("Generator test", func() {
 
 	Describe("Storage Transformers only", func() {
 		BeforeEach(func() {
-			goPath, soPath, err = genStorageConfig.GetPluginPaths()
+			goPath, soPath, err = storageConfig.GetPluginPaths()
 			Expect(err).ToNot(HaveOccurred())
-			g, err = p2.NewGenerator(genStorageConfig, dbConfig)
+			g, err = p2.NewGenerator(storageConfig, dbConfig)
 			Expect(err).ToNot(HaveOccurred())
 			err = g.GenerateExporterPlugin()
 			Expect(err).ToNot(HaveOccurred())

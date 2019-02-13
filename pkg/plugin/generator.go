@@ -18,9 +18,6 @@ package plugin
 
 import (
 	"errors"
-	"fmt"
-	"os"
-
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/builder"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/manager"
@@ -40,14 +37,8 @@ type generator struct {
 
 // Creates a new generator from a plugin and database config
 func NewGenerator(gc config.Plugin, dbc config.Database) (*generator, error) {
-	if len(gc.Initializers) < 1 {
-		return nil, errors.New("generator needs to be configured with TransformerInitializer import paths")
-	}
-	if len(gc.Dependencies) < 1 {
-		return nil, errors.New("generator needs to be configured with root repository path(s)")
-	}
-	if len(gc.Migrations) < 1 {
-		fmt.Fprintf(os.Stderr, "warning: no db migration paths have been provided for the plugin transformers\r\n")
+	if len(gc.Transformers) < 1 {
+		return nil, errors.New("plugin generator is not configured with any transformers")
 	}
 	return &generator{
 		PluginWriter:     writer.NewPluginWriter(gc),

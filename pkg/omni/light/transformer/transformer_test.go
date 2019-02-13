@@ -331,7 +331,7 @@ var _ = Describe("Transformer", func() {
 			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHItransformers.8IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 		})
 
