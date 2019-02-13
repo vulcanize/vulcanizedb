@@ -44,7 +44,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow vat", func() {
-		expectedVat := "vat"
+		expectedVat := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.VatMetadata, expectedVat)
 
@@ -62,7 +62,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow cow", func() {
-		expectedCow := "cow"
+		expectedCow := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.CowMetadata, expectedCow)
 
@@ -80,7 +80,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow row", func() {
-		expectedRow := "row"
+		expectedRow := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.RowMetadata, expectedRow)
 
@@ -98,7 +98,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow Sin", func() {
-		expectedSow := "sow"
+		expectedSow := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.SinMetadata, expectedSow)
 
@@ -115,8 +115,26 @@ var _ = Describe("Vow storage repository test", func() {
 		Expect(result.Sin).To(Equal(expectedSow))
 	})
 
+	It("persists a vow woe", func() {
+		expectedWoe := "123"
+
+		err = repo.Create(blockNumber, blockHash, vow.WoeMetadata, expectedWoe)
+
+		Expect(err).NotTo(HaveOccurred())
+		type VowWoe struct {
+			BlockMetadata
+			Woe string
+		}
+		var result VowWoe
+		err = db.Get(&result, `SELECT block_number, block_hash, woe from maker.vow_woe`)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.BlockNumber).To(Equal(blockNumber))
+		Expect(result.BlockHash).To(Equal(blockHash))
+		Expect(result.Woe).To(Equal(expectedWoe))
+	})
+
 	It("persists a vow Ash", func() {
-		expectedAsh := "ash"
+		expectedAsh := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.AshMetadata, expectedAsh)
 
@@ -134,7 +152,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow Wait", func() {
-		expectedWait := "wait"
+		expectedWait := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.WaitMetadata, expectedWait)
 
@@ -152,7 +170,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow Bump", func() {
-		expectedBump := "bump"
+		expectedBump := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.BumpMetadata, expectedBump)
 
@@ -170,7 +188,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow Sump", func() {
-		expectedSump := "sump"
+		expectedSump := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.SumpMetadata, expectedSump)
 
@@ -188,7 +206,7 @@ var _ = Describe("Vow storage repository test", func() {
 	})
 
 	It("persists a vow Hump", func() {
-		expectedHump := "hump"
+		expectedHump := "123"
 
 		err = repo.Create(blockNumber, blockHash, vow.HumpMetadata, expectedHump)
 
