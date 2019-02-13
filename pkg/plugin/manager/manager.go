@@ -89,7 +89,7 @@ func (m *manager) setupMigrationEnv() error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("unable to remove file found at %s where tmp directory needs to be written", m.tmpMigDir))
 	}
-	err = os.Mkdir(m.tmpMigDir, os.FileMode(0777))
+	err = os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
 	if err != nil {
 		return errors.New(fmt.Sprintf("unable to create temporary migration directory %s", m.tmpMigDir))
 	}
@@ -98,9 +98,9 @@ func (m *manager) setupMigrationEnv() error {
 }
 
 // Create copies of db migrations from vendored libs
-func (m *manager) createMigrationCopies(paths []string) error {
+func (m *manager) createMigrationCopies(paths map[string]bool) error {
 	// Iterate through migration paths to find migration directory
-	for _, path := range paths {
+	for path := range paths {
 		dir, err := ioutil.ReadDir(path)
 		if err != nil {
 			return err

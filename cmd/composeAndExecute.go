@@ -213,23 +213,45 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 
 func prepConfig() {
 	fmt.Println("configuring plugin")
-	types := viper.GetStringMapString("exporter.types")
-	genTypes := map[string]config.PluginType{}
-	for transformerName, transformerType := range types {
-		genType := config.GetPluginType(transformerType)
-		if genType == config.UnknownTransformerType {
-			log.Fatal(errors.New(`unknown transformer type in exporter config
-accepted types are "eth_event", "eth_storage", "ipfs_event" and "ipfs_storage"`))
+	names := viper.GetStringSlice("exporter.transformerNames")
+	transformers := make(map[string]config.Transformer)
+	for _, name := range names {
+		transformer := viper.GetStringMapString("exporter." + name)
+		_, ok := transformer["path"]
+		if !ok {
+			log.Fatal(fmt.Sprintf("%s transformer config is missing `path` value", name))
 		}
-		genTypes[transformerName] = genType
+		_, ok = transformer["repository"]
+		if !ok {
+			log.Fatal(fmt.Sprintf("%s transformer config is missing `repository` value", name))
+		}
+		_, ok = transformer["migrations"]
+		if !ok {
+			log.Fatal(fmt.Sprintf("%s transformer config is missing `migrations` value", name))
+		}
+		ty, ok := transformer["type"]
+		if !ok {
+			log.Fatal(fmt.Sprintf("%s transformer config is missing `type` value", name))
+		}
+
+		transformerType := config.GetTransformerType(ty)
+		if transformerType == config.UnknownTransformerType {
+			log.Fatal(errors.New(`unknown transformer type in exporter config
+accepted types are "eth_event", "eth_storage"`))
+		}
+
+		transformers[name] = config.Transformer{
+			Path:           transformer["path"],
+			Type:           transformerType,
+			RepositoryPath: transformer["repository"],
+			MigrationPath:  transformer["migrations"],
+		}
 	}
+
 	genConfig = config.Plugin{
+		Transformers: transformers,
 		FilePath:     "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins",
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
-		Initializers: viper.GetStringMapString("exporter.transformers"),
-		Dependencies: viper.GetStringMapString("exporter.repositories"),
-		Migrations:   viper.GetStringMapString("exporter.migrations"),
-		Types:        genTypes,
 	}
 }

@@ -58,12 +58,15 @@ func (w *writer) WritePlugin() error {
 
 	// Import pkgs for generic TransformerInitializer interface and specific TransformerInitializers specified in config
 	f.ImportAlias("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "interface")
-	for alias, relPath := range w.GenConfig.Initializers {
-		f.ImportAlias(w.makePath(alias, relPath), alias)
+	for name, transformer := range w.GenConfig.Transformers {
+		f.ImportAlias(transformer.RepositoryPath+"/"+transformer.Path, name)
 	}
 
 	// Collect initializer code
-	ethEventInitializers, ethStorageInitializers, _, _ := w.sortTransformers()
+	code, err := w.collectTransformers()
+	if err != nil {
+		return err
+	}
 
 	// Create Exporter variable with method to export the set of the imported storage and event transformer initializers
 	f.Type().Id("exporter").String()
@@ -74,10 +77,10 @@ func (w *writer) WritePlugin() error {
 	)).Block(Return(
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"TransformerInitializer").Values(ethEventInitializers...),
+			"TransformerInitializer").Values(code[config.EthEvent]...),
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"StorageTransformerInitializer").Values(ethStorageInitializers...))) // Exports the collected initializers
+			"StorageTransformerInitializer").Values(code[config.EthStorage]...))) // Exports the collected event and storage transformer initializers
 
 	// Write code to destination file
 	err = f.Save(goFile)
@@ -88,34 +91,21 @@ func (w *writer) WritePlugin() error {
 }
 
 // Collect code for various types of initializers
-func (w *writer) sortTransformers() ([]Code, []Code, []Code, []Code) {
-	importedEthEventInitializers := make([]Code, 0)
-	importerEthStorageInitializers := make([]Code, 0)
-	importedIpfsEventInitializers := make([]Code, 0)
-	importerIpfsStorageInitializers := make([]Code, 0)
-	for name, path := range w.GenConfig.Initializers {
-		switch w.GenConfig.Types[name] {
+func (w *writer) collectTransformers() (map[config.TransformerType][]Code, error) {
+	code := make(map[config.TransformerType][]Code)
+	for _, transformer := range w.GenConfig.Transformers {
+		path := transformer.RepositoryPath + "/" + transformer.Path
+		switch transformer.Type {
 		case config.EthEvent:
-			importedEthEventInitializers = append(importedEthEventInitializers, Qual(path, "TransformerInitializer"))
+			code[config.EthEvent] = append(code[config.EthEvent], Qual(path, "TransformerInitializer"))
 		case config.EthStorage:
-			importerEthStorageInitializers = append(importerEthStorageInitializers, Qual(path, "StorageTransformerInitializer"))
-		case config.IpfsEvent:
-			//importedIpfsEventInitializers = append(importedIpfsEventInitializers, Qual(path, "IpfsEventTransformerInitializer"))
-		case config.IpfsStorage:
-			//importerIpfsStorageInitializers = append(importerIpfsStorageInitializers, Qual(path, "IpfsStorageTransformerInitializer"))
+			code[config.EthStorage] = append(code[config.EthStorage], Qual(path, "StorageTransformerInitializer"))
+		default:
+			return nil, errors.New(fmt.Sprintf("invalid transformer type %s", transformer.Type))
 		}
 	}
 
-	return importedEthEventInitializers,
-		importerEthStorageInitializers,
-		importedIpfsEventInitializers,
-		importerIpfsStorageInitializers
-}
-
-// Concat relative path with its repo's root path
-func (w *writer) makePath(alias, relPath string) string {
-	pathRoot := w.GenConfig.Dependencies[alias]
-	return pathRoot + "/" + relPath
+	return code, nil
 }
 
 // Setup the .go, clear old ones if present

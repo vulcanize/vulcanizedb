@@ -37,16 +37,17 @@ type PluginBuilder interface {
 }
 
 type builder struct {
-	GenConfig  config.Plugin
-	tmpVenDirs []string // Keep track of temp vendor directories
-	goFile     string   // Keep track of goFile name
+	GenConfig    config.Plugin
+	dependencies []string
+	tmpVenDirs   []string // Keep track of temp vendor directories
+	goFile       string   // Keep track of goFile name
 }
 
 // Requires populated plugin config
 func NewPluginBuilder(gc config.Plugin) *builder {
 	return &builder{
 		GenConfig:  gc,
-		tmpVenDirs: make([]string, 0, len(gc.Dependencies)),
+		tmpVenDirs: make([]string, 0),
 	}
 }
 
@@ -82,8 +83,10 @@ func (b *builder) setupBuildEnv() error {
 		return err
 	}
 
+	repoPaths := b.GenConfig.GetRepoPaths()
+
 	// Import transformer dependencies so that we can build our plugin
-	for name, importPath := range b.GenConfig.Dependencies {
+	for importPath := range repoPaths {
 		// Use dependency paths in config to form git ssh string
 		// TODO: Change this to https once we are no longer working private transformer repos
 		// Right now since vulcanize/mcd_transformers is a private repo we
@@ -95,7 +98,7 @@ func (b *builder) setupBuildEnv() error {
 		depPath := filepath.Join(vendorPath, importPath)
 		err = exec.Command("git", "clone", importURL, depPath).Run()
 		if err != nil {
-			return errors.New(fmt.Sprintf("unable to clone %s transformer dependency: %s", name, err.Error()))
+			return errors.New(fmt.Sprintf("unable to clone transformer dependency from %s: %s", importPath, err.Error()))
 		}
 		err := os.RemoveAll(filepath.Join(depPath, "vendor/"))
 		if err != nil {
