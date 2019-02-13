@@ -17,8 +17,8 @@
 package retriever_test
 
 import (
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -31,5 +31,5 @@ func TestRetriever(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
+	logrus.SetOutput(ioutil.Discard)
 })
