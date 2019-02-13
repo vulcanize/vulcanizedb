@@ -12,3 +12,4 @@ postgraphile/build/
 postgraphile/node_modules/
 postgraphile/package-lock.json
 vulcanizedb.log
+db/migrations/00*.sql

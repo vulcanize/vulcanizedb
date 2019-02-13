@@ -87,6 +87,7 @@ const (
 
 func (pt TransformerType) String() string {
 	names := [...]string{
+		"Unknown",
 		"eth_event",
 		"eth_storage",
 	}
@@ -105,7 +106,7 @@ func GetTransformerType(str string) TransformerType {
 	}
 
 	for _, ty := range types {
-		if ty.String() == str && ty.String() != "Unknown" {
+		if ty.String() == str {
 			return ty
 		}
 	}

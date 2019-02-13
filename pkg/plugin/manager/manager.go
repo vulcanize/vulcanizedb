@@ -66,9 +66,16 @@ func (m *manager) RunMigrations() error {
 	if err != nil {
 		return err
 	}
+	// Fix the migrations
+	cmd := exec.Command("goose", "fix")
+	cmd.Dir = m.tmpMigDir
+	err = cmd.Run()
+	if err != nil {
+		return errors.New(fmt.Sprintf("version fixing for plugin migrations failed: %s", err.Error()))
+	}
 	// Run the copied migrations with goose
 	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	cmd := exec.Command("goose", "postgres", pgStr, "up")
+	cmd = exec.Command("goose", "postgres", pgStr, "up")
 	cmd.Dir = m.tmpMigDir
 	err = cmd.Run()
 	if err != nil {
