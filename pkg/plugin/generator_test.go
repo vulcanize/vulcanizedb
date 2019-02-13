@@ -78,18 +78,6 @@ var storageConfig = config.Plugin{
 
 var combinedConfig = config.Plugin{
 	Transformers: map[string]config.Transformer{
-		"pit": {
-			Path:           "transformers/storage_diffs/maker/pit/initializer",
-			Type:           config.EthStorage,
-			MigrationPath:  "db/migrations",
-			RepositoryPath: "github.com/vulcanize/mcd_transformers",
-		},
-		"vat": {
-			Path:           "transformers/storage_diffs/maker/vat/initializer",
-			Type:           config.EthStorage,
-			MigrationPath:  "db/migrations",
-			RepositoryPath: "github.com/vulcanize/mcd_transformers",
-		},
 		"bite": {
 			Path:           "transformers/bite/initializer",
 			Type:           config.EthEvent,
@@ -99,6 +87,18 @@ var combinedConfig = config.Plugin{
 		"deal": {
 			Path:           "transformers/deal/initializer",
 			Type:           config.EthEvent,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"pit": {
+			Path:           "transformers/storage_diffs/maker/pit/initializer",
+			Type:           config.EthStorage,
+			MigrationPath:  "db/migrations",
+			RepositoryPath: "github.com/vulcanize/mcd_transformers",
+		},
+		"vat": {
+			Path:           "transformers/storage_diffs/maker/vat/initializer",
+			Type:           config.EthStorage,
 			MigrationPath:  "db/migrations",
 			RepositoryPath: "github.com/vulcanize/mcd_transformers",
 		},
@@ -128,6 +128,9 @@ var _ = Describe("Generator test", func() {
 	var headerID int64
 	viper.SetConfigName("compose")
 	viper.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	AfterSuite(func() {
+		test_helpers.DropTestSchema(db)
+	})
 
 	Describe("Event Transformers only", func() {
 		BeforeEach(func() {
@@ -226,6 +229,7 @@ var _ = Describe("Generator test", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 		Describe("GenerateTransformerPlugin", func() {
+
 			It("It bundles the specified  StorageTransformerInitializers into a Exporter object and creates .so", func() {
 				plug, err := plugin.Open(soPath)
 				Expect(err).ToNot(HaveOccurred())
@@ -275,6 +279,7 @@ var _ = Describe("Generator test", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 		Describe("GenerateTransformerPlugin", func() {
+
 			It("It bundles the specified  TransformerInitializers and StorageTransformerInitializers into a Exporter object and creates .so", func() {
 				plug, err := plugin.Open(soPath)
 				Expect(err).ToNot(HaveOccurred())

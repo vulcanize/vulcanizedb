@@ -73,9 +73,11 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM maker.bite`)
-	Expect(err).NotTo(HaveOccurred())
-
 	err = tx.Commit()
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func DropTestSchema(db *postgres.DB) {
+	_, err := db.Exec(`DROP SCHEMA IF EXISTS maker CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 }

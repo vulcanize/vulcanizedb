@@ -54,23 +54,35 @@ var composeAndExecuteCmd = &cobra.Command{
     ipcPath = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    name = "exporter"
-    [exporter.transformers]
-            transformer1 = "path/to/transformer1"
-            transformer2 = "path/to/transformer2"
-            transformer3 = "path/to/transformer3"
-            transformer4 = "path/to/transformer4"
-	[exporter.types]
-            transformer1 = "eth_event"
-            transformer2 = "eth_event"
-            transformer3 = "eth_event"
-            transformer4 = "eth_storage"
-    [exporter.repositories]
-            transformers = "github.com/account/repo"
-            transformer4 = "github.com/account2/repo2"
-    [exporter.migrations]
-            transformers = "db/migrations"
-            transformer4 = "to/db/migrations"
+	name     = "exampleTransformerExporter"
+    save     = false
+    transformerNames = [
+        "transformer1",
+        "transformer2",
+        "transformer3",
+        "transformer4",
+    ]
+    [exporter.transformer1]
+        path = "path/to/transformer1"
+        type = "eth_event"
+        repository = "github.com/account/repo"
+        migrations = "db/migrations"
+    [exporter.transformer2]
+        path = "path/to/transformer2"
+        type = "eth_event"
+        repository = "github.com/account/repo"
+        migrations = "db/migrations"
+	[exporter.transformer3]
+        path = "path/to/transformer3"
+        type = "eth_storage"
+        repository = "github.com/account/repo"
+        migrations = "db/migrations"
+	[exporter.transformer4]
+        path = "path/to/transformer4"
+        type = "eth_event"
+        repository = "github.com/account2/repo2"
+        migrations = "to/db/migrations"
+
 
 Note: If any of the imported transformer need additional
 config variables do not forget to include those as well
@@ -81,7 +93,7 @@ This plugin is loaded and the set of transformer initializers is exported
 from it and loaded into and executed over by the appropriate watcher. 
 
 The type of watcher that the transformer works with is specified using the 
-exporter.types config variable as shown above. Currently there are watchers 
+type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
 (eth_storage). Soon there will be watchers for ipfs (ipfs_event and ipfs_storage).
 
@@ -217,34 +229,32 @@ func prepConfig() {
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
 		transformer := viper.GetStringMapString("exporter." + name)
-		_, ok := transformer["path"]
-		if !ok {
+		p, ok := transformer["path"]
+		if !ok || p == "" {
 			log.Fatal(fmt.Sprintf("%s transformer config is missing `path` value", name))
 		}
-		_, ok = transformer["repository"]
-		if !ok {
+		r, ok := transformer["repository"]
+		if !ok || r == "" {
 			log.Fatal(fmt.Sprintf("%s transformer config is missing `repository` value", name))
 		}
-		_, ok = transformer["migrations"]
-		if !ok {
+		m, ok := transformer["migrations"]
+		if !ok || m == "" {
 			log.Fatal(fmt.Sprintf("%s transformer config is missing `migrations` value", name))
 		}
-		ty, ok := transformer["type"]
+		t, ok := transformer["type"]
 		if !ok {
 			log.Fatal(fmt.Sprintf("%s transformer config is missing `type` value", name))
 		}
-
-		transformerType := config.GetTransformerType(ty)
+		transformerType := config.GetTransformerType(t)
 		if transformerType == config.UnknownTransformerType {
-			log.Fatal(errors.New(`unknown transformer type in exporter config
-accepted types are "eth_event", "eth_storage"`))
+			log.Fatal(errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`))
 		}
 
 		transformers[name] = config.Transformer{
-			Path:           transformer["path"],
+			Path:           p,
 			Type:           transformerType,
-			RepositoryPath: transformer["repository"],
-			MigrationPath:  transformer["migrations"],
+			RepositoryPath: r,
+			MigrationPath:  m,
 		}
 	}
 

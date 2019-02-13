@@ -1,5 +1,5 @@
 [database]
-    name     = "vulcanize_public"
+    name     = "vulcanize_infura"
     hostname = "localhost"
     user     = "vulcanize"
     password = "vulcanize"
@@ -28,7 +28,6 @@
         "flap_kick",
         "flip_kick",
         "flop_kick",
-        "frob_kick",
         "frob",
         "pit_file_debt_ceiling",
         "pit_file_ilk",
@@ -85,7 +84,7 @@
         type = "eth_event"
         repository = "github.com/vulcanize/mcd_transformers"
         migrations = "db/migrations"
-    [exporter.drip_file_repo]
+    [exporter.drop_file_repo]
         path = "transformers/drip_file/repo/initializer"
         type = "eth_event"
         repository = "github.com/vulcanize/mcd_transformers"
