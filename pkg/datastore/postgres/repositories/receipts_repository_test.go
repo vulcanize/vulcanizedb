@@ -87,14 +87,19 @@ var _ = Describe("Receipts Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedReceiptOne).NotTo(BeNil())
 			Expect(persistedReceiptOne.TxHash).To(Equal(txHashOne))
+
 			persistedReceiptTwo, err := receiptRepository.GetReceipt(txHashTwo)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedReceiptTwo).NotTo(BeNil())
 			Expect(persistedReceiptTwo.TxHash).To(Equal(txHashTwo))
-			persistedAddressOneLogs := logRepository.GetLogs(addressOne, blockNumber)
+
+			persistedAddressOneLogs, err := logRepository.GetLogs(addressOne, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedAddressOneLogs).NotTo(BeNil())
 			Expect(len(persistedAddressOneLogs)).To(Equal(2))
-			persistedAddressTwoLogs := logRepository.GetLogs(addressTwo, blockNumber)
+
+			persistedAddressTwoLogs, err := logRepository.GetLogs(addressTwo, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedAddressTwoLogs).NotTo(BeNil())
 			Expect(len(persistedAddressTwoLogs)).To(Equal(1))
 		})
