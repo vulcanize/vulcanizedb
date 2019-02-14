@@ -30,8 +30,9 @@ var _ = Describe("Validation window", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(big.NewInt(5))
 
-		validationWindow := history.MakeValidationWindow(blockChain, 2)
+		validationWindow, err := history.MakeValidationWindow(blockChain, 2)
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(validationWindow.LowerBound).To(Equal(int64(3)))
 		Expect(validationWindow.UpperBound).To(Equal(int64(5)))
 	})

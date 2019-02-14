@@ -59,7 +59,6 @@ var _ = Describe("Populating headers", func() {
 	It("returns early if the db is already synced up to the head of the chain", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(big.NewInt(2))
-		headerRepository.SetHeaderExists(true)
 		headersAdded, err := history.PopulateMissingHeaders(blockChain, headerRepository, 2)
 
 		Expect(err).NotTo(HaveOccurred())

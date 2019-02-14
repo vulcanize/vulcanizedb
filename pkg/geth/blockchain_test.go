@@ -221,7 +221,7 @@ var _ = Describe("Geth blockchain", func() {
 			blockNumber := int64(100)
 			mockClient.SetHeaderByNumberReturnHeader(&types.Header{Number: big.NewInt(blockNumber)})
 
-			result := blockChain.LastBlock()
+			result, _ := blockChain.LastBlock()
 
 			mockClient.AssertHeaderByNumberCalledWith(context.Background(), nil)
 			Expect(result).To(Equal(big.NewInt(blockNumber)))
