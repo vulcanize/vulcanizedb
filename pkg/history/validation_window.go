@@ -18,16 +18,9 @@ package history
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"text/template"
 )
-
-const WindowTemplate = `Validating Blocks
-|{{.LowerBound}}|-- Validation Window --|{{.UpperBound}}| ({{.UpperBound}}:HEAD)
-
-`
-
-var ParsedWindowTemplate = *template.Must(template.New("window").Parse(WindowTemplate))
 
 type ValidationWindow struct {
 	LowerBound int64
@@ -38,10 +31,14 @@ func (window ValidationWindow) Size() int {
 	return int(window.UpperBound - window.LowerBound)
 }
 
-func MakeValidationWindow(blockchain core.BlockChain, windowSize int) ValidationWindow {
-	upperBound := blockchain.LastBlock().Int64()
-	lowerBound := upperBound - int64(windowSize)
-	return ValidationWindow{lowerBound, upperBound}
+func MakeValidationWindow(blockchain core.BlockChain, windowSize int) (ValidationWindow, error) {
+	upperBound, err := blockchain.LastBlock()
+	if err != nil {
+		log.Error("MakeValidationWindow: error getting LastBlock: ", err)
+		return ValidationWindow{}, err
+	}
+	lowerBound := upperBound.Int64() - int64(windowSize)
+	return ValidationWindow{lowerBound, upperBound.Int64()}, nil
 }
 
 func MakeRange(min, max int64) []int64 {

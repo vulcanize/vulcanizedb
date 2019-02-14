@@ -18,6 +18,7 @@ package ethereum
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -37,6 +38,7 @@ func CreateDatabase(config DatabaseConfig) (Database, error) {
 	case Level:
 		levelDBConnection, err := ethdb.NewLDBDatabase(config.Path, 128, 1024)
 		if err != nil {
+			logrus.Error("CreateDatabase: error connecting to new LDBD: ", err)
 			return nil, err
 		}
 		levelDBReader := level.NewLevelDatabaseReader(levelDBConnection)

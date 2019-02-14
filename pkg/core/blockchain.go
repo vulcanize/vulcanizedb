@@ -30,7 +30,7 @@ type BlockChain interface {
 	GetHeaderByNumbers(blockNumbers []int64) ([]Header, error)
 	GetLogs(contract Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]Log, error)
 	GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error)
-	LastBlock() *big.Int
+	LastBlock() (*big.Int, error)
 	Node() Node
 }
 
