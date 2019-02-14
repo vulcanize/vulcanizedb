@@ -1,4 +1,8 @@
 [database]
+    name = "vulcanize_public"
+    hostname = "localhost"
+    user = "vulcanize"
+    password = "vulcanize"
     port = 5432
 
 [client]
