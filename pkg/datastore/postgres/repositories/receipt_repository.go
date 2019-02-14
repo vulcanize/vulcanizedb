@@ -19,6 +19,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -61,6 +62,9 @@ func createReceipt(receipt core.Receipt, blockId int64, tx *sql.Tx) (int64, erro
 		               RETURNING id`,
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
 	).Scan(&receiptId)
+	if err != nil {
+		logrus.Error("createReceipt: Error inserting: ", err)
+	}
 	return receiptId, err
 }
 
@@ -90,6 +94,7 @@ func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt 
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
 	if err != nil {
 		tx.Rollback()
+		logrus.Warning("CreateReceipt: error inserting receipt: ", err)
 		return receiptId, err
 	}
 	tx.Commit()

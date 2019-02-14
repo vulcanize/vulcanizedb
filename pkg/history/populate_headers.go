@@ -25,25 +25,24 @@ import (
 )
 
 func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
-	lastBlock := blockchain.LastBlock().Int64()
-	headerAlreadyExists, err := headerRepository.HeaderExists(lastBlock)
-
+	lastBlock, err := blockchain.LastBlock()
 	if err != nil {
-		log.Error("Error in checking header in PopulateMissingHeaders: ", err)
+		log.Error("PopulateMissingHeaders: Error getting last block: ", err)
 		return 0, err
-	} else if headerAlreadyExists {
-		return 0, nil
 	}
 
-	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockchain.Node().ID)
 	if err != nil {
-		log.Error("Error getting missing block numbers in PopulateMissingHeaders: ", err)
+		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
 		return 0, err
+	} else if len(blockNumbers) == 0 {
+		return 0, nil
 	}
 
 	log.Printf("Backfilling %d blocks\n\n", len(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockchain, headerRepository, blockNumbers)
 	if err != nil {
+		log.Error("PopulateMissingHeaders: Error getting/updating headers:", err)
 		return 0, err
 	}
 	return len(blockNumbers), nil
