@@ -60,6 +60,7 @@ func parseStorageDiffs() {
 	watcher.AddTransformers([]storage.TransformerInitializer{
 		transformers.GetPitStorageTransformer().NewTransformer,
 		transformers.GetVatStorageTransformer().NewTransformer,
+		transformers.GetVowStorageTransformer().NewTransformer,
 	})
 
 	err = watcher.Execute()
