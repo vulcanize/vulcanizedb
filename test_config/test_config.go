@@ -130,6 +130,17 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM receipts")
 	db.MustExec("DELETE FROM transactions")
 	db.MustExec("DELETE FROM watched_contracts")
+	db.MustExec("DELETE FROM maker.cat_nflip")
+	db.MustExec("DELETE FROM maker.cat_live")
+	db.MustExec("DELETE FROM maker.cat_vat")
+	db.MustExec("DELETE FROM maker.cat_pit")
+	db.MustExec("DELETE FROM maker.cat_vow")
+	db.MustExec("DELETE FROM maker.cat_ilk_flip")
+	db.MustExec("DELETE FROM maker.cat_ilk_chop")
+	db.MustExec("DELETE FROM maker.cat_ilk_lump")
+	db.MustExec("DELETE FROM maker.cat_flip_ilk")
+	db.MustExec("DELETE FROM maker.cat_flip_ink")
+	db.MustExec("DELETE FROM maker.cat_flip_tab")
 }
 
 // Returns a new test node, with the same ID
