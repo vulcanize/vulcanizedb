@@ -259,6 +259,8 @@ The information provided in the .toml config is used to generate the plugin:
     ipcPath  = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
+    home     = "github.com/vulcanize/vulcanizedb"
+    clone    = false
     name     = "eventTransformerExporter"
     save     = false
     transformerNames = [
@@ -288,20 +290,23 @@ The information provided in the .toml config is used to generate the plugin:
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
 ```
+- `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
+- `clone` this signifies whether or not to retrieve transformer packages by cloning them; by default we attempt to work with transformer packages located in
+our `$GOPATH` but setting this to `true` overrides that. This needs to be set to `true` for the configs used in tests in order for them to work with Travis.
 - `name` is the name used for the plugin files (.so and .go)   
-- `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation (useful for debugging)   
-- `transformerNames` is the list of the names of the transformers we are composing together, so we know how to access their submaps in the exporter map   
-- `exporter.<transformerName>`s are the sub-mappings containing config info for the transformers   
+- `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation. Sometimes useful for debugging/trouble-shooting purposes.
+- `transformerNames` is the list of the names of the transformers we are composing together, so we know how to access their submaps in the exporter map
+- `exporter.<transformerName>`s are the sub-mappings containing config info for the transformers
     - `repository` is the path for the repository which contains the transformer and its `TransformerInitializer`
-    - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` 
-    - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: "eth_event" and "eth_storage")   
-        - "eth_storage" indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go)
-         that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)   
-        - "eth_event" indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go)
-         that fetches event logs from an ETH node   
-    - `migrations` is the relative path from `repository` to the db migrations for the transformer      
+    - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package)
+    - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: `eth_event` and `eth_storage`)
+        - `eth_storage` indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go)
+         that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
+        - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go)
+         that fetches event logs from an ETH node
+    - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     
-Note: If any of the imported transformer need additional
+Note: If any of the imported transformers need additional
 config variables do not forget to include those as well  
 
 This information is used to write and build a go plugin with a transformer
@@ -344,8 +349,8 @@ func (e exporter) Export() []interface1.TransformerInitializer, []interface1.Sto
 To plug in an external transformer we need to:   
 
 * create a [package](https://github.com/vulcanize/mcd_transformers/blob/staging/transformers/bite/initializer/initializer.go) 
-that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)  
-and [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
-* design the transformers to work in the context of the [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
+that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
+* design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
 * create db migrations to run against vulcanizeDB so that we can store the transformed data     

@@ -78,7 +78,7 @@ func (b *builder) BuildPlugin() error {
 // This is to work around a conflict between plugins and vendoring (https://github.com/golang/go/issues/20481)
 func (b *builder) setupBuildEnv() error {
 	// TODO: Less hacky way of handling plugin build deps
-	vendorPath, err := helpers.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor")
+	vendorPath, err := helpers.CleanPath(filepath.Join("$GOPATH/src", b.GenConfig.Home, "vendor"))
 	if err != nil {
 		return err
 	}
@@ -87,25 +87,37 @@ func (b *builder) setupBuildEnv() error {
 
 	// Import transformer dependencies so that we can build our plugin
 	for importPath := range repoPaths {
-		// Use dependency paths in config to form git ssh string
-		// TODO: Change this to https once we are no longer working private transformer repos
-		// Right now since vulcanize/mcd_transformers is a private repo we
-		// are using ssh and uploading ssh key to travis for testing
-		// This is slower and more involved than using https urls
-		index := strings.Index(importPath, "/")
-		gitPath := importPath[:index] + ":" + importPath[index+1:]
-		importURL := "git@" + gitPath + ".git"
-		depPath := filepath.Join(vendorPath, importPath)
-		err = exec.Command("git", "clone", importURL, depPath).Run()
-		if err != nil {
-			return errors.New(fmt.Sprintf("unable to clone transformer dependency from %s: %s", importPath, err.Error()))
+		dstPath := filepath.Join(vendorPath, importPath)
+		// When testing on Travis we need to clone the libs
+		if b.GenConfig.Clone {
+			// And if we want to be able to work with a private repo we need  to use ssh instead of https
+			// and upload a permissioned ssh key to travis before deploying tests there
+			index := strings.Index(importPath, "/")
+			gitPath := importPath[:index] + ":" + importPath[index+1:]
+			importURL := "git@" + gitPath + ".git"
+			err = exec.Command("git", "clone", importURL, dstPath).Run()
+			if err != nil {
+				return errors.New(fmt.Sprintf("unable to clone transformer dependency from %s to %s: %s", importPath, dstPath, err.Error()))
+			}
+		} else { // If not on Travis we can work with libs at $GOPATH
+			srcDir, err := helpers.CleanPath(filepath.Join("$GOPATH/src", importPath))
+			if err != nil {
+				return err
+			}
+			sp := strings.Split(dstPath, "/")
+			spj := strings.Join(sp[:len(sp)-1], "/")
+			err = exec.Command("rsync", "-a", srcDir, spj).Run()
+			if err != nil {
+				return errors.New(fmt.Sprintf("unable to copy transformer dependency from %s to %s: %s", srcDir, dstPath, err.Error()))
+			}
 		}
-		err := os.RemoveAll(filepath.Join(depPath, "vendor/"))
+		// Have to clear out the copied over vendor lib or plugin won't build (see issue above)
+		err := os.RemoveAll(filepath.Join(dstPath, "vendor"))
 		if err != nil {
 			return err
 		}
 		// Keep track of this vendor directory to clear later
-		b.tmpVenDirs = append(b.tmpVenDirs, depPath)
+		b.tmpVenDirs = append(b.tmpVenDirs, dstPath)
 	}
 
 	return nil

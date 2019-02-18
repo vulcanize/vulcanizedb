@@ -62,16 +62,18 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
 	out, err := os.OpenFile(dst, syscall.O_CREAT|syscall.O_EXCL|os.O_WRONLY, os.FileMode(0666)) // Doesn't overwrite files
 	if err != nil {
+		in.Close()
 		return err
 	}
-	defer out.Close()
 
 	_, err = io.Copy(out, in)
 	if err != nil {
+		in.Close()
+		out.Close()
 		return err
 	}
+	in.Close()
 	return out.Close()
 }
