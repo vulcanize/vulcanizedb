@@ -16,7 +16,11 @@
 
 package maker
 
-import "github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+import (
+	"database/sql"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"math/big"
+)
 
 type Urn struct {
 	Ilk string
@@ -25,6 +29,7 @@ type Urn struct {
 
 type IMakerStorageRepository interface {
 	GetDaiKeys() ([]string, error)
+	GetMaxFlip() (*big.Int, error)
 	GetGemKeys() ([]Urn, error)
 	GetIlks() ([]string, error)
 	GetSinKeys() ([]string, error)
@@ -46,6 +51,16 @@ func (repository *MakerStorageRepository) GetDaiKeys() ([]string, error) {
 		SELECT DISTINCT urn FROM maker.vat_fold
 	`)
 	return daiKeys, err
+}
+
+func (repository *MakerStorageRepository) GetMaxFlip() (*big.Int, error) {
+	var maxFlip big.Int
+	err := repository.db.Get(&maxFlip, `SELECT MAX(nflip) FROM maker.bite`)
+	if err == sql.ErrNoRows {
+		// No flips have occurred; this is different from flip 0 having occurred
+		return nil, nil
+	}
+	return &maxFlip, err
 }
 
 func (repository *MakerStorageRepository) GetGemKeys() ([]Urn, error) {

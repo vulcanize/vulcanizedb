@@ -3,6 +3,7 @@ package test_helpers
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
+	"math/big"
 )
 
 type MockMakerStorageRepository struct {
@@ -14,11 +15,14 @@ type MockMakerStorageRepository struct {
 	GetGemKeysError  error
 	GetIlksCalled    bool
 	GetIlksError     error
+	GetMaxFlipCalled bool
+	GetMaxFlipError  error
 	GetSinKeysCalled bool
 	GetSinKeysError  error
 	GetUrnsCalled    bool
 	GetUrnsError     error
 	Ilks             []string
+	MaxFlip          *big.Int
 	SinKeys          []string
 	Urns             []maker.Urn
 }
@@ -36,6 +40,11 @@ func (repository *MockMakerStorageRepository) GetGemKeys() ([]maker.Urn, error) 
 func (repository *MockMakerStorageRepository) GetIlks() ([]string, error) {
 	repository.GetIlksCalled = true
 	return repository.Ilks, repository.GetIlksError
+}
+
+func (repository *MockMakerStorageRepository) GetMaxFlip() (*big.Int, error) {
+	repository.GetMaxFlipCalled = true
+	return repository.MaxFlip, repository.GetMaxFlipError
 }
 
 func (repository *MockMakerStorageRepository) GetSinKeys() ([]string, error) {

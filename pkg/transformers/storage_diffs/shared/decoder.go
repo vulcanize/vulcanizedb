@@ -27,6 +27,8 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 		return decodeUint256(row.StorageValue.Bytes()), nil
 	case Address:
 		return decodeAddress(row.StorageValue.Bytes()), nil
+	case Bytes32:
+		return row.StorageValue.Hex(), nil
 	default:
 		return nil, ErrTypeNotFound{}
 	}
