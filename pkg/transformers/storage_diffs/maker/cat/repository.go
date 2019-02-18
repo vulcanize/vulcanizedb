@@ -37,7 +37,7 @@ func (repository *CatStorageRepository) Create(blockNumber int, blockHash string
 	case FlipTab:
 		return repository.insertFlipTab(blockNumber, blockHash, metadata, value.(string))
 	default:
-		panic(fmt.Sprintf("unrecognized vat contract storage name: %s", metadata.Name))
+		panic(fmt.Sprintf("unrecognized cat contract storage name: %s", metadata.Name))
 	}
 }
 

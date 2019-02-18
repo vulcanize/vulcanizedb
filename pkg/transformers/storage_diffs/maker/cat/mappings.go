@@ -151,9 +151,8 @@ func (mappings CatMappings) loadFlipsKeys() error {
 	}
 
 	last := maxFlip.Int64()
-	var flipStr string
 	for flip := 0; int64(flip) <= last; flip++ {
-		flipStr = strconv.Itoa(flip)
+		flipStr := strconv.Itoa(flip)
 		mappings.mappings[getFlipIlkKey(flipStr)] = getFlipIlkMetadata(flipStr)
 		mappings.mappings[getFlipUrnKey(flipStr)] = getFlipUrnMetadata(flipStr)
 		mappings.mappings[getFlipInkKey(flipStr)] = getFlipInkMetadata(flipStr)
@@ -162,38 +161,38 @@ func (mappings CatMappings) loadFlipsKeys() error {
 	return nil
 }
 
-func getFlipIlkKey(nflip string) common.Hash {
-	return storage_diffs.GetMapping(FlipsMappingIndex, nflip)
+func getFlipIlkKey(flip string) common.Hash {
+	return storage_diffs.GetMapping(FlipsMappingIndex, flip)
 }
 
-func getFlipIlkMetadata(nflip string) shared.StorageValueMetadata {
-	keys := map[shared.Key]string{shared.Flip: nflip}
+func getFlipIlkMetadata(flip string) shared.StorageValueMetadata {
+	keys := map[shared.Key]string{shared.Flip: flip}
 	return shared.GetStorageValueMetadata(FlipIlk, keys, shared.Bytes32)
 }
 
-func getFlipUrnKey(nflip string) common.Hash {
-	return storage_diffs.GetIncrementedKey(getFlipIlkKey(nflip), 1)
+func getFlipUrnKey(flip string) common.Hash {
+	return storage_diffs.GetIncrementedKey(getFlipIlkKey(flip), 1)
 }
 
-func getFlipUrnMetadata(nflip string) shared.StorageValueMetadata {
-	keys := map[shared.Key]string{shared.Flip: nflip}
+func getFlipUrnMetadata(flip string) shared.StorageValueMetadata {
+	keys := map[shared.Key]string{shared.Flip: flip}
 	return shared.GetStorageValueMetadata(FlipUrn, keys, shared.Bytes32)
 }
 
-func getFlipInkKey(nflip string) common.Hash {
-	return storage_diffs.GetIncrementedKey(getFlipIlkKey(nflip), 2)
+func getFlipInkKey(flip string) common.Hash {
+	return storage_diffs.GetIncrementedKey(getFlipIlkKey(flip), 2)
 }
 
-func getFlipInkMetadata(nflip string) shared.StorageValueMetadata {
-	keys := map[shared.Key]string{shared.Flip: nflip}
+func getFlipInkMetadata(flip string) shared.StorageValueMetadata {
+	keys := map[shared.Key]string{shared.Flip: flip}
 	return shared.GetStorageValueMetadata(FlipInk, keys, shared.Uint256)
 }
 
-func getFlipTabKey(nflip string) common.Hash {
-	return storage_diffs.GetIncrementedKey(getFlipIlkKey(nflip), 3)
+func getFlipTabKey(flip string) common.Hash {
+	return storage_diffs.GetIncrementedKey(getFlipIlkKey(flip), 3)
 }
 
-func getFlipTabMetadata(nflip string) shared.StorageValueMetadata {
-	keys := map[shared.Key]string{shared.Flip: nflip}
+func getFlipTabMetadata(flip string) shared.StorageValueMetadata {
+	keys := map[shared.Key]string{shared.Flip: flip}
 	return shared.GetStorageValueMetadata(FlipTab, keys, shared.Uint256)
 }
