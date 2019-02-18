@@ -12,7 +12,7 @@ addons:
 go_import_path: github.com/vulcanize/vulcanizedb
 
 before_install:
-  # ginkgo golint dep migrate
+  # ginkgo golint dep goose
   - echo -e "Host github.com\n\tHostName github.com\n\tUser git\n\tIdentityFile ~/.ssh/id_rsa\n" >> ~/.ssh/config
   - make installtools
   - bash ./scripts/install-postgres-10.sh
@@ -41,4 +41,3 @@ notifications:
 after_script:
   - bash ./scripts/stop_test_chain.sh
   - bash ./bin/deploy.sh
-

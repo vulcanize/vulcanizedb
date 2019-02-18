@@ -18,16 +18,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"log"
 	"os"
 	"plugin"
 	syn "sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
@@ -112,14 +112,14 @@ func composeAndExecute() {
 	prepConfig()
 
 	// Generate code to build the plugin according to the config file
-	fmt.Println("generating plugin")
+	log.Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	err = generator.GenerateExporterPlugin()
 	if err != nil {
-		fmt.Fprint(os.Stderr, "generating plugin failed")
+		log.Debug("generating plugin failed")
 		log.Fatal(err)
 	}
 
@@ -131,25 +131,25 @@ func composeAndExecute() {
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
-	fmt.Println("opening plugin")
+	log.Info("opening plugin")
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		fmt.Fprint(os.Stderr, "opening pluggin failed")
+		log.Debug("opening pluggin failed")
 		log.Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
-	fmt.Println("loading transformers from plugin")
+	log.Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		fmt.Fprint(os.Stderr, "loading Exporter symbol failed")
+		log.Debug("loading Exporter symbol failed")
 		log.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		fmt.Fprint(os.Stderr, "plugged-in symbol not of type Exporter")
+		log.Debug("plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 
@@ -192,7 +192,7 @@ func init() {
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the TransformerInitializer set using the watcher
-	fmt.Println("executing event transformers")
+	log.Info("executing event transformers")
 	var recheck constants.TransformerExecution
 	if recheckHeadersArg {
 		recheck = constants.HeaderRecheck
@@ -212,7 +212,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the TransformerInitializer set using the watcher
-	fmt.Println("executing storage transformers")
+	log.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -224,7 +224,7 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 }
 
 func prepConfig() {
-	fmt.Println("configuring plugin")
+	log.Info("configuring plugin")
 	names := viper.GetStringSlice("exporter.transformerNames")
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
