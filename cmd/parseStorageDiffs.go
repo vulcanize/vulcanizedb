@@ -58,6 +58,7 @@ func parseStorageDiffs() {
 	// TODO: configure transformers
 	watcher := shared.NewStorageWatcher(tailer, db)
 	watcher.AddTransformers([]storage.TransformerInitializer{
+		transformers.GetCatStorageTransformer().NewTransformer,
 		transformers.GetPitStorageTransformer().NewTransformer,
 		transformers.GetVatStorageTransformer().NewTransformer,
 		transformers.GetVowStorageTransformer().NewTransformer,
