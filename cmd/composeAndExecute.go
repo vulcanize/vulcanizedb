@@ -263,5 +263,7 @@ func prepConfig() {
 		FilePath:     "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins",
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
+		Home:         viper.GetString("exporter.home"),
+		Clone:        viper.GetBool("exporter.clone"),
 	}
 }

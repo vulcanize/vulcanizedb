@@ -88,7 +88,7 @@ func (m *manager) RunMigrations() error {
 // Setup a temporary directory to hold transformer db migrations
 func (m *manager) setupMigrationEnv() error {
 	var err error
-	m.tmpMigDir, err = helpers.CleanPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/db/plugin_migrations")
+	m.tmpMigDir, err = helpers.CleanPath(filepath.Join("$GOPATH/src", m.GenConfig.Home+".plugin_migrations"))
 	if err != nil {
 		return err
 	}

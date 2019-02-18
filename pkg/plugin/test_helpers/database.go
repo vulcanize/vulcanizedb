@@ -17,6 +17,7 @@
 package test_helpers
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/gomega"
@@ -77,7 +78,7 @@ func TearDown(db *postgres.DB) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func DropTestSchema(db *postgres.DB) {
-	_, err := db.Exec(`DROP SCHEMA IF EXISTS maker CASCADE`)
+func DropTestSchema(db *postgres.DB, schema string) {
+	_, err := db.Exec(fmt.Sprintf(`DROP SCHEMA IF EXISTS %s CASCADE`, schema))
 	Expect(err).NotTo(HaveOccurred())
 }

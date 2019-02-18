@@ -28,6 +28,8 @@ type Plugin struct {
 	FilePath     string
 	FileName     string
 	Save         bool
+	Home         string
+	Clone        bool
 }
 
 type Transformer struct {
@@ -56,7 +58,7 @@ func (c *Plugin) GetMigrationsPaths() (map[string]bool, error) {
 	for _, transformer := range c.Transformers {
 		repo := transformer.RepositoryPath
 		mig := transformer.MigrationPath
-		path := filepath.Join("$GOPATH/src/github.com/vulcanize/vulcanizedb/vendor", repo, mig)
+		path := filepath.Join("$GOPATH/src", c.Home, "vendor", repo, mig)
 		cleanPath, err := helpers.CleanPath(path)
 		if err != nil {
 			return nil, err
