@@ -22,6 +22,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/storage"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
+	"reflect"
 	"strings"
 
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
@@ -30,14 +31,17 @@ import (
 type StorageWatcher struct {
 	db           *postgres.DB
 	tailer       fs.Tailer
+	Queue        IStorageQueue
 	Transformers map[common.Address]storage.Transformer
 }
 
 func NewStorageWatcher(tailer fs.Tailer, db *postgres.DB) StorageWatcher {
 	transformers := make(map[common.Address]storage.Transformer)
+	queue := NewStorageQueue(db)
 	return StorageWatcher{
 		db:           db,
 		tailer:       tailer,
+		Queue:        queue,
 		Transformers: transformers,
 	}
 }
@@ -66,9 +70,20 @@ func (watcher StorageWatcher) Execute() error {
 		}
 		executeErr := transformer.Execute(row)
 		if executeErr != nil {
-			logrus.Warn(executeErr.Error())
+			if isKeyNotFound(executeErr) {
+				queueErr := watcher.Queue.Add(row)
+				if queueErr != nil {
+					logrus.Warn(queueErr.Error())
+				}
+			} else {
+				logrus.Warn(executeErr.Error())
+			}
 			continue
 		}
 	}
 	return nil
+}
+
+func isKeyNotFound(executeErr error) bool {
+	return reflect.TypeOf(executeErr) == reflect.TypeOf(shared.ErrStorageKeyNotFound{})
 }
