@@ -28,16 +28,6 @@ func (e ErrContractNotFound) Error() string {
 	return fmt.Sprintf("transformer not found for contract: %s", e.Contract)
 }
 
-type ErrHeaderMismatch struct {
-	BlockHeight int
-	DbHash      string
-	DiffHash    string
-}
-
-func (e ErrHeaderMismatch) Error() string {
-	return fmt.Sprintf("header hash in row does not match db at height %d - row: %s, db: %s", e.BlockHeight, e.DbHash, e.DiffHash)
-}
-
 type ErrMetadataMalformed struct {
 	MissingData Key
 }
@@ -60,12 +50,4 @@ type ErrStorageKeyNotFound struct {
 
 func (e ErrStorageKeyNotFound) Error() string {
 	return fmt.Sprintf("unknown storage key: %s", e.Key)
-}
-
-type ErrTypeNotFound struct {
-	Type int
-}
-
-func (e ErrTypeNotFound) Error() string {
-	return fmt.Sprintf("no decoder for type: %d", e.Type)
 }

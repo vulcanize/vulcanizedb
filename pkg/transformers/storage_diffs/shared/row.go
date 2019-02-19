@@ -25,10 +25,10 @@ const ExpectedRowLength = 5
 
 type StorageDiffRow struct {
 	Contract     common.Address
-	BlockHash    common.Hash
-	BlockHeight  int
-	StorageKey   common.Hash
-	StorageValue common.Hash
+	BlockHash    common.Hash `db:"block_hash"`
+	BlockHeight  int         `db:"block_height"`
+	StorageKey   common.Hash `db:"storage_key"`
+	StorageValue common.Hash `db:"storage_value"`
 }
 
 func FromStrings(csvRow []string) (StorageDiffRow, error) {

@@ -17,6 +17,7 @@
 package shared
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 )
@@ -30,7 +31,7 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 	case Bytes32:
 		return row.StorageValue.Hex(), nil
 	default:
-		return nil, ErrTypeNotFound{}
+		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
 	}
 }
 
