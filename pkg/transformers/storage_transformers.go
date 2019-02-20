@@ -5,10 +5,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories/storage"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/cat"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/pit"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vat"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vow"
 )
+
+func GetCatStorageTransformer() storage.Transformer {
+	return storage.Transformer{
+		Address:    common.HexToAddress(constants.CatContractAddress()),
+		Mappings:   &cat.CatMappings{StorageRepository: &maker.MakerStorageRepository{}},
+		Repository: &cat.CatStorageRepository{},
+	}
+}
 
 func GetPitStorageTransformer() storage.Transformer {
 	return storage.Transformer{

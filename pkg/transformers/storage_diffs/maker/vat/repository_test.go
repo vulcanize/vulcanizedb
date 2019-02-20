@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vat"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -38,18 +39,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, daiMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type Dai struct {
-				BlockMetadata
-				Guy string
-				Dai string
-			}
-			var result Dai
-			err = db.Get(&result, `SELECT block_number, block_hash, guy, dai FROM maker.vat_dai`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, guy AS key, dai AS value FROM maker.vat_dai`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Guy).To(Equal(fakeGuy))
-			Expect(result.Dai).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing guy", func() {
@@ -77,20 +71,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, gemMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type Gem struct {
-				BlockMetadata
-				Ilk string
-				Guy string
-				Gem string
-			}
-			var result Gem
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, guy, gem FROM maker.vat_gem`)
+
+			var result DoubleMappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, guy AS key_two, gem AS value FROM maker.vat_gem`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Guy).To(Equal(fakeGuy))
-			Expect(result.Gem).To(Equal(fakeUint256))
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -131,18 +116,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkArtMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type IlkArt struct {
-				BlockMetadata
-				Ilk string
-				Art string
-			}
-			var result IlkArt
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, art FROM maker.vat_ilk_art`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, art AS value FROM maker.vat_ilk_art`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Art).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -170,18 +148,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkInkMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type IlkInk struct {
-				BlockMetadata
-				Ilk string
-				Ink string
-			}
-			var result IlkInk
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, ink FROM maker.vat_ilk_ink`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, ink AS value FROM maker.vat_ilk_ink`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Ink).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -209,18 +180,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkRateMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type IlkRate struct {
-				BlockMetadata
-				Ilk  string
-				Rate string
-			}
-			var result IlkRate
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, rate FROM maker.vat_ilk_rate`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, rate AS value FROM maker.vat_ilk_rate`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Rate).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -248,18 +212,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkTakeMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type IlkTake struct {
-				BlockMetadata
-				Ilk  string
-				Take string
-			}
-			var result IlkTake
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, take FROM maker.vat_ilk_take`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, take AS value FROM maker.vat_ilk_take`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Take).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -287,18 +244,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, sinMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type Sin struct {
-				BlockMetadata
-				Guy string
-				Sin string
-			}
-			var result Sin
-			err = db.Get(&result, `SELECT block_number, block_hash, guy, sin FROM maker.vat_sin`)
+
+			var result MappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, guy AS key, sin AS value FROM maker.vat_sin`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Guy).To(Equal(fakeGuy))
-			Expect(result.Sin).To(Equal(fakeUint256))
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing guy", func() {
@@ -326,20 +276,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, urnArtMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type UrnArt struct {
-				BlockMetadata
-				Ilk string
-				Urn string
-				Art string
-			}
-			var result UrnArt
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, urn, art FROM maker.vat_urn_art`)
+
+			var result DoubleMappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, urn AS key_two, art AS value FROM maker.vat_urn_art`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Urn).To(Equal(fakeGuy))
-			Expect(result.Art).To(Equal(fakeUint256))
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -380,20 +321,11 @@ var _ = Describe("Vat storage repository", func() {
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, urnInkMetadata, fakeUint256)
 
 			Expect(err).NotTo(HaveOccurred())
-			type UrnInk struct {
-				BlockMetadata
-				Ilk string
-				Urn string
-				Ink string
-			}
-			var result UrnInk
-			err = db.Get(&result, `SELECT block_number, block_hash, ilk, urn, ink FROM maker.vat_urn_ink`)
+
+			var result DoubleMappingRes
+			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, urn AS key_two, ink AS value FROM maker.vat_urn_ink`)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-			Expect(result.BlockHash).To(Equal(fakeBlockHash))
-			Expect(result.Ilk).To(Equal(fakeIlk))
-			Expect(result.Urn).To(Equal(fakeGuy))
-			Expect(result.Ink).To(Equal(fakeUint256))
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -433,16 +365,11 @@ var _ = Describe("Vat storage repository", func() {
 		err := repo.Create(fakeBlockNumber, fakeBlockHash, debtMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
-		type Debt struct {
-			BlockMetadata
-			Debt string
-		}
-		var result Debt
-		err = db.Get(&result, `SELECT block_number, block_hash, debt FROM maker.vat_debt`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, debt AS value FROM maker.vat_debt`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-		Expect(result.BlockHash).To(Equal(fakeBlockHash))
-		Expect(result.Debt).To(Equal(fakeUint256))
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 	})
 
 	It("persists vat vice", func() {
@@ -455,20 +382,10 @@ var _ = Describe("Vat storage repository", func() {
 		err := repo.Create(fakeBlockNumber, fakeBlockHash, viceMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
-		type Vice struct {
-			BlockMetadata
-			Vice string
-		}
-		var result Vice
-		err = db.Get(&result, `SELECT block_number, block_hash, vice FROM maker.vat_vice`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, vice AS value FROM maker.vat_vice`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-		Expect(result.BlockHash).To(Equal(fakeBlockHash))
-		Expect(result.Vice).To(Equal(fakeUint256))
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 	})
 })
-
-type BlockMetadata struct {
-	BlockNumber int    `db:"block_number"`
-	BlockHash   string `db:"block_hash"`
-}
