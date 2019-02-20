@@ -2,7 +2,7 @@
 CREATE TABLE maker.vat_toll (
   id            SERIAL PRIMARY KEY,
   header_id     INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-  ilk           TEXT,
+  ilk           INTEGER NOT NULL REFERENCES maker.ilks (id),
   urn           TEXT,
   take          NUMERIC,
   tx_idx        INTEGER NOT NULL,

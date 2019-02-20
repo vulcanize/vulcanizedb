@@ -1,8 +1,10 @@
 package vat_tune_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
+	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,7 +53,9 @@ var _ = Describe("Vat tune repository", func() {
 			var dbVatTune vat_tune.VatTuneModel
 			err = db.Get(&dbVatTune, `SELECT ilk, urn, v, w, dink, dart, tx_idx, log_idx, raw_log FROM maker.vat_tune WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbVatTune.Ilk).To(Equal(test_data.VatTuneModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatTuneModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatTune.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatTune.Urn).To(Equal(test_data.VatTuneModel.Urn))
 			Expect(dbVatTune.V).To(Equal(test_data.VatTuneModel.V))
 			Expect(dbVatTune.W).To(Equal(test_data.VatTuneModel.W))

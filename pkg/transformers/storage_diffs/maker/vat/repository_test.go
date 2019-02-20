@@ -4,10 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/vat"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Vat storage repository", func() {
@@ -75,7 +77,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result DoubleMappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, guy AS key_two, gem AS value FROM maker.vat_gem`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -120,7 +124,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result MappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, art AS value FROM maker.vat_ilk_art`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -152,7 +158,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result MappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, ink AS value FROM maker.vat_ilk_ink`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -184,7 +192,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result MappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, rate AS value FROM maker.vat_ilk_rate`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -216,7 +226,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result MappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, take AS value FROM maker.vat_ilk_take`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -280,7 +292,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result DoubleMappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, urn AS key_two, art AS value FROM maker.vat_urn_art`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {
@@ -325,7 +339,9 @@ var _ = Describe("Vat storage repository", func() {
 			var result DoubleMappingRes
 			err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key_one, urn AS key_two, ink AS value FROM maker.vat_urn_ink`)
 			Expect(err).NotTo(HaveOccurred())
-			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeGuy, fakeUint256)
+			ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+			Expect(err).NotTo(HaveOccurred())
+			AssertDoubleMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeGuy, fakeUint256)
 		})
 
 		It("returns error if metadata missing ilk", func() {

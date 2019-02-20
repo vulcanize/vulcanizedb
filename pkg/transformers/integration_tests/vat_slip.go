@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -66,7 +67,9 @@ var _ = Describe("Vat slip transformer", func() {
 		var model vat_slip.VatSlipModel
 		err = db.Get(&model, `SELECT ilk, guy, rad, tx_idx FROM maker.vat_slip WHERE header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(model.Guy).To(Equal("000000000000000000000000da15dce70ab462e66779f23ee14f21d993789ee3"))
 		Expect(model.Rad).To(Equal("100000000000000000000000000000000000000000000000"))
 		Expect(model.TransactionIndex).To(Equal(uint(0)))
@@ -124,7 +127,9 @@ var _ = Describe("Vat slip transformer", func() {
 		var model vat_slip.VatSlipModel
 		err = db.Get(&model, `SELECT ilk, guy, rad, tx_idx FROM maker.vat_slip WHERE header_id = $1`, headerID)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(model.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(model.Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(model.Guy).To(Equal("000000000000000000000000da15dce70ab462e66779f23ee14f21d993789ee3"))
 		Expect(model.Rad).To(Equal("100000000000000000000000000000000000000000000000"))
 		Expect(model.TransactionIndex).To(Equal(uint(0)))

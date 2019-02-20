@@ -45,11 +45,20 @@ func (repository VatFoldRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatFoldModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(vatFold.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(
 			`INSERT into maker.vat_fold (header_id, ilk, urn, rate, log_idx, tx_idx, raw_log)
 				VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)
 				ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, urn = $3, rate = $4, raw_log = $7;`,
-			headerID, vatFold.Ilk, vatFold.Urn, vatFold.Rate, vatFold.LogIndex, vatFold.TransactionIndex, vatFold.Raw,
+			headerID, ilkID, vatFold.Urn, vatFold.Rate, vatFold.LogIndex, vatFold.TransactionIndex, vatFold.Raw,
 		)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()

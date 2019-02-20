@@ -37,7 +37,7 @@ func (PitFileIlkConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) 
 		if err != nil {
 			return nil, err
 		}
-		ilk := ethLog.Topics[2].Hex()
+		ilk := shared.GetHexWithoutPrefix(ethLog.Topics[2].Bytes())
 		what := string(bytes.Trim(ethLog.Topics[3].Bytes(), "\x00"))
 		dataBytes := ethLog.Data[len(ethLog.Data)-constants.DataItemLength:]
 		data, err := getData(dataBytes, what)

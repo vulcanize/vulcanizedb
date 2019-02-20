@@ -19,6 +19,8 @@ package vat_fold_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -69,7 +71,9 @@ var _ = Describe("Vat.fold repository", func() {
 			err = db.Get(&dbVatFold, `SELECT ilk, urn, rate, log_idx, tx_idx, raw_log FROM maker.vat_fold WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(dbVatFold.Ilk).To(Equal(test_data.VatFoldModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatFoldModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatFold.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatFold.Urn).To(Equal(test_data.VatFoldModel.Urn))
 			Expect(dbVatFold.Rate).To(Equal(test_data.VatFoldModel.Rate))
 			Expect(dbVatFold.LogIndex).To(Equal(test_data.VatFoldModel.LogIndex))

@@ -45,10 +45,19 @@ func (repository FrobRepository) Create(headerID int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, FrobModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(frobModel.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(`INSERT INTO maker.frob (header_id, art, dart, dink, iart, ilk, ink, urn, raw_log, log_idx, tx_idx)
 		VALUES($1, $2::NUMERIC, $3::NUMERIC, $4::NUMERIC, $5::NUMERIC, $6, $7::NUMERIC, $8, $9, $10, $11)
 		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET art = $2, dart = $3, dink = $4, iart = $5, ilk = $6, ink = $7, urn = $8, raw_log = $9;`,
-			headerID, frobModel.Art, frobModel.Dart, frobModel.Dink, frobModel.IArt, frobModel.Ilk, frobModel.Ink, frobModel.Urn, frobModel.Raw, frobModel.LogIndex, frobModel.TransactionIndex)
+			headerID, frobModel.Art, frobModel.Dart, frobModel.Dink, frobModel.IArt, ilkID, frobModel.Ink, frobModel.Urn, frobModel.Raw, frobModel.LogIndex, frobModel.TransactionIndex)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {

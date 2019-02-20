@@ -50,11 +50,20 @@ func (repository BiteRepository) Create(headerID int64, models []interface{}) er
 			return fmt.Errorf("model of type %T, not %T", model, BiteModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(biteModel.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(
 			`INSERT into maker.bite (header_id, ilk, urn, ink, art, iart, tab, nflip, log_idx, tx_idx, raw_log)
         			VALUES($1, $2, $3, $4::NUMERIC, $5::NUMERIC, $6::NUMERIC, $7::NUMERIC, $8::NUMERIC, $9, $10, $11)
 					ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, urn = $3, ink = $4, art = $5, iart = $6, tab = $7, nflip = $8, raw_log = $11;`,
-			headerID, biteModel.Ilk, biteModel.Urn, biteModel.Ink, biteModel.Art, biteModel.IArt, biteModel.Tab, biteModel.NFlip, biteModel.LogIndex, biteModel.TransactionIndex, biteModel.Raw,
+			headerID, ilkID, biteModel.Urn, biteModel.Ink, biteModel.Art, biteModel.IArt, biteModel.Tab, biteModel.NFlip, biteModel.LogIndex, biteModel.TransactionIndex, biteModel.Raw,
 		)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
