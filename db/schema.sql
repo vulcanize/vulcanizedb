@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
--- Dumped by pg_dump version 10.5
+-- Dumped from database version 10.6
+-- Dumped by pg_dump version 10.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2644,6 +2644,40 @@ ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
 
 
 --
+-- Name: queued_storage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queued_storage (
+    id integer NOT NULL,
+    block_height bigint,
+    block_hash bytea,
+    contract bytea,
+    storage_key bytea,
+    storage_value bytea
+);
+
+
+--
+-- Name: queued_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queued_storage_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queued_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
+
+
+--
 -- Name: receipts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3319,6 +3353,13 @@ ALTER TABLE ONLY public.log_filters ALTER COLUMN id SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id_seq'::regclass);
+
+
+--
+-- Name: queued_storage id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('public.queued_storage_id_seq'::regclass);
 
 
 --
@@ -4195,6 +4236,14 @@ ALTER TABLE ONLY public.log_filters
 
 ALTER TABLE ONLY public.eth_nodes
     ADD CONSTRAINT nodes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queued_storage queued_storage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queued_storage
+    ADD CONSTRAINT queued_storage_pkey PRIMARY KEY (id);
 
 
 --

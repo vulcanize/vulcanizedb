@@ -73,11 +73,8 @@ var _ = Describe("Storage Watcher", func() {
 
 	It("logs error if no transformer can parse storage row", func() {
 		mockTailer := fakes.NewMockTailer()
-		line := &tail.Line{
-			Text: "12345,block_hash,123,storage_key,storage_value",
-			Time: time.Time{},
-			Err:  nil,
-		}
+		address := common.HexToAddress("0x12345")
+		line := getFakeLine(address.Bytes())
 		watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
 		tempFile, err := ioutil.TempFile("", "log")
 		defer os.Remove(tempFile.Name())
@@ -88,22 +85,14 @@ var _ = Describe("Storage Watcher", func() {
 			Expect(err).NotTo(HaveOccurred())
 			logContent, readErr := ioutil.ReadFile(tempFile.Name())
 			Expect(readErr).NotTo(HaveOccurred())
-			Expect(string(logContent)).To(ContainSubstring(shared2.ErrContractNotFound{Contract: common.HexToAddress("0x12345").Hex()}.Error()))
+			Expect(string(logContent)).To(ContainSubstring(shared2.ErrContractNotFound{Contract: address.Hex()}.Error()))
 		}, watcher, mockTailer, []*tail.Line{line})
 	})
 
 	It("executes transformer with storage row", func() {
 		address := []byte{1, 2, 3}
-		blockHash := []byte{4, 5, 6}
-		blockHeight := int64(789)
-		storageKey := []byte{9, 8, 7}
-		storageValue := []byte{6, 5, 4}
+		line := getFakeLine(address)
 		mockTailer := fakes.NewMockTailer()
-		line := &tail.Line{
-			Text: fmt.Sprintf("%s,%s,%d,%s,%s", common.Bytes2Hex(address), common.Bytes2Hex(blockHash), blockHeight, common.Bytes2Hex(storageKey), common.Bytes2Hex(storageValue)),
-			Time: time.Time{},
-			Err:  nil,
-		}
 		watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
 		fakeTransformer := &mocks.MockStorageTransformer{Address: common.BytesToAddress(address)}
 		watcher.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
@@ -116,40 +105,76 @@ var _ = Describe("Storage Watcher", func() {
 		}, watcher, mockTailer, []*tail.Line{line})
 	})
 
-	It("logs error if executing transformer fails", func() {
-		address := []byte{1, 2, 3}
-		blockHash := []byte{4, 5, 6}
-		blockHeight := int64(789)
-		storageKey := []byte{9, 8, 7}
-		storageValue := []byte{6, 5, 4}
-		mockTailer := fakes.NewMockTailer()
-		line := &tail.Line{
-			Text: fmt.Sprintf("%s,%s,%d,%s,%s", common.Bytes2Hex(address), common.Bytes2Hex(blockHash), blockHeight, common.Bytes2Hex(storageKey), common.Bytes2Hex(storageValue)),
-			Time: time.Time{},
-			Err:  nil,
-		}
-		watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
-		executionError := errors.New("storage watcher failed attempting to execute transformer")
-		fakeTransformer := &mocks.MockStorageTransformer{Address: common.BytesToAddress(address), ExecuteErr: executionError}
-		watcher.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-		tempFile, err := ioutil.TempFile("", "log")
-		defer os.Remove(tempFile.Name())
-		Expect(err).NotTo(HaveOccurred())
-		logrus.SetOutput(tempFile)
+	Describe("when executing transformer fails", func() {
+		It("queues row when error is storage key not found", func() {
+			address := []byte{1, 2, 3}
+			line := getFakeLine(address)
+			mockTailer := fakes.NewMockTailer()
+			watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
+			mockQueue := &mocks.MockStorageQueue{}
+			watcher.Queue = mockQueue
+			keyNotFoundError := shared2.ErrStorageKeyNotFound{Key: "unknown_storage_key"}
+			fakeTransformer := &mocks.MockStorageTransformer{Address: common.BytesToAddress(address), ExecuteErr: keyNotFoundError}
+			watcher.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
-		assert(func(err error) {
+			assert(func(err error) {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockQueue.AddCalled).To(BeTrue())
+			}, watcher, mockTailer, []*tail.Line{line})
+		})
+
+		It("logs error if queuing row fails", func() {
+			address := []byte{1, 2, 3}
+			line := getFakeLine(address)
+			mockTailer := fakes.NewMockTailer()
+			watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
+			mockQueue := &mocks.MockStorageQueue{}
+			mockQueue.AddError = fakes.FakeError
+			watcher.Queue = mockQueue
+			keyNotFoundError := shared2.ErrStorageKeyNotFound{Key: "unknown_storage_key"}
+			fakeTransformer := &mocks.MockStorageTransformer{Address: common.BytesToAddress(address), ExecuteErr: keyNotFoundError}
+			watcher.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			tempFile, err := ioutil.TempFile("", "log")
+			defer os.Remove(tempFile.Name())
 			Expect(err).NotTo(HaveOccurred())
-			logContent, readErr := ioutil.ReadFile(tempFile.Name())
-			Expect(readErr).NotTo(HaveOccurred())
-			Expect(string(logContent)).To(ContainSubstring(executionError.Error()))
-		}, watcher, mockTailer, []*tail.Line{line})
+			logrus.SetOutput(tempFile)
+
+			assert(func(err error) {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockQueue.AddCalled).To(BeTrue())
+				logContent, readErr := ioutil.ReadFile(tempFile.Name())
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(logContent)).To(ContainSubstring(fakes.FakeError.Error()))
+			}, watcher, mockTailer, []*tail.Line{line})
+		})
+
+		It("logs any other error", func() {
+			address := []byte{1, 2, 3}
+			line := getFakeLine(address)
+			mockTailer := fakes.NewMockTailer()
+			watcher := shared.NewStorageWatcher(mockTailer, test_config.NewTestDB(core.Node{}))
+			executionError := errors.New("storage watcher failed attempting to execute transformer")
+			fakeTransformer := &mocks.MockStorageTransformer{Address: common.BytesToAddress(address), ExecuteErr: executionError}
+			watcher.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			tempFile, err := ioutil.TempFile("", "log")
+			defer os.Remove(tempFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			logrus.SetOutput(tempFile)
+
+			assert(func(err error) {
+				Expect(err).NotTo(HaveOccurred())
+				logContent, readErr := ioutil.ReadFile(tempFile.Name())
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(logContent)).To(ContainSubstring(executionError.Error()))
+			}, watcher, mockTailer, []*tail.Line{line})
+		})
 	})
 })
 
 func assert(assertion func(err error), watcher shared.StorageWatcher, mockTailer *fakes.MockTailer, lines []*tail.Line) {
 	errs := make(chan error, 1)
 	done := make(chan bool, 1)
-	go execute(watcher, mockTailer, errs, done)
+	go execute(watcher, errs, done)
 	for _, line := range lines {
 		mockTailer.Lines <- line
 	}
@@ -165,11 +190,23 @@ func assert(assertion func(err error), watcher shared.StorageWatcher, mockTailer
 	}
 }
 
-func execute(watcher shared.StorageWatcher, tailer *fakes.MockTailer, errs chan error, done chan bool) {
+func execute(watcher shared.StorageWatcher, errs chan error, done chan bool) {
 	err := watcher.Execute()
 	if err != nil {
 		errs <- err
 	} else {
 		done <- true
+	}
+}
+
+func getFakeLine(address []byte) *tail.Line {
+	blockHash := []byte{4, 5, 6}
+	blockHeight := int64(789)
+	storageKey := []byte{9, 8, 7}
+	storageValue := []byte{6, 5, 4}
+	return &tail.Line{
+		Text: fmt.Sprintf("%s,%s,%d,%s,%s", common.Bytes2Hex(address), common.Bytes2Hex(blockHash), blockHeight, common.Bytes2Hex(storageKey), common.Bytes2Hex(storageValue)),
+		Time: time.Time{},
+		Err:  nil,
 	}
 }
