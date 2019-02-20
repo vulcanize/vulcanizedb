@@ -62,7 +62,7 @@ CREATE TABLE maker.cat_flip_ilk (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  nflip NUMERIC NOT NULL,
+  flip NUMERIC NOT NULL,
   ilk TEXT
 );
 
@@ -70,7 +70,7 @@ CREATE TABLE maker.cat_flip_urn (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  nflip NUMERIC NOT NULL,
+  flip NUMERIC NOT NULL,
   urn TEXT
 );
 
@@ -78,7 +78,7 @@ CREATE TABLE maker.cat_flip_ink (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  nflip NUMERIC NOT NULL,
+  flip NUMERIC NOT NULL,
   ink NUMERIC NOT NULL
 );
 
@@ -86,7 +86,7 @@ CREATE TABLE maker.cat_flip_tab (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  nflip NUMERIC NOT NULL,
+  flip NUMERIC NOT NULL,
   tab NUMERIC NOT NULL
 );
 

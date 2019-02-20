@@ -212,7 +212,7 @@ CREATE TABLE maker.cat_flip_ilk (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    nflip numeric NOT NULL,
+    flip numeric NOT NULL,
     ilk text
 );
 
@@ -245,7 +245,7 @@ CREATE TABLE maker.cat_flip_ink (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    nflip numeric NOT NULL,
+    flip numeric NOT NULL,
     ink numeric NOT NULL
 );
 
@@ -278,7 +278,7 @@ CREATE TABLE maker.cat_flip_tab (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    nflip numeric NOT NULL,
+    flip numeric NOT NULL,
     tab numeric NOT NULL
 );
 
@@ -311,7 +311,7 @@ CREATE TABLE maker.cat_flip_urn (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    nflip numeric NOT NULL,
+    flip numeric NOT NULL,
     urn text
 );
 
