@@ -46,13 +46,4 @@ var _ = Describe("Storage decoder", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(fakeAddress.Hex()))
 	})
-
-	It("returns error if attempting to decode unknown type", func() {
-		metadata := shared.StorageValueMetadata{Type: 100}
-
-		_, err := shared.Decode(shared.StorageDiffRow{}, metadata)
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(shared.ErrTypeNotFound{}))
-	})
 })
