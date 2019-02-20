@@ -56,7 +56,7 @@ var _ = Describe("Logs Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
 			Expect(err).NotTo(HaveOccurred())
-			logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -64,6 +64,7 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
+			Expect(err).NotTo(HaveOccurred())
 
 			log, err := logsRepository.GetLogs("x123", blockNumber)
 
@@ -91,7 +92,8 @@ var _ = Describe("Logs Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
 			Expect(err).NotTo(HaveOccurred())
-			_ = logsRepository.CreateLogs([]core.Log{{
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -99,7 +101,9 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
-			_ = logsRepository.CreateLogs([]core.Log{{
+			Expect(err).NotTo(HaveOccurred())
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       1,
 				Address:     "x123",
@@ -107,7 +111,9 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
 			}}, receiptId)
-			_ = logsRepository.CreateLogs([]core.Log{{
+			Expect(err).NotTo(HaveOccurred())
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 2,
 				Index:       0,
 				Address:     "x123",
@@ -115,6 +121,7 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
+			Expect(err).NotTo(HaveOccurred())
 
 			log, err := logsRepository.GetLogs("x123", blockNumber)
 			Expect(err).NotTo(HaveOccurred())

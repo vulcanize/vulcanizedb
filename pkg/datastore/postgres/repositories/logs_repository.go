@@ -40,13 +40,19 @@ func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) e
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
 		)
 		if err != nil {
-			tx.Rollback()
+			err = tx.Rollback()
+			if err != nil {
+				logrus.Error("CreateLogs: could not perform rollback: ", err)
+			}
 			return postgres.ErrDBInsertFailed
 		}
 	}
 	err := tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		err = tx.Rollback()
+		if err != nil {
+			logrus.Error("CreateLogs: could not perform rollback: ", err)
+		}
 		return postgres.ErrDBInsertFailed
 	}
 	return nil
@@ -83,7 +89,8 @@ func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) ([]core.Log, err
 		var topics core.Topics
 		err := logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
 		if err != nil {
-			logrus.Warn("loadLogs: Error scanning a row in logRows")
+			logrus.Error("loadLogs: Error scanning a row in logRows: ", err)
+			return []core.Log{}, err
 		}
 		lg := core.Log{
 			BlockNumber: blockNumber,

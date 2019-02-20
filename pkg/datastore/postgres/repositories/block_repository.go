@@ -49,10 +49,8 @@ func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) error {
                   UPDATE blocks SET is_final = TRUE
                   WHERE is_final = FALSE AND number < $1`,
 		cutoff)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
