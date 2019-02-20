@@ -273,21 +273,4 @@ var _ = Describe("Block header repository", func() {
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{1, 2, 3, 4, 5}))
 		})
 	})
-
-	Describe("HeaderExists", func() {
-		It("returns true if the header record exists", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
-
-			result, err := repo.HeaderExists(header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(BeTrue())
-		})
-
-		It("returns false if the header record doesn't exist", func() {
-			result, err := repo.HeaderExists(1)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(BeFalse())
-		})
-	})
 })

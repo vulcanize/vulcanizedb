@@ -42,6 +42,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 		if headerDoesNotExist(err) {
 			return repository.insertHeader(header)
 		}
+		log.Error("CreateOrUpdateHeader: error getting header hash: ", err)
 		return 0, err
 	}
 	if headerMustBeReplaced(hash, header) {
@@ -54,6 +55,7 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 	var header core.Header
 	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		blockNumber, repository.database.Node.ID)
+	log.Error("GetHeader: error getting headers: ", err)
 	return header, err
 }
 
@@ -74,18 +76,6 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	return numbers, nil
 }
 
-func (repository HeaderRepository) HeaderExists(blockNumber int64) (bool, error) {
-	_, err := repository.GetHeader(blockNumber)
-	if err != nil {
-		if headerDoesNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
-}
-
 func headerMustBeReplaced(hash string, header core.Header) bool {
 	return hash != header.Hash
 }
@@ -98,6 +88,7 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 	var hash string
 	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		header.BlockNumber, repository.database.Node.ID)
+	log.Error("getHeaderHash: error getting headers: ", err)
 	return hash, err
 }
 
@@ -106,6 +97,9 @@ func (repository HeaderRepository) insertHeader(header core.Header) (int64, erro
 	err := repository.database.QueryRowx(
 		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint) VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) RETURNING id`,
 		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID).Scan(&headerId)
+	if err != nil {
+		log.Error("insertHeader: error inserting header: ", err)
+	}
 	return headerId, err
 }
 
@@ -113,6 +107,7 @@ func (repository HeaderRepository) replaceHeader(header core.Header) (int64, err
 	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		header.BlockNumber, repository.database.Node.ID)
 	if err != nil {
+		log.Error("replaceHeader: error deleting headers: ", err)
 		return 0, err
 	}
 	return repository.insertHeader(header)

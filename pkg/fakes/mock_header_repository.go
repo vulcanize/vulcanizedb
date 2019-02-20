@@ -65,14 +65,6 @@ func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber,
 	return repository.missingBlockNumbers, nil
 }
 
-func (repository *MockHeaderRepository) HeaderExists(blockNumber int64) (bool, error) {
-	return repository.headerExists, nil
-}
-
-func (repository *MockHeaderRepository) SetHeaderExists(headerExists bool) {
-	repository.headerExists = headerExists
-}
-
 func (repository *MockHeaderRepository) SetGetHeaderError(err error) {
 	repository.getHeaderError = err
 }

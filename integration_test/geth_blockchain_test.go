@@ -48,9 +48,13 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	It("reads two blocks", func(done Done) {
 		blocks := fakes.NewMockBlockRepository()
-		lastBlock := blockChain.LastBlock()
+		lastBlock, err := blockChain.LastBlock()
+		Expect(err).NotTo(HaveOccurred())
+
 		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
-		history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
+		_, err = history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
+		Expect(err).NotTo(HaveOccurred())
+
 		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
 		close(done)
 	}, 30)
@@ -60,8 +64,9 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		Expect(err).ToNot(HaveOccurred())
 		firstBlock, err := blockChain.GetBlockByNumber(int64(1))
 		Expect(err).ToNot(HaveOccurred())
-		lastBlockNumber := blockChain.LastBlock()
+		lastBlockNumber, err := blockChain.LastBlock()
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(genesisBlock.Number).To(Equal(int64(0)))
 		Expect(firstBlock.Number).To(Equal(int64(1)))
 		Expect(lastBlockNumber.Int64()).To(BeNumerically(">", 0))

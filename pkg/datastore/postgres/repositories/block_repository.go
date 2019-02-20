@@ -43,12 +43,14 @@ func NewBlockRepository(database *postgres.DB) *BlockRepository {
 	return &BlockRepository{database: database}
 }
 
-func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) {
+func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) error {
 	cutoff := chainHead - blocksFromHeadBeforeFinal
-	blockRepository.database.Exec(`
+	_, err := blockRepository.database.Exec(`
                   UPDATE blocks SET is_final = TRUE
                   WHERE is_final = FALSE AND number < $1`,
 		cutoff)
+
+	return err
 }
 
 func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
@@ -70,7 +72,7 @@ func (blockRepository BlockRepository) CreateOrUpdateBlock(block core.Block) (in
 
 func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber int64, highestBlockNumber int64, nodeId string) []int64 {
 	numbers := make([]int64, 0)
-	blockRepository.database.Select(&numbers,
+	err := blockRepository.database.Select(&numbers,
 		`SELECT all_block_numbers
           FROM (
               SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
@@ -79,6 +81,9 @@ func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber i
 		  ) `,
 		startingBlockNumber,
 		highestBlockNumber, nodeId)
+	if err != nil {
+		log.Error("MissingBlockNumbers: error getting blocks: ", err)
+	}
 	return numbers
 }
 
@@ -108,6 +113,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 		case sql.ErrNoRows:
 			return core.Block{}, datastore.ErrBlockDoesNotExist(blockNumber)
 		default:
+			log.Error("GetBlock: error loading blocks: ", err)
 			return savedBlock, err
 		}
 	}
@@ -202,6 +208,7 @@ func (blockRepository BlockRepository) createReceipt(tx *sql.Tx, blockId int64, 
                RETURNING id`,
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
 	if err != nil {
+		log.Error("createReceipt: error inserting receipt: ", err)
 		return receiptId, err
 	}
 	return receiptId, nil
@@ -256,6 +263,7 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
 	var block b
 	err := blockRows.StructScan(&block)
 	if err != nil {
+		log.Error("loadBlock: error loading block: ", err)
 		return core.Block{}, err
 	}
 	transactionRows, err := blockRepository.database.Queryx(`
@@ -271,6 +279,7 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
             WHERE block_id = $1
             ORDER BY hash`, block.ID)
 	if err != nil {
+		log.Error("loadBlock: error fetting transactions: ", err)
 		return core.Block{}, err
 	}
 	block.Transactions = blockRepository.LoadTransactions(transactionRows)

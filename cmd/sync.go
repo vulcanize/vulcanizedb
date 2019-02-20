@@ -60,7 +60,11 @@ func init() {
 }
 
 func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+	populated, err := history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+	if err != nil {
+		log.Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
+	}
+	missingBlocksPopulated <- populated
 }
 
 func sync() {
@@ -68,12 +72,15 @@ func sync() {
 	defer ticker.Stop()
 
 	blockChain := getBlockChain()
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
+	lastBlock, err := blockChain.LastBlock()
+	if err != nil {
+		log.Error("sync: Error getting last block: ", err)
+	}
+	if lastBlock.Int64() == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
-	if startingBlockNumber > lastBlock {
-		log.Fatal("starting block number > current block number")
+	if startingBlockNumber > lastBlock.Int64() {
+		log.Fatal("sync: starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -85,7 +92,10 @@ func sync() {
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateBlocks()
+			window, err := validator.ValidateBlocks()
+			if err != nil {
+				log.Error("sync: error in validateBlocks: ", err)
+			}
 			log.Info(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)

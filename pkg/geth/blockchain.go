@@ -81,7 +81,7 @@ func (blockChain *BlockChain) getPOWHeader(blockNumber int64) (header core.Heade
 	if err != nil {
 		return header, err
 	}
-	return blockChain.headerConverter.Convert(gethHeader, gethHeader.Hash().String())
+	return blockChain.headerConverter.Convert(gethHeader, gethHeader.Hash().String()), nil
 }
 
 func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []core.Header, err error) {
@@ -113,8 +113,7 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 
 	for _, POWHeader := range POWHeaders {
 		if POWHeader.Number != nil {
-			header, _ := blockChain.headerConverter.Convert(&POWHeader, POWHeader.Hash().String())
-
+			header := blockChain.headerConverter.Convert(&POWHeader, POWHeader.Hash().String())
 			headers = append(headers, header)
 		}
 	}
@@ -147,7 +146,7 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 		GasUsed:     uint64(POAHeader.GasUsed),
 		Time:        POAHeader.Time.ToInt(),
 		Extra:       POAHeader.Extra,
-	}, POAHeader.Hash.String())
+	}, POAHeader.Hash.String()), nil
 }
 
 func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []core.Header, err error) {
@@ -182,7 +181,7 @@ func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []cor
 		var header core.Header
 		//Header.Number of the newest block will return nil.
 		if _, err := strconv.ParseUint(POAHeader.Number.ToInt().String(), 16, 64); err == nil {
-			header, _ = blockChain.headerConverter.Convert(&types.Header{
+			header = blockChain.headerConverter.Convert(&types.Header{
 				ParentHash:  POAHeader.ParentHash,
 				UncleHash:   POAHeader.UncleHash,
 				Coinbase:    POAHeader.Coinbase,
@@ -232,9 +231,9 @@ func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQue
 	return gethLogs, nil
 }
 
-func (blockChain *BlockChain) LastBlock() *big.Int {
-	block, _ := blockChain.ethClient.HeaderByNumber(context.Background(), nil)
-	return block.Number
+func (blockChain *BlockChain) LastBlock() (*big.Int, error) {
+	block, err := blockChain.ethClient.HeaderByNumber(context.Background(), nil)
+	return block.Number, err
 }
 
 func (blockChain *BlockChain) Node() core.Node {

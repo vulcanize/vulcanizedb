@@ -134,8 +134,9 @@ var _ = Describe("Postgres DB", func() {
 		err := logRepository.CreateLogs([]core.Log{badLog}, 123)
 
 		Expect(err).ToNot(BeNil())
-		savedBlock := logRepository.GetLogs("x123", 1)
+		savedBlock, err := logRepository.GetLogs("x123", 1)
 		Expect(savedBlock).To(BeNil())
+		Expect(err).To(Not(HaveOccurred()))
 	})
 
 	It("does not commit block or transactions if transaction is invalid", func() {
