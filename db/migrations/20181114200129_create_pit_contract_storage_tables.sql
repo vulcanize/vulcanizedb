@@ -10,7 +10,7 @@ CREATE TABLE maker.pit_ilk_spot (
   id            SERIAL PRIMARY KEY,
   block_number  BIGINT,
   block_hash    TEXT,
-  ilk           TEXT,
+  ilk           INTEGER NOT NULL REFERENCES maker.ilks (id),
   spot          NUMERIC NOT NULL
 );
 
@@ -18,7 +18,7 @@ CREATE TABLE maker.pit_ilk_line (
   id            SERIAL PRIMARY KEY,
   block_number  BIGINT,
   block_hash    TEXT,
-  ilk           TEXT,
+  ilk           INTEGER NOT NULL REFERENCES maker.ilks (id),
   line          NUMERIC NOT NULL
 );
 

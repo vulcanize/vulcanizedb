@@ -1,8 +1,10 @@
 package vat_toll_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
+	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,7 +53,9 @@ var _ = Describe("Vat toll repository", func() {
 			var dbVatToll vat_toll.VatTollModel
 			err = db.Get(&dbVatToll, `SELECT ilk, urn, take, tx_idx, log_idx, raw_log FROM maker.vat_toll WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbVatToll.Ilk).To(Equal(test_data.VatTollModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatTollModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatToll.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatToll.Urn).To(Equal(test_data.VatTollModel.Urn))
 			Expect(dbVatToll.Take).To(Equal(test_data.VatTollModel.Take))
 			Expect(dbVatToll.TransactionIndex).To(Equal(test_data.VatTollModel.TransactionIndex))

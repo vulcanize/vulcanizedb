@@ -19,6 +19,7 @@ package pit
 import (
 	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 )
 
@@ -50,13 +51,51 @@ func (repository PitStorageRepository) Create(blockNumber int, blockHash string,
 }
 
 func (repository PitStorageRepository) insertIlkLine(blockNumber int, blockHash string, ilk string, line string) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.pit_ilk_line (block_number, block_hash, ilk, line) VALUES ($1, $2, $3, $4)`, blockNumber, blockHash, ilk, line)
-	return err
+	tx, err := repository.db.Begin()
+	if err != nil {
+		return err
+	}
+	ilkID, ilkErr := shared2.GetOrCreateIlkInTransaction(ilk, tx)
+	if ilkErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction after failing to insert ilk: %s", ilkErr.Error())
+		}
+		return ilkErr
+	}
+	_, writeErr := tx.Exec(`INSERT INTO maker.pit_ilk_line (block_number, block_hash, ilk, line) VALUES ($1, $2, $3, $4)`, blockNumber, blockHash, ilkID, line)
+	if writeErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction after failing to insert pit ilk line: %s", writeErr.Error())
+		}
+		return writeErr
+	}
+	return tx.Commit()
 }
 
 func (repository PitStorageRepository) insertIlkSpot(blockNumber int, blockHash string, ilk string, spot string) error {
-	_, err := repository.db.Exec(`INSERT INTO maker.pit_ilk_spot (block_number, block_hash, ilk, spot) VALUES ($1, $2, $3, $4)`, blockNumber, blockHash, ilk, spot)
-	return err
+	tx, err := repository.db.Begin()
+	if err != nil {
+		return err
+	}
+	ilkID, ilkErr := shared2.GetOrCreateIlkInTransaction(ilk, tx)
+	if ilkErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction after failing to insert ilk: %s", ilkErr.Error())
+		}
+		return ilkErr
+	}
+	_, writeErr := tx.Exec(`INSERT INTO maker.pit_ilk_spot (block_number, block_hash, ilk, spot) VALUES ($1, $2, $3, $4)`, blockNumber, blockHash, ilkID, spot)
+	if writeErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction after failing to insert pit ilk spot: %s", writeErr.Error())
+		}
+		return writeErr
+	}
+	return tx.Commit()
 }
 
 func (repository PitStorageRepository) insertPitDrip(blockNumber int, blockHash string, drip string) error {

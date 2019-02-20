@@ -47,10 +47,19 @@ func (repository VatFluxRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatFluxModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(vatFlux.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(`INSERT INTO maker.vat_flux (header_id, ilk, dst, src, rad, tx_idx, log_idx, raw_log)
 		VALUES($1, $2, $3, $4, $5::NUMERIC, $6, $7, $8)
 		ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, dst = $3, src = $4, rad = $5, raw_log = $8;`,
-			headerID, vatFlux.Ilk, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)
+			headerID, ilkID, vatFlux.Dst, vatFlux.Src, vatFlux.Rad, vatFlux.TransactionIndex, vatFlux.LogIndex, vatFlux.Raw)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {

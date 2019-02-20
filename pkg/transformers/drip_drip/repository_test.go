@@ -24,10 +24,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Drip drip repository", func() {
@@ -67,7 +69,9 @@ var _ = Describe("Drip drip repository", func() {
 			var dbDripDrip drip_drip.DripDripModel
 			err = db.Get(&dbDripDrip, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.drip_drip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbDripDrip.Ilk).To(Equal(test_data.DripDripModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.DripDripModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbDripDrip.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbDripDrip.LogIndex).To(Equal(test_data.DripDripModel.LogIndex))
 			Expect(dbDripDrip.TransactionIndex).To(Equal(test_data.DripDripModel.TransactionIndex))
 			Expect(dbDripDrip.Raw).To(MatchJSON(test_data.DripDripModel.Raw))

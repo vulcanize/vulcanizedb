@@ -20,10 +20,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/pit"
 	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Pit storage repository", func() {
@@ -59,7 +61,9 @@ var _ = Describe("Pit storage repository", func() {
 		var result MappingRes
 		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, line AS value FROM maker.pit_ilk_line`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertMapping(result, blockNumber, blockHash, expectedIlk, expectedLine)
+		ilkID, err := shared2.GetOrCreateIlk(expectedIlk, db)
+		Expect(err).NotTo(HaveOccurred())
+		AssertMapping(result, blockNumber, blockHash, strconv.Itoa(ilkID), expectedLine)
 	})
 
 	It("persists an ilk spot", func() {
@@ -77,7 +81,9 @@ var _ = Describe("Pit storage repository", func() {
 		var result MappingRes
 		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, spot AS value FROM maker.pit_ilk_spot`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertMapping(result, blockNumber, blockHash, expectedIlk, expectedSpot)
+		ilkID, err := shared2.GetOrCreateIlk(expectedIlk, db)
+		Expect(err).NotTo(HaveOccurred())
+		AssertMapping(result, blockNumber, blockHash, strconv.Itoa(ilkID), expectedSpot)
 	})
 
 	It("persists a pit drip", func() {

@@ -30,10 +30,19 @@ func (repository VatTollRepository) Create(headerID int64, models []interface{})
 			return fmt.Errorf("model of type %T, not %T", model, VatTollModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(vatToll.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(
 			`INSERT into maker.vat_toll (header_id, ilk, urn, take, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, vatToll.Ilk, vatToll.Urn, vatToll.Take, vatToll.TransactionIndex, vatToll.LogIndex, vatToll.Raw,
+			headerID, ilkID, vatToll.Urn, vatToll.Take, vatToll.TransactionIndex, vatToll.LogIndex, vatToll.Raw,
 		)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()
