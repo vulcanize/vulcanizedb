@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/cat"
+	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -40,9 +41,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS value FROM maker.cat_nflip`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 			})
 		})
 
@@ -55,9 +54,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, live AS value FROM maker.cat_live`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 			})
 		})
 
@@ -70,9 +67,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, vat AS value FROM maker.cat_vat`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Value).To(Equal(fakeAddress))
+				AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeAddress)
 			})
 		})
 
@@ -85,9 +80,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, pit AS value FROM maker.cat_pit`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Value).To(Equal(fakeAddress))
+				AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeAddress)
 			})
 		})
 
@@ -100,9 +93,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, vow AS value FROM maker.cat_vow`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Value).To(Equal(fakeAddress))
+				AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeAddress)
 			})
 		})
 	})
@@ -119,10 +110,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, flip AS value FROM maker.cat_ilk_flip`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeIlk))
-				Expect(result.Value).To(Equal(fakeAddress))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeAddress)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -142,10 +130,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, chop AS value FROM maker.cat_ilk_chop`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeIlk))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -165,10 +150,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, lump AS value FROM maker.cat_ilk_lump`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeIlk))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -192,10 +174,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, ilk AS value FROM maker.cat_flip_ilk`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeUint256))
-				Expect(result.Value).To(Equal(fakeBytes32))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeBytes32)
 			})
 
 			It("returns an error if metadata missing flip", func() {
@@ -215,10 +194,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, urn AS value FROM maker.cat_flip_urn`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeUint256))
-				Expect(result.Value).To(Equal(fakeBytes32))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeBytes32)
 			})
 
 			It("returns an error if metadata missing flip", func() {
@@ -238,10 +214,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, ink AS value FROM maker.cat_flip_ink`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeUint256))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeUint256)
 			})
 
 			It("returns an error if metadata missing flip", func() {
@@ -261,10 +234,7 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, tab AS value FROM maker.cat_flip_tab`)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(result.BlockNumber).To(Equal(fakeBlockNumber))
-				Expect(result.BlockHash).To(Equal(fakeBlockHash))
-				Expect(result.Key).To(Equal(fakeUint256))
-				Expect(result.Value).To(Equal(fakeUint256))
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeUint256)
 			})
 
 			It("returns an error if metadata missing flip", func() {
@@ -276,19 +246,3 @@ var _ = Describe("Cat storage repository", func() {
 		})
 	})
 })
-
-type BlockMetadata struct {
-	BlockNumber int    `db:"block_number"`
-	BlockHash   string `db:"block_hash"`
-}
-
-type MappingRes struct {
-	BlockMetadata
-	Key   string
-	Value string
-}
-
-type VariableRes struct {
-	BlockMetadata
-	Value string
-}
