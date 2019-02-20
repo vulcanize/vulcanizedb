@@ -116,46 +116,46 @@ func (repository *CatStorageRepository) insertIlkLump(blockNumber int, blockHash
 
 // Flips mapping: uint256 => ilk, urn bytes32; ink, tab uint256 (both wad)
 func (repository *CatStorageRepository) insertFlipIlk(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, ilk string) error {
-	nflip, err := getFlip(metadata.Keys)
+	flip, err := getFlip(metadata.Keys)
 	if err != nil {
 		return err
 	}
 	_, writeErr := repository.db.Exec(
-		`INSERT INTO maker.cat_flip_ilk (block_number, block_hash, nflip, ilk) VALUES ($1, $2, $3, $4)`,
-		blockNumber, blockHash, nflip, ilk)
+		`INSERT INTO maker.cat_flip_ilk (block_number, block_hash, flip, ilk) VALUES ($1, $2, $3, $4)`,
+		blockNumber, blockHash, flip, ilk)
 	return writeErr
 }
 
 func (repository *CatStorageRepository) insertFlipUrn(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, urn string) error {
-	nflip, err := getFlip(metadata.Keys)
+	flip, err := getFlip(metadata.Keys)
 	if err != nil {
 		return err
 	}
 	_, writeErr := repository.db.Exec(
-		`INSERT INTO maker.cat_flip_urn (block_number, block_hash, nflip, urn) VALUES ($1, $2, $3, $4)`,
-		blockNumber, blockHash, nflip, urn)
+		`INSERT INTO maker.cat_flip_urn (block_number, block_hash, flip, urn) VALUES ($1, $2, $3, $4)`,
+		blockNumber, blockHash, flip, urn)
 	return writeErr
 }
 
 func (repository *CatStorageRepository) insertFlipInk(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, ink string) error {
-	nflip, err := getFlip(metadata.Keys)
+	flip, err := getFlip(metadata.Keys)
 	if err != nil {
 		return err
 	}
 	_, writeErr := repository.db.Exec(
-		`INSERT INTO maker.cat_flip_ink (block_number, block_hash, nflip, ink) VALUES ($1, $2, $3, $4)`,
-		blockNumber, blockHash, nflip, ink)
+		`INSERT INTO maker.cat_flip_ink (block_number, block_hash, flip, ink) VALUES ($1, $2, $3, $4)`,
+		blockNumber, blockHash, flip, ink)
 	return writeErr
 }
 
 func (repository *CatStorageRepository) insertFlipTab(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, tab string) error {
-	nflip, err := getFlip(metadata.Keys)
+	flip, err := getFlip(metadata.Keys)
 	if err != nil {
 		return err
 	}
 	_, writeErr := repository.db.Exec(
-		`INSERT INTO maker.cat_flip_tab (block_number, block_hash, nflip, tab) VALUES ($1, $2, $3, $4)`,
-		blockNumber, blockHash, nflip, tab)
+		`INSERT INTO maker.cat_flip_tab (block_number, block_hash, flip, tab) VALUES ($1, $2, $3, $4)`,
+		blockNumber, blockHash, flip, tab)
 	return writeErr
 }
 
@@ -168,9 +168,9 @@ func getIlk(keys map[shared.Key]string) (string, error) {
 }
 
 func getFlip(keys map[shared.Key]string) (string, error) {
-	nflip, ok := keys[shared.Flip]
+	flip, ok := keys[shared.Flip]
 	if !ok {
 		return "", shared.ErrMetadataMalformed{MissingData: shared.Flip}
 	}
-	return nflip, nil
+	return flip, nil
 }

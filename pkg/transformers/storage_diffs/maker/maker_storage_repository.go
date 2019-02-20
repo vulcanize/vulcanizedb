@@ -55,7 +55,7 @@ func (repository *MakerStorageRepository) GetDaiKeys() ([]string, error) {
 
 func (repository *MakerStorageRepository) GetMaxFlip() (*big.Int, error) {
 	var maxFlip big.Int
-	err := repository.db.Get(&maxFlip, `SELECT MAX(nflip) FROM maker.bite`)
+	err := repository.db.Get(&maxFlip, `SELECT MAX(nflip) FROM maker.cat_nflip`)
 	if err == sql.ErrNoRows {
 		// No flips have occurred; this is different from flip 0 having occurred
 		return nil, nil

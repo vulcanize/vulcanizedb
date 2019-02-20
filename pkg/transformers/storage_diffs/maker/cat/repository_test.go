@@ -172,7 +172,7 @@ var _ = Describe("Cat storage repository", func() {
 				err := repo.Create(fakeBlockNumber, fakeBlockHash, flipIlkMetadata, fakeBytes32)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, ilk AS value FROM maker.cat_flip_ilk`)
+				err = db.Get(&result, `SELECT block_number, block_hash, flip AS key, ilk AS value FROM maker.cat_flip_ilk`)
 				Expect(err).NotTo(HaveOccurred())
 				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeBytes32)
 			})
@@ -192,7 +192,7 @@ var _ = Describe("Cat storage repository", func() {
 				err := repo.Create(fakeBlockNumber, fakeBlockHash, flipUrnMetadata, fakeBytes32)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, urn AS value FROM maker.cat_flip_urn`)
+				err = db.Get(&result, `SELECT block_number, block_hash, flip AS key, urn AS value FROM maker.cat_flip_urn`)
 				Expect(err).NotTo(HaveOccurred())
 				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeBytes32)
 			})
@@ -212,7 +212,7 @@ var _ = Describe("Cat storage repository", func() {
 				err := repo.Create(fakeBlockNumber, fakeBlockHash, flipInkMetadata, fakeUint256)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, ink AS value FROM maker.cat_flip_ink`)
+				err = db.Get(&result, `SELECT block_number, block_hash, flip AS key, ink AS value FROM maker.cat_flip_ink`)
 				Expect(err).NotTo(HaveOccurred())
 				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeUint256)
 			})
@@ -232,7 +232,7 @@ var _ = Describe("Cat storage repository", func() {
 				err := repo.Create(fakeBlockNumber, fakeBlockHash, flipTabMetadata, fakeUint256)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = db.Get(&result, `SELECT block_number, block_hash, nflip AS key, tab AS value FROM maker.cat_flip_tab`)
+				err = db.Get(&result, `SELECT block_number, block_hash, flip AS key, tab AS value FROM maker.cat_flip_tab`)
 				Expect(err).NotTo(HaveOccurred())
 				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeUint256)
 			})
