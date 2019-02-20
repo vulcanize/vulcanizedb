@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/pit"
+	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -54,18 +55,11 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, ilkLineMetadata, expectedLine)
 
 		Expect(err).NotTo(HaveOccurred())
-		type IlkLine struct {
-			BlockMetadata
-			Ilk  string
-			Line string
-		}
-		var result IlkLine
-		err = db.Get(&result, `SELECT block_number, block_hash, ilk, line FROM maker.pit_ilk_line`)
+
+		var result MappingRes
+		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, line AS value FROM maker.pit_ilk_line`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Ilk).To(Equal(expectedIlk))
-		Expect(result.Line).To(Equal(expectedLine))
+		AssertMapping(result, blockNumber, blockHash, expectedIlk, expectedLine)
 	})
 
 	It("persists an ilk spot", func() {
@@ -79,18 +73,11 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, ilkSpotMetadata, expectedSpot)
 
 		Expect(err).NotTo(HaveOccurred())
-		type IlkSpot struct {
-			BlockMetadata
-			Ilk  string
-			Spot string
-		}
-		var result IlkSpot
-		err = db.Get(&result, `SELECT block_number, block_hash, ilk, spot FROM maker.pit_ilk_spot`)
+
+		var result MappingRes
+		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, spot AS value FROM maker.pit_ilk_spot`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Ilk).To(Equal(expectedIlk))
-		Expect(result.Spot).To(Equal(expectedSpot))
+		AssertMapping(result, blockNumber, blockHash, expectedIlk, expectedSpot)
 	})
 
 	It("persists a pit drip", func() {
@@ -99,16 +86,11 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, pit.DripMetadata, expectedDrip)
 
 		Expect(err).NotTo(HaveOccurred())
-		type PitDrip struct {
-			BlockMetadata
-			Drip string
-		}
-		var result PitDrip
-		err = db.Get(&result, `SELECT block_number, block_hash, drip FROM maker.pit_drip`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, drip AS value FROM maker.pit_drip`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Drip).To(Equal(expectedDrip))
+		AssertVariable(result, blockNumber, blockHash, expectedDrip)
 	})
 
 	It("persists a pit line", func() {
@@ -117,16 +99,11 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, pit.LineMetadata, expectedLine)
 
 		Expect(err).NotTo(HaveOccurred())
-		type PitLine struct {
-			BlockMetadata
-			Line string
-		}
-		var result PitLine
-		err = db.Get(&result, `SELECT block_number, block_hash, line FROM maker.pit_line`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, line AS value FROM maker.pit_line`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Line).To(Equal(expectedLine))
+		AssertVariable(result, blockNumber, blockHash, expectedLine)
 	})
 
 	It("persists a pit live", func() {
@@ -135,16 +112,11 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, pit.LiveMetadata, expectedLive)
 
 		Expect(err).NotTo(HaveOccurred())
-		type PitLive struct {
-			BlockMetadata
-			Live string
-		}
-		var result PitLive
-		err = db.Get(&result, `SELECT block_number, block_hash, live FROM maker.pit_live`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, live AS value FROM maker.pit_live`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Live).To(Equal(expectedLive))
+		AssertVariable(result, blockNumber, blockHash, expectedLive)
 	})
 
 	It("persists a pit vat", func() {
@@ -153,20 +125,10 @@ var _ = Describe("Pit storage repository", func() {
 		err = repo.Create(blockNumber, blockHash, pit.VatMetadata, expectedVat)
 
 		Expect(err).NotTo(HaveOccurred())
-		type PitVat struct {
-			BlockMetadata
-			Vat string
-		}
-		var result PitVat
-		err = db.Get(&result, `SELECT block_number, block_hash, vat FROM maker.pit_vat`)
+
+		var result VariableRes
+		err = db.Get(&result, `SELECT block_number, block_hash, vat AS value FROM maker.pit_vat`)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.BlockNumber).To(Equal(blockNumber))
-		Expect(result.BlockHash).To(Equal(blockHash))
-		Expect(result.Vat).To(Equal(expectedVat))
+		AssertVariable(result, blockNumber, blockHash, expectedVat)
 	})
 })
-
-type BlockMetadata struct {
-	BlockNumber int    `db:"block_number"`
-	BlockHash   string `db:"block_hash"`
-}
