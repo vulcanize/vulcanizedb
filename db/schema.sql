@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.4
--- Dumped by pg_dump version 10.4
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -202,6 +202,397 @@ CREATE SEQUENCE maker.cat_file_pit_vow_id_seq
 --
 
 ALTER SEQUENCE maker.cat_file_pit_vow_id_seq OWNED BY maker.cat_file_pit_vow.id;
+
+
+--
+-- Name: cat_flip_ilk; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_flip_ilk (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    flip numeric NOT NULL,
+    ilk text
+);
+
+
+--
+-- Name: cat_flip_ilk_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_flip_ilk_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_flip_ilk_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_flip_ilk_id_seq OWNED BY maker.cat_flip_ilk.id;
+
+
+--
+-- Name: cat_flip_ink; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_flip_ink (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    flip numeric NOT NULL,
+    ink numeric NOT NULL
+);
+
+
+--
+-- Name: cat_flip_ink_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_flip_ink_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_flip_ink_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_flip_ink_id_seq OWNED BY maker.cat_flip_ink.id;
+
+
+--
+-- Name: cat_flip_tab; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_flip_tab (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    flip numeric NOT NULL,
+    tab numeric NOT NULL
+);
+
+
+--
+-- Name: cat_flip_tab_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_flip_tab_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_flip_tab_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_flip_tab_id_seq OWNED BY maker.cat_flip_tab.id;
+
+
+--
+-- Name: cat_flip_urn; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_flip_urn (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    flip numeric NOT NULL,
+    urn text
+);
+
+
+--
+-- Name: cat_flip_urn_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_flip_urn_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_flip_urn_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_flip_urn_id_seq OWNED BY maker.cat_flip_urn.id;
+
+
+--
+-- Name: cat_ilk_chop; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_ilk_chop (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ilk text,
+    chop numeric NOT NULL
+);
+
+
+--
+-- Name: cat_ilk_chop_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_ilk_chop_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_ilk_chop_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_ilk_chop_id_seq OWNED BY maker.cat_ilk_chop.id;
+
+
+--
+-- Name: cat_ilk_flip; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_ilk_flip (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ilk text,
+    flip text
+);
+
+
+--
+-- Name: cat_ilk_flip_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_ilk_flip_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_ilk_flip_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_ilk_flip_id_seq OWNED BY maker.cat_ilk_flip.id;
+
+
+--
+-- Name: cat_ilk_lump; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_ilk_lump (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    ilk text,
+    lump numeric NOT NULL
+);
+
+
+--
+-- Name: cat_ilk_lump_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_ilk_lump_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_ilk_lump_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_ilk_lump_id_seq OWNED BY maker.cat_ilk_lump.id;
+
+
+--
+-- Name: cat_live; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_live (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    live numeric NOT NULL
+);
+
+
+--
+-- Name: cat_live_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_live_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_live_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_live_id_seq OWNED BY maker.cat_live.id;
+
+
+--
+-- Name: cat_nflip; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_nflip (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    nflip numeric NOT NULL
+);
+
+
+--
+-- Name: cat_nflip_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_nflip_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_nflip_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_nflip_id_seq OWNED BY maker.cat_nflip.id;
+
+
+--
+-- Name: cat_pit; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_pit (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    pit text
+);
+
+
+--
+-- Name: cat_pit_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_pit_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_pit_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_pit_id_seq OWNED BY maker.cat_pit.id;
+
+
+--
+-- Name: cat_vat; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_vat (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    vat text
+);
+
+
+--
+-- Name: cat_vat_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_vat_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_vat_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_vat_id_seq OWNED BY maker.cat_vat.id;
+
+
+--
+-- Name: cat_vow; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.cat_vow (
+    id integer NOT NULL,
+    block_number bigint,
+    block_hash text,
+    vow text
+);
+
+
+--
+-- Name: cat_vow_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.cat_vow_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cat_vow_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.cat_vow_id_seq OWNED BY maker.cat_vow.id;
 
 
 --
@@ -2441,6 +2832,90 @@ ALTER TABLE ONLY maker.cat_file_pit_vow ALTER COLUMN id SET DEFAULT nextval('mak
 
 
 --
+-- Name: cat_flip_ilk id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_ilk ALTER COLUMN id SET DEFAULT nextval('maker.cat_flip_ilk_id_seq'::regclass);
+
+
+--
+-- Name: cat_flip_ink id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_ink ALTER COLUMN id SET DEFAULT nextval('maker.cat_flip_ink_id_seq'::regclass);
+
+
+--
+-- Name: cat_flip_tab id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_tab ALTER COLUMN id SET DEFAULT nextval('maker.cat_flip_tab_id_seq'::regclass);
+
+
+--
+-- Name: cat_flip_urn id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_urn ALTER COLUMN id SET DEFAULT nextval('maker.cat_flip_urn_id_seq'::regclass);
+
+
+--
+-- Name: cat_ilk_chop id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_chop ALTER COLUMN id SET DEFAULT nextval('maker.cat_ilk_chop_id_seq'::regclass);
+
+
+--
+-- Name: cat_ilk_flip id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_flip ALTER COLUMN id SET DEFAULT nextval('maker.cat_ilk_flip_id_seq'::regclass);
+
+
+--
+-- Name: cat_ilk_lump id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_lump ALTER COLUMN id SET DEFAULT nextval('maker.cat_ilk_lump_id_seq'::regclass);
+
+
+--
+-- Name: cat_live id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_live ALTER COLUMN id SET DEFAULT nextval('maker.cat_live_id_seq'::regclass);
+
+
+--
+-- Name: cat_nflip id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_nflip ALTER COLUMN id SET DEFAULT nextval('maker.cat_nflip_id_seq'::regclass);
+
+
+--
+-- Name: cat_pit id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_pit ALTER COLUMN id SET DEFAULT nextval('maker.cat_pit_id_seq'::regclass);
+
+
+--
+-- Name: cat_vat id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_vat ALTER COLUMN id SET DEFAULT nextval('maker.cat_vat_id_seq'::regclass);
+
+
+--
+-- Name: cat_vow id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_vow ALTER COLUMN id SET DEFAULT nextval('maker.cat_vow_id_seq'::regclass);
+
+
+--
 -- Name: deal id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -2936,6 +3411,102 @@ ALTER TABLE ONLY maker.cat_file_pit_vow
 
 ALTER TABLE ONLY maker.cat_file_pit_vow
     ADD CONSTRAINT cat_file_pit_vow_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_flip_ilk cat_flip_ilk_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_ilk
+    ADD CONSTRAINT cat_flip_ilk_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_flip_ink cat_flip_ink_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_ink
+    ADD CONSTRAINT cat_flip_ink_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_flip_tab cat_flip_tab_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_tab
+    ADD CONSTRAINT cat_flip_tab_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_flip_urn cat_flip_urn_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_urn
+    ADD CONSTRAINT cat_flip_urn_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_ilk_chop cat_ilk_chop_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_chop
+    ADD CONSTRAINT cat_ilk_chop_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_ilk_flip cat_ilk_flip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_flip
+    ADD CONSTRAINT cat_ilk_flip_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_ilk_lump cat_ilk_lump_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_lump
+    ADD CONSTRAINT cat_ilk_lump_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_live cat_live_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_live
+    ADD CONSTRAINT cat_live_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_nflip cat_nflip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_nflip
+    ADD CONSTRAINT cat_nflip_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_pit cat_pit_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_pit
+    ADD CONSTRAINT cat_pit_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_vat cat_vat_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_vat
+    ADD CONSTRAINT cat_vat_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cat_vow cat_vow_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_vow
+    ADD CONSTRAINT cat_vow_pkey PRIMARY KEY (id);
 
 
 --

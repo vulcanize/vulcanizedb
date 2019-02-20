@@ -27,8 +27,9 @@ const (
 type Key string
 
 const (
-	Ilk Key = "ilk"
-	Guy Key = "guy"
+	Ilk  Key = "ilk"
+	Guy  Key = "guy"
+	Flip Key = "flip"
 )
 
 type StorageValueMetadata struct {
