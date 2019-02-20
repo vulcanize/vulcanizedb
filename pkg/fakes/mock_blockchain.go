@@ -108,8 +108,8 @@ func (chain *MockBlockChain) CallContract(contractHash string, input []byte, blo
 	return []byte{}, nil
 }
 
-func (chain *MockBlockChain) LastBlock() *big.Int {
-	return chain.lastBlock
+func (chain *MockBlockChain) LastBlock() (*big.Int, error) {
+	return chain.lastBlock, nil
 }
 
 func (chain *MockBlockChain) Node() core.Node {

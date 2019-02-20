@@ -56,7 +56,7 @@ var _ = Describe("Logs Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
 			Expect(err).NotTo(HaveOccurred())
-			logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -64,9 +64,11 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
+			Expect(err).NotTo(HaveOccurred())
 
-			log := logsRepository.GetLogs("x123", blockNumber)
+			log, err := logsRepository.GetLogs("x123", blockNumber)
 
+			Expect(err).NotTo(HaveOccurred())
 			Expect(log).NotTo(BeNil())
 			Expect(log[0].BlockNumber).To(Equal(blockNumber))
 			Expect(log[0].Address).To(Equal("x123"))
@@ -79,7 +81,8 @@ var _ = Describe("Logs Repository", func() {
 		})
 
 		It("returns nil if log does not exist", func() {
-			log := logsRepository.GetLogs("x123", 1)
+			log, err := logsRepository.GetLogs("x123", 1)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(log).To(BeNil())
 		})
 
@@ -89,7 +92,8 @@ var _ = Describe("Logs Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
 			Expect(err).NotTo(HaveOccurred())
-			logsRepository.CreateLogs([]core.Log{{
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -97,7 +101,9 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
-			logsRepository.CreateLogs([]core.Log{{
+			Expect(err).NotTo(HaveOccurred())
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
 				Index:       1,
 				Address:     "x123",
@@ -105,7 +111,9 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x111", 1: "x222", 2: "x333"},
 				Data:        "xdef",
 			}}, receiptId)
-			logsRepository.CreateLogs([]core.Log{{
+			Expect(err).NotTo(HaveOccurred())
+
+			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: 2,
 				Index:       0,
 				Address:     "x123",
@@ -113,13 +121,16 @@ var _ = Describe("Logs Repository", func() {
 				Topics:      core.Topics{0: "x777", 1: "x888", 2: "x999"},
 				Data:        "xabc",
 			}}, receiptId)
+			Expect(err).NotTo(HaveOccurred())
 
-			log := logsRepository.GetLogs("x123", blockNumber)
+			log, err := logsRepository.GetLogs("x123", blockNumber)
+			Expect(err).NotTo(HaveOccurred())
 
 			type logIndex struct {
 				blockNumber int64
 				Index       int64
 			}
+
 			var uniqueBlockNumbers []logIndex
 			for _, log := range log {
 				uniqueBlockNumbers = append(uniqueBlockNumbers,
@@ -199,8 +210,9 @@ var _ = Describe("Logs Repository", func() {
 			block := core.Block{Transactions: []core.Transaction{transaction}}
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
-			retrievedLogs := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
+			retrievedLogs, err := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)
 
+			Expect(err).NotTo(HaveOccurred())
 			expected := logs[1:]
 			Expect(retrievedLogs).To(Equal(expected))
 		})

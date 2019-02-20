@@ -31,7 +31,7 @@ type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
-	SetBlocksStatus(chainHead int64)
+	SetBlocksStatus(chainHead int64) error
 }
 
 var ErrContractDoesNotExist = func(contractHash string) error {
@@ -41,7 +41,7 @@ var ErrContractDoesNotExist = func(contractHash string) error {
 type ContractRepository interface {
 	CreateContract(contract core.Contract) error
 	GetContract(contractHash string) (core.Contract, error)
-	ContractExists(contractHash string) bool
+	ContractExists(contractHash string) (bool, error)
 }
 
 var ErrFilterDoesNotExist = func(name string) error {
@@ -57,12 +57,11 @@ type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	GetHeader(blockNumber int64) (core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
-	HeaderExists(blockNumber int64) (bool, error)
 }
 
 type LogRepository interface {
 	CreateLogs(logs []core.Log, receiptId int64) error
-	GetLogs(address string, blockNumber int64) []core.Log
+	GetLogs(address string, blockNumber int64) ([]core.Log, error)
 }
 
 var ErrReceiptDoesNotExist = func(txHash string) error {

@@ -17,6 +17,7 @@
 package repositories
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -28,6 +29,7 @@ type WatchedEventRepository struct {
 func (watchedEventRepository WatchedEventRepository) GetWatchedEvents(name string) ([]*core.WatchedEvent, error) {
 	rows, err := watchedEventRepository.DB.Queryx(`SELECT id, name, block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data FROM watched_event_logs where name=$1`, name)
 	if err != nil {
+		logrus.Error("GetWatchedEvents: error getting watched events: ", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -37,11 +39,13 @@ func (watchedEventRepository WatchedEventRepository) GetWatchedEvents(name strin
 		lg := new(core.WatchedEvent)
 		err = rows.StructScan(lg)
 		if err != nil {
+			logrus.Warn("GetWatchedEvents: error scanning log: ", err)
 			return nil, err
 		}
 		lgs = append(lgs, lg)
 	}
 	if err = rows.Err(); err != nil {
+		logrus.Warn("GetWatchedEvents: error scanning logs: ", err)
 		return nil, err
 	}
 	return lgs, nil

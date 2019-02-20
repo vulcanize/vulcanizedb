@@ -18,6 +18,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 
 	"database/sql"
 
@@ -39,16 +40,26 @@ func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) e
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
 		)
 		if err != nil {
-			tx.Rollback()
+			err = tx.Rollback()
+			if err != nil {
+				logrus.Error("CreateLogs: could not perform rollback: ", err)
+			}
 			return postgres.ErrDBInsertFailed
 		}
 	}
-	tx.Commit()
+	err := tx.Commit()
+	if err != nil {
+		err = tx.Rollback()
+		if err != nil {
+			logrus.Error("CreateLogs: could not perform rollback: ", err)
+		}
+		return postgres.ErrDBInsertFailed
+	}
 	return nil
 }
 
-func (logRepository LogRepository) GetLogs(address string, blockNumber int64) []core.Log {
-	logRows, _ := logRepository.DB.Query(
+func (logRepository LogRepository) GetLogs(address string, blockNumber int64) ([]core.Log, error) {
+	logRows, err := logRepository.DB.Query(
 		`SELECT block_number,
 					  address,
 					  tx_hash,
@@ -61,10 +72,13 @@ func (logRepository LogRepository) GetLogs(address string, blockNumber int64) []
 				FROM logs
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
+	if err != nil {
+		return []core.Log{}, err
+	}
 	return logRepository.loadLogs(logRows)
 }
 
-func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) []core.Log {
+func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) ([]core.Log, error) {
 	var lgs []core.Log
 	for logsRows.Next() {
 		var blockNumber int64
@@ -73,7 +87,11 @@ func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) []core.Log {
 		var index int64
 		var data string
 		var topics core.Topics
-		logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
+		err := logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
+		if err != nil {
+			logrus.Error("loadLogs: Error scanning a row in logRows: ", err)
+			return []core.Log{}, err
+		}
 		lg := core.Log{
 			BlockNumber: blockNumber,
 			TxHash:      txHash,
@@ -86,5 +104,5 @@ func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) []core.Log {
 		}
 		lgs = append(lgs, lg)
 	}
-	return lgs
+	return lgs, nil
 }

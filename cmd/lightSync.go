@@ -62,7 +62,9 @@ func init() {
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 	if err != nil {
-		log.Fatal("Error populating headers: ", err)
+		// TODO Lots of possible errors in the call stack above. If errors occur, we still put
+		// 0 in the channel, triggering another round
+		log.Error("backfillAllHeaders: Error populating headers: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -84,7 +86,7 @@ func lightSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				log.Error("ValidateHeaders failed in lightSync: ", err)
+				log.Error("lightSync: ValidateHeaders failed: ", err)
 			}
 			log.Info(window.GetString())
 		case n := <-missingBlocksPopulated:
@@ -97,11 +99,14 @@ func lightSync() {
 }
 
 func validateArgs(blockChain *geth.BlockChain) {
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
+	lastBlock, err := blockChain.LastBlock()
+	if err != nil {
+		log.Error("validateArgs: Error getting last block: ", err)
+	}
+	if lastBlock.Int64() == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
-	if startingBlockNumber > lastBlock {
+	if startingBlockNumber > lastBlock.Int64() {
 		log.Fatal("starting block number > current block number")
 	}
 }

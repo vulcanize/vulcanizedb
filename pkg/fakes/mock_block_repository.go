@@ -85,9 +85,10 @@ func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber i
 	return repository.missingBlockNumbersReturnArray
 }
 
-func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) {
+func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) error {
 	repository.setBlockStatusCalled = true
 	repository.setBlockStatusPassedChainHead = chainHead
+	return nil
 }
 
 func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCallCountEquals(times int) {

@@ -25,7 +25,7 @@ import (
 
 type HeaderConverter struct{}
 
-func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) (core.Header, error) {
+func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) core.Header {
 	rawHeader, err := json.Marshal(gethHeader)
 	if err != nil {
 		panic(err)
@@ -36,5 +36,5 @@ func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash str
 		Raw:         rawHeader,
 		Timestamp:   gethHeader.Time.String(),
 	}
-	return coreHeader, nil
+	return coreHeader
 }

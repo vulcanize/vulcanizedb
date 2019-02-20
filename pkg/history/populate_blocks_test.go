@@ -36,8 +36,9 @@ var _ = Describe("Populating blocks", func() {
 		blockChain.SetLastBlock(big.NewInt(2))
 		blockRepository.SetMissingBlockNumbersReturnArray([]int64{2})
 
-		blocksAdded := history.PopulateMissingBlocks(blockChain, blockRepository, 1)
-		_, err := blockRepository.GetBlock(1)
+		blocksAdded, err := history.PopulateMissingBlocks(blockChain, blockRepository, 1)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = blockRepository.GetBlock(1)
 
 		Expect(blocksAdded).To(Equal(1))
 		Expect(err).ToNot(HaveOccurred())
@@ -48,8 +49,9 @@ var _ = Describe("Populating blocks", func() {
 		blockChain.SetLastBlock(big.NewInt(13))
 		blockRepository.SetMissingBlockNumbersReturnArray([]int64{5, 8, 10})
 
-		blocksAdded := history.PopulateMissingBlocks(blockChain, blockRepository, 5)
+		blocksAdded, err := history.PopulateMissingBlocks(blockChain, blockRepository, 5)
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(blocksAdded).To(Equal(3))
 		blockRepository.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(3, []int64{5, 8, 10})
 	})
@@ -59,16 +61,18 @@ var _ = Describe("Populating blocks", func() {
 		blockChain.SetLastBlock(big.NewInt(6))
 		blockRepository.SetMissingBlockNumbersReturnArray([]int64{4, 5})
 
-		numberOfBlocksCreated := history.PopulateMissingBlocks(blockChain, blockRepository, 3)
+		numberOfBlocksCreated, err := history.PopulateMissingBlocks(blockChain, blockRepository, 3)
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(numberOfBlocksCreated).To(Equal(2))
 	})
 
 	It("updates the repository with a range of blocks w/in the range ", func() {
 		blockChain := fakes.NewMockBlockChain()
 
-		history.RetrieveAndUpdateBlocks(blockChain, blockRepository, history.MakeRange(2, 5))
+		_, err := history.RetrieveAndUpdateBlocks(blockChain, blockRepository, history.MakeRange(2, 5))
 
+		Expect(err).NotTo(HaveOccurred())
 		blockRepository.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(4, []int64{2, 3, 4, 5})
 	})
 
@@ -77,8 +81,9 @@ var _ = Describe("Populating blocks", func() {
 		blockChain.SetGetBlockByNumberErr(fakes.FakeError)
 		blocks := history.MakeRange(1, 10)
 
-		history.RetrieveAndUpdateBlocks(blockChain, blockRepository, blocks)
+		_, err := history.RetrieveAndUpdateBlocks(blockChain, blockRepository, blocks)
 
+		Expect(err).To(HaveOccurred())
 		blockRepository.AssertCreateOrUpdateBlockCallCountEquals(0)
 	})
 })
