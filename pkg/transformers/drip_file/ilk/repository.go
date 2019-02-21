@@ -47,10 +47,19 @@ func (repository DripFileIlkRepository) Create(headerID int64, models []interfac
 			return fmt.Errorf("model of type %T, not %T", model, DripFileIlkModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(ilk.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(
 			`INSERT into maker.drip_file_ilk (header_id, ilk, vow, tax, log_idx, tx_idx, raw_log)
         	VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)`,
-			headerID, ilk.Ilk, ilk.Vow, ilk.Tax, ilk.LogIndex, ilk.TransactionIndex, ilk.Raw,
+			headerID, ilkID, ilk.Vow, ilk.Tax, ilk.LogIndex, ilk.TransactionIndex, ilk.Raw,
 		)
 
 		if execErr != nil {

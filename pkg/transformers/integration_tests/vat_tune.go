@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"math/big"
+	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -75,7 +76,9 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[0].Urn).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))
 		Expect(dbResult[0].V).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))
 		Expect(dbResult[0].W).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))
@@ -142,7 +145,9 @@ var _ = Describe("VatTune LogNoteTransformer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(dbResult)).To(Equal(1))
-		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[0].Urn).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))
 		Expect(dbResult[0].V).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))
 		Expect(dbResult[0].W).To(Equal("0000000000000000000000004f26ffbe5f04ed43630fdc30a87638d53d0b0876"))

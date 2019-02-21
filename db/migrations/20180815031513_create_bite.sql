@@ -1,26 +1,26 @@
 -- +goose Up
-CREATE TABLE maker.frob (
+CREATE TABLE maker.bite (
   id        SERIAL PRIMARY KEY,
   header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-  ilk       TEXT,
+  ilk       INTEGER NOT NULL REFERENCES maker.ilks (id),
   urn       TEXT,
-  dink      NUMERIC,
-  dart      NUMERIC,
   ink       NUMERIC,
   art       NUMERIC,
-  iart      NUMERIC,
-  log_idx   INTEGER NOT NUll,
+  iArt      NUMERIC,
+  tab       NUMERIC,
+  nflip     NUMERIC,
   tx_idx    INTEGER NOT NUll,
+  log_idx   INTEGER NOT NUll,
   raw_log   JSONB,
   UNIQUE (header_id, tx_idx, log_idx)
 );
 
 ALTER TABLE public.checked_headers
-  ADD COLUMN frob_checked BOOLEAN NOT NULL DEFAULT FALSE;
+  ADD COLUMN bite_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
 
 -- +goose Down
-DROP TABLE maker.frob;
+DROP TABLE maker.bite;
 
 ALTER TABLE public.checked_headers
-  DROP COLUMN frob_checked;
+  DROP COLUMN bite_checked;

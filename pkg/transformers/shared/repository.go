@@ -10,6 +10,30 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 )
 
+func GetOrCreateIlk(ilk string, db *postgres.DB) (int, error) {
+	var ilkID int
+	err := db.Get(&ilkID, `SELECT id FROM maker.ilks WHERE ilk = $1`, ilk)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			insertErr := db.QueryRow(`INSERT INTO maker.ilks (ilk) VALUES ($1) RETURNING id`, ilk).Scan(&ilkID)
+			return ilkID, insertErr
+		}
+	}
+	return ilkID, err
+}
+
+func GetOrCreateIlkInTransaction(ilk string, tx *sql.Tx) (int, error) {
+	var ilkID int
+	err := tx.QueryRow(`SELECT id FROM maker.ilks WHERE ilk = $1`, ilk).Scan(&ilkID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			insertErr := tx.QueryRow(`INSERT INTO maker.ilks (ilk) VALUES ($1) RETURNING id`, ilk).Scan(&ilkID)
+			return ilkID, insertErr
+		}
+	}
+	return ilkID, err
+}
+
 func MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn string) error {
 	_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
 		VALUES ($1, $2)

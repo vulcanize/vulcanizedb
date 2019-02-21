@@ -19,6 +19,8 @@ package ilk_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -67,7 +69,9 @@ var _ = Describe("Pit file ilk repository", func() {
 			var dbPitFile ilk.PitFileIlkModel
 			err = db.Get(&dbPitFile, `SELECT ilk, what, data, log_idx, tx_idx, raw_log FROM maker.pit_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbPitFile.Ilk).To(Equal(test_data.PitFileIlkSpotModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.PitFileIlkSpotModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbPitFile.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbPitFile.What).To(Equal(test_data.PitFileIlkSpotModel.What))
 			Expect(dbPitFile.Data).To(Equal(test_data.PitFileIlkSpotModel.Data))
 			Expect(dbPitFile.LogIndex).To(Equal(test_data.PitFileIlkSpotModel.LogIndex))

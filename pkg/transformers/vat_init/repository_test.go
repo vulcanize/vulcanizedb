@@ -19,8 +19,10 @@ package vat_init_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -67,7 +69,9 @@ var _ = Describe("Vat init repository", func() {
 			var dbVatInit vat_init.VatInitModel
 			err = db.Get(&dbVatInit, `SELECT ilk, log_idx, tx_idx, raw_log FROM maker.vat_init WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbVatInit.Ilk).To(Equal(test_data.VatInitModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatInitModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatInit.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatInit.LogIndex).To(Equal(test_data.VatInitModel.LogIndex))
 			Expect(dbVatInit.TransactionIndex).To(Equal(test_data.VatInitModel.TransactionIndex))
 			Expect(dbVatInit.Raw).To(MatchJSON(test_data.VatInitModel.Raw))
