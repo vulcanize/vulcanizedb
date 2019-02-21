@@ -213,7 +213,7 @@ CREATE TABLE maker.cat_flip_ilk (
     block_number bigint,
     block_hash text,
     flip numeric NOT NULL,
-    ilk text
+    ilk integer NOT NULL
 );
 
 
@@ -344,7 +344,7 @@ CREATE TABLE maker.cat_ilk_chop (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     chop numeric NOT NULL
 );
 
@@ -377,7 +377,7 @@ CREATE TABLE maker.cat_ilk_flip (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     flip text
 );
 
@@ -410,7 +410,7 @@ CREATE TABLE maker.cat_ilk_lump (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     lump numeric NOT NULL
 );
 
@@ -4411,6 +4411,38 @@ ALTER TABLE ONLY maker.cat_file_flip
 
 ALTER TABLE ONLY maker.cat_file_pit_vow
     ADD CONSTRAINT cat_file_pit_vow_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cat_flip_ilk cat_flip_ilk_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_flip_ilk
+    ADD CONSTRAINT cat_flip_ilk_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: cat_ilk_chop cat_ilk_chop_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_chop
+    ADD CONSTRAINT cat_ilk_chop_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: cat_ilk_flip cat_ilk_flip_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_flip
+    ADD CONSTRAINT cat_ilk_flip_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: cat_ilk_lump cat_ilk_lump_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_ilk_lump
+    ADD CONSTRAINT cat_ilk_lump_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
