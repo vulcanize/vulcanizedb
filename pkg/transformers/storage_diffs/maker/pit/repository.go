@@ -34,9 +34,9 @@ func (repository *PitStorageRepository) SetDB(db *postgres.DB) {
 func (repository PitStorageRepository) Create(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, value interface{}) error {
 	switch metadata.Name {
 	case IlkLine:
-		return repository.insertIlkLine(blockNumber, blockHash, metadata.Keys[shared.Ilk], value.(string))
+		return repository.insertIlkLine(blockNumber, blockHash, metadata, value.(string))
 	case IlkSpot:
-		return repository.insertIlkSpot(blockNumber, blockHash, metadata.Keys[shared.Ilk], value.(string))
+		return repository.insertIlkSpot(blockNumber, blockHash, metadata, value.(string))
 	case PitDrip:
 		return repository.insertPitDrip(blockNumber, blockHash, value.(string))
 	case PitLine:
@@ -50,7 +50,11 @@ func (repository PitStorageRepository) Create(blockNumber int, blockHash string,
 	}
 }
 
-func (repository PitStorageRepository) insertIlkLine(blockNumber int, blockHash string, ilk string, line string) error {
+func (repository PitStorageRepository) insertIlkLine(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, line string) error {
+	ilk, err := getIlk(metadata.Keys)
+	if err != nil {
+		return err
+	}
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -74,7 +78,11 @@ func (repository PitStorageRepository) insertIlkLine(blockNumber int, blockHash 
 	return tx.Commit()
 }
 
-func (repository PitStorageRepository) insertIlkSpot(blockNumber int, blockHash string, ilk string, spot string) error {
+func (repository PitStorageRepository) insertIlkSpot(blockNumber int, blockHash string, metadata shared.StorageValueMetadata, spot string) error {
+	ilk, err := getIlk(metadata.Keys)
+	if err != nil {
+		return err
+	}
 	tx, err := repository.db.Begin()
 	if err != nil {
 		return err
@@ -116,4 +124,12 @@ func (repository PitStorageRepository) insertPitLive(blockNumber int, blockHash 
 func (repository PitStorageRepository) insertPitVat(blockNumber int, blockHash string, vat string) error {
 	_, err := repository.db.Exec(`INSERT INTO maker.pit_vat (block_number, block_hash, vat) VALUES ($1, $2, $3)`, blockNumber, blockHash, vat)
 	return err
+}
+
+func getIlk(keys map[shared.Key]string) (string, error) {
+	ilk, ok := keys[shared.Ilk]
+	if !ok {
+		return "", shared.ErrMetadataMalformed{MissingData: shared.Ilk}
+	}
+	return ilk, nil
 }
