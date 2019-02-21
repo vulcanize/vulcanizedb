@@ -38,7 +38,7 @@ CREATE TABLE maker.cat_ilk_flip (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  ilk TEXT,
+  ilk INTEGER NOT NULL REFERENCES maker.ilks (id),
   flip TEXT
 );
 
@@ -46,7 +46,7 @@ CREATE TABLE maker.cat_ilk_chop (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  ilk TEXT,
+  ilk INTEGER NOT NULL REFERENCES maker.ilks (id),
   chop NUMERIC NOT NULL
 );
 
@@ -54,7 +54,7 @@ CREATE TABLE maker.cat_ilk_lump (
   id SERIAL PRIMARY KEY,
   block_number BIGINT,
   block_hash TEXT,
-  ilk TEXT,
+  ilk INTEGER NOT NULL REFERENCES maker.ilks (id),
   lump NUMERIC NOT NULL
 );
 
@@ -63,7 +63,7 @@ CREATE TABLE maker.cat_flip_ilk (
   block_number BIGINT,
   block_hash TEXT,
   flip NUMERIC NOT NULL,
-  ilk TEXT
+  ilk INTEGER NOT NULL REFERENCES maker.ilks (id)
 );
 
 CREATE TABLE maker.cat_flip_urn (

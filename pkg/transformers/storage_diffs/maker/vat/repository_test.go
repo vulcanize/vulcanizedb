@@ -32,11 +32,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("dai", func() {
 		It("writes a row", func() {
-			daiMetadata := shared.StorageValueMetadata{
-				Name: vat.Dai,
-				Keys: map[shared.Key]string{shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			daiMetadata := shared.GetStorageValueMetadata(vat.Dai, map[shared.Key]string{shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, daiMetadata, fakeUint256)
 
@@ -49,11 +45,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing guy", func() {
-			malformedDaiMetadata := shared.StorageValueMetadata{
-				Name: vat.Dai,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedDaiMetadata := shared.GetStorageValueMetadata(vat.Dai, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedDaiMetadata, fakeUint256)
 
@@ -64,11 +56,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("gem", func() {
 		It("writes row", func() {
-			gemMetadata := shared.StorageValueMetadata{
-				Name: vat.Gem,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			gemMetadata := shared.GetStorageValueMetadata(vat.Gem, map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, gemMetadata, fakeUint256)
 
@@ -83,11 +71,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedGemMetadata := shared.StorageValueMetadata{
-				Name: vat.Gem,
-				Keys: map[shared.Key]string{shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			malformedGemMetadata := shared.GetStorageValueMetadata(vat.Gem, map[shared.Key]string{shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedGemMetadata, fakeUint256)
 
@@ -96,11 +80,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing guy", func() {
-			malformedGemMetadata := shared.StorageValueMetadata{
-				Name: vat.Gem,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			malformedGemMetadata := shared.GetStorageValueMetadata(vat.Gem, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedGemMetadata, fakeUint256)
 
@@ -111,11 +91,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("ilk Art", func() {
 		It("writes row", func() {
-			ilkArtMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkArt,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			ilkArtMetadata := shared.GetStorageValueMetadata(vat.IlkArt, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkArtMetadata, fakeUint256)
 
@@ -130,11 +106,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedIlkArtMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkArt,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedIlkArtMetadata := shared.GetStorageValueMetadata(vat.IlkArt, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkArtMetadata, fakeUint256)
 
@@ -145,11 +117,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("ilk Ink", func() {
 		It("writes row", func() {
-			ilkInkMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkInk,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			ilkInkMetadata := shared.GetStorageValueMetadata(vat.IlkInk, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkInkMetadata, fakeUint256)
 
@@ -164,11 +132,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedIlkInkMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkInk,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedIlkInkMetadata := shared.GetStorageValueMetadata(vat.IlkInk, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkInkMetadata, fakeUint256)
 
@@ -179,11 +143,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("ilk rate", func() {
 		It("writes row", func() {
-			ilkRateMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkRate,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			ilkRateMetadata := shared.GetStorageValueMetadata(vat.IlkRate, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkRateMetadata, fakeUint256)
 
@@ -198,11 +158,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedIlkRateMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkRate,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedIlkRateMetadata := shared.GetStorageValueMetadata(vat.IlkRate, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkRateMetadata, fakeUint256)
 
@@ -213,11 +169,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("ilk take", func() {
 		It("writes row", func() {
-			ilkTakeMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkTake,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			ilkTakeMetadata := shared.GetStorageValueMetadata(vat.IlkTake, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, ilkTakeMetadata, fakeUint256)
 
@@ -232,11 +184,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedIlkTakeMetadata := shared.StorageValueMetadata{
-				Name: vat.IlkTake,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedIlkTakeMetadata := shared.GetStorageValueMetadata(vat.IlkTake, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkTakeMetadata, fakeUint256)
 
@@ -247,11 +195,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("sin", func() {
 		It("writes a row", func() {
-			sinMetadata := shared.StorageValueMetadata{
-				Name: vat.Sin,
-				Keys: map[shared.Key]string{shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			sinMetadata := shared.GetStorageValueMetadata(vat.Sin, map[shared.Key]string{shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, sinMetadata, fakeUint256)
 
@@ -264,11 +208,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing guy", func() {
-			malformedSinMetadata := shared.StorageValueMetadata{
-				Name: vat.Sin,
-				Keys: nil,
-				Type: shared.Uint256,
-			}
+			malformedSinMetadata := shared.GetStorageValueMetadata(vat.Sin, nil, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedSinMetadata, fakeUint256)
 
@@ -279,11 +219,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("urn art", func() {
 		It("writes row", func() {
-			urnArtMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnArt,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			urnArtMetadata := shared.GetStorageValueMetadata(vat.UrnArt, map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, urnArtMetadata, fakeUint256)
 
@@ -298,11 +234,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedUrnArtMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnArt,
-				Keys: map[shared.Key]string{shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			malformedUrnArtMetadata := shared.GetStorageValueMetadata(vat.UrnArt, map[shared.Key]string{shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedUrnArtMetadata, fakeUint256)
 
@@ -311,11 +243,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing guy", func() {
-			malformedUrnArtMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnArt,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			malformedUrnArtMetadata := shared.GetStorageValueMetadata(vat.UrnArt, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedUrnArtMetadata, fakeUint256)
 
@@ -326,11 +254,7 @@ var _ = Describe("Vat storage repository", func() {
 
 	Describe("urn ink", func() {
 		It("writes row", func() {
-			urnInkMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnInk,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			urnInkMetadata := shared.GetStorageValueMetadata(vat.UrnInk, map[shared.Key]string{shared.Ilk: fakeIlk, shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, urnInkMetadata, fakeUint256)
 
@@ -345,11 +269,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing ilk", func() {
-			malformedUrnInkMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnInk,
-				Keys: map[shared.Key]string{shared.Guy: fakeGuy},
-				Type: shared.Uint256,
-			}
+			malformedUrnInkMetadata := shared.GetStorageValueMetadata(vat.UrnInk, map[shared.Key]string{shared.Guy: fakeGuy}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedUrnInkMetadata, fakeUint256)
 
@@ -358,11 +278,7 @@ var _ = Describe("Vat storage repository", func() {
 		})
 
 		It("returns error if metadata missing guy", func() {
-			malformedUrnInkMetadata := shared.StorageValueMetadata{
-				Name: vat.UrnInk,
-				Keys: map[shared.Key]string{shared.Ilk: fakeIlk},
-				Type: shared.Uint256,
-			}
+			malformedUrnInkMetadata := shared.GetStorageValueMetadata(vat.UrnInk, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
 			err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedUrnInkMetadata, fakeUint256)
 
@@ -372,13 +288,7 @@ var _ = Describe("Vat storage repository", func() {
 	})
 
 	It("persists vat debt", func() {
-		debtMetadata := shared.StorageValueMetadata{
-			Name: vat.VatDebt,
-			Keys: nil,
-			Type: shared.Uint256,
-		}
-
-		err := repo.Create(fakeBlockNumber, fakeBlockHash, debtMetadata, fakeUint256)
+		err := repo.Create(fakeBlockNumber, fakeBlockHash, vat.DebtMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
 
@@ -389,13 +299,7 @@ var _ = Describe("Vat storage repository", func() {
 	})
 
 	It("persists vat vice", func() {
-		viceMetadata := shared.StorageValueMetadata{
-			Name: vat.VatVice,
-			Keys: nil,
-			Type: shared.Uint256,
-		}
-
-		err := repo.Create(fakeBlockNumber, fakeBlockHash, viceMetadata, fakeUint256)
+		err := repo.Create(fakeBlockNumber, fakeBlockHash, vat.ViceMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
 

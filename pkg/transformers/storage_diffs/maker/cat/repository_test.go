@@ -4,10 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	shared2 "github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/cat"
 	. "github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/maker/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/storage_diffs/shared"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Cat storage repository", func() {
@@ -110,7 +112,9 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, flip AS value FROM maker.cat_ilk_flip`)
 				Expect(err).NotTo(HaveOccurred())
-				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeAddress)
+				ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeAddress)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -130,7 +134,9 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, chop AS value FROM maker.cat_ilk_chop`)
 				Expect(err).NotTo(HaveOccurred())
-				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+				ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -150,7 +156,9 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, lump AS value FROM maker.cat_ilk_lump`)
 				Expect(err).NotTo(HaveOccurred())
-				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeIlk, fakeUint256)
+				ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
 			})
 
 			It("returns an error if metadata missing ilk", func() {
@@ -174,7 +182,9 @@ var _ = Describe("Cat storage repository", func() {
 
 				err = db.Get(&result, `SELECT block_number, block_hash, flip AS key, ilk AS value FROM maker.cat_flip_ilk`)
 				Expect(err).NotTo(HaveOccurred())
-				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, fakeBytes32)
+				ilkID, err := shared2.GetOrCreateIlk(fakeBytes32, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, fakeUint256, strconv.Itoa(ilkID))
 			})
 
 			It("returns an error if metadata missing flip", func() {
