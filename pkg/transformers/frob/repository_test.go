@@ -19,6 +19,8 @@ package frob_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -67,7 +69,9 @@ var _ = Describe("Frob repository", func() {
 			err = db.Get(&dbFrob, `SELECT art, dart, dink, iart, ilk, ink, urn, log_idx, tx_idx, raw_log FROM maker.frob WHERE header_id = $1`, headerID)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbFrob.Ilk).To(Equal(test_data.FrobModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.FrobModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbFrob.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbFrob.Urn).To(Equal(test_data.FrobModel.Urn))
 			Expect(dbFrob.Ink).To(Equal(test_data.FrobModel.Ink))
 			Expect(dbFrob.Art).To(Equal(test_data.FrobModel.Art))

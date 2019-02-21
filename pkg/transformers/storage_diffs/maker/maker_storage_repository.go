@@ -66,19 +66,36 @@ func (repository *MakerStorageRepository) GetMaxFlip() (*big.Int, error) {
 func (repository *MakerStorageRepository) GetGemKeys() ([]Urn, error) {
 	var gems []Urn
 	err := repository.db.Select(&gems, `
-		SELECT DISTINCT ilk, guy FROM maker.vat_slip UNION
-		SELECT DISTINCT ilk, src AS guy FROM maker.vat_flux UNION
-		SELECT DISTINCT ilk, dst AS guy FROM maker.vat_flux UNION
-		SELECT DISTINCT ilk, v AS guy FROM maker.vat_tune UNION
-		SELECT DISTINCT ilk, v AS guy FROM maker.vat_grab UNION
-		SELECT DISTINCT ilk, urn AS guy FROM maker.vat_toll
+		SELECT DISTINCT ilks.ilk, slip.guy 
+		FROM maker.vat_slip slip
+		INNER JOIN maker.ilks ilks ON ilks.id = slip.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, flux.src AS guy 
+		FROM maker.vat_flux flux
+		INNER JOIN maker.ilks ilks ON ilks.id = flux.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, flux.dst AS guy 
+		FROM maker.vat_flux flux
+		INNER JOIN maker.ilks ilks ON ilks.id = flux.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, tune.v AS guy 
+		FROM maker.vat_tune tune
+		INNER JOIN maker.ilks ilks ON ilks.id = tune.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, grab.v AS guy 
+		FROM maker.vat_grab grab
+		INNER JOIN maker.ilks ilks ON ilks.id = grab.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, toll.urn AS guy 
+		FROM maker.vat_toll toll
+		INNER JOIN maker.ilks ilks ON ilks.id = toll.ilk
 	`)
 	return gems, err
 }
 
 func (repository MakerStorageRepository) GetIlks() ([]string, error) {
 	var ilks []string
-	err := repository.db.Select(&ilks, `SELECT DISTINCT ilk FROM maker.vat_init`)
+	err := repository.db.Select(&ilks, `SELECT DISTINCT ilk FROM maker.ilks`)
 	return ilks, err
 }
 
@@ -91,8 +108,15 @@ func (repository *MakerStorageRepository) GetSinKeys() ([]string, error) {
 
 func (repository *MakerStorageRepository) GetUrns() ([]Urn, error) {
 	var urns []Urn
-	err := repository.db.Select(&urns, `SELECT DISTINCT ilk, urn AS guy FROM maker.vat_tune UNION
-		SELECT DISTINCT ilk, urn AS guy FROM maker.vat_grab`)
+	err := repository.db.Select(&urns, `
+		SELECT DISTINCT ilks.ilk, tune.urn AS guy
+		FROM maker.vat_tune tune
+		INNER JOIN maker.ilks ilks ON ilks.id = tune.ilk
+		UNION
+		SELECT DISTINCT ilks.ilk, grab.urn AS guy
+		FROM maker.vat_grab grab
+		INNER JOIN maker.ilks ilks ON ilks.id = grab.ilk
+`)
 	return urns, err
 }
 

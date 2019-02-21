@@ -24,10 +24,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_file/ilk"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Drip file ilk repository", func() {
@@ -67,7 +69,9 @@ var _ = Describe("Drip file ilk repository", func() {
 			var dbDripFileIlk ilk.DripFileIlkModel
 			err = db.Get(&dbDripFileIlk, `SELECT ilk, vow, tax, log_idx, tx_idx, raw_log FROM maker.drip_file_ilk WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbDripFileIlk.Ilk).To(Equal(test_data.DripFileIlkModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.DripFileIlkModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbDripFileIlk.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbDripFileIlk.Vow).To(Equal(test_data.DripFileIlkModel.Vow))
 			Expect(dbDripFileIlk.Tax).To(Equal(test_data.DripFileIlkModel.Tax))
 			Expect(dbDripFileIlk.LogIndex).To(Equal(test_data.DripFileIlkModel.LogIndex))

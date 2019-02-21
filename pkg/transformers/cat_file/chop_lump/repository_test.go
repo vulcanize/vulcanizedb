@@ -23,10 +23,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/cat_file/chop_lump"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"strconv"
 )
 
 var _ = Describe("Cat file chop lump repository", func() {
@@ -65,7 +67,9 @@ var _ = Describe("Cat file chop lump repository", func() {
 			var dbResult chop_lump.CatFileChopLumpModel
 			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbResult.Ilk).To(Equal(test_data.CatFileChopModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.CatFileChopModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbResult.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbResult.What).To(Equal(test_data.CatFileChopModel.What))
 			Expect(dbResult.Data).To(Equal(test_data.CatFileChopModel.Data))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileChopModel.TransactionIndex))
@@ -83,7 +87,9 @@ var _ = Describe("Cat file chop lump repository", func() {
 			var dbResult chop_lump.CatFileChopLumpModel
 			err = db.Get(&dbResult, `SELECT ilk, what, data, tx_idx, log_idx, raw_log FROM maker.cat_file_chop_lump WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbResult.Ilk).To(Equal(test_data.CatFileLumpModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.CatFileLumpModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbResult.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbResult.What).To(Equal(test_data.CatFileLumpModel.What))
 			Expect(dbResult.Data).To(Equal(test_data.CatFileLumpModel.Data))
 			Expect(dbResult.TransactionIndex).To(Equal(test_data.CatFileLumpModel.TransactionIndex))

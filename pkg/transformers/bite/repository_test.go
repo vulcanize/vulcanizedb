@@ -19,6 +19,8 @@ package bite_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -67,7 +69,9 @@ var _ = Describe("Bite repository", func() {
 			var dbBite bite.BiteModel
 			err = db.Get(&dbBite, `SELECT ilk, urn, ink, art, tab, nflip, iart, log_idx, tx_idx, raw_log FROM maker.bite WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbBite.Ilk).To(Equal(test_data.BiteModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.BiteModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbBite.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbBite.Urn).To(Equal(test_data.BiteModel.Urn))
 			Expect(dbBite.Ink).To(Equal(test_data.BiteModel.Ink))
 			Expect(dbBite.Art).To(Equal(test_data.BiteModel.Art))

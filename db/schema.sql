@@ -64,7 +64,7 @@ SET default_with_oids = false;
 CREATE TABLE maker.bite (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     ink numeric,
     art numeric,
@@ -104,7 +104,7 @@ ALTER SEQUENCE maker.bite_id_seq OWNED BY maker.bite.id;
 CREATE TABLE maker.cat_file_chop_lump (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     what text,
     data numeric,
     tx_idx integer NOT NULL,
@@ -675,7 +675,7 @@ ALTER SEQUENCE maker.dent_id_seq OWNED BY maker.dent.id;
 CREATE TABLE maker.drip_drip (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
@@ -709,7 +709,7 @@ ALTER SEQUENCE maker.drip_drip_id_seq OWNED BY maker.drip_drip.id;
 CREATE TABLE maker.drip_file_ilk (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     vow text,
     tax numeric,
     log_idx integer NOT NULL,
@@ -931,7 +931,7 @@ ALTER SEQUENCE maker.flop_kick_id_seq OWNED BY maker.flop_kick.id;
 CREATE TABLE maker.frob (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     dink numeric,
     dart numeric,
@@ -962,6 +962,36 @@ CREATE SEQUENCE maker.frob_id_seq
 --
 
 ALTER SEQUENCE maker.frob_id_seq OWNED BY maker.frob.id;
+
+
+--
+-- Name: ilks; Type: TABLE; Schema: maker; Owner: -
+--
+
+CREATE TABLE maker.ilks (
+    id integer NOT NULL,
+    ilk text
+);
+
+
+--
+-- Name: ilks_id_seq; Type: SEQUENCE; Schema: maker; Owner: -
+--
+
+CREATE SEQUENCE maker.ilks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ilks_id_seq; Type: SEQUENCE OWNED BY; Schema: maker; Owner: -
+--
+
+ALTER SEQUENCE maker.ilks_id_seq OWNED BY maker.ilks.id;
 
 
 --
@@ -1038,7 +1068,7 @@ ALTER SEQUENCE maker.pit_file_debt_ceiling_id_seq OWNED BY maker.pit_file_debt_c
 CREATE TABLE maker.pit_file_ilk (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     what text,
     data numeric,
     log_idx integer NOT NULL,
@@ -1075,7 +1105,7 @@ CREATE TABLE maker.pit_ilk_line (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     line numeric NOT NULL
 );
 
@@ -1108,7 +1138,7 @@ CREATE TABLE maker.pit_ilk_spot (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     spot numeric NOT NULL
 );
 
@@ -1375,7 +1405,7 @@ ALTER SEQUENCE maker.vat_debt_id_seq OWNED BY maker.vat_debt.id;
 CREATE TABLE maker.vat_flux (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     src text,
     dst text,
     rad numeric,
@@ -1412,7 +1442,7 @@ ALTER SEQUENCE maker.vat_flux_id_seq OWNED BY maker.vat_flux.id;
 CREATE TABLE maker.vat_fold (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     rate numeric,
     log_idx integer NOT NULL,
@@ -1449,7 +1479,7 @@ CREATE TABLE maker.vat_gem (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     guy text,
     gem numeric NOT NULL
 );
@@ -1482,7 +1512,7 @@ ALTER SEQUENCE maker.vat_gem_id_seq OWNED BY maker.vat_gem.id;
 CREATE TABLE maker.vat_grab (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     v text,
     w text,
@@ -1558,7 +1588,7 @@ CREATE TABLE maker.vat_ilk_art (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     art numeric NOT NULL
 );
 
@@ -1591,7 +1621,7 @@ CREATE TABLE maker.vat_ilk_ink (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     ink numeric NOT NULL
 );
 
@@ -1624,7 +1654,7 @@ CREATE TABLE maker.vat_ilk_rate (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     rate numeric NOT NULL
 );
 
@@ -1657,7 +1687,7 @@ CREATE TABLE maker.vat_ilk_take (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     take numeric NOT NULL
 );
 
@@ -1689,7 +1719,7 @@ ALTER SEQUENCE maker.vat_ilk_take_id_seq OWNED BY maker.vat_ilk_take.id;
 CREATE TABLE maker.vat_init (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     log_idx integer NOT NULL,
     tx_idx integer NOT NULL,
     raw_log jsonb
@@ -1792,7 +1822,7 @@ ALTER SEQUENCE maker.vat_sin_id_seq OWNED BY maker.vat_sin.id;
 CREATE TABLE maker.vat_slip (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     guy text,
     rad numeric,
     tx_idx integer NOT NULL,
@@ -1828,7 +1858,7 @@ ALTER SEQUENCE maker.vat_slip_id_seq OWNED BY maker.vat_slip.id;
 CREATE TABLE maker.vat_toll (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     take numeric,
     tx_idx integer NOT NULL,
@@ -1864,7 +1894,7 @@ ALTER SEQUENCE maker.vat_toll_id_seq OWNED BY maker.vat_toll.id;
 CREATE TABLE maker.vat_tune (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     v text,
     w text,
@@ -1904,7 +1934,7 @@ CREATE TABLE maker.vat_urn_art (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     art text
 );
@@ -1938,7 +1968,7 @@ CREATE TABLE maker.vat_urn_ink (
     id integer NOT NULL,
     block_number bigint,
     block_hash text,
-    ilk text,
+    ilk integer NOT NULL,
     urn text,
     ink numeric NOT NULL
 );
@@ -3020,6 +3050,13 @@ ALTER TABLE ONLY maker.frob ALTER COLUMN id SET DEFAULT nextval('maker.frob_id_s
 
 
 --
+-- Name: ilks id; Type: DEFAULT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.ilks ALTER COLUMN id SET DEFAULT nextval('maker.ilks_id_seq'::regclass);
+
+
+--
 -- Name: pit_drip id; Type: DEFAULT; Schema: maker; Owner: -
 --
 
@@ -3711,6 +3748,22 @@ ALTER TABLE ONLY maker.frob
 
 
 --
+-- Name: ilks ilks_ilk_key; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.ilks
+    ADD CONSTRAINT ilks_ilk_key UNIQUE (ilk);
+
+
+--
+-- Name: ilks ilks_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.ilks
+    ADD CONSTRAINT ilks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: pit_drip pit_drip_pkey; Type: CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -4321,11 +4374,27 @@ ALTER TABLE ONLY maker.bite
 
 
 --
+-- Name: bite bite_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.bite
+    ADD CONSTRAINT bite_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: cat_file_chop_lump cat_file_chop_lump_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.cat_file_chop_lump
     ADD CONSTRAINT cat_file_chop_lump_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cat_file_chop_lump cat_file_chop_lump_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.cat_file_chop_lump
+    ADD CONSTRAINT cat_file_chop_lump_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
@@ -4369,11 +4438,27 @@ ALTER TABLE ONLY maker.drip_drip
 
 
 --
+-- Name: drip_drip drip_drip_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_drip
+    ADD CONSTRAINT drip_drip_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: drip_file_ilk drip_file_ilk_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.drip_file_ilk
     ADD CONSTRAINT drip_file_ilk_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: drip_file_ilk drip_file_ilk_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.drip_file_ilk
+    ADD CONSTRAINT drip_file_ilk_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
@@ -4425,6 +4510,14 @@ ALTER TABLE ONLY maker.frob
 
 
 --
+-- Name: frob frob_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.frob
+    ADD CONSTRAINT frob_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: pit_file_debt_ceiling pit_file_debt_ceiling_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -4438,6 +4531,30 @@ ALTER TABLE ONLY maker.pit_file_debt_ceiling
 
 ALTER TABLE ONLY maker.pit_file_ilk
     ADD CONSTRAINT pit_file_ilk_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: pit_file_ilk pit_file_ilk_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_file_ilk
+    ADD CONSTRAINT pit_file_ilk_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: pit_ilk_line pit_ilk_line_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_line
+    ADD CONSTRAINT pit_ilk_line_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: pit_ilk_spot pit_ilk_spot_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.pit_ilk_spot
+    ADD CONSTRAINT pit_ilk_spot_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
@@ -4465,11 +4582,35 @@ ALTER TABLE ONLY maker.vat_flux
 
 
 --
+-- Name: vat_flux vat_flux_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_flux
+    ADD CONSTRAINT vat_flux_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: vat_fold vat_fold_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_fold
     ADD CONSTRAINT vat_fold_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_fold vat_fold_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_fold
+    ADD CONSTRAINT vat_fold_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_gem vat_gem_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_gem
+    ADD CONSTRAINT vat_gem_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
@@ -4481,6 +4622,14 @@ ALTER TABLE ONLY maker.vat_grab
 
 
 --
+-- Name: vat_grab vat_grab_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_grab
+    ADD CONSTRAINT vat_grab_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: vat_heal vat_heal_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -4489,11 +4638,51 @@ ALTER TABLE ONLY maker.vat_heal
 
 
 --
+-- Name: vat_ilk_art vat_ilk_art_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_ilk_art
+    ADD CONSTRAINT vat_ilk_art_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_ilk_ink vat_ilk_ink_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_ilk_ink
+    ADD CONSTRAINT vat_ilk_ink_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_ilk_rate vat_ilk_rate_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_ilk_rate
+    ADD CONSTRAINT vat_ilk_rate_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_ilk_take vat_ilk_take_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_ilk_take
+    ADD CONSTRAINT vat_ilk_take_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: vat_init vat_init_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_init
     ADD CONSTRAINT vat_init_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_init vat_init_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_init
+    ADD CONSTRAINT vat_init_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --
@@ -4513,6 +4702,14 @@ ALTER TABLE ONLY maker.vat_slip
 
 
 --
+-- Name: vat_slip vat_slip_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_slip
+    ADD CONSTRAINT vat_slip_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: vat_toll vat_toll_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
@@ -4521,11 +4718,43 @@ ALTER TABLE ONLY maker.vat_toll
 
 
 --
+-- Name: vat_toll vat_toll_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_toll
+    ADD CONSTRAINT vat_toll_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
 -- Name: vat_tune vat_tune_header_id_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
 --
 
 ALTER TABLE ONLY maker.vat_tune
     ADD CONSTRAINT vat_tune_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vat_tune vat_tune_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_tune
+    ADD CONSTRAINT vat_tune_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_urn_art vat_urn_art_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_urn_art
+    ADD CONSTRAINT vat_urn_art_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
+
+
+--
+-- Name: vat_urn_ink vat_urn_ink_ilk_fkey; Type: FK CONSTRAINT; Schema: maker; Owner: -
+--
+
+ALTER TABLE ONLY maker.vat_urn_ink
+    ADD CONSTRAINT vat_urn_ink_ilk_fkey FOREIGN KEY (ilk) REFERENCES maker.ilks(id);
 
 
 --

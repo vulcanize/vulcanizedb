@@ -23,6 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
 	"sort"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "github.com/onsi/ginkgo"
@@ -97,12 +98,14 @@ var _ = Describe("Cat File transformer", func() {
 		Expect(len(dbResult)).To(Equal(2))
 		sort.Sort(byLogIndexChopLump(dbResult))
 
-		Expect(dbResult[0].Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("5245500000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[0].What).To(Equal("lump"))
 		Expect(dbResult[0].Data).To(Equal("10000.000000000000000000"))
 		Expect(dbResult[0].LogIndex).To(Equal(uint(3)))
 
-		Expect(dbResult[1].Ilk).To(Equal("5245500000000000000000000000000000000000000000000000000000000000"))
+		Expect(dbResult[1].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[1].What).To(Equal("chop"))
 		Expect(dbResult[1].Data).To(Equal("1.000000000000000000000000000"))
 		Expect(dbResult[1].LogIndex).To(Equal(uint(4)))

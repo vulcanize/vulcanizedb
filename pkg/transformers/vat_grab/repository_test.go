@@ -3,6 +3,8 @@ package vat_grab_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -53,7 +55,9 @@ var _ = Describe("Vat grab repository", func() {
 			var dbVatGrab vat_grab.VatGrabModel
 			err = db.Get(&dbVatGrab, `SELECT ilk, urn, v, w, dink, dart, log_idx, tx_idx, raw_log FROM maker.vat_grab WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbVatGrab.Ilk).To(Equal(test_data.VatGrabModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatGrabModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatGrab.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatGrab.Urn).To(Equal(test_data.VatGrabModel.Urn))
 			Expect(dbVatGrab.V).To(Equal(test_data.VatGrabModel.V))
 			Expect(dbVatGrab.W).To(Equal(test_data.VatGrabModel.W))

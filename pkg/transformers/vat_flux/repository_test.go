@@ -19,6 +19,8 @@ package vat_flux_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -76,7 +78,9 @@ var _ = Describe("VatFlux Repository", func() {
 			err = db.Select(&dbResult, `SELECT * from maker.vat_flux where header_id = $1`, headerId)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbResult)).To(Equal(2))
-			Expect(dbResult[0].Ilk).To(Equal(test_data.VatFluxModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatFluxModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbResult[0].Dst).To(Equal(test_data.VatFluxModel.Dst))
 			Expect(dbResult[0].Src).To(Equal(test_data.VatFluxModel.Src))
 			Expect(dbResult[0].Rad).To(Equal(test_data.VatFluxModel.Rad))

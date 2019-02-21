@@ -47,11 +47,20 @@ func (repository CatFileChopLumpRepository) Create(headerID int64, models []inte
 			return fmt.Errorf("model of type %T, not %T", model, CatFileChopLumpModel{})
 		}
 
+		ilkID, ilkErr := shared.GetOrCreateIlkInTransaction(chopLump.Ilk, tx)
+		if ilkErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error("failed to rollback ", rollbackErr)
+			}
+			return ilkErr
+		}
+
 		_, execErr := tx.Exec(
 			`INSERT into maker.cat_file_chop_lump (header_id, ilk, what, data, tx_idx, log_idx, raw_log)
 			VALUES($1, $2, $3, $4::NUMERIC, $5, $6, $7)
 			ON CONFLICT (header_id, tx_idx, log_idx) DO UPDATE SET ilk = $2, what = $3, data = $4, raw_log = $7;`,
-			headerID, chopLump.Ilk, chopLump.What, chopLump.Data, chopLump.TransactionIndex, chopLump.LogIndex, chopLump.Raw,
+			headerID, ilkID, chopLump.What, chopLump.Data, chopLump.TransactionIndex, chopLump.LogIndex, chopLump.Raw,
 		)
 		if execErr != nil {
 			rollbackErr := tx.Rollback()

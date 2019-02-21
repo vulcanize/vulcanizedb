@@ -25,6 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/factories"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/drip_drip"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
@@ -86,7 +87,9 @@ var _ = Describe("DripDrip Transformer", func() {
 
 		Expect(len(dbResults)).To(Equal(1))
 		dbResult := dbResults[0]
-		Expect(dbResult.Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult.Ilk).To(Equal(strconv.Itoa(ilkID)))
 	})
 
 	It("rechecks drip drip event", func() {

@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -94,7 +95,9 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(dbResult[0].Dart).To(Equal("0"))
 		Expect(dbResult[0].Dink).To(Equal("10000000000000"))
 		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
-		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
 		Expect(dbResult[0].Urn).To(Equal("000000000000000000000000c8e093e5f3f9b5aa6a6b33ea45960b93c161430c"))
 	})
@@ -139,7 +142,9 @@ var _ = Describe("Frob Transformer", func() {
 		Expect(dbResult[0].Dart).To(Equal("0"))
 		Expect(dbResult[0].Dink).To(Equal("10000000000000"))
 		Expect(dbResult[0].IArt).To(Equal("1495509999999999999992"))
-		Expect(dbResult[0].Ilk).To(Equal("4554480000000000000000000000000000000000000000000000000000000000"))
+		ilkID, err := shared.GetOrCreateIlk("4554480000000000000000000000000000000000000000000000000000000000", db)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(dbResult[0].Ilk).To(Equal(strconv.Itoa(ilkID)))
 		Expect(dbResult[0].Ink).To(Equal("10050100000000000"))
 		Expect(dbResult[0].Urn).To(Equal("000000000000000000000000c8e093e5f3f9b5aa6a6b33ea45960b93c161430c"))
 	})

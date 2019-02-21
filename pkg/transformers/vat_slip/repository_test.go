@@ -3,8 +3,10 @@ package vat_slip_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/transformers/test_data/shared_behaviors"
+	"strconv"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -51,7 +53,9 @@ var _ = Describe("Vat slip repository", func() {
 			var dbVatSlip vat_slip.VatSlipModel
 			err = db.Get(&dbVatSlip, `SELECT ilk, guy, rad, tx_idx, log_idx, raw_log FROM maker.vat_slip WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(dbVatSlip.Ilk).To(Equal(test_data.VatSlipModel.Ilk))
+			ilkID, err := shared.GetOrCreateIlk(test_data.VatSlipModel.Ilk, db)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbVatSlip.Ilk).To(Equal(strconv.Itoa(ilkID)))
 			Expect(dbVatSlip.Guy).To(Equal(test_data.VatSlipModel.Guy))
 			Expect(dbVatSlip.Rad).To(Equal(test_data.VatSlipModel.Rad))
 			Expect(dbVatSlip.TransactionIndex).To(Equal(test_data.VatSlipModel.TransactionIndex))

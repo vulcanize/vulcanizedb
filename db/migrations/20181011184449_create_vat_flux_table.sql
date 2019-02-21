@@ -1,13 +1,11 @@
 -- +goose Up
-CREATE TABLE maker.vat_tune (
+CREATE TABLE maker.vat_flux (
   id            SERIAL PRIMARY KEY,
   header_id     INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-  ilk           TEXT,
-  urn           TEXT,
-  v             TEXT,
-  w             TEXT,
-  dink          NUMERIC,
-  dart          NUMERIC,
+  ilk           INTEGER NOT NULL REFERENCES maker.ilks (id),
+  src           TEXT,
+  dst           TEXT,
+  rad           numeric,
   tx_idx        INTEGER NOT NULL,
   log_idx       INTEGER NOT NULL,
   raw_log       JSONB,
@@ -15,10 +13,10 @@ CREATE TABLE maker.vat_tune (
 );
 
 ALTER TABLE public.checked_headers
-  ADD COLUMN vat_tune_checked BOOLEAN NOT NULL DEFAULT FALSE;
+  ADD COLUMN vat_flux_checked BOOLEAN NOT NULL DEFAULT FALSE;
 
 
 -- +goose Down
-DROP TABLE maker.vat_tune;
+DROP TABLE maker.vat_flux;
 ALTER TABLE public.checked_headers
-  DROP COLUMN vat_tune_checked;
+  DROP COLUMN vat_flux_checked;
