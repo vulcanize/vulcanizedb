@@ -30,111 +30,108 @@ import (
 
 var _ = Describe("Pit storage repository", func() {
 	var (
-		blockNumber int
-		blockHash   string
-		db          *postgres.DB
-		err         error
-		repo        pit.PitStorageRepository
+		db              *postgres.DB
+		err             error
+		repo            pit.PitStorageRepository
+		fakeAddress     = "0x12345"
+		fakeBlockHash   = "expected_block_hash"
+		fakeBlockNumber = 123
+		fakeIlk         = "fake_ilk"
+		fakeUint256     = "12345"
 	)
 
 	BeforeEach(func() {
-		blockNumber = 123
-		blockHash = "expected_block_hash"
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repo = pit.PitStorageRepository{}
 		repo.SetDB(db)
 	})
 
-	It("persists an ilk line", func() {
-		expectedIlk := "fake_ilk"
-		expectedLine := "12345"
-		ilkLineMetadata := shared.StorageValueMetadata{
-			Name: pit.IlkLine,
-			Keys: map[shared.Key]string{shared.Ilk: expectedIlk},
-			Type: shared.Uint256,
-		}
-		err = repo.Create(blockNumber, blockHash, ilkLineMetadata, expectedLine)
+	Describe("Ilk", func() {
+		Describe("Line", func() {
+			It("writes a row", func() {
+				ilkLineMetadata := shared.GetStorageValueMetadata(pit.IlkLine, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
 
-		Expect(err).NotTo(HaveOccurred())
+				err = repo.Create(fakeBlockNumber, fakeBlockHash, ilkLineMetadata, fakeUint256)
 
-		var result MappingRes
-		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, line AS value FROM maker.pit_ilk_line`)
-		Expect(err).NotTo(HaveOccurred())
-		ilkID, err := shared2.GetOrCreateIlk(expectedIlk, db)
-		Expect(err).NotTo(HaveOccurred())
-		AssertMapping(result, blockNumber, blockHash, strconv.Itoa(ilkID), expectedLine)
-	})
+				Expect(err).NotTo(HaveOccurred())
+				var result MappingRes
+				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, line AS value FROM maker.pit_ilk_line`)
+				Expect(err).NotTo(HaveOccurred())
+				ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
+			})
 
-	It("persists an ilk spot", func() {
-		expectedIlk := "fake_ilk"
-		expectedSpot := "12345"
-		ilkSpotMetadata := shared.StorageValueMetadata{
-			Name: pit.IlkSpot,
-			Keys: map[shared.Key]string{shared.Ilk: expectedIlk},
-			Type: shared.Uint256,
-		}
-		err = repo.Create(blockNumber, blockHash, ilkSpotMetadata, expectedSpot)
+			It("returns an error if metadata missing ilk", func() {
+				malformedIlkLineMetadata := shared.GetStorageValueMetadata(pit.IlkLine, nil, shared.Uint256)
 
-		Expect(err).NotTo(HaveOccurred())
+				err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkLineMetadata, fakeUint256)
+				Expect(err).To(MatchError(shared.ErrMetadataMalformed{MissingData: shared.Ilk}))
+			})
+		})
 
-		var result MappingRes
-		err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, spot AS value FROM maker.pit_ilk_spot`)
-		Expect(err).NotTo(HaveOccurred())
-		ilkID, err := shared2.GetOrCreateIlk(expectedIlk, db)
-		Expect(err).NotTo(HaveOccurred())
-		AssertMapping(result, blockNumber, blockHash, strconv.Itoa(ilkID), expectedSpot)
+		Describe("Spot", func() {
+			It("writes a row", func() {
+				ilkSpotMetadata := shared.GetStorageValueMetadata(pit.IlkSpot, map[shared.Key]string{shared.Ilk: fakeIlk}, shared.Uint256)
+
+				err = repo.Create(fakeBlockNumber, fakeBlockHash, ilkSpotMetadata, fakeUint256)
+
+				Expect(err).NotTo(HaveOccurred())
+				var result MappingRes
+				err = db.Get(&result, `SELECT block_number, block_hash, ilk AS key, spot AS value FROM maker.pit_ilk_spot`)
+				Expect(err).NotTo(HaveOccurred())
+				ilkID, err := shared2.GetOrCreateIlk(fakeIlk, db)
+				Expect(err).NotTo(HaveOccurred())
+				AssertMapping(result, fakeBlockNumber, fakeBlockHash, strconv.Itoa(ilkID), fakeUint256)
+			})
+
+			It("returns an error if metadata missing ilk", func() {
+				malformedIlkSpotMetadata := shared.GetStorageValueMetadata(pit.IlkSpot, nil, shared.Uint256)
+
+				err := repo.Create(fakeBlockNumber, fakeBlockHash, malformedIlkSpotMetadata, fakeUint256)
+				Expect(err).To(MatchError(shared.ErrMetadataMalformed{MissingData: shared.Ilk}))
+			})
+		})
 	})
 
 	It("persists a pit drip", func() {
-		expectedDrip := "0x0123456789abcdef0123"
-
-		err = repo.Create(blockNumber, blockHash, pit.DripMetadata, expectedDrip)
+		err = repo.Create(fakeBlockNumber, fakeBlockHash, pit.DripMetadata, fakeAddress)
 
 		Expect(err).NotTo(HaveOccurred())
-
 		var result VariableRes
 		err = db.Get(&result, `SELECT block_number, block_hash, drip AS value FROM maker.pit_drip`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertVariable(result, blockNumber, blockHash, expectedDrip)
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeAddress)
 	})
 
 	It("persists a pit line", func() {
-		expectedLine := "12345"
-
-		err = repo.Create(blockNumber, blockHash, pit.LineMetadata, expectedLine)
+		err = repo.Create(fakeBlockNumber, fakeBlockHash, pit.LineMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
-
 		var result VariableRes
 		err = db.Get(&result, `SELECT block_number, block_hash, line AS value FROM maker.pit_line`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertVariable(result, blockNumber, blockHash, expectedLine)
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 	})
 
 	It("persists a pit live", func() {
-		expectedLive := "12345"
-
-		err = repo.Create(blockNumber, blockHash, pit.LiveMetadata, expectedLive)
+		err = repo.Create(fakeBlockNumber, fakeBlockHash, pit.LiveMetadata, fakeUint256)
 
 		Expect(err).NotTo(HaveOccurred())
-
 		var result VariableRes
 		err = db.Get(&result, `SELECT block_number, block_hash, live AS value FROM maker.pit_live`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertVariable(result, blockNumber, blockHash, expectedLive)
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeUint256)
 	})
 
 	It("persists a pit vat", func() {
-		expectedVat := "0x0123456789abcdef0123"
-
-		err = repo.Create(blockNumber, blockHash, pit.VatMetadata, expectedVat)
+		err = repo.Create(fakeBlockNumber, fakeBlockHash, pit.VatMetadata, fakeAddress)
 
 		Expect(err).NotTo(HaveOccurred())
-
 		var result VariableRes
 		err = db.Get(&result, `SELECT block_number, block_hash, vat AS value FROM maker.pit_vat`)
 		Expect(err).NotTo(HaveOccurred())
-		AssertVariable(result, blockNumber, blockHash, expectedVat)
+		AssertVariable(result, fakeBlockNumber, fakeBlockHash, fakeAddress)
 	})
 })
