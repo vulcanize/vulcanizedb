@@ -88,7 +88,6 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 	var hash string
 	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		header.BlockNumber, repository.database.Node.ID)
-	log.Error("getHeaderHash: error getting headers: ", err)
 	return hash, err
 }
 
