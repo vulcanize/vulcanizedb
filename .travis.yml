@@ -24,7 +24,6 @@ before_install:
 before_script:
   - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
-  - make version_migrations
   - make migrate NAME=vulcanize_private
   - bash ./scripts/start_test_chain.sh
   - cd postgraphile && yarn
