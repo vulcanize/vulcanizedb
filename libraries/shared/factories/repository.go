@@ -14,28 +14,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package factories
 
-type ValueType int
-
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
-}
-
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+type Repository interface {
+	Create(headerID int64, models []interface{}) error
+	MarkHeaderChecked(headerID int64) error
+	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
+	RecheckHeaders(startingBlockNumber, endingBlockNUmber int64) ([]core.Header, error)
+	SetDB(db *postgres.DB)
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	r2 "github.com/vulcanize/vulcanizedb/pkg/omni/light/repository"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -45,12 +46,15 @@ var _ = Describe("Repository utilities", func() {
 			headerIDs                []int64
 			notCheckedSQL            string
 			err                      error
+			hr                       r2.HeaderRepository
 		)
 
 		BeforeEach(func() {
 			db = test_config.NewTestDB(test_config.NewTestNode())
 			test_config.CleanTestDB(db)
 			headerRepository = repositories.NewHeaderRepository(db)
+			hr = r2.NewHeaderRepository(db)
+			hr.AddCheckColumns(getExpectedColumnNames())
 
 			columnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
@@ -69,6 +73,10 @@ var _ = Describe("Repository utilities", func() {
 				headerIDs = append(headerIDs, headerID)
 				Expect(err).NotTo(HaveOccurred())
 			}
+		})
+
+		AfterEach(func() {
+			test_config.CleanCheckedHeadersTable(db, getExpectedColumnNames())
 		})
 
 		It("only treats headers as checked if the event specific logs have been checked", func() {
@@ -111,11 +119,14 @@ var _ = Describe("Repository utilities", func() {
 	Describe("GetCheckedColumnNames", func() {
 		It("gets the column names from checked_headers", func() {
 			db := test_config.NewTestDB(test_config.NewTestNode())
+			hr := r2.NewHeaderRepository(db)
+			hr.AddCheckColumns(getExpectedColumnNames())
 			test_config.CleanTestDB(db)
 			expectedColumnNames := getExpectedColumnNames()
 			actualColumnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualColumnNames).To(Equal(expectedColumnNames))
+			test_config.CleanCheckedHeadersTable(db, getExpectedColumnNames())
 		})
 	})
 

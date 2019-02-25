@@ -14,28 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package mocks
 
-type ValueType int
+import (
+	"github.com/ethereum/go-ethereum/common"
 
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+type MockMappings struct {
+	Metadata     utils.StorageValueMetadata
+	LookupCalled bool
+	LookupErr    error
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+func (mappings *MockMappings) Lookup(key common.Hash) (utils.StorageValueMetadata, error) {
+	mappings.LookupCalled = true
+	return mappings.Metadata, mappings.LookupErr
+}
+
+func (*MockMappings) SetDB(db *postgres.DB) {
+	panic("implement me")
 }

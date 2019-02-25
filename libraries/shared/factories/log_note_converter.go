@@ -14,28 +14,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package factories
 
-type ValueType int
+import "github.com/ethereum/go-ethereum/core/types"
 
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
-)
-
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
-}
-
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+type LogNoteConverter interface {
+	ToModels(ethLog []types.Log) ([]interface{}, error)
 }

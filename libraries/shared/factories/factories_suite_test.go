@@ -14,28 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package factories_test
 
-type ValueType int
+import (
+	"testing"
 
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+func TestFactories(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Factories Suite")
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
-}
+var _ = BeforeSuite(func() {
+	log.SetOutput(ioutil.Discard)
+})

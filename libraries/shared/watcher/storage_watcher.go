@@ -17,12 +17,13 @@
 package watcher
 
 import (
-	"strings"
 	"reflect"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -32,13 +33,13 @@ import (
 type StorageWatcher struct {
 	db           *postgres.DB
 	tailer       fs.Tailer
-	Queue        IStorageQueue
+	Queue        storage.IStorageQueue
 	Transformers map[common.Address]transformer.StorageTransformer
 }
 
 func NewStorageWatcher(tailer fs.Tailer, db *postgres.DB) StorageWatcher {
 	transformers := make(map[common.Address]transformer.StorageTransformer)
-	queue := NewStorageQueue(db)
+	queue := storage.NewStorageQueue(db)
 	return StorageWatcher{
 		db:           db,
 		tailer:       tailer,
