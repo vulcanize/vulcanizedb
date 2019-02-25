@@ -44,17 +44,19 @@ var composeAndExecuteCmd = &cobra.Command{
 	Long: `This command needs a config .toml file of form:
 
 [database]
-    name = "vulcanize_public"
+    name     = "vulcanize_public"
     hostname = "localhost"
-    user = "vulcanize"
+    user     = "vulcanize"
     password = "vulcanize"
-    port = 5432
+    port     = 5432
 
 [client]
-    ipcPath = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-	name     = "exampleTransformerExporter"
+    home     = "github.com/vulcanize/vulcanizedb"
+    clone    = false
+    name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
         "transformer1",
@@ -72,14 +74,14 @@ var composeAndExecuteCmd = &cobra.Command{
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
-	[exporter.transformer3]
+    [exporter.transformer3]
         path = "path/to/transformer3"
-        type = "eth_storage"
+        type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
-	[exporter.transformer4]
+    [exporter.transformer4]
         path = "path/to/transformer4"
-        type = "eth_event"
+        type = "eth_storage"
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
 
@@ -95,7 +97,7 @@ from it and loaded into and executed over by the appropriate watcher.
 The type of watcher that the transformer works with is specified using the 
 type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
-(eth_storage). Soon there will be watchers for ipfs (ipfs_event and ipfs_storage).
+(eth_storage).
 
 Transformers of different types can be ran together in the same command using a 
 single config file or in separate command instances using different config files

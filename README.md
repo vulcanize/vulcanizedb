@@ -136,9 +136,10 @@ false
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
 ## Running the Tests
+- `createdb vulcanize_private` will create the test db
+- `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run the just the integration tests
-- Note: requires Ganache chain setup and seeded with `flip-kick.js` and `frob.js` (in that order)
 
 ## Deploying
 1. you will need to make sure you have ssh agent running and your ssh key added to it. instructions [here](https://developer.github.com/v3/guides/using-ssh-agent-forwarding/#your-key-must-be-available-to-ssh-agent)
@@ -240,13 +241,23 @@ The addition of '_' after table names is to prevent collisions with reserved Pos
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
 long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
+
 This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.   
 
+#### Writing custom transformers 
+Storage Transformers   
+   * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
+   * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
+    
+Event Transformers   
+   * Guide
+   * Example
+   
 #### composeAndExecute configuration
-A  config location is specified when executing the command:  
+A .toml config file is specified when executing the command:  
 `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`  
 
-The information provided in the .toml config is used to generate the plugin:    
+The config provides information for composing a set of transformers:         
 
 ```toml 
 [database]
@@ -262,7 +273,7 @@ The information provided in the .toml config is used to generate the plugin:
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
     clone    = false
-    name     = "eventTransformerExporter"
+    name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
         "transformer1",
@@ -306,19 +317,14 @@ our `$GOPATH` but setting this to `true` overrides that. This needs to be set to
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
-    
-Note: If any of the imported transformers need additional
-config variables do not forget to include those as well  
+- Note: If any of the imported transformers need additional config variables those need to be included as well   
 
-This information is used to write and build a go plugin with a transformer
-set composed from the transformer imports specified in the config file   
-This plugin is loaded and the set of transformer initializers is exported
-from it and loaded into and executed over by the appropriate watcher   
+This information is used to write and build a Go plugin which exports the configured transformers.
+These transformers are loaded onto their specified watchers and executed.   
 
-Transformers of different types can be run together in the same command using a 
-single config file or in separate instances using different config files   
+Transformers of different types can be run together in the same command using a single config file or in separate instances using different config files   
 
-The general structure of a plugin .go file, and what we would see with the above config is shown below   
+The general structure of a plugin .go file, and what we would see built with the above config is shown below   
 
 ```go
 package main
@@ -354,4 +360,6 @@ that exports a variable `TransformerInitializer` or `StorageTransformerInitializ
 or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
 * design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
-* create db migrations to run against vulcanizeDB so that we can store the transformed data     
+* create db migrations to run against vulcanizeDB so that we can store the transformer output
+    * specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
+    * do not `goose fix` the transformer migrations      
