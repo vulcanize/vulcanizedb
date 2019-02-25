@@ -14,28 +14,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage
 
-type ValueType int
-
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+type IStorageQueue interface {
+	Add(row utils.StorageDiffRow) error
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+type StorageQueue struct {
+	db *postgres.DB
+}
+
+func NewStorageQueue(db *postgres.DB) StorageQueue {
+	return StorageQueue{db: db}
+}
+
+func (queue StorageQueue) Add(row utils.StorageDiffRow) error {
+	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (contract,
+		block_hash, block_height, storage_key, storage_value) VALUES
+		($1, $2, $3, $4, $5)`, row.Contract.Bytes(), row.BlockHash.Bytes(),
+		row.BlockHeight, row.StorageKey.Bytes(), row.StorageValue.Bytes())
+	return err
 }

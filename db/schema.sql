@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.6
--- Dumped by pg_dump version 10.6
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 10.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -114,8 +114,7 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 CREATE TABLE public.checked_headers (
     id integer NOT NULL,
-    header_id integer NOT NULL,
-    price_feeds_checked integer DEFAULT 0 NOT NULL
+    header_id integer NOT NULL
 );
 
 
@@ -300,6 +299,40 @@ ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
 
 
 --
+-- Name: queued_storage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.queued_storage (
+    id integer NOT NULL,
+    block_height bigint,
+    block_hash bytea,
+    contract bytea,
+    storage_key bytea,
+    storage_value bytea
+);
+
+
+--
+-- Name: queued_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.queued_storage_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queued_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
+
+
+--
 -- Name: receipts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -333,6 +366,38 @@ CREATE SEQUENCE public.receipts_id_seq
 --
 
 ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
+
+
+--
+-- Name: token_supply; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.token_supply (
+    id integer NOT NULL,
+    block_id integer NOT NULL,
+    supply numeric NOT NULL,
+    token_address character varying(66) NOT NULL
+);
+
+
+--
+-- Name: token_supply_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.token_supply_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: token_supply_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.token_supply_id_seq OWNED BY public.token_supply.id;
 
 
 --
@@ -477,10 +542,24 @@ ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id
 
 
 --
+-- Name: queued_storage id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('public.queued_storage_id_seq'::regclass);
+
+
+--
 -- Name: receipts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.receipts ALTER COLUMN id SET DEFAULT nextval('public.receipts_id_seq'::regclass);
+
+
+--
+-- Name: token_supply id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_supply ALTER COLUMN id SET DEFAULT nextval('public.token_supply_id_seq'::regclass);
 
 
 --
@@ -665,6 +744,14 @@ ALTER TABLE ONLY public.transactions
 --
 
 ALTER TABLE ONLY public.receipts
+    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: token_supply blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_supply
     ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
 
 

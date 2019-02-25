@@ -27,7 +27,7 @@ import (
 
 func TestShared(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Storage Utils Suite")
+	RunSpecs(t, "Shared Storage Utils Suite")
 }
 
 var _ = BeforeSuite(func() {

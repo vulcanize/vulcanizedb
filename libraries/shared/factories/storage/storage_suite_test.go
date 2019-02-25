@@ -14,28 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage_test
 
-type ValueType int
+import (
+	"testing"
 
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
-}
-
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+func TestStorage(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Storage Factories Suite")
 }

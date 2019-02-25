@@ -14,28 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package mocks
 
-type ValueType int
-
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+type MockStorageQueue struct {
+	AddCalled bool
+	AddError  error
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+func (queue *MockStorageQueue) Add(row utils.StorageDiffRow) error {
+	queue.AddCalled = true
+	return queue.AddError
 }

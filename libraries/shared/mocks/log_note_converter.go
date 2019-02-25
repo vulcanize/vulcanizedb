@@ -14,28 +14,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package mocks
 
-type ValueType int
-
-const (
-	Uint256 ValueType = iota
-	Bytes32
-	Address
+import (
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type Key string
-
-type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+type MockLogNoteConverter struct {
+	err                   error
+	returnModels          []interface{}
+	PassedLogs            []types.Log
+	ToModelsCalledCounter int
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
-	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
-	}
+func (converter *MockLogNoteConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
+	converter.PassedLogs = ethLogs
+	converter.ToModelsCalledCounter++
+	return converter.returnModels, converter.err
+}
+
+func (converter *MockLogNoteConverter) SetConverterError(e error) {
+	converter.err = e
+}
+
+func (converter *MockLogNoteConverter) SetReturnModels(models []interface{}) {
+	converter.returnModels = models
 }

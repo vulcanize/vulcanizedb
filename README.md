@@ -239,7 +239,8 @@ The addition of '_' after table names is to prevent collisions with reserved Pos
 ### composeAndExecute 
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
-long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).
+long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
+This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.   
 
 #### composeAndExecute configuration
 A  config location is specified when executing the command:  

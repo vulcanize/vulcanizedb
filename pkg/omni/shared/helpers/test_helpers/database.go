@@ -257,17 +257,10 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM receipts`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`ALTER TABLE checked_headers 
-DROP COLUMN IF EXISTS eventName_contractAddr,
-DROP COLUMN IF EXISTS eventName_contractAddr2,
-DROP COLUMN IF EXISTS eventName_contractAddr3,
-DROP COLUMN IF EXISTS methodName_contractAddr,
-DROP COLUMN IF EXISTS methodName_contractAddr2,
-DROP COLUMN IF EXISTS methodName_contractAddr3,
-DROP COLUMN IF EXISTS transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e,
-DROP COLUMN IF EXISTS balanceof_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e,
-DROP COLUMN IF EXISTS newowner_0x314159265dd8dbb310642f98f50c066173c1259b,
-DROP COLUMN IF EXISTS owner_0x314159265dd8dbb310642f98f50c066173c1259b`)
+	_, err = tx.Exec(`DROP TABLE checked_headers`)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`CREATE TABLE checked_headers (id SERIAL PRIMARY KEY, header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE);`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
