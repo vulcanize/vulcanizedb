@@ -7,6 +7,8 @@ import (
 
 type MockParser struct {
 	AbiToReturn string
+	EventName   string
+	Event       types.Event
 }
 
 func (*MockParser) Parse(contractAddr string) error {
@@ -33,6 +35,6 @@ func (*MockParser) GetSelectMethods(wanted []string) []types.Method {
 	return []types.Method{}
 }
 
-func (*MockParser) GetEvents(wanted []string) map[string]types.Event {
-	return map[string]types.Event{}
+func (parser *MockParser) GetEvents(wanted []string) map[string]types.Event {
+	return map[string]types.Event{parser.EventName: parser.Event}
 }
