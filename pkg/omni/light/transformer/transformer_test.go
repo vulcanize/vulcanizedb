@@ -34,7 +34,7 @@ var _ = Describe("Transformer", func() {
 	Describe("SetEvents", func() {
 		It("Sets which events to watch from the given contract address", func() {
 			watchedEvents := []string{"Transfer", "Mint"}
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetEvents(fakeAddress, watchedEvents)
 			Expect(t.WatchedEvents[fakeAddress]).To(Equal(watchedEvents))
 		})
@@ -43,7 +43,7 @@ var _ = Describe("Transformer", func() {
 	Describe("SetEventAddrs", func() {
 		It("Sets which account addresses to watch events for", func() {
 			eventAddrs := []string{"test1", "test2"}
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetEventArgs(fakeAddress, eventAddrs)
 			Expect(t.EventArgs[fakeAddress]).To(Equal(eventAddrs))
 		})
@@ -52,7 +52,7 @@ var _ = Describe("Transformer", func() {
 	Describe("SetMethods", func() {
 		It("Sets which methods to poll at the given contract address", func() {
 			watchedMethods := []string{"balanceOf", "totalSupply"}
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetMethods(fakeAddress, watchedMethods)
 			Expect(t.WantedMethods[fakeAddress]).To(Equal(watchedMethods))
 		})
@@ -61,7 +61,7 @@ var _ = Describe("Transformer", func() {
 	Describe("SetMethodAddrs", func() {
 		It("Sets which account addresses to poll methods against", func() {
 			methodAddrs := []string{"test1", "test2"}
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetMethodArgs(fakeAddress, methodAddrs)
 			Expect(t.MethodArgs[fakeAddress]).To(Equal(methodAddrs))
 		})
@@ -69,7 +69,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("SetStartingBlock", func() {
 		It("Sets the block range that the contract should be watched within", func() {
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetStartingBlock(fakeAddress, 11)
 			Expect(t.ContractStart[fakeAddress]).To(Equal(int64(11)))
 		})
@@ -77,7 +77,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("SetCreateAddrList", func() {
 		It("Sets the block range that the contract should be watched within", func() {
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetCreateAddrList(fakeAddress, true)
 			Expect(t.CreateAddrList[fakeAddress]).To(Equal(true))
 		})
@@ -85,7 +85,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("SetCreateHashList", func() {
 		It("Sets the block range that the contract should be watched within", func() {
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetCreateHashList(fakeAddress, true)
 			Expect(t.CreateHashList[fakeAddress]).To(Equal(true))
 		})
@@ -93,7 +93,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.MockBlockRetriever{}
+			blockRetriever := &fakes.MockLightBlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -123,7 +123,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Fails to initialize if first and most recent block numbers cannot be fetched from vDB headers table", func() {
-			blockRetriever := &fakes.MockBlockRetriever{}
+			blockRetriever := &fakes.MockLightBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 			t.SetEvents(fakeAddress, []string{"Transfer"})
@@ -135,7 +135,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Does nothing if watched events are unset", func() {
-			t := getFakeTransformer(&fakes.MockBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			t := getFakeTransformer(&fakes.MockLightBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
 
 			err := t.Init()
 
@@ -150,16 +150,17 @@ var _ = Describe("Transformer", func() {
 
 func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser, pollr poller.Poller) transformer.Transformer {
 	return transformer.Transformer{
-		Parser:         parsr,
-		BlockRetriever: blockRetriever,
-		Poller:         pollr,
-		Contracts:      map[string]*contract.Contract{},
-		WatchedEvents:  map[string][]string{},
-		WantedMethods:  map[string][]string{},
-		ContractStart:  map[string]int64{},
-		EventArgs:      map[string][]string{},
-		MethodArgs:     map[string][]string{},
-		CreateAddrList: map[string]bool{},
-		CreateHashList: map[string]bool{},
+		Parser:           parsr,
+		BlockRetriever:   blockRetriever,
+		Poller:           pollr,
+		HeaderRepository: &fakes.MockLightHeaderRepository{},
+		Contracts:        map[string]*contract.Contract{},
+		WatchedEvents:    map[string][]string{},
+		WantedMethods:    map[string][]string{},
+		ContractStart:    map[string]int64{},
+		EventArgs:        map[string][]string{},
+		MethodArgs:       map[string][]string{},
+		CreateAddrList:   map[string]bool{},
+		CreateHashList:   map[string]bool{},
 	}
 }
