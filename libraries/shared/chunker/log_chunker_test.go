@@ -58,9 +58,9 @@ var _ = Describe("Log chunker", func() {
 	Describe("initialisation", func() {
 		It("creates lookup maps correctly", func() {
 			Expect(chunker.AddressToNames).To(Equal(map[string][]string{
-				"0x00000000000000000000000000000000000000a1": []string{"TransformerA"},
-				"0x00000000000000000000000000000000000000a2": []string{"TransformerA", "TransformerC"},
-				"0x00000000000000000000000000000000000000b1": []string{"TransformerB"},
+				"0x00000000000000000000000000000000000000a1": {"TransformerA"},
+				"0x00000000000000000000000000000000000000a2": {"TransformerA", "TransformerC"},
+				"0x00000000000000000000000000000000000000b1": {"TransformerB"},
 			}))
 
 			Expect(chunker.NameToTopic0).To(Equal(map[string]common.Hash{

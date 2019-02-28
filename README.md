@@ -79,7 +79,7 @@ Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` ca
         - The default location is:
           - Mac: `<full home path>/Library/Application\ Support/io.parity.ethereum/`
           - Linux: `<full home path>/local/share/io.parity.ethereum/`
-          
+
   - `levelDbPath` should match Geth's chaindata directory path.
       - The geth LevelDB chaindata path is printed to the console when you start geth.
       - The default location is:
@@ -112,8 +112,8 @@ Syncs VulcanizeDB with the configured Ethereum node, populating only block heade
 This command is useful when you want a minimal baseline from which to track targeted data on the blockchain (e.g. individual smart contract storage values).
 1. Start Ethereum node
 1. In a separate terminal start VulcanizeDB:
-    - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`  
-  
+    - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
+
 ## Start full environment in docker by single command
 
 ### Geth Rinkeby
@@ -150,68 +150,68 @@ If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_
 
 ## Contract Watchers
 Contract watchers work with a light or full sync vDB to fetch raw ethereum data and execute a set of transformations over them, persisting the output.    
-  
+
 A watcher is composed of at least a fetcher and a transformer or set of transformers, where a fetcher is an interface for retrieving raw Ethereum data from some source (e.g. eth_jsonrpc, IPFS)
 and a transformer is an interface for filtering through that raw Ethereum data to extract, process, and persist data for specific contracts or accounts. 
 
-### omniWatcher 
+### omniWatcher
 The `omniWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available. 
-It also provides some state variable coverage by automating polling of public methods, with some restrictions.   
+It also provides some state variable coverage by automating polling of public methods, with some restrictions.
 
 This command requires a pre-synced (full or light) vulcanizeDB (see above sections) and currently requires the contract ABI be available on etherscan or provided by the user.   
- 
-To watch all events of a contract using a light synced vDB:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`  
-    
-Or if you are using a full synced vDB, change the mode to full:  
-    - Execute `./vulcanizedb omniWatcher --mode full --config <path to config.toml> --contract-address <contract address>`  
-    
-To watch contracts on a network other than mainnet, use the network flag:  
+
+To watch all events of a contract using a light synced vDB:
+    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`
+
+Or if you are using a full synced vDB, change the mode to full:
+    - Execute `./vulcanizedb omniWatcher --mode full --config <path to config.toml> --contract-address <contract address>`
+
+To watch contracts on a network other than mainnet, use the network flag:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --network <ropsten, kovan, or rinkeby>`  
-    
+
 To watch events starting at a certain block use the starting block flag:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#>`
-    
-To watch only specified events use the events flag:  
+
+To watch only specified events use the events flag:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2>`  
-    
+
 To watch events and poll the specified methods with any addresses and hashes emitted by the watched events utilize the methods flag:  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName1> --methods <methodName2>`  
-    
-To watch specified events and poll the specified method with any addresses and hashes emitted by the watched events:  
+
+To watch specified events and poll the specified method with any addresses and hashes emitted by the watched events:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
-    
+
 To turn on method piping so that values returned from previous method calls are cached and used as arguments in subsequent method calls:  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --piping true --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
-    
-To watch all types of events of the contract but only persist the ones that emit one of the filtered-for argument values:  
+
+To watch all types of events of the contract but only persist the ones that emit one of the filtered-for argument values:
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --event-args <arg1> --event-args <arg2>`  
-    
+
 To watch all events of the contract but only poll the specified method with specified argument values (if they are emitted from the watched events):  
     - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName> --method-args <arg1> --method-args <arg2>`  
 
-#### omniWatcher output    
+#### omniWatcher output
 
 Transformed events and polled method results are committed to Postgres in schemas and tables generated according to the contract abi.      
 
-Schemas are created for each contract using the naming convention `<sync-type>_<lowercase contract-address>`    
+Schemas are created for each contract using the naming convention `<sync-type>_<lowercase contract-address>`
 Under this schema, tables are generated for watched events as `<lowercase event name>_event` and for polled methods as `<lowercase method name>_method`  
 The 'method' and 'event' identifiers are tacked onto the end of the table names to prevent collisions between methods and events of the same lowercase name    
 
-Example: 
+Example:
 
 Running `./vulcanizedb omniWatcher --config <path to config> --starting-block-number=5197514 --contract-address=0x8dd5fbce2f6a956c3022ba3663759011dd51e73e --events=Transfer --events=Mint --methods=balanceOf` 
 watches Transfer and Mint events of the TrueUSD contract and polls its balanceOf method using the addresses we find emitted from those events    
 
-It produces and populates a schema with three tables:   
+It produces and populates a schema with three tables:
 
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`  
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`  
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`  
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`
+`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`
 
 Column ids and types for these tables are generated based on the event and method argument names and types and method return types, resulting in tables such as:
 
-Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"  
+Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"
 
 |  Column    |         Type          | Collation | Nullable |                                           Default                                           | Storage  | Stats target | Description  
 |:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
@@ -224,9 +224,9 @@ Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"
 | from_      | character varying(66) |           | not null |                                                                                             | extended |              |             |
 | to_        | character varying(66) |           | not null |                                                                                             | extended |              |             |
 | value_     | numeric               |           | not null |                                                                                             | main     |              |             |
-     
 
-Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"  
+
+Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
 
 |   Column   |         Type          | Collation | Nullable |                                            Default                                            | Storage  | Stats target | Description |
 |:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
@@ -235,32 +235,32 @@ Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
 | block      | integer               |           | not null |                                                                                               | plain    |              |             |
 | who_       | character varying(66) |           | not null |                                                                                               | extended |              |             |
 | returned   | numeric               |           | not null |                                                                                               | main     |              |             |
-    
-The addition of '_' after table names is to prevent collisions with reserved Postgres words   
+  
+The addition of '_' after table names is to prevent collisions with reserved Postgres words
 
-### composeAndExecute 
+### composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
 long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
 
-This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.   
+This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.
 
-#### Writing custom transformers 
-Storage Transformers   
+#### Writing custom transformers
+Storage Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
    * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
-    
-Event Transformers   
+
+Event Transformers
    * Guide
    * Example
-   
+
 #### composeAndExecute configuration
-A .toml config file is specified when executing the command:  
-`./vulcanizedb composeAndExecute --config=./environments/config_name.toml`  
+A .toml config file is specified when executing the command:
+`./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
 
-The config provides information for composing a set of transformers:         
+The config provides information for composing a set of transformers:
 
-```toml 
+```toml
 [database]
     name     = "vulcanize_public"
     hostname = "localhost"
@@ -316,14 +316,14 @@ The config provides information for composing a set of transformers:
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
-- Note: If any of the imported transformers need additional config variables those need to be included as well   
+- Note: If any of the imported transformers need additional config variables those need to be included as well
 
 This information is used to write and build a Go plugin which exports the configured transformers.
-These transformers are loaded onto their specified watchers and executed.   
+These transformers are loaded onto their specified watchers and executed.
 
 Transformers of different types can be run together in the same command using a single config file or in separate instances using different config files   
 
-The general structure of a plugin .go file, and what we would see built with the above config is shown below   
+The general structure of a plugin .go file, and what we would see built with the above config is shown below
 
 ```go
 package main
@@ -352,7 +352,7 @@ func (e exporter) Export() []interface1.TransformerInitializer, []interface1.Sto
 ```
 
 #### Preparing transformer(s) to work as pluggins for composeAndExecute
-To plug in an external transformer we need to:   
+To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/mcd_transformers/blob/staging/transformers/bite/initializer/initializer.go) 
 that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
@@ -361,7 +361,7 @@ or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanized
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
-    * Do not `goose fix` the transformer migrations   
+    * Do not `goose fix` the transformer migrations
 
 To update a plugin repository with changes to the core vulcanizedb repository, replace the vulcanizedb vendored in the plugin repo (`plugin_repo/vendor/github.com/vulcanize/vulcanizedb`)
 with the newly updated version

@@ -49,7 +49,7 @@ var GenericTestConfig = transformer.TransformerConfig{
 }
 
 func randomString(length int) string {
-	var seededRand *rand.Rand = rand.New(
+	var seededRand = rand.New(
 		rand.NewSource(time.Now().UnixNano()))
 	charset := "abcdefghijklmnopqrstuvwxyz1234567890"
 	b := make([]byte, length)
