@@ -573,6 +573,7 @@
     "github.com/ethereum/go-ethereum/params",
     "github.com/ethereum/go-ethereum/rpc",
     "github.com/hashicorp/golang-lru",
+    "github.com/hpcloud/tail",
     "github.com/jmoiron/sqlx",
     "github.com/lib/pq",
     "github.com/mitchellh/go-homedir",
@@ -585,6 +586,7 @@
     "golang.org/x/net/context",
     "golang.org/x/sync/errgroup",
     "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer",
+    "gopkg.in/tomb.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

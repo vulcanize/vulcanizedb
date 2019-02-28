@@ -112,7 +112,7 @@ var _ = Describe("Parser", func() {
 			Expect(abiTy).To(Equal(abi.UintTy))
 
 			pgTy = e.Fields[2].PgType
-			Expect(pgTy).To(Equal("DECIMAL"))
+			Expect(pgTy).To(Equal("NUMERIC"))
 
 			_, ok = events["Approval"]
 			Expect(ok).To(Equal(false))
@@ -143,7 +143,7 @@ var _ = Describe("Parser", func() {
 			Expect(abiTy).To(Equal(abi.UintTy))
 
 			pgTy = balOf.Return[0].PgType
-			Expect(pgTy).To(Equal("DECIMAL"))
+			Expect(pgTy).To(Equal("NUMERIC"))
 
 		})
 
@@ -200,7 +200,7 @@ var _ = Describe("Parser", func() {
 			Expect(abiTy).To(Equal(abi.UintTy))
 
 			pgTy = balOf.Return[0].PgType
-			Expect(pgTy).To(Equal("DECIMAL"))
+			Expect(pgTy).To(Equal("NUMERIC"))
 
 		})
 
