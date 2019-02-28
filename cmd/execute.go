@@ -16,22 +16,26 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
-	"github.com/vulcanize/vulcanizedb/utils"
+	"fmt"
 	"os"
 	"plugin"
 	syn "sync"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// composeAndExecuteCmd represents the composeAndExecute command
-var composeAndExecuteCmd = &cobra.Command{
-	Use:   "composeAndExecute",
-	Short: "Composes, loads, and executes transformer initializer plugin",
+// executeCmd represents the execute command
+var executeCmd = &cobra.Command{
+	Use:   "execute",
+	Short: "executes a precomposed transformer initializer plugin",
 	Long: `This command needs a config .toml file of form:
 
 [database]
@@ -45,85 +49,34 @@ var composeAndExecuteCmd = &cobra.Command{
     ipcPath  = "http://kovan0.vulcanize.io:8545"
 
 [exporter]
-    home     = "github.com/vulcanize/vulcanizedb"
-    clone    = false
     name     = "exampleTransformerExporter"
-    save     = false
-    transformerNames = [
-        "transformer1",
-        "transformer2",
-        "transformer3",
-        "transformer4",
-    ]
-    [exporter.transformer1]
-        path = "path/to/transformer1"
-        type = "eth_event"
-        repository = "github.com/account/repo"
-        migrations = "db/migrations"
-    [exporter.transformer2]
-        path = "path/to/transformer2"
-        type = "eth_event"
-        repository = "github.com/account/repo"
-        migrations = "db/migrations"
-    [exporter.transformer3]
-        path = "path/to/transformer3"
-        type = "eth_event"
-        repository = "github.com/account/repo"
-        migrations = "db/migrations"
-    [exporter.transformer4]
-        path = "path/to/transformer4"
-        type = "eth_storage"
-        repository = "github.com/account2/repo2"
-        migrations = "to/db/migrations"
-
 
 Note: If any of the plugin transformer need additional
 configuration variables include them in the .toml file as well
 
-This information is used to write and build a go plugin with a transformer 
-set composed from the transformer imports specified in the config file
-This plugin is loaded and the set of transformer initializers is exported
-from it and loaded into and executed over by the appropriate watcher. 
-
-The type of watcher that the transformer works with is specified using the 
-type variable for each transformer in the config. Currently there are watchers 
-of event data from an eth node (eth_event) and storage data from an eth node 
-(eth_storage).
-
-Transformers of different types can be ran together in the same command using a 
-single config file or in separate command instances using different config files
+The exporter.name is the name (without extension) of the plugin to be loaded.
+The plugin file needs to be located in the /plugins directory and this command assumes 
+the db migrations remain from when the plugin was composed. Additionally, the plugin 
+must have been composed by the same version of vulcanizedb or else it will not be compatible.
 
 Specify config location when executing the command:
-./vulcanizedb composeAndExecute --config=./environments/config_name.toml`,
+./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
-		composeAndExecute()
+		execute()
 	},
 }
 
-func composeAndExecute() {
+func execute() {
 	// Build plugin generator config
 	prepConfig()
-
-	// Generate code to build the plugin according to the config file
-	log.Info("generating plugin")
-	generator, err := p2.NewGenerator(genConfig, databaseConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = generator.GenerateExporterPlugin()
-	if err != nil {
-		log.Debug("generating plugin failed")
-		log.Fatal(err)
-	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !genConfig.Save {
-		defer helpers.ClearFiles(pluginPath)
-	}
+
+	fmt.Printf("Executing plugin %s", pluginPath)
 	log.Info("linking plugin", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
@@ -174,6 +127,44 @@ func composeAndExecute() {
 }
 
 func init() {
-	rootCmd.AddCommand(composeAndExecuteCmd)
-	composeAndExecuteCmd.Flags().BoolVar(&recheckHeadersArg, "recheckHeaders", false, "checks headers that are already checked for each transformer.")
+	rootCmd.AddCommand(executeCmd)
+	executeCmd.Flags().BoolVar(&recheckHeadersArg, "recheckHeaders", false, "checks headers that are already checked for each transformer.")
+}
+
+type Exporter interface {
+	Export() ([]transformer.TransformerInitializer, []transformer.StorageTransformerInitializer)
+}
+
+func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
+	defer wg.Done()
+	// Execute over the TransformerInitializer set using the watcher
+	log.Info("executing event transformers")
+	var recheck constants.TransformerExecution
+	if recheckHeadersArg {
+		recheck = constants.HeaderRecheck
+	} else {
+		recheck = constants.HeaderMissing
+	}
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		err := w.Execute(recheck)
+		if err != nil {
+			// TODO Handle watcher errors in execute
+		}
+	}
+}
+
+func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
+	defer wg.Done()
+	// Execute over the TransformerInitializer set using the watcher
+	log.Info("executing storage transformers")
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		err := w.Execute()
+		if err != nil {
+			// TODO Handle watcher errors in execute
+		}
+	}
 }

@@ -64,7 +64,7 @@ func NewEvent(e abi.Event) Event {
 		case abi.HashTy, abi.AddressTy:
 			fields[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
-			fields[i].PgType = "DECIMAL"
+			fields[i].PgType = "NUMERIC"
 		case abi.BoolTy:
 			fields[i].PgType = "BOOLEAN"
 		case abi.BytesTy, abi.FixedBytesTy:

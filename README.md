@@ -10,7 +10,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
 
 ## Dependencies
  - Go 1.11+
- - Postgres 10
+ - Postgres 10.6
  - Ethereum Node
    - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.21+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
@@ -40,6 +40,8 @@ In order to install packages with `dep`, ensure you are in the project directory
 `dep ensure`
 
 After `dep` finishes, dependencies should be installed within your `GOPATH` at the versions specified in `Gopkg.toml`.
+
+Because we are working with a modified version of the go-ethereum accounts/abi package, after running `dep ensure` you will need to run `git checkout vendor/github/ethereum/go-ethereum/accounts/abi` to checkout the modified dependency
 
 Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system. It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
@@ -207,7 +209,7 @@ It produces and populates a schema with three tables:
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`  
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`  
 
-Column ids and types for these tables are generated based on the event and method argument names and types and method return types, resulting in tables such as  
+Column ids and types for these tables are generated based on the event and method argument names and types and method return types, resulting in tables such as:
 
 Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"  
 
@@ -223,7 +225,6 @@ Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"
 | to_        | character varying(66) |           | not null |                                                                                             | extended |              |             |
 | value_     | numeric               |           | not null |                                                                                             | main     |              |             |
      
-and   
 
 Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"  
 
@@ -303,7 +304,7 @@ The config provides information for composing a set of transformers:
         migrations = "to/db/migrations"
 ```
 - `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
-- `clone` this signifies whether or not to retrieve transformer packages by cloning them; by default we attempt to work with transformer packages located in
+- `clone` this signifies whether or not to retrieve plugin transformer packages by `git clone`ing them; by default we attempt to work with transformer packages located in
 our `$GOPATH` but setting this to `true` overrides that. This needs to be set to `true` for the configs used in tests in order for them to work with Travis.
 - `name` is the name used for the plugin files (.so and .go)   
 - `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation. Sometimes useful for debugging/trouble-shooting purposes.
@@ -355,11 +356,16 @@ func (e exporter) Export() []interface1.TransformerInitializer, []interface1.Sto
 #### Preparing transformer(s) to work as pluggins for composeAndExecute
 To plug in an external transformer we need to:   
 
-* create a [package](https://github.com/vulcanize/mcd_transformers/blob/staging/transformers/bite/initializer/initializer.go) 
+* Create a [package](https://github.com/vulcanize/mcd_transformers/blob/staging/transformers/bite/initializer/initializer.go) 
 that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
 or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
-* design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
+* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
-* create db migrations to run against vulcanizeDB so that we can store the transformer output
-    * specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
-    * do not `goose fix` the transformer migrations      
+* Create db migrations to run against vulcanizeDB so that we can store the transformer output
+    * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
+    * Do not `goose fix` the transformer migrations   
+
+To update a plugin repository with changes to the core vulcanizedb repository, replace the vulcanizedb vendored in the plugin repo (`plugin_repo/vendor/github.com/vulcanize/vulcanizedb`)
+with the newly updated version
+* The entire vendor lib within the vendored vulcanizedb needs to be deleted (`plugin_repo/vendor/github.com/vulcanize/vulcanizedb/vendor`)
+* These complications arise due to this [conflict](https://github.com/golang/go/issues/20481) between `dep` and Go plugins
