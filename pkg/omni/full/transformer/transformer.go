@@ -101,60 +101,59 @@ func NewTransformer(network string, BC core.BlockChain, DB *postgres.DB) *Transf
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
 // Use this info to generate event filters
-func (t *Transformer) Init() error {
-	for contractAddr, subset := range t.WatchedEvents {
+func (transformer *Transformer) Init() error {
+	for contractAddr, subset := range transformer.WatchedEvents {
 		// Get Abi
-		err := t.Parser.Parse(contractAddr)
+		err := transformer.Parser.Parse(contractAddr)
 		if err != nil {
 			return err
 		}
 
 		// Get first block and most recent block number in the header repo
-		firstBlock, err := t.BlockRetriever.RetrieveFirstBlock(contractAddr)
+		firstBlock, err := transformer.BlockRetriever.RetrieveFirstBlock(contractAddr)
 		if err != nil {
 			return err
 		}
-		lastBlock, err := t.BlockRetriever.RetrieveMostRecentBlock()
+		lastBlock, err := transformer.BlockRetriever.RetrieveMostRecentBlock()
 		if err != nil {
 			return err
 		}
 
 		// Set to specified range if it falls within the bounds
-		if firstBlock < t.ContractStart[contractAddr] {
-			firstBlock = t.ContractStart[contractAddr]
+		if firstBlock < transformer.ContractStart[contractAddr] {
+			firstBlock = transformer.ContractStart[contractAddr]
 		}
 
 		// Get contract name if it has one
 		var name = new(string)
-		t.Poller.FetchContractData(t.Abi(), contractAddr, "name", nil, name, lastBlock)
+		transformer.Poller.FetchContractData(transformer.Abi(), contractAddr, "name", nil, name, lastBlock)
 
 		// Remove any potential accidental duplicate inputs in arg filter values
 		eventArgs := map[string]bool{}
-		for _, arg := range t.EventArgs[contractAddr] {
+		for _, arg := range transformer.EventArgs[contractAddr] {
 			eventArgs[arg] = true
 		}
 		methodArgs := map[string]bool{}
-		for _, arg := range t.MethodArgs[contractAddr] {
+		for _, arg := range transformer.MethodArgs[contractAddr] {
 			methodArgs[arg] = true
 		}
 
 		// Aggregate info into contract object
 		info := contract.Contract{
-			Name:          *name,
-			Network:       t.Network,
-			Address:       contractAddr,
-			Abi:           t.Parser.Abi(),
-			ParsedAbi:     t.Parser.ParsedAbi(),
-			StartingBlock: firstBlock,
-			LastBlock:     lastBlock,
-			// TODO: consider whether this duplicated knowledge from t.WatchedEvents
-			Events:         t.Parser.GetEvents(subset),
-			Methods:        t.Parser.GetSelectMethods(t.WantedMethods[contractAddr]),
+			Name:           *name,
+			Network:        transformer.Network,
+			Address:        contractAddr,
+			Abi:            transformer.Parser.Abi(),
+			ParsedAbi:      transformer.Parser.ParsedAbi(),
+			StartingBlock:  firstBlock,
+			LastBlock:      lastBlock,
+			Events:         transformer.Parser.GetEvents(subset),
+			Methods:        transformer.Parser.GetSelectMethods(transformer.WantedMethods[contractAddr]),
 			FilterArgs:     eventArgs,
 			MethodArgs:     methodArgs,
-			CreateAddrList: t.CreateAddrList[contractAddr],
-			CreateHashList: t.CreateHashList[contractAddr],
-			Piping:         t.Piping[contractAddr],
+			CreateAddrList: transformer.CreateAddrList[contractAddr],
+			CreateHashList: transformer.CreateHashList[contractAddr],
+			Piping:         transformer.Piping[contractAddr],
 		}.Init()
 
 		// Use info to create filters
@@ -165,14 +164,14 @@ func (t *Transformer) Init() error {
 
 		// Iterate over filters and push them to the repo using filter repository interface
 		for _, filter := range info.Filters {
-			err = t.FilterRepository.CreateFilter(filter)
+			err = transformer.FilterRepository.CreateFilter(filter)
 			if err != nil {
 				return err
 			}
 		}
 
 		// Store contract info for further processing
-		t.Contracts[contractAddr] = info
+		transformer.Contracts[contractAddr] = info
 	}
 
 	return nil
@@ -183,18 +182,18 @@ func (t *Transformer) Init() error {
 // Uses converter to convert logs into custom log type
 // Persists converted logs into custuom postgres tables
 // Calls selected methods, using token holder address generated during event log conversion
-func (tr Transformer) Execute() error {
-	if len(tr.Contracts) == 0 {
+func (transformer Transformer) Execute() error {
+	if len(transformer.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts to work with")
 	}
 	// Iterate through all internal contracts
-	for _, con := range tr.Contracts {
+	for _, con := range transformer.Contracts {
 		// Update converter with current contract
-		tr.Update(con)
+		transformer.Update(con)
 
 		// Iterate through contract filters and get watched event logs
 		for eventSig, filter := range con.Filters {
-			watchedEvents, err := tr.GetWatchedEvents(filter.Name)
+			watchedEvents, err := transformer.GetWatchedEvents(filter.Name)
 			if err != nil {
 				return err
 			}
@@ -202,7 +201,7 @@ func (tr Transformer) Execute() error {
 			// Iterate over watched event logs
 			for _, we := range watchedEvents {
 				// Convert them to our custom log type
-				cstm, err := tr.Converter.Convert(*we, con.Events[eventSig])
+				cstm, err := transformer.Converter.Convert(*we, con.Events[eventSig])
 				if err != nil {
 					return err
 				}
@@ -212,7 +211,7 @@ func (tr Transformer) Execute() error {
 
 				// If log is not empty, immediately persist in repo
 				// Run this in seperate goroutine?
-				err = tr.PersistLogs([]types.Log{*cstm}, con.Events[eventSig], con.Address, con.Name)
+				err = transformer.PersistLogs([]types.Log{*cstm}, con.Events[eventSig], con.Address, con.Name)
 				if err != nil {
 					return err
 				}
@@ -223,7 +222,7 @@ func (tr Transformer) Execute() error {
 		// poller polls select contract methods
 		// and persists the results into custom pg tables
 		// Run this in seperate goroutine?
-		if err := tr.PollContract(*con); err != nil {
+		if err := transformer.PollContract(*con); err != nil {
 			return err
 		}
 	}
@@ -232,41 +231,41 @@ func (tr Transformer) Execute() error {
 }
 
 // Used to set which contract addresses and which of their events to watch
-func (tr *Transformer) SetEvents(contractAddr string, filterSet []string) {
-	tr.WatchedEvents[strings.ToLower(contractAddr)] = filterSet
+func (transformer *Transformer) SetEvents(contractAddr string, filterSet []string) {
+	transformer.WatchedEvents[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to watch events for
-func (tr *Transformer) SetEventArgs(contractAddr string, filterSet []string) {
-	tr.EventArgs[strings.ToLower(contractAddr)] = filterSet
+func (transformer *Transformer) SetEventArgs(contractAddr string, filterSet []string) {
+	transformer.EventArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set which contract addresses and which of their methods to call
-func (tr *Transformer) SetMethods(contractAddr string, filterSet []string) {
-	tr.WantedMethods[strings.ToLower(contractAddr)] = filterSet
+func (transformer *Transformer) SetMethods(contractAddr string, filterSet []string) {
+	transformer.WantedMethods[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to poll methods on
-func (tr *Transformer) SetMethodArgs(contractAddr string, filterSet []string) {
-	tr.MethodArgs[strings.ToLower(contractAddr)] = filterSet
+func (transformer *Transformer) SetMethodArgs(contractAddr string, filterSet []string) {
+	transformer.MethodArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set the block range to watch for a given address
-func (tr *Transformer) SetStartingBlock(contractAddr string, start int64) {
-	tr.ContractStart[strings.ToLower(contractAddr)] = start
+func (transformer *Transformer) SetStartingBlock(contractAddr string, start int64) {
+	transformer.ContractStart[strings.ToLower(contractAddr)] = start
 }
 
 // Used to set whether or not to persist an account address list
-func (tr *Transformer) SetCreateAddrList(contractAddr string, on bool) {
-	tr.CreateAddrList[strings.ToLower(contractAddr)] = on
+func (transformer *Transformer) SetCreateAddrList(contractAddr string, on bool) {
+	transformer.CreateAddrList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to set whether or not to persist an hash list
-func (tr *Transformer) SetCreateHashList(contractAddr string, on bool) {
-	tr.CreateHashList[strings.ToLower(contractAddr)] = on
+func (transformer *Transformer) SetCreateHashList(contractAddr string, on bool) {
+	transformer.CreateHashList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to turn method piping on for a contract
-func (tr *Transformer) SetPiping(contractAddr string, on bool) {
-	tr.Piping[strings.ToLower(contractAddr)] = on
+func (transformer *Transformer) SetPiping(contractAddr string, on bool) {
+	transformer.Piping[strings.ToLower(contractAddr)] = on
 }
