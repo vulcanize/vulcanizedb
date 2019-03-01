@@ -84,7 +84,7 @@ describe('buildServerConfig', () => {
   it('provides the database config to Postgraphile', () => {
     expect(serverUtilities.postgraphile).toHaveBeenCalledWith(
       `${databaseConfig.host}/${databaseConfig.database}`,
-      ["public", "maker"],
+      ["public"],
       jasmine.any(Object));
   });
 

@@ -53,7 +53,7 @@ func NewMethod(m abi.Method) Method {
 		case abi.HashTy, abi.AddressTy:
 			inputs[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
-			inputs[i].PgType = "DECIMAL"
+			inputs[i].PgType = "NUMERIC"
 		case abi.BoolTy:
 			inputs[i].PgType = "BOOLEAN"
 		case abi.BytesTy, abi.FixedBytesTy:
@@ -77,7 +77,7 @@ func NewMethod(m abi.Method) Method {
 		case abi.HashTy, abi.AddressTy:
 			outputs[i].PgType = "CHARACTER VARYING(66)"
 		case abi.IntTy, abi.UintTy:
-			outputs[i].PgType = "DECIMAL"
+			outputs[i].PgType = "NUMERIC"
 		case abi.BoolTy:
 			outputs[i].PgType = "BOOLEAN"
 		case abi.BytesTy, abi.FixedBytesTy:
