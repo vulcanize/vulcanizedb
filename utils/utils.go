@@ -17,11 +17,10 @@
 package utils
 
 import (
+	log "github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"

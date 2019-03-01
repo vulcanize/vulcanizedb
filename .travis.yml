@@ -13,6 +13,7 @@ go_import_path: github.com/vulcanize/vulcanizedb
 
 before_install:
   # ginkgo golint dep goose
+  - echo -e "Host github.com\n\tHostName github.com\n\tUser git\n\tIdentityFile ~/.ssh/id_rsa\n" >> ~/.ssh/config
   - make installtools
   - bash ./scripts/install-postgres-10.sh
   - npm install -g ganache-cli
@@ -23,9 +24,8 @@ before_install:
 before_script:
   - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
-  - make version_migrations
   - make migrate NAME=vulcanize_private
-  - bash ./pkg/transformers/start_test_chain.sh
+  - bash ./scripts/start_test_chain.sh
   - cd postgraphile && yarn
 
 script:
@@ -38,5 +38,5 @@ notifications:
   email: false
 
 after_script:
-  - bash ./pkg/transformers/stop_test_chain.sh
+  - bash ./scripts/stop_test_chain.sh
   - bash ./bin/deploy.sh

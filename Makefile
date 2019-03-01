@@ -48,7 +48,6 @@ lint:
 
 .PHONY: test
 test: | $(GINKGO) $(LINT)
-	go get -t ./...
 	go vet ./...
 	go fmt ./...
 	$(GINKGO) -r --skipPackage=integration_tests,integration
@@ -57,13 +56,14 @@ test: | $(GINKGO) $(LINT)
 integrationtest: | $(GINKGO) $(LINT)
 	go vet ./...
 	go fmt ./...
-	$(GINKGO) -r pkg/transformers/integration_tests/ integration_test/
+	$(GINKGO) -r integration_test/
 
 .PHONY: dep
 dep: | $(DEP)
 	$(DEP) ensure
 
 build: dep
+	git checkout vendor/github.com/ethereum/go-ethereum/accounts/abi
 	go fmt ./...
 	go build
 

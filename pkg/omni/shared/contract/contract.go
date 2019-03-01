@@ -18,6 +18,7 @@ package contract
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -78,7 +79,7 @@ func (c *Contract) GenerateFilters() error {
 
 	for name, event := range c.Events {
 		c.Filters[name] = filters.LogFilter{
-			Name:      event.Name,
+			Name:      c.Address + "_" + event.Name,
 			FromBlock: c.StartingBlock,
 			ToBlock:   -1,
 			Address:   common.HexToAddress(c.Address).Hex(),
