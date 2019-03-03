@@ -12,7 +12,7 @@ Vulcanize DB is a set of tools that make it easier for developers to write appli
  - Go 1.11+
  - Postgres 10.6
  - Ethereum Node
-   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.21+)
+   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
 
 ## Project Setup
