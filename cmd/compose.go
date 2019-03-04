@@ -45,7 +45,6 @@ var composeCmd = &cobra.Command{
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
-    clone    = false
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
@@ -168,6 +167,5 @@ func prepConfig() {
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
 		Home:         viper.GetString("exporter.home"),
-		Clone:        viper.GetBool("exporter.clone"),
 	}
 }

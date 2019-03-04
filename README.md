@@ -273,7 +273,6 @@ The config provides information for composing a set of transformers:
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
-    clone    = false
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
@@ -304,7 +303,6 @@ The config provides information for composing a set of transformers:
         migrations = "to/db/migrations"
 ```
 - `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
-- `clone` this signifies whether or not to retrieve plugin transformer packages by `git clone`ing them; by default we attempt to work with transformer packages located in
 our `$GOPATH` but setting this to `true` overrides that. This needs to be set to `true` for the configs used in tests in order for them to work with Travis.
 - `name` is the name used for the plugin files (.so and .go)   
 - `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation. Sometimes useful for debugging/trouble-shooting purposes.
