@@ -18,6 +18,7 @@ package helpers
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,16 +63,51 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
 	out, err := os.OpenFile(dst, syscall.O_CREAT|syscall.O_EXCL|os.O_WRONLY, os.FileMode(0666)) // Doesn't overwrite files
 	if err != nil {
+		in.Close()
 		return err
 	}
-	defer out.Close()
 
 	_, err = io.Copy(out, in)
-	if err != nil {
+	in.Close()
+	out.Close()
+	return err
+}
+
+func CopyDir(src string, dst string, excludeRecursiveDir string) error {
+	var err error
+	var fds []os.FileInfo
+	var srcinfo os.FileInfo
+
+	if srcinfo, err = os.Stat(src); err != nil {
 		return err
 	}
-	return out.Close()
+
+	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+		return err
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := filepath.Join(src, fd.Name())
+		dstfp := filepath.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if fd.Name() != excludeRecursiveDir {
+				err = CopyDir(srcfp, dstfp, "")
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			err = CopyFile(srcfp, dstfp)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
