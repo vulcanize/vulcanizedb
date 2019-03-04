@@ -2,11 +2,9 @@ package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
-	"math/big"
 )
 
 var _ = Describe("Mappings", func() {
@@ -16,12 +14,11 @@ var _ = Describe("Mappings", func() {
 			//    	mapping (bytes32 => uint) public amounts
 			// pass in the index of the mapping on the contract + the bytes32 key for the uint val being looked up
 			indexOfMappingOnContract := storage.IndexZero
-			keyForDesiredValueInMapping := "fake_bytes32"
+			keyForDesiredValueInMapping := "1234567890abcdef"
 
 			storageKey := storage.GetMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
-			expectedStorageKeyBytes := crypto.Keccak256(common.FromHex(keyForDesiredValueInMapping + indexOfMappingOnContract))
-			expectedStorageKey := common.BytesToHash(expectedStorageKeyBytes)
+			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 	})
@@ -32,14 +29,12 @@ var _ = Describe("Mappings", func() {
 			//    	mapping (address => mapping (uint => bytes32)) public addressNames
 			// pass in the index of the mapping on the contract + the address and uint keys for the bytes32 val being looked up
 			indexOfMappingOnContract := storage.IndexOne
-			keyForOuterMapping := "fake_address"
+			keyForOuterMapping := "1234567890abcdef"
 			keyForInnerMapping := "123"
 
 			storageKey := storage.GetNestedMapping(indexOfMappingOnContract, keyForOuterMapping, keyForInnerMapping)
 
-			hashedOuterMappingStorageKey := crypto.Keccak256(common.FromHex(keyForOuterMapping + indexOfMappingOnContract))
-			fullStorageKeyBytes := crypto.Keccak256(common.FromHex(keyForInnerMapping), hashedOuterMappingStorageKey)
-			expectedStorageKey := common.BytesToHash(fullStorageKeyBytes)
+			expectedStorageKey := common.HexToHash("0x82113529f6cd61061d1a6f0de53f2bdd067a1addd3d2b46be50a99abfcdb1661")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 	})
@@ -55,13 +50,12 @@ var _ = Describe("Mappings", func() {
 			// pass in the storage key for the zero-indexed value ("quantity") + the number of increments required.
 			// (For "quality", we must increment the storage key for the corresponding "quantity" by 1).
 			indexOfMappingOnContract := storage.IndexTwo
-			keyForDesiredValueInMapping := "fake_bytes32"
+			keyForDesiredValueInMapping := "1234567890abcdef"
 			storageKeyForFirstPropertyOnStruct := storage.GetMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
 			storageKey := storage.GetIncrementedKey(storageKeyForFirstPropertyOnStruct, 1)
 
-			incrementedStorageKey := storageKeyForFirstPropertyOnStruct.Big().Add(storageKeyForFirstPropertyOnStruct.Big(), big.NewInt(1))
-			expectedStorageKey := common.BytesToHash(incrementedStorageKey.Bytes())
+			expectedStorageKey := common.HexToHash("0x69b38749f0a8ed5d505c8474f7fb62c7828aad8a7627f1c67e07af1d2368cad4")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 	})
