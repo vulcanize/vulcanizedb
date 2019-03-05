@@ -12,6 +12,9 @@ CREATE TABLE public.headers (
   ON DELETE CASCADE
 );
 
+-- Index is removed when table is
+CREATE INDEX headers_block_number ON public.headers (block_number);
+
 
 -- +goose Down
 DROP TABLE public.headers;
