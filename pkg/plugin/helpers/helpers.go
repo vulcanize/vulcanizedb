@@ -80,16 +80,19 @@ func CopyDir(src string, dst string, excludeRecursiveDir string) error {
 	var fds []os.FileInfo
 	var srcinfo os.FileInfo
 
-	if srcinfo, err = os.Stat(src); err != nil {
+	srcinfo, err = os.Stat(src)
+	if err != nil {
 		return err
 	}
 
-	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
-		return err
+	mkErr := os.MkdirAll(dst, srcinfo.Mode())
+	if mkErr != nil {
+		return mkErr
 	}
 
-	if fds, err = ioutil.ReadDir(src); err != nil {
-		return err
+	fds, readErr := ioutil.ReadDir(src)
+	if err != readErr {
+		return readErr
 	}
 	for _, fd := range fds {
 		srcfp := filepath.Join(src, fd.Name())
@@ -97,15 +100,15 @@ func CopyDir(src string, dst string, excludeRecursiveDir string) error {
 
 		if fd.IsDir() {
 			if fd.Name() != excludeRecursiveDir {
-				err = CopyDir(srcfp, dstfp, "")
-				if err != nil {
-					return err
+				dirErr := CopyDir(srcfp, dstfp, "")
+				if dirErr != nil {
+					return dirErr
 				}
 			}
 		} else {
-			err = CopyFile(srcfp, dstfp)
-			if err != nil {
-				return err
+			fileErr := CopyFile(srcfp, dstfp)
+			if fileErr != nil {
+				return fileErr
 			}
 		}
 	}
