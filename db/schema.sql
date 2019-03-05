@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.5
--- Dumped by pg_dump version 10.4
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -708,6 +708,13 @@ CREATE INDEX block_id_index ON public.transactions USING btree (block_id);
 --
 
 CREATE INDEX block_number_index ON public.blocks USING btree (number);
+
+
+--
+-- Name: headers_block_number; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
 
 
 --
