@@ -60,15 +60,15 @@ func (b *builder) BuildPlugin() error {
 	}
 
 	// setup env to build plugin
-	err = b.setupBuildEnv()
-	if err != nil {
-		return err
+	setupErr := b.setupBuildEnv()
+	if setupErr != nil {
+		return setupErr
 	}
 
 	// Build the .go file into a .so plugin
-	err = exec.Command("go", "build", "-buildmode=plugin", "-o", soFile, b.goFile).Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("unable to build .so file: %s", err.Error()))
+	execErr := exec.Command("go", "build", "-buildmode=plugin", "-o", soFile, b.goFile).Run()
+	if execErr != nil {
+		return errors.New(fmt.Sprintf("unable to build .so file: %s", execErr.Error()))
 	}
 	return nil
 }
@@ -87,20 +87,20 @@ func (b *builder) setupBuildEnv() error {
 	// Import transformer dependencies so that we can build our plugin
 	for importPath := range repoPaths {
 		dst := filepath.Join(vendorPath, importPath)
-		src, err := helpers.CleanPath(filepath.Join("$GOPATH/src", importPath))
-		if err != nil {
-			return err
+		src, cleanErr := helpers.CleanPath(filepath.Join("$GOPATH/src", importPath))
+		if cleanErr != nil {
+			return cleanErr
 		}
 
-		err = helpers.CopyDir(src, dst, "vendor")
-		if err != nil {
-			return errors.New(fmt.Sprintf("unable to copy transformer dependency from %s to %s: %v", src, dst, err))
+		copyErr := helpers.CopyDir(src, dst, "vendor")
+		if copyErr != nil {
+			return errors.New(fmt.Sprintf("unable to copy transformer dependency from %s to %s: %v", src, dst, copyErr))
 		}
 
 		// Have to clear out the copied over vendor lib or plugin won't build (see issue above)
-		err = os.RemoveAll(filepath.Join(dst, "vendor"))
-		if err != nil {
-			return err
+		removeErr := os.RemoveAll(filepath.Join(dst, "vendor"))
+		if removeErr != nil {
+			return removeErr
 		}
 		// Keep track of this vendor directory to clear later
 		b.tmpVenDirs = append(b.tmpVenDirs, dst)
