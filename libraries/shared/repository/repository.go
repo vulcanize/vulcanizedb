@@ -155,15 +155,3 @@ func CreateNotCheckedSQL(boolColumns []string, recheckHeaders constants.Transfor
 
 	return result.String()
 }
-
-// TODO: Move to plugin
-func GetTicInTx(headerID int64, tx *sql.Tx) (int64, error) {
-	var blockTimestamp int64
-	err := tx.QueryRow(`SELECT block_timestamp FROM public.headers WHERE id = $1;`, headerID).Scan(&blockTimestamp)
-	if err != nil {
-		return 0, err
-	}
-
-	tic := blockTimestamp + constants.TTL
-	return tic, nil
-}
