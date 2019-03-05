@@ -59,6 +59,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	log.Info("----- Starting vDB -----")
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
