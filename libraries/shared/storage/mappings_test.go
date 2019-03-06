@@ -12,7 +12,7 @@ var _ = Describe("Mappings", func() {
 		It("returns the storage key for a mapping when passed the mapping's index on the contract and the desired value's key", func() {
 			// ex. solidity:
 			//    	mapping (bytes32 => uint) public amounts
-			// pass in the index of the mapping on the contract + the bytes32 key for the uint val being looked up
+			// to access amounts, pass in the index of the mapping on the contract + the bytes32 key for the uint val being looked up
 			indexOfMappingOnContract := storage.IndexZero
 			keyForDesiredValueInMapping := "1234567890abcdef"
 
@@ -26,8 +26,9 @@ var _ = Describe("Mappings", func() {
 	Describe("GetNestedMapping", func() {
 		It("returns the storage key for a nested mapping when passed the mapping's index on the contract and the desired value's keys", func() {
 			// ex. solidity:
+			//    	mapping (bytes32 => uint) public amounts
 			//    	mapping (address => mapping (uint => bytes32)) public addressNames
-			// pass in the index of the mapping on the contract + the address and uint keys for the bytes32 val being looked up
+			// to access addressNames, pass in the index of the mapping on the contract + the address and uint keys for the bytes32 val being looked up
 			indexOfMappingOnContract := storage.IndexOne
 			keyForOuterMapping := "1234567890abcdef"
 			keyForInnerMapping := "123"
@@ -42,12 +43,14 @@ var _ = Describe("Mappings", func() {
 	Describe("GetIncrementedKey", func() {
 		It("returns the storage key for later values sharing an index on the contract with other earlier values", func() {
 			// ex. solidity:
+			//    	mapping (bytes32 => uint) public amounts
+			//    	mapping (address => mapping (uint => bytes32)) public addressNames
 			//    	struct Data {
 			//        uint256 quantity;
 			//        uint256 quality;
 			//    	}
 			//    	mapping (bytes32 => Data) public itemData;
-			// pass in the storage key for the zero-indexed value ("quantity") + the number of increments required.
+			// to access quality from itemData, pass in the storage key for the zero-indexed value (quantity) + the number of increments required.
 			// (For "quality", we must increment the storage key for the corresponding "quantity" by 1).
 			indexOfMappingOnContract := storage.IndexTwo
 			keyForDesiredValueInMapping := "1234567890abcdef"
