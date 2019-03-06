@@ -41,7 +41,7 @@ In order to install packages with `dep`, ensure you are in the project directory
 
 After `dep` finishes, dependencies should be installed within your `GOPATH` at the versions specified in `Gopkg.toml`.
 
-Because we are working with a modified version of the go-ethereum accounts/abi package, after running `dep ensure` you will need to run `git checkout vendor/github/ethereum/go-ethereum/accounts/abi` to checkout the modified dependency
+Because we are working with a modified version of the go-ethereum accounts/abi package, after running `dep ensure` you will need to run `git checkout vendor/github.com/ethereum/go-ethereum/accounts/abi` to checkout the modified dependency
 
 Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system. It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
