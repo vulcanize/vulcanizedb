@@ -6,26 +6,20 @@ services:
   - postgresql
 addons:
   postgresql: "9.6"
-  ssh_known_hosts:
-    - 147.75.96.51
 
 go_import_path: github.com/vulcanize/vulcanizedb
 
 before_install:
   # ginkgo golint dep goose
-  - echo -e "Host github.com\n\tHostName github.com\n\tUser git\n\tIdentityFile ~/.ssh/id_rsa\n" >> ~/.ssh/config
   - make installtools
   - bash ./scripts/install-postgres-10.sh
-  - npm install -g ganache-cli
   - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
   - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   - sudo apt-get update && sudo apt-get install yarn
 
 before_script:
-  - go get -u github.com/pressly/sup/cmd/sup
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
-  - bash ./scripts/start_test_chain.sh
   - cd postgraphile && yarn
 
 script:
@@ -36,7 +30,3 @@ script:
 
 notifications:
   email: false
-
-after_script:
-  - bash ./scripts/stop_test_chain.sh
-  - bash ./bin/deploy.sh
