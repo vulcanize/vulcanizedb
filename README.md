@@ -273,7 +273,6 @@ The config provides information for composing a set of transformers:
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
-    clone    = false
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
@@ -304,14 +303,13 @@ The config provides information for composing a set of transformers:
         migrations = "to/db/migrations"
 ```
 - `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
-- `clone` this signifies whether or not to retrieve plugin transformer packages by `git clone`ing them; by default we attempt to work with transformer packages located in
-our `$GOPATH` but setting this to `true` overrides that. This needs to be set to `true` for the configs used in tests in order for them to work with Travis.
 - `name` is the name used for the plugin files (.so and .go)   
 - `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation. Sometimes useful for debugging/trouble-shooting purposes.
 - `transformerNames` is the list of the names of the transformers we are composing together, so we know how to access their submaps in the exporter map
 - `exporter.<transformerName>`s are the sub-mappings containing config info for the transformers
     - `repository` is the path for the repository which contains the transformer and its `TransformerInitializer`
-    - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package)
+    - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package).
+        - Transformer repositories need to be cloned into the user's $GOPATH (`go get`)
     - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: `eth_event` and `eth_storage`)
         - `eth_storage` indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go)
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)

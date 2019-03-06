@@ -29,7 +29,6 @@ type Plugin struct {
 	FileName     string
 	Save         bool
 	Home         string
-	Clone        bool
 }
 
 type Transformer struct {
