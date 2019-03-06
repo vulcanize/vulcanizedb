@@ -17,7 +17,6 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	log "github.com/sirupsen/logrus"
@@ -122,7 +121,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 
 func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, error) {
 	var blockId int64
-	tx, _ := blockRepository.database.BeginTx(context.Background(), nil)
+	tx, _ := blockRepository.database.Beginx()
 	err := tx.QueryRow(
 		`INSERT INTO blocks
                 (eth_node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward, eth_node_fingerprint)
@@ -145,7 +144,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	return blockId, nil
 }
 
-func (blockRepository BlockRepository) createTransactions(tx *sql.Tx, blockId int64, transactions []core.Transaction) error {
+func (blockRepository BlockRepository) createTransactions(tx *sqlx.Tx, blockId int64, transactions []core.Transaction) error {
 	for _, transaction := range transactions {
 		err := blockRepository.createTransaction(tx, blockId, transaction)
 		if err != nil {
@@ -165,7 +164,7 @@ func nullStringToZero(s string) string {
 	return s
 }
 
-func (blockRepository BlockRepository) createTransaction(tx *sql.Tx, blockId int64, transaction core.Transaction) error {
+func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId int64, transaction core.Transaction) error {
 	_, err := tx.Exec(
 		`INSERT INTO transactions
        (block_id, hash, nonce, tx_to, tx_from, gaslimit, gasprice, value, input_data)
@@ -198,7 +197,7 @@ func hasReceipt(transaction core.Transaction) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
-func (blockRepository BlockRepository) createReceipt(tx *sql.Tx, blockId int64, receipt core.Receipt) (int, error) {
+func (blockRepository BlockRepository) createReceipt(tx *sqlx.Tx, blockId int64, receipt core.Receipt) (int, error) {
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
@@ -224,7 +223,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
 
-func (blockRepository BlockRepository) createLogs(tx *sql.Tx, logs []core.Log, receiptId int) error {
+func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.Log, receiptId int) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
