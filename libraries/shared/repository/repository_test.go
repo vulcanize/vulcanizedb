@@ -97,7 +97,7 @@ var _ = Describe("Repository", func() {
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, headerErr := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(headerErr).NotTo(HaveOccurred())
-			tx, txErr := db.Begin()
+			tx, txErr := db.Beginx()
 			Expect(txErr).NotTo(HaveOccurred())
 
 			err := shared.MarkHeaderCheckedInTransaction(headerID, tx, checkedHeadersColumn)
