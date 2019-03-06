@@ -46,7 +46,6 @@ var composeAndExecuteCmd = &cobra.Command{
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
-    clone    = false
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
