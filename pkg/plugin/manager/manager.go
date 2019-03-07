@@ -105,9 +105,9 @@ func (m *manager) setupMigrationEnv() error {
 }
 
 // Create copies of db migrations from vendored libs
-func (m *manager) createMigrationCopies(paths map[string]bool) error {
+func (m *manager) createMigrationCopies(paths []string) error {
 	// Iterate through migration paths to find migration directory
-	for path := range paths {
+	for _, path := range paths {
 		dir, err := ioutil.ReadDir(path)
 		if err != nil {
 			return err
