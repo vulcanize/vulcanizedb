@@ -59,21 +59,25 @@ var composeCmd = &cobra.Command{
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "2"
     [exporter.transformer3]
         path = "path/to/transformer3"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer4]
         path = "path/to/transformer4"
         type = "eth_storage"
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
+        rank = "1"
 
 
 Note: If any of the plugin transformer need additional
@@ -149,6 +153,10 @@ func prepConfig() {
 		if !mrOK || mr == "" {
 			log.Fatal(name, "transformer config is missing `rank` value")
 		}
+		rank, err := strconv.Atoi(mr)
+		if err != nil {
+			log.Fatal(name, "migration `rank` can't be converted to an integer")
+		}
 		t, tOK := transformer["type"]
 		if !tOK {
 			log.Fatal(name, "transformer config is missing `type` value")
@@ -156,10 +164,6 @@ func prepConfig() {
 		transformerType := config.GetTransformerType(t)
 		if transformerType == config.UnknownTransformerType {
 			log.Fatal(errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`))
-		}
-		rank, err := strconv.Atoi(mr)
-		if err != nil {
-			log.Fatal(name, "migration `rank` can't be converted to an integer")
 		}
 
 		transformers[name] = config.Transformer{
