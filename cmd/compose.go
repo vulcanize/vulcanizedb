@@ -18,6 +18,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -132,25 +133,33 @@ func prepConfig() {
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
 		transformer := viper.GetStringMapString("exporter." + name)
-		p, ok := transformer["path"]
-		if !ok || p == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `path` value", name))
+		p, pOK := transformer["path"]
+		if !pOK || p == "" {
+			log.Fatal(name, "transformer config is missing `path` value")
 		}
-		r, ok := transformer["repository"]
-		if !ok || r == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `repository` value", name))
+		r, rOK := transformer["repository"]
+		if !rOK || r == "" {
+			log.Fatal(name, "transformer config is missing `repository` value")
 		}
-		m, ok := transformer["migrations"]
-		if !ok || m == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `migrations` value", name))
+		m, mOK := transformer["migrations"]
+		if !mOK || m == "" {
+			log.Fatal(name, "transformer config is missing `migrations` value")
 		}
-		t, ok := transformer["type"]
-		if !ok {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `type` value", name))
+		mr, mrOK := transformer["rank"]
+		if !mrOK || mr == "" {
+			log.Fatal(name, "transformer config is missing `rank` value")
+		}
+		t, tOK := transformer["type"]
+		if !tOK {
+			log.Fatal(name, "transformer config is missing `type` value")
 		}
 		transformerType := config.GetTransformerType(t)
 		if transformerType == config.UnknownTransformerType {
 			log.Fatal(errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`))
+		}
+		rank, err := strconv.Atoi(mr)
+		if err != nil {
+			log.Fatal(name, "migration `rank` can't be converted to an integer")
 		}
 
 		transformers[name] = config.Transformer{
@@ -158,6 +167,7 @@ func prepConfig() {
 			Type:           transformerType,
 			RepositoryPath: r,
 			MigrationPath:  m,
+			MigrationRank:  rank,
 		}
 	}
 

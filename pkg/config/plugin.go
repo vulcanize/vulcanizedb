@@ -17,6 +17,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -35,6 +37,7 @@ type Transformer struct {
 	Path           string
 	Type           TransformerType
 	MigrationPath  string
+	MigrationRank  int
 	RepositoryPath string
 }
 
@@ -51,10 +54,10 @@ func (c *Plugin) GetPluginPaths() (string, string, error) {
 	return goFile, soFile, nil
 }
 
-// Removes duplicate migration paths before returning them
-func (c *Plugin) GetMigrationsPaths() (map[string]bool, error) {
-	paths := make(map[string]bool)
-	for _, transformer := range c.Transformers {
+// Removes duplicate migration paths and returns them in ranked order
+func (c *Plugin) GetMigrationsPaths() ([]string, error) {
+	paths := make(map[int]string)
+	for name, transformer := range c.Transformers {
 		repo := transformer.RepositoryPath
 		mig := transformer.MigrationPath
 		path := filepath.Join("$GOPATH/src", c.Home, "vendor", repo, mig)
@@ -62,10 +65,23 @@ func (c *Plugin) GetMigrationsPaths() (map[string]bool, error) {
 		if err != nil {
 			return nil, err
 		}
-		paths[cleanPath] = true
+		// If there is a different path with the same rank then we have a conflict
+		_, ok := paths[transformer.MigrationRank]
+		if ok {
+			conflictingPath := paths[transformer.MigrationRank]
+			if conflictingPath != cleanPath {
+				return nil, errors.New(fmt.Sprintf("transformer %s has the same migration rank (%d) as another transformer", name, transformer.MigrationRank))
+			}
+		}
+		paths[transformer.MigrationRank] = cleanPath
 	}
 
-	return paths, nil
+	sortedPaths := make([]string, len(paths))
+	for rank, path := range paths {
+		sortedPaths[rank] = path
+	}
+
+	return sortedPaths, nil
 }
 
 // Removes duplicate repo paths before returning them
