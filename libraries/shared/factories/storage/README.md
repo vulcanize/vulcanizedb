@@ -23,7 +23,7 @@ VulcanizeDB has shared code for continuously reading from the CSV file written b
 The storage watcher is responsible for continuously delegating CSV rows to the appropriate transformer as they are being written by the ethereum node.
 It maintains a mapping of contract addresses to transformers, and will ignore storage diff rows for contract addresses that do not have a corresponding transformer.
 
-The storage watcher is currently initialized from the `parseStorageDiffs` command, which also adds transformers that the watcher should know about in its mapping of addresses to transformers.
+Storage watchers can be loaded with plugin storage transformers and executed using the `composeAndExecute` command.
 
 ### Storage Transformer
 
