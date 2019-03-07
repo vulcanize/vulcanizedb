@@ -66,21 +66,6 @@ func (m *manager) RunMigrations() error {
 	if err != nil {
 		return err
 	}
-	// Fix the migrations
-	cmd := exec.Command("goose", "fix")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("version fixing for plugin migrations failed: %s", err.Error()))
-	}
-	// Run the copied migrations with goose
-	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	cmd = exec.Command("goose", "postgres", pgStr, "up")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("db migrations for plugin transformers failed: %s", err.Error()))
-	}
 
 	return nil
 }
@@ -125,6 +110,30 @@ func (m *manager) createMigrationCopies(paths []string) error {
 				return err
 			}
 		}
+		err = m.fixAndRun(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *manager) fixAndRun(path string) error {
+	// Fix the migrations
+	cmd := exec.Command("goose", "fix")
+	cmd.Dir = m.tmpMigDir
+	err := cmd.Run()
+	if err != nil {
+		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, err.Error()))
+	}
+	// Run the copied migrations with goose
+	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	cmd = exec.Command("goose", "postgres", pgStr, "up")
+	cmd.Dir = m.tmpMigDir
+	err = cmd.Run()
+	if err != nil {
+		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, err.Error()))
 	}
 
 	return nil
