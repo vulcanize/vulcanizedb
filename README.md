@@ -286,21 +286,25 @@ The config provides information for composing a set of transformers:
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "2"
     [exporter.transformer3]
         path = "path/to/transformer3"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer4]
         path = "path/to/transformer4"
         type = "eth_storage"
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
+        rank = "1"
 ```
 - `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
 - `name` is the name used for the plugin files (.so and .go)   
@@ -316,7 +320,13 @@ The config provides information for composing a set of transformers:
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
-- Note: If any of the imported transformers need additional config variables those need to be included as well
+    - `rank` determines the order that migrations are ran, with lower ranked migrations running first
+        - this is to help isolate any potential conflicts between transformer migrations
+        - start at "0" 
+        - use strings
+        - don't leave gaps
+        - transformers with identical migrations/migration paths should share the same rank
+- Note: If any of the imported transformers need additional config variables those need to be included as well   
 
 This information is used to write and build a Go plugin which exports the configured transformers.
 These transformers are loaded onto their specified watchers and executed.

@@ -59,21 +59,25 @@ var composeAndExecuteCmd = &cobra.Command{
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "2"
     [exporter.transformer3]
         path = "path/to/transformer3"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer4]
         path = "path/to/transformer4"
         type = "eth_storage"
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
+        rank = "1"
 
 
 Note: If any of the plugin transformer need additional
