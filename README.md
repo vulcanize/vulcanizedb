@@ -359,8 +359,10 @@ or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanized
 * Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go#L83)
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go#L58) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
+    * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
-    * Do not `goose fix` the transformer migrations
+    * If the base vDB migrations occupy this path as well, they need to be in their `goose fix`ed form
+    as they are [here](https://github.com/vulcanize/vulcanizedb/tree/master/db/migrations)
 
 To update a plugin repository with changes to the core vulcanizedb repository, replace the vulcanizedb vendored in the plugin repo (`plugin_repo/vendor/github.com/vulcanize/vulcanizedb`)
 with the newly updated version
