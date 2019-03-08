@@ -292,7 +292,7 @@ The config provides information for composing a set of transformers:
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
-        rank = "2"
+        rank = "0"
     [exporter.transformer3]
         path = "path/to/transformer3"
         type = "eth_event"
