@@ -26,7 +26,7 @@ contract Contract {
   
   function add_address(address addr) public {
     bool exists = addresses[addr] > 0;
-    addresses[addr] = addresses[addr] + 1;
+    addresses[addr]++;
     if (!exists) {
       emit AddressAdded(addr, ++num_addresses);
     }
