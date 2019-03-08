@@ -18,9 +18,9 @@ package repository
 
 import (
 	"bytes"
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -35,7 +35,7 @@ func MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn str
 	return err
 }
 
-func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, checkedHeadersColumn string) error {
+func MarkHeaderCheckedInTransaction(headerID int64, tx *sqlx.Tx, checkedHeadersColumn string) error {
 	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
 		VALUES ($1, $2)
 		ON CONFLICT (header_id) DO
@@ -154,15 +154,4 @@ func CreateNotCheckedSQL(boolColumns []string, recheckHeaders constants.Transfor
 	}
 
 	return result.String()
-}
-
-func GetTicInTx(headerID int64, tx *sql.Tx) (int64, error) {
-	var blockTimestamp int64
-	err := tx.QueryRow(`SELECT block_timestamp FROM public.headers WHERE id = $1;`, headerID).Scan(&blockTimestamp)
-	if err != nil {
-		return 0, err
-	}
-
-	tic := blockTimestamp + constants.TTL
-	return tic, nil
 }

@@ -106,6 +106,7 @@ type Owner struct {
 	Address   string `db:"returned"`
 }
 
+// TODO: consider whether this should be moved to libraries/shared
 func SetupBC() core.BlockChain {
 	infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
 	rawRpcClient, err := rpc.Dial(infuraIPC)
@@ -113,9 +114,9 @@ func SetupBC() core.BlockChain {
 	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	blockChainClient := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
+	blockChainNode := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, blockChainNode, transactionConverter)
 
 	return blockChain
 }
@@ -127,9 +128,9 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	blockChainClient := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
+	blockChainNode := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, blockChainNode, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
@@ -188,6 +189,7 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	}.Init()
 }
 
+// TODO: consider whether this can be moved to plugin or libraries/shared
 func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
@@ -236,7 +238,7 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 }
 
 func TearDown(db *postgres.DB) {
-	tx, err := db.Begin()
+	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM blocks`)
