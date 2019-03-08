@@ -24,7 +24,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -49,5 +48,3 @@ func GetFakeHeader(blockNumber int64) core.Header {
 		Timestamp:   strconv.FormatInt(fakeTimestamp, 10),
 	}
 }
-
-var FakeHeaderTic = fakeTimestamp + constants.TTL

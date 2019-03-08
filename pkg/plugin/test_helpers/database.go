@@ -31,6 +31,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
+// TODO: consider whether this should be moved to libraries/shared
 func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	infuraIPC := "http://kovan0.vulcanize.io:8545"
 	rawRpcClient, err := rpc.Dial(infuraIPC)
@@ -38,9 +39,9 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	blockChainClient := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
+	blockChainNode := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, blockChainNode, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",

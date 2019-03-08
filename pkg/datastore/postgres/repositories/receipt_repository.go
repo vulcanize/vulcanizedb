@@ -17,8 +17,8 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -31,7 +31,7 @@ type ReceiptRepository struct {
 }
 
 func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
-	tx, err := receiptRepository.DB.BeginTx(context.Background(), nil)
+	tx, err := receiptRepository.DB.Beginx()
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, 
 	return nil
 }
 
-func createReceipt(receipt core.Receipt, blockId int64, tx *sql.Tx) (int64, error) {
+func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
 	err := tx.QueryRow(
 		`INSERT INTO receipts
@@ -68,7 +68,7 @@ func createReceipt(receipt core.Receipt, blockId int64, tx *sql.Tx) (int64, erro
 	return receiptId, err
 }
 
-func createLogs(logs []core.Log, receiptId int64, tx *sql.Tx) error {
+func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -84,7 +84,7 @@ func createLogs(logs []core.Log, receiptId int64, tx *sql.Tx) error {
 }
 
 func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt) (int64, error) {
-	tx, _ := receiptRepository.DB.BeginTx(context.Background(), nil)
+	tx, _ := receiptRepository.DB.Beginx()
 	var receiptId int64
 	err := tx.QueryRow(
 		`INSERT INTO receipts
