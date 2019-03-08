@@ -4,8 +4,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/cmd"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"os"
 )
 
@@ -19,9 +17,5 @@ func main() {
 		log.Info("Failed to log to file, using default stderr")
 	}
 
-	tracer.Start(tracer.WithServiceName(viper.GetString("datadog.name")))
-
 	cmd.Execute()
-
-	defer tracer.Stop()
 }
