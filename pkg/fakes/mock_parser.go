@@ -2,7 +2,7 @@ package fakes
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 )
 
 type MockParser struct {
