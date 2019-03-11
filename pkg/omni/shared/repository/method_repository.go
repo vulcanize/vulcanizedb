@@ -77,7 +77,7 @@ func (r *methodRepository) PersistResults(results []types.Result, methodInfo typ
 
 // Creates a custom postgres command to persist logs for the given event
 func (r *methodRepository) persistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error {
-	tx, err := r.DB.Beginx()
+	tx, err := r.DB.Begin()
 	if err != nil {
 		return err
 	}

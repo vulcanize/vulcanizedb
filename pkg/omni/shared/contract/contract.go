@@ -64,12 +64,6 @@ func (c Contract) Init() *Contract {
 		}
 	}
 
-	// If we are creating an address list in postgres
-	// we initialize the map despite what method call, if any
-	if c.CreateAddrList {
-		c.EmittedAddrs = map[interface{}]bool{}
-	}
-
 	return &c
 }
 

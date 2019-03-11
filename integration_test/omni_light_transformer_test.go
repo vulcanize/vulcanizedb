@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -39,8 +40,7 @@ var _ = Describe("Omnit light transformer", func() {
 		It("Initializes transformer's contract objects", func() {
 			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
 			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -70,9 +70,7 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, nil)
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -89,9 +87,12 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Keeps track of contract-related addresses while transforming event data if they need to be used for later method polling", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Methods = map[string][]string{
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			c, ok := t.Contracts[tusdAddr]
@@ -131,9 +132,12 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Polls given methods using generated token holder address", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Methods = map[string][]string{
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -150,9 +154,7 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Fails if initialization has not been done", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, nil)
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
 			err = t.Execute()
 			Expect(err).To(HaveOccurred())
 		})
@@ -173,9 +175,7 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, nil)
+			t := transformer.NewTransformer(mocks.ENSConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -192,9 +192,12 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Keeps track of contract-related hashes while transforming event data if they need to be used for later method polling", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			c, ok := t.Contracts[ensAddr]
@@ -218,9 +221,12 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Polls given method using list of collected hashes", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -242,10 +248,12 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("It does not persist events if they do not pass the emitted arg filter", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, nil)
-			t.SetEventArgs(constants.EnsContractAddress, []string{"fake_filter_value"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.EventArgs = map[string][]string{
+				ensAddr: {"fake_filter_value"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -257,10 +265,15 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("If a method arg filter is applied, only those arguments are used in polling", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
-			t.SetMethodArgs(constants.EnsContractAddress, []string{"0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.MethodArgs = map[string][]string{
+				ensAddr: {"0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"},
+			}
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -302,11 +315,7 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, nil)
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, nil)
+			t := transformer.NewTransformer(mocks.ENSandTusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -332,11 +341,13 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Keeps track of contract-related hashes and addresses while transforming event data if they need to be used for later method polling", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSandTusdConfig
+			testConf.Methods = map[string][]string{
+				ensAddr:  {"owner"},
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			ens, ok := t.Contracts[ensAddr]
@@ -376,11 +387,13 @@ var _ = Describe("Omnit light transformer", func() {
 		})
 
 		It("Polls given methods for each contract, using list of collected values", func() {
-			t := transformer.NewTransformer("", blockChain, db)
-			t.SetEvents(constants.EnsContractAddress, []string{"NewOwner"})
-			t.SetMethods(constants.EnsContractAddress, []string{"owner"})
-			t.SetEvents(constants.TusdContractAddress, []string{"Transfer"})
-			t.SetMethods(constants.TusdContractAddress, []string{"balanceOf"})
+			var testConf config.ContractConfig
+			testConf = mocks.ENSandTusdConfig
+			testConf.Methods = map[string][]string{
+				ensAddr:  {"owner"},
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()

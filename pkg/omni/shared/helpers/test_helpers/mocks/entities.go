@@ -18,6 +18,8 @@ package mocks
 
 import (
 	"encoding/json"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -248,4 +250,79 @@ var MockNewOwnerLog2 = types.Log{
 		common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba400"),
 	},
 	Data: hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000af21"),
+}
+
+var ens = strings.ToLower(constants.EnsContractAddress)
+var tusd = strings.ToLower(constants.TusdContractAddress)
+
+var TusdConfig = config.ContractConfig{
+	Network: "",
+	Addresses: map[string]bool{
+		tusd: true,
+	},
+	Abis: map[string]string{
+		tusd: "",
+	},
+	Events: map[string][]string{
+		tusd: []string{"Transfer"},
+	},
+	Methods: map[string][]string{
+		tusd: nil,
+	},
+	MethodArgs: map[string][]string{
+		tusd: nil,
+	},
+	EventArgs: map[string][]string{
+		tusd: nil,
+	},
+}
+
+var ENSConfig = config.ContractConfig{
+	Network: "",
+	Addresses: map[string]bool{
+		ens: true,
+	},
+	Abis: map[string]string{
+		ens: "",
+	},
+	Events: map[string][]string{
+		ens: []string{"NewOwner"},
+	},
+	Methods: map[string][]string{
+		ens: nil,
+	},
+	MethodArgs: map[string][]string{
+		ens: nil,
+	},
+	EventArgs: map[string][]string{
+		ens: nil,
+	},
+}
+
+var ENSandTusdConfig = config.ContractConfig{
+	Network: "",
+	Addresses: map[string]bool{
+		ens:  true,
+		tusd: true,
+	},
+	Abis: map[string]string{
+		ens:  "",
+		tusd: "",
+	},
+	Events: map[string][]string{
+		ens:  []string{"NewOwner"},
+		tusd: []string{"Transfer"},
+	},
+	Methods: map[string][]string{
+		ens:  nil,
+		tusd: nil,
+	},
+	MethodArgs: map[string][]string{
+		ens:  nil,
+		tusd: nil,
+	},
+	EventArgs: map[string][]string{
+		ens:  nil,
+		tusd: nil,
+	},
 }
