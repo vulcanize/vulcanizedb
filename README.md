@@ -154,43 +154,83 @@ Contract watchers work with a light or full sync vDB to fetch raw ethereum data 
 A watcher is composed of at least a fetcher and a transformer or set of transformers, where a fetcher is an interface for retrieving raw Ethereum data from some source (e.g. eth_jsonrpc, IPFS)
 and a transformer is an interface for filtering through that raw Ethereum data to extract, process, and persist data for specific contracts or accounts. 
 
-### omniWatcher
-The `omniWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available. 
+### contractWatcher
+The `contractWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available.
 It also provides some state variable coverage by automating polling of public methods, with some restrictions.
 
 This command requires a pre-synced (full or light) vulcanizeDB (see above sections) and currently requires the contract ABI be available on etherscan or provided by the user.   
 
-To watch all events of a contract using a light synced vDB:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`
+This command takes a config of the form:
 
-Or if you are using a full synced vDB, change the mode to full:
-    - Execute `./vulcanizedb omniWatcher --mode full --config <path to config.toml> --contract-address <contract address>`
+```toml
+  [database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port     = 5432
 
-To watch contracts on a network other than mainnet, use the network flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --network <ropsten, kovan, or rinkeby>`  
+  [client]
+    ipcPath  = "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
 
-To watch events starting at a certain block use the starting block flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#>`
+  [contract]
+    network  = ""
+    addresses  = [
+        "contractAddress1",
+        "contractAddress2"
+    ]
+    [contract.contractAddress1]
+        abi    = 'ABI for contract 1'
+        startingBlock = 982463
+    [contract.contractAddress2]
+        abi    = 'ABI for contract 2'
+        events = [
+            "event1",
+            "event2"
+        ]
+		eventArgs = [
+			"arg1",
+			"arg2"
+		]
+        methods = [
+            "method1",
+			"method2"
+        ]
+		methodArgs = [
+			"arg1",
+			"arg2"
+		]
+        startingBlock = 4448566
+        piping = true
+````
 
-To watch only specified events use the events flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2>`  
+- The `contract` section defines which contracts we want to watch and with which conditions.
+- `network` is only necessary if the ABIs are not provided and wish to be fetched from Etherscan.
+    - Empty or nil string indicates mainnet
+    - "ropsten", "kovan", and "rinkeby" indicate their respective networks
+- `addresses` lists the contract addresses we are watching and is used to load their individual configuration parameters
+- `contract.<contractAddress>` are the sub-mappings which contain the parameters specific to each contract address
+    - `abi` is the ABI for the contract; if none is provided the application will attempt to fetch one from Etherscan using the provided address and network
+    - `events` is the list of events to watch
+        - If this field is omitted or no events are provided then by defualt ALL events extracted from the ABI will be watched
+        - If event names are provided then only those events will be watched
+    - `eventArgs` is the list of arguments to filter events with
+        - If this field is omitted or no eventArgs are provided then by default watched events are not filtered by their argument values
+        - If eventArgs are provided then only those events which emit at least one of these values as an argument are watched
+    - `methods` is the list of methods to poll
+        - If this is omitted or no methods are provided then by default NO methods are polled
+        - If method names are provided then those methods will be polled, provided
+            1) Method has two or less arguments
+            1) Arguments are all of address or hash types
+            1) Method returns a single value
+    - `methodArgs` is the list of arguments to limit polling methods to
+        - If this field is omitted or no methodArgs are provided then by default methods will be polled with every combination of the appropriately typed values that have been collected from watched events
+        - If methodArgs are provided then only those values will be used to poll methods
+    - `startingBlock` is the block we want to begin watching the contract, usually the deployment block of that contract
+    - `piping` is a boolean flag which indicates whether or not we want to pipe return method values forward as arguments to subsequent method calls
 
-To watch events and poll the specified methods with any addresses and hashes emitted by the watched events utilize the methods flag:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName1> --methods <methodName2>`  
+At the very minimum, for each contract address an ABI and a starting block number need to be provided (or just the starting block if the ABI can be reliably fetched from Etherscan).
+With just this information we will be able to watch all events at the contract, but with no additional filters and no method polling.
 
-To watch specified events and poll the specified method with any addresses and hashes emitted by the watched events:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
-
-To turn on method piping so that values returned from previous method calls are cached and used as arguments in subsequent method calls:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --piping true --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
-
-To watch all types of events of the contract but only persist the ones that emit one of the filtered-for argument values:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --event-args <arg1> --event-args <arg2>`  
-
-To watch all events of the contract but only poll the specified method with specified argument values (if they are emitted from the watched events):  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName> --method-args <arg1> --method-args <arg2>`  
-
-#### omniWatcher output
+#### contractWatcher output
 
 Transformed events and polled method results are committed to Postgres in schemas and tables generated according to the contract abi.      
 
@@ -200,7 +240,7 @@ The 'method' and 'event' identifiers are tacked onto the end of the table names 
 
 Example:
 
-Running `./vulcanizedb omniWatcher --config <path to config> --starting-block-number=5197514 --contract-address=0x8dd5fbce2f6a956c3022ba3663759011dd51e73e --events=Transfer --events=Mint --methods=balanceOf` 
+Running `./vulcanizedb contractWatcher --config <path to config> --starting-block-number=5197514 --contract-address=0x8dd5fbce2f6a956c3022ba3663759011dd51e73e --events=Transfer --events=Mint --methods=balanceOf`
 watches Transfer and Mint events of the TrueUSD contract and polls its balanceOf method using the addresses we find emitted from those events    
 
 It produces and populates a schema with three tables:
