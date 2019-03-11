@@ -54,7 +54,7 @@ func (c *converter) Update(info *contract.Contract) {
 
 // Convert the given watched event log into a types.Log for the given event
 func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
-	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	returnLogs := make([]types.Log, 0, len(logs))
 	for _, log := range logs {
 		values := make(map[string]interface{})
@@ -63,7 +63,7 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			values[field.Name] = i
 		}
 
-		err := boundContract.UnpackLogIntoMap(values, event.Name, log)
+		err := contract.UnpackLogIntoMap(values, event.Name, log)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +133,7 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 
 // Convert the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
 func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
-	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
 	for _, event := range events {
 		eventsToLogs[event.Name] = make([]types.Log, 0, len(logs))
@@ -142,7 +142,7 @@ func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 			// If the log is of this event type, process it as such
 			if event.Sig() == log.Topics[0] {
 				values := make(map[string]interface{})
-				err := boundContract.UnpackLogIntoMap(values, event.Name, log)
+				err := contract.UnpackLogIntoMap(values, event.Name, log)
 				if err != nil {
 					return nil, err
 				}

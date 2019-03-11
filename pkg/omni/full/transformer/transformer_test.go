@@ -17,160 +17,307 @@
 package transformer_test
 
 import (
+	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"math/rand"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/full/retriever"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/parser"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/poller"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/helpers/test_helpers/mocks"
 )
 
 var _ = Describe("Transformer", func() {
-	var fakeAddress = "0x1234567890abcdef"
+	var db *postgres.DB
+	var err error
+	var blockChain core.BlockChain
+	var blockRepository repositories.BlockRepository
+	var ensAddr = strings.ToLower(constants.EnsContractAddress)
+	var tusdAddr = strings.ToLower(constants.TusdContractAddress)
 	rand.Seed(time.Now().UnixNano())
 
-	Describe("SetEvents", func() {
-		It("Sets which events to watch from the given contract address", func() {
-			watchedEvents := []string{"Transfer", "Mint"}
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetEvents(fakeAddress, watchedEvents)
-			Expect(t.WatchedEvents[fakeAddress]).To(Equal(watchedEvents))
-		})
+	BeforeEach(func() {
+		db, blockChain = test_helpers.SetupDBandBC()
+		blockRepository = *repositories.NewBlockRepository(db)
 	})
 
-	Describe("SetEventAddrs", func() {
-		It("Sets which account addresses to watch events for", func() {
-			eventAddrs := []string{"test1", "test2"}
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetEventArgs(fakeAddress, eventAddrs)
-			Expect(t.EventArgs[fakeAddress]).To(Equal(eventAddrs))
-		})
-	})
-
-	Describe("SetMethods", func() {
-		It("Sets which methods to poll at the given contract address", func() {
-			watchedMethods := []string{"balanceOf", "totalSupply"}
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetMethods(fakeAddress, watchedMethods)
-			Expect(t.WantedMethods[fakeAddress]).To(Equal(watchedMethods))
-		})
-	})
-
-	Describe("SetMethodAddrs", func() {
-		It("Sets which account addresses to poll methods against", func() {
-			methodAddrs := []string{"test1", "test2"}
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetMethodArgs(fakeAddress, methodAddrs)
-			Expect(t.MethodArgs[fakeAddress]).To(Equal(methodAddrs))
-		})
-	})
-
-	Describe("SetStartingBlock", func() {
-		It("Sets the block range that the contract should be watched within", func() {
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetStartingBlock(fakeAddress, 11)
-			Expect(t.ContractStart[fakeAddress]).To(Equal(int64(11)))
-		})
-	})
-
-	Describe("SetCreateAddrList", func() {
-		It("Sets the block range that the contract should be watched within", func() {
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetCreateAddrList(fakeAddress, true)
-			Expect(t.CreateAddrList[fakeAddress]).To(Equal(true))
-		})
-	})
-
-	Describe("SetCreateHashList", func() {
-		It("Sets the block range that the contract should be watched within", func() {
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetCreateHashList(fakeAddress, true)
-			Expect(t.CreateHashList[fakeAddress]).To(Equal(true))
-		})
+	AfterEach(func() {
+		test_helpers.TearDown(db)
 	})
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.MockFullBlockRetriever{}
-			firstBlock := int64(1)
-			mostRecentBlock := int64(2)
-			blockRetriever.FirstBlock = firstBlock
-			blockRetriever.MostRecentBlock = mostRecentBlock
-
-			parsr := &fakes.MockParser{}
-			fakeAbi := "fake_abi"
-			eventName := "Transfer"
-			event := types.Event{}
-			parsr.AbiToReturn = fakeAbi
-			parsr.EventName = eventName
-			parsr.Event = event
-
-			pollr := &fakes.MockPoller{}
-			fakeContractName := "fake_contract_name"
-			pollr.ContractName = fakeContractName
-
-			t := getTransformer(blockRetriever, parsr, pollr)
-			t.SetEvents(fakeAddress, []string{"Transfer"})
-
-			err := t.Init()
-
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
-			c, ok := t.Contracts[fakeAddress]
+			c, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(true))
 
-			Expect(c.StartingBlock).To(Equal(firstBlock))
-			Expect(c.LastBlock).To(Equal(mostRecentBlock))
-			Expect(c.Abi).To(Equal(fakeAbi))
-			Expect(c.Name).To(Equal(fakeContractName))
-			Expect(c.Address).To(Equal(fakeAddress))
+			Expect(c.StartingBlock).To(Equal(int64(6194633)))
+			Expect(c.LastBlock).To(Equal(int64(6194634)))
+			Expect(c.Abi).To(Equal(constants.TusdAbiString))
+			Expect(c.Name).To(Equal("TrueUSD"))
+			Expect(c.Address).To(Equal(tusdAddr))
 		})
 
 		It("Fails to initialize if first and most recent blocks cannot be fetched from vDB", func() {
-			blockRetriever := &fakes.MockFullBlockRetriever{}
-			blockRetriever.FirstBlockErr = fakes.FakeError
-			t := getTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
-			t.SetEvents(fakeAddress, []string{"Transfer"})
-
-			err := t.Init()
-
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			err = t.Init()
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
 		It("Does nothing if watched events are unset", func() {
-			t := getTransformer(&fakes.MockFullBlockRetriever{}, &fakes.MockParser{}, &fakes.MockPoller{})
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Events = nil
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
 
-			err := t.Init()
-
-			Expect(err).ToNot(HaveOccurred())
-
-			_, ok := t.Contracts[fakeAddress]
+			_, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(false))
 		})
 	})
-})
 
-func getTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser, pollr poller.Poller) transformer.Transformer {
-	return transformer.Transformer{
-		FilterRepository: &fakes.MockFilterRepository{},
-		Parser:           parsr,
-		BlockRetriever:   blockRetriever,
-		Poller:           pollr,
-		Contracts:        map[string]*contract.Contract{},
-		WatchedEvents:    map[string][]string{},
-		WantedMethods:    map[string][]string{},
-		ContractStart:    map[string]int64{},
-		EventArgs:        map[string][]string{},
-		MethodArgs:       map[string][]string{},
-		CreateAddrList:   map[string]bool{},
-		CreateHashList:   map[string]bool{},
-	}
-}
+	Describe("Execute", func() {
+		BeforeEach(func() {
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+		})
+
+		It("Transforms watched contract data into custom repositories", func() {
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			log := test_helpers.TransferLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.transfer_event WHERE block = 6194634", tusdAddr)).StructScan(&log)
+
+			// We don't know vulcID, so compare individual fields instead of complete structures
+			Expect(log.Tx).To(Equal("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee"))
+			Expect(log.Block).To(Equal(int64(6194634)))
+			Expect(log.From).To(Equal("0x000000000000000000000000000000000000Af21"))
+			Expect(log.To).To(Equal("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391"))
+			Expect(log.Value).To(Equal("1097077688018008265106216665536940668749033598146"))
+		})
+
+		It("Keeps track of contract-related addresses while transforming event data if they need to be used for later method polling", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Methods = map[string][]string{
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			c, ok := t.Contracts[tusdAddr]
+			Expect(ok).To(Equal(true))
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			b, ok := c.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = c.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843bCE061BA391")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x09BbBBE21a5975cAc061D82f7b843b1234567890")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x")]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.EmittedAddrs[""]
+			Expect(ok).To(Equal(false))
+
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x09THISE21a5IS5cFAKE1D82fAND43bCE06MADEUP")]
+			Expect(ok).To(Equal(false))
+		})
+
+		It("Polls given methods using generated token holder address", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Methods = map[string][]string{
+				tusdAddr: {"balanceOf"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			res := test_helpers.BalanceOf{}
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0x000000000000000000000000000000000000Af21' AND block = '6194634'", tusdAddr)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Balance).To(Equal("0"))
+			Expect(res.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843bCE061BA391' AND block = '6194634'", tusdAddr)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Balance).To(Equal("0"))
+			Expect(res.TokenName).To(Equal("TrueUSD"))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6194634'", tusdAddr)).StructScan(&res)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Fails if initialization has not been done", func() {
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+
+			err = t.Execute()
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Execute- against ENS registry contract", func() {
+		BeforeEach(func() {
+			blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock2)
+		})
+
+		It("Transforms watched contract data into custom repositories", func() {
+			t := transformer.NewTransformer(mocks.ENSConfig, blockChain, db)
+
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			log := test_helpers.NewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.newowner_event", ensAddr)).StructScan(&log)
+
+			// We don't know vulcID, so compare individual fields instead of complete structures
+			Expect(log.Tx).To(Equal("0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb"))
+			Expect(log.Block).To(Equal(int64(6194635)))
+			Expect(log.Node).To(Equal("0x0000000000000000000000000000000000000000000000000000c02aaa39b223"))
+			Expect(log.Label).To(Equal("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391"))
+			Expect(log.Owner).To(Equal("0x000000000000000000000000000000000000Af21"))
+		})
+
+		It("Keeps track of contract-related hashes while transforming event data if they need to be used for later method polling", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			c, ok := t.Contracts[ensAddr]
+			Expect(ok).To(Equal(true))
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(c.EmittedHashes)).To(Equal(3))
+
+			b, ok := c.EmittedHashes[common.HexToHash("0x0000000000000000000000000000000000000000000000000000c02aaa39b223")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			b, ok = c.EmittedHashes[common.HexToHash("0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391")]
+			Expect(ok).To(Equal(true))
+			Expect(b).To(Equal(true))
+
+			// Doesn't keep track of address since it wouldn't be used in calling the 'owner' method
+			_, ok = c.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
+			Expect(ok).To(Equal(false))
+		})
+
+		It("Polls given methods using generated token holder address", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			res := test_helpers.Owner{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x0000000000000000000000000000000000000000000000000000c02aaa39b223' AND block = '6194636'", ensAddr)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(res.TokenName).To(Equal(""))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391' AND block = '6194636'", ensAddr)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(res.TokenName).To(Equal(""))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6194636'", ensAddr)).StructScan(&res)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("It does not perist events if they do not pass the emitted arg filter", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.EventArgs = map[string][]string{
+				ensAddr: {"fake_filter_value"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			log := test_helpers.LightNewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.newowner_event", ensAddr)).StructScan(&log)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("If a method arg filter is applied, only those arguments are used in polling", func() {
+			var testConf config.ContractConfig
+			testConf = mocks.ENSConfig
+			testConf.Methods = map[string][]string{
+				ensAddr: {"owner"},
+			}
+			testConf.MethodArgs = map[string][]string{
+				ensAddr: {"0x0000000000000000000000000000000000000000000000000000c02aaa39b223"},
+			}
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+
+			res := test_helpers.Owner{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x0000000000000000000000000000000000000000000000000000c02aaa39b223' AND block = '6194636'", ensAddr)).StructScan(&res)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(res.TokenName).To(Equal(""))
+
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391' AND block = '6194636'", ensAddr)).StructScan(&res)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
