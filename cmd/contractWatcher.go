@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/cobra"
 
 	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	ft "github.com/vulcanize/vulcanizedb/pkg/omni/full/transformer"
-	lt "github.com/vulcanize/vulcanizedb/pkg/omni/light/transformer"
+	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
+	lt "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 

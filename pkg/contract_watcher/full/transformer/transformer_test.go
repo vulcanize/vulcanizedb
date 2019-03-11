@@ -1,4 +1,20 @@
-package integration
+// VulcanizeDB
+// Copyright © 2019 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package transformer_test
 
 import (
 	"fmt"
@@ -20,7 +36,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-var _ = Describe("Omni full transformer", func() {
+var _ = Describe("Transformer", func() {
 	var db *postgres.DB
 	var err error
 	var blockChain core.BlockChain
@@ -54,6 +70,26 @@ var _ = Describe("Omni full transformer", func() {
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))
+		})
+
+		It("Fails to initialize if first and most recent blocks cannot be fetched from vDB", func() {
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Does nothing if watched events are unset", func() {
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Events = nil
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+
+			_, ok := t.Contracts[tusdAddr]
+			Expect(ok).To(Equal(false))
 		})
 	})
 
@@ -247,7 +283,6 @@ var _ = Describe("Omni full transformer", func() {
 				ensAddr: {"fake_filter_value"},
 			}
 			t := transformer.NewTransformer(testConf, blockChain, db)
-
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -262,11 +297,11 @@ var _ = Describe("Omni full transformer", func() {
 		It("If a method arg filter is applied, only those arguments are used in polling", func() {
 			var testConf config.ContractConfig
 			testConf = mocks.ENSConfig
-			testConf.MethodArgs = map[string][]string{
-				ensAddr: {"0x0000000000000000000000000000000000000000000000000000c02aaa39b223"},
-			}
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
+			}
+			testConf.MethodArgs = map[string][]string{
+				ensAddr: {"0x0000000000000000000000000000000000000000000000000000c02aaa39b223"},
 			}
 			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()

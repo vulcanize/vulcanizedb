@@ -1,4 +1,20 @@
-package integration
+// VulcanizeDB
+// Copyright © 2019 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package transformer_test
 
 import (
 	"fmt"
@@ -18,7 +34,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-var _ = Describe("Omnit light transformer", func() {
+var _ = Describe("Transformer", func() {
 	var db *postgres.DB
 	var err error
 	var blockChain core.BlockChain
@@ -52,6 +68,26 @@ var _ = Describe("Omnit light transformer", func() {
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))
+		})
+
+		It("Fails to initialize if first and most recent block numbers cannot be fetched from vDB headers table", func() {
+			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Does nothing if nothing if no addresses are configured", func() {
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			var testConf config.ContractConfig
+			testConf = mocks.TusdConfig
+			testConf.Addresses = nil
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			_, ok := t.Contracts[tusdAddr]
+			Expect(ok).To(Equal(false))
 		})
 	})
 
@@ -267,11 +303,11 @@ var _ = Describe("Omnit light transformer", func() {
 		It("If a method arg filter is applied, only those arguments are used in polling", func() {
 			var testConf config.ContractConfig
 			testConf = mocks.ENSConfig
-			testConf.MethodArgs = map[string][]string{
-				ensAddr: {"0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"},
-			}
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
+			}
+			testConf.MethodArgs = map[string][]string{
+				ensAddr: {"0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"},
 			}
 			t := transformer.NewTransformer(testConf, blockChain, db)
 			err = t.Init()
