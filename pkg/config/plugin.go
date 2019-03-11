@@ -111,6 +111,7 @@ const (
 	UnknownTransformerType TransformerType = iota
 	EthEvent
 	EthStorage
+	EthGeneric
 )
 
 func (pt TransformerType) String() string {
@@ -118,9 +119,10 @@ func (pt TransformerType) String() string {
 		"Unknown",
 		"eth_event",
 		"eth_storage",
+		"eth_generic",
 	}
 
-	if pt > EthStorage || pt < EthEvent {
+	if pt > EthGeneric || pt < EthEvent {
 		return "Unknown"
 	}
 
@@ -131,6 +133,7 @@ func GetTransformerType(str string) TransformerType {
 	types := [...]TransformerType{
 		EthEvent,
 		EthStorage,
+		EthGeneric,
 	}
 
 	for _, ty := range types {

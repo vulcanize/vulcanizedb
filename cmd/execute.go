@@ -100,7 +100,7 @@ func execute() {
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers := exporter.Export()
+	ethEventInitializers, ethStorageInitializers, genericInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -123,6 +123,13 @@ func execute() {
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
 	}
+
+	if len(genericInitializers) > 0 {
+		gw := watcher.NewGenericWatcher(&db, blockChain)
+		gw.AddTransformers(genericInitializers)
+		wg.Add(1)
+		go genericWatching(&gw, &wg)
+	}
 	wg.Wait()
 }
 
@@ -132,7 +139,7 @@ func init() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer)
+	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.GenericTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
@@ -157,12 +164,26 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
-	// Execute over the StorageTransformerInitializer set using the watcher
+	// Execute over the StorageTransformerInitializer set using the storage watcher
 	log.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
 		err := w.Execute()
+		if err != nil {
+			// TODO Handle watcher errors in execute
+		}
+	}
+}
+
+func genericWatching(w *watcher.GenericWatcher, wg *syn.WaitGroup) {
+	defer wg.Done()
+	// Execute over the GenericTransformerInitializer set using the generic watcher
+	log.Info("executing generic transformers")
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		err := w.Execute(nil)
 		if err != nil {
 			// TODO Handle watcher errors in execute
 		}

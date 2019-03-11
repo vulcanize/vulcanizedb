@@ -36,8 +36,8 @@ type GenericWatcher struct {
 	BlockChain   core.BlockChain
 }
 
-func NewGenericWatcher(db *postgres.DB, bc core.BlockChain) *GenericWatcher {
-	return &GenericWatcher{
+func NewGenericWatcher(db *postgres.DB, bc core.BlockChain) GenericWatcher {
+	return GenericWatcher{
 		DB:         db,
 		BlockChain: bc,
 	}

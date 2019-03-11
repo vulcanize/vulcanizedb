@@ -329,7 +329,7 @@ The config provides information for composing a set of transformers:
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_event"
+        type = "eth_generic"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "0"
@@ -359,6 +359,9 @@ The config provides information for composing a set of transformers:
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
+        - `eth_generic` indicates the transformer works with the [generic watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go)
+        that is made to work with [omni pkg](https://github.com/vulcanize/maker-vulcanizedb/tree/staging/pkg/omni)
+        based transformers which work with either a light or full sync vDB to watch events and poll public methods
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
         - this is to help isolate any potential conflicts between transformer migrations
@@ -390,14 +393,15 @@ type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer {
-	return []interface1.EventTransformerInitializer{
-		transformer1.EventTransformerInitializer,
-		transformer2.EventTransformerInitializer,
-		transformer3.EventTransformerInitializer,
-	},     []interface1.StorageTransformerInitializer{
-		transformer4.StorageTransformerInitializer,
-    }
+func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer, []interface1.GenericTransformerInitializer {
+	return []interface1.TransformerInitializer{
+            transformer1.TransformerInitializer,
+            transformer3.TransformerInitializer,
+        },     []interface1.StorageTransformerInitializer{
+            transformer4.StorageTransformerInitializer,
+        },     []interface1.GenericTransformerInitializer{
+            transformer2.TransformerInitializer,
+        }
 }
 ```
 
@@ -405,10 +409,12 @@ func (e exporter) Export() []interface1.EventTransformerInitializer, []interface
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
-that exports a variable `EventTransformerInitializer` or `StorageTransformerInitializer` that are of type [EventTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/storage_transformer.go#L31), respectively
-* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go#L83)
-or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go#L58) watcher execution modes
+that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `GenericTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31),
+or [GenericTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/transformer/generic_transformer.go#L31), respectively
+* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83),
+[storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53),
+or [generic](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go#L68) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields

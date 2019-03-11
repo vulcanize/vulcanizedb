@@ -62,7 +62,7 @@ var composeAndExecuteCmd = &cobra.Command{
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_event"
+        type = "eth_generic"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "2"
@@ -91,7 +91,8 @@ from it and loaded into and executed over by the appropriate watcher.
 The type of watcher that the transformer works with is specified using the 
 type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
-(eth_storage).
+(eth_storage), and a more generic interface for accepting omni pkg based transformers
+which can perform both event watching and public method polling.
 
 Transformers of different types can be ran together in the same command using a 
 single config file or in separate command instances using different config files
@@ -150,7 +151,7 @@ func composeAndExecute() {
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers := exporter.Export()
+	ethEventInitializers, ethStorageInitializers, genericInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -172,6 +173,13 @@ func composeAndExecute() {
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
+	}
+
+	if len(genericInitializers) > 0 {
+		gw := watcher.NewGenericWatcher(&db, blockChain)
+		gw.AddTransformers(genericInitializers)
+		wg.Add(1)
+		go genericWatching(&gw, &wg)
 	}
 	wg.Wait()
 }
