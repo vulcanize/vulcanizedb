@@ -31,7 +31,6 @@ Using Vulcanize for the first time requires several steps be done in order to al
 In order to fetch the project codebase for local use or modification, install it to your `GOPATH` via:
 
 `go get github.com/vulcanize/vulcanizedb`
-`go get gopkg.in/DataDog/dd-trace-go.v1/ddtrace`
 
 Once fetched, dependencies can be installed via `go get` or (the preferred method) at specific versions via `golang/dep`, the prototype golang pakcage manager. Installation instructions are [here](https://golang.github.io/dep/docs/installation.html).
 
