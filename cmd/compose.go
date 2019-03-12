@@ -153,9 +153,9 @@ func prepConfig() {
 		if !mrOK || mr == "" {
 			log.Fatal(name, "transformer config is missing `rank` value")
 		}
-		rank, err := strconv.Atoi(mr)
+		rank, err := strconv.ParseUint(mr, 10, 64)
 		if err != nil {
-			log.Fatal(name, "migration `rank` can't be converted to an integer")
+			log.Fatal(name, "migration `rank` can't be converted to an unsigned integer")
 		}
 		t, tOK := transformer["type"]
 		if !tOK {
