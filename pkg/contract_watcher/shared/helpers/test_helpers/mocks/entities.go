@@ -183,6 +183,13 @@ var MockHeader3 = core.Header{
 	Timestamp:   "50000030",
 }
 
+var MockHeader4 = core.Header{
+	Hash:        "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
+	BlockNumber: 6194635,
+	Raw:         rawFakeHeader,
+	Timestamp:   "50000030",
+}
+
 var MockTransferLog1 = types.Log{
 	Index:       1,
 	Address:     common.HexToAddress(constants.TusdContractAddress),

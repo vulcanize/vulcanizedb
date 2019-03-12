@@ -54,7 +54,9 @@ func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *po
 
 func (p *poller) PollContract(con contract.Contract) error {
 	for i := con.StartingBlock; i <= con.LastBlock; i++ {
-		p.PollContractAt(con, i)
+		if err := p.PollContractAt(con, i); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -98,7 +100,6 @@ func (p *poller) pollNoArgAt(m types.Method, bn int64) error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("poller error calling 0 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
 	}
-
 	strOut, err := stringify(out)
 	if err != nil {
 		return err
@@ -138,8 +139,8 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 	if len(args) == 0 { // If we haven't collected any args by now we can't call the method
 		return nil
 	}
-	results := make([]types.Result, 0, len(args))
 
+	results := make([]types.Result, 0, len(args))
 	for arg := range args {
 		in := []interface{}{arg}
 		strIn := []interface{}{contract.StringifyArg(arg)}
@@ -160,7 +161,6 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 		result.Output = strOut
 		results = append(results, result)
 	}
-
 	// Persist result set as batch
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
@@ -204,7 +204,6 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 	}
 
 	results := make([]types.Result, 0, len(firstArgs)*len(secondArgs))
-
 	for arg1 := range firstArgs {
 		for arg2 := range secondArgs {
 			in := []interface{}{arg1, arg2}
@@ -215,18 +214,15 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 			if err != nil {
 				return errors.New(fmt.Sprintf("poller error calling 2 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
 			}
-
 			strOut, err := stringify(out)
 			if err != nil {
 				return err
 			}
-
 			p.cache(out)
 
 			result.Output = strOut
 			result.Inputs = strIn
 			results = append(results, result)
-
 		}
 	}
 
@@ -243,9 +239,8 @@ func (p *poller) FetchContractData(contractAbi, contractAddress, method string, 
 	return p.bc.FetchContractData(contractAbi, contractAddress, method, methodArgs, result, blockNumber)
 }
 
-// This is used to cache an method return value if method piping is turned on
+// This is used to cache a method return value if method piping is turned on
 func (p *poller) cache(out interface{}) {
-	// Cache returned value if piping is turned on
 	if p.contract.Piping {
 		switch out.(type) {
 		case common.Hash:

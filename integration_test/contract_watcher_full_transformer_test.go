@@ -20,7 +20,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-var _ = Describe("Omni full transformer", func() {
+var _ = Describe("contractWatcher full transformer", func() {
 	var db *postgres.DB
 	var err error
 	var blockChain core.BlockChain

@@ -285,6 +285,8 @@ func (tr *transformer) Execute() error {
 		if err != nil {
 			return err
 		}
+
+		tr.start = header.BlockNumber + 1
 	}
 
 	return nil
