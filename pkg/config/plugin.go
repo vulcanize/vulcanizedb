@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -37,7 +37,7 @@ type Transformer struct {
 	Path           string
 	Type           TransformerType
 	MigrationPath  string
-	MigrationRank  int
+	MigrationRank  uint64
 	RepositoryPath string
 }
 
@@ -56,7 +56,8 @@ func (c *Plugin) GetPluginPaths() (string, string, error) {
 
 // Removes duplicate migration paths and returns them in ranked order
 func (c *Plugin) GetMigrationsPaths() ([]string, error) {
-	paths := make(map[int]string)
+	paths := make(map[uint64]string)
+	highestRank := -1
 	for name, transformer := range c.Transformers {
 		repo := transformer.RepositoryPath
 		mig := transformer.MigrationPath
@@ -74,6 +75,16 @@ func (c *Plugin) GetMigrationsPaths() ([]string, error) {
 			}
 		}
 		paths[transformer.MigrationRank] = cleanPath
+		if int(transformer.MigrationRank) >= highestRank {
+			highestRank = int(transformer.MigrationRank)
+		}
+	}
+	// Check for gaps and duplicates
+	if len(paths) != (highestRank + 1) {
+		return []string{}, errors.New("number of distinct ranks does not match number of distinct migration paths")
+	}
+	if anyDupes(paths) {
+		return []string{}, errors.New("duplicate paths with different ranks present")
 	}
 
 	sortedPaths := make([]string, len(paths))
@@ -129,4 +140,25 @@ func GetTransformerType(str string) TransformerType {
 	}
 
 	return UnknownTransformerType
+}
+
+func anyDupes(list map[uint64]string) bool {
+	seen := make([]string, 0, len(list))
+	for _, str := range list {
+		dupe := inList(str, seen)
+		if dupe {
+			return true
+		}
+		seen = append(seen, str)
+	}
+	return false
+}
+
+func inList(str string, list []string) bool {
+	for _, element := range list {
+		if str == element {
+			return true
+		}
+	}
+	return false
 }
