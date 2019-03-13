@@ -248,11 +248,11 @@ This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) 
 Storage Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
    * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
-
-Event Transformers
-   * Guide
-   * Example
-
+    
+Event Transformers   
+   * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/event_docs/libraries/shared/factories/README.md)
+   * [Example](https://github.com/vulcanize/ens_transformers/tree/working)
+   
 #### composeAndExecute configuration
 A .toml config file is specified when executing the command:
 `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
@@ -310,9 +310,9 @@ The config provides information for composing a set of transformers:
     - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package).
         - Transformer repositories need to be cloned into the user's $GOPATH (`go get`)
     - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: `eth_event` and `eth_storage`)
-        - `eth_storage` indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go)
+        - `eth_storage` indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go)
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
-        - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go)
+        - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
 - Note: If any of the imported transformers need additional config variables those need to be included as well
@@ -353,14 +353,16 @@ func (e exporter) Export() []interface1.TransformerInitializer, []interface1.Sto
 #### Preparing transformer(s) to work as pluggins for composeAndExecute
 To plug in an external transformer we need to:
 
-* Create a [package](https://github.com/vulcanize/mcd_transformers/blob/staging/transformers/bite/initializer/initializer.go) 
-that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31), respectively   
-* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83)
-or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53) watchers
+* Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
+that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/storage_transformer.go#L31), respectively
+* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go#L83)
+or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go#L58) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
+    * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
-    * Do not `goose fix` the transformer migrations
+    * If the base vDB migrations occupy this path as well, they need to be in their `goose fix`ed form
+    as they are [here](https://github.com/vulcanize/vulcanizedb/tree/master/db/migrations)
 
 To update a plugin repository with changes to the core vulcanizedb repository, replace the vulcanizedb vendored in the plugin repo (`plugin_repo/vendor/github.com/vulcanize/vulcanizedb`)
 with the newly updated version
