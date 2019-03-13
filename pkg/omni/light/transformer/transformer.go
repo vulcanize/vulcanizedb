@@ -37,7 +37,7 @@ import (
 )
 
 // Requires a light synced vDB (headers) and a running eth node (or infura)
-type transformer struct {
+type Transformer struct {
 	// Database interfaces
 	srep.EventRepository        // Holds transformed watched event log data
 	repository.HeaderRepository // Interface for interaction with header repositories
@@ -93,9 +93,9 @@ type transformer struct {
 // 4. Execute
 
 // Transformer takes in config for blockchain, database, and network id
-func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transformer {
+func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *Transformer {
 
-	return &transformer{
+	return &Transformer{
 		Poller:           poller.NewPoller(bc, db, types.LightSync),
 		Fetcher:          fetcher.NewFetcher(bc),
 		Parser:           parser.NewParser(network),
@@ -120,7 +120,7 @@ func NewTransformer(network string, bc core.BlockChain, db *postgres.DB) *transf
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
 // Use this info to generate event filters
-func (tr *transformer) Init() error {
+func (tr *Transformer) Init() error {
 	// Initialize internally configured transformer settings
 	tr.contractAddresses = make([]string, 0)       // Holds all contract addresses, for batch fetching of logs
 	tr.sortedEventIds = make(map[string][]string)  // Map to sort event column ids by contract, for post fetch processing and persisting of logs
@@ -154,7 +154,7 @@ func (tr *transformer) Init() error {
 
 		// Get contract name if it has one
 		var name = new(string)
-		tr.FetchContractData(tr.Abi(), contractAddr, "name", nil, &name, lastBlock)
+		tr.Poller.FetchContractData(tr.Abi(), contractAddr, "name", nil, name, lastBlock)
 
 		// Remove any potential accidental duplicate inputs in arg filter values
 		eventArgs := map[string]bool{}
@@ -221,7 +221,7 @@ func (tr *transformer) Init() error {
 	return nil
 }
 
-func (tr *transformer) Execute() error {
+func (tr *Transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts")
 	}
@@ -311,7 +311,7 @@ func (tr *transformer) Execute() error {
 }
 
 // Used to poll contract methods at a given header
-func (tr *transformer) methodPolling(header core.Header, sortedMethodIds map[string][]string) error {
+func (tr *Transformer) methodPolling(header core.Header, sortedMethodIds map[string][]string) error {
 	for _, con := range tr.Contracts {
 		// Skip method polling processes if no methods are specified
 		// Also don't try to poll methods below this contract's specified starting block
@@ -336,41 +336,41 @@ func (tr *transformer) methodPolling(header core.Header, sortedMethodIds map[str
 }
 
 // Used to set which contract addresses and which of their events to watch
-func (tr *transformer) SetEvents(contractAddr string, filterSet []string) {
+func (tr *Transformer) SetEvents(contractAddr string, filterSet []string) {
 	tr.WatchedEvents[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to watch events for
-func (tr *transformer) SetEventArgs(contractAddr string, filterSet []string) {
+func (tr *Transformer) SetEventArgs(contractAddr string, filterSet []string) {
 	tr.EventArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set which contract addresses and which of their methods to call
-func (tr *transformer) SetMethods(contractAddr string, filterSet []string) {
+func (tr *Transformer) SetMethods(contractAddr string, filterSet []string) {
 	tr.WantedMethods[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set subset of account addresses to poll methods on
-func (tr *transformer) SetMethodArgs(contractAddr string, filterSet []string) {
+func (tr *Transformer) SetMethodArgs(contractAddr string, filterSet []string) {
 	tr.MethodArgs[strings.ToLower(contractAddr)] = filterSet
 }
 
 // Used to set the block range to watch for a given address
-func (tr *transformer) SetStartingBlock(contractAddr string, start int64) {
+func (tr *Transformer) SetStartingBlock(contractAddr string, start int64) {
 	tr.ContractStart[strings.ToLower(contractAddr)] = start
 }
 
 // Used to set whether or not to persist an account address list
-func (tr *transformer) SetCreateAddrList(contractAddr string, on bool) {
+func (tr *Transformer) SetCreateAddrList(contractAddr string, on bool) {
 	tr.CreateAddrList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to set whether or not to persist an hash list
-func (tr *transformer) SetCreateHashList(contractAddr string, on bool) {
+func (tr *Transformer) SetCreateHashList(contractAddr string, on bool) {
 	tr.CreateHashList[strings.ToLower(contractAddr)] = on
 }
 
 // Used to turn method piping on for a contract
-func (tr *transformer) SetPiping(contractAddr string, on bool) {
+func (tr *Transformer) SetPiping(contractAddr string, on bool) {
 	tr.Piping[strings.ToLower(contractAddr)] = on
 }

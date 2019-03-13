@@ -27,6 +27,8 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 	switch metadata.Type {
 	case Uint256:
 		return decodeUint256(row.StorageValue.Bytes()), nil
+	case Uint48:
+		return decodeUint48(row.StorageValue.Bytes()), nil
 	case Address:
 		return decodeAddress(row.StorageValue.Bytes()), nil
 	case Bytes32:
@@ -37,6 +39,11 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 }
 
 func decodeUint256(raw []byte) string {
+	n := big.NewInt(0).SetBytes(raw)
+	return n.String()
+}
+
+func decodeUint48(raw []byte) string {
 	n := big.NewInt(0).SetBytes(raw)
 	return n.String()
 }
