@@ -71,7 +71,7 @@ func (oc *ContractConfig) PrepConfig() {
 	oc.Addresses = make(map[string]bool, len(addrs))
 	oc.Abis = make(map[string]string, len(addrs))
 	oc.Methods = make(map[string][]string, len(addrs))
-	oc.EventArgs = make(map[string][]string, len(addrs))
+	oc.Events = make(map[string][]string, len(addrs))
 	oc.MethodArgs = make(map[string][]string, len(addrs))
 	oc.EventArgs = make(map[string][]string, len(addrs))
 	oc.StartingBlocks = make(map[string]int64, len(addrs))
@@ -86,92 +86,131 @@ func (oc *ContractConfig) PrepConfig() {
 		transformer := viper.GetStringMap("contract." + addr)
 
 		// Get and check abi
-		abi, abiOK := transformer["abi"]
-		if !abiOK || abi == nil {
-			log.Fatal(addr, "transformer config is missing `abi` value")
-		}
-		abiRef, abiOK := abi.(string)
+		var abi string
+		_, abiOK := transformer["abi"]
 		if !abiOK {
-			log.Fatal(addr, "transformer `events` not of type []string")
+			log.Warnf("contract %s not configured with an ABI, will attempt to fetch it from Etherscan\r\n", addr)
+		} else {
+			abiInterface := transformer["abi"]
+			abi, abiOK = abiInterface.(string)
+			if !abiOK {
+				log.Fatal(addr, "transformer `abi` not of type []string")
+			}
 		}
-		oc.Abis[strings.ToLower(addr)] = abiRef
+		oc.Abis[strings.ToLower(addr)] = abi
 
 		// Get and check events
-		events, eventsOK := transformer["events"]
-		if !eventsOK || events == nil {
-			log.Fatal(addr, "transformer config is missing `events` value")
-		}
-		eventsRef, eventsOK := events.([]string)
+		events := make([]string, 0)
+		_, eventsOK := transformer["events"]
 		if !eventsOK {
-			log.Fatal(addr, "transformer `events` not of type []string")
+			log.Warnf("contract %s not configured with a list of events to watch, will watch all events\r\n", addr)
+			events = []string{}
+		} else {
+			eventsInterface := transformer["events"]
+			eventsI, eventsOK := eventsInterface.([]interface{})
+			if !eventsOK {
+				log.Fatal(addr, "transformer `events` not of type []string\r\n")
+			}
+			for _, strI := range eventsI {
+				str, strOK := strI.(string)
+				if !strOK {
+					log.Fatal(addr, "transformer `events` not of type []string\r\n")
+				}
+				events = append(events, str)
+			}
 		}
-		if eventsRef == nil {
-			eventsRef = []string{}
-		}
-		oc.Events[strings.ToLower(addr)] = eventsRef
+		oc.Events[strings.ToLower(addr)] = events
 
 		// Get and check methods
-		methods, methodsOK := transformer["methods"]
-		if !methodsOK || methods == nil {
-			log.Fatal(addr, "transformer config is missing `methods` value")
-		}
-		methodsRef, methodsOK := methods.([]string)
+		methods := make([]string, 0)
+		_, methodsOK := transformer["methods"]
 		if !methodsOK {
-			log.Fatal(addr, "transformer `methods` not of type []string")
+			log.Warnf("contract %s not configured with a list of methods to poll, will not poll any methods\r\n", addr)
+			methods = []string{}
+		} else {
+			methodsInterface := transformer["methods"]
+			methodsI, methodsOK := methodsInterface.([]interface{})
+			if !methodsOK {
+				log.Fatal(addr, "transformer `methods` not of type []string\r\n")
+			}
+			for _, strI := range methodsI {
+				str, strOK := strI.(string)
+				if !strOK {
+					log.Fatal(addr, "transformer `methods` not of type []string\r\n")
+				}
+				methods = append(methods, str)
+			}
 		}
-		if methodsRef == nil {
-			methodsRef = []string{}
-		}
-		oc.Methods[strings.ToLower(addr)] = methodsRef
+		oc.Methods[strings.ToLower(addr)] = methods
 
 		// Get and check eventArgs
-		eventArgs, eventArgsOK := transformer["eventArgs"]
-		if !eventArgsOK || eventArgs == nil {
-			log.Fatal(addr, "transformer config is missing `eventArgs` value")
-		}
-		eventArgsRef, eventArgsOK := eventArgs.([]string)
+		eventArgs := make([]string, 0)
+		_, eventArgsOK := transformer["eventArgs"]
 		if !eventArgsOK {
-			log.Fatal(addr, "transformer `eventArgs` not of type []string")
+			log.Warnf("contract %s not configured with a list of event arguments to filter for, will not filter events for specific emitted values\r\n", addr)
+			eventArgs = []string{}
+		} else {
+			eventArgsInterface := transformer["eventArgs"]
+			eventArgsI, eventArgsOK := eventArgsInterface.([]interface{})
+			if !eventArgsOK {
+				log.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
+			}
+			for _, strI := range eventArgsI {
+				str, strOK := strI.(string)
+				if !strOK {
+					log.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
+				}
+				eventArgs = append(eventArgs, str)
+			}
 		}
-		if eventArgsRef == nil {
-			eventArgsRef = []string{}
-		}
-		oc.EventArgs[strings.ToLower(addr)] = eventArgsRef
+		oc.EventArgs[strings.ToLower(addr)] = eventArgs
 
 		// Get and check methodArgs
-		methodArgs, methodArgsOK := transformer["methodArgs"]
-		if !methodArgsOK || methodArgs == nil {
-			log.Fatal(addr, "transformer config is missing `methodArgs` value")
-		}
-		methodArgsRef, methodArgsOK := methodArgs.([]string)
+		methodArgs := make([]string, 0)
+		_, methodArgsOK := transformer["methodArgs"]
 		if !methodArgsOK {
-			log.Fatal(addr, "transformer `methodArgs` not of type []string")
+			log.Warnf("contract %s not configured with a list of method argument values to poll with, will poll methods with all available arguments\r\n", addr)
+			methodArgs = []string{}
+		} else {
+			methodArgsInterface := transformer["methodArgs"]
+			methodArgsI, methodArgsOK := methodArgsInterface.([]interface{})
+			if !methodArgsOK {
+				log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
+			}
+			for _, strI := range methodArgsI {
+				str, strOK := strI.(string)
+				if !strOK {
+					log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
+				}
+				methodArgs = append(methodArgs, str)
+			}
 		}
-		if methodArgsRef == nil {
-			methodArgsRef = []string{}
-		}
-		oc.MethodArgs[strings.ToLower(addr)] = methodArgsRef
+		oc.MethodArgs[strings.ToLower(addr)] = methodArgs
 
 		// Get and check startingBlock
-		start, startOK := transformer["startingBlock"]
-		if !startOK || start == nil {
-			log.Fatal(addr, "transformer config is missing `startingBlock` value")
-		}
-		startRef, startOK := start.(int64)
+		startInterface, startOK := transformer["startingblock"]
 		if !startOK {
-			log.Fatal(addr, "transformer `startingBlock` not of type int")
+			log.Fatal(addr, "transformer config is missing `startingBlock` value\r\n")
 		}
-		oc.StartingBlocks[strings.ToLower(addr)] = startRef
+		start, startOK := startInterface.(int64)
+		if !startOK {
+			log.Fatal(addr, "transformer `startingBlock` not of type int\r\n")
+		}
+		oc.StartingBlocks[strings.ToLower(addr)] = start
 
 		// Get pipping
-		pipe, pipeOK := transformer["pipping"]
-		if !pipeOK || pipe == nil {
-			log.Fatal(addr, "transformer config is missing `pipping` value")
-		}
-		pipeRef, pipeOK := pipe.(bool)
+		var piping bool
+		_, pipeOK := transformer["piping"]
 		if !pipeOK {
-			log.Fatal(addr, "transformer `piping` not of type bool")
+			log.Warnf("contract %s does not have its `piping` set, by default piping is turned off\r\n", addr)
+			piping = false
+		} else {
+			pipingInterface := transformer["piping"]
+			piping, pipeOK = pipingInterface.(bool)
+			if !pipeOK {
+				log.Fatal(addr, "transformer `piping` not of type bool\r\n")
+			}
 		}
-		oc.Piping[strings.ToLower(addr)] = pipeRef
+		oc.Piping[strings.ToLower(addr)] = piping
 	}
 }

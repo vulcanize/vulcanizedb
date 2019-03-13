@@ -62,7 +62,7 @@ var composeCmd = &cobra.Command{
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_generic"
+        type = "eth_contract"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "0"
@@ -91,8 +91,9 @@ from it and loaded into and executed over by the appropriate watcher.
 The type of watcher that the transformer works with is specified using the 
 type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
-(eth_storage), and a more generic interface for accepting omni pkg based transformers
-which can perform both event watching and public method polling.
+(eth_storage), and a more generic interface for accepting contract_watcher pkg
+based transformers which can perform both event watching and public method 
+polling (eth_contract).
 
 Transformers of different types can be ran together in the same command using a 
 single config file or in separate command instances using different config files

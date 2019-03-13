@@ -64,7 +64,8 @@ var _ = Describe("Address Retriever Test", func() {
 		err = info.GenerateFilters()
 		Expect(err).ToNot(HaveOccurred())
 
-		c := converter.NewConverter(info)
+		c := converter.Converter{}
+		c.Update(info)
 		log, err = c.Convert(mockEvent, event)
 		Expect(err).ToNot(HaveOccurred())
 

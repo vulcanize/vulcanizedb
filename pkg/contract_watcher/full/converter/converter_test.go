@@ -39,7 +39,8 @@ var _ = Describe("Converter", func() {
 
 	Describe("Update", func() {
 		It("Updates contract con held by the converter", func() {
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			Expect(c.ContractInfo).To(Equal(con))
 
 			con := test_helpers.SetupTusdContract([]string{}, []string{})
@@ -58,7 +59,8 @@ var _ = Describe("Converter", func() {
 			err = con.GenerateFilters()
 			Expect(err).ToNot(HaveOccurred())
 
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			log, err := c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -77,7 +79,8 @@ var _ = Describe("Converter", func() {
 			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
 
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			_, err := c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -101,7 +104,8 @@ var _ = Describe("Converter", func() {
 
 		It("Fails with an empty contract", func() {
 			event := con.Events["Transfer"]
-			c := converter.NewConverter(&contract.Contract{})
+			c := converter.Converter{}
+			c.Update(&contract.Contract{})
 			_, err = c.Convert(mocks.MockTranferEvent, event)
 			Expect(err).To(HaveOccurred())
 		})

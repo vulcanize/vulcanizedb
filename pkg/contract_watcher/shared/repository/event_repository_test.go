@@ -134,7 +134,8 @@ var _ = Describe("Repository", func() {
 
 		Describe("PersistLogs", func() {
 			BeforeEach(func() {
-				c := fc.NewConverter(con)
+				c := fc.Converter{}
+				c.Update(con)
 				log, err = c.Convert(mockEvent, event)
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -276,7 +277,8 @@ var _ = Describe("Repository", func() {
 				headerRepository := repositories.NewHeaderRepository(db)
 				headerID, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
 				Expect(err).ToNot(HaveOccurred())
-				c := lc.NewConverter(con)
+				c := lc.Converter{}
+				c.Update(con)
 				logs, err = c.Convert([]geth.Log{mockLog1, mockLog2}, event, headerID)
 				Expect(err).ToNot(HaveOccurred())
 			})

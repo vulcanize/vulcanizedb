@@ -99,8 +99,8 @@ func execute() {
 		os.Exit(1)
 	}
 
-	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers, genericInitializers := exporter.Export()
+	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
+	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -124,11 +124,11 @@ func execute() {
 		go watchEthStorage(&sw, &wg)
 	}
 
-	if len(genericInitializers) > 0 {
-		gw := watcher.NewGenericWatcher(&db, blockChain)
-		gw.AddTransformers(genericInitializers)
+	if len(ethContractInitializers) > 0 {
+		gw := watcher.NewContractWatcher(&db, blockChain)
+		gw.AddTransformers(ethContractInitializers)
 		wg.Add(1)
-		go genericWatching(&gw, &wg)
+		go contractWatching(&gw, &wg)
 	}
 	wg.Wait()
 }
@@ -139,7 +139,7 @@ func init() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.GenericTransformerInitializer)
+	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
@@ -176,10 +176,10 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	}
 }
 
-func genericWatching(w *watcher.GenericWatcher, wg *syn.WaitGroup) {
+func contractWatching(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
-	// Execute over the GenericTransformerInitializer set using the generic watcher
-	log.Info("executing generic transformers")
+	// Execute over the ContractTransformerInitializer set using the contract watcher
+	log.Info("executing contract_watcher transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {

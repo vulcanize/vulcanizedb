@@ -22,10 +22,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type GenericTransformer interface {
+type ContractTransformer interface {
 	Init() error
 	Execute() error
 	GetConfig() config.ContractConfig
 }
 
-type GenericTransformerInitializer func(db *postgres.DB, bc core.BlockChain) GenericTransformer
+type ContractTransformerInitializer func(db *postgres.DB, bc core.BlockChain) ContractTransformer

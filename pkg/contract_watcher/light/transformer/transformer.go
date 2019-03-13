@@ -38,7 +38,7 @@ import (
 )
 
 // Requires a light synced vDB (headers) and a running eth node (or infura)
-type transformer struct {
+type Transformer struct {
 	// Database interfaces
 	srep.EventRepository        // Holds transformed watched event log data
 	repository.HeaderRepository // Interface for interaction with header repositories
@@ -48,9 +48,9 @@ type transformer struct {
 	retriever.BlockRetriever // Retrieves first block for contract and current block height
 
 	// Processing interfaces
-	fetcher.Fetcher     // Fetches event logs, using header hashes
-	converter.Converter // Converts watched event logs into custom log
-	poller.Poller       // Polls methods using arguments collected from events and persists them using a method datastore
+	fetcher.Fetcher              // Fetches event logs, using header hashes
+	converter.ConverterInterface // Converts watched event logs into custom log
+	poller.Poller                // Polls methods using arguments collected from events and persists them using a method datastore
 
 	// Store contract configuration information
 	Config config.ContractConfig
@@ -74,18 +74,18 @@ type transformer struct {
 // 4. Execute
 
 // Transformer takes in config for blockchain, database, and network id
-func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.DB) *transformer {
+func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.DB) *Transformer {
 
-	return &transformer{
-		Poller:           poller.NewPoller(bc, db, types.LightSync),
-		Fetcher:          fetcher.NewFetcher(bc),
-		Parser:           parser.NewParser(con.Network),
-		HeaderRepository: repository.NewHeaderRepository(db),
-		BlockRetriever:   retriever.NewBlockRetriever(db),
-		Converter:        converter.NewConverter(&contract.Contract{}),
-		Contracts:        map[string]*contract.Contract{},
-		EventRepository:  srep.NewEventRepository(db, types.LightSync),
-		Config:           con,
+	return &Transformer{
+		Poller:             poller.NewPoller(bc, db, types.LightSync),
+		Fetcher:            fetcher.NewFetcher(bc),
+		Parser:             parser.NewParser(con.Network),
+		HeaderRepository:   repository.NewHeaderRepository(db),
+		BlockRetriever:     retriever.NewBlockRetriever(db),
+		ConverterInterface: &converter.Converter{},
+		Contracts:          map[string]*contract.Contract{},
+		EventRepository:    srep.NewEventRepository(db, types.LightSync),
+		Config:             con,
 	}
 }
 
@@ -93,7 +93,7 @@ func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
 // Use this info to generate event filters
-func (tr *transformer) Init() error {
+func (tr *Transformer) Init() error {
 	// Initialize internally configured transformer settings
 	tr.contractAddresses = make([]string, 0)       // Holds all contract addresses, for batch fetching of logs
 	tr.sortedEventIds = make(map[string][]string)  // Map to sort event column ids by contract, for post fetch processing and persisting of logs
@@ -124,10 +124,6 @@ func (tr *transformer) Init() error {
 		if err != nil {
 			return err
 		}
-		lastBlock, err := tr.BlockRetriever.RetrieveMostRecentBlock()
-		if err != nil {
-			return err
-		}
 
 		// Set to specified range if it falls within the bounds
 		if firstBlock < tr.Config.StartingBlocks[contractAddr] {
@@ -136,7 +132,7 @@ func (tr *transformer) Init() error {
 
 		// Get contract name if it has one
 		var name = new(string)
-		tr.FetchContractData(tr.Abi(), contractAddr, "name", nil, &name, lastBlock)
+		tr.Poller.FetchContractData(tr.Abi(), contractAddr, "name", nil, name, -1)
 
 		// Remove any potential accidental duplicate inputs
 		eventArgs := map[string]bool{}
@@ -201,7 +197,7 @@ func (tr *transformer) Init() error {
 	return nil
 }
 
-func (tr *transformer) Execute() error {
+func (tr *Transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts")
 	}
@@ -253,10 +249,10 @@ func (tr *transformer) Execute() error {
 			}
 			// Configure converter with this contract
 			con := tr.Contracts[conAddr]
-			tr.Converter.Update(con)
+			tr.ConverterInterface.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
-			convertedLogs, err := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
+			convertedLogs, err := tr.ConverterInterface.ConvertBatch(logs, con.Events, header.Id)
 			if err != nil {
 				return err
 			}
@@ -293,7 +289,7 @@ func (tr *transformer) Execute() error {
 }
 
 // Used to poll contract methods at a given header
-func (tr *transformer) methodPolling(header core.Header, sortedMethodIds map[string][]string) error {
+func (tr *Transformer) methodPolling(header core.Header, sortedMethodIds map[string][]string) error {
 	for _, con := range tr.Contracts {
 		// Skip method polling processes if no methods are specified
 		// Also don't try to poll methods below this contract's specified starting block
@@ -317,6 +313,6 @@ func (tr *transformer) methodPolling(header core.Header, sortedMethodIds map[str
 	return nil
 }
 
-func (tr *transformer) GetConfig() config.ContractConfig {
+func (tr *Transformer) GetConfig() config.ContractConfig {
 	return tr.Config
 }

@@ -67,7 +67,7 @@ func (c Contract) Init() *Contract {
 	return &c
 }
 
-// Use contract info to generate event filters - full sync omni watcher only
+// Use contract info to generate event filters - full sync contract watcher only
 func (c *Contract) GenerateFilters() error {
 	c.Filters = map[string]filters.LogFilter{}
 

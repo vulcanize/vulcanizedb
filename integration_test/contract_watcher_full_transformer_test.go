@@ -42,7 +42,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 		It("Initializes transformer's contract objects", func() {
 			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
 			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -55,6 +55,28 @@ var _ = Describe("contractWatcher full transformer", func() {
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))
 		})
+
+		It("Fails to initialize if first and most recent blocks cannot be fetched from vDB", func() {
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
+		})
+
+		It("Does nothing if watched events are unset", func() {
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			var testConf config.ContractConfig
+			testConf = test_helpers.TusdConfig
+			testConf.Events = nil
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no filters created"))
+
+			_, ok := t.Contracts[tusdAddr]
+			Expect(ok).To(Equal(false))
+		})
 	})
 
 	Describe("Execute", func() {
@@ -64,7 +86,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -84,7 +106,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 		It("Keeps track of contract-related addresses while transforming event data if they need to be used for later method polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.TusdConfig
+			testConf = test_helpers.TusdConfig
 			testConf.Methods = map[string][]string{
 				tusdAddr: {"balanceOf"},
 			}
@@ -121,7 +143,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 		It("Polls given methods using generated token holder address", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.TusdConfig
+			testConf = test_helpers.TusdConfig
 			testConf.Methods = map[string][]string{
 				tusdAddr: {"balanceOf"},
 			}
@@ -146,13 +168,15 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6194634'", tusdAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 
 		It("Fails if initialization has not been done", func() {
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 
 			err = t.Execute()
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("transformer has no initialized contracts to work with"))
 		})
 	})
 
@@ -163,7 +187,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer(mocks.ENSConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.ENSConfig, blockChain, db)
 
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
@@ -184,7 +208,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 		It("Keeps track of contract-related hashes while transforming event data if they need to be used for later method polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
 			}
@@ -214,7 +238,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 		It("Polls given methods using generated token holder address", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
 			}
@@ -238,11 +262,12 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6194636'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 
 		It("It does not perist events if they do not pass the emitted arg filter", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.EventArgs = map[string][]string{
 				ensAddr: {"fake_filter_value"},
 			}
@@ -257,11 +282,12 @@ var _ = Describe("contractWatcher full transformer", func() {
 			log := test_helpers.LightNewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("does not exist"))
 		})
 
 		It("If a method arg filter is applied, only those arguments are used in polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.MethodArgs = map[string][]string{
 				ensAddr: {"0x0000000000000000000000000000000000000000000000000000c02aaa39b223"},
 			}
@@ -283,6 +309,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.owner_method WHERE node_ = '0x9dd48110dcc444fdc242510c09bbbbe21a5975cac061d82f7b843bce061ba391' AND block = '6194636'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 	})
 })

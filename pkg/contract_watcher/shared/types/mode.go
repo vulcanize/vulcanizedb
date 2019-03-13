@@ -47,7 +47,7 @@ func (mode Mode) MarshalText() ([]byte, error) {
 	case FullSync:
 		return []byte("full"), nil
 	default:
-		return nil, fmt.Errorf("omni watcher: unknown mode %d, want LightSync or FullSync", mode)
+		return nil, fmt.Errorf("contract watcher: unknown mode %d, want LightSync or FullSync", mode)
 	}
 }
 
@@ -58,7 +58,7 @@ func (mode *Mode) UnmarshalText(text []byte) error {
 	case "full":
 		*mode = FullSync
 	default:
-		return fmt.Errorf(`omni watcher: unknown mode %q, want "light" or "full"`, text)
+		return fmt.Errorf(`contract watcher: unknown mode %q, want "light" or "full"`, text)
 	}
 	return nil
 }

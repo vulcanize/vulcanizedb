@@ -33,8 +33,8 @@ import (
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
 	var bc core.BlockChain
-	var omniHeaderRepo repository.HeaderRepository   // omni/light header repository
-	var coreHeaderRepo repositories.HeaderRepository // pkg/datastore header repository
+	var contractHeaderRepo repository.HeaderRepository // contract_watcher light header repository
+	var coreHeaderRepo repositories.HeaderRepository   // pkg/datastore header repository
 	var eventIDs = []string{
 		"eventName_contractAddr",
 		"eventName_contractAddr2",
@@ -48,7 +48,7 @@ var _ = Describe("Repository", func() {
 
 	BeforeEach(func() {
 		db, bc = test_helpers.SetupDBandBC()
-		omniHeaderRepo = repository.NewHeaderRepository(db)
+		contractHeaderRepo = repository.NewHeaderRepository(db)
 		coreHeaderRepo = repositories.NewHeaderRepository(db)
 	})
 
@@ -62,7 +62,7 @@ var _ = Describe("Repository", func() {
 			_, err := db.Exec(query)
 			Expect(err).To(HaveOccurred())
 
-			err = omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err = contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = db.Exec(query)
@@ -70,13 +70,13 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("Caches column it creates so that it does not need to repeatedly query the database to check for it's existence", func() {
-			_, ok := omniHeaderRepo.CheckCache(eventIDs[0])
+			_, ok := contractHeaderRepo.CheckCache(eventIDs[0])
 			Expect(ok).To(Equal(false))
 
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			v, ok := omniHeaderRepo.CheckCache(eventIDs[0])
+			v, ok := contractHeaderRepo.CheckCache(eventIDs[0])
 			Expect(ok).To(Equal(true))
 			Expect(v).To(Equal(true))
 		})
@@ -89,7 +89,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).To(HaveOccurred())
 			}
 
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, id := range eventIDs {
@@ -100,15 +100,15 @@ var _ = Describe("Repository", func() {
 
 		It("Caches columns it creates so that it does not need to repeatedly query the database to check for it's existence", func() {
 			for _, id := range eventIDs {
-				_, ok := omniHeaderRepo.CheckCache(id)
+				_, ok := contractHeaderRepo.CheckCache(id)
 				Expect(ok).To(Equal(false))
 			}
 
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, id := range eventIDs {
-				v, ok := omniHeaderRepo.CheckCache(id)
+				v, ok := contractHeaderRepo.CheckCache(id)
 				Expect(ok).To(Equal(true))
 				Expect(v).To(Equal(true))
 			}
@@ -118,20 +118,20 @@ var _ = Describe("Repository", func() {
 	Describe("MissingHeaders", func() {
 		It("Returns all unchecked headers for the given eventID", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
 
 		It("Returns unchecked headers in ascending order", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -145,10 +145,10 @@ var _ = Describe("Repository", func() {
 
 		It("Returns only contiguous chunks of headers", func() {
 			addDiscontinuousHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
@@ -157,10 +157,10 @@ var _ = Describe("Repository", func() {
 
 		It("Fails if eventID does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, "notEventId")
+			_, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, "notEventId")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -168,36 +168,36 @@ var _ = Describe("Repository", func() {
 	Describe("MissingHeadersForAll", func() { // HERE
 		It("Returns all headers that have not been checked for all of the ids provided", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
-			err = omniHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[0])
+			err = contractHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
-			err = omniHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[1])
+			err = contractHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[1])
 			Expect(err).ToNot(HaveOccurred())
-			err = omniHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[2])
+			err = contractHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[2])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeadersForAll(6194633, 6194635, eventIDs)
+			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(6194633, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
 
 		It("Returns only contiguous chunks of headers", func() {
 			addDiscontinuousHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
@@ -206,10 +206,10 @@ var _ = Describe("Repository", func() {
 
 		It("Returns at most 100 headers", func() {
 			add102Headers(coreHeaderRepo, bc)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194733, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194733, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(100))
 			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
@@ -218,11 +218,11 @@ var _ = Describe("Repository", func() {
 
 		It("Fails if one of the eventIDs does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			badEventIDs := append(eventIDs, "notEventId")
 
-			_, err = omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, badEventIDs)
+			_, err = contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, badEventIDs)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -230,36 +230,36 @@ var _ = Describe("Repository", func() {
 	Describe("MarkHeaderChecked", func() {
 		It("Marks the header checked for the given eventID", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			headerID := missingHeaders[0].Id
-			err = omniHeaderRepo.MarkHeaderChecked(headerID, eventIDs[0])
+			err = contractHeaderRepo.MarkHeaderChecked(headerID, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
 
 		It("Fails if eventID does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumn(eventIDs[0])
+			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			headerID := missingHeaders[0].Id
-			err = omniHeaderRepo.MarkHeaderChecked(headerID, "notEventId")
+			err = contractHeaderRepo.MarkHeaderChecked(headerID, "notEventId")
 			Expect(err).To(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
@@ -268,18 +268,18 @@ var _ = Describe("Repository", func() {
 	Describe("MarkHeaderCheckedForAll", func() {
 		It("Marks the header checked for all provided column ids", func() {
 			addHeaders(coreHeaderRepo)
-			err := omniHeaderRepo.AddCheckColumns(eventIDs)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := omniHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			headerID := missingHeaders[0].Id
-			err = omniHeaderRepo.MarkHeaderCheckedForAll(headerID, eventIDs)
+			err = contractHeaderRepo.MarkHeaderCheckedForAll(headerID, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = omniHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -296,17 +296,17 @@ var _ = Describe("Repository", func() {
 
 			var missingHeaders []core.Header
 			for _, id := range methodIDs {
-				err := omniHeaderRepo.AddCheckColumn(id)
+				err := contractHeaderRepo.AddCheckColumn(id)
 				Expect(err).ToNot(HaveOccurred())
-				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, id)
+				missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(3))
 			}
 
-			err := omniHeaderRepo.MarkHeadersCheckedForAll(missingHeaders, methodIDs)
+			err := contractHeaderRepo.MarkHeadersCheckedForAll(missingHeaders, methodIDs)
 			Expect(err).ToNot(HaveOccurred())
 			for _, id := range methodIDs {
-				missingHeaders, err = omniHeaderRepo.MissingHeaders(6194632, 6194635, id)
+				missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(0))
 			}
@@ -317,28 +317,28 @@ var _ = Describe("Repository", func() {
 		It("Returns headers that have been checked for all the provided events but have not been checked for all the provided methods", func() {
 			addHeaders(coreHeaderRepo)
 			for i, id := range eventIDs {
-				err := omniHeaderRepo.AddCheckColumn(id)
+				err := contractHeaderRepo.AddCheckColumn(id)
 				Expect(err).ToNot(HaveOccurred())
-				err = omniHeaderRepo.AddCheckColumn(methodIDs[i])
+				err = contractHeaderRepo.AddCheckColumn(methodIDs[i])
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			missingHeaders, err := omniHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			headerID := missingHeaders[0].Id
 			headerID2 := missingHeaders[1].Id
 			for i, id := range eventIDs {
-				err = omniHeaderRepo.MarkHeaderChecked(headerID, id)
+				err = contractHeaderRepo.MarkHeaderChecked(headerID, id)
 				Expect(err).ToNot(HaveOccurred())
-				err = omniHeaderRepo.MarkHeaderChecked(headerID2, id)
+				err = contractHeaderRepo.MarkHeaderChecked(headerID2, id)
 				Expect(err).ToNot(HaveOccurred())
-				err = omniHeaderRepo.MarkHeaderChecked(headerID, methodIDs[i])
+				err = contractHeaderRepo.MarkHeaderChecked(headerID, methodIDs[i])
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			intersectionHeaders, err := omniHeaderRepo.MissingMethodsCheckedEventsIntersection(6194632, 6194635, methodIDs, eventIDs)
+			intersectionHeaders, err := contractHeaderRepo.MissingMethodsCheckedEventsIntersection(6194632, 6194635, methodIDs, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(intersectionHeaders)).To(Equal(1))
 			Expect(intersectionHeaders[0].Id).To(Equal(headerID2))

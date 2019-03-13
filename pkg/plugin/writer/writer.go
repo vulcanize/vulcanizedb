@@ -74,7 +74,7 @@ func (w *writer) WritePlugin() error {
 	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Parens(List(
 		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "EventTransformerInitializer"),
 		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
-		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "GenericTransformerInitializer"),
+		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "ContractTransformerInitializer"),
 	)).Block(Return(
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
@@ -84,7 +84,7 @@ func (w *writer) WritePlugin() error {
 			"StorageTransformerInitializer").Values(code[config.EthStorage]...),
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"GenericTransformerInitializer").Values(code[config.EthGeneric]...))) // Exports the collected event and storage transformer initializers
+			"ContractTransformerInitializer").Values(code[config.EthContract]...))) // Exports the collected event and storage transformer initializers
 
 	// Write code to destination file
 	err = f.Save(goFile)
@@ -104,8 +104,8 @@ func (w *writer) collectTransformers() (map[config.TransformerType][]Code, error
 			code[config.EthEvent] = append(code[config.EthEvent], Qual(path, "EventTransformerInitializer"))
 		case config.EthStorage:
 			code[config.EthStorage] = append(code[config.EthStorage], Qual(path, "StorageTransformerInitializer"))
-		case config.EthGeneric:
-			code[config.EthGeneric] = append(code[config.EthGeneric], Qual(path, "GenericTransformerInitializer"))
+		case config.EthContract:
+			code[config.EthContract] = append(code[config.EthContract], Qual(path, "ContractTransformerInitializer"))
 		default:
 			return nil, errors.New(fmt.Sprintf("invalid transformer type %s", transformer.Type))
 		}
