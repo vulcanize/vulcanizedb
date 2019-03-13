@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -66,21 +66,6 @@ func (m *manager) RunMigrations() error {
 	if err != nil {
 		return err
 	}
-	// Fix the migrations
-	cmd := exec.Command("goose", "fix")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("version fixing for plugin migrations failed: %s", err.Error()))
-	}
-	// Run the copied migrations with goose
-	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	cmd = exec.Command("goose", "postgres", pgStr, "up")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("db migrations for plugin transformers failed: %s", err.Error()))
-	}
 
 	return nil
 }
@@ -105,9 +90,9 @@ func (m *manager) setupMigrationEnv() error {
 }
 
 // Create copies of db migrations from vendored libs
-func (m *manager) createMigrationCopies(paths map[string]bool) error {
+func (m *manager) createMigrationCopies(paths []string) error {
 	// Iterate through migration paths to find migration directory
-	for path := range paths {
+	for _, path := range paths {
 		dir, err := ioutil.ReadDir(path)
 		if err != nil {
 			return err
@@ -125,6 +110,30 @@ func (m *manager) createMigrationCopies(paths map[string]bool) error {
 				return err
 			}
 		}
+		err = m.fixAndRun(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *manager) fixAndRun(path string) error {
+	// Fix the migrations
+	cmd := exec.Command("goose", "fix")
+	cmd.Dir = m.tmpMigDir
+	err := cmd.Run()
+	if err != nil {
+		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, err.Error()))
+	}
+	// Run the copied migrations with goose
+	pgStr := fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	cmd = exec.Command("goose", "postgres", pgStr, "up")
+	cmd.Dir = m.tmpMigDir
+	err = cmd.Run()
+	if err != nil {
+		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, err.Error()))
 	}
 
 	return nil

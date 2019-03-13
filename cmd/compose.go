@@ -18,6 +18,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -58,21 +59,25 @@ var composeCmd = &cobra.Command{
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer3]
         path = "path/to/transformer3"
         type = "eth_event"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
+        rank = "0"
     [exporter.transformer4]
         path = "path/to/transformer4"
         type = "eth_storage"
         repository = "github.com/account2/repo2"
         migrations = "to/db/migrations"
+        rank = "1"
 
 
 Note: If any of the plugin transformer need additional
@@ -132,21 +137,29 @@ func prepConfig() {
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
 		transformer := viper.GetStringMapString("exporter." + name)
-		p, ok := transformer["path"]
-		if !ok || p == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `path` value", name))
+		p, pOK := transformer["path"]
+		if !pOK || p == "" {
+			log.Fatal(name, "transformer config is missing `path` value")
 		}
-		r, ok := transformer["repository"]
-		if !ok || r == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `repository` value", name))
+		r, rOK := transformer["repository"]
+		if !rOK || r == "" {
+			log.Fatal(name, "transformer config is missing `repository` value")
 		}
-		m, ok := transformer["migrations"]
-		if !ok || m == "" {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `migrations` value", name))
+		m, mOK := transformer["migrations"]
+		if !mOK || m == "" {
+			log.Fatal(name, "transformer config is missing `migrations` value")
 		}
-		t, ok := transformer["type"]
-		if !ok {
-			log.Fatal(fmt.Sprintf("%s transformer config is missing `type` value", name))
+		mr, mrOK := transformer["rank"]
+		if !mrOK || mr == "" {
+			log.Fatal(name, "transformer config is missing `rank` value")
+		}
+		rank, err := strconv.ParseUint(mr, 10, 64)
+		if err != nil {
+			log.Fatal(name, "migration `rank` can't be converted to an unsigned integer")
+		}
+		t, tOK := transformer["type"]
+		if !tOK {
+			log.Fatal(name, "transformer config is missing `type` value")
 		}
 		transformerType := config.GetTransformerType(t)
 		if transformerType == config.UnknownTransformerType {
@@ -158,6 +171,7 @@ func prepConfig() {
 			Type:           transformerType,
 			RepositoryPath: r,
 			MigrationPath:  m,
+			MigrationRank:  rank,
 		}
 	}
 
