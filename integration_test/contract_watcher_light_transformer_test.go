@@ -2,13 +2,13 @@ package integration
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
@@ -40,7 +40,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 		It("Initializes transformer's contract objects", func() {
 			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
 			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -52,6 +52,27 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))
+		})
+
+		It("Fails to initialize if first and block cannot be fetched from vDB headers table", func() {
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
+		})
+
+		It("Does nothing if nothing if no addresses are configured", func() {
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			var testConf config.ContractConfig
+			testConf = test_helpers.TusdConfig
+			testConf.Addresses = nil
+			t := transformer.NewTransformer(testConf, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+
+			_, ok := t.Contracts[tusdAddr]
+			Expect(ok).To(Equal(false))
 		})
 	})
 
@@ -70,7 +91,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -88,7 +109,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Keeps track of contract-related addresses while transforming event data if they need to be used for later method polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.TusdConfig
+			testConf = test_helpers.TusdConfig
 			testConf.Methods = map[string][]string{
 				tusdAddr: {"balanceOf"},
 			}
@@ -133,7 +154,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Polls given methods using generated token holder address", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.TusdConfig
+			testConf = test_helpers.TusdConfig
 			testConf.Methods = map[string][]string{
 				tusdAddr: {"balanceOf"},
 			}
@@ -151,12 +172,14 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", tusdAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 
 		It("Fails if initialization has not been done", func() {
-			t := transformer.NewTransformer(mocks.TusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Execute()
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("transformer has no initialized contracts"))
 		})
 	})
 
@@ -175,7 +198,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer(mocks.ENSConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.ENSConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -193,7 +216,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Keeps track of contract-related hashes while transforming event data if they need to be used for later method polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
 			}
@@ -222,7 +245,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Polls given method using list of collected hashes", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.Methods = map[string][]string{
 				ensAddr: {"owner"},
 			}
@@ -245,11 +268,12 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 
 		It("It does not persist events if they do not pass the emitted arg filter", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.EventArgs = map[string][]string{
 				ensAddr: {"fake_filter_value"},
 			}
@@ -262,11 +286,12 @@ var _ = Describe("contractWatcher light transformer", func() {
 			log := test_helpers.LightNewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("does not exist"))
 		})
 
 		It("If a method arg filter is applied, only those arguments are used in polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSConfig
+			testConf = test_helpers.ENSConfig
 			testConf.MethodArgs = map[string][]string{
 				ensAddr: {"0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"},
 			}
@@ -287,6 +312,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 	})
 
@@ -301,7 +327,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
-			t := transformer.NewTransformer(mocks.ENSandTusdConfig, blockChain, db)
+			t := transformer.NewTransformer(test_helpers.ENSandTusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
@@ -326,7 +352,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Keeps track of contract-related hashes and addresses while transforming event data if they need to be used for later method polling", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSandTusdConfig
+			testConf = test_helpers.ENSandTusdConfig
 			testConf.Methods = map[string][]string{
 				ensAddr:  {"owner"},
 				tusdAddr: {"balanceOf"},
@@ -367,7 +393,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 		It("Polls given methods for each contract, using list of collected values", func() {
 			var testConf config.ContractConfig
-			testConf = mocks.ENSandTusdConfig
+			testConf = test_helpers.ENSandTusdConfig
 			testConf.Methods = map[string][]string{
 				ensAddr:  {"owner"},
 				tusdAddr: {"balanceOf"},
@@ -391,6 +417,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHItransformers.8IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 
 			bal := test_helpers.BalanceOf{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x8cA465764873E71CEa525F5EB6AE973d650c22C2' AND block = '6885701'", tusdAddr)).StructScan(&bal)
@@ -400,6 +427,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6885701'", tusdAddr)).StructScan(&bal)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
 	})
 })

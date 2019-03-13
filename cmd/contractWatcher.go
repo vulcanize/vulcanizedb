@@ -94,7 +94,7 @@ func contractWatcher() {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
-	var t st.GenericTransformer
+	var t st.ContractTransformer
 	con := config.ContractConfig{}
 	con.PrepConfig()
 	switch mode {

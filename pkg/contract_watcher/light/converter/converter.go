@@ -32,28 +32,22 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 )
 
-type Converter interface {
+type ConverterInterface interface {
 	Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error)
 	ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error)
 	Update(info *contract.Contract)
 }
 
-type converter struct {
+type Converter struct {
 	ContractInfo *contract.Contract
 }
 
-func NewConverter(info *contract.Contract) *converter {
-	return &converter{
-		ContractInfo: info,
-	}
-}
-
-func (c *converter) Update(info *contract.Contract) {
+func (c *Converter) Update(info *contract.Contract) {
 	c.ContractInfo = info
 }
 
 // Convert the given watched event log into a types.Log for the given event
-func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
+func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	returnLogs := make([]types.Log, 0, len(logs))
 	for _, log := range logs {
@@ -132,7 +126,7 @@ func (c *converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 }
 
 // Convert the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
-func (c *converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
+func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
 	for _, event := range events {

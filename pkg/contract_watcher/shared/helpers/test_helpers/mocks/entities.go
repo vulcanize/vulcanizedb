@@ -18,13 +18,13 @@ package mocks
 
 import (
 	"encoding/json"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
@@ -262,74 +262,46 @@ var MockNewOwnerLog2 = types.Log{
 var ens = strings.ToLower(constants.EnsContractAddress)
 var tusd = strings.ToLower(constants.TusdContractAddress)
 
-var TusdConfig = config.ContractConfig{
+var MockConfig = config.ContractConfig{
 	Network: "",
 	Addresses: map[string]bool{
-		tusd: true,
+		"0x1234567890abcdef": true,
 	},
 	Abis: map[string]string{
-		tusd: "",
+		"0x1234567890abcdef": "fake_abi",
 	},
 	Events: map[string][]string{
-		tusd: []string{"Transfer"},
+		"0x1234567890abcdef": []string{"Transfer"},
 	},
 	Methods: map[string][]string{
-		tusd: nil,
+		"0x1234567890abcdef": nil,
 	},
 	MethodArgs: map[string][]string{
-		tusd: nil,
+		"0x1234567890abcdef": nil,
 	},
 	EventArgs: map[string][]string{
-		tusd: nil,
+		"0x1234567890abcdef": nil,
 	},
 }
 
-var ENSConfig = config.ContractConfig{
+var MockEmptyConfig = config.ContractConfig{
 	Network: "",
 	Addresses: map[string]bool{
-		ens: true,
+		"0x1234567890abcdef": true,
 	},
 	Abis: map[string]string{
-		ens: "",
+		"0x1234567890abcdef": "fake_abi",
 	},
 	Events: map[string][]string{
-		ens: []string{"NewOwner"},
+		"0x1234567890abcdef": nil,
 	},
 	Methods: map[string][]string{
-		ens: nil,
+		"0x1234567890abcdef": nil,
 	},
 	MethodArgs: map[string][]string{
-		ens: nil,
+		"0x1234567890abcdef": nil,
 	},
 	EventArgs: map[string][]string{
-		ens: nil,
-	},
-}
-
-var ENSandTusdConfig = config.ContractConfig{
-	Network: "",
-	Addresses: map[string]bool{
-		ens:  true,
-		tusd: true,
-	},
-	Abis: map[string]string{
-		ens:  "",
-		tusd: "",
-	},
-	Events: map[string][]string{
-		ens:  []string{"NewOwner"},
-		tusd: []string{"Transfer"},
-	},
-	Methods: map[string][]string{
-		ens:  nil,
-		tusd: nil,
-	},
-	MethodArgs: map[string][]string{
-		ens:  nil,
-		tusd: nil,
-	},
-	EventArgs: map[string][]string{
-		ens:  nil,
-		tusd: nil,
+		"0x1234567890abcdef": nil,
 	},
 }

@@ -15,8 +15,9 @@ func (*MockParser) Parse(contractAddr string) error {
 	return nil
 }
 
-func (*MockParser) ParseAbiStr(abiStr string) error {
-	panic("implement me")
+func (m *MockParser) ParseAbiStr(abiStr string) error {
+	m.AbiToReturn = abiStr
+	return nil
 }
 
 func (parser *MockParser) Abi() string {

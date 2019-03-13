@@ -38,7 +38,8 @@ var _ = Describe("Converter", func() {
 	Describe("Update", func() {
 		It("Updates contract info held by the converter", func() {
 			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			Expect(c.ContractInfo).To(Equal(con))
 
 			info := test_helpers.SetupTusdContract([]string{}, []string{})
@@ -56,7 +57,8 @@ var _ = Describe("Converter", func() {
 			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
 
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			logs, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, 232)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(logs)).To(Equal(2))
@@ -80,7 +82,8 @@ var _ = Describe("Converter", func() {
 			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
 
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			_, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, 232)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -110,7 +113,8 @@ var _ = Describe("Converter", func() {
 			event, ok := con.Events["NewOwner"]
 			Expect(ok).To(Equal(true))
 
-			c := converter.NewConverter(con)
+			c := converter.Converter{}
+			c.Update(con)
 			_, err := c.Convert([]types.Log{mocks.MockNewOwnerLog1, mocks.MockNewOwnerLog2}, event, 232)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(con.EmittedHashes)).To(Equal(3))
@@ -143,7 +147,8 @@ var _ = Describe("Converter", func() {
 
 		It("Fails with an empty contract", func() {
 			event := con.Events["Transfer"]
-			c := converter.NewConverter(&contract.Contract{})
+			c := converter.Converter{}
+			c.Update(&contract.Contract{})
 			_, err = c.Convert([]types.Log{mocks.MockTransferLog1}, event, 232)
 			Expect(err).To(HaveOccurred())
 		})

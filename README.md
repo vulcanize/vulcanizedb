@@ -156,9 +156,17 @@ and a transformer is an interface for filtering through that raw Ethereum data t
 
 ### contractWatcher
 The `contractWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available.
-It also provides some state variable coverage by automating polling of public methods, with some restrictions.
+It also provides some state variable coverage by automating polling of public methods, with some restrictions:
+1. The method must have 2 or less arguments
+2. The method's arguments must all be of type address or bytes32 (hash)
+3. The method must return a single value
 
-This command requires a pre-synced (full or light) vulcanizeDB (see above sections) and currently requires the contract ABI be available on etherscan or provided by the user.   
+This command operates in two modes- `light` and `full`- which require a light or full-synced vulcanizeDB, respectively.
+
+This command requires the contract ABI be available on Etherscan if it is not provided in the config file by the user.
+
+If method polling is turned on we require an archival node at the ETH ipc endpoint in our config, whether or not we are operating in `light` or `full` mode.
+Otherwise, when operating in `light` mode, we only need to connect to a full node to fetch event logs.
 
 This command takes a config of the form:
 
@@ -240,10 +248,26 @@ The 'method' and 'event' identifiers are tacked onto the end of the table names 
 
 Example:
 
-Running `./vulcanizedb contractWatcher --config <path to config> --starting-block-number=5197514 --contract-address=0x8dd5fbce2f6a956c3022ba3663759011dd51e73e --events=Transfer --events=Mint --methods=balanceOf`
-watches Transfer and Mint events of the TrueUSD contract and polls its balanceOf method using the addresses we find emitted from those events    
+Running `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=light`
 
-It produces and populates a schema with three tables:
+Runs our contract watcher in light mode, configured to watch the contracts specified in the config file. Note that
+by default we operate in `light` mode but the flag is included here to demonstrate its use.
+
+The example config we link to in this example watches two contracts, the ENS Registry (0x314159265dD8dbb310642f98f50C066173C1259b) and TrueUSD (0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E).
+
+Because the ENS Registry is configured with only an ABI and a starting block, we will watch all events for this contract and poll none of its methods. Note that the ENS Registry is an example
+of a contract which does not have its ABI available over Etherscan and must have it included in the config file.
+
+The TrueUSD contract is configured with two events (`Transfer` and `Mint`) and a single method (`balanceOf`), as such it will watch these two events and use any addresses it collects emitted from them
+to poll the `balanceOf` method with those addresses at every block. Note that we do not provide an ABI for TrueUSD as its ABI can be fetched from Etherscan.
+
+For the ENS contract, it produces and populates a schema with four tables"
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newowner_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newresolver_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newttl_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.transfer_event`
+
+For the TrusUSD contract, it produces and populates a schema with three tables:
 
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`
@@ -276,7 +300,9 @@ Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
 | who_       | character varying(66) |           | not null |                                                                                               | extended |              |             |
 | returned   | numeric               |           | not null |                                                                                               | main     |              |             |
   
-The addition of '_' after table names is to prevent collisions with reserved Postgres words
+The addition of '_' after table names is to prevent collisions with reserved Postgres words.
+
+Also notice that the contract address used for the schema name has been down-cased.
 
 ### composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
@@ -359,9 +385,9 @@ The config provides information for composing a set of transformers:
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
-        - `eth_generic` indicates the transformer works with the [generic watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go)
-        that is made to work with [omni pkg](https://github.com/vulcanize/maker-vulcanizedb/tree/staging/pkg/omni)
-        based transformers which work with either a light or full sync vDB to watch events and poll public methods
+        - `eth_contract` indicates the transformer works with the [contract watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go)
+        that is made to work with [contract_watcher pkg](https://github.com/vulcanize/maker-vulcanizedb/tree/staging/pkg/omni)
+        based transformers which work with either a light or full sync vDB to watch events and poll public methods ([example](https://github.com/vulcanize/ens_transformers/blob/working/transformers/domain_records/transformer.go))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
         - this is to help isolate any potential conflicts between transformer migrations
@@ -393,13 +419,13 @@ type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer, []interface1.GenericTransformerInitializer {
+func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer, []interface1.ContractTransformerInitializer {
 	return []interface1.TransformerInitializer{
             transformer1.TransformerInitializer,
             transformer3.TransformerInitializer,
         },     []interface1.StorageTransformerInitializer{
             transformer4.StorageTransformerInitializer,
-        },     []interface1.GenericTransformerInitializer{
+        },     []interface1.ContractTransformerInitializer{
             transformer2.TransformerInitializer,
         }
 }
@@ -409,12 +435,12 @@ func (e exporter) Export() []interface1.EventTransformerInitializer, []interface
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
-that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `GenericTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
+that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
 or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31),
-or [GenericTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/transformer/generic_transformer.go#L31), respectively
+or [ContractTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/transformer/contract_transformer.go#L31), respectively
 * Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83),
 [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53),
-or [generic](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go#L68) watcher execution modes
+or [contract](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields

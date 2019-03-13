@@ -38,7 +38,7 @@ type Field struct {
 
 // Struct to hold instance of an event log data
 type Log struct {
-	Id     int64             // VulcanizeIdLog for full sync and header ID for light sync omni watcher
+	Id     int64             // VulcanizeIdLog for full sync and header ID for light sync contract watcher
 	Values map[string]string // Map of event input names to their values
 
 	// Used for full sync only

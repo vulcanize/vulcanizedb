@@ -34,27 +34,21 @@ import (
 
 // Converter is used to convert watched event logs to
 // custom logs containing event input name => value maps
-type Converter interface {
+type ConverterInterface interface {
 	Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error)
 	Update(info *contract.Contract)
 }
 
-type converter struct {
+type Converter struct {
 	ContractInfo *contract.Contract
 }
 
-func NewConverter(info *contract.Contract) *converter {
-	return &converter{
-		ContractInfo: info,
-	}
-}
-
-func (c *converter) Update(info *contract.Contract) {
+func (c *Converter) Update(info *contract.Contract) {
 	c.ContractInfo = info
 }
 
 // Convert the given watched event log into a types.Log for the given event
-func (c *converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
+func (c *Converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
 	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
 	log := helpers.ConvertToLog(watchedEvent)

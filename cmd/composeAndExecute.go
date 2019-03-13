@@ -62,7 +62,7 @@ var composeAndExecuteCmd = &cobra.Command{
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_generic"
+        type = "eth_contract"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "2"
@@ -91,8 +91,9 @@ from it and loaded into and executed over by the appropriate watcher.
 The type of watcher that the transformer works with is specified using the 
 type variable for each transformer in the config. Currently there are watchers 
 of event data from an eth node (eth_event) and storage data from an eth node 
-(eth_storage), and a more generic interface for accepting omni pkg based transformers
-which can perform both event watching and public method polling.
+(eth_storage), and a more generic interface for accepting contract_watcher pkg
+based transformers which can perform both event watching and public method 
+polling (eth_contract).
 
 Transformers of different types can be ran together in the same command using a 
 single config file or in separate command instances using different config files
@@ -150,8 +151,8 @@ func composeAndExecute() {
 		os.Exit(1)
 	}
 
-	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers, genericInitializers := exporter.Export()
+	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
+	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -175,11 +176,11 @@ func composeAndExecute() {
 		go watchEthStorage(&sw, &wg)
 	}
 
-	if len(genericInitializers) > 0 {
-		gw := watcher.NewGenericWatcher(&db, blockChain)
-		gw.AddTransformers(genericInitializers)
+	if len(ethContractInitializers) > 0 {
+		gw := watcher.NewContractWatcher(&db, blockChain)
+		gw.AddTransformers(ethContractInitializers)
 		wg.Add(1)
-		go genericWatching(&gw, &wg)
+		go contractWatching(&gw, &wg)
 	}
 	wg.Wait()
 }
