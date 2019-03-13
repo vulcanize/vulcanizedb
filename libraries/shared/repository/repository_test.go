@@ -19,6 +19,7 @@ package repository_test
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,7 +35,83 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Repository utilities", func() {
+var _ = Describe("Repository", func() {
+	Describe("MarkHeaderChecked", func() {
+		var (
+			checkedHeadersColumn string
+			db                   *postgres.DB
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(test_config.NewTestNode())
+			test_config.CleanTestDB(db)
+
+			checkedHeadersColumn = "test_column_checked"
+			_, migrateErr := db.Exec(`ALTER TABLE public.checked_headers
+				ADD COLUMN ` + checkedHeadersColumn + ` integer`)
+			Expect(migrateErr).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_, cleanupMigrateErr := db.Exec(`ALTER TABLE public.checked_headers DROP COLUMN ` + checkedHeadersColumn)
+			Expect(cleanupMigrateErr).NotTo(HaveOccurred())
+		})
+
+		It("marks passed column as checked for passed header", func() {
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, headerErr := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(headerErr).NotTo(HaveOccurred())
+
+			err := shared.MarkHeaderChecked(headerID, db, checkedHeadersColumn)
+
+			Expect(err).NotTo(HaveOccurred())
+			var checkedCount int
+			fetchErr := db.Get(&checkedCount, `SELECT `+checkedHeadersColumn+` FROM public.checked_headers LIMIT 1`)
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(checkedCount).To(Equal(1))
+		})
+	})
+
+	Describe("MarkHeaderCheckedInTransaction", func() {
+		var (
+			checkedHeadersColumn string
+			db                   *postgres.DB
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(test_config.NewTestNode())
+			test_config.CleanTestDB(db)
+
+			checkedHeadersColumn = "test_column_checked"
+			_, migrateErr := db.Exec(`ALTER TABLE public.checked_headers
+				ADD COLUMN ` + checkedHeadersColumn + ` integer`)
+			Expect(migrateErr).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_, cleanupMigrateErr := db.Exec(`ALTER TABLE public.checked_headers DROP COLUMN ` + checkedHeadersColumn)
+			Expect(cleanupMigrateErr).NotTo(HaveOccurred())
+		})
+
+		It("marks passed column as checked for passed header within a passed transaction", func() {
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerID, headerErr := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(headerErr).NotTo(HaveOccurred())
+			tx, txErr := db.Beginx()
+			Expect(txErr).NotTo(HaveOccurred())
+
+			err := shared.MarkHeaderCheckedInTransaction(headerID, tx, checkedHeadersColumn)
+
+			Expect(err).NotTo(HaveOccurred())
+			commitErr := tx.Commit()
+			Expect(commitErr).NotTo(HaveOccurred())
+			var checkedCount int
+			fetchErr := db.Get(&checkedCount, `SELECT `+checkedHeadersColumn+` FROM public.checked_headers LIMIT 1`)
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(checkedCount).To(Equal(1))
+		})
+	})
+
 	Describe("MissingHeaders", func() {
 		var (
 			db                       *postgres.DB
@@ -116,6 +193,84 @@ var _ = Describe("Repository utilities", func() {
 		})
 	})
 
+	Describe("RecheckHeaders", func() {
+		var (
+			checkedHeadersColumn                                      string
+			db                                                        *postgres.DB
+			headerOneID, headerTwoID, headerThreeID, headerFourID     int64
+			headerOneErr, headerTwoErr, headerThreeErr, headerFourErr error
+		)
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(test_config.NewTestNode())
+			test_config.CleanTestDB(db)
+
+			// create header checked column
+			checkedHeadersColumn = "test_column_checked"
+			_, migrateErr := db.Exec(`ALTER TABLE public.checked_headers ADD COLUMN ` + checkedHeadersColumn + ` integer`)
+			Expect(migrateErr).NotTo(HaveOccurred())
+
+			// create headers
+			headerRepository := repositories.NewHeaderRepository(db)
+			headerOneID, headerOneErr = headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(1))
+			Expect(headerOneErr).NotTo(HaveOccurred())
+			headerTwoID, headerTwoErr = headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(2))
+			Expect(headerTwoErr).NotTo(HaveOccurred())
+			headerThreeID, headerThreeErr = headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(3))
+			Expect(headerThreeErr).NotTo(HaveOccurred())
+			headerFourID, headerFourErr = headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(4))
+			Expect(headerFourErr).NotTo(HaveOccurred())
+
+			// mark every header checked at least once, with one fully rechecked (headerThree)
+			maxCheckCount, intConversionErr := strconv.Atoi(constants.RecheckHeaderCap)
+			Expect(intConversionErr).NotTo(HaveOccurred())
+			_, markHeaderOneCheckedErr := db.Exec(
+				`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`) VALUES ($1, $2)`,
+				headerOneID, maxCheckCount)
+			Expect(markHeaderOneCheckedErr).NotTo(HaveOccurred())
+			_, markHeaderTwoCheckedErr := db.Exec(
+				`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`) VALUES ($1, $2)`,
+				headerTwoID, maxCheckCount)
+			Expect(markHeaderTwoCheckedErr).NotTo(HaveOccurred())
+			_, markHeaderThreeCheckedErr := db.Exec(
+				`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`) VALUES ($1, $2)`,
+				headerThreeID, maxCheckCount+1)
+			Expect(markHeaderThreeCheckedErr).NotTo(HaveOccurred())
+			_, markHeaderFourCheckedErr := db.Exec(
+				`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`) VALUES ($1, $2)`,
+				headerFourID, maxCheckCount)
+			Expect(markHeaderFourCheckedErr).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_, cleanupMigrateErr := db.Exec(`ALTER TABLE public.checked_headers DROP COLUMN ` + checkedHeadersColumn)
+			Expect(cleanupMigrateErr).NotTo(HaveOccurred())
+		})
+
+		Describe("when no ending block number (ending block number == -1)", func() {
+			It("returns all headers since starting block where checked count is less than cap", func() {
+				headers, err := shared.RecheckHeaders(1, -1, db, checkedHeadersColumn)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(headers)).To(Equal(3))
+				Expect(headers[0].Id).To(Or(Equal(headerOneID), Equal(headerTwoID), Equal(headerFourID)))
+				Expect(headers[1].Id).To(Or(Equal(headerOneID), Equal(headerTwoID), Equal(headerFourID)))
+				Expect(headers[2].Id).To(Or(Equal(headerOneID), Equal(headerTwoID), Equal(headerFourID)))
+			})
+		})
+
+		Describe("when ending block number specified", func() {
+			It("returns headers between starting and ending block where checked count is less than cap", func() {
+				headers, err := shared.RecheckHeaders(1, 3, db, checkedHeadersColumn)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(headers)).To(Equal(2))
+				Expect(headers[0].Id).To(Or(Equal(headerOneID), Equal(headerTwoID)))
+				Expect(headers[1].Id).To(Or(Equal(headerOneID), Equal(headerTwoID)))
+			})
+		})
+	})
+
 	Describe("GetCheckedColumnNames", func() {
 		It("gets the column names from checked_headers", func() {
 			db := test_config.NewTestDB(test_config.NewTestNode())
@@ -162,33 +317,9 @@ var _ = Describe("Repository utilities", func() {
 
 func getExpectedColumnNames() []string {
 	return []string{
-		"price_feeds_checked",
-		"flip_kick_checked",
-		"frob_checked",
-		"tend_checked",
-		"bite_checked",
-		"dent_checked",
-		"pit_file_debt_ceiling_checked",
-		"pit_file_ilk_checked",
-		"vat_init_checked",
-		"drip_file_ilk_checked",
-		"drip_file_repo_checked",
-		"drip_file_vow_checked",
-		"deal_checked",
-		"drip_drip_checked",
-		"cat_file_chop_lump_checked",
-		"cat_file_flip_checked",
-		"cat_file_pit_vow_checked",
-		"flop_kick_checked",
-		"vat_move_checked",
-		"vat_fold_checked",
-		"vat_heal_checked",
-		"vat_toll_checked",
-		"vat_tune_checked",
-		"vat_grab_checked",
-		"vat_flux_checked",
-		"vat_slip_checked",
-		"vow_flog_checked",
-		"flap_kick_checked",
+		"column_1_checked",
+		"column_2_checked",
+		"column_3_checked",
+		"column_4_checked",
 	}
 }

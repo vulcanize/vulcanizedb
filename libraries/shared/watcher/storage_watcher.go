@@ -50,8 +50,8 @@ func NewStorageWatcher(tailer fs.Tailer, db *postgres.DB) StorageWatcher {
 
 func (watcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
 	for _, initializer := range initializers {
-		transformer := initializer(watcher.db)
-		watcher.Transformers[transformer.ContractAddress()] = transformer
+		storageTransformer := initializer(watcher.db)
+		watcher.Transformers[storageTransformer.ContractAddress()] = storageTransformer
 	}
 }
 
@@ -65,12 +65,12 @@ func (watcher StorageWatcher) Execute() error {
 		if parseErr != nil {
 			return parseErr
 		}
-		transformer, ok := watcher.Transformers[row.Contract]
+		storageTransformer, ok := watcher.Transformers[row.Contract]
 		if !ok {
 			logrus.Warn(utils.ErrContractNotFound{Contract: row.Contract.Hex()}.Error())
 			continue
 		}
-		executeErr := transformer.Execute(row)
+		executeErr := storageTransformer.Execute(row)
 		if executeErr != nil {
 			if isKeyNotFound(executeErr) {
 				queueErr := watcher.Queue.Add(row)

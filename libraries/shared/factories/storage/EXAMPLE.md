@@ -26,7 +26,7 @@ contract Contract {
   
   function add_address(address addr) public {
     bool exists = addresses[addr] > 0;
-    addresses[addr] = addresses[addr] + 1;
+    addresses[addr]++;
     if (!exists) {
       emit AddressAdded(addr, ++num_addresses);
     }
@@ -36,7 +36,7 @@ contract Contract {
 
 Disclaimer: this contract has not been audited and is not intended to be modeled or used in production. :)
 
-This contract persists two values in it's storage:
+This contract persists two values in its storage:
 
 1. `num_addresses`: the total number of unique addresses known to the contract.
 2. `addresses`: a mapping that records the number of times an address has been added to the contract.
@@ -131,9 +131,9 @@ Once we have recognized a storage diff, we can decode the storage value to the d
 Since the metadata tells us that the above values are `uint256`, we can decode a value like `0000000000000000000000000000000000000000000000000000000000000001` to `1`.
 
 The purpose of the contract-specific repository is to write that value to the database in a way that makes it useful for future queries.
-Typically, the involves writing the block hash, block number, decoded value, and any keys in the metadata to a table.
+Typically, this involves writing the block hash, block number, decoded value, and any keys in the metadata to a table.
 
-The current repository interface has a generalized `Create` function that can accept any arbitrary storage row along with it's metadata.
+The current repository interface has a generalized `Create` function that can accept any arbitrary storage row along with its metadata.
 This is deliberate, to facilitate shared use of the common storage transformer.
 An implication of this decision is that the `Create` function typically includes a `switch` statement that selects which table to write to, as well as what data to include, based on the name of the variable as defined in the metadata.
 
@@ -158,7 +158,7 @@ func (repository AddressStorageRepository) Create(blockNumber int, blockHash str
 
 ## Summary
 
-With our very simple address storing contract, we would be able to read it's storage diffs by implementing an event transformer, a mappings, and a repository.
+With our very simple address storing contract, we would be able to read its storage diffs by implementing an event transformer, a mappings, and a repository.
 
 The mappings would be able to lookup storage keys reflecting `num_addresses` or any slot in `addresses`, using addresses derived from watching the `AddressAdded` event for the latter.
 

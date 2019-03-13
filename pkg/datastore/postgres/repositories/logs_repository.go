@@ -17,7 +17,6 @@
 package repositories
 
 import (
-	"context"
 	"github.com/sirupsen/logrus"
 
 	"database/sql"
@@ -31,7 +30,7 @@ type LogRepository struct {
 }
 
 func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) error {
-	tx, _ := logRepository.DB.BeginTx(context.Background(), nil)
+	tx, _ := logRepository.DB.Beginx()
 	for _, tlog := range lgs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
