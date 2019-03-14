@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package factories
+package event
 
 import "github.com/ethereum/go-ethereum/core/types"
 
-type LogNoteConverter interface {
-	ToModels(ethLog []types.Log) ([]interface{}, error)
+type Converter interface {
+	ToEntities(contractAbi string, ethLog []types.Log) ([]interface{}, error)
+	ToModels([]interface{}) ([]interface{}, error)
 }

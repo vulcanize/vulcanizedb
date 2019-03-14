@@ -99,7 +99,7 @@ func execute() {
 		os.Exit(1)
 	}
 
-	// Use the Exporters export method to load the TransformerInitializer and StorageTransformerInitializer sets
+	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
 	ethEventInitializers, ethStorageInitializers := exporter.Export()
 
 	// Setup bc and db objects
@@ -132,12 +132,12 @@ func init() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.TransformerInitializer, []transformer.StorageTransformerInitializer)
+	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
-	// Execute over the TransformerInitializer set using the watcher
+	// Execute over the EventTransformerInitializer set using the watcher
 	log.Info("executing event transformers")
 	var recheck constants.TransformerExecution
 	if recheckHeadersArg {
@@ -157,7 +157,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
-	// Execute over the TransformerInitializer set using the watcher
+	// Execute over the StorageTransformerInitializer set using the watcher
 	log.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()

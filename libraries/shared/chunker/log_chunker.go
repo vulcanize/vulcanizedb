@@ -26,7 +26,7 @@ import (
 )
 
 type Chunker interface {
-	AddConfigs(transformerConfigs []shared_t.TransformerConfig)
+	AddConfigs(transformerConfigs []shared_t.EventTransformerConfig)
 	ChunkLogs(logs []types.Log) map[string][]types.Log
 }
 
@@ -45,7 +45,7 @@ func NewLogChunker() *LogChunker {
 }
 
 // Configures the chunker by adding more addreses and topics to consider.
-func (chunker *LogChunker) AddConfigs(transformerConfigs []shared_t.TransformerConfig) {
+func (chunker *LogChunker) AddConfigs(transformerConfigs []shared_t.EventTransformerConfig) {
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {
 			var lowerCaseAddress = strings.ToLower(address)

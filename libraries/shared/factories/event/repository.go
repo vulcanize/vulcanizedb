@@ -14,22 +14,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package factories_test
+package event
 
 import (
-	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-func TestFactories(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Factories Suite")
+type Repository interface {
+	Create(headerID int64, models []interface{}) error
+	MarkHeaderChecked(headerID int64) error
+	MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error)
+	RecheckHeaders(startingBlockNumber, endingBlockNUmber int64) ([]core.Header, error)
+	SetDB(db *postgres.DB)
 }
-
-var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
-})

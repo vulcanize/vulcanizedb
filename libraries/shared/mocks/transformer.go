@@ -30,7 +30,7 @@ type MockTransformer struct {
 	ExecuteError     error
 	PassedLogs       []types.Log
 	PassedHeader     core.Header
-	config           shared_t.TransformerConfig
+	config           shared_t.EventTransformerConfig
 }
 
 func (mh *MockTransformer) Execute(logs []types.Log, header core.Header, recheckHeaders constants.TransformerExecution) error {
@@ -43,11 +43,11 @@ func (mh *MockTransformer) Execute(logs []types.Log, header core.Header, recheck
 	return nil
 }
 
-func (mh *MockTransformer) GetConfig() shared_t.TransformerConfig {
+func (mh *MockTransformer) GetConfig() shared_t.EventTransformerConfig {
 	return mh.config
 }
 
-func (mh *MockTransformer) SetTransformerConfig(config shared_t.TransformerConfig) {
+func (mh *MockTransformer) SetTransformerConfig(config shared_t.EventTransformerConfig) {
 	mh.config = config
 }
 
@@ -55,7 +55,7 @@ func (mh *MockTransformer) FakeTransformerInitializer(db *postgres.DB) shared_t.
 	return mh
 }
 
-var FakeTransformerConfig = shared_t.TransformerConfig{
+var FakeTransformerConfig = shared_t.EventTransformerConfig{
 	TransformerName:   "FakeTransformer",
 	ContractAddresses: []string{"FakeAddress"},
 	Topic:             "FakeTopic",

@@ -19,20 +19,20 @@ package transformer
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type EventTransformer interface {
 	Execute(logs []types.Log, header core.Header, recheckHeaders constants.TransformerExecution) error
-	GetConfig() TransformerConfig
+	GetConfig() EventTransformerConfig
 }
 
-type TransformerInitializer func(db *postgres.DB) EventTransformer
+type EventTransformerInitializer func(db *postgres.DB) EventTransformer
 
-type TransformerConfig struct {
+type EventTransformerConfig struct {
 	TransformerName     string
 	ContractAddresses   []string
 	ContractAbi         string

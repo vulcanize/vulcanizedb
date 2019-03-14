@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package factories
+package event
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
@@ -27,7 +27,7 @@ import (
 )
 
 type LogNoteTransformer struct {
-	Config     transformer.TransformerConfig
+	Config     transformer.EventTransformerConfig
 	Converter  LogNoteConverter
 	Repository Repository
 }
@@ -68,6 +68,6 @@ func (tr LogNoteTransformer) GetName() string {
 	return tr.Config.TransformerName
 }
 
-func (tr LogNoteTransformer) GetConfig() transformer.TransformerConfig {
+func (tr LogNoteTransformer) GetConfig() transformer.EventTransformerConfig {
 	return tr.Config
 }
