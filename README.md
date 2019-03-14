@@ -177,7 +177,7 @@ This command takes a config of the form:
     port     = 5432
 
   [client]
-    ipcPath  = "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+    ipcPath  = "path_to_ethjson_rpc"
 
   [contract]
     network  = ""
@@ -248,9 +248,19 @@ The 'method' and 'event' identifiers are tacked onto the end of the table names 
 
 Example:
 
-Running `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=light`
+Modify `./environments/example.toml` to replace `"path_to_ethjson_rpc"` with a path that points to an ethjson_rpc endpoint (e.g. a local geth node ipc path or an Infura url).
+This endpoint should be for an archival eth node if we want to perform method polling as this configuration is currently set up to do. To work with a non-archival full node,
+remove the `balanceOf` method from the `0x8dd5fbce2f6a956c3022ba3663759011dd51e73e` (TrueUSD) contract.
 
-Runs our contract watcher in light mode, configured to watch the contracts specified in the config file. Note that
+If you are operating a light sync vDB, run:
+
+ `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=light`
+
+If instead you are operating a full sync vDB and provided an archival node IPC path, run in full mode:
+
+ `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=full`
+
+This will run the contractWatcher and configures it to watch the contracts specified in the config file. Note that
 by default we operate in `light` mode but the flag is included here to demonstrate its use.
 
 The example config we link to in this example watches two contracts, the ENS Registry (0x314159265dD8dbb310642f98f50C066173C1259b) and TrueUSD (0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E).
