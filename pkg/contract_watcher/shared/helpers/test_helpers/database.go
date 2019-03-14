@@ -34,6 +34,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 type TransferLog struct {
@@ -106,22 +107,9 @@ type Owner struct {
 	Address   string `db:"returned"`
 }
 
-func SetupBC() core.BlockChain {
-	infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
-	rawRpcClient, err := rpc.Dial(infuraIPC)
-	Expect(err).NotTo(HaveOccurred())
-	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	blockChainClient := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
-	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
-
-	return blockChain
-}
-
 func SetupDBandBC() (*postgres.DB, core.BlockChain) {
-	infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
+	con := test_config.InfuraClient
+	infuraIPC := con.IPCPath
 	rawRpcClient, err := rpc.Dial(infuraIPC)
 	Expect(err).NotTo(HaveOccurred())
 	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)

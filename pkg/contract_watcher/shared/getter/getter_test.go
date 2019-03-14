@@ -28,15 +28,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("Interface Getter", func() {
 	Describe("GetAbi", func() {
 		It("Constructs and returns a custom abi based on results from supportsInterface calls", func() {
 			expectedABI := `[` + constants.AddrChangeInterface + `,` + constants.NameChangeInterface + `,` + constants.ContentChangeInterface + `,` + constants.AbiChangeInterface + `,` + constants.PubkeyChangeInterface + `]`
-
+			con := test_config.InfuraClient
+			infuraIPC := con.IPCPath
 			blockNumber := int64(6885696)
-			infuraIPC := "https://mainnet.infura.io/v3/b09888c1113640cc9ab42750ce750c05"
 			rawRpcClient, err := rpc.Dial(infuraIPC)
 			Expect(err).NotTo(HaveOccurred())
 			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)

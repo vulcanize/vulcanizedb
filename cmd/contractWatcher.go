@@ -46,7 +46,7 @@ Requires a .toml config file:
     port     = 5432
 
   [client]
-    ipcPath  = "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+    ipcPath  = "path_to_ethjson_rpc"
 
   [contract]
     network  = ""
