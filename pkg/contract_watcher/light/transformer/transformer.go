@@ -18,12 +18,12 @@ package transformer
 
 import (
 	"errors"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/converter"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/fetcher"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
@@ -40,17 +40,17 @@ import (
 // Requires a light synced vDB (headers) and a running eth node (or infura)
 type Transformer struct {
 	// Database interfaces
-	srep.EventRepository        // Holds transformed watched event log data
-	repository.HeaderRepository // Interface for interaction with header repositories
+	EventRepository  srep.EventRepository        // Holds transformed watched event log data
+	HeaderRepository repository.HeaderRepository // Interface for interaction with header repositories
 
 	// Pre-processing interfaces
-	parser.Parser            // Parses events and methods out of contract abi fetched using contract address
-	retriever.BlockRetriever // Retrieves first block for contract and current block height
+	Parser    parser.Parser            // Parses events and methods out of contract abi fetched using contract address
+	Retriever retriever.BlockRetriever // Retrieves first block for contract
 
 	// Processing interfaces
-	fetcher.Fetcher              // Fetches event logs, using header hashes
-	converter.ConverterInterface // Converts watched event logs into custom log
-	poller.Poller                // Polls methods using arguments collected from events and persists them using a method datastore
+	Fetcher   fetcher.Fetcher              // Fetches event logs, using header hashes
+	Converter converter.ConverterInterface // Converts watched event logs into custom log
+	Poller    poller.Poller                // Polls methods using arguments collected from events and persists them using a method datastore
 
 	// Store contract configuration information
 	Config config.ContractConfig
@@ -64,7 +64,7 @@ type Transformer struct {
 	sortedMethodIds   map[string][]string // Map to sort method column ids by contract, for post fetch method polling
 	eventIds          []string            // Holds event column ids across all contract, for batch fetching of headers
 	eventFilters      []common.Hash       // Holds topic0 hashes across all contracts, for batch fetching of logs
-	start             int64               // Hold the lowest starting block and the highest ending block
+	Start             int64               // Hold the lowest starting block and the highest ending block
 }
 
 // Order-of-operations:
@@ -77,15 +77,15 @@ type Transformer struct {
 func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.DB) *Transformer {
 
 	return &Transformer{
-		Poller:             poller.NewPoller(bc, db, types.LightSync),
-		Fetcher:            fetcher.NewFetcher(bc),
-		Parser:             parser.NewParser(con.Network),
-		HeaderRepository:   repository.NewHeaderRepository(db),
-		BlockRetriever:     retriever.NewBlockRetriever(db),
-		ConverterInterface: &converter.Converter{},
-		Contracts:          map[string]*contract.Contract{},
-		EventRepository:    srep.NewEventRepository(db, types.LightSync),
-		Config:             con,
+		Poller:           poller.NewPoller(bc, db, types.LightSync),
+		Fetcher:          fetcher.NewFetcher(bc),
+		Parser:           parser.NewParser(con.Network),
+		HeaderRepository: repository.NewHeaderRepository(db),
+		Retriever:        retriever.NewBlockRetriever(db),
+		Converter:        &converter.Converter{},
+		Contracts:        map[string]*contract.Contract{},
+		EventRepository:  srep.NewEventRepository(db, types.LightSync),
+		Config:           con,
 	}
 }
 
@@ -100,7 +100,7 @@ func (tr *Transformer) Init() error {
 	tr.sortedMethodIds = make(map[string][]string) // Map to sort method column ids by contract, for post fetch method polling
 	tr.eventIds = make([]string, 0)                // Holds event column ids across all contract, for batch fetching of headers
 	tr.eventFilters = make([]common.Hash, 0)       // Holds topic0 hashes across all contracts, for batch fetching of logs
-	tr.start = 100000000000                        // Hold the lowest starting block and the highest ending block
+	tr.Start = 100000000000
 
 	// Iterate through all internal contract addresses
 	for contractAddr := range tr.Config.Addresses {
@@ -120,7 +120,7 @@ func (tr *Transformer) Init() error {
 		}
 
 		// Get first block and most recent block number in the header repo
-		firstBlock, err := tr.BlockRetriever.RetrieveFirstBlock()
+		firstBlock, err := tr.Retriever.RetrieveFirstBlock()
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func (tr *Transformer) Init() error {
 
 		// Get contract name if it has one
 		var name = new(string)
-		tr.Poller.FetchContractData(tr.Abi(), contractAddr, "name", nil, name, -1)
+		tr.Poller.FetchContractData(tr.Parser.Abi(), contractAddr, "name", nil, name, -1)
 
 		// Remove any potential accidental duplicate inputs
 		eventArgs := map[string]bool{}
@@ -152,7 +152,6 @@ func (tr *Transformer) Init() error {
 			Abi:           tr.Parser.Abi(),
 			ParsedAbi:     tr.Parser.ParsedAbi(),
 			StartingBlock: firstBlock,
-			LastBlock:     -1,
 			Events:        tr.Parser.GetEvents(tr.Config.Events[contractAddr]),
 			Methods:       tr.Parser.GetSelectMethods(tr.Config.Methods[contractAddr]),
 			FilterArgs:    eventArgs,
@@ -189,8 +188,8 @@ func (tr *Transformer) Init() error {
 		}
 
 		// Update start to the lowest block
-		if con.StartingBlock < tr.start {
-			tr.start = con.StartingBlock
+		if con.StartingBlock < tr.Start {
+			tr.Start = con.StartingBlock
 		}
 	}
 
@@ -202,20 +201,20 @@ func (tr *Transformer) Execute() error {
 		return errors.New("error: transformer has no initialized contracts")
 	}
 
-	// Map to sort batch fetched logs by which contract they belong to, for post fetch processing
-	sortedLogs := make(map[string][]gethTypes.Log)
-	for _, con := range tr.Contracts {
-		sortedLogs[con.Address] = []gethTypes.Log{}
-	}
-
 	// Find unchecked headers for all events across all contracts; these are returned in asc order
-	missingHeaders, err := tr.HeaderRepository.MissingHeadersForAll(tr.start, -1, tr.eventIds)
+	missingHeaders, err := tr.HeaderRepository.MissingHeadersForAll(tr.Start, -1, tr.eventIds)
 	if err != nil {
 		return err
 	}
 
 	// Iterate over headers
 	for _, header := range missingHeaders {
+		// Set `start` to this header
+		// This way if we throw an error but don't bring the execution cycle down (how it is currently handled)
+		// we restart the cycle at this header
+		tr.Start = header.BlockNumber
+		// Map to sort batch fetched logs by which contract they belong to, for post fetch processing
+		sortedLogs := make(map[string][]gethTypes.Log)
 		// And fetch all event logs across contracts at this header
 		allLogs, err := tr.Fetcher.FetchLogs(tr.contractAddresses, tr.eventFilters, header)
 		if err != nil {
@@ -233,6 +232,7 @@ func (tr *Transformer) Execute() error {
 			if err != nil {
 				return err
 			}
+			tr.Start = header.BlockNumber + 1 // Empty header; setup to start at the next header
 			continue
 		}
 
@@ -249,10 +249,10 @@ func (tr *Transformer) Execute() error {
 			}
 			// Configure converter with this contract
 			con := tr.Contracts[conAddr]
-			tr.ConverterInterface.Update(con)
+			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
-			convertedLogs, err := tr.ConverterInterface.ConvertBatch(logs, con.Events, header.Id)
+			convertedLogs, err := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
 			if err != nil {
 				return err
 			}
@@ -281,8 +281,8 @@ func (tr *Transformer) Execute() error {
 		if err != nil {
 			return err
 		}
-
-		tr.start = header.BlockNumber + 1
+		// Success; setup to start at the next header
+		tr.Start = header.BlockNumber + 1
 	}
 
 	return nil

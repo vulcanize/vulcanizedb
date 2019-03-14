@@ -4,7 +4,7 @@
     port     = 5432
 
 [client]
-    ipcPath  = "path_to_ethjson_rpc"
+    ipcPath  = ""
 
 [contract]
     network  = ""

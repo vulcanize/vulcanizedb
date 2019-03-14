@@ -138,6 +138,7 @@ false
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
 ## Running the Tests
+- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full archival node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
 - `createdb vulcanize_private` will create the test db
 - `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
@@ -154,12 +155,12 @@ Contract watchers work with a light or full sync vDB to fetch raw ethereum data 
 A watcher is composed of at least a fetcher and a transformer or set of transformers, where a fetcher is an interface for retrieving raw Ethereum data from some source (e.g. eth_jsonrpc, IPFS)
 and a transformer is an interface for filtering through that raw Ethereum data to extract, process, and persist data for specific contracts or accounts. 
 
-### contractWatcher
+## contractWatcher
 The `contractWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available.
 It also provides some state variable coverage by automating polling of public methods, with some restrictions:
 1. The method must have 2 or less arguments
-2. The method's arguments must all be of type address or bytes32 (hash)
-3. The method must return a single value
+1. The method's arguments must all be of type address or bytes32 (hash)
+1. The method must return a single value
 
 This command operates in two modes- `light` and `full`- which require a light or full-synced vulcanizeDB, respectively.
 
@@ -177,7 +178,7 @@ This command takes a config of the form:
     port     = 5432
 
   [client]
-    ipcPath  = "path_to_ethjson_rpc"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
   [contract]
     network  = ""
@@ -238,7 +239,7 @@ This command takes a config of the form:
 At the very minimum, for each contract address an ABI and a starting block number need to be provided (or just the starting block if the ABI can be reliably fetched from Etherscan).
 With just this information we will be able to watch all events at the contract, but with no additional filters and no method polling.
 
-#### contractWatcher output
+### contractWatcher output
 
 Transformed events and polled method results are committed to Postgres in schemas and tables generated according to the contract abi.      
 
@@ -246,9 +247,9 @@ Schemas are created for each contract using the naming convention `<sync-type>_<
 Under this schema, tables are generated for watched events as `<lowercase event name>_event` and for polled methods as `<lowercase method name>_method`  
 The 'method' and 'event' identifiers are tacked onto the end of the table names to prevent collisions between methods and events of the same lowercase name    
 
-Example:
+### contractWatcher example:
 
-Modify `./environments/example.toml` to replace `"path_to_ethjson_rpc"` with a path that points to an ethjson_rpc endpoint (e.g. a local geth node ipc path or an Infura url).
+Modify `./environments/example.toml` to replace the empty `ipcPath` with a path that points to an ethjson_rpc endpoint (e.g. a local geth node ipc path or an Infura url).
 This endpoint should be for an archival eth node if we want to perform method polling as this configuration is currently set up to do. To work with a non-archival full node,
 remove the `balanceOf` method from the `0x8dd5fbce2f6a956c3022ba3663759011dd51e73e` (TrueUSD) contract.
 
@@ -314,14 +315,14 @@ The addition of '_' after table names is to prevent collisions with reserved Pos
 
 Also notice that the contract address used for the schema name has been down-cased.
 
-### composeAndExecute
+## composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
 long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
 
 This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.
 
-#### Writing custom transformers
+### Writing custom transformers
 Storage Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
    * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
@@ -330,7 +331,7 @@ Event Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/event_docs/libraries/shared/factories/README.md)
    * [Example](https://github.com/vulcanize/ens_transformers/tree/working)
    
-#### composeAndExecute configuration
+### composeAndExecute configuration
 A .toml config file is specified when executing the command:
 `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
 
@@ -345,7 +346,7 @@ The config provides information for composing a set of transformers:
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
@@ -365,7 +366,7 @@ The config provides information for composing a set of transformers:
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_generic"
+        type = "eth_contract"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "0"
@@ -441,7 +442,7 @@ func (e exporter) Export() []interface1.EventTransformerInitializer, []interface
 }
 ```
 
-#### Preparing transformer(s) to work as pluggins for composeAndExecute
+### Preparing transformers to work as pluggins for composeAndExecute
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)

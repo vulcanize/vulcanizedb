@@ -49,10 +49,10 @@ func (c *Converter) Update(info *contract.Contract) {
 
 // Convert the given watched event log into a types.Log for the given event
 func (c *Converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
-	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
 	log := helpers.ConvertToLog(watchedEvent)
-	err := contract.UnpackLogIntoMap(values, event.Name, log)
+	err := boundContract.UnpackLogIntoMap(values, event.Name, log)
 	if err != nil {
 		return nil, err
 	}

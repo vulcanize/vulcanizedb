@@ -42,7 +42,7 @@ var composeCmd = &cobra.Command{
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"

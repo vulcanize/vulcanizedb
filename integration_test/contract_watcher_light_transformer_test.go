@@ -48,7 +48,6 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(ok).To(Equal(true))
 
 			Expect(c.StartingBlock).To(Equal(int64(6194632)))
-			Expect(c.LastBlock).To(Equal(int64(-1)))
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))
@@ -203,6 +202,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
+			Expect(t.Start).To(Equal(int64(6885698)))
 
 			log := test_helpers.LightNewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
@@ -318,7 +318,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 	Describe("Execute- against both ENS and TrueUSD", func() {
 		BeforeEach(func() {
-			for i := 6885692; i < 6885702; i++ {
+			for i := 6885692; i <= 6885701; i++ {
 				header, err := blockChain.GetHeaderByNumber(int64(i))
 				Expect(err).ToNot(HaveOccurred())
 				_, err = headerRepository.CreateOrUpdateHeader(header)
@@ -332,6 +332,7 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
+			Expect(t.Start).To(Equal(int64(6885702)))
 
 			newOwnerLog := test_helpers.LightNewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)

@@ -32,7 +32,6 @@ import (
 
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
-	var bc core.BlockChain
 	var contractHeaderRepo repository.HeaderRepository // contract_watcher light header repository
 	var coreHeaderRepo repositories.HeaderRepository   // pkg/datastore header repository
 	var eventIDs = []string{
@@ -47,7 +46,7 @@ var _ = Describe("Repository", func() {
 	}
 
 	BeforeEach(func() {
-		db, bc = test_helpers.SetupDBandBC()
+		db, _ = test_helpers.SetupDBandBC()
 		contractHeaderRepo = repository.NewHeaderRepository(db)
 		coreHeaderRepo = repositories.NewHeaderRepository(db)
 	})
@@ -205,7 +204,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("Returns at most 100 headers", func() {
-			add102Headers(coreHeaderRepo, bc)
+			add102Headers(coreHeaderRepo)
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -359,11 +358,11 @@ func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
 }
 
-func add102Headers(coreHeaderRepo repositories.HeaderRepository, blockChain core.BlockChain) {
+func add102Headers(coreHeaderRepo repositories.HeaderRepository) {
+	baseHeader := mocks.MockHeader1
 	for i := 6194632; i < 6194733; i++ {
-		header, err := blockChain.GetHeaderByNumber(int64(i))
+		_, err := coreHeaderRepo.CreateOrUpdateHeader(baseHeader)
 		Expect(err).ToNot(HaveOccurred())
-		_, err = coreHeaderRepo.CreateOrUpdateHeader(header)
-		Expect(err).ToNot(HaveOccurred())
+		baseHeader.BlockNumber++
 	}
 }

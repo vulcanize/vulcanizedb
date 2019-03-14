@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package poller_test
+package integration_test
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ import (
 
 var _ = Describe("Poller", func() {
 
-	var p poller.Poller
+	var contractPoller poller.Poller
 	var con *contract.Contract
 	var db *postgres.DB
 	var bc core.BlockChain
@@ -46,7 +46,7 @@ var _ = Describe("Poller", func() {
 	Describe("Full sync mode", func() {
 		BeforeEach(func() {
 			db, bc = test_helpers.SetupDBandBC()
-			p = poller.NewPoller(bc, db, types.FullSync)
+			contractPoller = poller.NewPoller(bc, db, types.FullSync)
 		})
 
 		Describe("PollContract", func() {
@@ -54,10 +54,9 @@ var _ = Describe("Poller", func() {
 				con = test_helpers.SetupTusdContract(nil, []string{"balanceOf"})
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
-				con.LastBlock = 6707323
 				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
-				err := p.PollContract(*con)
+				err := contractPoller.PollContract(*con, 6707323)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -89,7 +88,7 @@ var _ = Describe("Poller", func() {
 				Expect(len(con.Methods)).To(Equal(1))
 				con.AddEmittedHash(common.HexToHash("0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"), common.HexToHash("0x7e74a86b6e146964fb965db04dc2590516da77f720bb6759337bf5632415fd86"))
 
-				err := p.PollContractAt(*con, 6885877)
+				err := contractPoller.PollContractAt(*con, 6885877)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.Owner{}
@@ -109,10 +108,9 @@ var _ = Describe("Poller", func() {
 				con = test_helpers.SetupTusdContract(nil, nil)
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
-				con.LastBlock = 6707323
 				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
-				err := p.PollContract(*con)
+				err := contractPoller.PollContract(*con, 6707323)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -125,7 +123,7 @@ var _ = Describe("Poller", func() {
 		Describe("FetchContractData", func() {
 			It("Calls a single contract method", func() {
 				var name = new(string)
-				err := p.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
+				err := contractPoller.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(*name).To(Equal("TrueUSD"))
 			})
@@ -135,7 +133,7 @@ var _ = Describe("Poller", func() {
 	Describe("Light sync mode", func() {
 		BeforeEach(func() {
 			db, bc = test_helpers.SetupDBandBC()
-			p = poller.NewPoller(bc, db, types.LightSync)
+			contractPoller = poller.NewPoller(bc, db, types.LightSync)
 		})
 
 		Describe("PollContract", func() {
@@ -143,10 +141,9 @@ var _ = Describe("Poller", func() {
 				con = test_helpers.SetupTusdContract(nil, []string{"balanceOf"})
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
-				con.LastBlock = 6707323
 				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
-				err := p.PollContract(*con)
+				err := contractPoller.PollContract(*con, 6707323)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -178,7 +175,7 @@ var _ = Describe("Poller", func() {
 				Expect(len(con.Methods)).To(Equal(1))
 				con.AddEmittedHash(common.HexToHash("0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"), common.HexToHash("0x7e74a86b6e146964fb965db04dc2590516da77f720bb6759337bf5632415fd86"))
 
-				err := p.PollContractAt(*con, 6885877)
+				err := contractPoller.PollContractAt(*con, 6885877)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.Owner{}
@@ -198,10 +195,9 @@ var _ = Describe("Poller", func() {
 				con = test_helpers.SetupTusdContract(nil, nil)
 				Expect(con.Abi).To(Equal(constants.TusdAbiString))
 				con.StartingBlock = 6707322
-				con.LastBlock = 6707323
 				con.AddEmittedAddr(common.HexToAddress("0xfE9e8709d3215310075d67E3ed32A380CCf451C8"), common.HexToAddress("0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"))
 
-				err := p.PollContract(*con)
+				err := contractPoller.PollContract(*con, 6707323)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
@@ -214,11 +210,10 @@ var _ = Describe("Poller", func() {
 				con = test_helpers.SetupENSContract(nil, []string{"resolver"})
 				Expect(con.Abi).To(Equal(constants.ENSAbiString))
 				con.StartingBlock = 6921967
-				con.LastBlock = 6921968
 				con.EmittedAddrs = map[interface{}]bool{}
 				con.Piping = false
 				con.AddEmittedHash(common.HexToHash("0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8"))
-				err := p.PollContract(*con)
+				err := contractPoller.PollContract(*con, 6921968)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.Resolver{}
@@ -230,10 +225,10 @@ var _ = Describe("Poller", func() {
 
 				test_helpers.TearDown(db)
 				db, bc = test_helpers.SetupDBandBC()
-				p = poller.NewPoller(bc, db, types.LightSync)
+				contractPoller = poller.NewPoller(bc, db, types.LightSync)
 
 				con.Piping = true
-				err = p.PollContract(*con)
+				err = contractPoller.PollContract(*con, 6921968)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
@@ -248,7 +243,7 @@ var _ = Describe("Poller", func() {
 		Describe("FetchContractData", func() {
 			It("Calls a single contract method", func() {
 				var name = new(string)
-				err := p.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
+				err := contractPoller.FetchContractData(constants.TusdAbiString, constants.TusdContractAddress, "name", nil, &name, 6197514)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(*name).To(Equal("TrueUSD"))
 			})

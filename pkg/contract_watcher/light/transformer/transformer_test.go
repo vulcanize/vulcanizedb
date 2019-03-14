@@ -19,6 +19,7 @@ package transformer_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
@@ -54,7 +55,47 @@ var _ = Describe("Transformer", func() {
 			Expect(ok).To(Equal(true))
 
 			Expect(c.StartingBlock).To(Equal(firstBlock))
-			Expect(c.LastBlock).To(Equal(int64(-1)))
+			Expect(c.Abi).To(Equal(fakeAbi))
+			Expect(c.Name).To(Equal(fakeContractName))
+			Expect(c.Address).To(Equal(fakeAddress))
+		})
+
+		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
+			blockRetriever := &fakes.MockLightBlockRetriever{}
+			blockRetriever.FirstBlockErr = fakes.FakeError
+			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
+
+			err := t.Init()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+	})
+
+	Describe("Execute", func() {
+		It("Executes contract transformations", func() {
+			blockRetriever := &fakes.MockLightBlockRetriever{}
+			firstBlock := int64(1)
+			blockRetriever.FirstBlock = firstBlock
+
+			parsr := &fakes.MockParser{}
+			fakeAbi := "fake_abi"
+			parsr.AbiToReturn = fakeAbi
+
+			pollr := &fakes.MockPoller{}
+			fakeContractName := "fake_contract_name"
+			pollr.ContractName = fakeContractName
+
+			t := getFakeTransformer(blockRetriever, parsr, pollr)
+
+			err := t.Init()
+
+			Expect(err).ToNot(HaveOccurred())
+
+			c, ok := t.Contracts[fakeAddress]
+			Expect(ok).To(Equal(true))
+
+			Expect(c.StartingBlock).To(Equal(firstBlock))
 			Expect(c.Abi).To(Equal(fakeAbi))
 			Expect(c.Name).To(Equal(fakeContractName))
 			Expect(c.Address).To(Equal(fakeAddress))
@@ -76,7 +117,7 @@ var _ = Describe("Transformer", func() {
 func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser, pollr poller.Poller) transformer.Transformer {
 	return transformer.Transformer{
 		Parser:           parsr,
-		BlockRetriever:   blockRetriever,
+		Retriever:        blockRetriever,
 		Poller:           pollr,
 		HeaderRepository: &fakes.MockLightHeaderRepository{},
 		Contracts:        map[string]*contract.Contract{},

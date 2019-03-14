@@ -8,7 +8,7 @@ type MockPoller struct {
 	ContractName string
 }
 
-func (*MockPoller) PollContract(con contract.Contract) error {
+func (*MockPoller) PollContract(con contract.Contract, lastBlock int64) error {
 	panic("implement me")
 }
 

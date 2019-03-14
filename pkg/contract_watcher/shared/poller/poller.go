@@ -34,7 +34,7 @@ import (
 )
 
 type Poller interface {
-	PollContract(con contract.Contract) error
+	PollContract(con contract.Contract, lastBlock int64) error
 	PollContractAt(con contract.Contract, blockNumber int64) error
 	FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
 }
@@ -52,8 +52,8 @@ func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *po
 	}
 }
 
-func (p *poller) PollContract(con contract.Contract) error {
-	for i := con.StartingBlock; i <= con.LastBlock; i++ {
+func (p *poller) PollContract(con contract.Contract, lastBlock int64) error {
+	for i := con.StartingBlock; i <= lastBlock; i++ {
 		if err := p.PollContractAt(con, i); err != nil {
 			return err
 		}

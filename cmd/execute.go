@@ -46,7 +46,7 @@ var executeCmd = &cobra.Command{
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     name     = "exampleTransformerExporter"
@@ -128,7 +128,7 @@ func execute() {
 		gw := watcher.NewContractWatcher(&db, blockChain)
 		gw.AddTransformers(ethContractInitializers)
 		wg.Add(1)
-		go contractWatching(&gw, &wg)
+		go watchEthContract(&gw, &wg)
 	}
 	wg.Wait()
 }
@@ -155,10 +155,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute(recheck)
-		if err != nil {
-			// TODO Handle watcher errors in execute
-		}
+		w.Execute(recheck)
 	}
 }
 
@@ -169,23 +166,17 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute()
-		if err != nil {
-			// TODO Handle watcher errors in execute
-		}
+		w.Execute()
 	}
 }
 
-func contractWatching(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
+func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the ContractTransformerInitializer set using the contract watcher
 	log.Info("executing contract_watcher transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute(nil)
-		if err != nil {
-			// TODO Handle watcher errors in execute
-		}
+		w.Execute()
 	}
 }
