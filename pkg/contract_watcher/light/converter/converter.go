@@ -48,7 +48,7 @@ func (c *Converter) Update(info *contract.Contract) {
 
 // Convert the given watched event log into a types.Log for the given event
 func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error) {
-	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	returnLogs := make([]types.Log, 0, len(logs))
 	for _, log := range logs {
 		values := make(map[string]interface{})
@@ -57,7 +57,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			values[field.Name] = i
 		}
 
-		err := contract.UnpackLogIntoMap(values, event.Name, log)
+		err := boundContract.UnpackLogIntoMap(values, event.Name, log)
 		if err != nil {
 			return nil, err
 		}

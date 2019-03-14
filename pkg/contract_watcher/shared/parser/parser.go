@@ -98,7 +98,7 @@ func (p *parser) lookUp(contractAddr string) (string, error) {
 		return v, nil
 	}
 
-	return "", errors.New("ABI not present in lookup tabe")
+	return "", errors.New("ABI not present in lookup table")
 }
 
 // Returns only specified methods, if they meet the criteria

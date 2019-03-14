@@ -97,7 +97,7 @@ func (r *eventRepository) persistLogs(logs []types.Log, eventInfo types.Event, c
 
 // Creates a custom postgres command to persist logs for the given event (compatible with light synced vDB)
 func (r *eventRepository) persistLightSyncLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	tx, err := r.db.Begin()
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (r *eventRepository) persistLightSyncLogs(logs []types.Log, eventInfo types
 
 // Creates a custom postgres command to persist logs for the given event (compatible with fully synced vDB)
 func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	tx, err := r.db.Begin()
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
 	}

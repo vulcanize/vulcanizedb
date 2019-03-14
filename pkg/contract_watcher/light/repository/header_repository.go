@@ -17,8 +17,8 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/hashicorp/golang-lru"
 
@@ -130,7 +130,7 @@ func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string)
 
 // Marks all of the provided headers checked for each of the provided column ids
 func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids []string) error {
-	tx, err := r.db.Begin()
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (r *headerRepository) CheckCache(key string) (interface{}, bool) {
 }
 
 // Used to mark a header checked as part of some external transaction so as to group into one commit
-func MarkHeaderCheckedInTransaction(headerID int64, tx *sql.Tx, eventID string) error {
+func MarkHeaderCheckedInTransaction(headerID int64, tx *sqlx.Tx, eventID string) error {
 	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+eventID+`)
 		VALUES ($1, $2) 
 		ON CONFLICT (header_id) DO

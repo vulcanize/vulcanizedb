@@ -168,7 +168,6 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		StartingBlock: 6194634,
-		LastBlock:     6507323,
 		Events:        p.GetEvents(wantedEvents),
 		Methods:       p.GetSelectMethods(wantedMethods),
 		MethodArgs:    map[string]bool{},
@@ -215,7 +214,6 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 		Abi:           p.Abi(),
 		ParsedAbi:     p.ParsedAbi(),
 		StartingBlock: 6194634,
-		LastBlock:     6507323,
 		Events:        p.GetEvents(wantedEvents),
 		Methods:       p.GetSelectMethods(wantedMethods),
 		MethodArgs:    map[string]bool{},
@@ -224,7 +222,7 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 }
 
 func TearDown(db *postgres.DB) {
-	tx, err := db.Begin()
+	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM blocks`)

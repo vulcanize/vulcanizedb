@@ -50,7 +50,6 @@ var _ = Describe("contractWatcher full transformer", func() {
 			Expect(ok).To(Equal(true))
 
 			Expect(c.StartingBlock).To(Equal(int64(6194633)))
-			Expect(c.LastBlock).To(Equal(int64(6194634)))
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))
 			Expect(c.Address).To(Equal(tusdAddr))

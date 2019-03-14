@@ -17,7 +17,6 @@
 package transformer_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
 	"math/rand"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/poller"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
@@ -67,7 +67,7 @@ var _ = Describe("Transformer", func() {
 			Expect(ok).To(Equal(true))
 
 			Expect(c.StartingBlock).To(Equal(firstBlock))
-			Expect(c.LastBlock).To(Equal(mostRecentBlock))
+			Expect(t.LastBlock).To(Equal(mostRecentBlock))
 			Expect(c.Abi).To(Equal(fakeAbi))
 			Expect(c.Name).To(Equal(fakeContractName))
 			Expect(c.Address).To(Equal(fakeAddress))
@@ -90,7 +90,7 @@ func getTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Parser
 	return transformer.Transformer{
 		FilterRepository: &fakes.MockFilterRepository{},
 		Parser:           parsr,
-		BlockRetriever:   blockRetriever,
+		Retriever:        blockRetriever,
 		Poller:           pollr,
 		Contracts:        map[string]*contract.Contract{},
 		Config:           mocks.MockConfig,

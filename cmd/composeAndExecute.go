@@ -42,7 +42,7 @@ var composeAndExecuteCmd = &cobra.Command{
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
@@ -180,7 +180,7 @@ func composeAndExecute() {
 		gw := watcher.NewContractWatcher(&db, blockChain)
 		gw.AddTransformers(ethContractInitializers)
 		wg.Add(1)
-		go contractWatching(&gw, &wg)
+		go watchEthContract(&gw, &wg)
 	}
 	wg.Wait()
 }

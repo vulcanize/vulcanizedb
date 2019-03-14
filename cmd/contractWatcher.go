@@ -46,7 +46,7 @@ Requires a .toml config file:
     port     = 5432
 
   [client]
-    ipcPath  = "path_to_ethjson_rpc"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
   [contract]
     network  = ""
@@ -112,12 +112,14 @@ func contractWatcher() {
 	}
 
 	for range ticker.C {
-		t.Execute()
+		err = t.Execute()
+		if err != nil {
+			log.Error("Execution error for transformer:", t.GetConfig().Name, err)
+		}
 	}
 }
 
 func init() {
 	rootCmd.AddCommand(contractWatcherCmd)
-
 	contractWatcherCmd.Flags().StringVarP(&mode, "mode", "o", "light", "'light' or 'full' mode to work with either light synced or fully synced vDB (default is light)")
 }

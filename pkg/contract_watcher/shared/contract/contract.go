@@ -34,7 +34,6 @@ type Contract struct {
 	Address        string                       // Address of the contract
 	Network        string                       // Network on which the contract is deployed; default empty "" is Ethereum mainnet
 	StartingBlock  int64                        // Starting block of the contract
-	LastBlock      int64                        // Most recent block on the network
 	Abi            string                       // Abi string
 	ParsedAbi      abi.ABI                      // Parsed abi
 	Events         map[string]types.Event       // List of events to watch

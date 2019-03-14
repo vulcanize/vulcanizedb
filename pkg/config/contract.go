@@ -19,6 +19,7 @@ package config
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"strings"
 )
 
@@ -65,20 +66,20 @@ type ContractConfig struct {
 	Piping map[string]bool
 }
 
-func (oc *ContractConfig) PrepConfig() {
+func (contractConfig *ContractConfig) PrepConfig() {
 	addrs := viper.GetStringSlice("contract.addresses")
-	oc.Network = viper.GetString("contract.network")
-	oc.Addresses = make(map[string]bool, len(addrs))
-	oc.Abis = make(map[string]string, len(addrs))
-	oc.Methods = make(map[string][]string, len(addrs))
-	oc.Events = make(map[string][]string, len(addrs))
-	oc.MethodArgs = make(map[string][]string, len(addrs))
-	oc.EventArgs = make(map[string][]string, len(addrs))
-	oc.StartingBlocks = make(map[string]int64, len(addrs))
-	oc.Piping = make(map[string]bool, len(addrs))
+	contractConfig.Network = viper.GetString("contract.network")
+	contractConfig.Addresses = make(map[string]bool, len(addrs))
+	contractConfig.Abis = make(map[string]string, len(addrs))
+	contractConfig.Methods = make(map[string][]string, len(addrs))
+	contractConfig.Events = make(map[string][]string, len(addrs))
+	contractConfig.MethodArgs = make(map[string][]string, len(addrs))
+	contractConfig.EventArgs = make(map[string][]string, len(addrs))
+	contractConfig.StartingBlocks = make(map[string]int64, len(addrs))
+	contractConfig.Piping = make(map[string]bool, len(addrs))
 	// De-dupe addresses
 	for _, addr := range addrs {
-		oc.Addresses[strings.ToLower(addr)] = true
+		contractConfig.Addresses[strings.ToLower(addr)] = true
 	}
 
 	// Iterate over addresses to pull out config info for each contract
@@ -87,26 +88,29 @@ func (oc *ContractConfig) PrepConfig() {
 
 		// Get and check abi
 		var abi string
-		_, abiOK := transformer["abi"]
+		abiInterface, abiOK := transformer["abi"]
 		if !abiOK {
 			log.Warnf("contract %s not configured with an ABI, will attempt to fetch it from Etherscan\r\n", addr)
 		} else {
-			abiInterface := transformer["abi"]
 			abi, abiOK = abiInterface.(string)
 			if !abiOK {
 				log.Fatal(addr, "transformer `abi` not of type []string")
 			}
 		}
-		oc.Abis[strings.ToLower(addr)] = abi
+		if abi != "" {
+			if _, abiErr := geth.ParseAbi(abi); abiErr != nil {
+				log.Fatal(addr, "transformer `abi` not valid JSON")
+			}
+		}
+		contractConfig.Abis[strings.ToLower(addr)] = abi
 
 		// Get and check events
 		events := make([]string, 0)
-		_, eventsOK := transformer["events"]
+		eventsInterface, eventsOK := transformer["events"]
 		if !eventsOK {
 			log.Warnf("contract %s not configured with a list of events to watch, will watch all events\r\n", addr)
 			events = []string{}
 		} else {
-			eventsInterface := transformer["events"]
 			eventsI, eventsOK := eventsInterface.([]interface{})
 			if !eventsOK {
 				log.Fatal(addr, "transformer `events` not of type []string\r\n")
@@ -119,16 +123,15 @@ func (oc *ContractConfig) PrepConfig() {
 				events = append(events, str)
 			}
 		}
-		oc.Events[strings.ToLower(addr)] = events
+		contractConfig.Events[strings.ToLower(addr)] = events
 
 		// Get and check methods
 		methods := make([]string, 0)
-		_, methodsOK := transformer["methods"]
+		methodsInterface, methodsOK := transformer["methods"]
 		if !methodsOK {
 			log.Warnf("contract %s not configured with a list of methods to poll, will not poll any methods\r\n", addr)
 			methods = []string{}
 		} else {
-			methodsInterface := transformer["methods"]
 			methodsI, methodsOK := methodsInterface.([]interface{})
 			if !methodsOK {
 				log.Fatal(addr, "transformer `methods` not of type []string\r\n")
@@ -141,16 +144,15 @@ func (oc *ContractConfig) PrepConfig() {
 				methods = append(methods, str)
 			}
 		}
-		oc.Methods[strings.ToLower(addr)] = methods
+		contractConfig.Methods[strings.ToLower(addr)] = methods
 
 		// Get and check eventArgs
 		eventArgs := make([]string, 0)
-		_, eventArgsOK := transformer["eventArgs"]
+		eventArgsInterface, eventArgsOK := transformer["eventArgs"]
 		if !eventArgsOK {
 			log.Warnf("contract %s not configured with a list of event arguments to filter for, will not filter events for specific emitted values\r\n", addr)
 			eventArgs = []string{}
 		} else {
-			eventArgsInterface := transformer["eventArgs"]
 			eventArgsI, eventArgsOK := eventArgsInterface.([]interface{})
 			if !eventArgsOK {
 				log.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
@@ -163,16 +165,15 @@ func (oc *ContractConfig) PrepConfig() {
 				eventArgs = append(eventArgs, str)
 			}
 		}
-		oc.EventArgs[strings.ToLower(addr)] = eventArgs
+		contractConfig.EventArgs[strings.ToLower(addr)] = eventArgs
 
 		// Get and check methodArgs
 		methodArgs := make([]string, 0)
-		_, methodArgsOK := transformer["methodArgs"]
+		methodArgsInterface, methodArgsOK := transformer["methodArgs"]
 		if !methodArgsOK {
 			log.Warnf("contract %s not configured with a list of method argument values to poll with, will poll methods with all available arguments\r\n", addr)
 			methodArgs = []string{}
 		} else {
-			methodArgsInterface := transformer["methodArgs"]
 			methodArgsI, methodArgsOK := methodArgsInterface.([]interface{})
 			if !methodArgsOK {
 				log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
@@ -185,7 +186,7 @@ func (oc *ContractConfig) PrepConfig() {
 				methodArgs = append(methodArgs, str)
 			}
 		}
-		oc.MethodArgs[strings.ToLower(addr)] = methodArgs
+		contractConfig.MethodArgs[strings.ToLower(addr)] = methodArgs
 
 		// Get and check startingBlock
 		startInterface, startOK := transformer["startingblock"]
@@ -196,7 +197,7 @@ func (oc *ContractConfig) PrepConfig() {
 		if !startOK {
 			log.Fatal(addr, "transformer `startingBlock` not of type int\r\n")
 		}
-		oc.StartingBlocks[strings.ToLower(addr)] = start
+		contractConfig.StartingBlocks[strings.ToLower(addr)] = start
 
 		// Get pipping
 		var piping bool
@@ -211,6 +212,6 @@ func (oc *ContractConfig) PrepConfig() {
 				log.Fatal(addr, "transformer `piping` not of type bool\r\n")
 			}
 		}
-		oc.Piping[strings.ToLower(addr)] = piping
+		contractConfig.Piping[strings.ToLower(addr)] = piping
 	}
 }

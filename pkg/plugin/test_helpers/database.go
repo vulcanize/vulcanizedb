@@ -54,7 +54,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 }
 
 func TearDown(db *postgres.DB) {
-	tx, err := db.Begin()
+	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM headers`)

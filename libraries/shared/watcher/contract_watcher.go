@@ -49,7 +49,6 @@ func (watcher *ContractWatcher) AddTransformers(inits interface{}) error {
 		return fmt.Errorf("initializers of type %T, not %T", inits, []transformer.ContractTransformerInitializer{})
 	}
 
-	watcher.Transformers = make([]transformer.ContractTransformer, 0, len(initializers))
 	for _, initializer := range initializers {
 		t := initializer(watcher.DB, watcher.BlockChain)
 		watcher.Transformers = append(watcher.Transformers, t)
@@ -65,7 +64,7 @@ func (watcher *ContractWatcher) AddTransformers(inits interface{}) error {
 	return nil
 }
 
-func (watcher *ContractWatcher) Execute(interface{}) error {
+func (watcher *ContractWatcher) Execute() error {
 	for _, transformer := range watcher.Transformers {
 		err := transformer.Execute()
 		if err != nil {
