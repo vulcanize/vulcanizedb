@@ -52,7 +52,7 @@ var _ = Describe("Watcher", func() {
 		w := watcher.NewEventWatcher(nil, nil)
 		fakeTransformer := &mocks.MockTransformer{}
 		fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
-		w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
 		Expect(len(w.Transformers)).To(Equal(1))
 		Expect(w.Transformers).To(ConsistOf(fakeTransformer))
@@ -68,8 +68,8 @@ var _ = Describe("Watcher", func() {
 		fakeTransformer2 := &mocks.MockTransformer{}
 		fakeTransformer2.SetTransformerConfig(mocks.FakeTransformerConfig)
 
-		w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer1.FakeTransformerInitializer})
-		w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer2.FakeTransformerInitializer})
+		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer1.FakeTransformerInitializer})
+		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer2.FakeTransformerInitializer})
 
 		Expect(len(w.Transformers)).To(Equal(2))
 		Expect(w.Topics).To(Equal([]common.Hash{common.HexToHash("FakeTopic"),
@@ -80,13 +80,13 @@ var _ = Describe("Watcher", func() {
 
 	It("calculates earliest starting block number", func() {
 		fakeTransformer1 := &mocks.MockTransformer{}
-		fakeTransformer1.SetTransformerConfig(transformer.TransformerConfig{StartingBlockNumber: 5})
+		fakeTransformer1.SetTransformerConfig(transformer.EventTransformerConfig{StartingBlockNumber: 5})
 
 		fakeTransformer2 := &mocks.MockTransformer{}
-		fakeTransformer2.SetTransformerConfig(transformer.TransformerConfig{StartingBlockNumber: 3})
+		fakeTransformer2.SetTransformerConfig(transformer.EventTransformerConfig{StartingBlockNumber: 3})
 
 		w := watcher.NewEventWatcher(nil, nil)
-		w.AddTransformers([]transformer.TransformerInitializer{
+		w.AddTransformers([]transformer.EventTransformerInitializer{
 			fakeTransformer1.FakeTransformerInitializer,
 			fakeTransformer2.FakeTransformerInitializer,
 		})
@@ -123,7 +123,7 @@ var _ = Describe("Watcher", func() {
 
 		It("executes each transformer", func() {
 			fakeTransformer := &mocks.MockTransformer{}
-			w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := w.Execute(constants.HeaderMissing)
@@ -133,7 +133,7 @@ var _ = Describe("Watcher", func() {
 
 		It("returns an error if transformer returns an error", func() {
 			fakeTransformer := &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
-			w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
 			err := w.Execute(constants.HeaderMissing)
@@ -145,10 +145,10 @@ var _ = Describe("Watcher", func() {
 			transformerA := &mocks.MockTransformer{}
 			transformerB := &mocks.MockTransformer{}
 
-			configA := transformer.TransformerConfig{TransformerName: "transformerA",
+			configA := transformer.EventTransformerConfig{TransformerName: "transformerA",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
 				Topic:             "0xA"}
-			configB := transformer.TransformerConfig{TransformerName: "transformerB",
+			configB := transformer.EventTransformerConfig{TransformerName: "transformerB",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000b"},
 				Topic:             "0xB"}
 
@@ -163,7 +163,7 @@ var _ = Describe("Watcher", func() {
 
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 			w = watcher.NewEventWatcher(db, &mockBlockChain)
-			w.AddTransformers([]transformer.TransformerInitializer{
+			w.AddTransformers([]transformer.EventTransformerInitializer{
 				transformerA.FakeTransformerInitializer, transformerB.FakeTransformerInitializer})
 
 			err := w.Execute(constants.HeaderMissing)
@@ -182,9 +182,9 @@ var _ = Describe("Watcher", func() {
 			It("fetches logs for added transformers", func() {
 				addresses := []string{"0xA", "0xB"}
 				topic := "0x1"
-				fakeTransformer.SetTransformerConfig(transformer.TransformerConfig{
+				fakeTransformer.SetTransformerConfig(transformer.EventTransformerConfig{
 					Topic: topic, ContractAddresses: addresses})
-				w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+				w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
 				err := w.Execute(constants.HeaderMissing)
 				Expect(err).NotTo(HaveOccurred())
@@ -201,7 +201,7 @@ var _ = Describe("Watcher", func() {
 				fetcherError := errors.New("FetcherError")
 				mockBlockChain.SetGetEthLogsWithCustomQueryErr(fetcherError)
 
-				w.AddTransformers([]transformer.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+				w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 				err := w.Execute(constants.HeaderMissing)
 				Expect(err).To(MatchError(fetcherError))
 			})
