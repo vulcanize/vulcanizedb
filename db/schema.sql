@@ -67,23 +67,23 @@ CREATE VIEW public.block_stats AS
 --
 
 CREATE TABLE public.blocks (
-    number bigint,
-    gaslimit bigint,
-    gasused bigint,
-    "time" bigint,
     id integer NOT NULL,
     difficulty bigint,
-    hash character varying(66),
-    nonce character varying(20),
-    parenthash character varying(66),
-    size character varying,
-    uncle_hash character varying(66),
-    eth_node_id integer NOT NULL,
-    is_final boolean,
-    miner character varying(42),
     extra_data character varying,
+    gaslimit bigint,
+    gasused bigint,
+    hash character varying(66),
+    miner character varying(42),
+    nonce character varying(20),
+    number bigint,
+    parenthash character varying(66),
     reward double precision,
     uncles_reward double precision,
+    size character varying,
+    "time" bigint,
+    is_final boolean,
+    uncle_hash character varying(66),
+    eth_node_id integer NOT NULL,
     eth_node_fingerprint character varying(128) NOT NULL
 );
 
@@ -144,10 +144,10 @@ ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
 
 CREATE TABLE public.eth_nodes (
     id integer NOT NULL,
+    client_name character varying,
     genesis_block character varying(66),
     network_id numeric,
-    eth_node_id character varying(128),
-    client_name character varying
+    eth_node_id character varying(128)
 );
 
 
@@ -374,15 +374,15 @@ ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
 
 CREATE TABLE public.transactions (
     id integer NOT NULL,
+    block_id integer NOT NULL,
+    input_data character varying,
+    tx_from character varying(66),
+    gaslimit numeric,
+    gasprice numeric,
     hash character varying(66),
     nonce numeric,
     tx_to character varying(66),
-    gaslimit numeric,
-    gasprice numeric,
-    value numeric,
-    block_id integer NOT NULL,
-    tx_from character varying(66),
-    input_data character varying
+    value numeric
 );
 
 
@@ -412,8 +412,8 @@ ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 
 CREATE TABLE public.watched_contracts (
     contract_id integer NOT NULL,
-    contract_hash character varying(66),
-    contract_abi json
+    contract_abi json,
+    contract_hash character varying(66)
 );
 
 
@@ -562,14 +562,6 @@ ALTER TABLE ONLY public.checked_headers
 
 
 --
--- Name: watched_contracts contract_hash_uc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.watched_contracts
-    ADD CONSTRAINT contract_hash_uc UNIQUE (contract_hash);
-
-
---
 -- Name: blocks eth_node_id_block_number_uc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -650,6 +642,14 @@ ALTER TABLE ONLY public.transactions
 
 
 --
+-- Name: watched_contracts watched_contracts_contract_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watched_contracts
+    ADD CONSTRAINT watched_contracts_contract_hash_key UNIQUE (contract_hash);
+
+
+--
 -- Name: watched_contracts watched_contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -662,13 +662,6 @@ ALTER TABLE ONLY public.watched_contracts
 --
 
 CREATE INDEX block_id_index ON public.transactions USING btree (block_id);
-
-
---
--- Name: block_number_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX block_number_index ON public.blocks USING btree (number);
 
 
 --
@@ -686,6 +679,13 @@ CREATE INDEX node_id_index ON public.blocks USING btree (eth_node_id);
 
 
 --
+-- Name: number_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX number_index ON public.blocks USING btree (number);
+
+
+--
 -- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -697,14 +697,6 @@ CREATE INDEX tx_from_index ON public.transactions USING btree (tx_from);
 --
 
 CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
-
-
---
--- Name: transactions blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
 
 
 --
@@ -745,6 +737,14 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.receipts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
 
 
 --
