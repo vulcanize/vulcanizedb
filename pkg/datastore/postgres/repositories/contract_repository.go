@@ -42,7 +42,7 @@ func (contractRepository ContractRepository) CreateContract(contract core.Contra
 					SET contract_hash = $1, contract_abi = $2
 				`, contract.Hash, abiToInsert)
 	if err != nil {
-		return postgres.ErrDBInsertFailed
+		return postgres.ErrDBInsertFailed(err)
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (contractRepository ContractRepository) addTransactions(contract core.Contr
                    gasprice,
                    value,
                    input_data
-            FROM transactions
+            FROM full_sync_transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)
 	if err != nil {

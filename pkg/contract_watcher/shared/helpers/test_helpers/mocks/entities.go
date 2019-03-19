@@ -34,7 +34,10 @@ var TransferBlock1 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 	Number: 6194633,
 	Transactions: []core.Transaction{{
-		Hash: "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
+		GasLimit: 0,
+		GasPrice: 0,
+		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
+		Nonce:    0,
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 			ContractAddress: "",
@@ -52,6 +55,8 @@ var TransferBlock1 = core.Block{
 				Data:  "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe",
 			}},
 		},
+		TxIndex: 0,
+		Value:   "0",
 	}},
 }
 
@@ -59,7 +64,10 @@ var TransferBlock2 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ooo",
 	Number: 6194634,
 	Transactions: []core.Transaction{{
-		Hash: "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
+		GasLimit: 0,
+		GasPrice: 0,
+		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
+		Nonce:    0,
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
 			ContractAddress: "",
@@ -77,6 +85,8 @@ var TransferBlock2 = core.Block{
 				Data:  "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000089d24a6b4ccb1b6faa2625fe562bdd9a23260359000000000000000000000000000000000000000000000000392d2e2bda9c00000000000000000000000000000000000000000000000000927f41fa0a4a418000000000000000000000000000000000000000000000000000000000005adcfebe",
 			}},
 		},
+		TxIndex: 0,
+		Value:   "0",
 	}},
 }
 
@@ -84,7 +94,10 @@ var NewOwnerBlock1 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ppp",
 	Number: 6194635,
 	Transactions: []core.Transaction{{
-		Hash: "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
+		GasLimit: 0,
+		GasPrice: 0,
+		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
+		Nonce:    0,
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
 			ContractAddress: "",
@@ -102,6 +115,8 @@ var NewOwnerBlock1 = core.Block{
 				Data:  "0x000000000000000000000000000000000000000000000000000000000000af21",
 			}},
 		},
+		TxIndex: 0,
+		Value:   "0",
 	}},
 }
 
@@ -109,7 +124,10 @@ var NewOwnerBlock2 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ggg",
 	Number: 6194636,
 	Transactions: []core.Transaction{{
-		Hash: "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",
+		GasLimit: 0,
+		GasPrice: 0,
+		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",
+		Nonce:    0,
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",
 			ContractAddress: "",
@@ -127,6 +145,8 @@ var NewOwnerBlock2 = core.Block{
 				Data:  "0x000000000000000000000000000000000000000000000000000000000000af21",
 			}},
 		},
+		TxIndex: 0,
+		Value:   "0",
 	}},
 }
 

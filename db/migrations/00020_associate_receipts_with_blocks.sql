@@ -4,7 +4,7 @@ ALTER TABLE receipts
 
 UPDATE receipts  
   SET block_id = (
-    SELECT block_id FROM transactions WHERE transactions.id = receipts.transaction_id
+    SELECT block_id FROM full_sync_transactions WHERE full_sync_transactions.id = receipts.transaction_id
   );
 
 ALTER TABLE receipts
@@ -28,7 +28,7 @@ CREATE INDEX transaction_id_index ON receipts (transaction_id);
 
 UPDATE receipts
   SET transaction_id = (
-    SELECT id FROM transactions WHERE transactions.hash = receipts.tx_hash
+    SELECT id FROM full_sync_transactions WHERE full_sync_transactions.hash = receipts.tx_hash
   );
 
 ALTER TABLE receipts
@@ -37,7 +37,7 @@ ALTER TABLE receipts
 ALTER TABLE receipts
   ADD CONSTRAINT transaction_fk
 FOREIGN KEY (transaction_id)
-REFERENCES transactions (id)
+REFERENCES full_sync_transactions (id)
 ON DELETE CASCADE;
 
 ALTER TABLE receipts

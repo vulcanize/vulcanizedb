@@ -17,13 +17,15 @@
 package core
 
 type Transaction struct {
-	Hash     string `db:"hash"`
 	Data     string `db:"input_data"`
-	Nonce    uint64 `db:"nonce"`
-	To       string `db:"tx_to"`
 	From     string `db:"tx_from"`
-	GasLimit uint64 `db:"gaslimit"`
-	GasPrice int64  `db:"gasprice"`
+	GasLimit uint64
+	GasPrice int64
+	Hash     string
+	Nonce    uint64
+	Raw      []byte
 	Receipt
-	Value string `db:"value"`
+	To      string `db:"tx_to"`
+	TxIndex int64  `db:"tx_index"`
+	Value   string
 }

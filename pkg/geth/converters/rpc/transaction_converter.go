@@ -17,6 +17,7 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"strings"
@@ -52,7 +53,10 @@ func (rtc *RpcTransactionConverter) ConvertTransactionsToCore(gethBlock *types.B
 				log.Println("transaction sender: ", err)
 				return err
 			}
-			coreTransaction := transToCoreTrans(transaction, &from)
+			coreTransaction, convertErr := transToCoreTrans(transaction, &from, int64(gethTransactionIndex))
+			if convertErr != nil {
+				return convertErr
+			}
 			coreTransaction, err = rtc.appendReceiptToTransaction(coreTransaction)
 			if err != nil {
 				log.Println("receipt: ", err)
@@ -79,18 +83,25 @@ func (rtc *RpcTransactionConverter) appendReceiptToTransaction(transaction core.
 	return transaction, nil
 }
 
-func transToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
+func transToCoreTrans(transaction *types.Transaction, from *common.Address, transactionIndex int64) (core.Transaction, error) {
 	data := hexutil.Encode(transaction.Data())
+	var raw bytes.Buffer
+	encodeErr := transaction.EncodeRLP(&raw)
+	if encodeErr != nil {
+		return core.Transaction{}, encodeErr
+	}
 	return core.Transaction{
-		Hash:     transaction.Hash().Hex(),
-		Nonce:    transaction.Nonce(),
-		To:       strings.ToLower(addressToHex(transaction.To())),
+		Data:     data,
 		From:     strings.ToLower(addressToHex(from)),
 		GasLimit: transaction.Gas(),
 		GasPrice: transaction.GasPrice().Int64(),
+		Hash:     transaction.Hash().Hex(),
+		Nonce:    transaction.Nonce(),
+		Raw:      raw.Bytes(),
+		To:       strings.ToLower(addressToHex(transaction.To())),
+		TxIndex:  transactionIndex,
 		Value:    transaction.Value().String(),
-		Data:     data,
-	}
+	}, nil
 }
 
 func addressToHex(to *common.Address) string {
