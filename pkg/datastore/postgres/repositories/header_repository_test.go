@@ -180,6 +180,57 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
+	Describe("creating a transaction", func() {
+		It("adds a transaction", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.Transaction{
+				From:    fromAddress.Hex(),
+				Hash:    txHash.Hex(),
+				To:      toAddress.Hex(),
+				TxIndex: txIndex.Int64(),
+			}
+
+			insertErr := repo.CreateTransaction(headerID, transaction)
+
+			Expect(insertErr).NotTo(HaveOccurred())
+			var dbTransaction core.Transaction
+			err = db.Get(&dbTransaction, `SELECT hash, tx_from, tx_to, tx_index FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTransaction).To(Equal(transaction))
+		})
+
+		It("silently ignores duplicate inserts", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.Transaction{
+				From:    fromAddress.Hex(),
+				Hash:    txHash.Hex(),
+				To:      toAddress.Hex(),
+				TxIndex: txIndex.Int64(),
+			}
+
+			insertErr := repo.CreateTransaction(headerID, transaction)
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			insertTwoErr := repo.CreateTransaction(headerID, transaction)
+			Expect(insertTwoErr).NotTo(HaveOccurred())
+
+			var dbTransactions []core.Transaction
+			err = db.Select(&dbTransactions, `SELECT hash, tx_from, tx_to, tx_index FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbTransactions)).To(Equal(1))
+		})
+	})
+
 	Describe("Getting a header", func() {
 		It("returns header if it exists", func() {
 			_, err = repo.CreateOrUpdateHeader(header)

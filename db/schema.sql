@@ -259,6 +259,41 @@ ALTER SEQUENCE public.headers_id_seq OWNED BY public.headers.id;
 
 
 --
+-- Name: light_sync_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.light_sync_transactions (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    hash text,
+    raw jsonb,
+    tx_index integer,
+    tx_from text,
+    tx_to text
+);
+
+
+--
+-- Name: light_sync_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.light_sync_transactions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: light_sync_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.light_sync_transactions_id_seq OWNED BY public.light_sync_transactions.id;
+
+
+--
 -- Name: log_filters; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -505,6 +540,13 @@ ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.head
 
 
 --
+-- Name: light_sync_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions ALTER COLUMN id SET DEFAULT nextval('public.light_sync_transactions_id_seq'::regclass);
+
+
+--
 -- Name: log_filters id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -601,6 +643,22 @@ ALTER TABLE ONLY public.goose_db_version
 
 ALTER TABLE ONLY public.headers
     ADD CONSTRAINT headers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_header_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_header_id_hash_key UNIQUE (header_id, hash);
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -731,6 +789,14 @@ ALTER TABLE ONLY public.headers
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

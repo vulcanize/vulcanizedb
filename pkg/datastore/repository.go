@@ -55,6 +55,7 @@ type FilterRepository interface {
 
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
+	CreateTransaction(headerID int64, transaction core.Transaction) error
 	GetHeader(blockNumber int64) (core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
 }
