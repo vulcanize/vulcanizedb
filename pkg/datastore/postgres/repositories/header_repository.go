@@ -49,11 +49,21 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	return 0, ErrValidHeaderExists
 }
 
+func (repository HeaderRepository) CreateTransaction(headerID int64, transaction core.Transaction) error {
+	_, err := repository.database.Exec(`INSERT INTO public.light_sync_transactions
+		(header_id, hash, tx_to, tx_from, tx_index) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT DO NOTHING`,
+		headerID, transaction.Hash, transaction.To, transaction.From, transaction.TxIndex)
+	return err
+}
+
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
 	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		blockNumber, repository.database.Node.ID)
-	log.Error("GetHeader: error getting headers: ", err)
+	if err != nil {
+		log.Error("GetHeader: error getting headers: ", err)
+	}
 	return header, err
 }
 

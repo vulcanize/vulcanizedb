@@ -56,6 +56,10 @@ func (repository *MockHeaderRepository) CreateOrUpdateHeader(header core.Header)
 	return repository.createOrUpdateHeaderReturnID, repository.createOrUpdateHeaderErr
 }
 
+func (repository *MockHeaderRepository) CreateTransaction(headerID int64, transaction core.Transaction) error {
+	panic("implement me")
+}
+
 func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	repository.GetHeaderPassedBlockNumber = blockNumber
 	return core.Header{BlockNumber: blockNumber, Hash: repository.getHeaderReturnBlockHash}, repository.getHeaderError
