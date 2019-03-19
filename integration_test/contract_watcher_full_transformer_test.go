@@ -40,8 +40,10 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			_, insertErr := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
@@ -63,8 +65,10 @@ var _ = Describe("contractWatcher full transformer", func() {
 		})
 
 		It("Does nothing if watched events are unset", func() {
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			_, insertErr := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 			var testConf config.ContractConfig
 			testConf = test_helpers.TusdConfig
 			testConf.Events = nil
@@ -80,8 +84,10 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 	Describe("Execute", func() {
 		BeforeEach(func() {
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
-			blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			_, insertErr := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(mocks.TransferBlock2)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {
@@ -181,8 +187,10 @@ var _ = Describe("contractWatcher full transformer", func() {
 
 	Describe("Execute- against ENS registry contract", func() {
 		BeforeEach(func() {
-			blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock1)
-			blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock2)
+			_, insertErr := blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(mocks.NewOwnerBlock2)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 		})
 
 		It("Transforms watched contract data into custom repositories", func() {

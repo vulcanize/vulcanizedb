@@ -17,6 +17,7 @@
 package common_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -227,6 +228,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				big.NewInt(3),
 				hexutil.MustDecode("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"),
 			)
+			var rawTransaction bytes.Buffer
+			encodeErr := gethTransaction.EncodeRLP(&rawTransaction)
+			Expect(encodeErr).NotTo(HaveOccurred())
 
 			gethReceipt := &types.Receipt{
 				Bloom:             types.BytesToBloom(hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")),
@@ -261,6 +265,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
+			Expect(coreTransaction.Raw).To(Equal(rawTransaction.Bytes()))
+			Expect(coreTransaction.TxIndex).To(Equal(int64(0)))
 			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().String()))
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
 

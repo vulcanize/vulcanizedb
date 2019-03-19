@@ -32,18 +32,18 @@ type LogRepository struct {
 func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) error {
 	tx, _ := logRepository.DB.Beginx()
 	for _, tlog := range lgs {
-		_, err := tx.Exec(
+		_, insertLogErr := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
 		)
-		if err != nil {
-			err = tx.Rollback()
-			if err != nil {
-				logrus.Error("CreateLogs: could not perform rollback: ", err)
+		if insertLogErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Error("CreateLogs: could not perform rollback: ", rollbackErr)
 			}
-			return postgres.ErrDBInsertFailed
+			return postgres.ErrDBInsertFailed(insertLogErr)
 		}
 	}
 	err := tx.Commit()
@@ -52,7 +52,7 @@ func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) e
 		if err != nil {
 			logrus.Error("CreateLogs: could not perform rollback: ", err)
 		}
-		return postgres.ErrDBInsertFailed
+		return postgres.ErrDBInsertFailed(err)
 	}
 	return nil
 }

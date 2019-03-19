@@ -17,6 +17,10 @@
 package repositories_test
 
 import (
+	"bytes"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 	"strconv"
 
@@ -51,7 +55,8 @@ var _ = Describe("Saving blocks", func() {
 		block := core.Block{
 			Number: 123,
 		}
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
+		Expect(insertErr).NotTo(HaveOccurred())
 		nodeTwo := core.Node{
 			GenesisBlock: "0x456",
 			NetworkID:    1,
@@ -98,8 +103,9 @@ var _ = Describe("Saving blocks", func() {
 			UnclesReward: unclesReward,
 		}
 
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
 
+		Expect(insertErr).NotTo(HaveOccurred())
 		savedBlock, err := blockRepository.GetBlock(blockNumber)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(savedBlock.Reward).To(Equal(blockReward))
@@ -127,42 +133,54 @@ var _ = Describe("Saving blocks", func() {
 	It("saves one transaction associated to the block", func() {
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{{}},
+			Transactions: []core.Transaction{fakes.FakeTransaction},
 		}
 
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := blockRepository.GetBlock(123)
+		Expect(insertErr).NotTo(HaveOccurred())
+		savedBlock, getErr := blockRepository.GetBlock(123)
+		Expect(getErr).NotTo(HaveOccurred())
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 	})
 
 	It("saves two transactions associated to the block", func() {
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{{}, {}},
+			Transactions: []core.Transaction{fakes.FakeTransaction, fakes.FakeTransaction},
 		}
 
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
 
-		savedBlock, _ := blockRepository.GetBlock(123)
+		Expect(insertErr).NotTo(HaveOccurred())
+		savedBlock, getErr := blockRepository.GetBlock(123)
+		Expect(getErr).NotTo(HaveOccurred())
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
 	})
 
 	It(`replaces blocks and transactions associated to the block
 			when a more new block is in conflict (same block number + nodeid)`, func() {
 		blockOne := core.Block{
-			Number:       123,
-			Hash:         "xabc",
-			Transactions: []core.Transaction{{Hash: "x123"}, {Hash: "x345"}},
+			Number: 123,
+			Hash:   "xabc",
+			Transactions: []core.Transaction{
+				fakes.GetFakeTransaction("x123", core.Receipt{}),
+				fakes.GetFakeTransaction("x345", core.Receipt{}),
+			},
 		}
 		blockTwo := core.Block{
-			Number:       123,
-			Hash:         "xdef",
-			Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
+			Number: 123,
+			Hash:   "xdef",
+			Transactions: []core.Transaction{
+				fakes.GetFakeTransaction("x678", core.Receipt{}),
+				fakes.GetFakeTransaction("x9ab", core.Receipt{}),
+			},
 		}
 
-		blockRepository.CreateOrUpdateBlock(blockOne)
-		blockRepository.CreateOrUpdateBlock(blockTwo)
+		_, insertErrOne := blockRepository.CreateOrUpdateBlock(blockOne)
+		Expect(insertErrOne).NotTo(HaveOccurred())
+		_, insertErrTwo := blockRepository.CreateOrUpdateBlock(blockTwo)
+		Expect(insertErrTwo).NotTo(HaveOccurred())
 
 		savedBlock, _ := blockRepository.GetBlock(123)
 		Expect(len(savedBlock.Transactions)).To(Equal(2))
@@ -173,14 +191,21 @@ var _ = Describe("Saving blocks", func() {
 	It(`does not replace blocks when block number is not unique
 			     but block number + node id is`, func() {
 		blockOne := core.Block{
-			Number:       123,
-			Transactions: []core.Transaction{{Hash: "x123"}, {Hash: "x345"}},
+			Number: 123,
+			Transactions: []core.Transaction{
+				fakes.GetFakeTransaction("x123", core.Receipt{}),
+				fakes.GetFakeTransaction("x345", core.Receipt{}),
+			},
 		}
 		blockTwo := core.Block{
-			Number:       123,
-			Transactions: []core.Transaction{{Hash: "x678"}, {Hash: "x9ab"}},
+			Number: 123,
+			Transactions: []core.Transaction{
+				fakes.GetFakeTransaction("x678", core.Receipt{}),
+				fakes.GetFakeTransaction("x9ab", core.Receipt{}),
+			},
 		}
-		blockRepository.CreateOrUpdateBlock(blockOne)
+		_, insertErrOne := blockRepository.CreateOrUpdateBlock(blockOne)
+		Expect(insertErrOne).NotTo(HaveOccurred())
 		nodeTwo := core.Node{
 			GenesisBlock: "0x456",
 			NetworkID:    1,
@@ -189,10 +214,14 @@ var _ = Describe("Saving blocks", func() {
 		test_config.CleanTestDB(dbTwo)
 		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
-		blockRepository.CreateOrUpdateBlock(blockOne)
-		repositoryTwo.CreateOrUpdateBlock(blockTwo)
-		retrievedBlockOne, _ := blockRepository.GetBlock(123)
-		retrievedBlockTwo, _ := repositoryTwo.GetBlock(123)
+		_, insertErrTwo := blockRepository.CreateOrUpdateBlock(blockOne)
+		Expect(insertErrTwo).NotTo(HaveOccurred())
+		_, insertErrThree := repositoryTwo.CreateOrUpdateBlock(blockTwo)
+		Expect(insertErrThree).NotTo(HaveOccurred())
+		retrievedBlockOne, getErrOne := blockRepository.GetBlock(123)
+		Expect(getErrOne).NotTo(HaveOccurred())
+		retrievedBlockTwo, getErrTwo := repositoryTwo.GetBlock(123)
+		Expect(getErrTwo).NotTo(HaveOccurred())
 
 		Expect(retrievedBlockOne.Transactions[0].Hash).To(Equal("x123"))
 		Expect(retrievedBlockTwo.Transactions[0].Hash).To(Equal("x678"))
@@ -223,46 +252,51 @@ var _ = Describe("Saving blocks", func() {
 		var value = new(big.Int)
 		value.SetString("34940183920000000000", 10)
 		inputData := "0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"
+		gethTransaction := types.NewTransaction(nonce, common.HexToAddress(to), value, gasLimit, big.NewInt(gasPrice), common.FromHex(inputData))
+		var raw bytes.Buffer
+		rlpErr := gethTransaction.EncodeRLP(&raw)
+		Expect(rlpErr).NotTo(HaveOccurred())
 		transaction := core.Transaction{
-			Hash:     "x1234",
-			GasPrice: gasPrice,
-			GasLimit: gasLimit,
-			Nonce:    nonce,
-			To:       to,
-			From:     from,
-			Value:    value.String(),
 			Data:     inputData,
+			From:     from,
+			GasLimit: gasLimit,
+			GasPrice: gasPrice,
+			Hash:     "x1234",
+			Nonce:    nonce,
+			Raw:      raw.Bytes(),
+			Receipt:  core.Receipt{},
+			To:       to,
+			TxIndex:  2,
+			Value:    value.String(),
 		}
 		block := core.Block{
 			Number:       123,
 			Transactions: []core.Transaction{transaction},
 		}
 
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
+		Expect(insertErr).NotTo(HaveOccurred())
 
-		savedBlock, _ := blockRepository.GetBlock(123)
+		savedBlock, err := blockRepository.GetBlock(123)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(len(savedBlock.Transactions)).To(Equal(1))
 		savedTransaction := savedBlock.Transactions[0]
-		Expect(savedTransaction.Data).To(Equal(transaction.Data))
-		Expect(savedTransaction.Hash).To(Equal(transaction.Hash))
-		Expect(savedTransaction.To).To(Equal(to))
-		Expect(savedTransaction.From).To(Equal(from))
-		Expect(savedTransaction.Nonce).To(Equal(nonce))
-		Expect(savedTransaction.GasLimit).To(Equal(gasLimit))
-		Expect(savedTransaction.GasPrice).To(Equal(gasPrice))
-		Expect(savedTransaction.Value).To(Equal(value.String()))
+		Expect(savedTransaction).To(Equal(transaction))
 	})
 
 	Describe("The missing block numbers", func() {
 		It("is empty the starting block number is the highest known block number", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
+			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
 
+			Expect(insertErr).NotTo(HaveOccurred())
 			Expect(len(blockRepository.MissingBlockNumbers(1, 1, node.ID))).To(Equal(0))
 		})
 
 		It("is empty if copies of block exist from both current node and another", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 0})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
+			_, insertErrOne := blockRepository.CreateOrUpdateBlock(core.Block{Number: 0})
+			Expect(insertErrOne).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 			nodeTwo := core.Node{
 				GenesisBlock: "0x456",
 				NetworkID:    1,
@@ -270,7 +304,8 @@ var _ = Describe("Saving blocks", func() {
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())
 			repositoryTwo := repositories.NewBlockRepository(dbTwo)
-			repositoryTwo.CreateOrUpdateBlock(core.Block{Number: 0})
+			_, insertErrThree := repositoryTwo.CreateOrUpdateBlock(core.Block{Number: 0})
+			Expect(insertErrThree).NotTo(HaveOccurred())
 
 			missing := blockRepository.MissingBlockNumbers(0, 1, node.ID)
 
@@ -278,42 +313,53 @@ var _ = Describe("Saving blocks", func() {
 		})
 
 		It("is the only missing block number", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
+			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
+			Expect(insertErr).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(1, 2, node.ID)).To(Equal([]int64{1}))
 		})
 
 		It("is both missing block numbers", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
+			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
+			Expect(insertErr).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(1, 3, node.ID)).To(Equal([]int64{1, 2}))
 		})
 
 		It("goes back to the starting block number", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			Expect(insertErr).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{4, 5}))
 		})
 
 		It("only includes missing block numbers", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			_, insertErrOne := blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			Expect(insertErrOne).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{5}))
 		})
 
 		It("includes blocks created by a different node", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			_, insertErrOne := blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			Expect(insertErrOne).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(4, 6, "Different node id")).To(Equal([]int64{4, 5, 6}))
 		})
 
 		It("is a list with multiple gaps", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 5})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 10})
+			_, insertErrOne := blockRepository.CreateOrUpdateBlock(core.Block{Number: 4})
+			Expect(insertErrOne).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 5})
+			Expect(insertErrTwo).NotTo(HaveOccurred())
+			_, insertErrThree := blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
+			Expect(insertErrThree).NotTo(HaveOccurred())
+			_, insertErrFour := blockRepository.CreateOrUpdateBlock(core.Block{Number: 10})
+			Expect(insertErrFour).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(3, 10, node.ID)).To(Equal([]int64{3, 6, 7, 9}))
 		})
@@ -323,8 +369,10 @@ var _ = Describe("Saving blocks", func() {
 		})
 
 		It("only returns requested range even when other gaps exist", func() {
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
-			blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
+			_, insertErrOne := blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
+			Expect(insertErrOne).NotTo(HaveOccurred())
+			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 
 			Expect(blockRepository.MissingBlockNumbers(1, 5, node.ID)).To(Equal([]int64{1, 2, 4, 5}))
 		})
@@ -334,11 +382,13 @@ var _ = Describe("Saving blocks", func() {
 		It("sets the status of blocks within n-20 of chain HEAD as final", func() {
 			blockNumberOfChainHead := 25
 			for i := 0; i < blockNumberOfChainHead; i++ {
-				blockRepository.CreateOrUpdateBlock(core.Block{Number: int64(i), Hash: strconv.Itoa(i)})
+				_, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: int64(i), Hash: strconv.Itoa(i)})
+				Expect(err).NotTo(HaveOccurred())
 			}
 
-			blockRepository.SetBlocksStatus(int64(blockNumberOfChainHead))
+			setErr := blockRepository.SetBlocksStatus(int64(blockNumberOfChainHead))
 
+			Expect(setErr).NotTo(HaveOccurred())
 			blockOne, err := blockRepository.GetBlock(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blockOne.IsFinal).To(Equal(true))

@@ -17,6 +17,7 @@
 package fakes
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"strconv"
@@ -46,5 +47,44 @@ func GetFakeHeader(blockNumber int64) core.Header {
 		BlockNumber: blockNumber,
 		Raw:         rawFakeHeader,
 		Timestamp:   strconv.FormatInt(fakeTimestamp, 10),
+	}
+}
+
+var fakeTransaction types.Transaction
+var rawTransaction bytes.Buffer
+var _ = fakeTransaction.EncodeRLP(&rawTransaction)
+var FakeTransaction = core.Transaction{
+	Data:     "",
+	From:     "",
+	GasLimit: 0,
+	GasPrice: 0,
+	Hash:     "",
+	Nonce:    0,
+	Raw:      rawTransaction.Bytes(),
+	Receipt:  core.Receipt{},
+	To:       "",
+	TxIndex:  0,
+	Value:    "0",
+}
+
+func GetFakeTransaction(hash string, receipt core.Receipt) core.Transaction {
+	gethTransaction := types.Transaction{}
+	var raw bytes.Buffer
+	err := gethTransaction.EncodeRLP(&raw)
+	if err != nil {
+		panic("failed to marshal transaction creating test fake")
+	}
+	return core.Transaction{
+		Data:     "",
+		From:     "",
+		GasLimit: 0,
+		GasPrice: 0,
+		Hash:     hash,
+		Nonce:    0,
+		Raw:      raw.Bytes(),
+		Receipt:  receipt,
+		To:       "",
+		TxIndex:  0,
+		Value:    "0",
 	}
 }

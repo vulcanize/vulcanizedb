@@ -109,14 +109,18 @@ var _ = Describe("Postgres DB", func() {
 
 		_, err := postgres.NewDB(invalidDatabase, node)
 
-		Expect(err).To(Equal(postgres.ErrDBConnectionFailed))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(postgres.DbConnectionFailedMsg))
 	})
 
 	It("throws error when can't create node", func() {
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 		node := core.Node{GenesisBlock: badHash, NetworkID: 1, ID: "x123", ClientName: "geth"}
+
 		_, err := postgres.NewDB(test_config.DBConfig, node)
-		Expect(err).To(Equal(postgres.ErrUnableToSetNode))
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(postgres.SettingNodeFailedMsg))
 	})
 
 	It("does not commit log if log is invalid", func() {
