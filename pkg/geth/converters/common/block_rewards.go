@@ -17,54 +17,68 @@
 package common
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func CalcUnclesReward(block core.Block, uncles []*types.Header) float64 {
-	var unclesReward float64
+// (U_n + 8 - B_n) * R / 8
+// Returns a map of miner addresses to a map of the uncles they mined (hashes) to the rewards received for that uncle
+func CalcUnclesReward(block core.Block, uncles []*types.Header) (*big.Int, map[string]map[string]*big.Int) {
+	uncleRewards := new(big.Int)
+	mappedUncleRewards := make(map[string]map[string]*big.Int)
 	for _, uncle := range uncles {
-		blockNumber := block.Number
-		staticBlockReward := float64(staticRewardByBlockNumber(blockNumber))
-		unclesReward += (1.0 + float64(uncle.Number.Int64()-block.Number)/8.0) * staticBlockReward
+		staticBlockReward := staticRewardByBlockNumber(block.Number)
+		rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
+		uncleBlock := big.NewInt(uncle.Number.Int64())
+		uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
+		mainBlock := big.NewInt(block.Number)
+		uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
+		thisUncleReward := rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+		uncleRewards = uncleRewards.Add(uncleRewards, thisUncleReward)
+		mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()].Add(mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()], thisUncleReward)
 	}
-	return unclesReward
+	return uncleRewards, mappedUncleRewards
 }
 
-func CalcBlockReward(block core.Block, uncles []*types.Header) float64 {
-	blockNumber := block.Number
-	staticBlockReward := staticRewardByBlockNumber(blockNumber)
+func CalcBlockReward(block core.Block, uncles []*types.Header) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(block.Number)
 	transactionFees := calcTransactionFees(block)
 	uncleInclusionRewards := calcUncleInclusionRewards(block, uncles)
-	return transactionFees + uncleInclusionRewards + staticBlockReward
+	tmp := transactionFees.Add(transactionFees, uncleInclusionRewards)
+	return tmp.Add(tmp, staticBlockReward)
 }
 
-func calcTransactionFees(block core.Block) float64 {
-	var transactionFees float64
+func calcTransactionFees(block core.Block) *big.Int {
+	transactionFees := new(big.Int)
 	for _, transaction := range block.Transactions {
 		receipt := transaction.Receipt
-		transactionFees += float64(uint64(transaction.GasPrice) * receipt.GasUsed)
+		gasPrice := big.NewInt(transaction.GasPrice)
+		gasUsed := big.NewInt(int64(receipt.GasUsed))
+		transactionFee := gasPrice.Mul(gasPrice, gasUsed)
+		transactionFees = transactionFees.Add(transactionFees, transactionFee)
 	}
-	return transactionFees / params.Ether
+	return transactionFees
 }
 
-func calcUncleInclusionRewards(block core.Block, uncles []*types.Header) float64 {
-	var uncleInclusionRewards float64
-	staticBlockReward := staticRewardByBlockNumber(block.Number)
+func calcUncleInclusionRewards(block core.Block, uncles []*types.Header) *big.Int {
+	uncleInclusionRewards := new(big.Int)
 	for range uncles {
-		uncleInclusionRewards += staticBlockReward * 1 / 32
+		staticBlockReward := staticRewardByBlockNumber(block.Number)
+		staticBlockReward.Div(staticBlockReward, big.NewInt(32))
+		uncleInclusionRewards.Add(uncleInclusionRewards, staticBlockReward)
 	}
 	return uncleInclusionRewards
 }
 
-func staticRewardByBlockNumber(blockNumber int64) float64 {
-	var staticBlockReward float64
+func staticRewardByBlockNumber(blockNumber int64) *big.Int {
+	staticBlockReward := new(big.Int)
 	//https://blog.ethereum.org/2017/10/12/byzantium-hf-announcement/
 	if blockNumber >= 4370000 {
-		staticBlockReward = 3
+		staticBlockReward.SetString("3000000000000000000", 10)
 	} else {
-		staticBlockReward = 5
+		staticBlockReward.SetString("5000000000000000000", 10)
 	}
 	return staticBlockReward
 }
