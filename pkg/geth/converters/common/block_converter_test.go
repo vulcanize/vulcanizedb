@@ -290,7 +290,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := vulcCommon.ToCoreReceipt(gethReceipt)
+			expectedReceipt, err := vulcCommon.ToCoreReceipt(gethReceipt)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 
@@ -329,7 +330,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.To).To(Equal(""))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := vulcCommon.ToCoreReceipt(gethReceipt)
+			expectedReceipt, err := vulcCommon.ToCoreReceipt(gethReceipt)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 	})

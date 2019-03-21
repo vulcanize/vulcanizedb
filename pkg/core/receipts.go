@@ -18,20 +18,12 @@ package core
 
 type Receipt struct {
 	Bloom             string
-	ContractAddress   string
-	CumulativeGasUsed uint64
-	GasUsed           uint64
-	Logs              []Log
-	StateRoot         string
-	Status            int
-	TxHash            string
-}
-
-type ReceiptModel struct {
 	ContractAddress   string `db:"contract_address"`
-	CumulativeGasUsed string `db:"cumulative_gas_used"`
-	GasUsed           string `db:"gas_used"`
+	CumulativeGasUsed uint64 `db:"cumulative_gas_used"`
+	GasUsed           uint64 `db:"gas_used"`
+	Logs              []Log
 	StateRoot         string `db:"state_root"`
 	Status            int
 	TxHash            string `db:"tx_hash"`
+	Rlp               []byte `db:"rlp"`
 }
