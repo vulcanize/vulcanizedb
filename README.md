@@ -350,11 +350,11 @@ type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []interface1.TransformerInitializer, []interface1.StorageTransformerInitializer {
-	return []interface1.TransformerInitializer{
-		transformer1.TransformerInitializer,
-		transformer2.TransformerInitializer,
-		transformer3.TransformerInitializer,
+func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer {
+	return []interface1.EventTransformerInitializer{
+		transformer1.EventTransformerInitializer,
+		transformer2.EventTransformerInitializer,
+		transformer3.EventTransformerInitializer,
 	},     []interface1.StorageTransformerInitializer{
 		transformer4.StorageTransformerInitializer,
     }
@@ -365,7 +365,7 @@ func (e exporter) Export() []interface1.TransformerInitializer, []interface1.Sto
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
-that exports a variable `TransformerInitializer` or `StorageTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go#L33)
+that exports a variable `EventTransformerInitializer` or `StorageTransformerInitializer` that are of type [EventTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go#L33)
 or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/storage_transformer.go#L31), respectively
 * Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go#L83)
 or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go#L58) watcher execution modes

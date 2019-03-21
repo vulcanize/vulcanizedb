@@ -149,7 +149,7 @@ func composeAndExecute() {
 		os.Exit(1)
 	}
 
-	// Use the Exporters export method to load the TransformerInitializer and StorageTransformerInitializer sets
+	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
 	ethEventInitializers, ethStorageInitializers := exporter.Export()
 
 	// Setup bc and db objects

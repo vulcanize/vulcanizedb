@@ -72,12 +72,12 @@ func (w *writer) WritePlugin() error {
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
 	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Parens(List(
-		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "TransformerInitializer"),
+		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "EventTransformerInitializer"),
 		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
 	)).Block(Return(
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
-			"TransformerInitializer").Values(code[config.EthEvent]...),
+			"EventTransformerInitializer").Values(code[config.EthEvent]...),
 		Index().Qual(
 			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
 			"StorageTransformerInitializer").Values(code[config.EthStorage]...))) // Exports the collected event and storage transformer initializers
@@ -97,7 +97,7 @@ func (w *writer) collectTransformers() (map[config.TransformerType][]Code, error
 		path := transformer.RepositoryPath + "/" + transformer.Path
 		switch transformer.Type {
 		case config.EthEvent:
-			code[config.EthEvent] = append(code[config.EthEvent], Qual(path, "TransformerInitializer"))
+			code[config.EthEvent] = append(code[config.EthEvent], Qual(path, "EventTransformerInitializer"))
 		case config.EthStorage:
 			code[config.EthStorage] = append(code[config.EthStorage], Qual(path, "StorageTransformerInitializer"))
 		default:

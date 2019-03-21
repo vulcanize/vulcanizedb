@@ -52,10 +52,10 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 }
 
 // Adds transformers to the watcher and updates the chunker, so that it will consider the new transformers.
-func (watcher *EventWatcher) AddTransformers(initializers []transformer.TransformerInitializer) {
+func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTransformerInitializer) {
 	var contractAddresses []common.Address
 	var topic0s []common.Hash
-	var configs []transformer.TransformerConfig
+	var configs []transformer.EventTransformerConfig
 
 	for _, initializer := range initializers {
 		t := initializer(watcher.DB)

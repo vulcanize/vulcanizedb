@@ -28,8 +28,8 @@ Using the `compose` or `composeAndExecute` command, event watchers can be loaded
 The event transformer is responsible for converting event logs into more useful data objects and storing them in Postgres.
 The event transformer is composed of converter and repository interfaces and a config struct:
 ```go
-type Transformer struct {
-	Config     transformer.TransformerConfig
+type EventTransformer struct {
+	Config     transformer.EventTransformerConfig
 	Converter  Converter
 	Repository Repository
 }
@@ -86,7 +86,7 @@ In order to watch events at a smart contract, for those events the developer mus
 1. Model - struct representing the final data model we want to write to Postgres.
 1. Converter - an interface which can unpack event logs into our entities and convert those entities to our models. 
 1. Repository - an interface to write our models to Postgres.
-1. TransformerInitializer - a public variable which exports our configured transformer to be loaded as part of a plugin.
+1. EventTransformerInitializer - a public variable which exports our configured transformer to be loaded as part of a plugin.
 1. DB migrations - migrations to generate the Postgres schema, tables, views, function, etc that are needed to store and interface with the transformed data models.
 
 The example event we will use looks like: 
@@ -101,7 +101,7 @@ it is working at, the contract's ABI, the topic (e.g. event signature; topic0) t
 and ending block numbers.
 
 ```go
-type TransformerConfig struct {
+type EventTransformerConfig struct {
 	TransformerName     string
 	ContractAddresses   []string
 	ContractAbi         string
@@ -318,14 +318,14 @@ func (repository ExampleRepository) RecheckHeaders(startingBlockNumber int64, en
 }
 ```
 
-### TransformerInitializer
+### EventTransformerInitializer
 
 A transformer initializer variable needs to be exported from somewhere within the transformer repository so that the transformer can be
-loaded as part of a plugin in the `compose` or `composeAndExecute` commands. It is important that this variable is named `TransformerInitializer` and
-it must be of `type TransformerInitializer func(db *postgres.DB) EventTransformer`.
+loaded as part of a plugin in the `compose` or `composeAndExecute` commands. It is important that this variable is named `EventTransformerInitializer` and
+it must be of `type EventTransformerInitializer func(db *postgres.DB) EventTransformer`.
 
 ```go
-var TransformerInitializer transformer.TransformerInitializer = factories.Transformer{
+var EventTransformerInitializer transformer.EventTransformerInitializer = factories.Transformer{
 	Config:     exampleEventConfig,
 	Converter:  ExampleConverter{},
 	Repository: &ExampleRepository{},
@@ -384,5 +384,5 @@ of which headers we have already filtered through for this event.
 
 To create a transformer for a contract event we need to create entities for unpacking the raw log, models to represent
 the final data structure, a converter to mediate this unpacking and conversion between entities to models, a repository to write
-these models to Postgres, db migrations to accommodate these models in Postgres, and a TransformerInitializer to export the
+these models to Postgres, db migrations to accommodate these models in Postgres, and a EventTransformerInitializer to export the
 configured transformer and load it as a plugin to the `compose` or `composeAndExecute` commands as described in the [main readme](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/README.md#composeandexecute-configuration).

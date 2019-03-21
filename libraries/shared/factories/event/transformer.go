@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package factories
+package event
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
@@ -27,7 +27,7 @@ import (
 )
 
 type Transformer struct {
-	Config     transformer.TransformerConfig
+	Config     transformer.EventTransformerConfig
 	Converter  Converter
 	Repository Repository
 }
@@ -75,6 +75,6 @@ func (transformer Transformer) GetName() string {
 	return transformer.Config.TransformerName
 }
 
-func (transformer Transformer) GetConfig() transformer.TransformerConfig {
+func (transformer Transformer) GetConfig() transformer.EventTransformerConfig {
 	return transformer.Config
 }
