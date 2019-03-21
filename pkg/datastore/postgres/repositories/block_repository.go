@@ -23,7 +23,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -145,8 +144,8 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		block.IsFinal,
 		block.Miner,
 		block.ExtraData,
-		utilities.NullToZero(block.Reward),
-		utilities.NullToZero(block.UnclesReward),
+		nullStringToZero(block.Reward),
+		nullStringToZero(block.UnclesReward),
 		blockRepository.database.Node.ID).
 		Scan(&blockId)
 	if insertBlockErr != nil {
@@ -200,7 +199,7 @@ func (blockRepository BlockRepository) createUncle(tx *sqlx.Tx, blockId int64, u
        (hash, block_id, reward, miner, raw, block_timestamp, eth_node_id, eth_node_fingerprint)
        VALUES ($1, $2, $3, $4, $5, $6, $7::NUMERIC, $8)
        RETURNING id`,
-		uncle.Hash, blockId, utilities.NullToZero(uncle.Reward), uncle.Miner, uncle.Raw, uncle.Timestamp, blockRepository.database.NodeID, blockRepository.database.Node.ID)
+		uncle.Hash, blockId, nullStringToZero(uncle.Reward), uncle.Miner, uncle.Raw, uncle.Timestamp, blockRepository.database.NodeID, blockRepository.database.Node.ID)
 	return err
 }
 

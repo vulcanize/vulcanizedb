@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )

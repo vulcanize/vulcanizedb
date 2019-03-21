@@ -126,7 +126,8 @@ var _ = Describe("Geth cold importer", func() {
 
 		err := importer.Execute(blockNumber, blockNumber, "node_id")
 		Expect(err).NotTo(HaveOccurred())
-		expectedReceipts := vulcCommon.ToCoreReceipts(fakeReceipts)
+		expectedReceipts, err := vulcCommon.ToCoreReceipts(fakeReceipts)
+		Expect(err).ToNot(HaveOccurred())
 		mockReceiptRepository.AssertCreateReceiptsAndLogsCalledWith(blockId, expectedReceipts)
 	})
 

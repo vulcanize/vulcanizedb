@@ -9,6 +9,7 @@ CREATE TABLE light_sync_receipts(
   state_root          VARCHAR(66),
   status              INTEGER,
   tx_hash             VARCHAR(66),
+  rlp                 BYTEA,
   UNIQUE(header_id, transaction_id)
 );
 
