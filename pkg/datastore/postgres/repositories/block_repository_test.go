@@ -84,8 +84,8 @@ var _ = Describe("Saving blocks", func() {
 		uncleHash := "x789"
 		blockSize := string("1000")
 		difficulty := int64(10)
-		blockReward := float64(5.132)
-		unclesReward := float64(3.580)
+		blockReward := "5132000000000000000"
+		unclesReward := "3580000000000000000"
 		block := core.Block{
 			Reward:       blockReward,
 			Difficulty:   difficulty,

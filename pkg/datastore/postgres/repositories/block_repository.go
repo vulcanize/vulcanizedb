@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"math/big"
 
 	"github.com/jmoiron/sqlx"
 
@@ -139,6 +140,13 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		}
 		return 0, postgres.ErrDBInsertFailed(insertBlockErr)
 	}
+	if len(block.MappedUncleRewards) > 0 {
+		insertUncleErr := blockRepository.createUncleRewards(tx, blockId, block.Hash, block.MappedUncleRewards)
+		if insertUncleErr != nil {
+			tx.Rollback()
+			return 0, postgres.ErrDBInsertFailed(insertUncleErr)
+		}
+	}
 	if len(block.Transactions) > 0 {
 		insertTxErr := blockRepository.createTransactions(tx, blockId, block.Transactions)
 		if insertTxErr != nil {
@@ -158,6 +166,28 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		return 0, commitErr
 	}
 	return blockId, nil
+}
+
+func (blockRepository BlockRepository) createUncleRewards(tx *sqlx.Tx, blockId int64, blockHash string, mappedUncleRewards map[string]map[string]*big.Int) error {
+	for miner, uncleRewards := range mappedUncleRewards {
+		for uncleHash, reward := range uncleRewards {
+			err := blockRepository.createUncleReward(tx, blockId, blockHash, miner, uncleHash, reward.String())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (blockRepository BlockRepository) createUncleReward(tx *sqlx.Tx, blockId int64, blockHash, miner, uncleHash, amount string) error {
+	_, err := tx.Exec(
+		`INSERT INTO uncle_rewards
+       (block_id, block_hash, uncle_hash, uncle_reward, miner_address)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+		blockId, blockHash, miner, uncleHash, amount)
+	return err
 }
 
 func (blockRepository BlockRepository) createTransactions(tx *sqlx.Tx, blockId int64, transactions []core.TransactionModel) error {

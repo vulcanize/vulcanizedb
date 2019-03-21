@@ -52,7 +52,9 @@ func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error)
 		Transactions: transactions,
 		UncleHash:    gethBlock.UncleHash().Hex(),
 	}
-	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles())
-	coreBlock.UnclesReward = CalcUnclesReward(coreBlock, gethBlock.Uncles())
+	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles()).String()
+	uncleRewards, mappedUncleRewards := CalcUnclesReward(coreBlock, gethBlock.Uncles())
+	coreBlock.UnclesReward = uncleRewards.String()
+	coreBlock.MappedUncleRewards = mappedUncleRewards
 	return coreBlock, nil
 }
