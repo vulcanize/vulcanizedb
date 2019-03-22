@@ -19,10 +19,11 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -260,7 +261,7 @@ func (blockRepository BlockRepository) createReceipt(tx *sqlx.Tx, blockId int64,
 	//Not currently persisting log bloom filters
 	var receiptId int
 	err := tx.QueryRow(
-		`INSERT INTO receipts
+		`INSERT INTO full_sync_receipts
                (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7) 
                RETURNING id`,
