@@ -41,13 +41,13 @@ type Transformer struct {
 	RepositoryPath string
 }
 
-func (c *Plugin) GetPluginPaths() (string, string, error) {
-	path, err := helpers.CleanPath(c.FilePath)
+func (pluginConfig *Plugin) GetPluginPaths() (string, string, error) {
+	path, err := helpers.CleanPath(pluginConfig.FilePath)
 	if err != nil {
 		return "", "", err
 	}
 
-	name := strings.Split(c.FileName, ".")[0]
+	name := strings.Split(pluginConfig.FileName, ".")[0]
 	goFile := filepath.Join(path, name+".go")
 	soFile := filepath.Join(path, name+".so")
 
@@ -55,13 +55,13 @@ func (c *Plugin) GetPluginPaths() (string, string, error) {
 }
 
 // Removes duplicate migration paths and returns them in ranked order
-func (c *Plugin) GetMigrationsPaths() ([]string, error) {
+func (pluginConfig *Plugin) GetMigrationsPaths() ([]string, error) {
 	paths := make(map[uint64]string)
 	highestRank := -1
-	for name, transformer := range c.Transformers {
+	for name, transformer := range pluginConfig.Transformers {
 		repo := transformer.RepositoryPath
 		mig := transformer.MigrationPath
-		path := filepath.Join("$GOPATH/src", c.Home, "vendor", repo, mig)
+		path := filepath.Join("$GOPATH/src", pluginConfig.Home, "vendor", repo, mig)
 		cleanPath, err := helpers.CleanPath(path)
 		if err != nil {
 			return nil, err
@@ -96,9 +96,9 @@ func (c *Plugin) GetMigrationsPaths() ([]string, error) {
 }
 
 // Removes duplicate repo paths before returning them
-func (c *Plugin) GetRepoPaths() map[string]bool {
+func (pluginConfig *Plugin) GetRepoPaths() map[string]bool {
 	paths := make(map[string]bool)
-	for _, transformer := range c.Transformers {
+	for _, transformer := range pluginConfig.Transformers {
 		paths[transformer.RepositoryPath] = true
 	}
 
@@ -111,26 +111,29 @@ const (
 	UnknownTransformerType TransformerType = iota
 	EthEvent
 	EthStorage
+	EthContract
 )
 
-func (pt TransformerType) String() string {
+func (transformerType TransformerType) String() string {
 	names := [...]string{
 		"Unknown",
 		"eth_event",
 		"eth_storage",
+		"eth_contract",
 	}
 
-	if pt > EthStorage || pt < EthEvent {
+	if transformerType > EthContract || transformerType < EthEvent {
 		return "Unknown"
 	}
 
-	return names[pt]
+	return names[transformerType]
 }
 
 func GetTransformerType(str string) TransformerType {
 	types := [...]TransformerType{
 		EthEvent,
 		EthStorage,
+		EthContract,
 	}
 
 	for _, ty := range types {

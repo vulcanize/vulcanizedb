@@ -1,14 +1,14 @@
 package fakes
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/contract"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
 )
 
 type MockPoller struct {
 	ContractName string
 }
 
-func (*MockPoller) PollContract(con contract.Contract) error {
+func (*MockPoller) PollContract(con contract.Contract, lastBlock int64) error {
 	panic("implement me")
 }
 
