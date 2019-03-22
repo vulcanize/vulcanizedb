@@ -18,6 +18,7 @@ package geth_test
 
 import (
 	"context"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -242,6 +243,30 @@ var _ = Describe("Geth blockchain", func() {
 
 			mockClient.AssertHeaderByNumberCalledWith(context.Background(), nil)
 			Expect(result).To(Equal(big.NewInt(blockNumber)))
+		})
+	})
+
+	Describe("getting an account balance", func() {
+		It("fetches the balance for a given account address at a given block height", func() {
+			balance := big.NewInt(100000)
+			mockClient.SetBalanceAt(balance)
+
+			result, err := blockChain.GetAccountBalance(common.HexToAddress("0x40"), big.NewInt(100))
+			Expect(err).NotTo(HaveOccurred())
+
+			mockClient.AssertBalanceAtCalled(context.Background(), common.HexToAddress("0x40"), big.NewInt(100))
+			Expect(result).To(Equal(balance))
+		})
+
+		It("fails if the client returns an error", func() {
+			balance := big.NewInt(100000)
+			mockClient.SetBalanceAt(balance)
+			setErr := errors.New("testError")
+			mockClient.SetBalanceAtErr(setErr)
+
+			_, err := blockChain.GetAccountBalance(common.HexToAddress("0x40"), big.NewInt(100))
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(setErr))
 		})
 	})
 })

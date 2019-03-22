@@ -265,3 +265,7 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 
 	return headers, err
 }
+
+func (blockChain *BlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
+	return blockChain.ethClient.BalanceAt(context.Background(), address, blockNumber)
+}

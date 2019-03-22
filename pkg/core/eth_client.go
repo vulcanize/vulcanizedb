@@ -32,4 +32,5 @@ type EthClient interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	TransactionSender(ctx context.Context, tx *types.Transaction, block common.Hash, index uint) (common.Address, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }

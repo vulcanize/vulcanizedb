@@ -114,9 +114,13 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(5.31355))
+
+			expectedBlockReward := new(big.Int)
+			expectedBlockReward.SetString("5313550000000000000", 10)
+
+			blockReward := vulcCommon.CalcBlockReward(coreBlock, block.Uncles())
+			Expect(blockReward.String()).To(Equal(expectedBlockReward.String()))
 		})
 
 		It("calculates the uncles reward for a block", func() {
@@ -151,9 +155,19 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcUnclesReward(coreBlock, block.Uncles())).To(Equal(6.875))
+
+			expectedTotalReward := new(big.Int)
+			expectedTotalReward.SetString("6875000000000000000", 10)
+			totalReward, mappedRewards := vulcCommon.CalcUnclesReward(coreBlock, block.Uncles())
+			Expect(totalReward.String()).To(Equal(expectedTotalReward.String()))
+
+			Expect(len(mappedRewards)).To(Equal(1))
+			Expect(len(mappedRewards["0x0000000000000000000000000000000000000000"])).To(Equal(2))
+			Expect(mappedRewards["0x0000000000000000000000000000000000000000"]["0xb629de4014b6e30cf9555ee833f1806fa0d8b8516fde194405f9c98c2deb8772"].String()).
+				To(Equal(big.NewInt(3125000000000000000).String()))
+			Expect(mappedRewards["0x0000000000000000000000000000000000000000"]["0x673f5231e4888a951e0bc8a25b5774b982e6e9e258362c21affaff6e02dd5a2b"].String()).
+				To(Equal(big.NewInt(3750000000000000000).String()))
 		})
 
 		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
@@ -200,9 +214,12 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(3.024990672))
+
+			expectedRewards := new(big.Int)
+			expectedRewards.SetString("3024990672000000000", 10)
+			rewards := vulcCommon.CalcBlockReward(coreBlock, block.Uncles())
+			Expect(rewards.String()).To(Equal(expectedRewards.String()))
 		})
 	})
 

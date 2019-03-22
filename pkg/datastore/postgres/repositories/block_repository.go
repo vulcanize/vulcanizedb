@@ -19,11 +19,12 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"math/big"
 
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -131,7 +132,23 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
                 (eth_node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward, eth_node_fingerprint)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING id `,
-		blockRepository.database.NodeID, block.Number, block.GasLimit, block.GasUsed, block.Time, block.Difficulty, block.Hash, block.Nonce, block.ParentHash, block.Size, block.UncleHash, block.IsFinal, block.Miner, block.ExtraData, block.Reward, block.UnclesReward, blockRepository.database.Node.ID).
+		blockRepository.database.NodeID,
+		block.Number,
+		block.GasLimit,
+		block.GasUsed,
+		block.Time,
+		block.Difficulty,
+		block.Hash,
+		block.Nonce,
+		block.ParentHash,
+		block.Size,
+		block.UncleHash,
+		block.IsFinal,
+		block.Miner,
+		block.ExtraData,
+		utilities.NullToZero(block.Reward),
+		utilities.NullToZero(block.UnclesReward),
+		blockRepository.database.Node.ID).
 		Scan(&blockId)
 	if insertBlockErr != nil {
 		rollbackErr := tx.Rollback()
@@ -186,7 +203,7 @@ func (blockRepository BlockRepository) createUncleReward(tx *sqlx.Tx, blockId in
        (block_id, block_hash, uncle_hash, uncle_reward, miner_address)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-		blockId, blockHash, miner, uncleHash, amount)
+		blockId, blockHash, miner, uncleHash, utilities.NullToZero(amount))
 	return err
 }
 
@@ -216,7 +233,7 @@ func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId in
        (block_id, gaslimit, gasprice, hash, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
        VALUES ($1, $2::NUMERIC, $3::NUMERIC, $4, $5, $6::NUMERIC, $7,  $8, $9::NUMERIC, $10, $11::NUMERIC)
        RETURNING id`, blockId, transaction.GasLimit, transaction.GasPrice, transaction.Hash, transaction.Data,
-		transaction.Nonce, transaction.Raw, transaction.From, transaction.TxIndex, transaction.To, transaction.Value)
+		transaction.Nonce, transaction.Raw, transaction.From, transaction.TxIndex, transaction.To, nullStringToZero(transaction.Value))
 	if err != nil {
 		return err
 	}

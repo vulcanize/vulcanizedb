@@ -1,0 +1,9 @@
+-- +goose Up
+ALTER TABLE blocks
+  ALTER COLUMN uncles_reward TYPE NUMERIC USING uncles_reward::NUMERIC,
+  ALTER COLUMN reward TYPE NUMERIC USING reward::NUMERIC;
+
+-- +goose Down
+ALTER TABLE blocks
+  ALTER COLUMN uncles_reward TYPE DOUBLE PRECISION USING uncles_reward::DOUBLE PRECISION,
+  ALTER COLUMN reward TYPE DOUBLE PRECISION USING reward::DOUBLE PRECISION;
