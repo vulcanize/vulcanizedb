@@ -1,7 +1,7 @@
 [database]
-name = "vulcanize_private"
-hostname = "localhost"
-port = 5432
+    name     = "vulcanize_private"
+    hostname = "localhost"
+    port     = 5432
 
 [client]
-ipcPath = "http://127.0.0.1:7545"
+    ipcPath  = "http://127.0.0.1:7545"

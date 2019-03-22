@@ -138,6 +138,7 @@ false
 If you have full rinkeby chaindata you can move it to `rinkeby_vulcanizedb_geth_data` docker volume to skip long wait of sync.
 
 ## Running the Tests
+- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full archival node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
 - `createdb vulcanize_private` will create the test db
 - `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
@@ -154,43 +155,91 @@ Contract watchers work with a light or full sync vDB to fetch raw ethereum data 
 A watcher is composed of at least a fetcher and a transformer or set of transformers, where a fetcher is an interface for retrieving raw Ethereum data from some source (e.g. eth_jsonrpc, IPFS)
 and a transformer is an interface for filtering through that raw Ethereum data to extract, process, and persist data for specific contracts or accounts. 
 
-### omniWatcher
-The `omniWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available. 
-It also provides some state variable coverage by automating polling of public methods, with some restrictions.
+## contractWatcher
+The `contractWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available.
+It also provides some state variable coverage by automating polling of public methods, with some restrictions:
+1. The method must have 2 or less arguments
+1. The method's arguments must all be of type address or bytes32 (hash)
+1. The method must return a single value
 
-This command requires a pre-synced (full or light) vulcanizeDB (see above sections) and currently requires the contract ABI be available on etherscan or provided by the user.   
+This command operates in two modes- `light` and `full`- which require a light or full-synced vulcanizeDB, respectively.
 
-To watch all events of a contract using a light synced vDB:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address>`
+This command requires the contract ABI be available on Etherscan if it is not provided in the config file by the user.
 
-Or if you are using a full synced vDB, change the mode to full:
-    - Execute `./vulcanizedb omniWatcher --mode full --config <path to config.toml> --contract-address <contract address>`
+If method polling is turned on we require an archival node at the ETH ipc endpoint in our config, whether or not we are operating in `light` or `full` mode.
+Otherwise, when operating in `light` mode, we only need to connect to a full node to fetch event logs.
 
-To watch contracts on a network other than mainnet, use the network flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --network <ropsten, kovan, or rinkeby>`  
+This command takes a config of the form:
 
-To watch events starting at a certain block use the starting block flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --starting-block-number <#>`
+```toml
+  [database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port     = 5432
 
-To watch only specified events use the events flag:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2>`  
+  [client]
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
-To watch events and poll the specified methods with any addresses and hashes emitted by the watched events utilize the methods flag:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName1> --methods <methodName2>`  
+  [contract]
+    network  = ""
+    addresses  = [
+        "contractAddress1",
+        "contractAddress2"
+    ]
+    [contract.contractAddress1]
+        abi    = 'ABI for contract 1'
+        startingBlock = 982463
+    [contract.contractAddress2]
+        abi    = 'ABI for contract 2'
+        events = [
+            "event1",
+            "event2"
+        ]
+		eventArgs = [
+			"arg1",
+			"arg2"
+		]
+        methods = [
+            "method1",
+			"method2"
+        ]
+		methodArgs = [
+			"arg1",
+			"arg2"
+		]
+        startingBlock = 4448566
+        piping = true
+````
 
-To watch specified events and poll the specified method with any addresses and hashes emitted by the watched events:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
+- The `contract` section defines which contracts we want to watch and with which conditions.
+- `network` is only necessary if the ABIs are not provided and wish to be fetched from Etherscan.
+    - Empty or nil string indicates mainnet
+    - "ropsten", "kovan", and "rinkeby" indicate their respective networks
+- `addresses` lists the contract addresses we are watching and is used to load their individual configuration parameters
+- `contract.<contractAddress>` are the sub-mappings which contain the parameters specific to each contract address
+    - `abi` is the ABI for the contract; if none is provided the application will attempt to fetch one from Etherscan using the provided address and network
+    - `events` is the list of events to watch
+        - If this field is omitted or no events are provided then by defualt ALL events extracted from the ABI will be watched
+        - If event names are provided then only those events will be watched
+    - `eventArgs` is the list of arguments to filter events with
+        - If this field is omitted or no eventArgs are provided then by default watched events are not filtered by their argument values
+        - If eventArgs are provided then only those events which emit at least one of these values as an argument are watched
+    - `methods` is the list of methods to poll
+        - If this is omitted or no methods are provided then by default NO methods are polled
+        - If method names are provided then those methods will be polled, provided
+            1) Method has two or less arguments
+            1) Arguments are all of address or hash types
+            1) Method returns a single value
+    - `methodArgs` is the list of arguments to limit polling methods to
+        - If this field is omitted or no methodArgs are provided then by default methods will be polled with every combination of the appropriately typed values that have been collected from watched events
+        - If methodArgs are provided then only those values will be used to poll methods
+    - `startingBlock` is the block we want to begin watching the contract, usually the deployment block of that contract
+    - `piping` is a boolean flag which indicates whether or not we want to pipe return method values forward as arguments to subsequent method calls
 
-To turn on method piping so that values returned from previous method calls are cached and used as arguments in subsequent method calls:  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --piping true --contract-address <contract address> --events <EventName1> --events <EventName2> --methods <methodName>`  
+At the very minimum, for each contract address an ABI and a starting block number need to be provided (or just the starting block if the ABI can be reliably fetched from Etherscan).
+With just this information we will be able to watch all events at the contract, but with no additional filters and no method polling.
 
-To watch all types of events of the contract but only persist the ones that emit one of the filtered-for argument values:
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --event-args <arg1> --event-args <arg2>`  
-
-To watch all events of the contract but only poll the specified method with specified argument values (if they are emitted from the watched events):  
-    - Execute `./vulcanizedb omniWatcher --config <path to config.toml> --contract-address <contract address> --methods <methodName> --method-args <arg1> --method-args <arg2>`  
-
-#### omniWatcher output
+### contractWatcher output
 
 Transformed events and polled method results are committed to Postgres in schemas and tables generated according to the contract abi.      
 
@@ -198,12 +247,38 @@ Schemas are created for each contract using the naming convention `<sync-type>_<
 Under this schema, tables are generated for watched events as `<lowercase event name>_event` and for polled methods as `<lowercase method name>_method`  
 The 'method' and 'event' identifiers are tacked onto the end of the table names to prevent collisions between methods and events of the same lowercase name    
 
-Example:
+### contractWatcher example:
 
-Running `./vulcanizedb omniWatcher --config <path to config> --starting-block-number=5197514 --contract-address=0x8dd5fbce2f6a956c3022ba3663759011dd51e73e --events=Transfer --events=Mint --methods=balanceOf` 
-watches Transfer and Mint events of the TrueUSD contract and polls its balanceOf method using the addresses we find emitted from those events    
+Modify `./environments/example.toml` to replace the empty `ipcPath` with a path that points to an ethjson_rpc endpoint (e.g. a local geth node ipc path or an Infura url).
+This endpoint should be for an archival eth node if we want to perform method polling as this configuration is currently set up to do. To work with a non-archival full node,
+remove the `balanceOf` method from the `0x8dd5fbce2f6a956c3022ba3663759011dd51e73e` (TrueUSD) contract.
 
-It produces and populates a schema with three tables:
+If you are operating a light sync vDB, run:
+
+ `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=light`
+
+If instead you are operating a full sync vDB and provided an archival node IPC path, run in full mode:
+
+ `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=full`
+
+This will run the contractWatcher and configures it to watch the contracts specified in the config file. Note that
+by default we operate in `light` mode but the flag is included here to demonstrate its use.
+
+The example config we link to in this example watches two contracts, the ENS Registry (0x314159265dD8dbb310642f98f50C066173C1259b) and TrueUSD (0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E).
+
+Because the ENS Registry is configured with only an ABI and a starting block, we will watch all events for this contract and poll none of its methods. Note that the ENS Registry is an example
+of a contract which does not have its ABI available over Etherscan and must have it included in the config file.
+
+The TrueUSD contract is configured with two events (`Transfer` and `Mint`) and a single method (`balanceOf`), as such it will watch these two events and use any addresses it collects emitted from them
+to poll the `balanceOf` method with those addresses at every block. Note that we do not provide an ABI for TrueUSD as its ABI can be fetched from Etherscan.
+
+For the ENS contract, it produces and populates a schema with four tables"
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newowner_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newresolver_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.newttl_event`
+`light_0x314159265dd8dbb310642f98f50c066173c1259b.transfer_event`
+
+For the TrusUSD contract, it produces and populates a schema with three tables:
 
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`
 `light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`
@@ -236,16 +311,18 @@ Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
 | who_       | character varying(66) |           | not null |                                                                                               | extended |              |             |
 | returned   | numeric               |           | not null |                                                                                               | main     |              |             |
   
-The addition of '_' after table names is to prevent collisions with reserved Postgres words
+The addition of '_' after table names is to prevent collisions with reserved Postgres words.
 
-### composeAndExecute
+Also notice that the contract address used for the schema name has been down-cased.
+
+## composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
 long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
 
 This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.
 
-#### Writing custom transformers
+### Writing custom transformers
 Storage Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
    * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
@@ -254,7 +331,7 @@ Event Transformers
    * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/event_docs/libraries/shared/factories/README.md)
    * [Example](https://github.com/vulcanize/ens_transformers/tree/working)
    
-#### composeAndExecute configuration
+### composeAndExecute configuration
 A .toml config file is specified when executing the command:
 `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
 
@@ -269,7 +346,7 @@ The config provides information for composing a set of transformers:
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
@@ -289,7 +366,7 @@ The config provides information for composing a set of transformers:
         rank = "0"
     [exporter.transformer2]
         path = "path/to/transformer2"
-        type = "eth_event"
+        type = "eth_contract"
         repository = "github.com/account/repo"
         migrations = "db/migrations"
         rank = "0"
@@ -319,6 +396,9 @@ The config provides information for composing a set of transformers:
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
         - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
+        - `eth_contract` indicates the transformer works with the [contract watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go)
+        that is made to work with [contract_watcher pkg](https://github.com/vulcanize/maker-vulcanizedb/tree/staging/pkg/omni)
+        based transformers which work with either a light or full sync vDB to watch events and poll public methods ([example](https://github.com/vulcanize/ens_transformers/blob/working/transformers/domain_records/transformer.go))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
         - this is to help isolate any potential conflicts between transformer migrations
@@ -350,25 +430,28 @@ type exporter string
 
 var Exporter exporter
 
-func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer {
-	return []interface1.EventTransformerInitializer{
-		transformer1.EventTransformerInitializer,
-		transformer2.EventTransformerInitializer,
-		transformer3.EventTransformerInitializer,
-	},     []interface1.StorageTransformerInitializer{
-		transformer4.StorageTransformerInitializer,
-    }
+func (e exporter) Export() []interface1.EventTransformerInitializer, []interface1.StorageTransformerInitializer, []interface1.ContractTransformerInitializer {
+	return []interface1.TransformerInitializer{
+            transformer1.TransformerInitializer,
+            transformer3.TransformerInitializer,
+        },     []interface1.StorageTransformerInitializer{
+            transformer4.StorageTransformerInitializer,
+        },     []interface1.ContractTransformerInitializer{
+            transformer2.TransformerInitializer,
+        }
 }
 ```
 
-#### Preparing transformer(s) to work as pluggins for composeAndExecute
+### Preparing transformers to work as pluggins for composeAndExecute
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
-that exports a variable `EventTransformerInitializer` or `StorageTransformerInitializer` that are of type [EventTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/storage_transformer.go#L31), respectively
-* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go#L83)
-or [storage](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go#L58) watcher execution modes
+that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31),
+or [ContractTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/transformer/contract_transformer.go#L31), respectively
+* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83),
+[storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53),
+or [contract](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields

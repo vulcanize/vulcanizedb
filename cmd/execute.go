@@ -46,7 +46,7 @@ var executeCmd = &cobra.Command{
     port     = 5432
 
 [client]
-    ipcPath  = "http://kovan0.vulcanize.io:8545"
+    ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
     name     = "exampleTransformerExporter"
@@ -99,8 +99,8 @@ func execute() {
 		os.Exit(1)
 	}
 
-	// Use the Exporters export method to load the EventTransformerInitializer and StorageTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers := exporter.Export()
+	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
+	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -123,6 +123,13 @@ func execute() {
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
 	}
+
+	if len(ethContractInitializers) > 0 {
+		gw := watcher.NewContractWatcher(&db, blockChain)
+		gw.AddTransformers(ethContractInitializers)
+		wg.Add(1)
+		go watchEthContract(&gw, &wg)
+	}
 	wg.Wait()
 }
 
@@ -132,7 +139,7 @@ func init() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer)
+	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
@@ -148,23 +155,28 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute(recheck)
-		if err != nil {
-			// TODO Handle watcher errors in execute
-		}
+		w.Execute(recheck)
 	}
 }
 
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
-	// Execute over the StorageTransformerInitializer set using the watcher
+	// Execute over the StorageTransformerInitializer set using the storage watcher
 	log.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		err := w.Execute()
-		if err != nil {
-			// TODO Handle watcher errors in execute
-		}
+		w.Execute()
+	}
+}
+
+func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
+	defer wg.Done()
+	// Execute over the ContractTransformerInitializer set using the contract watcher
+	log.Info("executing contract_watcher transformers")
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		w.Execute()
 	}
 }

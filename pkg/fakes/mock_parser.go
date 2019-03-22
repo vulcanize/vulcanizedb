@@ -2,7 +2,7 @@ package fakes
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/vulcanize/vulcanizedb/pkg/omni/shared/types"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 )
 
 type MockParser struct {
@@ -15,8 +15,9 @@ func (*MockParser) Parse(contractAddr string) error {
 	return nil
 }
 
-func (*MockParser) ParseAbiStr(abiStr string) error {
-	panic("implement me")
+func (m *MockParser) ParseAbiStr(abiStr string) error {
+	m.AbiToReturn = abiStr
+	return nil
 }
 
 func (parser *MockParser) Abi() string {
