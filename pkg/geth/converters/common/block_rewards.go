@@ -37,6 +37,12 @@ func CalcUnclesReward(block core.Block, uncles []*types.Header) (*big.Int, map[s
 		uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
 		thisUncleReward := rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
 		uncleRewards = uncleRewards.Add(uncleRewards, thisUncleReward)
+		if mappedUncleRewards[uncle.Coinbase.Hex()] == nil {
+			mappedUncleRewards[uncle.Coinbase.Hex()] = make(map[string]*big.Int)
+		}
+		if mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()] == nil {
+			mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()] = new(big.Int)
+		}
 		mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()].Add(mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()], thisUncleReward)
 	}
 	return uncleRewards, mappedUncleRewards

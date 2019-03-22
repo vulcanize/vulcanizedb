@@ -56,3 +56,7 @@ func (client EthClient) TransactionSender(ctx context.Context, tx *types.Transac
 func (client EthClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	return client.client.TransactionReceipt(ctx, txHash)
 }
+
+func (client EthClient) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	return client.client.BalanceAt(ctx, account, blockNumber)
+}

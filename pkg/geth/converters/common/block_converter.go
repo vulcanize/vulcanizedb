@@ -17,10 +17,13 @@
 package common
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"strings"
 )
 
 type BlockConverter struct {
@@ -54,7 +57,7 @@ func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error)
 	}
 	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles()).String()
 	uncleRewards, mappedUncleRewards := CalcUnclesReward(coreBlock, gethBlock.Uncles())
-	coreBlock.UnclesReward = uncleRewards.String()
+	coreBlock.UnclesReward = utilities.NullToZero(uncleRewards.String())
 	coreBlock.MappedUncleRewards = mappedUncleRewards
 	return coreBlock, nil
 }
