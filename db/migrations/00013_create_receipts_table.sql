@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE receipts
+CREATE TABLE full_sync_receipts
 (
   id                  SERIAL PRIMARY KEY,
   transaction_id      INTEGER NOT NULL REFERENCES full_sync_transactions (id) ON DELETE CASCADE,
@@ -13,4 +13,4 @@ CREATE TABLE receipts
 
 
 -- +goose Down
-DROP TABLE receipts;
+DROP TABLE full_sync_receipts;

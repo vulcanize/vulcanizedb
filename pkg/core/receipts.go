@@ -26,3 +26,12 @@ type Receipt struct {
 	Status            int
 	TxHash            string
 }
+
+type ReceiptModel struct {
+	ContractAddress   string `db:"contract_address"`
+	CumulativeGasUsed string `db:"cumulative_gas_used"`
+	GasUsed           string `db:"gas_used"`
+	StateRoot         string `db:"state_root"`
+	Status            int
+	TxHash            string `db:"tx_hash"`
+}

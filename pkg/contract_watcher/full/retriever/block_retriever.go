@@ -53,7 +53,7 @@ func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (in
 	err := r.db.Get(
 		&firstBlock,
 		`SELECT number FROM blocks
-		       WHERE id = (SELECT block_id FROM receipts
+		       WHERE id = (SELECT block_id FROM full_sync_receipts
                	           WHERE lower(contract_address) = $1
 		                   ORDER BY block_id ASC
 					       LIMIT 1)`,

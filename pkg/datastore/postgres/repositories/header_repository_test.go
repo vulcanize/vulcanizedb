@@ -180,6 +180,124 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
+	Describe("creating a receipt", func() {
+		It("adds a receipt in a tx", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+			tx, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId, txErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			Expect(txErr).ToNot(HaveOccurred())
+
+			contractAddr := common.HexToAddress("0x1234")
+			stateRoot := common.HexToHash("0x5678")
+			var gasUsed uint64 = 10
+			var cumulativeGasUsed uint64 = 100
+			receipt := core.Receipt{
+				ContractAddress:   contractAddr.Hex(),
+				TxHash:            txHash.Hex(),
+				GasUsed:           gasUsed,
+				CumulativeGasUsed: cumulativeGasUsed,
+				StateRoot:         stateRoot.Hex(),
+			}
+
+			_, receiptErr := repo.CreateReceiptInTx(tx, headerID, txId, receipt)
+			commitErr := tx.Commit()
+			Expect(commitErr).ToNot(HaveOccurred())
+			Expect(receiptErr).ToNot(HaveOccurred())
+
+			type idModel struct {
+				TransactionId int64 `db:"transaction_id"`
+				core.ReceiptModel
+			}
+			var dbReceipt idModel
+			err = db.Get(&dbReceipt,
+				`SELECT transaction_id, contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash
+				FROM public.light_sync_receipts WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbReceipt.TransactionId).To(Equal(txId))
+			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
+			Expect(dbReceipt.ContractAddress).To(Equal(contractAddr.Hex()))
+			Expect(dbReceipt.CumulativeGasUsed).To(Equal("100"))
+			Expect(dbReceipt.GasUsed).To(Equal("10"))
+			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
+		})
+
+		It("adds a receipt in standalone query", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+			tx, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId, txErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			commitErr := tx.Commit()
+			Expect(commitErr).ToNot(HaveOccurred())
+			Expect(txErr).ToNot(HaveOccurred())
+
+			contractAddr := common.HexToAddress("0x1234")
+			stateRoot := common.HexToHash("0x5678")
+			var gasUsed uint64 = 10
+			var cumulativeGasUsed uint64 = 100
+			receipt := core.Receipt{
+				ContractAddress:   contractAddr.Hex(),
+				TxHash:            txHash.Hex(),
+				GasUsed:           gasUsed,
+				CumulativeGasUsed: cumulativeGasUsed,
+				StateRoot:         stateRoot.Hex(),
+			}
+
+			receiptErr := repo.CreateReceipt(headerID, txId, receipt)
+			Expect(receiptErr).ToNot(HaveOccurred())
+
+			type idModel struct {
+				TransactionId int64 `db:"transaction_id"`
+				core.ReceiptModel
+			}
+			var dbReceipt idModel
+			err = db.Get(&dbReceipt,
+				`SELECT transaction_id, contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash
+				FROM public.light_sync_receipts WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbReceipt.TransactionId).To(Equal(txId))
+			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
+			Expect(dbReceipt.ContractAddress).To(Equal(contractAddr.Hex()))
+			Expect(dbReceipt.CumulativeGasUsed).To(Equal("100"))
+			Expect(dbReceipt.GasUsed).To(Equal("10"))
+			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
+		})
+	})
+
 	Describe("creating a transaction", func() {
 		var (
 			headerID     int64
@@ -242,6 +360,87 @@ var _ = Describe("Block header repository", func() {
 				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(2))
+		})
+	})
+
+	Describe("creating a transaction in a sqlx tx", func() {
+		It("adds a transaction", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+
+			tx, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			_, insertErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			commitErr := tx.Commit()
+			Expect(commitErr).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			var dbTransaction core.TransactionModel
+			err = db.Get(&dbTransaction,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTransaction).To(Equal(transaction))
+		})
+
+		It("silently upserts", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				Receipt:  core.Receipt{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+
+			tx1, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId1, insertErr := repo.CreateTransactionInTx(tx1, headerID, transaction)
+			commit1Err := tx1.Commit()
+			Expect(commit1Err).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			tx2, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId2, insertErr := repo.CreateTransactionInTx(tx2, headerID, transaction)
+			commit2Err := tx2.Commit()
+			Expect(commit2Err).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+			Expect(txId1).To(Equal(txId2))
+
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbTransactions)).To(Equal(1))
 		})
 	})
 

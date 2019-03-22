@@ -56,7 +56,7 @@ func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, 
 func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
 	err := tx.QueryRow(
-		`INSERT INTO receipts
+		`INSERT INTO full_sync_receipts
 		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
 		               VALUES ($1, $2, $3, $4, $5, $6, $7)
 		               RETURNING id`,
@@ -87,7 +87,7 @@ func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt 
 	tx, _ := receiptRepository.DB.Beginx()
 	var receiptId int64
 	err := tx.QueryRow(
-		`INSERT INTO receipts
+		`INSERT INTO full_sync_receipts
                (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7)
                RETURNING id`,
@@ -109,7 +109,7 @@ func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Recei
                        gas_used,
                        state_root,
                        status
-                FROM receipts
+                FROM full_sync_receipts
                 WHERE tx_hash = $1`, txHash)
 	receipt, err := loadReceipt(row)
 	if err != nil {
