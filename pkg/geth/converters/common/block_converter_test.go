@@ -260,7 +260,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
-			Expect(coreTransaction.Data).To(Equal("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"))
+			expectedData := common.FromHex("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14")
+			Expect(coreTransaction.Data).To(Equal(expectedData))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas()))

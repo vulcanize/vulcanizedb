@@ -73,24 +73,26 @@ var _ = Describe("Creating contracts", func() {
 		blockRepository = repositories.NewBlockRepository(db)
 		block := core.Block{
 			Number: 123,
-			Transactions: []core.Transaction{
+			Transactions: []core.TransactionModel{
 				{Hash: "TRANSACTION1", To: "x123", Value: "0"},
 				{Hash: "TRANSACTION2", To: "x345", Value: "0"},
 				{Hash: "TRANSACTION3", To: "x123", Value: "0"},
 			},
 		}
-		blockRepository.CreateOrUpdateBlock(block)
+		_, insertBlockErr := blockRepository.CreateOrUpdateBlock(block)
+		Expect(insertBlockErr).NotTo(HaveOccurred())
 
-		contractRepository.CreateContract(core.Contract{Hash: "x123"})
+		insertContractErr := contractRepository.CreateContract(core.Contract{Hash: "x123"})
+		Expect(insertContractErr).NotTo(HaveOccurred())
 		contract, err := contractRepository.GetContract("x123")
 		Expect(err).ToNot(HaveOccurred())
 		sort.Slice(contract.Transactions, func(i, j int) bool {
 			return contract.Transactions[i].Hash < contract.Transactions[j].Hash
 		})
 		Expect(contract.Transactions).To(
-			Equal([]core.Transaction{
-				{Hash: "TRANSACTION1", To: "x123", Value: "0"},
-				{Hash: "TRANSACTION3", To: "x123", Value: "0"},
+			Equal([]core.TransactionModel{
+				{Data: []byte{}, Hash: "TRANSACTION1", To: "x123", Value: "0"},
+				{Data: []byte{}, Hash: "TRANSACTION3", To: "x123", Value: "0"},
 			}))
 	})
 

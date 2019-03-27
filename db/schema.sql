@@ -161,7 +161,7 @@ CREATE TABLE public.full_sync_transactions (
     gaslimit numeric,
     gasprice numeric,
     hash character varying(66),
-    input_data character varying,
+    input_data bytea,
     nonce numeric,
     raw bytea,
     tx_from character varying(66),
@@ -266,10 +266,15 @@ CREATE TABLE public.light_sync_transactions (
     id integer NOT NULL,
     header_id integer NOT NULL,
     hash text,
-    raw jsonb,
-    tx_index integer,
+    gaslimit numeric,
+    gasprice numeric,
+    input_data bytea,
+    nonce numeric,
+    raw bytea,
     tx_from text,
-    tx_to text
+    tx_index integer,
+    tx_to text,
+    value numeric
 );
 
 

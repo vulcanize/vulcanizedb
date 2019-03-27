@@ -30,7 +30,7 @@ type Block struct {
 	ParentHash   string  `db:"parenthash"`
 	Size         string  `db:"size"`
 	Time         int64   `db:"time"`
-	Transactions []Transaction
+	Transactions []TransactionModel
 	UncleHash    string  `db:"uncle_hash"`
 	UnclesReward float64 `db:"uncles_reward"`
 }

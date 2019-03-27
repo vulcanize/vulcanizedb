@@ -33,7 +33,7 @@ import (
 var TransferBlock1 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 	Number: 6194633,
-	Transactions: []core.Transaction{{
+	Transactions: []core.TransactionModel{{
 		GasLimit: 0,
 		GasPrice: 0,
 		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
@@ -63,7 +63,7 @@ var TransferBlock1 = core.Block{
 var TransferBlock2 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ooo",
 	Number: 6194634,
-	Transactions: []core.Transaction{{
+	Transactions: []core.TransactionModel{{
 		GasLimit: 0,
 		GasPrice: 0,
 		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
@@ -93,7 +93,7 @@ var TransferBlock2 = core.Block{
 var NewOwnerBlock1 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ppp",
 	Number: 6194635,
-	Transactions: []core.Transaction{{
+	Transactions: []core.TransactionModel{{
 		GasLimit: 0,
 		GasPrice: 0,
 		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
@@ -123,7 +123,7 @@ var NewOwnerBlock1 = core.Block{
 var NewOwnerBlock2 = core.Block{
 	Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ggg",
 	Number: 6194636,
-	Transactions: []core.Transaction{{
+	Transactions: []core.TransactionModel{{
 		GasLimit: 0,
 		GasPrice: 0,
 		Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",

@@ -49,11 +49,13 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	return 0, ErrValidHeaderExists
 }
 
-func (repository HeaderRepository) CreateTransaction(headerID int64, transaction core.Transaction) error {
+func (repository HeaderRepository) CreateTransaction(headerID int64, transaction core.TransactionModel) error {
 	_, err := repository.database.Exec(`INSERT INTO public.light_sync_transactions
-		(header_id, hash, tx_to, tx_from, tx_index) VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT DO NOTHING`,
-		headerID, transaction.Hash, transaction.To, transaction.From, transaction.TxIndex)
+		(header_id, hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") 
+		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
+		ON CONFLICT DO NOTHING`, headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
+		transaction.Data, transaction.Nonce, transaction.Raw, transaction.From, transaction.TxIndex, transaction.To,
+		transaction.Value)
 	return err
 }
 

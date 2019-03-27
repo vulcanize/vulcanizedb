@@ -160,7 +160,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	return blockId, nil
 }
 
-func (blockRepository BlockRepository) createTransactions(tx *sqlx.Tx, blockId int64, transactions []core.Transaction) error {
+func (blockRepository BlockRepository) createTransactions(tx *sqlx.Tx, blockId int64, transactions []core.TransactionModel) error {
 	for _, transaction := range transactions {
 		err := blockRepository.createTransaction(tx, blockId, transaction)
 		if err != nil {
@@ -180,7 +180,7 @@ func nullStringToZero(s string) string {
 	return s
 }
 
-func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId int64, transaction core.Transaction) error {
+func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId int64, transaction core.TransactionModel) error {
 	_, err := tx.Exec(
 		`INSERT INTO full_sync_transactions
        (block_id, gaslimit, gasprice, hash, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
@@ -205,11 +205,11 @@ func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId in
 	return nil
 }
 
-func hasLogs(transaction core.Transaction) bool {
+func hasLogs(transaction core.TransactionModel) bool {
 	return len(transaction.Receipt.Logs) > 0
 }
 
-func hasReceipt(transaction core.Transaction) bool {
+func hasReceipt(transaction core.TransactionModel) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
@@ -302,10 +302,10 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
 	return block.Block, nil
 }
 
-func (blockRepository BlockRepository) LoadTransactions(transactionRows *sqlx.Rows) []core.Transaction {
-	var transactions []core.Transaction
+func (blockRepository BlockRepository) LoadTransactions(transactionRows *sqlx.Rows) []core.TransactionModel {
+	var transactions []core.TransactionModel
 	for transactionRows.Next() {
-		var transaction core.Transaction
+		var transaction core.TransactionModel
 		err := transactionRows.StructScan(&transaction)
 		if err != nil {
 			log.Fatal(err)

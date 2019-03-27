@@ -133,7 +133,7 @@ var _ = Describe("Saving blocks", func() {
 	It("saves one transaction associated to the block", func() {
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{fakes.FakeTransaction},
+			Transactions: []core.TransactionModel{fakes.FakeTransaction},
 		}
 
 		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
@@ -147,7 +147,7 @@ var _ = Describe("Saving blocks", func() {
 	It("saves two transactions associated to the block", func() {
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{fakes.FakeTransaction, fakes.FakeTransaction},
+			Transactions: []core.TransactionModel{fakes.FakeTransaction, fakes.FakeTransaction},
 		}
 
 		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
@@ -163,7 +163,7 @@ var _ = Describe("Saving blocks", func() {
 		blockOne := core.Block{
 			Number: 123,
 			Hash:   "xabc",
-			Transactions: []core.Transaction{
+			Transactions: []core.TransactionModel{
 				fakes.GetFakeTransaction("x123", core.Receipt{}),
 				fakes.GetFakeTransaction("x345", core.Receipt{}),
 			},
@@ -171,7 +171,7 @@ var _ = Describe("Saving blocks", func() {
 		blockTwo := core.Block{
 			Number: 123,
 			Hash:   "xdef",
-			Transactions: []core.Transaction{
+			Transactions: []core.TransactionModel{
 				fakes.GetFakeTransaction("x678", core.Receipt{}),
 				fakes.GetFakeTransaction("x9ab", core.Receipt{}),
 			},
@@ -192,14 +192,14 @@ var _ = Describe("Saving blocks", func() {
 			     but block number + node id is`, func() {
 		blockOne := core.Block{
 			Number: 123,
-			Transactions: []core.Transaction{
+			Transactions: []core.TransactionModel{
 				fakes.GetFakeTransaction("x123", core.Receipt{}),
 				fakes.GetFakeTransaction("x345", core.Receipt{}),
 			},
 		}
 		blockTwo := core.Block{
 			Number: 123,
-			Transactions: []core.Transaction{
+			Transactions: []core.TransactionModel{
 				fakes.GetFakeTransaction("x678", core.Receipt{}),
 				fakes.GetFakeTransaction("x9ab", core.Receipt{}),
 			},
@@ -256,8 +256,8 @@ var _ = Describe("Saving blocks", func() {
 		var raw bytes.Buffer
 		rlpErr := gethTransaction.EncodeRLP(&raw)
 		Expect(rlpErr).NotTo(HaveOccurred())
-		transaction := core.Transaction{
-			Data:     inputData,
+		transaction := core.TransactionModel{
+			Data:     common.Hex2Bytes(inputData),
 			From:     from,
 			GasLimit: gasLimit,
 			GasPrice: gasPrice,
@@ -271,7 +271,7 @@ var _ = Describe("Saving blocks", func() {
 		}
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{transaction},
+			Transactions: []core.TransactionModel{transaction},
 		}
 
 		_, insertErr := blockRepository.CreateOrUpdateBlock(block)

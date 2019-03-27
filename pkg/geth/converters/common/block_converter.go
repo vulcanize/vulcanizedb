@@ -32,7 +32,7 @@ func NewBlockConverter(transactionConverter TransactionConverter) BlockConverter
 }
 
 func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error) {
-	transactions, err := bc.transactionConverter.ConvertTransactionsToCore(gethBlock)
+	transactions, err := bc.transactionConverter.ConvertBlockTransactionsToCore(gethBlock)
 	if err != nil {
 		return core.Block{}, err
 	}
