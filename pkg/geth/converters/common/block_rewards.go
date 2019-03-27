@@ -24,6 +24,9 @@ import (
 )
 
 // (U_n + 8 - B_n) * R / 8
+// https://github.com/ethereum/go-ethereum/issues/1591
+// https://ethereum.stackexchange.com/questions/27172/different-uncles-reward
+// https://github.com/ethereum/homestead-guide/issues/399
 // Returns a map of miner addresses to a map of the uncles they mined (hashes) to the rewards received for that uncle
 func CalcUnclesReward(block core.Block, uncles []*types.Header) (*big.Int, map[string]map[string]*big.Int) {
 	uncleRewards := new(big.Int)
