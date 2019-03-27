@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"

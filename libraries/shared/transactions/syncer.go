@@ -32,11 +32,9 @@ func (syncer TransactionsSyncer) SyncTransactions(headerID int64, logs []types.L
 	if transactionErr != nil {
 		return transactionErr
 	}
-	for _, transaction := range transactions {
-		writeErr := syncer.Repository.CreateTransaction(headerID, transaction)
-		if writeErr != nil {
-			return writeErr
-		}
+	writeErr := syncer.Repository.CreateTransactions(headerID, transactions)
+	if writeErr != nil {
+		return writeErr
 	}
 	return nil
 }
