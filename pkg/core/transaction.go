@@ -36,7 +36,7 @@ type RpcTransaction struct {
 	GasLimit         string `json:"gas"`
 	Recipient        string `json:"to"`
 	Amount           string `json:"value"`
-	Payload          []byte `json:"input"`
+	Payload          string `json:"input"`
 	V                string `json:"v"`
 	R                string `json:"r"`
 	S                string `json:"s"`

@@ -9,8 +9,13 @@ import (
 )
 
 var _ = Describe("RPC transaction converter", func() {
+	var converter rpc.RpcTransactionConverter
+
+	BeforeEach(func() {
+		converter = rpc.RpcTransactionConverter{}
+	})
+
 	It("converts hex fields to integers", func() {
-		converter := rpc.RpcTransactionConverter{}
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
 		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
@@ -25,7 +30,6 @@ var _ = Describe("RPC transaction converter", func() {
 	})
 
 	It("returns error if invalid hex cannot be converted", func() {
-		converter := rpc.RpcTransactionConverter{}
 		invalidTransaction := getFakeRpcTransaction("invalid")
 
 		_, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{invalidTransaction})
@@ -34,7 +38,6 @@ var _ = Describe("RPC transaction converter", func() {
 	})
 
 	It("copies RPC transaction hash, from, and to values to model", func() {
-		converter := rpc.RpcTransactionConverter{}
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
 		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
@@ -46,14 +49,37 @@ var _ = Describe("RPC transaction converter", func() {
 		Expect(transactionModels[0].To).To(Equal(rpcTransaction.Recipient))
 	})
 
-	XIt("derives transaction RLP", func() {
-		// actual transaction: https://kovan.etherscan.io/tx/0x73aefdf70fc5650e0dd82affbb59d107f12dfabc50a78625b434ea68b7a69ee6
-		// actual RLP hex: 0x2926af093b6b72e3f10089bde6da0f99b0d4e13354f6f37c8334efc9d7e99a47
+	It("derives transaction RLP", func() {
+		// actual transaction: https://kovan.etherscan.io/tx/0x3b29ef265425d304069c57e5145cd1c7558568b06d231775f50a693bee1aad4f
+		rpcTransaction := core.RpcTransaction{
+			Nonce:            "0x7aa9",
+			GasPrice:         "0x3b9aca00",
+			GasLimit:         "0x7a120",
+			Recipient:        "0xf88bbdc1e2718f8857f30a180076ec38d53cf296",
+			Amount:           "0x0",
+			Payload:          "0x18178358",
+			V:                "0x78",
+			R:                "0x79f6a78ababfdb37b87a4d52795a49b08b5b5171443d1f2fb8f373431e77439c",
+			S:                "0x3f1a210dd3b59d161735a314b88568fa91552dfe207c00a2fdbcd52ccb081409",
+			Hash:             "0x3b29ef265425d304069c57e5145cd1c7558568b06d231775f50a693bee1aad4f",
+			From:             "0x694032e172d9b0ee6aff5d36749bad4947a36e4e",
+			TransactionIndex: "0xa",
+		}
 
+		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(transactionModels)).To(Equal(1))
+		model := transactionModels[0]
+		expectedRLP := []byte{248, 106, 130, 122, 169, 132, 59, 154, 202, 0, 131, 7, 161, 32, 148, 248, 139, 189, 193,
+			226, 113, 143, 136, 87, 243, 10, 24, 0, 118, 236, 56, 213, 60, 242, 150, 128, 132, 24, 23, 131, 88, 120, 160,
+			121, 246, 167, 138, 186, 191, 219, 55, 184, 122, 77, 82, 121, 90, 73, 176, 139, 91, 81, 113, 68, 61, 31, 47,
+			184, 243, 115, 67, 30, 119, 67, 156, 160, 63, 26, 33, 13, 211, 181, 157, 22, 23, 53, 163, 20, 184, 133, 104,
+			250, 145, 85, 45, 254, 32, 124, 0, 162, 253, 188, 213, 44, 203, 8, 20, 9}
+		Expect(model.Raw).To(Equal(expectedRLP))
 	})
 
 	It("does not include transaction receipt", func() {
-		converter := rpc.RpcTransactionConverter{}
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
 		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
@@ -76,7 +102,7 @@ func getFakeRpcTransaction(hex string) core.RpcTransaction {
 		V:                "0x2",
 		R:                "0x2",
 		S:                "0x2",
-		Payload:          nil,
+		Payload:          "0x12",
 		TransactionIndex: hex,
 	}
 }
