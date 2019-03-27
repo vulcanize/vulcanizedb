@@ -40,7 +40,7 @@ var _ = Describe("Block Retriever", func() {
 	var block1 = core.Block{
 		Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 		Number:       1,
-		Transactions: []core.Transaction{},
+		Transactions: []core.TransactionModel{},
 	}
 
 	BeforeEach(func() {
@@ -63,7 +63,7 @@ var _ = Describe("Block Retriever", func() {
 			block2 := core.Block{
 				Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 				Number: 2,
-				Transactions: []core.Transaction{{
+				Transactions: []core.TransactionModel{{
 					Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 					GasPrice: 0,
 					GasLimit: 0,
@@ -83,7 +83,7 @@ var _ = Describe("Block Retriever", func() {
 			block3 := core.Block{
 				Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad456yui",
 				Number: 3,
-				Transactions: []core.Transaction{{
+				Transactions: []core.TransactionModel{{
 					Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 					GasPrice: 0,
 					GasLimit: 0,
@@ -127,7 +127,7 @@ var _ = Describe("Block Retriever", func() {
 			block2 := core.Block{
 				Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 				Number: 2,
-				Transactions: []core.Transaction{{
+				Transactions: []core.TransactionModel{{
 					Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 					GasPrice: 0,
 					GasLimit: 0,
@@ -158,7 +158,7 @@ var _ = Describe("Block Retriever", func() {
 			block3 := core.Block{
 				Hash:   "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad456yui",
 				Number: 3,
-				Transactions: []core.Transaction{{
+				Transactions: []core.TransactionModel{{
 					Hash:     "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 					GasPrice: 0,
 					GasLimit: 0,
@@ -202,13 +202,13 @@ var _ = Describe("Block Retriever", func() {
 			block2 := core.Block{
 				Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 				Number:       2,
-				Transactions: []core.Transaction{},
+				Transactions: []core.TransactionModel{},
 			}
 
 			block3 := core.Block{
 				Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad456yui",
 				Number:       3,
-				Transactions: []core.Transaction{},
+				Transactions: []core.TransactionModel{},
 			}
 
 			_, insertErrOne := blockRepository.CreateOrUpdateBlock(block1)
@@ -228,13 +228,13 @@ var _ = Describe("Block Retriever", func() {
 			block2 := core.Block{
 				Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad123ert",
 				Number:       2,
-				Transactions: []core.Transaction{},
+				Transactions: []core.TransactionModel{},
 			}
 
 			block3 := core.Block{
 				Hash:         "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad456yui",
 				Number:       3,
-				Transactions: []core.Transaction{},
+				Transactions: []core.TransactionModel{},
 			}
 
 			_, insertErrOne := blockRepository.CreateOrUpdateBlock(block1)

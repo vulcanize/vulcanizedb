@@ -27,7 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Receipts Repository", func() {
+var _ = Describe("Receipt Repository", func() {
 	var blockRepository datastore.BlockRepository
 	var logRepository datastore.LogRepository
 	var receiptRepository datastore.ReceiptRepository
@@ -119,7 +119,7 @@ var _ = Describe("Receipts Repository", func() {
 			}
 
 			transaction := fakes.GetFakeTransaction(expected.TxHash, expected)
-			block := core.Block{Transactions: []core.Transaction{transaction}}
+			block := core.Block{Transactions: []core.TransactionModel{transaction}}
 
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 
@@ -148,7 +148,7 @@ var _ = Describe("Receipts Repository", func() {
 			transaction := fakes.GetFakeTransaction(receipt.TxHash, receipt)
 
 			block := core.Block{
-				Transactions: []core.Transaction{transaction},
+				Transactions: []core.TransactionModel{transaction},
 			}
 
 			_, err := blockRepository.CreateOrUpdateBlock(block)

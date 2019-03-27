@@ -188,18 +188,26 @@ var _ = Describe("Block header repository", func() {
 			toAddress := common.HexToAddress("0x5678")
 			txHash := common.HexToHash("0x9876")
 			txIndex := big.NewInt(123)
-			transaction := core.Transaction{
-				From:    fromAddress.Hex(),
-				Hash:    txHash.Hex(),
-				To:      toAddress.Hex(),
-				TxIndex: txIndex.Int64(),
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
 			}
 
 			insertErr := repo.CreateTransaction(headerID, transaction)
 
 			Expect(insertErr).NotTo(HaveOccurred())
-			var dbTransaction core.Transaction
-			err = db.Get(&dbTransaction, `SELECT hash, tx_from, tx_to, tx_index FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			var dbTransaction core.TransactionModel
+			err = db.Get(&dbTransaction,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransaction).To(Equal(transaction))
 		})
@@ -211,11 +219,18 @@ var _ = Describe("Block header repository", func() {
 			toAddress := common.HexToAddress("0x5678")
 			txHash := common.HexToHash("0x9876")
 			txIndex := big.NewInt(123)
-			transaction := core.Transaction{
-				From:    fromAddress.Hex(),
-				Hash:    txHash.Hex(),
-				To:      toAddress.Hex(),
-				TxIndex: txIndex.Int64(),
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				Receipt:  core.Receipt{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
 			}
 
 			insertErr := repo.CreateTransaction(headerID, transaction)
@@ -224,8 +239,10 @@ var _ = Describe("Block header repository", func() {
 			insertTwoErr := repo.CreateTransaction(headerID, transaction)
 			Expect(insertTwoErr).NotTo(HaveOccurred())
 
-			var dbTransactions []core.Transaction
-			err = db.Select(&dbTransactions, `SELECT hash, tx_from, tx_to, tx_index FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(1))
 		})

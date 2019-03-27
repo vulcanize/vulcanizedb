@@ -121,6 +121,33 @@ var _ = Describe("Watcher", func() {
 			w = watcher.NewEventWatcher(db, &mockBlockChain)
 		})
 
+		It("syncs transactions for fetched logs", func() {
+			fakeTransformer := &mocks.MockTransformer{}
+			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
+			w.Syncer = mockTransactionSyncer
+
+			err := w.Execute(constants.HeaderMissing)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeTrue())
+		})
+
+		It("returns error if syncing transactions fails", func() {
+			fakeTransformer := &mocks.MockTransformer{}
+			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
+			mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
+			w.Syncer = mockTransactionSyncer
+
+			err := w.Execute(constants.HeaderMissing)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
 		It("executes each transformer", func() {
 			fakeTransformer := &mocks.MockTransformer{}
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})

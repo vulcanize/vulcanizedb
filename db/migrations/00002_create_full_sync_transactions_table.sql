@@ -5,7 +5,7 @@ CREATE TABLE full_sync_transactions (
   gaslimit    NUMERIC,
   gasprice    NUMERIC,
   hash        VARCHAR(66),
-  input_data  VARCHAR,
+  input_data  BYTEA,
   nonce       NUMERIC,
   raw         BYTEA,
   tx_from     VARCHAR(66),

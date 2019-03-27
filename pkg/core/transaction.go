@@ -16,8 +16,8 @@
 
 package core
 
-type Transaction struct {
-	Data     string `db:"input_data"`
+type TransactionModel struct {
+	Data     []byte `db:"input_data"`
 	From     string `db:"tx_from"`
 	GasLimit uint64
 	GasPrice int64
@@ -28,4 +28,19 @@ type Transaction struct {
 	To      string `db:"tx_to"`
 	TxIndex int64  `db:"tx_index"`
 	Value   string
+}
+
+type RpcTransaction struct {
+	Nonce            string `json:"nonce"`
+	GasPrice         string `json:"gasPrice"`
+	GasLimit         string `json:"gas"`
+	Recipient        string `json:"to"`
+	Amount           string `json:"value"`
+	Payload          []byte `json:"input"`
+	V                string `json:"v"`
+	R                string `json:"r"`
+	S                string `json:"s"`
+	Hash             string
+	From             string
+	TransactionIndex string `json:"transactionIndex"`
 }

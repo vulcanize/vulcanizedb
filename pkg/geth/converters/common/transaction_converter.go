@@ -22,5 +22,6 @@ import (
 )
 
 type TransactionConverter interface {
-	ConvertTransactionsToCore(gethBlock *types.Block) ([]core.Transaction, error)
+	ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error)
+	ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error)
 }

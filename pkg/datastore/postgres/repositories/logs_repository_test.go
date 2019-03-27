@@ -204,7 +204,7 @@ var _ = Describe("Logs Repository", func() {
 			}
 			transaction := fakes.GetFakeTransaction(receipt.TxHash, receipt)
 
-			block := core.Block{Transactions: []core.Transaction{transaction}}
+			block := core.Block{Transactions: []core.TransactionModel{transaction}}
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
 			retrievedLogs, err := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)

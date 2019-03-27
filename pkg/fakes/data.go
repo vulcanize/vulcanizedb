@@ -29,6 +29,7 @@ import (
 )
 
 var (
+	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
 	fakeTimestamp = int64(111111111)
@@ -53,8 +54,8 @@ func GetFakeHeader(blockNumber int64) core.Header {
 var fakeTransaction types.Transaction
 var rawTransaction bytes.Buffer
 var _ = fakeTransaction.EncodeRLP(&rawTransaction)
-var FakeTransaction = core.Transaction{
-	Data:     "",
+var FakeTransaction = core.TransactionModel{
+	Data:     []byte{},
 	From:     "",
 	GasLimit: 0,
 	GasPrice: 0,
@@ -67,15 +68,15 @@ var FakeTransaction = core.Transaction{
 	Value:    "0",
 }
 
-func GetFakeTransaction(hash string, receipt core.Receipt) core.Transaction {
+func GetFakeTransaction(hash string, receipt core.Receipt) core.TransactionModel {
 	gethTransaction := types.Transaction{}
 	var raw bytes.Buffer
 	err := gethTransaction.EncodeRLP(&raw)
 	if err != nil {
 		panic("failed to marshal transaction creating test fake")
 	}
-	return core.Transaction{
-		Data:     "",
+	return core.TransactionModel{
+		Data:     []byte{},
 		From:     "",
 		GasLimit: 0,
 		GasPrice: 0,
