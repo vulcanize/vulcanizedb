@@ -17,15 +17,9 @@
 package datastore
 
 import (
-	"fmt"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
-
-var ErrBlockDoesNotExist = func(blockNumber int64) error {
-	return fmt.Errorf("Block number %d does not exist", blockNumber)
-}
 
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
@@ -34,18 +28,10 @@ type BlockRepository interface {
 	SetBlocksStatus(chainHead int64) error
 }
 
-var ErrContractDoesNotExist = func(contractHash string) error {
-	return fmt.Errorf("Contract %v does not exist", contractHash)
-}
-
 type ContractRepository interface {
 	CreateContract(contract core.Contract) error
 	GetContract(contractHash string) (core.Contract, error)
 	ContractExists(contractHash string) (bool, error)
-}
-
-var ErrFilterDoesNotExist = func(name string) error {
-	return fmt.Errorf("filter %s does not exist", name)
 }
 
 type FilterRepository interface {
@@ -55,6 +41,7 @@ type FilterRepository interface {
 
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
+	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
 	GetHeader(blockNumber int64) (core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
 }
@@ -62,10 +49,6 @@ type HeaderRepository interface {
 type LogRepository interface {
 	CreateLogs(logs []core.Log, receiptId int64) error
 	GetLogs(address string, blockNumber int64) ([]core.Log, error)
-}
-
-var ErrReceiptDoesNotExist = func(txHash string) error {
-	return fmt.Errorf("Receipt for tx: %v does not exist", txHash)
 }
 
 type ReceiptRepository interface {

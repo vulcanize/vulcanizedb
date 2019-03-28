@@ -17,6 +17,7 @@
 package fakes
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -35,11 +36,15 @@ type MockBlockChain struct {
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
 	getBlockByNumberErr                error
+	GetTransactionsCalled              bool
+	GetTransactionsError               error
+	GetTransactionsPassedHashes        []common.Hash
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
 	logQueryReturnLogs                 []types.Log
 	lastBlock                          *big.Int
 	node                               core.Node
+	Transactions                       []core.TransactionModel
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -102,6 +107,12 @@ func (chain *MockBlockChain) GetHeaderByNumbers(blockNumbers []int64) ([]core.He
 
 func (chain *MockBlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
 	return []core.Log{}, nil
+}
+
+func (chain *MockBlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
+	chain.GetTransactionsCalled = true
+	chain.GetTransactionsPassedHashes = transactionHashes
+	return chain.Transactions, chain.GetTransactionsError
 }
 
 func (chain *MockBlockChain) CallContract(contractHash string, input []byte, blockNumber *big.Int) ([]byte, error) {

@@ -38,8 +38,10 @@ var _ = Describe("contractWatcher light transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			_, insertErr := headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
 			Expect(err).ToNot(HaveOccurred())
@@ -61,8 +63,10 @@ var _ = Describe("contractWatcher light transformer", func() {
 		})
 
 		It("Does nothing if nothing if no addresses are configured", func() {
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			_, insertErr := headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			Expect(insertErr).NotTo(HaveOccurred())
+			_, insertErrTwo := headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			Expect(insertErrTwo).NotTo(HaveOccurred())
 			var testConf config.ContractConfig
 			testConf = test_helpers.TusdConfig
 			testConf.Addresses = nil

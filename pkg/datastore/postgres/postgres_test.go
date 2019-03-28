@@ -88,7 +88,7 @@ var _ = Describe("Postgres DB", func() {
 		badBlock := core.Block{
 			Number:       123,
 			Nonce:        badNonce,
-			Transactions: []core.Transaction{},
+			Transactions: []core.TransactionModel{},
 		}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
 		db := test_config.NewTestDB(node)
@@ -109,14 +109,18 @@ var _ = Describe("Postgres DB", func() {
 
 		_, err := postgres.NewDB(invalidDatabase, node)
 
-		Expect(err).To(Equal(postgres.ErrDBConnectionFailed))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(postgres.DbConnectionFailedMsg))
 	})
 
 	It("throws error when can't create node", func() {
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
 		node := core.Node{GenesisBlock: badHash, NetworkID: 1, ID: "x123", ClientName: "geth"}
+
 		_, err := postgres.NewDB(test_config.DBConfig, node)
-		Expect(err).To(Equal(postgres.ErrUnableToSetNode))
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring(postgres.SettingNodeFailedMsg))
 	})
 
 	It("does not commit log if log is invalid", func() {
@@ -142,10 +146,10 @@ var _ = Describe("Postgres DB", func() {
 	It("does not commit block or transactions if transaction is invalid", func() {
 		//badHash violates db To field length
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		badTransaction := core.Transaction{To: badHash}
+		badTransaction := core.TransactionModel{To: badHash}
 		block := core.Block{
 			Number:       123,
-			Transactions: []core.Transaction{badTransaction},
+			Transactions: []core.TransactionModel{badTransaction},
 		}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
 		db, _ := postgres.NewDB(test_config.DBConfig, node)

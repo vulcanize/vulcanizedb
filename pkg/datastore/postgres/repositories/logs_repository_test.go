@@ -17,6 +17,7 @@
 package repositories_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"sort"
 
 	. "github.com/onsi/ginkgo"
@@ -201,13 +202,9 @@ var _ = Describe("Logs Repository", func() {
 				Status:            1,
 				TxHash:            "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
 			}
-			transaction :=
-				core.Transaction{
-					Hash:    receipt.TxHash,
-					Receipt: receipt,
-				}
+			transaction := fakes.GetFakeTransaction(receipt.TxHash, receipt)
 
-			block := core.Block{Transactions: []core.Transaction{transaction}}
+			block := core.Block{Transactions: []core.TransactionModel{transaction}}
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 			Expect(err).To(Not(HaveOccurred()))
 			retrievedLogs, err := logsRepository.GetLogs("0x99041f808d598b782d5a3e498681c2452a31da08", 4745407)

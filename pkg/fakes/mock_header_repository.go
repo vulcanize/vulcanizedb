@@ -27,6 +27,8 @@ type MockHeaderRepository struct {
 	createOrUpdateHeaderErr                error
 	createOrUpdateHeaderPassedBlockNumbers []int64
 	createOrUpdateHeaderReturnID           int64
+	CreateTransactionsCalled               bool
+	CreateTransactionsError                error
 	getHeaderError                         error
 	getHeaderReturnBlockHash               string
 	missingBlockNumbers                    []int64
@@ -54,6 +56,11 @@ func (repository *MockHeaderRepository) CreateOrUpdateHeader(header core.Header)
 	repository.createOrUpdateHeaderCallCount++
 	repository.createOrUpdateHeaderPassedBlockNumbers = append(repository.createOrUpdateHeaderPassedBlockNumbers, header.BlockNumber)
 	return repository.createOrUpdateHeaderReturnID, repository.createOrUpdateHeaderErr
+}
+
+func (repository *MockHeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
+	repository.CreateTransactionsCalled = true
+	return repository.CreateTransactionsError
 }
 
 func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {

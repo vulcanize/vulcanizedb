@@ -180,6 +180,71 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
+	Describe("creating a transaction", func() {
+		var (
+			headerID     int64
+			transactions []core.TransactionModel
+		)
+
+		BeforeEach(func() {
+			var err error
+			headerID, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txHashTwo := common.HexToHash("0x5432")
+			txIndex := big.NewInt(123)
+			transactions = []core.TransactionModel{{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}, {
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 1,
+				GasPrice: 1,
+				Hash:     txHashTwo.Hex(),
+				Nonce:    1,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  1,
+				Value:    "1",
+			}}
+
+			insertErr := repo.CreateTransactions(headerID, transactions)
+			Expect(insertErr).NotTo(HaveOccurred())
+		})
+
+		It("adds transactions", func() {
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTransactions).To(ConsistOf(transactions))
+		})
+
+		It("silently ignores duplicate inserts", func() {
+			insertTwoErr := repo.CreateTransactions(headerID, transactions)
+			Expect(insertTwoErr).NotTo(HaveOccurred())
+
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbTransactions)).To(Equal(2))
+		})
+	})
+
 	Describe("Getting a header", func() {
 		It("returns header if it exists", func() {
 			_, err = repo.CreateOrUpdateHeader(header)

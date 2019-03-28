@@ -81,7 +81,8 @@ var _ = Describe("Geth cold importer", func() {
 
 		mockEthereumDatabase.AssertGetBlockHashCalledWith(blockNumber)
 		mockEthereumDatabase.AssertGetBlockCalledWith(fakeHash, blockNumber)
-		mockTransactionConverter.AssertConvertTransactionsToCoreCalledWith(fakeGethBlock)
+		Expect(mockTransactionConverter.ConvertBlockTransactionsToCoreCalled).To(BeTrue())
+		Expect(mockTransactionConverter.ConvertBlockTransactionsToCorePassedBlock).To(Equal(fakeGethBlock))
 		convertedBlock, err := blockConverter.ToCoreBlock(fakeGethBlock)
 		Expect(err).NotTo(HaveOccurred())
 		mockBlockRepository.AssertCreateOrUpdateBlockCalledWith(convertedBlock)
