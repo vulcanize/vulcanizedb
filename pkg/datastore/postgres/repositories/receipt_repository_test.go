@@ -23,10 +23,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Receipts Repository", func() {
+var _ = Describe("Receipt Repository", func() {
 	var blockRepository datastore.BlockRepository
 	var logRepository datastore.LogRepository
 	var receiptRepository datastore.ReceiptRepository
@@ -117,11 +118,8 @@ var _ = Describe("Receipts Repository", func() {
 				TxHash:            "0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223",
 			}
 
-			transaction := core.Transaction{
-				Hash:    expected.TxHash,
-				Receipt: expected,
-			}
-			block := core.Block{Transactions: []core.Transaction{transaction}}
+			transaction := fakes.GetFakeTransaction(expected.TxHash, expected)
+			block := core.Block{Transactions: []core.TransactionModel{transaction}}
 
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 
@@ -147,13 +145,10 @@ var _ = Describe("Receipts Repository", func() {
 			receipt := core.Receipt{
 				TxHash: "0x002c4799161d809b23f67884eb6598c9df5894929fe1a9ead97ca175d360f547",
 			}
-			transaction := core.Transaction{
-				Hash:    receipt.TxHash,
-				Receipt: receipt,
-			}
+			transaction := fakes.GetFakeTransaction(receipt.TxHash, receipt)
 
 			block := core.Block{
-				Transactions: []core.Transaction{transaction},
+				Transactions: []core.TransactionModel{transaction},
 			}
 
 			_, err := blockRepository.CreateOrUpdateBlock(block)
