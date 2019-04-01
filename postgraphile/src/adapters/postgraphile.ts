@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import { Server } from 'http';
 import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 
-// NOTE (jchristie@8thlight.com) Shape of the middleware is not
+// NOTE: Shape of the middleware is not
 // currently important to this application, but if a need arises,
 // any needed shape can be assigned from a custom type here. For
 // the time being, this is a named stub to provide clarity.
@@ -14,7 +14,7 @@ export interface PostgraphileOptions {
   watchPg: boolean;
   enableCors: boolean;
   graphiql: boolean;
-  // NOTE (jchristie@8thlight.com) Shape of the middlewares is not
+  // NOTE: Shape of the middlewares is not
   // currently important to this application, but if a need arises,
   // any needed shape can be assigned from a custom type here.
   webSocketMiddlewares: object[];
