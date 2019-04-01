@@ -1,8 +1,6 @@
 # Vulcanize DB
 
-[![Join the chat at https://gitter.im/vulcanizeio/VulcanizeDB](https://badges.gitter.im/vulcanizeio/VulcanizeDB.svg)](https://gitter.im/vulcanizeio/VulcanizeDB?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-[![Build Status](https://travis-ci.com/vulcanize/maker-vulcanizedb.svg?token=MKcE2K7CRvKtdxSSnbap&branch=staging)](https://travis-ci.com/vulcanize/maker-vulcanizedb)
+[![Build Status](https://travis-ci.org/vulcanize/vulcanizedb.svg?branch=master)](https://travis-ci.org/vulcanize/vulcanizedb)
 
 ## About
 
@@ -41,7 +39,6 @@ In order to install packages with `dep`, ensure you are in the project directory
 After `dep` finishes, dependencies should be installed within your `GOPATH` at the versions specified in `Gopkg.toml`.
 
 Because we are working with a modified version of the go-ethereum accounts/abi package, after running `dep ensure` you will need to run `git checkout vendor/github/ethereum/go-ethereum/accounts/abi` to checkout the modified dependency.
-This is explained in greater detail [here](https://github.com/vulcanize/maker-vulcanizedb/issues/41).
 
 Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system. It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
@@ -318,17 +315,17 @@ Also notice that the contract address used for the schema name has been down-cas
 ## composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
 This is accomplished by generating a Go pluggin which allows our `vulcanizedb` binary to link to external transformers, so
-long as they abide by our standard [interfaces](https://github.com/vulcanize/maker-vulcanizedb/tree/compose_and_execute/libraries/shared/transformer).   
+long as they abide by our standard [interfaces](../staging/libraries/shared/transformer).
 
 This command requires Go 1.11+ and [Go plugins](https://golang.org/pkg/plugin/) only work on Unix based systems.
 
 ### Writing custom transformers
 Storage Transformers
-   * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/README.md)   
-   * [Example](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/factories/storage/EXAMPLE.md)   
+   * [Guide](../staging/libraries/shared/factories/storage/README.md)
+   * [Example](../staging/libraries/shared/factories/storage/EXAMPLE.md)
     
 Event Transformers   
-   * [Guide](https://github.com/vulcanize/maker-vulcanizedb/blob/event_docs/libraries/shared/factories/README.md)
+   * [Guide](../staging/libraries/shared/factories/event/README.md)
    * [Example](https://github.com/vulcanize/ens_transformers/tree/working)
    
 ### composeAndExecute configuration
@@ -392,12 +389,12 @@ The config provides information for composing a set of transformers:
     - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package).
         - Transformer repositories need to be cloned into the user's $GOPATH (`go get`)
     - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: `eth_event` and `eth_storage`)
-        - `eth_storage` indicates the transformer works with the [storage watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/storage_watcher.go)
+        - `eth_storage` indicates the transformer works with the [storage watcher](../staging/libraries/shared/watcher/storage_watcher.go)
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
-        - `eth_event` indicates the transformer works with the [event watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
+        - `eth_event` indicates the transformer works with the [event watcher](../staging/libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
-        - `eth_contract` indicates the transformer works with the [contract watcher](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/generic_watcher.go)
-        that is made to work with [contract_watcher pkg](https://github.com/vulcanize/maker-vulcanizedb/tree/staging/pkg/omni)
+        - `eth_contract` indicates the transformer works with the [contract watcher](../staging/libraries/shared/watcher/contract_watcher.go)
+        that is made to work with [contract_watcher pkg](../staging/pkg/contract_watcher)
         based transformers which work with either a light or full sync vDB to watch events and poll public methods ([example](https://github.com/vulcanize/ens_transformers/blob/working/transformers/domain_records/transformer.go))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
@@ -446,12 +443,12 @@ func (e exporter) Export() []interface1.EventTransformerInitializer, []interface
 To plug in an external transformer we need to:
 
 * Create a [package](https://github.com/vulcanize/ens_transformers/blob/working/transformers/registry/new_owner/initializer/initializer.go)
-that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/transformer/storage_transformer.go#L31),
-or [ContractTransformerInitializer](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/transformer/contract_transformer.go#L31), respectively
-* Design the transformers to work in the context of their [event](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/event_watcher.go#L83),
-[storage](https://github.com/vulcanize/maker-vulcanizedb/blob/compose_and_execute/libraries/shared/watcher/storage_watcher.go#L53),
-or [contract](https://github.com/vulcanize/maker-vulcanizedb/blob/omni_update/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
+that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](../staging/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](../staging/libraries/shared/transformer/storage_transformer.go#L31),
+or [ContractTransformerInitializer](../staging/libraries/shared/transformer/contract_transformer.go#L31), respectively
+* Design the transformers to work in the context of their [event](../staging/libraries/shared/watcher/event_watcher.go#L83),
+[storage](../staging/libraries/shared/watcher/storage_watcher.go#L53),
+or [contract](../staging/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
 * Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Do not `goose fix` the transformer migrations   
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
