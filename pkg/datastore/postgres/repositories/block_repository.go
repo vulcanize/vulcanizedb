@@ -19,12 +19,10 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-	"math/big"
-
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -157,8 +155,8 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		}
 		return 0, postgres.ErrDBInsertFailed(insertBlockErr)
 	}
-	if len(block.MappedUncleRewards) > 0 {
-		insertUncleErr := blockRepository.createUncleRewards(tx, blockId, block.Hash, block.MappedUncleRewards)
+	if len(block.Uncles) > 0 {
+		insertUncleErr := blockRepository.createUncles(tx, blockId, block.Hash, block.Uncles)
 		if insertUncleErr != nil {
 			tx.Rollback()
 			return 0, postgres.ErrDBInsertFailed(insertUncleErr)
@@ -185,25 +183,23 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	return blockId, nil
 }
 
-func (blockRepository BlockRepository) createUncleRewards(tx *sqlx.Tx, blockId int64, blockHash string, mappedUncleRewards map[string]map[string]*big.Int) error {
-	for minerAddr, uncleRewards := range mappedUncleRewards {
-		for uncleHash, reward := range uncleRewards {
-			err := blockRepository.createUncleReward(tx, blockId, blockHash, minerAddr, uncleHash, reward.String())
-			if err != nil {
-				return err
-			}
+func (blockRepository BlockRepository) createUncles(tx *sqlx.Tx, blockId int64, blockHash string, uncles []core.Uncle) error {
+	for _, uncle := range uncles {
+		err := blockRepository.createUncle(tx, blockId, uncle)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (blockRepository BlockRepository) createUncleReward(tx *sqlx.Tx, blockId int64, blockHash, minerAddr, uncleHash, amount string) error {
+func (blockRepository BlockRepository) createUncle(tx *sqlx.Tx, blockId int64, uncle core.Uncle) error {
 	_, err := tx.Exec(
-		`INSERT INTO uncle_rewards
-       (block_id, block_hash, miner_address, uncle_hash, uncle_reward)
-       VALUES ($1, $2, $3, $4, $5)
+		`INSERT INTO uncles
+       (hash, block_id, block_hash, reward, miner, raw, block_timestamp, eth_node_id, eth_node_fingerprint)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::NUMERIC, $8, $9)
        RETURNING id`,
-		blockId, blockHash, minerAddr, uncleHash, utilities.NullToZero(amount))
+		uncle.Hash, blockId, uncle.BlockHash, utilities.NullToZero(uncle.Reward), uncle.Miner, uncle.Raw, uncle.Timestamp, blockRepository.database.NodeID, blockRepository.database.Node.ID)
 	return err
 }
 

@@ -159,15 +159,16 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			expectedTotalReward := new(big.Int)
 			expectedTotalReward.SetString("6875000000000000000", 10)
-			totalReward, mappedRewards := vulcCommon.CalcUnclesReward(coreBlock, block.Uncles())
+			totalReward, coreUncles := blockConverter.ToCoreUncle(coreBlock, block.Uncles())
 			Expect(totalReward.String()).To(Equal(expectedTotalReward.String()))
 
-			Expect(len(mappedRewards)).To(Equal(1))
-			Expect(len(mappedRewards["0x0000000000000000000000000000000000000000"])).To(Equal(2))
-			Expect(mappedRewards["0x0000000000000000000000000000000000000000"]["0xb629de4014b6e30cf9555ee833f1806fa0d8b8516fde194405f9c98c2deb8772"].String()).
-				To(Equal(big.NewInt(3125000000000000000).String()))
-			Expect(mappedRewards["0x0000000000000000000000000000000000000000"]["0x673f5231e4888a951e0bc8a25b5774b982e6e9e258362c21affaff6e02dd5a2b"].String()).
-				To(Equal(big.NewInt(3750000000000000000).String()))
+			Expect(len(coreUncles)).To(Equal(2))
+			Expect(coreUncles[0].Reward).To(Equal("3125000000000000000"))
+			Expect(coreUncles[0].Miner).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(coreUncles[0].Hash).To(Equal("0xb629de4014b6e30cf9555ee833f1806fa0d8b8516fde194405f9c98c2deb8772"))
+			Expect(coreUncles[1].Reward).To(Equal("3750000000000000000"))
+			Expect(coreUncles[1].Miner).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(coreUncles[1].Hash).To(Equal("0x673f5231e4888a951e0bc8a25b5774b982e6e9e258362c21affaff6e02dd5a2b"))
 		})
 
 		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
