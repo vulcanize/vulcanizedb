@@ -73,7 +73,7 @@ func GetFakeTransaction(hash string, receipt core.Receipt) core.TransactionModel
 	var raw bytes.Buffer
 	err := gethTransaction.EncodeRLP(&raw)
 	if err != nil {
-		panic("failed to marshal transaction creating test fake")
+		panic("failed to marshal transaction while creating test fake")
 	}
 	return core.TransactionModel{
 		Data:     []byte{},
@@ -87,5 +87,16 @@ func GetFakeTransaction(hash string, receipt core.Receipt) core.TransactionModel
 		To:       "",
 		TxIndex:  0,
 		Value:    "0",
+	}
+}
+
+func GetFakeUncle(hash, reward string) core.Uncle {
+	return core.Uncle{
+		Miner:     FakeAddress.String(),
+		Hash:      hash,
+		BlockHash: FakeHash.String(),
+		Reward:    reward,
+		Raw:       rawFakeHeader,
+		Timestamp: strconv.FormatInt(fakeTimestamp, 10),
 	}
 }

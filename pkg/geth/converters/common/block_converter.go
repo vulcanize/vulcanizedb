@@ -17,12 +17,13 @@
 package common
 
 import (
+	"encoding/json"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -56,8 +57,41 @@ func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error)
 		UncleHash:    gethBlock.UncleHash().Hex(),
 	}
 	coreBlock.Reward = CalcBlockReward(coreBlock, gethBlock.Uncles()).String()
-	uncleRewards, mappedUncleRewards := CalcUnclesReward(coreBlock, gethBlock.Uncles())
-	coreBlock.UnclesReward = utilities.NullToZero(uncleRewards.String())
-	coreBlock.MappedUncleRewards = mappedUncleRewards
+	totalUncleReward, uncles := bc.ToCoreUncle(coreBlock, gethBlock.Uncles())
+
+	coreBlock.UnclesReward = totalUncleReward.String()
+	coreBlock.Uncles = uncles
 	return coreBlock, nil
+}
+
+// Rewards for the miners of uncles is calculated as (U_n + 8 - B_n) * R / 8
+// Where U_n is the uncle block number, B_n is the parent block number and R is the static block reward at B_n
+// https://github.com/ethereum/go-ethereum/issues/1591
+// https://ethereum.stackexchange.com/questions/27172/different-uncles-reward
+// https://github.com/ethereum/homestead-guide/issues/399
+// Returns the total uncle reward and the individual processed uncles
+func (bc BlockConverter) ToCoreUncle(block core.Block, uncles []*types.Header) (*big.Int, []core.Uncle) {
+	totalUncleRewards := new(big.Int)
+	coreUncles := make([]core.Uncle, 0, len(uncles))
+	for _, uncle := range uncles {
+		staticBlockReward := staticRewardByBlockNumber(block.Number)
+		rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
+		mainBlock := big.NewInt(block.Number)
+		uncleBlock := big.NewInt(uncle.Number.Int64())
+		uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
+		uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
+		thisUncleReward := rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+		raw, _ := json.Marshal(uncle)
+		coreUncle := core.Uncle{
+			Miner:     uncle.Coinbase.Hex(),
+			BlockHash: block.Hash,
+			Hash:      uncle.Hash().Hex(),
+			Raw:       raw,
+			Reward:    thisUncleReward.String(),
+			Timestamp: uncle.Time.String(),
+		}
+		coreUncles = append(coreUncles, coreUncle)
+		totalUncleRewards.Add(totalUncleRewards, thisUncleReward)
+	}
+	return totalUncleRewards, coreUncles
 }

@@ -23,34 +23,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// (U_n + 8 - B_n) * R / 8
-// https://github.com/ethereum/go-ethereum/issues/1591
-// https://ethereum.stackexchange.com/questions/27172/different-uncles-reward
-// https://github.com/ethereum/homestead-guide/issues/399
-// Returns a map of miner addresses to a map of the uncles they mined (hashes) to the rewards received for that uncle
-func CalcUnclesReward(block core.Block, uncles []*types.Header) (*big.Int, map[string]map[string]*big.Int) {
-	uncleRewards := new(big.Int)
-	mappedUncleRewards := make(map[string]map[string]*big.Int)
-	for _, uncle := range uncles {
-		staticBlockReward := staticRewardByBlockNumber(block.Number)
-		rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
-		uncleBlock := big.NewInt(uncle.Number.Int64())
-		uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
-		mainBlock := big.NewInt(block.Number)
-		uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
-		thisUncleReward := rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
-		uncleRewards = uncleRewards.Add(uncleRewards, thisUncleReward)
-		if mappedUncleRewards[uncle.Coinbase.Hex()] == nil {
-			mappedUncleRewards[uncle.Coinbase.Hex()] = make(map[string]*big.Int)
-		}
-		if mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()] == nil {
-			mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()] = new(big.Int)
-		}
-		mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()].Add(mappedUncleRewards[uncle.Coinbase.Hex()][uncle.Hash().Hex()], thisUncleReward)
-	}
-	return uncleRewards, mappedUncleRewards
-}
-
 func CalcBlockReward(block core.Block, uncles []*types.Header) *big.Int {
 	staticBlockReward := staticRewardByBlockNumber(block.Number)
 	transactionFees := calcTransactionFees(block)
