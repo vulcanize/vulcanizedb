@@ -9,7 +9,6 @@ The current approach for caching smart contract storage diffs assumes that you a
 The CSV file is expected to have 5 columns: contract address, block hash, block number, storage key, storage value.
 
 We have [a branch on vulcanize/parity-ethereum](https://github.com/vulcanize/parity-ethereum/tree/watch-storage-diffs) that enables running a node that writes storage diffs this way.
-We also have [sample data](https://github.com/8thlight/maker-vulcanizedb/pull/132/files) that comes from running that node against Kovan through block 9796184.
 
 Looking forward, we would like to isolate this assumption as much as possible.
 We may end up needing to read CSV data that is formatted differently, or reading data from a non-CSV source, and we do not want resulting changes to cascade throughout the codebase.
