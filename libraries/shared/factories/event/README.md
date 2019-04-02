@@ -17,13 +17,13 @@ Looking forward, we will be building fetchers that enable sourcing data from IPF
 
 VulcanizeDB has shared code built out for building and plugging in event transformers
 
-### [Event Watcher (light sync)](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/watcher/event_watcher.go)
+### [Event Watcher (light sync)](../staging/libraries/shared/watcher/event_watcher.go)
 
 The event watcher is responsible for continuously fetching and delegating chunks of logs and their associated header to the appropriate transformers.
 
 Using the `compose` or `composeAndExecute` command, event watchers can be loaded with plugin event transformers and execute over them.
 
-### [Event Transformer](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/libraries/shared/transformer/event_transformer.go)
+### [Event Transformer](../staging/libraries/shared/transformer/event_transformer.go)
 
 The event transformer is responsible for converting event logs into more useful data objects and storing them in Postgres.
 The event transformer is composed of converter and repository interfaces and a config struct:
@@ -371,10 +371,10 @@ ALTER TABLE public.checked_headers
 
 
 -- +goose Down
-DROP TABLE maker.bite;
+DROP TABLE example_schema.example_event;
 
 ALTER TABLE public.checked_headers
-  DROP COLUMN bite_checked;
+  DROP COLUMN example_event_checked;
 ``` 
 
 Notice that we have also added a column to the `checked_headers` table for this event so that we can keep track
@@ -385,4 +385,4 @@ of which headers we have already filtered through for this event.
 To create a transformer for a contract event we need to create entities for unpacking the raw log, models to represent
 the final data structure, a converter to mediate this unpacking and conversion between entities to models, a repository to write
 these models to Postgres, db migrations to accommodate these models in Postgres, and a EventTransformerInitializer to export the
-configured transformer and load it as a plugin to the `compose` or `composeAndExecute` commands as described in the [main readme](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/README.md#composeandexecute-configuration).
+configured transformer and load it as a plugin to the `compose` or `composeAndExecute` commands as described in the main readme.
