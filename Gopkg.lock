@@ -45,7 +45,7 @@
   version = "v1.7.1"
 
 [[projects]]
-  digest = "1:49b5451a4ce27b50393cc0d4c6fdd9cf7fa148ee4c0dd9c1d6c515b232427022"
+  digest = "1:90d36f5b581e95e00ced808cd48824ed6c320c25887828cce461bdef4cb7bc7c"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -66,6 +66,8 @@
     "crypto/secp256k1",
     "ethclient",
     "ethdb",
+    "ethdb/leveldb",
+    "ethdb/memorydb",
     "event",
     "log",
     "metrics",
@@ -82,8 +84,7 @@
     "trie",
   ]
   pruneopts = ""
-  revision = "c942700427557e3ff6de3aaf6b916e2f056c1ec2"
-  version = "v1.8.23"
+  revision = "cd79bc61a983d6482579d12cdd239b37bbfa12ef"
 
 [[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
@@ -321,14 +322,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:210286d0cb60ffe28f1ca00b664029e8943009f95d06d8f8c336301b28e1aee5"
-  name = "github.com/philhofer/fwd"
-  packages = ["."]
-  pruneopts = ""
-  revision = "bb6d471dc95d4fe11e432687f8b70ff496cf3136"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:7143292549152d009ca9e9c493b74736a2ebd93f921bea8a4b308d7cc5edc6b3"
   name = "github.com/rjeczalik/notify"
   packages = ["."]
@@ -425,14 +418,6 @@
   revision = "ae2bd5eed72d46b28834ec3f60db3a3ebedd8dbd"
 
 [[projects]]
-  digest = "1:cae65c1f3471b1f456a9d8a160440f4824ad50c718a15da4144490fbc3b12e49"
-  name = "github.com/tinylib/msgp"
-  packages = ["msgp"]
-  pruneopts = ""
-  revision = "b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1"
-  version = "1.0.2"
-
-[[projects]]
   branch = "master"
   digest = "1:59b49c47c11a48f1054529207f65907c014ecf5f9a7c0d9c0f1616dec7b062ed"
   name = "golang.org/x/crypto"
@@ -508,19 +493,6 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:be560af8c72c59788a6748eae60b8e1fe136fefdf049b7dfb6f5b591ea337984"
-  name = "gopkg.in/DataDog/dd-trace-go.v1"
-  packages = [
-    "ddtrace",
-    "ddtrace/ext",
-    "ddtrace/internal",
-    "ddtrace/tracer",
-  ]
-  pruneopts = ""
-  revision = "bcd20367df871708a36549e7fe36183ee5b4fc55"
-  version = "v1.3.0"
-
-[[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
   name = "gopkg.in/fsnotify.v1"
   packages = ["."]
@@ -571,6 +543,7 @@
     "github.com/ethereum/go-ethereum/p2p",
     "github.com/ethereum/go-ethereum/p2p/discv5",
     "github.com/ethereum/go-ethereum/params",
+    "github.com/ethereum/go-ethereum/rlp",
     "github.com/ethereum/go-ethereum/rpc",
     "github.com/hashicorp/golang-lru",
     "github.com/hpcloud/tail",
@@ -585,7 +558,6 @@
     "github.com/spf13/viper",
     "golang.org/x/net/context",
     "golang.org/x/sync/errgroup",
-    "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer",
     "gopkg.in/tomb.v1",
   ]
   solver-name = "gps-cdcl"
