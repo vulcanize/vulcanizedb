@@ -63,7 +63,6 @@ dep: | $(DEP)
 	$(DEP) ensure
 
 build: dep
-	git checkout vendor/github.com/ethereum/go-ethereum/accounts/abi
 	go fmt ./...
 	go build
 

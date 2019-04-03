@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 type Reader interface {
@@ -31,10 +32,10 @@ type Reader interface {
 }
 
 type LevelDatabaseReader struct {
-	reader rawdb.DatabaseReader
+	reader ethdb.Reader
 }
 
-func NewLevelDatabaseReader(reader rawdb.DatabaseReader) *LevelDatabaseReader {
+func NewLevelDatabaseReader(reader ethdb.Reader) *LevelDatabaseReader {
 	return &LevelDatabaseReader{reader: reader}
 }
 
