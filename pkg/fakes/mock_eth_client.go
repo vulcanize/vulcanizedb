@@ -54,6 +54,11 @@ type MockEthClient struct {
 	passedMethod                string
 	transactionSenderErr        error
 	transactionReceiptErr       error
+	passedAddress               common.Address
+	passedBlockNumber           *big.Int
+	passedBalance               *big.Int
+	balanceAtErr                error
+	passedbalanceAtContext      context.Context
 }
 
 func NewMockEthClient() *MockEthClient {
@@ -207,4 +212,25 @@ func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q e
 
 func (client *MockEthClient) AssertBatchCalledWith(method string) {
 	Expect(client.passedMethod).To(Equal(method))
+}
+
+func (client *MockEthClient) SetBalanceAtErr(err error) {
+	client.balanceAtErr = err
+}
+
+func (client *MockEthClient) SetBalanceAt(balance *big.Int) {
+	client.passedBalance = balance
+}
+
+func (client *MockEthClient) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	client.passedbalanceAtContext = ctx
+	client.passedAddress = account
+	client.passedBlockNumber = blockNumber
+	return client.passedBalance, client.balanceAtErr
+}
+
+func (client *MockEthClient) AssertBalanceAtCalled(ctx context.Context, account common.Address, blockNumber *big.Int) {
+	Expect(client.passedbalanceAtContext).To(Equal(ctx))
+	Expect(client.passedAddress).To(Equal(account))
+	Expect(client.passedBlockNumber).To(Equal(blockNumber))
 }
