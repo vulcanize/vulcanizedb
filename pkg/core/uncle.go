@@ -19,7 +19,6 @@ package core
 type Uncle struct {
 	Id        int64
 	Miner     string
-	BlockHash string `db:"block_hash"`
 	Reward    string
 	Hash      string
 	Timestamp string `db:"block_timestamp"`

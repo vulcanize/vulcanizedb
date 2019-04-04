@@ -94,7 +94,6 @@ func GetFakeUncle(hash, reward string) core.Uncle {
 	return core.Uncle{
 		Miner:     FakeAddress.String(),
 		Hash:      hash,
-		BlockHash: FakeHash.String(),
 		Reward:    reward,
 		Raw:       rawFakeHeader,
 		Timestamp: strconv.FormatInt(fakeTimestamp, 10),
