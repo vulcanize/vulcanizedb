@@ -45,6 +45,8 @@ type MockBlockChain struct {
 	lastBlock                          *big.Int
 	node                               core.Node
 	Transactions                       []core.TransactionModel
+	accountBalanceReturnValue          *big.Int
+	getAccountBalanceErr               error
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -140,4 +142,16 @@ func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, a
 
 func (blockChain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {
 	Expect(blockChain.logQuery).To(Equal(query))
+}
+
+func (blockChain *MockBlockChain) SetGetAccountBalanceErr(err error) {
+	blockChain.getAccountBalanceErr = err
+}
+
+func (blockChain *MockBlockChain) SetGetAccountBalance(balance *big.Int) {
+	blockChain.accountBalanceReturnValue = balance
+}
+
+func (blockChain *MockBlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
+	return blockChain.accountBalanceReturnValue, blockChain.getAccountBalanceErr
 }

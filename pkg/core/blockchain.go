@@ -26,6 +26,7 @@ import (
 
 type BlockChain interface {
 	ContractDataFetcher
+	AccountDataFetcher
 	GetBlockByNumber(blockNumber int64) (Block, error)
 	GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error)
 	GetHeaderByNumber(blockNumber int64) (Header, error)
@@ -38,4 +39,8 @@ type BlockChain interface {
 
 type ContractDataFetcher interface {
 	FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
+}
+
+type AccountDataFetcher interface {
+	GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error)
 }

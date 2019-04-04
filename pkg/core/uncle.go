@@ -16,22 +16,11 @@
 
 package core
 
-type Block struct {
-	Reward       string `db:"reward"`
-	Difficulty   int64  `db:"difficulty"`
-	ExtraData    string `db:"extra_data"`
-	GasLimit     uint64 `db:"gas_limit"`
-	GasUsed      uint64 `db:"gas_used"`
-	Hash         string `db:"hash"`
-	IsFinal      bool   `db:"is_final"`
-	Miner        string `db:"miner"`
-	Nonce        string `db:"nonce"`
-	Number       int64  `db:"number"`
-	ParentHash   string `db:"parent_hash"`
-	Size         string `db:"size"`
-	Time         int64  `db:"time"`
-	Transactions []TransactionModel
-	UncleHash    string `db:"uncle_hash"`
-	UnclesReward string `db:"uncles_reward"`
-	Uncles       []Uncle
+type Uncle struct {
+	Id        int64
+	Miner     string
+	Reward    string
+	Hash      string
+	Timestamp string `db:"block_timestamp"`
+	Raw       []byte
 }
