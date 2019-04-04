@@ -74,17 +74,10 @@ func (bc BlockConverter) ToCoreUncle(block core.Block, uncles []*types.Header) (
 	totalUncleRewards := new(big.Int)
 	coreUncles := make([]core.Uncle, 0, len(uncles))
 	for _, uncle := range uncles {
-		staticBlockReward := staticRewardByBlockNumber(block.Number)
-		rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
-		mainBlock := big.NewInt(block.Number)
-		uncleBlock := big.NewInt(uncle.Number.Int64())
-		uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
-		uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
-		thisUncleReward := rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+		thisUncleReward := calcUncleMinerReward(block.Number, uncle.Number.Int64())
 		raw, _ := json.Marshal(uncle)
 		coreUncle := core.Uncle{
 			Miner:     uncle.Coinbase.Hex(),
-			BlockHash: block.Hash,
 			Hash:      uncle.Hash().Hex(),
 			Raw:       raw,
 			Reward:    thisUncleReward.String(),

@@ -226,7 +226,7 @@ var _ = Describe("Block header repository", func() {
 		It("adds transactions", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
-				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
 				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransactions).To(ConsistOf(transactions))
@@ -238,7 +238,7 @@ var _ = Describe("Block header repository", func() {
 
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
-				`SELECT hash, gaslimit, gasprice, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
 				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(2))

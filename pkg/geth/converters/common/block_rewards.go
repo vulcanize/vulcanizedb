@@ -31,6 +31,16 @@ func CalcBlockReward(block core.Block, uncles []*types.Header) *big.Int {
 	return tmp.Add(tmp, staticBlockReward)
 }
 
+func calcUncleMinerReward(blockNumber, uncleBlockNumber int64) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(blockNumber)
+	rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
+	mainBlock := big.NewInt(blockNumber)
+	uncleBlock := big.NewInt(uncleBlockNumber)
+	uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
+	uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
+	return rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+}
+
 func calcTransactionFees(block core.Block) *big.Int {
 	transactionFees := new(big.Int)
 	for _, transaction := range block.Transactions {
@@ -56,7 +66,9 @@ func calcUncleInclusionRewards(block core.Block, uncles []*types.Header) *big.In
 func staticRewardByBlockNumber(blockNumber int64) *big.Int {
 	staticBlockReward := new(big.Int)
 	//https://blog.ethereum.org/2017/10/12/byzantium-hf-announcement/
-	if blockNumber >= 4370000 {
+	if blockNumber >= 7280000 {
+		staticBlockReward.SetString("2000000000000000000", 10)
+	} else if blockNumber >= 4370000 {
 		staticBlockReward.SetString("3000000000000000000", 10)
 	} else {
 		staticBlockReward.SetString("5000000000000000000", 10)

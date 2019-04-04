@@ -176,7 +176,7 @@ var _ = Describe("Saving blocks", func() {
 		Expect(savedBlock.UnclesReward).To(Equal(big.NewInt(0).Div(big.NewInt(5000000000000000000), big.NewInt(32)).String()))
 
 		var uncleModel core.Uncle
-		err := db.Get(&uncleModel, `SELECT hash, block_hash, reward, miner, raw, block_timestamp FROM uncles 
+		err := db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{1, 2, 3}).Hex())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{1, 2, 3}).Hex()))
@@ -185,7 +185,7 @@ var _ = Describe("Saving blocks", func() {
 		Expect(uncleModel.Timestamp).To(Equal("111111111"))
 	})
 
-	It("saves one uncle associated to the block", func() {
+	It("saves two uncles associated to the block", func() {
 		block := core.Block{
 			Hash:         fakes.FakeHash.String(),
 			Number:       123,
@@ -207,7 +207,7 @@ var _ = Describe("Saving blocks", func() {
 		Expect(savedBlock.UnclesReward).To(Equal(big.NewInt(0).Div(b, big.NewInt(32)).String()))
 
 		var uncleModel core.Uncle
-		err := db.Get(&uncleModel, `SELECT hash, block_hash, reward, miner, raw, block_timestamp FROM uncles 
+		err := db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{1, 2, 3}).Hex())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{1, 2, 3}).Hex()))
@@ -215,7 +215,7 @@ var _ = Describe("Saving blocks", func() {
 		Expect(uncleModel.Miner).To(Equal(fakes.FakeAddress.Hex()))
 		Expect(uncleModel.Timestamp).To(Equal("111111111"))
 
-		err = db.Get(&uncleModel, `SELECT hash, block_hash, reward, miner, raw, block_timestamp FROM uncles 
+		err = db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{3, 2, 1}).Hex())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{3, 2, 1}).Hex()))

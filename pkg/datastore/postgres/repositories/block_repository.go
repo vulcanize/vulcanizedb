@@ -90,13 +90,13 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 	blockRows := blockRepository.database.QueryRowx(
 		`SELECT id,
                        number,
-                       gaslimit,
-                       gasused,
+                       gas_limit,
+                       gas_used,
                        time,
                        difficulty,
                        hash,
                        nonce,
-                       parenthash,
+                       parent_hash,
                        size,
                        uncle_hash,
                        is_final,
@@ -127,7 +127,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	}
 	insertBlockErr := tx.QueryRow(
 		`INSERT INTO blocks
-                (eth_node_id, number, gaslimit, gasused, time, difficulty, hash, nonce, parenthash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward, eth_node_fingerprint)
+                (eth_node_id, number, gas_limit, gas_used, time, difficulty, hash, nonce, parent_hash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward, eth_node_fingerprint)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING id `,
 		blockRepository.database.NodeID,
@@ -196,10 +196,10 @@ func (blockRepository BlockRepository) createUncles(tx *sqlx.Tx, blockId int64, 
 func (blockRepository BlockRepository) createUncle(tx *sqlx.Tx, blockId int64, uncle core.Uncle) error {
 	_, err := tx.Exec(
 		`INSERT INTO uncles
-       (hash, block_id, block_hash, reward, miner, raw, block_timestamp, eth_node_id, eth_node_fingerprint)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::NUMERIC, $8, $9)
+       (hash, block_id, reward, miner, raw, block_timestamp, eth_node_id, eth_node_fingerprint)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::NUMERIC, $8)
        RETURNING id`,
-		uncle.Hash, blockId, uncle.BlockHash, utilities.NullToZero(uncle.Reward), uncle.Miner, uncle.Raw, uncle.Timestamp, blockRepository.database.NodeID, blockRepository.database.Node.ID)
+		uncle.Hash, blockId, utilities.NullToZero(uncle.Reward), uncle.Miner, uncle.Raw, uncle.Timestamp, blockRepository.database.NodeID, blockRepository.database.Node.ID)
 	return err
 }
 
@@ -226,7 +226,7 @@ func nullStringToZero(s string) string {
 func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId int64, transaction core.TransactionModel) error {
 	_, err := tx.Exec(
 		`INSERT INTO full_sync_transactions
-       (block_id, gaslimit, gasprice, hash, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
+       (block_id, gas_limit, gas_price, hash, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
        VALUES ($1, $2::NUMERIC, $3::NUMERIC, $4, $5, $6::NUMERIC, $7,  $8, $9::NUMERIC, $10, $11::NUMERIC)
        RETURNING id`, blockId, transaction.GasLimit, transaction.GasPrice, transaction.Hash, transaction.Data,
 		transaction.Nonce, transaction.Raw, transaction.From, transaction.TxIndex, transaction.To, nullStringToZero(transaction.Value))
@@ -325,8 +325,8 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
 	}
 	transactionRows, err := blockRepository.database.Queryx(`
 		SELECT hash,
-			gaslimit,
-			gasprice,
+			gas_limit,
+			gas_price,
 			input_data,
 			nonce,
 			raw,

@@ -82,8 +82,8 @@ func (contractRepository ContractRepository) addTransactions(contract core.Contr
                    nonce,
                    tx_to,
                    tx_from,
-                   gaslimit,
-                   gasprice,
+                   gas_limit,
+                   gas_price,
                    value,
                    input_data
             FROM full_sync_transactions

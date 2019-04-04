@@ -45,9 +45,7 @@ type MockBlockChain struct {
 	lastBlock                          *big.Int
 	node                               core.Node
 	Transactions                       []core.TransactionModel
-	passedAccountAddress               common.Address
-	passedBlockNumer                   *big.Int
-	passedAccountBalance               *big.Int
+	accountBalanceReturnValue          *big.Int
 	getAccountBalanceErr               error
 }
 
@@ -151,11 +149,9 @@ func (blockChain *MockBlockChain) SetGetAccountBalanceErr(err error) {
 }
 
 func (blockChain *MockBlockChain) SetGetAccountBalance(balance *big.Int) {
-	blockChain.passedAccountBalance = balance
+	blockChain.accountBalanceReturnValue = balance
 }
 
 func (blockChain *MockBlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	blockChain.passedAccountAddress = address
-	blockChain.passedBlockNumer = blockNumber
-	return blockChain.passedAccountBalance, blockChain.getAccountBalanceErr
+	return blockChain.accountBalanceReturnValue, blockChain.getAccountBalanceErr
 }

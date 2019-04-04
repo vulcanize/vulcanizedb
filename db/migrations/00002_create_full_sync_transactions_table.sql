@@ -2,8 +2,8 @@
 CREATE TABLE full_sync_transactions (
   id          SERIAL PRIMARY KEY,
   block_id    INTEGER NOT NULL REFERENCES blocks(id) ON DELETE CASCADE,
-  gaslimit    NUMERIC,
-  gasprice    NUMERIC,
+  gas_limit    NUMERIC,
+  gas_price    NUMERIC,
   hash        VARCHAR(66),
   input_data  BYTEA,
   nonce       NUMERIC,
