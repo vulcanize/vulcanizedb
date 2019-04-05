@@ -70,15 +70,15 @@ CREATE TABLE public.blocks (
     id integer NOT NULL,
     difficulty bigint,
     extra_data character varying,
-    gaslimit bigint,
-    gasused bigint,
+    gas_limit bigint,
+    gas_used bigint,
     hash character varying(66),
     miner character varying(42),
     nonce character varying(20),
     number bigint,
-    parenthash character varying(66),
-    reward double precision,
-    uncles_reward double precision,
+    parent_hash character varying(66),
+    reward numeric,
+    uncles_reward numeric,
     size character varying,
     "time" bigint,
     is_final boolean,
@@ -158,8 +158,8 @@ CREATE TABLE public.eth_nodes (
 CREATE TABLE public.full_sync_transactions (
     id integer NOT NULL,
     block_id integer NOT NULL,
-    gaslimit numeric,
-    gasprice numeric,
+    gas_limit numeric,
+    gas_price numeric,
     hash character varying(66),
     input_data bytea,
     nonce numeric,
@@ -233,7 +233,7 @@ CREATE TABLE public.headers (
     block_number bigint,
     raw jsonb,
     block_timestamp numeric,
-    eth_node_id integer,
+    eth_node_id integer NOT NULL,
     eth_node_fingerprint character varying(128)
 );
 
@@ -266,8 +266,8 @@ CREATE TABLE public.light_sync_transactions (
     id integer NOT NULL,
     header_id integer NOT NULL,
     hash text,
-    gaslimit numeric,
-    gasprice numeric,
+    gas_limit numeric,
+    gas_price numeric,
     input_data bytea,
     nonce numeric,
     raw bytea,
@@ -449,6 +449,43 @@ ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
 
 
 --
+-- Name: uncles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.uncles (
+    id integer NOT NULL,
+    hash character varying(66) NOT NULL,
+    block_id integer NOT NULL,
+    reward numeric NOT NULL,
+    miner character varying(42) NOT NULL,
+    raw jsonb,
+    block_timestamp numeric,
+    eth_node_id integer NOT NULL,
+    eth_node_fingerprint character varying(128)
+);
+
+
+--
+-- Name: uncles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.uncles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: uncles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.uncles_id_seq OWNED BY public.uncles.id;
+
+
+--
 -- Name: watched_contracts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -580,6 +617,13 @@ ALTER TABLE ONLY public.receipts ALTER COLUMN id SET DEFAULT nextval('public.rec
 
 
 --
+-- Name: uncles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles ALTER COLUMN id SET DEFAULT nextval('public.uncles_id_seq'::regclass);
+
+
+--
 -- Name: watched_contracts contract_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -707,6 +751,22 @@ ALTER TABLE ONLY public.receipts
 
 
 --
+-- Name: uncles uncles_block_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_block_id_hash_key UNIQUE (block_id, hash);
+
+
+--
+-- Name: uncles uncles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: watched_contracts watched_contracts_contract_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -781,19 +841,19 @@ ALTER TABLE ONLY public.checked_headers
 
 
 --
--- Name: headers eth_nodes_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.headers
-    ADD CONSTRAINT eth_nodes_fk FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
-
-
---
 -- Name: full_sync_transactions full_sync_transactions_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: headers headers_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.headers
+    ADD CONSTRAINT headers_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
@@ -818,6 +878,22 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.receipts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: uncles uncles_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: uncles uncles_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
