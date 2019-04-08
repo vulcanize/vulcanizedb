@@ -203,18 +203,6 @@ var _ = Describe("Repository", func() {
 			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
 		})
 
-		It("Returns at most 100 headers", func() {
-			add102Headers(coreHeaderRepo)
-			err := contractHeaderRepo.AddCheckColumns(eventIDs)
-			Expect(err).ToNot(HaveOccurred())
-
-			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194733, eventIDs)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(missingHeaders)).To(Equal(100))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
-		})
-
 		It("Fails if one of the eventIDs does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
@@ -356,13 +344,4 @@ func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
 	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
-}
-
-func add102Headers(coreHeaderRepo repositories.HeaderRepository) {
-	baseHeader := mocks.MockHeader1
-	for i := 6194632; i < 6194733; i++ {
-		_, err := coreHeaderRepo.CreateOrUpdateHeader(baseHeader)
-		Expect(err).ToNot(HaveOccurred())
-		baseHeader.BlockNumber++
-	}
 }

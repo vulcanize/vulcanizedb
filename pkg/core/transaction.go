@@ -23,7 +23,7 @@ type TransactionModel struct {
 	GasPrice int64  `db:"gas_price"`
 	Hash     string
 	Nonce    uint64
-	Raw      []byte
+	Raw      []byte `db:"raw"`
 	Receipt
 	To      string `db:"tx_to"`
 	TxIndex int64  `db:"tx_index"`

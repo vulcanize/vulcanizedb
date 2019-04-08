@@ -17,6 +17,7 @@
 package common_test
 
 import (
+	"bytes"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -40,6 +41,11 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			TxHash:            common.HexToHash("0x97d99bc7729211111a21b12c933c949d4f31684f1d6954ff477d0477538ff017"),
 		}
 
+		rlpBuff := new(bytes.Buffer)
+		receiptForStorage := types.ReceiptForStorage(receipt)
+		err := receiptForStorage.EncodeRLP(rlpBuff)
+		Expect(err).ToNot(HaveOccurred())
+
 		expected := core.Receipt{
 			Bloom:             "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			ContractAddress:   "",
@@ -49,9 +55,11 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			StateRoot:         "0x88abf7e73128227370aa7baa3dd4e18d0af70e92ef1f9ef426942fbe2dddb733",
 			Status:            -99,
 			TxHash:            receipt.TxHash.Hex(),
+			Rlp:               rlpBuff.Bytes(),
 		}
 
-		coreReceipt := vulcCommon.ToCoreReceipt(&receipt)
+		coreReceipt, err := vulcCommon.ToCoreReceipt(&receipt)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(coreReceipt.Bloom).To(Equal(expected.Bloom))
 		Expect(coreReceipt.ContractAddress).To(Equal(expected.ContractAddress))
 		Expect(coreReceipt.CumulativeGasUsed).To(Equal(expected.CumulativeGasUsed))
@@ -60,7 +68,7 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 		Expect(coreReceipt.StateRoot).To(Equal(expected.StateRoot))
 		Expect(coreReceipt.Status).To(Equal(expected.Status))
 		Expect(coreReceipt.TxHash).To(Equal(expected.TxHash))
-
+		Expect(bytes.Compare(coreReceipt.Rlp, expected.Rlp)).To(Equal(0))
 	})
 
 	It("converts geth receipt to internal receipt format (post Byzantium has status", func() {
@@ -74,6 +82,11 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			TxHash:            common.HexToHash("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223"),
 		}
 
+		rlpBuff := new(bytes.Buffer)
+		receiptForStorage := types.ReceiptForStorage(receipt)
+		err := receiptForStorage.EncodeRLP(rlpBuff)
+		Expect(err).ToNot(HaveOccurred())
+
 		expected := core.Receipt{
 			Bloom:             "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			ContractAddress:   receipt.ContractAddress.Hex(),
@@ -83,9 +96,11 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 			StateRoot:         "",
 			Status:            1,
 			TxHash:            receipt.TxHash.Hex(),
+			Rlp:               rlpBuff.Bytes(),
 		}
 
-		coreReceipt := vulcCommon.ToCoreReceipt(&receipt)
+		coreReceipt, err := vulcCommon.ToCoreReceipt(&receipt)
+		Expect(err).ToNot(HaveOccurred())
 		Expect(coreReceipt.Bloom).To(Equal(expected.Bloom))
 		Expect(coreReceipt.ContractAddress).To(Equal(""))
 		Expect(coreReceipt.CumulativeGasUsed).To(Equal(expected.CumulativeGasUsed))
@@ -94,5 +109,6 @@ var _ = Describe("Conversion of GethReceipt to core.Receipt", func() {
 		Expect(coreReceipt.StateRoot).To(Equal(expected.StateRoot))
 		Expect(coreReceipt.Status).To(Equal(expected.Status))
 		Expect(coreReceipt.TxHash).To(Equal(expected.TxHash))
+		Expect(bytes.Compare(coreReceipt.Rlp, expected.Rlp)).To(Equal(0))
 	})
 })

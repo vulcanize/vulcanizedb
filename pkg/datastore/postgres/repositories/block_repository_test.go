@@ -329,11 +329,11 @@ var _ = Describe("Saving blocks", func() {
 			GasPrice: gasPrice,
 			Hash:     "x1234",
 			Nonce:    nonce,
-			Raw:      raw.Bytes(),
 			Receipt:  core.Receipt{},
 			To:       to,
 			TxIndex:  2,
 			Value:    value.String(),
+			Raw:      []byte{},
 		}
 		block := core.Block{
 			Number:       123,

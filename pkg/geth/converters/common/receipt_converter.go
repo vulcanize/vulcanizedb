@@ -26,16 +26,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func ToCoreReceipts(gethReceipts types.Receipts) []core.Receipt {
+func ToCoreReceipts(gethReceipts types.Receipts) ([]core.Receipt, error) {
 	var coreReceipts []core.Receipt
 	for _, receipt := range gethReceipts {
-		coreReceipt := ToCoreReceipt(receipt)
+		coreReceipt, err := ToCoreReceipt(receipt)
+		if err != nil {
+			return nil, err
+		}
 		coreReceipts = append(coreReceipts, coreReceipt)
 	}
-	return coreReceipts
+	return coreReceipts, nil
 }
 
-func ToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
+func ToCoreReceipt(gethReceipt *types.Receipt) (core.Receipt, error) {
 	bloom := hexutil.Encode(gethReceipt.Bloom.Bytes())
 	var postState string
 	var status int
@@ -43,6 +46,12 @@ func ToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
 	logs := dereferenceLogs(gethReceipt)
 	contractAddress := setContractAddress(gethReceipt)
 
+	rlpBuff := new(bytes.Buffer)
+	receiptForStorage := types.ReceiptForStorage(*gethReceipt)
+	err := receiptForStorage.EncodeRLP(rlpBuff)
+	if err != nil {
+		return core.Receipt{}, err
+	}
 	return core.Receipt{
 		Bloom:             bloom,
 		ContractAddress:   contractAddress,
@@ -52,7 +61,8 @@ func ToCoreReceipt(gethReceipt *types.Receipt) core.Receipt {
 		StateRoot:         postState,
 		TxHash:            gethReceipt.TxHash.Hex(),
 		Status:            status,
-	}
+		Rlp:               rlpBuff.Bytes(),
+	}, nil
 }
 
 func setContractAddress(gethReceipt *types.Receipt) string {
