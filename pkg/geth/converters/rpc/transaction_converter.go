@@ -127,7 +127,10 @@ func (rtc *RpcTransactionConverter) appendReceiptToTransaction(transaction core.
 	if err != nil {
 		return transaction, err
 	}
-	receipt := vulcCommon.ToCoreReceipt(gethReceipt)
+	receipt, err := vulcCommon.ToCoreReceipt(gethReceipt)
+	if err != nil {
+		return transaction, err
+	}
 	transaction.Receipt = receipt
 	return transaction, nil
 }

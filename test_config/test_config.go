@@ -115,7 +115,8 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM log_filters")
 	db.MustExec("DELETE FROM logs")
 	db.MustExec("DELETE FROM queued_storage")
-	db.MustExec("DELETE FROM receipts")
+	db.MustExec("DELETE FROM full_sync_receipts")
+	db.MustExec("DELETE FROM light_sync_receipts")
 	db.MustExec("DELETE FROM watched_contracts")
 }
 

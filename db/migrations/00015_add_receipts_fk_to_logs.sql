@@ -8,7 +8,7 @@ ALTER TABLE logs
 ALTER TABLE logs
   ADD CONSTRAINT receipts_fk
 FOREIGN KEY (receipt_id)
-REFERENCES receipts (id)
+REFERENCES full_sync_receipts (id)
 ON DELETE CASCADE;
 
 
