@@ -12,7 +12,13 @@ Storage Transformers
     
 Event Transformers   
    * [Guide](../../staging/libraries/shared/factories/event/README.md)
-   * [Example](https://github.com/vulcanize/ens_transformers)
+   * [Example 1](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registar)
+   * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registry)
+   * [Example 3](https://github.com/vulcanize/ens_transformers/tree/master/transformers/resolver)
+
+Contract Transformers
+   * [Example 1](https://github.com/vulcanize/account_transformers)
+   * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/domain_records)
 
 ## Preparing transformers to work as a plugin for composeAndExecute
 To plug in an external transformer we need to:
@@ -24,7 +30,7 @@ or [ContractTransformerInitializer](../../staging/libraries/shared/transformer/c
 [storage](../../staging/libraries/shared/watcher/storage_watcher.go#L53),
 or [contract](../../staging/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
 3. Create db migrations to run against vulcanizeDB so that we can store the transformer output
-    * Do not `goose fix` the transformer migrations   
+    * Do not `goose fix` the transformer migrations, this is to ensure they are always ran after the core vulcanizedb migrations which are kept in their fixed form
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
     * If the base vDB migrations occupy this path as well, they need to be in their `goose fix`ed form
     as they are [here](../../staging/db/migrations)

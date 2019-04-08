@@ -7,15 +7,14 @@
 
 
 ## Table of Contents
-1. [Background](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#background)
-1. [Dependencies](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#dependencies)
-1. [Install](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#install)
-1. [Usage](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#usage)
-1. [Tests](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#tests)
-1. [Deploying](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#deploying)
-1. [API](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#API)
-1. [Contributing](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#contributing)
-1. [License](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#license)
+1. [Background](../staging/README.md#background)
+1. [Dependencies](../staging/README.md#dependencies)
+1. [Install](../staging/README.md#install)
+1. [Usage](../staging/README.md#usage)
+1. [Tests](../staging/README.md#tests)
+1. [API](../staging/README.md#API)
+1. [Contributing](../staging/README.md#contributing)
+1. [License](../staging/README.md#license)
 
 
 ## Background
@@ -32,28 +31,28 @@ complicate data accessibility and usability for dApp developers.
 
 
 ## Install
-1. [Fetching the project](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#fetching-the-project)
-1. [Installing project dependencies](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#installing-project-dependencies)
-1. [Configuring shell environment](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#configuring-shell-environment)
-1. [Setting up the database](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#setting-up-the-database)
-1. [Configuring a synced Ethereum node](https://github.com/vulcanize/maker-vulcanizedb/tree/readme#configuring-a-synced-ethereum-node)
+1. [Building the project](../staging/README.md#building-the-project)
+1. [Setting up the database](../staging/README.md#setting-up-the-database)
+1. [Configuring a synced Ethereum node](../staging/README.md#configuring-a-synced-ethereum-node)
 
-### Fetching the project
+### Building the project
 Download the codebase to your local `GOPATH` via:
 
 `go get github.com/vulcanize/vulcanizedb`
 
-### Installing project dependencies
-Once fetched, dependencies can be installed via `go get` or (the preferred method) at specific versions via `golang/dep`, the prototype golang pakcage manager. Installation instructions are [here](https://golang.github.io/dep/docs/installation.html).
+Move to the project directory and use [golang/dep](https://github.com/golang/dep) to install the dependencies:
 
-In order to install packages with `dep`, ensure you are in the project directory now within your `GOPATH` (default location is `~/go/src/github.com/vulcanize/vulcanizedb/`) and run:
+`cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
 
 `dep ensure`
 
-After `dep` finishes, dependencies should be installed within your `GOPATH` at the versions specified in `Gopkg.toml`.
+Once the dependencies have been successfully installed, build the executable with:
 
-### Configuring shell environment
-Lastly, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system. It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
+`make build`
+
+If you are running into issues at this stage, ensure that `GOPATH` is defined in your shell.
+If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system.
+It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
 ### Setting up the database
 1. Install Postgres
@@ -95,9 +94,6 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
           - Linux: `<full home path>/ethereum/geth/chaindata`
       - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
 
-- See `environments/infura.toml` to configure commands to run against infura, if a local node is unavailable.
-- Copy `environments/local.toml.example` to `environments/local.toml` to configure commands to run against a local node such as [Ganache](https://truffleframework.com/ganache) or [ganache-cli](https://github.com/trufflesuite/ganache-clihttps://github.com/trufflesuite/ganache-cli).
-
 
 ## Usage
 Usage is broken up into two processes:
@@ -105,41 +101,34 @@ Usage is broken up into two processes:
 ### Data syncing
 To provide data for transformations, raw Ethereum data must first be synced into vDB.
 This is accomplished through the use of the `lightSync`, `sync`, or `coldImport` commands.
-These commands are described in detail [here](https://github.com/vulcanize/maker-vulcanizedb/blob/readme/documentation/sync.md).
+These commands are described in detail [here](../staging/documentation/sync.md).
 
 ### Data transformation
 Contract watchers use the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest.
 
-There is a built-in `contractWatcher` command which provides generic transformation of most contract data. This command is described in detail [here](https://github.com/vulcanize/maker-vulcanizedb/blob/readme/documentation/contractWatcher.md).
+There is a built-in `contractWatcher` command which provides generic transformation of most contract data. This command is described in detail [here](../staging/documentation/contractWatcher.md).
 
 In many cases a custom transformer or set of transformers will need to be written to provide complete or more comprehensive coverage or to optimize other aspects of the output for a specific end-use.
-In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. This is described in detail [here](https://github.com/vulcanize/maker-vulcanizedb/blob/readme/documentation/composeAndExecute.md).
+In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. This is described in detail [here](../staging/documentation/composeAndExecute.md).
 
 
 ## Tests
-- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full archival node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+    - Note: integration tests require configuration with an archival node
 - `createdb vulcanize_private` will create the test db
 - `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
-    - Note: only the integration tests require configuration with an archival node
-
-
-## Deploying
-1. you will need to make sure you have ssh agent running and your ssh key added to it. instructions [here](https://developer.github.com/v3/guides/using-ssh-agent-forwarding/#your-key-must-be-available-to-ssh-agent)
-1. `go get -u github.com/pressly/sup/cmd/sup`
-1. `sup staging deploy`
-
 
 ## API
 [Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/postgraphile/README.md).
 
 
 ## Contributing
-Contributions are welcome! For more on this, please see [here](https://github.com/vulcanize/maker-vulcanizedb/blob/readme/documentation/contributing.md).
+Contributions are welcome! For more on this, please see [here](../staging/documentation/contributing.md).
 
 Small note: If editing the Readme, please conform to the [standard-readme specification](https://github.com/RichardLitt/standard-readme).
 
 
 ## License
-[AGPL-3.0](https://github.com/vulcanize/maker-vulcanizedb/blob/staging/LICENSE) © Vulcanize Inc
+[AGPL-3.0](../staging/LICENSE) © Vulcanize Inc
