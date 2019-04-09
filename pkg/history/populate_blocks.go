@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,30 +17,47 @@
 package history
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
-func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, startingBlockNumber int64) int {
-	lastBlock := blockchain.LastBlock().Int64()
-	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
-	log.SetPrefix("")
+func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, startingBlockNumber int64) (int, error) {
+	lastBlock, err := blockchain.LastBlock()
+	if err != nil {
+		log.Error("PopulateMissingBlocks: error getting last block: ", err)
+		return 0, err
+	}
+	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockchain.Node().ID)
+
+	if len(blockRange) == 0 {
+		return 0, nil
+	}
+
 	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
-	RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
-	return len(blockRange)
+	_, err = RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
+	if err != nil {
+		log.Error("PopulateMissingBlocks: error gettings/updating blocks: ", err)
+		return 0, err
+	}
+	return len(blockRange), nil
 }
 
-func RetrieveAndUpdateBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, blockNumbers []int64) int {
+func RetrieveAndUpdateBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, blockNumbers []int64) (int, error) {
 	for _, blockNumber := range blockNumbers {
 		block, err := blockchain.GetBlockByNumber(blockNumber)
 		if err != nil {
-			log.Printf("failed to retrieve block number: %d\n", blockNumber)
-			return 0
+			log.Error("RetrieveAndUpdateBlocks: error getting block: ", err)
+			return 0, err
 		}
-		// TODO: handle possible error here
-		blockRepository.CreateOrUpdateBlock(block)
+
+		_, err = blockRepository.CreateOrUpdateBlock(block)
+		if err != nil {
+			log.Error("RetrieveAndUpdateBlocks: error creating/updating block: ", err)
+			return 0, err
+		}
+
 	}
-	return len(blockNumbers)
+	return len(blockNumbers), nil
 }

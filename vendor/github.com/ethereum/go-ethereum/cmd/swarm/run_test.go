@@ -57,6 +57,17 @@ func init() {
 	})
 }
 
+const clusterSize = 3
+
+var clusteronce sync.Once
+var cluster *testCluster
+
+func initCluster(t *testing.T) {
+	clusteronce.Do(func() {
+		cluster = newTestCluster(t, clusterSize)
+	})
+}
+
 func serverFunc(api *api.API) swarmhttp.TestServer {
 	return swarmhttp.NewServer(api, "")
 }
@@ -70,6 +81,18 @@ func TestMain(m *testing.M) {
 
 func runSwarm(t *testing.T, args ...string) *cmdtest.TestCmd {
 	tt := cmdtest.NewTestCmd(t, nil)
+
+	found := false
+	for _, v := range args {
+		if v == "--bootnodes" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		args = append([]string{"--bootnodes", ""}, args...)
+	}
 
 	// Boot "swarm". This actually runs the test binary but the TestMain
 	// function will prevent any tests from running.
@@ -241,9 +264,9 @@ func existingTestNode(t *testing.T, dir string, bzzaccount string) *testNode {
 
 	// start the node
 	node.Cmd = runSwarm(t,
+		"--bootnodes", "",
 		"--port", p2pPort,
 		"--nat", "extip:127.0.0.1",
-		"--nodiscover",
 		"--datadir", dir,
 		"--ipcpath", conf.IPCPath,
 		"--ens-api", "",
@@ -317,9 +340,9 @@ func newTestNode(t *testing.T, dir string) *testNode {
 
 	// start the node
 	node.Cmd = runSwarm(t,
+		"--bootnodes", "",
 		"--port", p2pPort,
 		"--nat", "extip:127.0.0.1",
-		"--nodiscover",
 		"--datadir", dir,
 		"--ipcpath", conf.IPCPath,
 		"--ens-api", "",

@@ -1,0 +1,38 @@
+[database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port     = 5432
+
+[client]
+    ipcPath = ""
+
+[exporter]
+    home     = "github.com/vulcanize/vulcanizedb"
+    name     = "accountTransformerExporter"
+    save     = false
+    transformerNames = [
+        "account"
+    ]
+    [exporter.account]
+        path = "transformers/account/light/initializer"
+        type = "eth_contract"
+        repository = "github.com/vulcanize/account_transformers"
+        migrations = "db/migrations"
+        rank = "0"
+
+[token]
+    addresses = [
+        "0x58b6A8A3302369DAEc383334672404Ee733aB239",
+        "0x862Da0A691bb0b74038377295f8fF523D0493eB4",
+    ]
+    [token.equivalents]
+        0x0000000000085d4780B73119b644AE5ecd22b376 = [
+           "0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E"
+        ]
+        0x58b6A8A3302369DAEc383334672404Ee733aB239 = [
+           "0x8e306b005773bee6bA6A6e8972Bc79D766cC15c8"
+        ]
+
+[account]
+    start = 0
+    addresses = []

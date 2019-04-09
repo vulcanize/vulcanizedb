@@ -1,1 +1,0 @@
-DROP INDEX block_id_index;

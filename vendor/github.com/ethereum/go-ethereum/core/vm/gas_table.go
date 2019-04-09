@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// memoryGasCosts calculates the quadratic gas for memory expansion. It does so
+// memoryGasCost calculates the quadratic gas for memory expansion. It does so
 // only for the memory region that is expanded, not the total memory.
 func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 
@@ -55,12 +55,6 @@ func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 		return fee, nil
 	}
 	return 0, nil
-}
-
-func constGasFunc(gas uint64) gasFunc {
-	return func(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-		return gas, nil
-	}
 }
 
 func gasCallDataCopy(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -121,7 +115,9 @@ func gasSStore(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, m
 		current = evm.StateDB.GetState(contract.Address(), common.BigToHash(x))
 	)
 	// The legacy gas metering only takes into consideration the current state
-	if !evm.chainRules.IsConstantinople {
+	// Legacy rules should be applied if we are in Petersburg (removal of EIP-1283)
+	// OR Constantinople is not active
+	if evm.chainRules.IsPetersburg || !evm.chainRules.IsConstantinople {
 		// This checks for 3 scenario's and calculates gas accordingly:
 		//
 		// 1. From a zero-value address to a non-zero value         (NEW VALUE)
@@ -380,7 +376,7 @@ func gasExp(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem 
 		gas      = expByteLen * gt.ExpByte // no overflow check required. Max is 256 * ExpByte gas
 		overflow bool
 	)
-	if gas, overflow = math.SafeAdd(gas, GasSlowStep); overflow {
+	if gas, overflow = math.SafeAdd(gas, params.ExpGas); overflow {
 		return 0, errGasUintOverflow
 	}
 	return gas, nil
@@ -518,16 +514,4 @@ func gasStaticCall(gt params.GasTable, evm *EVM, contract *Contract, stack *Stac
 		return 0, errGasUintOverflow
 	}
 	return gas, nil
-}
-
-func gasPush(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return GasFastestStep, nil
-}
-
-func gasSwap(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return GasFastestStep, nil
-}
-
-func gasDup(gt params.GasTable, evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return GasFastestStep, nil
 }

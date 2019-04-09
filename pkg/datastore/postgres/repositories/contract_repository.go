@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -42,19 +42,22 @@ func (contractRepository ContractRepository) CreateContract(contract core.Contra
 					SET contract_hash = $1, contract_abi = $2
 				`, contract.Hash, abiToInsert)
 	if err != nil {
-		return postgres.ErrDBInsertFailed
+		return postgres.ErrDBInsertFailed(err)
 	}
 	return nil
 }
 
-func (contractRepository ContractRepository) ContractExists(contractHash string) bool {
+func (contractRepository ContractRepository) ContractExists(contractHash string) (bool, error) {
 	var exists bool
-	contractRepository.DB.QueryRow(
+	err := contractRepository.DB.QueryRow(
 		`SELECT exists(
                    SELECT 1
                    FROM watched_contracts
                    WHERE contract_hash = $1)`, contractHash).Scan(&exists)
-	return exists
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (contractRepository ContractRepository) GetContract(contractHash string) (core.Contract, error) {
@@ -66,25 +69,31 @@ func (contractRepository ContractRepository) GetContract(contractHash string) (c
 	if err == sql.ErrNoRows {
 		return core.Contract{}, datastore.ErrContractDoesNotExist(contractHash)
 	}
-	savedContract := contractRepository.addTransactions(core.Contract{Hash: hash, Abi: abi})
+	savedContract, err := contractRepository.addTransactions(core.Contract{Hash: hash, Abi: abi})
+	if err != nil {
+		return core.Contract{}, err
+	}
 	return savedContract, nil
 }
 
-func (contractRepository ContractRepository) addTransactions(contract core.Contract) core.Contract {
-	transactionRows, _ := contractRepository.DB.Queryx(`
+func (contractRepository ContractRepository) addTransactions(contract core.Contract) (core.Contract, error) {
+	transactionRows, err := contractRepository.DB.Queryx(`
             SELECT hash,
                    nonce,
                    tx_to,
                    tx_from,
-                   gaslimit,
-                   gasprice,
+                   gas_limit,
+                   gas_price,
                    value,
                    input_data
-            FROM transactions
+            FROM full_sync_transactions
             WHERE tx_to = $1
             ORDER BY block_id DESC`, contract.Hash)
+	if err != nil {
+		return core.Contract{}, err
+	}
 	blockRepository := &BlockRepository{contractRepository.DB}
 	transactions := blockRepository.LoadTransactions(transactionRows)
 	savedContract := core.Contract{Hash: contract.Hash, Transactions: transactions, Abi: contract.Abi}
-	return savedContract
+	return savedContract, nil
 }

@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,10 +18,10 @@ package ethereum
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum/level"
 )
 
@@ -35,8 +35,9 @@ type Database interface {
 func CreateDatabase(config DatabaseConfig) (Database, error) {
 	switch config.Type {
 	case Level:
-		levelDBConnection, err := ethdb.NewLDBDatabase(config.Path, 128, 1024)
+		levelDBConnection, err := rawdb.NewLevelDBDatabase(config.Path, 128, 1024, "vdb")
 		if err != nil {
+			logrus.Error("CreateDatabase: error connecting to new LDBD: ", err)
 			return nil, err
 		}
 		levelDBReader := level.NewLevelDatabaseReader(levelDBConnection)

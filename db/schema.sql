@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.3
--- Dumped by pg_dump version 10.3
+-- Dumped from database version 10.6
+-- Dumped by pg_dump version 10.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -67,23 +67,23 @@ CREATE VIEW public.block_stats AS
 --
 
 CREATE TABLE public.blocks (
-    number bigint,
-    gaslimit bigint,
-    gasused bigint,
-    "time" bigint,
     id integer NOT NULL,
     difficulty bigint,
+    extra_data character varying,
+    gas_limit bigint,
+    gas_used bigint,
     hash character varying(66),
+    miner character varying(42),
     nonce character varying(20),
-    parenthash character varying(66),
+    number bigint,
+    parent_hash character varying(66),
+    reward numeric,
+    uncles_reward numeric,
     size character varying,
+    "time" bigint,
+    is_final boolean,
     uncle_hash character varying(66),
     eth_node_id integer NOT NULL,
-    is_final boolean,
-    miner character varying(42),
-    extra_data character varying,
-    reward double precision,
-    uncles_reward double precision,
     eth_node_fingerprint character varying(128) NOT NULL
 );
 
@@ -109,16 +109,154 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 
 --
+-- Name: checked_headers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.checked_headers (
+    id integer NOT NULL,
+    header_id integer NOT NULL
+);
+
+
+--
+-- Name: checked_headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.checked_headers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: checked_headers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
+
+
+--
 -- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.eth_nodes (
     id integer NOT NULL,
+    client_name character varying,
     genesis_block character varying(66),
     network_id numeric,
-    eth_node_id character varying(128),
-    client_name character varying
+    eth_node_id character varying(128)
 );
+
+
+--
+-- Name: full_sync_receipts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.full_sync_receipts (
+    id integer NOT NULL,
+    contract_address character varying(42),
+    cumulative_gas_used numeric,
+    gas_used numeric,
+    state_root character varying(66),
+    status integer,
+    tx_hash character varying(66),
+    block_id integer NOT NULL
+);
+
+
+--
+-- Name: full_sync_receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.full_sync_receipts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: full_sync_receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.full_sync_receipts_id_seq OWNED BY public.full_sync_receipts.id;
+
+
+--
+-- Name: full_sync_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.full_sync_transactions (
+    id integer NOT NULL,
+    block_id integer NOT NULL,
+    gas_limit numeric,
+    gas_price numeric,
+    hash character varying(66),
+    input_data bytea,
+    nonce numeric,
+    raw bytea,
+    tx_from character varying(66),
+    tx_index integer,
+    tx_to character varying(66),
+    value numeric
+);
+
+
+--
+-- Name: full_sync_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.full_sync_transactions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: full_sync_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.full_sync_transactions_id_seq OWNED BY public.full_sync_transactions.id;
+
+
+--
+-- Name: goose_db_version; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.goose_db_version (
+    id integer NOT NULL,
+    version_id bigint NOT NULL,
+    is_applied boolean NOT NULL,
+    tstamp timestamp without time zone DEFAULT now()
+);
+
+
+--
+-- Name: goose_db_version_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.goose_db_version_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: goose_db_version_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.goose_db_version_id_seq OWNED BY public.goose_db_version.id;
 
 
 --
@@ -129,8 +267,9 @@ CREATE TABLE public.headers (
     id integer NOT NULL,
     hash character varying(66),
     block_number bigint,
-    raw bytea,
-    eth_node_id integer,
+    raw jsonb,
+    block_timestamp numeric,
+    eth_node_id integer NOT NULL,
     eth_node_fingerprint character varying(128)
 );
 
@@ -153,6 +292,84 @@ CREATE SEQUENCE public.headers_id_seq
 --
 
 ALTER SEQUENCE public.headers_id_seq OWNED BY public.headers.id;
+
+
+--
+-- Name: light_sync_receipts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.light_sync_receipts (
+    id integer NOT NULL,
+    transaction_id integer NOT NULL,
+    header_id integer NOT NULL,
+    contract_address character varying(42),
+    cumulative_gas_used numeric,
+    gas_used numeric,
+    state_root character varying(66),
+    status integer,
+    tx_hash character varying(66),
+    rlp bytea
+);
+
+
+--
+-- Name: light_sync_receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.light_sync_receipts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: light_sync_receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.light_sync_receipts_id_seq OWNED BY public.light_sync_receipts.id;
+
+
+--
+-- Name: light_sync_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.light_sync_transactions (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    hash character varying(66),
+    gas_limit numeric,
+    gas_price numeric,
+    input_data bytea,
+    nonce numeric,
+    raw bytea,
+    tx_from character varying(44),
+    tx_index integer,
+    tx_to character varying(44),
+    value numeric
+);
+
+
+--
+-- Name: light_sync_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.light_sync_transactions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: light_sync_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.light_sync_transactions_id_seq OWNED BY public.light_sync_transactions.id;
 
 
 --
@@ -236,26 +453,24 @@ ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
 
 
 --
--- Name: receipts; Type: TABLE; Schema: public; Owner: -
+-- Name: queued_storage; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.receipts (
+CREATE TABLE public.queued_storage (
     id integer NOT NULL,
-    contract_address character varying(42),
-    cumulative_gas_used numeric,
-    gas_used numeric,
-    state_root character varying(66),
-    status integer,
-    tx_hash character varying(66),
-    block_id integer NOT NULL
+    block_height bigint,
+    block_hash bytea,
+    contract bytea,
+    storage_key bytea,
+    storage_value bytea
 );
 
 
 --
--- Name: receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: queued_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.receipts_id_seq
+CREATE SEQUENCE public.queued_storage_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -265,39 +480,34 @@ CREATE SEQUENCE public.receipts_id_seq
 
 
 --
--- Name: receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: queued_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
-
-
---
--- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.schema_migrations (
-    version bigint NOT NULL,
-    dirty boolean NOT NULL
-);
+ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
 
 
 --
--- Name: token_supply; Type: TABLE; Schema: public; Owner: -
+-- Name: uncles; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.token_supply (
+CREATE TABLE public.uncles (
     id integer NOT NULL,
+    hash character varying(66) NOT NULL,
     block_id integer NOT NULL,
-    supply numeric NOT NULL,
-    token_address character varying(66) NOT NULL
+    reward numeric NOT NULL,
+    miner character varying(42) NOT NULL,
+    raw jsonb,
+    block_timestamp numeric,
+    eth_node_id integer NOT NULL,
+    eth_node_fingerprint character varying(128)
 );
 
 
 --
--- Name: token_supply_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: uncles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.token_supply_id_seq
+CREATE SEQUENCE public.uncles_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -307,48 +517,10 @@ CREATE SEQUENCE public.token_supply_id_seq
 
 
 --
--- Name: token_supply_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: uncles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.token_supply_id_seq OWNED BY public.token_supply.id;
-
-
---
--- Name: transactions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.transactions (
-    id integer NOT NULL,
-    hash character varying(66),
-    nonce numeric,
-    tx_to character varying(66),
-    gaslimit numeric,
-    gasprice numeric,
-    value numeric,
-    block_id integer NOT NULL,
-    tx_from character varying(66),
-    input_data character varying
-);
-
-
---
--- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.transactions_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
+ALTER SEQUENCE public.uncles_id_seq OWNED BY public.uncles.id;
 
 
 --
@@ -357,8 +529,8 @@ ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 
 CREATE TABLE public.watched_contracts (
     contract_id integer NOT NULL,
-    contract_hash character varying(66),
-    contract_abi json
+    contract_abi json,
+    contract_hash character varying(66)
 );
 
 
@@ -413,6 +585,13 @@ ALTER TABLE ONLY public.blocks ALTER COLUMN id SET DEFAULT nextval('public.block
 
 
 --
+-- Name: checked_headers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('public.checked_headers_id_seq'::regclass);
+
+
+--
 -- Name: eth_nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -420,10 +599,45 @@ ALTER TABLE ONLY public.eth_nodes ALTER COLUMN id SET DEFAULT nextval('public.no
 
 
 --
+-- Name: full_sync_receipts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_receipts ALTER COLUMN id SET DEFAULT nextval('public.full_sync_receipts_id_seq'::regclass);
+
+
+--
+-- Name: full_sync_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_transactions ALTER COLUMN id SET DEFAULT nextval('public.full_sync_transactions_id_seq'::regclass);
+
+
+--
+-- Name: goose_db_version id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goose_db_version ALTER COLUMN id SET DEFAULT nextval('public.goose_db_version_id_seq'::regclass);
+
+
+--
 -- Name: headers id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.headers_id_seq'::regclass);
+
+
+--
+-- Name: light_sync_receipts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_receipts ALTER COLUMN id SET DEFAULT nextval('public.light_sync_receipts_id_seq'::regclass);
+
+
+--
+-- Name: light_sync_transactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions ALTER COLUMN id SET DEFAULT nextval('public.light_sync_transactions_id_seq'::regclass);
 
 
 --
@@ -441,24 +655,17 @@ ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id
 
 
 --
--- Name: receipts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: queued_storage id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts ALTER COLUMN id SET DEFAULT nextval('public.receipts_id_seq'::regclass);
-
-
---
--- Name: token_supply id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.token_supply ALTER COLUMN id SET DEFAULT nextval('public.token_supply_id_seq'::regclass);
+ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('public.queued_storage_id_seq'::regclass);
 
 
 --
--- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: uncles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public.transactions_id_seq'::regclass);
+ALTER TABLE ONLY public.uncles ALTER COLUMN id SET DEFAULT nextval('public.uncles_id_seq'::regclass);
 
 
 --
@@ -477,11 +684,19 @@ ALTER TABLE ONLY public.blocks
 
 
 --
--- Name: watched_contracts contract_hash_uc; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: checked_headers checked_headers_header_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.watched_contracts
-    ADD CONSTRAINT contract_hash_uc UNIQUE (contract_hash);
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_header_id_key UNIQUE (header_id);
+
+
+--
+-- Name: checked_headers checked_headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_pkey PRIMARY KEY (id);
 
 
 --
@@ -501,11 +716,67 @@ ALTER TABLE ONLY public.eth_nodes
 
 
 --
+-- Name: full_sync_receipts full_sync_receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_receipts
+    ADD CONSTRAINT full_sync_receipts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: full_sync_transactions full_sync_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_transactions
+    ADD CONSTRAINT full_sync_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: goose_db_version goose_db_version_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goose_db_version
+    ADD CONSTRAINT goose_db_version_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: headers headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers
     ADD CONSTRAINT headers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: light_sync_receipts light_sync_receipts_header_id_transaction_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_receipts
+    ADD CONSTRAINT light_sync_receipts_header_id_transaction_id_key UNIQUE (header_id, transaction_id);
+
+
+--
+-- Name: light_sync_receipts light_sync_receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_receipts
+    ADD CONSTRAINT light_sync_receipts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_header_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_header_id_hash_key UNIQUE (header_id, hash);
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -533,27 +804,35 @@ ALTER TABLE ONLY public.eth_nodes
 
 
 --
--- Name: receipts receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: queued_storage queued_storage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_pkey PRIMARY KEY (id);
-
-
---
--- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+ALTER TABLE ONLY public.queued_storage
+    ADD CONSTRAINT queued_storage_pkey PRIMARY KEY (id);
 
 
 --
--- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: uncles uncles_block_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_block_id_hash_key UNIQUE (block_id, hash);
+
+
+--
+-- Name: uncles uncles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: watched_contracts watched_contracts_contract_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watched_contracts
+    ADD CONSTRAINT watched_contracts_contract_hash_key UNIQUE (contract_hash);
 
 
 --
@@ -568,14 +847,14 @@ ALTER TABLE ONLY public.watched_contracts
 -- Name: block_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX block_id_index ON public.transactions USING btree (block_id);
+CREATE INDEX block_id_index ON public.full_sync_transactions USING btree (block_id);
 
 
 --
--- Name: block_number_index; Type: INDEX; Schema: public; Owner: -
+-- Name: headers_block_number; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX block_number_index ON public.blocks USING btree (number);
+CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
 
 
 --
@@ -586,49 +865,80 @@ CREATE INDEX node_id_index ON public.blocks USING btree (eth_node_id);
 
 
 --
+-- Name: number_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX number_index ON public.blocks USING btree (number);
+
+
+--
 -- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tx_from_index ON public.transactions USING btree (tx_from);
+CREATE INDEX tx_from_index ON public.full_sync_transactions USING btree (tx_from);
 
 
 --
 -- Name: tx_to_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tx_to_index ON public.transactions USING btree (tx_to);
+CREATE INDEX tx_to_index ON public.full_sync_transactions USING btree (tx_to);
 
 
 --
--- Name: transactions blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: full_sync_receipts blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.transactions
+ALTER TABLE ONLY public.full_sync_receipts
     ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
 
 
 --
--- Name: receipts blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: checked_headers checked_headers_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
-
-
---
--- Name: token_supply blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.token_supply
-    ADD CONSTRAINT blocks_fk FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.checked_headers
+    ADD CONSTRAINT checked_headers_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
--- Name: headers eth_nodes_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: full_sync_transactions full_sync_transactions_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_transactions
+    ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: headers headers_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers
-    ADD CONSTRAINT eth_nodes_fk FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT headers_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: light_sync_receipts light_sync_receipts_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_receipts
+    ADD CONSTRAINT light_sync_receipts_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: light_sync_receipts light_sync_receipts_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_receipts
+    ADD CONSTRAINT light_sync_receipts_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.light_sync_transactions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: light_sync_transactions light_sync_transactions_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.light_sync_transactions
+    ADD CONSTRAINT light_sync_transactions_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --
@@ -644,9 +954,26 @@ ALTER TABLE ONLY public.blocks
 --
 
 ALTER TABLE ONLY public.logs
-    ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.receipts(id) ON DELETE CASCADE;
+    ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.full_sync_receipts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: uncles uncles_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: uncles uncles_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncles
+    ADD CONSTRAINT uncles_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
 -- PostgreSQL database dump complete
 --
+

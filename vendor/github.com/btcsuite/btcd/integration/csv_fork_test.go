@@ -53,7 +53,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	output := &wire.TxOut{PkScript: selfAddrScript, Value: 1e8}
 
 	// Next, create and broadcast a transaction paying to the output.
-	fundTx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
+	fundTx, err := r.CreateTransaction([]*wire.TxOut{output}, 10, true)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -88,7 +88,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	return key, utxo, selfAddrScript, nil
 }
 
-// TestBIP0113Activation tests for proper adherance of the BIP 113 rule
+// TestBIP0113Activation tests for proper adherence of the BIP 113 rule
 // constraint which requires all transaction finality tests to use the MTP of
 // the last 11 blocks, rather than the timestamp of the block which includes
 // them.
@@ -188,7 +188,7 @@ func TestBIP0113Activation(t *testing.T) {
 	// At this point, the block height should be 103: we mined 101 blocks
 	// to create a single mature output, then an additional block to create
 	// a new output, and then mined a single block above to include our
-	// transation.
+	// transaction.
 	assertChainHeight(r, t, 103)
 
 	// Next, mine enough blocks to ensure that the soft-fork becomes
@@ -316,7 +316,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 
 	// Finally create a valid transaction which creates the output crafted
 	// above.
-	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
+	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10, true)
 	if err != nil {
 		return nil, nil, nil, err
 	}

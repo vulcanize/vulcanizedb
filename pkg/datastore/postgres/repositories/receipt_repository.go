@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,8 +17,9 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
+	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -30,7 +31,7 @@ type ReceiptRepository struct {
 }
 
 func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
-	tx, err := receiptRepository.DB.BeginTx(context.Background(), nil)
+	tx, err := receiptRepository.DB.Beginx()
 	if err != nil {
 		return err
 	}
@@ -52,19 +53,22 @@ func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, 
 	return nil
 }
 
-func createReceipt(receipt core.Receipt, blockId int64, tx *sql.Tx) (int64, error) {
+func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
 	err := tx.QueryRow(
-		`INSERT INTO receipts
+		`INSERT INTO full_sync_receipts
 		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
 		               VALUES ($1, $2, $3, $4, $5, $6, $7)
 		               RETURNING id`,
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
 	).Scan(&receiptId)
+	if err != nil {
+		logrus.Error("createReceipt: Error inserting: ", err)
+	}
 	return receiptId, err
 }
 
-func createLogs(logs []core.Log, receiptId int64, tx *sql.Tx) error {
+func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -80,16 +84,17 @@ func createLogs(logs []core.Log, receiptId int64, tx *sql.Tx) error {
 }
 
 func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt) (int64, error) {
-	tx, _ := receiptRepository.DB.BeginTx(context.Background(), nil)
+	tx, _ := receiptRepository.DB.Beginx()
 	var receiptId int64
 	err := tx.QueryRow(
-		`INSERT INTO receipts
+		`INSERT INTO full_sync_receipts
                (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7)
                RETURNING id`,
 		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
 	if err != nil {
 		tx.Rollback()
+		logrus.Warning("CreateReceipt: error inserting receipt: ", err)
 		return receiptId, err
 	}
 	tx.Commit()
@@ -104,7 +109,7 @@ func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Recei
                        gas_used,
                        state_root,
                        status
-                FROM receipts
+                FROM full_sync_receipts
                 WHERE tx_hash = $1`, txHash)
 	receipt, err := loadReceipt(row)
 	if err != nil {

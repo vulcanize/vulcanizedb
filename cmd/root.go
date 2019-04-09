@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,12 +18,13 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -37,11 +38,19 @@ import (
 var (
 	cfgFile             string
 	databaseConfig      config.Database
+	genConfig           config.Plugin
 	ipc                 string
 	levelDbPath         string
 	startingBlockNumber int64
+	storageDiffsPath    string
 	syncAll             bool
 	endingBlockNumber   int64
+	recheckHeadersArg   bool
+)
+
+const (
+	pollingInterval  = 7 * time.Second
+	validationWindow = 15
 )
 
 var rootCmd = &cobra.Command{
@@ -50,8 +59,9 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	log.Info("----- Starting vDB -----")
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 }
@@ -59,6 +69,7 @@ func Execute() {
 func database(cmd *cobra.Command, args []string) {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
+	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	databaseConfig = config.Database{
 		Name:     viper.GetString("database.name"),
 		Hostname: viper.GetString("database.hostname"),
@@ -71,8 +82,11 @@ func database(cmd *cobra.Command, args []string) {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	// When searching for env variables, replace dots in config keys with underscores
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "environment/public.toml", "config file location")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
@@ -80,6 +94,8 @@ func init() {
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
+	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
+	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -88,26 +104,27 @@ func init() {
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
+	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
+	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
 }
 
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".vulcanizedb")
+		noConfigError := "No config file passed with --config flag"
+		fmt.Println("Error: ", noConfigError)
+		log.Fatal(noConfigError)
+		os.Exit(1)
 	}
 
-	viper.AutomaticEnv()
-
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
+		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
+	} else {
+		invalidConfigError := "Couldn't read config file"
+		fmt.Println("Error: ", invalidConfigError)
+		log.Fatal(invalidConfigError)
+		os.Exit(1)
 	}
 }
 

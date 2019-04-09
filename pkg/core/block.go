@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,20 +17,21 @@
 package core
 
 type Block struct {
-	Reward       float64 `db:"reward"`
-	Difficulty   int64   `db:"difficulty"`
-	ExtraData    string  `db:"extra_data"`
-	GasLimit     uint64  `db:"gaslimit"`
-	GasUsed      uint64  `db:"gasused"`
-	Hash         string  `db:"hash"`
-	IsFinal      bool    `db:"is_final"`
-	Miner        string  `db:"miner"`
-	Nonce        string  `db:"nonce"`
-	Number       int64   `db:"number"`
-	ParentHash   string  `db:"parenthash"`
-	Size         string  `db:"size"`
-	Time         int64   `db:"time"`
-	Transactions []Transaction
-	UncleHash    string  `db:"uncle_hash"`
-	UnclesReward float64 `db:"uncles_reward"`
+	Reward       string `db:"reward"`
+	Difficulty   int64  `db:"difficulty"`
+	ExtraData    string `db:"extra_data"`
+	GasLimit     uint64 `db:"gas_limit"`
+	GasUsed      uint64 `db:"gas_used"`
+	Hash         string `db:"hash"`
+	IsFinal      bool   `db:"is_final"`
+	Miner        string `db:"miner"`
+	Nonce        string `db:"nonce"`
+	Number       int64  `db:"number"`
+	ParentHash   string `db:"parent_hash"`
+	Size         string `db:"size"`
+	Time         int64  `db:"time"`
+	Transactions []TransactionModel
+	UncleHash    string `db:"uncle_hash"`
+	UnclesReward string `db:"uncles_reward"`
+	Uncles       []Uncle
 }

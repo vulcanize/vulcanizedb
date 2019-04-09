@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/cold_import"
@@ -55,7 +54,8 @@ var _ = Describe("Geth cold importer", func() {
 		mockEthereumDatabase.SetReturnBlock(fakeGethBlock)
 		importer := cold_import.NewColdImporter(mockEthereumDatabase, mockBlockRepository, mockReceiptRepository, blockConverter)
 
-		importer.Execute(startingBlockNumber, endingBlockNumber, nodeId)
+		err := importer.Execute(startingBlockNumber, endingBlockNumber, nodeId)
+		Expect(err).NotTo(HaveOccurred())
 
 		mockBlockRepository.AssertMissingBlockNumbersCalledWith(startingBlockNumber, endingBlockNumber, nodeId)
 		mockEthereumDatabase.AssertGetBlockHashCalledWith(missingBlockNumber)
@@ -76,11 +76,13 @@ var _ = Describe("Geth cold importer", func() {
 		mockEthereumDatabase.SetReturnBlock(fakeGethBlock)
 		importer := cold_import.NewColdImporter(mockEthereumDatabase, mockBlockRepository, mockReceiptRepository, blockConverter)
 
-		importer.Execute(blockNumber, blockNumber, "node_id")
+		err := importer.Execute(blockNumber, blockNumber, "node_id")
+		Expect(err).NotTo(HaveOccurred())
 
 		mockEthereumDatabase.AssertGetBlockHashCalledWith(blockNumber)
 		mockEthereumDatabase.AssertGetBlockCalledWith(fakeHash, blockNumber)
-		mockTransactionConverter.AssertConvertTransactionsToCoreCalledWith(fakeGethBlock)
+		Expect(mockTransactionConverter.ConvertBlockTransactionsToCoreCalled).To(BeTrue())
+		Expect(mockTransactionConverter.ConvertBlockTransactionsToCorePassedBlock).To(Equal(fakeGethBlock))
 		convertedBlock, err := blockConverter.ToCoreBlock(fakeGethBlock)
 		Expect(err).NotTo(HaveOccurred())
 		mockBlockRepository.AssertCreateOrUpdateBlockCalledWith(convertedBlock)
@@ -101,8 +103,8 @@ var _ = Describe("Geth cold importer", func() {
 		mockEthereumDatabase.SetReturnBlock(fakeGethBlock)
 		importer := cold_import.NewColdImporter(mockEthereumDatabase, mockBlockRepository, mockReceiptRepository, blockConverter)
 
-		importer.Execute(startingBlockNumber, endingBlockNumber, "node_id")
-
+		err := importer.Execute(startingBlockNumber, endingBlockNumber, "node_id")
+		Expect(err).NotTo(HaveOccurred())
 		mockBlockRepository.AssertSetBlockStatusCalledWith(endingBlockNumber)
 	})
 
@@ -122,9 +124,10 @@ var _ = Describe("Geth cold importer", func() {
 		mockEthereumDatabase.SetReturnReceipts(fakeReceipts)
 		importer := cold_import.NewColdImporter(mockEthereumDatabase, mockBlockRepository, mockReceiptRepository, blockConverter)
 
-		importer.Execute(blockNumber, blockNumber, "node_id")
-
-		expectedReceipts := vulcCommon.ToCoreReceipts(fakeReceipts)
+		err := importer.Execute(blockNumber, blockNumber, "node_id")
+		Expect(err).NotTo(HaveOccurred())
+		expectedReceipts, err := vulcCommon.ToCoreReceipts(fakeReceipts)
+		Expect(err).ToNot(HaveOccurred())
 		mockReceiptRepository.AssertCreateReceiptsAndLogsCalledWith(blockId, expectedReceipts)
 	})
 

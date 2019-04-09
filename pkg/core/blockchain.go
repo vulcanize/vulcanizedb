@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 package core
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -25,14 +26,21 @@ import (
 
 type BlockChain interface {
 	ContractDataFetcher
+	AccountDataFetcher
 	GetBlockByNumber(blockNumber int64) (Block, error)
-	GetHeaderByNumber(blockNumber int64) (Header, error)
-	GetLogs(contract Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]Log, error)
 	GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error)
-	LastBlock() *big.Int
+	GetHeaderByNumber(blockNumber int64) (Header, error)
+	GetHeaderByNumbers(blockNumbers []int64) ([]Header, error)
+	GetLogs(contract Contract, startingBlockNumber *big.Int, endingBlockNumber *big.Int) ([]Log, error)
+	GetTransactions(transactionHashes []common.Hash) ([]TransactionModel, error)
+	LastBlock() (*big.Int, error)
 	Node() Node
 }
 
 type ContractDataFetcher interface {
 	FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error
+}
+
+type AccountDataFetcher interface {
+	GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error)
 }

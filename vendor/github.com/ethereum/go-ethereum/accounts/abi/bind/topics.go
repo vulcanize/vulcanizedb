@@ -17,6 +17,7 @@
 package bind
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -83,8 +84,10 @@ func makeTopics(query ...[]interface{}) ([][]common.Hash, error) {
 				val := reflect.ValueOf(rule)
 
 				switch {
+
+				// static byte array
 				case val.Kind() == reflect.Array && reflect.TypeOf(rule).Elem().Kind() == reflect.Uint8:
-					reflect.Copy(reflect.ValueOf(topic[common.HashLength-val.Len():]), val)
+					reflect.Copy(reflect.ValueOf(topic[:val.Len()]), val)
 
 				default:
 					return nil, fmt.Errorf("unsupported indexed type: %T", rule)
@@ -175,8 +178,10 @@ func parseTopics(out interface{}, fields abi.Arguments, topics []common.Hash) er
 			default:
 				// Ran out of custom types, try the crazies
 				switch {
+
+				// static byte array
 				case arg.Type.T == abi.FixedBytesTy:
-					reflect.Copy(field, reflect.ValueOf(topics[0][common.HashLength-arg.Type.Size:]))
+					reflect.Copy(field, reflect.ValueOf(topics[0][:arg.Type.Size]))
 
 				default:
 					return fmt.Errorf("unsupported indexed type: %v", arg.Type)
@@ -188,7 +193,7 @@ func parseTopics(out interface{}, fields abi.Arguments, topics []common.Hash) er
 	return nil
 }
 
-// parseTopics converts the indexed topic field-value pairs into map key-value pairs
+// parseTopicsIntoMap converts the indexed topic field-value pairs into map key-value pairs
 func parseTopicsIntoMap(out map[string]interface{}, fields abi.Arguments, topics []common.Hash) error {
 	// Sanity check that the fields and topics match up
 	if len(fields) != len(topics) {
@@ -202,11 +207,7 @@ func parseTopicsIntoMap(out map[string]interface{}, fields abi.Arguments, topics
 
 		switch arg.Type.T {
 		case abi.BoolTy:
-			if topics[0][common.HashLength-1] == 1 {
-				out[arg.Name] = true
-			} else {
-				out[arg.Name] = false
-			}
+			out[arg.Name] = topics[0][common.HashLength-1] == 1
 		case abi.IntTy, abi.UintTy:
 			num := new(big.Int).SetBytes(topics[0][:])
 			out[arg.Name] = num
@@ -216,9 +217,21 @@ func parseTopicsIntoMap(out map[string]interface{}, fields abi.Arguments, topics
 			out[arg.Name] = addr
 		case abi.HashTy:
 			out[arg.Name] = topics[0]
-		case abi.BytesTy, abi.FixedBytesTy:
+		case abi.FixedBytesTy:
 			out[arg.Name] = topics[0][:]
-		default:
+		case abi.StringTy, abi.BytesTy, abi.SliceTy, abi.ArrayTy:
+			// Array types (including strings and bytes) have their keccak256 hashes stored in the topic- not a hash
+			// whose bytes can be decoded to the actual value- so the best we can do is retrieve that hash
+			out[arg.Name] = topics[0]
+		case abi.FunctionTy:
+			if garbage := binary.BigEndian.Uint64(topics[0][0:8]); garbage != 0 {
+				return fmt.Errorf("bind: got improperly encoded function type, got %v", topics[0].Bytes())
+			}
+			var tmp [24]byte
+			copy(tmp[:], topics[0][8:32])
+			out[arg.Name] = tmp
+		default: // Not handling tuples
+			return fmt.Errorf("unsupported indexed type: %v", arg.Type)
 		}
 
 		topics = topics[1:]

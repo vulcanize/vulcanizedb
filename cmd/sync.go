@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,10 +17,9 @@
 package cmd
 
 import (
-	"log"
-	"os"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -54,11 +53,6 @@ Expects ethereum node to be running and requires a .toml config:
 	},
 }
 
-const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
-)
-
 func init() {
 	rootCmd.AddCommand(syncCmd)
 
@@ -66,7 +60,11 @@ func init() {
 }
 
 func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	missingBlocksPopulated <- history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+	populated, err := history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
+	if err != nil {
+		log.Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
+	}
+	missingBlocksPopulated <- populated
 }
 
 func sync() {
@@ -74,13 +72,15 @@ func sync() {
 	defer ticker.Stop()
 
 	blockChain := getBlockChain()
-
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
+	lastBlock, err := blockChain.LastBlock()
+	if err != nil {
+		log.Error("sync: Error getting last block: ", err)
+	}
+	if lastBlock.Int64() == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
-	if startingBlockNumber > lastBlock {
-		log.Fatal("starting block number > current block number")
+	if startingBlockNumber > lastBlock.Int64() {
+		log.Fatal("sync: starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -92,8 +92,11 @@ func sync() {
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateBlocks()
-			window.Log(os.Stdout)
+			window, err := validator.ValidateBlocks()
+			if err != nil {
+				log.Error("sync: error in validateBlocks: ", err)
+			}
+			log.Info(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}

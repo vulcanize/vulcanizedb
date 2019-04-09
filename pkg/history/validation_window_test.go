@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,8 +17,6 @@
 package history_test
 
 import (
-	"bytes"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -32,8 +30,9 @@ var _ = Describe("Validation window", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(big.NewInt(5))
 
-		validationWindow := history.MakeValidationWindow(blockChain, 2)
+		validationWindow, err := history.MakeValidationWindow(blockChain, 2)
 
+		Expect(err).NotTo(HaveOccurred())
 		Expect(validationWindow.LowerBound).To(Equal(int64(3)))
 		Expect(validationWindow.UpperBound).To(Equal(int64(5)))
 	})
@@ -49,16 +48,5 @@ var _ = Describe("Validation window", func() {
 		expected := []int64{0, 1, 2, 3, 4, 5}
 
 		Expect(numberOfBlocksCreated).To(Equal(expected))
-	})
-
-	It("logs window message", func() {
-		expectedMessage := &bytes.Buffer{}
-		window := history.ValidationWindow{LowerBound: 5, UpperBound: 7}
-		history.ParsedWindowTemplate.Execute(expectedMessage, window)
-		actualMessage := &bytes.Buffer{}
-
-		window.Log(actualMessage)
-
-		Expect(actualMessage).To(Equal(expectedMessage))
 	})
 })

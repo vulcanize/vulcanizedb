@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Provide me with a postgres database name, and I will:
+# - Drop the database
+# - Recreate the database
+# - Run the vulcanizedb migration
+
+if [ "$1" = "" ]; then
+    echo "Provide a database name to reset"
+    exit 1
+fi
+
+db=$1
+dir=$(basename "$(pwd)")
+if [ $dir != "vulcanizedb" ]
+then
+  echo "Run me from the vulcanizedb root dir"
+  exit 1
+fi
+
+user=$(whoami)
+psql -c "DROP DATABASE $db" postgres
+if [ $? -eq 0 ]; then
+    psql -c "CREATE DATABASE $db WITH OWNER $user" postgres
+    make migrate HOST_NAME=localhost NAME=$db PORT=5432
+else
+    echo "Couldnt drop the database. Are you connected? Does it exist?"
+fi

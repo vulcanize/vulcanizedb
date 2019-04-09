@@ -20,7 +20,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 	"testing"
@@ -66,6 +69,13 @@ func init() {
 func TestAccountingSimulation(t *testing.T) {
 	//setup the balances objects for every node
 	bal := newBalances(*nodes)
+	//setup the metrics system or tests will fail trying to write metrics
+	dir, err := ioutil.TempDir("", "account-sim")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	SetupAccountingMetrics(1*time.Second, filepath.Join(dir, "metrics.db"))
 	//define the node.Service for this test
 	services := adapters.Services{
 		"accounting": func(ctx *adapters.ServiceContext) (node.Service, error) {
@@ -149,8 +159,9 @@ func TestAccountingSimulation(t *testing.T) {
 // (n entries in the array will not be filled -
 //  the balance of a node with itself)
 type matrix struct {
-	n int     //number of nodes
-	m []int64 //array of balances
+	n    int     //number of nodes
+	m    []int64 //array of balances
+	lock sync.Mutex
 }
 
 // create a new matrix
@@ -167,7 +178,9 @@ func (m *matrix) add(i, j int, v int64) error {
 	// i * number of nodes + remote node
 	mi := i*m.n + j
 	// register that balance
+	m.lock.Lock()
 	m.m[mi] += v
+	m.lock.Unlock()
 	return nil
 }
 

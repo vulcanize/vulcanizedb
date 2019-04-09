@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,8 +17,6 @@
 package postgres
 
 import (
-	"errors"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
 	"github.com/vulcanize/vulcanizedb/pkg/config"
@@ -31,23 +29,18 @@ type DB struct {
 	NodeID int64
 }
 
-var (
-	ErrDBInsertFailed     = errors.New("postgres: insert failed")
-	ErrDBDeleteFailed     = errors.New("postgres: delete failed")
-	ErrDBConnectionFailed = errors.New("postgres: db connection failed")
-	ErrUnableToSetNode    = errors.New("postgres: unable to set node")
-)
+var ()
 
 func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	connectString := config.DbConnectionString(databaseConfig)
-	db, err := sqlx.Connect("postgres", connectString)
-	if err != nil {
-		return &DB{}, ErrDBConnectionFailed
+	db, connectErr := sqlx.Connect("postgres", connectString)
+	if connectErr != nil {
+		return &DB{}, ErrDBConnectionFailed(connectErr)
 	}
 	pg := DB{DB: db, Node: node}
-	err = pg.CreateNode(&node)
-	if err != nil {
-		return &DB{}, ErrUnableToSetNode
+	nodeErr := pg.CreateNode(&node)
+	if nodeErr != nil {
+		return &DB{}, ErrUnableToSetNode(nodeErr)
 	}
 	return &pg, nil
 }
@@ -66,7 +59,7 @@ func (db *DB) CreateNode(node *core.Node) error {
                 RETURNING id`,
 		node.GenesisBlock, node.NetworkID, node.ID, node.ClientName).Scan(&nodeId)
 	if err != nil {
-		return ErrUnableToSetNode
+		return ErrUnableToSetNode(err)
 	}
 	db.NodeID = nodeId
 	return nil

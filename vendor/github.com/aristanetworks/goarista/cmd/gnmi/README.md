@@ -16,10 +16,20 @@ under [GOPATH](https://golang.org/doc/code.html#GOPATH).
 
 # Usage
 
+```
+$ gnmi [OPTIONS] [OPERATION]
+```
+
+When running on the switch in a non-default VRF:
+
+```
+$ ip netns exec ns-<VRF> gnmi [OPTIONS] [OPERATION]
+```
+
 ## Options
 
-* `-addr ADDR:PORT`  
-Address of the gNMI endpoint (REQUIRED)
+* `-addr [<VRF-NAME>/]ADDR:PORT`  
+Address of the gNMI endpoint (REQUIRED) with VRF name (OPTIONAL)
 * `-username USERNAME`  
 Username to authenticate with
 * `-password PASSWORD`  
@@ -92,7 +102,7 @@ $ gnmi [OPTIONS] delete '/network-instances/network-instance[name=default]/proto
 ```
 
 `update` and `replace` both take a path and a value in JSON
-format. See
+format. The JSON data may be provided in a file. See
 [here](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md#344-modes-of-update-replace-versus-update)
 for documentation on the differences between `update` and `replace`.
 
@@ -108,15 +118,46 @@ Replace the BGP global configuration:
 gnmi [OPTIONS] replace '/network-instances/network-instance[name=default]/protocols/protocol[name=BGP][identifier=BGP]/bgp/global' '{"config":{"as": 1234, "router-id": "1.2.3.4"}}'
 ```
 
-Note: String values must be quoted. For example, setting the hostname to `"tor13"`:
+Note: String values need to be quoted if they look like JSON. For example, setting the login banner to `tor[13]`:
 ```
-gnmi [OPTIONS] update '/system/config/hostname' '"tor13"'
+gnmi [OPTIONS] update '/system/config/login-banner '"tor[13]"'
+```
+
+#### JSON in a file
+
+The value argument to `update` and `replace` may be a file. The
+content of the file is used to make the request.
+
+Example:
+
+File `path/to/subintf100.json` contains the following:
+
+```
+{
+  "subinterface": [
+    {
+      "config": {
+        "enabled": true,
+        "index": 100
+      },
+      "index": 100
+    }
+  ]
+}
+```
+
+Add subinterface 100 to interfaces Ethernet4/1/1 and Ethernet4/2/1 in
+one transaction:
+
+```
+gnmi [OPTIONS] update '/interfaces/interface[name=Ethernet4/1/1]/subinterfaces' path/to/subintf100.json \
+               update '/interfaces/interface[name=Ethernet4/2/1]/subinterfaces' path/to/subintf100.json
 ```
 
 ### CLI requests
 `gnmi` offers the ability to send CLI text inside an `update` or
 `replace` operation. This is achieved by doing an `update` or
-`replace` and using `"cli"` as the path and a set of configure-mode
+`replace` and specifying `"origin=cli"` along with an empty path and a set of configure-mode
 CLI commands separated by `\n`.
 
 Example:
@@ -125,6 +166,18 @@ Configure the idle-timeout on SSH connections
 ```
 gnmi [OPTIONS] update 'cli' 'management ssh
 idle-timeout 300'
+```
+
+### P4 Config
+`gnmi` offers the ability to send p4 config files inside a `replace` operation.
+This is achieved by doing a `replace` and specifying `"origin=p4_config"`
+along with the path of the p4 config file to send.
+
+Example:
+
+Send the config.p4 file
+```
+gnmi [OPTIONS] replace 'origin=p4_config' 'config.p4'
 ```
 
 ## Paths

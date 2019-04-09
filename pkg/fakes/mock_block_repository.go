@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -85,9 +85,10 @@ func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber i
 	return repository.missingBlockNumbersReturnArray
 }
 
-func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) {
+func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) error {
 	repository.setBlockStatusCalled = true
 	repository.setBlockStatusPassedChainHead = chainHead
+	return nil
 }
 
 func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCallCountEquals(times int) {

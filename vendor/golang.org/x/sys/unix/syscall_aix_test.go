@@ -86,7 +86,7 @@ func TestUtimesNanoAt(t *testing.T) {
 	defer chtmpdir(t)()
 
 	symlink := "symlink1"
-	defer os.Remove(symlink)
+	os.Remove(symlink)
 	err := os.Symlink("nonexisting", symlink)
 	if err != nil {
 		t.Fatal(err)

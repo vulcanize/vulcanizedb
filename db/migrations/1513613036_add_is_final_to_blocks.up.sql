@@ -1,2 +1,0 @@
-ALTER TABLE blocks
-    ADD COLUMN is_final BOOLEAN;

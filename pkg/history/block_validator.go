@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 package history
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
@@ -35,11 +36,30 @@ func NewBlockValidator(blockchain core.BlockChain, blockRepository datastore.Blo
 	}
 }
 
-func (bv BlockValidator) ValidateBlocks() ValidationWindow {
-	window := MakeValidationWindow(bv.blockchain, bv.windowSize)
+func (bv BlockValidator) ValidateBlocks() (ValidationWindow, error) {
+	window, err := MakeValidationWindow(bv.blockchain, bv.windowSize)
+	if err != nil {
+		logrus.Error("ValidateBlocks: error creating validation window: ", err)
+		return ValidationWindow{}, err
+	}
+
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
-	RetrieveAndUpdateBlocks(bv.blockchain, bv.blockRepository, blockNumbers)
-	lastBlock := bv.blockchain.LastBlock().Int64()
-	bv.blockRepository.SetBlocksStatus(lastBlock)
-	return window
+	_, err = RetrieveAndUpdateBlocks(bv.blockchain, bv.blockRepository, blockNumbers)
+	if err != nil {
+		logrus.Error("ValidateBlocks: error getting and updating blocks: ", err)
+		return ValidationWindow{}, err
+	}
+
+	lastBlock, err := bv.blockchain.LastBlock()
+	if err != nil {
+		logrus.Error("ValidateBlocks: error getting last block: ", err)
+		return ValidationWindow{}, err
+	}
+
+	err = bv.blockRepository.SetBlocksStatus(lastBlock.Int64())
+	if err != nil {
+		logrus.Error("ValidateBlocks: error setting block status: ", err)
+		return ValidationWindow{}, err
+	}
+	return window, nil
 }

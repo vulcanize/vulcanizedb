@@ -1,2 +1,0 @@
-#!/bin/bash
-geth --fast --cache=1024

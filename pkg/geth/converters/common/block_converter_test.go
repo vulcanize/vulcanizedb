@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 package common_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -113,9 +114,13 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(5.31355))
+
+			expectedBlockReward := new(big.Int)
+			expectedBlockReward.SetString("5313550000000000000", 10)
+
+			blockReward := vulcCommon.CalcBlockReward(coreBlock, block.Uncles())
+			Expect(blockReward.String()).To(Equal(expectedBlockReward.String()))
 		})
 
 		It("calculates the uncles reward for a block", func() {
@@ -150,9 +155,20 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcUnclesReward(coreBlock, block.Uncles())).To(Equal(6.875))
+
+			expectedTotalReward := new(big.Int)
+			expectedTotalReward.SetString("6875000000000000000", 10)
+			totalReward, coreUncles := blockConverter.ToCoreUncle(coreBlock, block.Uncles())
+			Expect(totalReward.String()).To(Equal(expectedTotalReward.String()))
+
+			Expect(len(coreUncles)).To(Equal(2))
+			Expect(coreUncles[0].Reward).To(Equal("3125000000000000000"))
+			Expect(coreUncles[0].Miner).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(coreUncles[0].Hash).To(Equal("0xb629de4014b6e30cf9555ee833f1806fa0d8b8516fde194405f9c98c2deb8772"))
+			Expect(coreUncles[1].Reward).To(Equal("3750000000000000000"))
+			Expect(coreUncles[1].Miner).To(Equal("0x0000000000000000000000000000000000000000"))
+			Expect(coreUncles[1].Hash).To(Equal("0x673f5231e4888a951e0bc8a25b5774b982e6e9e258362c21affaff6e02dd5a2b"))
 		})
 
 		It("decreases the static block reward from 5 to 3 for blocks after block 4,269,999", func() {
@@ -199,9 +215,12 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(vulcCommon.CalcBlockReward(coreBlock, block.Uncles())).To(Equal(3.024990672))
+
+			expectedRewards := new(big.Int)
+			expectedRewards.SetString("3024990672000000000", 10)
+			rewards := vulcCommon.CalcBlockReward(coreBlock, block.Uncles())
+			Expect(rewards.String()).To(Equal(expectedRewards.String()))
 		})
 	})
 
@@ -227,6 +246,9 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				big.NewInt(3),
 				hexutil.MustDecode("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"),
 			)
+			var rawTransaction bytes.Buffer
+			encodeErr := gethTransaction.EncodeRLP(&rawTransaction)
+			Expect(encodeErr).NotTo(HaveOccurred())
 
 			gethReceipt := &types.Receipt{
 				Bloom:             types.BytesToBloom(hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")),
@@ -256,16 +278,20 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(coreBlock.Transactions)).To(Equal(1))
 			coreTransaction := coreBlock.Transactions[0]
-			Expect(coreTransaction.Data).To(Equal("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14"))
+			expectedData := common.FromHex("0xf7d8c8830000000000000000000000000000000000000000000000000000000000037788000000000000000000000000000000000000000000000000000000000003bd14")
+			Expect(coreTransaction.Data).To(Equal(expectedData))
 			Expect(coreTransaction.To).To(Equal(gethTransaction.To().Hex()))
 			Expect(coreTransaction.From).To(Equal("0x0000000000000000000000000000000000000123"))
 			Expect(coreTransaction.GasLimit).To(Equal(gethTransaction.Gas()))
 			Expect(coreTransaction.GasPrice).To(Equal(gethTransaction.GasPrice().Int64()))
+			Expect(coreTransaction.Raw).To(Equal(rawTransaction.Bytes()))
+			Expect(coreTransaction.TxIndex).To(Equal(int64(0)))
 			Expect(coreTransaction.Value).To(Equal(gethTransaction.Value().String()))
 			Expect(coreTransaction.Nonce).To(Equal(gethTransaction.Nonce()))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := vulcCommon.ToCoreReceipt(gethReceipt)
+			expectedReceipt, err := vulcCommon.ToCoreReceipt(gethReceipt)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 
@@ -304,7 +330,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Expect(coreTransaction.To).To(Equal(""))
 
 			coreReceipt := coreTransaction.Receipt
-			expectedReceipt := vulcCommon.ToCoreReceipt(gethReceipt)
+			expectedReceipt, err := vulcCommon.ToCoreReceipt(gethReceipt)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(coreReceipt).To(Equal(expectedReceipt))
 		})
 	})

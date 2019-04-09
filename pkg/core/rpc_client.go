@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -16,10 +16,15 @@
 
 package core
 
-import "context"
+import (
+	"context"
+
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+)
 
 type RpcClient interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+	BatchCall(batch []client.BatchElem) error
 	IpcPath() string
 	SupportedModules() (map[string]string, error)
 }

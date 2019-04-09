@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -76,11 +76,10 @@ var _ = Describe("Reading contracts", func() {
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
-			logs, err := blockChain.GetLogs(core.Contract{Hash: "x123"}, big.NewInt(4703824), nil)
+			logs, err := blockChain.GetLogs(core.Contract{Hash: "0x123"}, big.NewInt(4703824), nil)
 
 			Expect(err).To(BeNil())
 			Expect(len(logs)).To(Equal(0))
-
 		})
 	})
 
@@ -98,14 +97,10 @@ var _ = Describe("Reading contracts", func() {
 			contract := testing.SampleContract()
 			var balance = new(big.Int)
 
-			arg := common.HexToHash("0xd26114cd6ee289accf82350c8d8487fedb8a0c07")
-			hashArgs := []common.Hash{arg}
-			balanceOfArgs := make([]interface{}, len(hashArgs))
-			for i, s := range hashArgs {
-				balanceOfArgs[i] = s
-			}
+			args := make([]interface{}, 1)
+			args[0] = common.HexToHash("0xd26114cd6ee289accf82350c8d8487fedb8a0c07")
 
-			err = blockChain.FetchContractData(contract.Abi, "0xd26114cd6ee289accf82350c8d8487fedb8a0c07", "balanceOf", balanceOfArgs, &balance, 5167471)
+			err = blockChain.FetchContractData(contract.Abi, "0xd26114cd6ee289accf82350c8d8487fedb8a0c07", "balanceOf", args, &balance, 5167471)
 			Expect(err).NotTo(HaveOccurred())
 			expected := new(big.Int)
 			expected.SetString("10897295492887612977137", 10)

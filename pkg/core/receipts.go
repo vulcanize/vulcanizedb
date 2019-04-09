@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,11 +18,12 @@ package core
 
 type Receipt struct {
 	Bloom             string
-	ContractAddress   string
-	CumulativeGasUsed uint64
-	GasUsed           uint64
+	ContractAddress   string `db:"contract_address"`
+	CumulativeGasUsed uint64 `db:"cumulative_gas_used"`
+	GasUsed           uint64 `db:"gas_used"`
 	Logs              []Log
-	StateRoot         string
+	StateRoot         string `db:"state_root"`
 	Status            int
-	TxHash            string
+	TxHash            string `db:"tx_hash"`
+	Rlp               []byte `db:"rlp"`
 }
