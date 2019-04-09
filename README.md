@@ -19,7 +19,8 @@
 
 ## Background
 The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine
-complicate data accessibility and usability for dApp developers.
+complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by 
+providing a suite of tools to ease the extraction and transformation of data into a more useful state.
 
 
 ## Dependencies
