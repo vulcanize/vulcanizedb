@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,54 +17,61 @@
 package common
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func CalcUnclesReward(block core.Block, uncles []*types.Header) float64 {
-	var unclesReward float64
-	for _, uncle := range uncles {
-		blockNumber := block.Number
-		staticBlockReward := float64(staticRewardByBlockNumber(blockNumber))
-		unclesReward += (1.0 + float64(uncle.Number.Int64()-block.Number)/8.0) * staticBlockReward
-	}
-	return unclesReward
-}
-
-func CalcBlockReward(block core.Block, uncles []*types.Header) float64 {
-	blockNumber := block.Number
-	staticBlockReward := staticRewardByBlockNumber(blockNumber)
+func CalcBlockReward(block core.Block, uncles []*types.Header) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(block.Number)
 	transactionFees := calcTransactionFees(block)
 	uncleInclusionRewards := calcUncleInclusionRewards(block, uncles)
-	return transactionFees + uncleInclusionRewards + staticBlockReward
+	tmp := transactionFees.Add(transactionFees, uncleInclusionRewards)
+	return tmp.Add(tmp, staticBlockReward)
 }
 
-func calcTransactionFees(block core.Block) float64 {
-	var transactionFees float64
+func calcUncleMinerReward(blockNumber, uncleBlockNumber int64) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(blockNumber)
+	rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
+	mainBlock := big.NewInt(blockNumber)
+	uncleBlock := big.NewInt(uncleBlockNumber)
+	uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
+	uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
+	return rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+}
+
+func calcTransactionFees(block core.Block) *big.Int {
+	transactionFees := new(big.Int)
 	for _, transaction := range block.Transactions {
 		receipt := transaction.Receipt
-		transactionFees += float64(uint64(transaction.GasPrice) * receipt.GasUsed)
+		gasPrice := big.NewInt(transaction.GasPrice)
+		gasUsed := big.NewInt(int64(receipt.GasUsed))
+		transactionFee := gasPrice.Mul(gasPrice, gasUsed)
+		transactionFees = transactionFees.Add(transactionFees, transactionFee)
 	}
-	return transactionFees / params.Ether
+	return transactionFees
 }
 
-func calcUncleInclusionRewards(block core.Block, uncles []*types.Header) float64 {
-	var uncleInclusionRewards float64
-	staticBlockReward := staticRewardByBlockNumber(block.Number)
+func calcUncleInclusionRewards(block core.Block, uncles []*types.Header) *big.Int {
+	uncleInclusionRewards := new(big.Int)
 	for range uncles {
-		uncleInclusionRewards += staticBlockReward * 1 / 32
+		staticBlockReward := staticRewardByBlockNumber(block.Number)
+		staticBlockReward.Div(staticBlockReward, big.NewInt(32))
+		uncleInclusionRewards.Add(uncleInclusionRewards, staticBlockReward)
 	}
 	return uncleInclusionRewards
 }
 
-func staticRewardByBlockNumber(blockNumber int64) float64 {
-	var staticBlockReward float64
+func staticRewardByBlockNumber(blockNumber int64) *big.Int {
+	staticBlockReward := new(big.Int)
 	//https://blog.ethereum.org/2017/10/12/byzantium-hf-announcement/
-	if blockNumber >= 4370000 {
-		staticBlockReward = 3
+	if blockNumber >= 7280000 {
+		staticBlockReward.SetString("2000000000000000000", 10)
+	} else if blockNumber >= 4370000 {
+		staticBlockReward.SetString("3000000000000000000", 10)
 	} else {
-		staticBlockReward = 5
+		staticBlockReward.SetString("5000000000000000000", 10)
 	}
 	return staticBlockReward
 }

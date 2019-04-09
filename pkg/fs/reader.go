@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -22,8 +22,7 @@ type Reader interface {
 	Read(path string) ([]byte, error)
 }
 
-type FsReader struct {
-}
+type FsReader struct{}
 
 func (FsReader) Read(path string) ([]byte, error) {
 	return ioutil.ReadFile(path)

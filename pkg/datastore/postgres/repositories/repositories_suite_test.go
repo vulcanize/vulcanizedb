@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,8 @@
 package repositories_test
 
 import (
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -27,3 +29,7 @@ func TestRepositories(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Repositories Suite")
 }
+
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})

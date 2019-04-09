@@ -10,221 +10,288 @@ import (
 	"sort"
 
 	"github.com/aristanetworks/goarista/key"
-	"github.com/aristanetworks/goarista/pathmap"
 )
 
-// Map associates Paths to values. It allows wildcards. The
-// primary use of Map is to be able to register handlers to paths
-// that can be efficiently looked up every time a path is updated.
-//
-// For example:
-//
-// m.Set({key.New("interfaces"), key.New("*"), key.New("adminStatus")}, AdminStatusHandler)
-// m.Set({key.New("interface"), key.New("Management1"), key.New("adminStatus")},
-//     Management1AdminStatusHandler)
-//
-// m.Visit(Path{key.New("interfaces"), key.New("Ethernet3/32/1"), key.New("adminStatus")},
-//     HandlerExecutor)
-// >> AdminStatusHandler gets passed to HandlerExecutor
-// m.Visit(Path{key.New("interfaces"), key.New("Management1"), key.New("adminStatus")},
-//    HandlerExecutor)
-// >> AdminStatusHandler and Management1AdminStatusHandler gets passed to HandlerExecutor
-//
-// Note, Visit performance is typically linearly with the length of
-// the path. But, it can be as bad as O(2^len(Path)) when TreeMap
-// nodes have children and a wildcard associated with it. For example,
-// if these paths were registered:
-//
-// m.Set(Path{key.New("foo"), key.New("bar"), key.New("baz")}, 1)
-// m.Set(Path{key.New("*"), key.New("bar"), key.New("baz")}, 2)
-// m.Set(Path{key.New("*"), key.New("*"), key.New("baz")}, 3)
-// m.Set(Path{key.New("*"), key.New("*"), key.New("*")}, 4)
-// m.Set(Path{key.New("foo"), key.New("*"), key.New("*")}, 5)
-// m.Set(Path{key.New("foo"), key.New("bar"), key.New("*")}, 6)
-// m.Set(Path{key.New("foo"), key.New("*"), key.New("baz")}, 7)
-// m.Set(Path{key.New("*"), key.New("bar"), key.New("*")}, 8)
-//
-// m.Visit(Path{key.New("foo"),key.New("bar"),key.New("baz")}, Foo) // 2^3 nodes traversed
-//
-// This shouldn't be a concern with our paths because it is likely
-// that a TreeMap node will either have a wildcard or children, not
-// both. A TreeMap node that corresponds to a collection will often be a
-// wildcard, otherwise it will have specific children.
-type Map interface {
-	// Visit calls f for every registration in the Map that
-	// matches path. For example,
-	//
-	// m.Set(Path{key.New("foo"), key.New("bar")}, 1)
-	// m.Set(Path{key.New("*"), key.New("bar")}, 2)
-	//
-	// m.Visit(Path{key.New("foo"), key.New("bar")}, Printer)
-	// >> Calls Printer(1) and Printer(2)
-	Visit(p Path, f pathmap.VisitorFunc) error
-
-	// VisitPrefix calls f for every registration in the Map that
-	// is a prefix of path. For example,
-	//
-	// m.Set(Path{}, 0)
-	// m.Set(Path{key.New("foo")}, 1)
-	// m.Set(Path{key.New("foo"), key.New("bar")}, 2)
-	// m.Set(Path{key.New("foo"), key.New("quux")}, 3)
-	// m.Set(Path{key.New("*"), key.New("bar")}, 4)
-	//
-	// m.VisitPrefix(Path{key.New("foo"), key.New("bar"), key.New("baz")}, Printer)
-	// >> Calls Printer on values 0, 1, 2, and 4
-	VisitPrefix(p Path, f pathmap.VisitorFunc) error
-
-	// Get returns the mapping for path. This returns the exact
-	// mapping for path. For example, if you register two paths
-	//
-	// m.Set(Path{key.New("foo"), key.New("bar")}, 1)
-	// m.Set(Path{key.New("*"), key.New("bar")}, 2)
-	//
-	// m.Get(Path{key.New("foo"), key.New("bar")}) => 1
-	// m.Get(Path{key.New("*"), key.New("bar")}) => 2
-	Get(p Path) interface{}
-
-	// Set a mapping of path to value. Path may contain wildcards. Set
-	// replaces what was there before.
-	Set(p Path, v interface{})
-
-	// Delete removes the mapping for path
-	Delete(p Path) bool
-}
-
-// Wildcard is a special key representing any possible path
-var Wildcard key.Key = key.New("*")
-
-type node struct {
+// Map associates paths to values. It allows wildcards. A Map
+// is primarily used to register handlers with paths that can
+// be easily looked up each time a path is updated.
+type Map struct {
 	val      interface{}
-	wildcard *node
-	children map[key.Key]*node
+	ok       bool
+	wildcard *Map
+	children map[key.Key]*Map
 }
 
-// NewMap creates a new Map
-func NewMap() Map {
-	return &node{}
-}
+// VisitorFunc is a function that handles the value associated
+// with a path in a Map. Note that only the value is passed in
+// as an argument since the path can be stored inside the value
+// if needed.
+type VisitorFunc func(v interface{}) error
 
-// Visit calls f for every matching registration in the Map
-func (n *node) Visit(p Path, f pathmap.VisitorFunc) error {
+// Visit calls a function fn for every value in the Map
+// that is registered with a match of a path p. In the
+// general case, time complexity is linear with respect
+// to the length of p but it can be as bad as O(2^len(p))
+// if there are a lot of paths with wildcards registered.
+//
+// Example:
+//
+// a := path.New("foo", "bar", "baz")
+// b := path.New("foo", path.Wildcard, "baz")
+// c := path.New(path.Wildcard, "bar", "baz")
+// d := path.New("foo", "bar", path.Wildcard)
+// e := path.New(path.Wildcard, path.Wildcard, "baz")
+// f := path.New(path.Wildcard, "bar", path.Wildcard)
+// g := path.New("foo", path.Wildcard, path.Wildcard)
+// h := path.New(path.Wildcard, path.Wildcard, path.Wildcard)
+//
+// m.Set(a, 1)
+// m.Set(b, 2)
+// m.Set(c, 3)
+// m.Set(d, 4)
+// m.Set(e, 5)
+// m.Set(f, 6)
+// m.Set(g, 7)
+// m.Set(h, 8)
+//
+// p := path.New("foo", "bar", "baz")
+//
+// m.Visit(p, fn)
+//
+// Result: fn(1), fn(2), fn(3), fn(4), fn(5), fn(6), fn(7) and fn(8)
+func (m *Map) Visit(p key.Path, fn VisitorFunc) error {
 	for i, element := range p {
-		if n.wildcard != nil {
-			if err := n.wildcard.Visit(p[i+1:], f); err != nil {
+		if m.wildcard != nil {
+			if err := m.wildcard.Visit(p[i+1:], fn); err != nil {
 				return err
 			}
 		}
-		next, ok := n.children[element]
+		next, ok := m.children[element]
 		if !ok {
 			return nil
 		}
-		n = next
+		m = next
 	}
-	if n.val == nil {
+	if !m.ok {
 		return nil
 	}
-	return f(n.val)
+	return fn(m.val)
 }
 
-// VisitPrefix calls f for every registered path that is a prefix of
-// the path
-func (n *node) VisitPrefix(p Path, f pathmap.VisitorFunc) error {
+// VisitPrefixes calls a function fn for every value in the
+// Map that is registered with a prefix of a path p.
+//
+// Example:
+//
+// a := path.New()
+// b := path.New("foo")
+// c := path.New("foo", "bar")
+// d := path.New("foo", "baz")
+// e := path.New(path.Wildcard, "bar")
+//
+// m.Set(a, 1)
+// m.Set(b, 2)
+// m.Set(c, 3)
+// m.Set(d, 4)
+// m.Set(e, 5)
+//
+// p := path.New("foo", "bar", "baz")
+//
+// m.VisitPrefixes(p, fn)
+//
+// Result: fn(1), fn(2), fn(3), fn(5)
+func (m *Map) VisitPrefixes(p key.Path, fn VisitorFunc) error {
 	for i, element := range p {
-		// Call f on each node we visit
-		if n.val != nil {
-			if err := f(n.val); err != nil {
+		if m.ok {
+			if err := fn(m.val); err != nil {
 				return err
 			}
 		}
-		if n.wildcard != nil {
-			if err := n.wildcard.VisitPrefix(p[i+1:], f); err != nil {
+		if m.wildcard != nil {
+			if err := m.wildcard.VisitPrefixes(p[i+1:], fn); err != nil {
 				return err
 			}
 		}
-		next, ok := n.children[element]
+		next, ok := m.children[element]
 		if !ok {
 			return nil
 		}
-		n = next
+		m = next
 	}
-	if n.val == nil {
+	if !m.ok {
 		return nil
 	}
-	// Call f on the final node
-	return f(n.val)
+	return fn(m.val)
 }
 
-// Get returns the mapping for path
-func (n *node) Get(p Path) interface{} {
-	for _, element := range p {
-		if element.Equal(Wildcard) {
-			if n.wildcard == nil {
-				return nil
+// VisitPrefixed calls fn for every value in the map that is
+// registerd with a path that is prefixed by p. This method
+// can be used to visit every registered path if p is the
+// empty path (or root path) which prefixes all paths.
+//
+// Example:
+//
+// a := path.New("foo")
+// b := path.New("foo", "bar")
+// c := path.New("foo", "bar", "baz")
+// d := path.New("foo", path.Wildcard)
+//
+// m.Set(a, 1)
+// m.Set(b, 2)
+// m.Set(c, 3)
+// m.Set(d, 4)
+//
+// p := path.New("foo", "bar")
+//
+// m.VisitPrefixed(p, fn)
+//
+// Result: fn(2), fn(3), fn(4)
+func (m *Map) VisitPrefixed(p key.Path, fn VisitorFunc) error {
+	for i, element := range p {
+		if m.wildcard != nil {
+			if err := m.wildcard.VisitPrefixed(p[i+1:], fn); err != nil {
+				return err
 			}
-			n = n.wildcard
-			continue
 		}
-		next, ok := n.children[element]
+		next, ok := m.children[element]
 		if !ok {
 			return nil
 		}
-		n = next
+		m = next
 	}
-	return n.val
+	return m.visitSubtree(fn)
 }
 
-// Set a mapping of path to value. Path may contain wildcards. Set
-// replaces what was there before.
-func (n *node) Set(p Path, v interface{}) {
+func (m *Map) visitSubtree(fn VisitorFunc) error {
+	if m.ok {
+		if err := fn(m.val); err != nil {
+			return err
+		}
+	}
+	if m.wildcard != nil {
+		if err := m.wildcard.visitSubtree(fn); err != nil {
+			return err
+		}
+	}
+	for _, next := range m.children {
+		if err := next.visitSubtree(fn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Get returns the value registered with an exact match of a
+// path p. If there is no exact match for p, Get returns nil
+// and false. If p has an exact match and it is set to true,
+// Get returns nil and true.
+//
+// Example:
+//
+// m.Set(path.New("foo", "bar"), 1)
+// m.Set(path.New("baz", "qux"), nil)
+//
+// a := m.Get(path.New("foo", "bar"))
+// b := m.Get(path.New("foo", path.Wildcard))
+// c, ok := m.Get(path.New("baz", "qux"))
+//
+// Result: a == 1, b == nil, c == nil and ok == true
+func (m *Map) Get(p key.Path) (interface{}, bool) {
 	for _, element := range p {
 		if element.Equal(Wildcard) {
-			if n.wildcard == nil {
-				n.wildcard = &node{}
+			if m.wildcard == nil {
+				return nil, false
 			}
-			n = n.wildcard
+			m = m.wildcard
 			continue
 		}
-		if n.children == nil {
-			n.children = map[key.Key]*node{}
-		}
-		next, ok := n.children[element]
+		next, ok := m.children[element]
 		if !ok {
-			next = &node{}
-			n.children[element] = next
+			return nil, false
 		}
-		n = next
+		m = next
 	}
-	n.val = v
+	return m.val, m.ok
 }
 
-// Delete removes the mapping for path
-func (n *node) Delete(p Path) bool {
-	nodes := make([]*node, len(p)+1)
-	for i, element := range p {
-		nodes[i] = n
+// Set registers a path p with a value. If the path was already
+// registered with a value it returns true and false otherwise.
+//
+// Example:
+//
+// p := path.New("foo", "bar")
+//
+// a := m.Set(p, 0)
+// b := m.Set(p, 1)
+//
+// v := m.Get(p)
+//
+// Result: a == false, b == true and v == 1
+func (m *Map) Set(p key.Path, v interface{}) bool {
+	for _, element := range p {
 		if element.Equal(Wildcard) {
-			if n.wildcard == nil {
+			if m.wildcard == nil {
+				m.wildcard = &Map{}
+			}
+			m = m.wildcard
+			continue
+		}
+		if m.children == nil {
+			m.children = map[key.Key]*Map{}
+		}
+		next, ok := m.children[element]
+		if !ok {
+			next = &Map{}
+			m.children[element] = next
+		}
+		m = next
+	}
+	set := !m.ok
+	m.val, m.ok = v, true
+	return set
+}
+
+// Delete unregisters the value registered with a path. It
+// returns true if a value was deleted and false otherwise.
+//
+// Example:
+//
+// p := path.New("foo", "bar")
+//
+// m.Set(p, 0)
+//
+// a := m.Delete(p)
+// b := m.Delete(p)
+//
+// Result: a == true and b == false
+func (m *Map) Delete(p key.Path) bool {
+	maps := make([]*Map, len(p)+1)
+	for i, element := range p {
+		maps[i] = m
+		if element.Equal(Wildcard) {
+			if m.wildcard == nil {
 				return false
 			}
-			n = n.wildcard
+			m = m.wildcard
 			continue
 		}
-		next, ok := n.children[element]
+		next, ok := m.children[element]
 		if !ok {
 			return false
 		}
-		n = next
+		m = next
 	}
-	n.val = nil
-	nodes[len(p)] = n
+	deleted := m.ok
+	m.val, m.ok = nil, false
+	maps[len(p)] = m
 
-	// See if we can delete any node objects
+	// Remove any empty maps.
 	for i := len(p); i > 0; i-- {
-		n = nodes[i]
-		if n.val != nil || n.wildcard != nil || len(n.children) > 0 {
+		m = maps[i]
+		if m.ok || m.wildcard != nil || len(m.children) > 0 {
 			break
 		}
-		parent := nodes[i-1]
+		parent := maps[i-1]
 		element := p[i-1]
 		if element.Equal(Wildcard) {
 			parent.wildcard = nil
@@ -232,28 +299,28 @@ func (n *node) Delete(p Path) bool {
 			delete(parent.children, element)
 		}
 	}
-	return true
+	return deleted
 }
 
-func (n *node) String() string {
+func (m *Map) String() string {
 	var b bytes.Buffer
-	n.write(&b, "")
+	m.write(&b, "")
 	return b.String()
 }
 
-func (n *node) write(b *bytes.Buffer, indent string) {
-	if n.val != nil {
+func (m *Map) write(b *bytes.Buffer, indent string) {
+	if m.ok {
 		b.WriteString(indent)
-		fmt.Fprintf(b, "Val: %v", n.val)
+		fmt.Fprintf(b, "Val: %v", m.val)
 		b.WriteString("\n")
 	}
-	if n.wildcard != nil {
+	if m.wildcard != nil {
 		b.WriteString(indent)
 		fmt.Fprintf(b, "Child %q:\n", Wildcard)
-		n.wildcard.write(b, indent+"  ")
+		m.wildcard.write(b, indent+"  ")
 	}
-	children := make([]key.Key, 0, len(n.children))
-	for key := range n.children {
+	children := make([]key.Key, 0, len(m.children))
+	for key := range m.children {
 		children = append(children, key)
 	}
 	sort.Slice(children, func(i, j int) bool {
@@ -261,7 +328,7 @@ func (n *node) write(b *bytes.Buffer, indent string) {
 	})
 
 	for _, key := range children {
-		child := n.children[key]
+		child := m.children[key]
 		b.WriteString(indent)
 		fmt.Fprintf(b, "Child %q:\n", key.String())
 		child.write(b, indent+"  ")

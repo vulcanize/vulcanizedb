@@ -5,52 +5,11 @@
 package key
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"unsafe"
 
 	"github.com/aristanetworks/goarista/areflect"
 )
-
-// composite allows storing a map[string]interface{} as a key in a Go map.
-// This is useful when the key isn't a fixed data structure known at compile
-// time but rather something generic, like a bag of key-value pairs.
-// Go does not allow storing a map inside the key of a map, because maps are
-// not comparable or hashable, and keys in maps must be both.  This file is
-// a hack specific to the 'gc' implementation of Go (which is the one most
-// people use when they use Go), to bypass this check, by abusing reflection
-// to override how Go compares composite for equality or how it's hashed.
-// The values allowed in this map are only the types whitelisted in New() as
-// well as map[Key]interface{}.
-//
-// See also https://github.com/golang/go/issues/283
-type composite struct {
-	// This value must always be set to the sentinel constant above.
-	sentinel uintptr
-	m        map[string]interface{}
-}
-
-func (k composite) Key() interface{} {
-	return k.m
-}
-
-func (k composite) String() string {
-	return stringify(k.Key())
-}
-
-func (k composite) GoString() string {
-	return fmt.Sprintf("key.New(%#v)", k.Key())
-}
-
-func (k composite) MarshalJSON() ([]byte, error) {
-	return json.Marshal(k.Key())
-}
-
-func (k composite) Equal(other interface{}) bool {
-	o, ok := other.(composite)
-	return ok && mapStringEqual(k.m, o.m)
-}
 
 func hashInterface(v interface{}) uintptr {
 	switch v := v.(type) {
@@ -58,6 +17,18 @@ func hashInterface(v interface{}) uintptr {
 		return hashMapString(v)
 	case map[Key]interface{}:
 		return hashMapKey(v)
+	case []interface{}:
+		return hashSlice(v)
+	case Pointer:
+		// This case applies to pointers used
+		// as values in maps or slices (i.e.
+		// not wrapped in a key).
+		return hashSlice(pointerToSlice(v))
+	case Path:
+		// This case applies to paths used
+		// as values in maps or slices (i.e
+		// not wrapped in a kay).
+		return hashSlice(pathToSlice(v))
 	default:
 		return _nilinterhash(v)
 	}
@@ -78,9 +49,9 @@ func hashMapKey(m map[Key]interface{}) uintptr {
 	for k, v := range m {
 		// Use addition so that the order of iteration doesn't matter.
 		switch k := k.(type) {
-		case keyImpl:
+		case interfaceKey:
 			h += _nilinterhash(k.key)
-		case composite:
+		case compositeKey:
 			h += hashMapString(k.m)
 		}
 		h += hashInterface(v)
@@ -88,28 +59,42 @@ func hashMapKey(m map[Key]interface{}) uintptr {
 	return h
 }
 
+func hashSlice(s []interface{}) uintptr {
+	h := uintptr(31 * (len(s) + 1))
+	for _, v := range s {
+		h += hashInterface(v)
+	}
+	return h
+}
+
 func hash(p unsafe.Pointer, seed uintptr) uintptr {
-	ck := *(*composite)(p)
+	ck := *(*compositeKey)(p)
 	if ck.sentinel != sentinel {
 		panic("use of unhashable type in a map")
 	}
-	return seed ^ hashMapString(ck.m)
+	if ck.m != nil {
+		return seed ^ hashMapString(ck.m)
+	}
+	return seed ^ hashSlice(ck.s)
 }
 
 func equal(a unsafe.Pointer, b unsafe.Pointer) bool {
-	ca := (*composite)(a)
-	cb := (*composite)(b)
+	ca := (*compositeKey)(a)
+	cb := (*compositeKey)(b)
 	if ca.sentinel != sentinel {
 		panic("use of uncomparable type on the lhs of ==")
 	}
 	if cb.sentinel != sentinel {
 		panic("use of uncomparable type on the rhs of ==")
 	}
-	return mapStringEqual(ca.m, cb.m)
+	if ca.m != nil {
+		return mapStringEqual(ca.m, cb.m)
+	}
+	return sliceEqual(ca.s, cb.s)
 }
 
 func init() {
-	typ := reflect.TypeOf(composite{})
+	typ := reflect.TypeOf(compositeKey{})
 	alg := reflect.ValueOf(typ).Elem().FieldByName("alg").Elem()
 	// Pretty certain that doing this voids your warranty.
 	// This overwrites the typeAlg of either alg_NOEQ64 (on 32-bit platforms)

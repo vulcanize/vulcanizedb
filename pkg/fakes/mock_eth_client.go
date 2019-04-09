@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -24,6 +24,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 type MockEthClient struct {
@@ -40,14 +42,23 @@ type MockEthClient struct {
 	headerByNumberPassedContext context.Context
 	headerByNumberPassedNumber  *big.Int
 	headerByNumberReturnHeader  *types.Header
+	headerByNumbersReturnHeader []*types.Header
+	headerByNumbersPassedNumber []*big.Int
 	filterLogsErr               error
 	filterLogsPassedContext     context.Context
 	filterLogsPassedQuery       ethereum.FilterQuery
 	filterLogsReturnLogs        []types.Log
 	transactionReceipts         map[string]*types.Receipt
 	err                         error
+	passedBatch                 []client.BatchElem
+	passedMethod                string
 	transactionSenderErr        error
 	transactionReceiptErr       error
+	passedAddress               common.Address
+	passedBlockNumber           *big.Int
+	passedBalance               *big.Int
+	balanceAtErr                error
+	passedbalanceAtContext      context.Context
 }
 
 func NewMockEthClient() *MockEthClient {
@@ -71,6 +82,8 @@ func NewMockEthClient() *MockEthClient {
 		filterLogsReturnLogs:        nil,
 		transactionReceipts:         make(map[string]*types.Receipt),
 		err:                         nil,
+		passedBatch:                 nil,
+		passedMethod:                "123",
 	}
 }
 
@@ -96,6 +109,10 @@ func (client *MockEthClient) SetHeaderByNumberErr(err error) {
 
 func (client *MockEthClient) SetHeaderByNumberReturnHeader(header *types.Header) {
 	client.headerByNumberReturnHeader = header
+}
+
+func (client *MockEthClient) SetHeaderByNumbersReturnHeader(headers []*types.Header) {
+	client.headerByNumbersReturnHeader = headers
 }
 
 func (client *MockEthClient) SetFilterLogsErr(err error) {
@@ -127,6 +144,13 @@ func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.Call
 	return client.callContractReturnBytes, client.callContractErr
 }
 
+func (client *MockEthClient) BatchCall(batch []client.BatchElem) error {
+	client.passedBatch = batch
+	client.passedMethod = batch[0].Method
+
+	return nil
+}
+
 func (client *MockEthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	client.blockByNumberPassedContext = ctx
 	client.blockByNumberPassedNumber = number
@@ -137,6 +161,11 @@ func (client *MockEthClient) HeaderByNumber(ctx context.Context, number *big.Int
 	client.headerByNumberPassedContext = ctx
 	client.headerByNumberPassedNumber = number
 	return client.headerByNumberReturnHeader, client.headerByNumberErr
+}
+
+func (client *MockEthClient) HeaderByNumbers(numbers []*big.Int) ([]*types.Header, error) {
+	client.headerByNumbersPassedNumber = numbers
+	return client.headerByNumbersReturnHeader, client.headerByNumberErr
 }
 
 func (client *MockEthClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
@@ -172,7 +201,36 @@ func (client *MockEthClient) AssertHeaderByNumberCalledWith(ctx context.Context,
 	Expect(client.headerByNumberPassedNumber).To(Equal(number))
 }
 
+func (client *MockEthClient) AssertHeaderByNumbersCalledWith(number []*big.Int) {
+	Expect(client.headerByNumbersPassedNumber).To(Equal(number))
+}
+
 func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q ethereum.FilterQuery) {
 	Expect(client.filterLogsPassedContext).To(Equal(ctx))
 	Expect(client.filterLogsPassedQuery).To(Equal(q))
+}
+
+func (client *MockEthClient) AssertBatchCalledWith(method string) {
+	Expect(client.passedMethod).To(Equal(method))
+}
+
+func (client *MockEthClient) SetBalanceAtErr(err error) {
+	client.balanceAtErr = err
+}
+
+func (client *MockEthClient) SetBalanceAt(balance *big.Int) {
+	client.passedBalance = balance
+}
+
+func (client *MockEthClient) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	client.passedbalanceAtContext = ctx
+	client.passedAddress = account
+	client.passedBlockNumber = blockNumber
+	return client.passedBalance, client.balanceAtErr
+}
+
+func (client *MockEthClient) AssertBalanceAtCalled(ctx context.Context, account common.Address, blockNumber *big.Int) {
+	Expect(client.passedbalanceAtContext).To(Equal(ctx))
+	Expect(client.passedAddress).To(Equal(account))
+	Expect(client.passedBlockNumber).To(Equal(blockNumber))
 }

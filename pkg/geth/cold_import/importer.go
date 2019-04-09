@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -67,6 +67,9 @@ func (ci *ColdImporter) createBlocksAndTransactions(hash []byte, i int64) (int64
 
 func (ci *ColdImporter) createReceiptsAndLogs(hash []byte, number int64, blockId int64) error {
 	receipts := ci.ethDB.GetBlockReceipts(hash, number)
-	coreReceipts := common.ToCoreReceipts(receipts)
+	coreReceipts, err := common.ToCoreReceipts(receipts)
+	if err != nil {
+		return err
+	}
 	return ci.receiptRepository.CreateReceiptsAndLogs(blockId, coreReceipts)
 }

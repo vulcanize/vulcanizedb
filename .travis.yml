@@ -5,21 +5,25 @@ go:
 services:
   - postgresql
 addons:
-  postgresql: "9.6"
-
+  postgresql: '9.6'
 go_import_path: github.com/vulcanize/vulcanizedb
-
 before_install:
-  # ginkgo golint dep migrate
   - make installtools
   - bash ./scripts/install-postgres-10.sh
-
+  - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  - sudo apt-get update && sudo apt-get install yarn
 before_script:
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
-
+  - cd postgraphile && yarn
 script:
+  - yarn test
+  - cd ../
   - make test
-
+  - make integrationtest
 notifications:
   email: false
+env:
+  matrix:
+    secure: GA4GiMHy868UD/C+59jRUOdJxxdLSMauNapPA31AODUMv0lcEOXg6TBJkv6Vn3OOrLHYYSpwCGiGQjF86U2vpKWzD1mSITalPfP/kNpFnrHVNf2oPpfrQs8ccs9gnFpbCNLDy0w2+55pgnrd5hvdnlsTEUS1lHWSKEZmWsSqUeS/dw22IS0+nUja0Pc3pHaWlJz2R502uEKIixjq1fOX65Z/9r1BrMqklOwWrABK0GwgYcDZwc+b3iovyDPkDa3sT/Ddz/srkcYi/Y182zdLdrknj3MVR3GiW5iSqIVm6gr427SFXF4EQVwkEBwAGoo83wRhCgCAslYTRZZ5aleb1HUtAWzuiMAd/JlAYb2jc6VJa19+rQ/5wd7Bann3hB5bY2uV+b02qFK3qWe6uqZLBSESWjFEyWJVoaXgpH0QDc0JG1R9UFxLSVa8NM3P/jgTnUgnAvdW36mTC4dg73Ha9bYdeLpuAZr6k8iTh5qp0CazKAazsdJ+ECNt6q3fkgsI/V5ZwCFfQwlauq+PiBaZsQqr7eeP19klipE3vGf6BCBRvCBdubzSgGZPIRkxOQREc24j/gzBjBNGeqoU2uOp8sXMEG5idfIyHbMU+n2Yi6IRKKPe5lwjgWEsqLkkoM2REMPIEPffRQz0f+mD48HWP0H4KjKHvubKRCE0v2ONlM4=

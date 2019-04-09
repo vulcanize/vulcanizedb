@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,35 +17,21 @@
 package datastore
 
 import (
-	"fmt"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
-
-var ErrBlockDoesNotExist = func(blockNumber int64) error {
-	return fmt.Errorf("Block number %d does not exist", blockNumber)
-}
 
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
-	SetBlocksStatus(chainHead int64)
-}
-
-var ErrContractDoesNotExist = func(contractHash string) error {
-	return fmt.Errorf("Contract %v does not exist", contractHash)
+	SetBlocksStatus(chainHead int64) error
 }
 
 type ContractRepository interface {
 	CreateContract(contract core.Contract) error
 	GetContract(contractHash string) (core.Contract, error)
-	ContractExists(contractHash string) bool
-}
-
-var ErrFilterDoesNotExist = func(name string) error {
-	return fmt.Errorf("filter %s does not exist", name)
+	ContractExists(contractHash string) (bool, error)
 }
 
 type FilterRepository interface {
@@ -55,17 +41,14 @@ type FilterRepository interface {
 
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
+	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
 	GetHeader(blockNumber int64) (core.Header, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
 }
 
 type LogRepository interface {
 	CreateLogs(logs []core.Log, receiptId int64) error
-	GetLogs(address string, blockNumber int64) []core.Log
-}
-
-var ErrReceiptDoesNotExist = func(txHash string) error {
-	return fmt.Errorf("Receipt for tx: %v does not exist", txHash)
+	GetLogs(address string, blockNumber int64) ([]core.Log, error)
 }
 
 type ReceiptRepository interface {

@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aristanetworks/glog"
 	"github.com/aristanetworks/goarista/gnmi"
+	"github.com/aristanetworks/splunk-hec-go"
 
-	"github.com/fuyufjh/splunk-hec-go"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
@@ -49,7 +50,10 @@ func main() {
 	ctx := gnmi.NewContext(context.Background(), cfg)
 	// Store the address without the port so it can be used as the host in the Splunk event.
 	addr := cfg.Addr
-	client := gnmi.Dial(cfg)
+	client, err := gnmi.Dial(cfg)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	// Splunk connection
 	urls := strings.Split(*splunkURLs, ",")
@@ -67,10 +71,14 @@ func main() {
 	// gNMI subscription
 	respChan := make(chan *pb.SubscribeResponse)
 	errChan := make(chan error)
-	defer close(respChan)
 	defer close(errChan)
 	paths := strings.Split(*subscribePaths, ",")
-	go gnmi.Subscribe(ctx, client, gnmi.SplitPaths(paths), respChan, errChan)
+	subscribeOptions := &gnmi.SubscribeOptions{
+		Mode:       "stream",
+		StreamMode: "target_defined",
+		Paths:      gnmi.SplitPaths(paths),
+	}
+	go gnmi.Subscribe(ctx, client, subscribeOptions, respChan, errChan)
 
 	// Forward subscribe responses to Splunk
 	for {

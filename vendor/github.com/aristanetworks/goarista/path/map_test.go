@@ -10,68 +10,76 @@ import (
 	"testing"
 
 	"github.com/aristanetworks/goarista/key"
-	"github.com/aristanetworks/goarista/pathmap"
 	"github.com/aristanetworks/goarista/test"
 )
 
-func accumulator(counter map[int]int) pathmap.VisitorFunc {
+func accumulator(counter map[int]int) VisitorFunc {
 	return func(val interface{}) error {
 		counter[val.(int)]++
 		return nil
 	}
 }
 
-func TestVisit(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{key.New("foo"), key.New("bar"), key.New("baz")}, 1)
-	m.Set(Path{key.New("*"), key.New("bar"), key.New("baz")}, 2)
-	m.Set(Path{key.New("*"), key.New("*"), key.New("baz")}, 3)
-	m.Set(Path{key.New("*"), key.New("*"), key.New("*")}, 4)
-	m.Set(Path{key.New("foo"), key.New("*"), key.New("*")}, 5)
-	m.Set(Path{key.New("foo"), key.New("bar"), key.New("*")}, 6)
-	m.Set(Path{key.New("foo"), key.New("*"), key.New("baz")}, 7)
-	m.Set(Path{key.New("*"), key.New("bar"), key.New("*")}, 8)
+func TestMapSet(t *testing.T) {
+	m := Map{}
+	a := m.Set(key.Path{key.New("foo")}, 0)
+	b := m.Set(key.Path{key.New("foo")}, 1)
+	if !a || b {
+		t.Fatal("Map.Set not working properly")
+	}
+}
 
-	m.Set(Path{}, 10)
+func TestMapVisit(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{key.New("foo"), key.New("bar"), key.New("baz")}, 1)
+	m.Set(key.Path{Wildcard, key.New("bar"), key.New("baz")}, 2)
+	m.Set(key.Path{Wildcard, Wildcard, key.New("baz")}, 3)
+	m.Set(key.Path{Wildcard, Wildcard, Wildcard}, 4)
+	m.Set(key.Path{key.New("foo"), Wildcard, Wildcard}, 5)
+	m.Set(key.Path{key.New("foo"), key.New("bar"), Wildcard}, 6)
+	m.Set(key.Path{key.New("foo"), Wildcard, key.New("baz")}, 7)
+	m.Set(key.Path{Wildcard, key.New("bar"), Wildcard}, 8)
 
-	m.Set(Path{key.New("*")}, 20)
-	m.Set(Path{key.New("foo")}, 21)
+	m.Set(key.Path{}, 10)
 
-	m.Set(Path{key.New("zap"), key.New("zip")}, 30)
-	m.Set(Path{key.New("zap"), key.New("zip")}, 31)
+	m.Set(key.Path{Wildcard}, 20)
+	m.Set(key.Path{key.New("foo")}, 21)
 
-	m.Set(Path{key.New("zip"), key.New("*")}, 40)
-	m.Set(Path{key.New("zip"), key.New("*")}, 41)
+	m.Set(key.Path{key.New("zap"), key.New("zip")}, 30)
+	m.Set(key.Path{key.New("zap"), key.New("zip")}, 31)
+
+	m.Set(key.Path{key.New("zip"), Wildcard}, 40)
+	m.Set(key.Path{key.New("zip"), Wildcard}, 41)
 
 	testCases := []struct {
-		path     Path
+		path     key.Path
 		expected map[int]int
 	}{{
-		path:     Path{key.New("foo"), key.New("bar"), key.New("baz")},
+		path:     key.Path{key.New("foo"), key.New("bar"), key.New("baz")},
 		expected: map[int]int{1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1},
 	}, {
-		path:     Path{key.New("qux"), key.New("bar"), key.New("baz")},
+		path:     key.Path{key.New("qux"), key.New("bar"), key.New("baz")},
 		expected: map[int]int{2: 1, 3: 1, 4: 1, 8: 1},
 	}, {
-		path:     Path{key.New("foo"), key.New("qux"), key.New("baz")},
+		path:     key.Path{key.New("foo"), key.New("qux"), key.New("baz")},
 		expected: map[int]int{3: 1, 4: 1, 5: 1, 7: 1},
 	}, {
-		path:     Path{key.New("foo"), key.New("bar"), key.New("qux")},
+		path:     key.Path{key.New("foo"), key.New("bar"), key.New("qux")},
 		expected: map[int]int{4: 1, 5: 1, 6: 1, 8: 1},
 	}, {
-		path:     Path{},
+		path:     key.Path{},
 		expected: map[int]int{10: 1},
 	}, {
-		path:     Path{key.New("foo")},
+		path:     key.Path{key.New("foo")},
 		expected: map[int]int{20: 1, 21: 1},
 	}, {
-		path:     Path{key.New("foo"), key.New("bar")},
+		path:     key.Path{key.New("foo"), key.New("bar")},
 		expected: map[int]int{},
 	}, {
-		path:     Path{key.New("zap"), key.New("zip")},
+		path:     key.Path{key.New("zap"), key.New("zip")},
 		expected: map[int]int{31: 1},
 	}, {
-		path:     Path{key.New("zip"), key.New("zap")},
+		path:     key.Path{key.New("zip"), key.New("zap")},
 		expected: map[int]int{41: 1},
 	}}
 
@@ -84,135 +92,160 @@ func TestVisit(t *testing.T) {
 	}
 }
 
-func TestVisitError(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{key.New("foo"), key.New("bar")}, 1)
-	m.Set(Path{key.New("*"), key.New("bar")}, 2)
+func TestMapVisitError(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 1)
+	m.Set(key.Path{Wildcard, key.New("bar")}, 2)
 
 	errTest := errors.New("Test")
 
-	err := m.Visit(Path{key.New("foo"), key.New("bar")},
+	err := m.Visit(key.Path{key.New("foo"), key.New("bar")},
 		func(v interface{}) error { return errTest })
 	if err != errTest {
 		t.Errorf("Unexpected error. Expected: %v, Got: %v", errTest, err)
 	}
-	err = m.VisitPrefix(Path{key.New("foo"), key.New("bar"), key.New("baz")},
+	err = m.VisitPrefixes(key.Path{key.New("foo"), key.New("bar"), key.New("baz")},
 		func(v interface{}) error { return errTest })
 	if err != errTest {
 		t.Errorf("Unexpected error. Expected: %v, Got: %v", errTest, err)
 	}
 }
 
-func TestGet(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{}, 0)
-	m.Set(Path{key.New("foo"), key.New("bar")}, 1)
-	m.Set(Path{key.New("foo"), key.New("*")}, 2)
-	m.Set(Path{key.New("*"), key.New("bar")}, 3)
-	m.Set(Path{key.New("zap"), key.New("zip")}, 4)
+func TestMapGet(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{}, 0)
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 1)
+	m.Set(key.Path{key.New("foo"), Wildcard}, 2)
+	m.Set(key.Path{Wildcard, key.New("bar")}, 3)
+	m.Set(key.Path{key.New("zap"), key.New("zip")}, 4)
+	m.Set(key.Path{key.New("baz"), key.New("qux")}, nil)
 
 	testCases := []struct {
-		path     Path
-		expected interface{}
+		path key.Path
+		v    interface{}
+		ok   bool
 	}{{
-		path:     Path{},
-		expected: 0,
+		path: key.Path{},
+		v:    0,
+		ok:   true,
 	}, {
-		path:     Path{key.New("foo"), key.New("bar")},
-		expected: 1,
+		path: key.Path{key.New("foo"), key.New("bar")},
+		v:    1,
+		ok:   true,
 	}, {
-		path:     Path{key.New("foo"), key.New("*")},
-		expected: 2,
+		path: key.Path{key.New("foo"), Wildcard},
+		v:    2,
+		ok:   true,
 	}, {
-		path:     Path{key.New("*"), key.New("bar")},
-		expected: 3,
+		path: key.Path{Wildcard, key.New("bar")},
+		v:    3,
+		ok:   true,
 	}, {
-		path:     Path{key.New("bar"), key.New("foo")},
-		expected: nil,
+		path: key.Path{key.New("baz"), key.New("qux")},
+		v:    nil,
+		ok:   true,
 	}, {
-		path:     Path{key.New("zap"), key.New("*")},
-		expected: nil,
+		path: key.Path{key.New("bar"), key.New("foo")},
+		v:    nil,
+	}, {
+		path: key.Path{key.New("zap"), Wildcard},
+		v:    nil,
 	}}
 
 	for _, tc := range testCases {
-		got := m.Get(tc.path)
-		if got != tc.expected {
-			t.Errorf("Test case %v: Expected %v, Got %v",
-				tc.path, tc.expected, got)
+		v, ok := m.Get(tc.path)
+		if v != tc.v || ok != tc.ok {
+			t.Errorf("Test case %v: Expected (v: %v, ok: %t), Got (v: %v, ok: %t)",
+				tc.path, tc.v, tc.ok, v, ok)
 		}
 	}
 }
 
-func countNodes(n *node) int {
-	if n == nil {
+func countNodes(m *Map) int {
+	if m == nil {
 		return 0
 	}
 	count := 1
-	count += countNodes(n.wildcard)
-	for _, child := range n.children {
+	count += countNodes(m.wildcard)
+	for _, child := range m.children {
 		count += countNodes(child)
 	}
 	return count
 }
 
-func TestDelete(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{}, 0)
-	m.Set(Path{key.New("*")}, 1)
-	m.Set(Path{key.New("foo"), key.New("bar")}, 2)
-	m.Set(Path{key.New("foo"), key.New("*")}, 3)
+func TestMapDelete(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{}, 0)
+	m.Set(key.Path{Wildcard}, 1)
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 2)
+	m.Set(key.Path{key.New("foo"), Wildcard}, 3)
+	m.Set(key.Path{key.New("foo")}, 4)
 
-	n := countNodes(m.(*node))
+	n := countNodes(&m)
 	if n != 5 {
 		t.Errorf("Initial count wrong. Expected: 5, Got: %d", n)
 	}
 
 	testCases := []struct {
-		del      Path        // Path to delete
+		del      key.Path    // key.Path to delete
 		expected bool        // expected return value of Delete
-		visit    Path        // Path to Visit
+		visit    key.Path    // key.Path to Visit
 		before   map[int]int // Expected to find items before deletion
 		after    map[int]int // Expected to find items after deletion
 		count    int         // Count of nodes
 	}{{
-		del:      Path{key.New("zap")}, // A no-op Delete
+		del:      key.Path{key.New("zap")}, // A no-op Delete
 		expected: false,
-		visit:    Path{key.New("foo"), key.New("bar")},
+		visit:    key.Path{key.New("foo"), key.New("bar")},
 		before:   map[int]int{2: 1, 3: 1},
 		after:    map[int]int{2: 1, 3: 1},
 		count:    5,
 	}, {
-		del:      Path{key.New("foo"), key.New("bar")},
+		del:      key.Path{key.New("foo"), key.New("bar")},
 		expected: true,
-		visit:    Path{key.New("foo"), key.New("bar")},
+		visit:    key.Path{key.New("foo"), key.New("bar")},
 		before:   map[int]int{2: 1, 3: 1},
 		after:    map[int]int{3: 1},
 		count:    4,
 	}, {
-		del:      Path{key.New("*")},
+		del:      key.Path{key.New("foo")},
 		expected: true,
-		visit:    Path{key.New("foo")},
+		visit:    key.Path{key.New("foo")},
+		before:   map[int]int{1: 1, 4: 1},
+		after:    map[int]int{1: 1},
+		count:    4,
+	}, {
+		del:      key.Path{key.New("foo")},
+		expected: false,
+		visit:    key.Path{key.New("foo")},
+		before:   map[int]int{1: 1},
+		after:    map[int]int{1: 1},
+		count:    4,
+	}, {
+		del:      key.Path{Wildcard},
+		expected: true,
+		visit:    key.Path{key.New("foo")},
 		before:   map[int]int{1: 1},
 		after:    map[int]int{},
 		count:    3,
 	}, {
-		del:      Path{key.New("*")},
+		del:      key.Path{Wildcard},
 		expected: false,
-		visit:    Path{key.New("foo")},
+		visit:    key.Path{key.New("foo")},
 		before:   map[int]int{},
 		after:    map[int]int{},
 		count:    3,
 	}, {
-		del:      Path{key.New("foo"), key.New("*")},
+		del:      key.Path{key.New("foo"), Wildcard},
 		expected: true,
-		visit:    Path{key.New("foo"), key.New("bar")},
+		visit:    key.Path{key.New("foo"), key.New("bar")},
 		before:   map[int]int{3: 1},
 		after:    map[int]int{},
 		count:    1, // Should have deleted "foo" and "bar" nodes
 	}, {
-		del:      Path{},
+		del:      key.Path{},
 		expected: true,
-		visit:    Path{},
+		visit:    key.Path{},
 		before:   map[int]int{0: 1},
 		after:    map[int]int{},
 		count:    1, // Root node can't be deleted
@@ -238,53 +271,102 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestVisitPrefix(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{}, 0)
-	m.Set(Path{key.New("foo")}, 1)
-	m.Set(Path{key.New("foo"), key.New("bar")}, 2)
-	m.Set(Path{key.New("foo"), key.New("bar"), key.New("baz")}, 3)
-	m.Set(Path{key.New("foo"), key.New("bar"), key.New("baz"), key.New("quux")}, 4)
-	m.Set(Path{key.New("quux"), key.New("bar")}, 5)
-	m.Set(Path{key.New("foo"), key.New("quux")}, 6)
-	m.Set(Path{key.New("*")}, 7)
-	m.Set(Path{key.New("foo"), key.New("*")}, 8)
-	m.Set(Path{key.New("*"), key.New("bar")}, 9)
-	m.Set(Path{key.New("*"), key.New("quux")}, 10)
-	m.Set(Path{key.New("quux"), key.New("quux"), key.New("quux"), key.New("quux")}, 11)
+func TestMapVisitPrefixes(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{}, 0)
+	m.Set(key.Path{key.New("foo")}, 1)
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 2)
+	m.Set(key.Path{key.New("foo"), key.New("bar"), key.New("baz")}, 3)
+	m.Set(key.Path{key.New("foo"), key.New("bar"), key.New("baz"), key.New("quux")}, 4)
+	m.Set(key.Path{key.New("quux"), key.New("bar")}, 5)
+	m.Set(key.Path{key.New("foo"), key.New("quux")}, 6)
+	m.Set(key.Path{Wildcard}, 7)
+	m.Set(key.Path{key.New("foo"), Wildcard}, 8)
+	m.Set(key.Path{Wildcard, key.New("bar")}, 9)
+	m.Set(key.Path{Wildcard, key.New("quux")}, 10)
+	m.Set(key.Path{key.New("quux"), key.New("quux"), key.New("quux"), key.New("quux")}, 11)
 
 	testCases := []struct {
-		path     Path
+		path     key.Path
 		expected map[int]int
 	}{{
-		path:     Path{key.New("foo"), key.New("bar"), key.New("baz")},
+		path:     key.Path{key.New("foo"), key.New("bar"), key.New("baz")},
 		expected: map[int]int{0: 1, 1: 1, 2: 1, 3: 1, 7: 1, 8: 1, 9: 1},
 	}, {
-		path:     Path{key.New("zip"), key.New("zap")},
+		path:     key.Path{key.New("zip"), key.New("zap")},
 		expected: map[int]int{0: 1, 7: 1},
 	}, {
-		path:     Path{key.New("foo"), key.New("zap")},
+		path:     key.Path{key.New("foo"), key.New("zap")},
 		expected: map[int]int{0: 1, 1: 1, 8: 1, 7: 1},
 	}, {
-		path:     Path{key.New("quux"), key.New("quux"), key.New("quux")},
+		path:     key.Path{key.New("quux"), key.New("quux"), key.New("quux")},
 		expected: map[int]int{0: 1, 7: 1, 10: 1},
 	}}
 
 	for _, tc := range testCases {
 		result := make(map[int]int, len(tc.expected))
-		m.VisitPrefix(tc.path, accumulator(result))
+		m.VisitPrefixes(tc.path, accumulator(result))
 		if diff := test.Diff(tc.expected, result); diff != "" {
 			t.Errorf("Test case %v: %s", tc.path, diff)
 		}
 	}
 }
 
-func TestString(t *testing.T) {
-	m := NewMap()
-	m.Set(Path{}, 0)
-	m.Set(Path{key.New("foo"), key.New("bar")}, 1)
-	m.Set(Path{key.New("foo"), key.New("quux")}, 2)
-	m.Set(Path{key.New("foo"), key.New("*")}, 3)
+func TestMapVisitPrefixed(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{}, 0)
+	m.Set(key.Path{key.New("qux")}, 1)
+	m.Set(key.Path{key.New("foo")}, 2)
+	m.Set(key.Path{key.New("foo"), key.New("qux")}, 3)
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 4)
+	m.Set(key.Path{Wildcard, key.New("bar")}, 5)
+	m.Set(key.Path{key.New("foo"), Wildcard}, 6)
+	m.Set(key.Path{key.New("qux"), key.New("foo"), key.New("bar")}, 7)
+
+	testCases := []struct {
+		in  key.Path
+		out map[int]int
+	}{{
+		in:  key.Path{},
+		out: map[int]int{0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1},
+	}, {
+		in:  key.Path{key.New("qux")},
+		out: map[int]int{1: 1, 5: 1, 7: 1},
+	}, {
+		in:  key.Path{key.New("foo")},
+		out: map[int]int{2: 1, 3: 1, 4: 1, 5: 1, 6: 1},
+	}, {
+		in:  key.Path{key.New("foo"), key.New("qux")},
+		out: map[int]int{3: 1, 6: 1},
+	}, {
+		in:  key.Path{key.New("foo"), key.New("bar")},
+		out: map[int]int{4: 1, 5: 1, 6: 1},
+	}, {
+		in:  key.Path{key.New(int64(0))},
+		out: map[int]int{5: 1},
+	}, {
+		in:  key.Path{Wildcard},
+		out: map[int]int{5: 1},
+	}, {
+		in:  key.Path{Wildcard, Wildcard},
+		out: map[int]int{},
+	}}
+
+	for _, tc := range testCases {
+		out := make(map[int]int, len(tc.out))
+		m.VisitPrefixed(tc.in, accumulator(out))
+		if diff := test.Diff(tc.out, out); diff != "" {
+			t.Errorf("Test case %v: %s", tc.out, diff)
+		}
+	}
+}
+
+func TestMapString(t *testing.T) {
+	m := Map{}
+	m.Set(key.Path{}, 0)
+	m.Set(key.Path{key.New("foo"), key.New("bar")}, 1)
+	m.Set(key.Path{key.New("foo"), key.New("quux")}, 2)
+	m.Set(key.Path{key.New("foo"), Wildcard}, 3)
 
 	expected := `Val: 0
 Child "foo":
@@ -295,19 +377,19 @@ Child "foo":
   Child "quux":
     Val: 2
 `
-	got := fmt.Sprint(m)
+	got := fmt.Sprint(&m)
 
 	if expected != got {
 		t.Errorf("Unexpected string. Expected:\n\n%s\n\nGot:\n\n%s", expected, got)
 	}
 }
 
-func genWords(count, wordLength int) Path {
+func genWords(count, wordLength int) key.Path {
 	chars := []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	if count+wordLength > len(chars) {
 		panic("need more chars")
 	}
-	result := make(Path, count)
+	result := make(key.Path, count)
 	for i := 0; i < count; i++ {
 		result[i] = key.New(string(chars[i : i+wordLength]))
 	}
@@ -315,18 +397,16 @@ func genWords(count, wordLength int) Path {
 }
 
 func benchmarkPathMap(pathLength, pathDepth int, b *testing.B) {
-	m := NewMap()
-
 	// Push pathDepth paths, each of length pathLength
 	path := genWords(pathLength, 10)
 	words := genWords(pathDepth, 10)
-	n := m.(*node)
+	m := &Map{}
 	for _, element := range path {
-		n.children = map[key.Key]*node{}
+		m.children = map[key.Key]*Map{}
 		for _, word := range words {
-			n.children[word] = &node{}
+			m.children[word] = &Map{}
 		}
-		n = n.children[element]
+		m = m.children[element]
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

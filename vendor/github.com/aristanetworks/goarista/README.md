@@ -25,19 +25,20 @@ class of service flags to use for incoming connections. Requires `go1.9`.
 
 ## key
 
-Provides a common type used across various Arista projects, named `key.Key`,
-which is used to work around the fact that Go can't let one
-use a non-hashable type as a key to a `map`, and we sometimes need to use
-a `map[string]interface{}` (or something containing one) as a key to maps.
-As a result, we frequently use `map[key.Key]interface{}` instead of just
-`map[interface{}]interface{}` when we need a generic key-value collection.
+Provides common types used across various Arista projects. The type `key.Key`
+is used to work around the fact that Go can't let one use a non-hashable type
+as a key to a `map`, and we sometimes need to use a `map[string]interface{}`
+(or something containing one) as a key to maps. As a result, we frequently use
+`map[key.Key]interface{}` instead of just `map[interface{}]interface{}` when we
+need a generic key-value collection. The type `key.Path` is the representation
+of a path broken down into individual elements, where each element is a `key.Key`.
+The type `key.Pointer` represents a pointer to a `key.Path`.
 
 ## path
 
-Provides a common type used across various Arista projects, named `path.Path`,
-which is the representation of a path broken down into individual elements.
-Each element is a `key.Key`. The type `path.Map` may be used for mapping paths
-to values. It allows for some fuzzy matching.
+Provides functions that can be used to manipulate `key.Path` objects. The type
+`path.Map` may be used for mapping paths to values. It allows for some fuzzy
+matching for paths containing `path.Wildcard` keys.
 
 ## lanz
 A client for [LANZ](https://eos.arista.com/latency-analyzer-lanz-architectures-and-configuration/)
@@ -55,9 +56,10 @@ A library to help expose monitoring metrics on top of the
 `netns.Do(namespace, cb)` provides a handy mechanism to execute the given
 callback `cb` in the given [network namespace](https://lwn.net/Articles/580893/).
 
-## pathmap
+## influxlib
 
-DEPRECATED; use`path.Map` instead.
+This is a influxdb library that provides easy methods of connecting to, writing to,
+and reading from the service.
 
 ## test
 

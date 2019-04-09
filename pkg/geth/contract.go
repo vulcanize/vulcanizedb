@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,11 @@ func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, 
 	if err != nil {
 		return err
 	}
-	output, err := blockChain.callContract(address, input, big.NewInt(blockNumber))
+	var bn *big.Int
+	if blockNumber > 0 {
+		bn = big.NewInt(blockNumber)
+	}
+	output, err := blockChain.callContract(address, input, bn)
 	if err != nil {
 		return err
 	}

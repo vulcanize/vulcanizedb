@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 package history
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
@@ -35,9 +36,17 @@ func NewHeaderValidator(blockChain core.BlockChain, repository datastore.HeaderR
 	}
 }
 
-func (validator HeaderValidator) ValidateHeaders() ValidationWindow {
-	window := MakeValidationWindow(validator.blockChain, validator.windowSize)
+func (validator HeaderValidator) ValidateHeaders() (ValidationWindow, error) {
+	window, err := MakeValidationWindow(validator.blockChain, validator.windowSize)
+	if err != nil {
+		logrus.Error("ValidateHeaders: error creating validation window: ", err)
+		return ValidationWindow{}, err
+	}
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
-	RetrieveAndUpdateHeaders(validator.blockChain, validator.headerRepository, blockNumbers)
-	return window
+	_, err = RetrieveAndUpdateHeaders(validator.blockChain, validator.headerRepository, blockNumbers)
+	if err != nil {
+		logrus.Error("ValidateHeaders: error getting/updating headers: ", err)
+		return ValidationWindow{}, err
+	}
+	return window, nil
 }

@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -16,14 +16,31 @@
 
 package core
 
-type Transaction struct {
-	Hash     string `db:"hash"`
-	Data     string `db:"input_data"`
-	Nonce    uint64 `db:"nonce"`
-	To       string `db:"tx_to"`
+type TransactionModel struct {
+	Data     []byte `db:"input_data"`
 	From     string `db:"tx_from"`
-	GasLimit uint64 `db:"gaslimit"`
-	GasPrice int64  `db:"gasprice"`
+	GasLimit uint64 `db:"gas_limit"`
+	GasPrice int64  `db:"gas_price"`
+	Hash     string
+	Nonce    uint64
+	Raw      []byte `db:"raw"`
 	Receipt
-	Value string `db:"value"`
+	To      string `db:"tx_to"`
+	TxIndex int64  `db:"tx_index"`
+	Value   string
+}
+
+type RpcTransaction struct {
+	Nonce            string `json:"nonce"`
+	GasPrice         string `json:"gasPrice"`
+	GasLimit         string `json:"gas"`
+	Recipient        string `json:"to"`
+	Amount           string `json:"value"`
+	Payload          string `json:"input"`
+	V                string `json:"v"`
+	R                string `json:"r"`
+	S                string `json:"s"`
+	Hash             string
+	From             string
+	TransactionIndex string `json:"transactionIndex"`
 }

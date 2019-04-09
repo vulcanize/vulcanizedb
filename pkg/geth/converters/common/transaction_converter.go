@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -22,5 +22,6 @@ import (
 )
 
 type TransactionConverter interface {
-	ConvertTransactionsToCore(gethBlock *types.Block) ([]core.Transaction, error)
+	ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error)
+	ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error)
 }

@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,7 +17,7 @@
 package history
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
@@ -25,23 +25,32 @@ import (
 )
 
 func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
-	lastBlock := blockchain.LastBlock().Int64()
-	blockRange := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock, blockchain.Node().ID)
-	log.SetPrefix("")
-	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
-	_, err := RetrieveAndUpdateHeaders(blockchain, headerRepository, blockRange)
+	lastBlock, err := blockchain.LastBlock()
 	if err != nil {
+		log.Error("PopulateMissingHeaders: Error getting last block: ", err)
 		return 0, err
 	}
-	return len(blockRange), nil
+
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockchain.Node().ID)
+	if err != nil {
+		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
+		return 0, err
+	} else if len(blockNumbers) == 0 {
+		return 0, nil
+	}
+
+	log.Printf("Backfilling %d blocks\n\n", len(blockNumbers))
+	_, err = RetrieveAndUpdateHeaders(blockchain, headerRepository, blockNumbers)
+	if err != nil {
+		log.Error("PopulateMissingHeaders: Error getting/updating headers:", err)
+		return 0, err
+	}
+	return len(blockNumbers), nil
 }
 
 func RetrieveAndUpdateHeaders(chain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
-	for _, blockNumber := range blockNumbers {
-		header, err := chain.GetHeaderByNumber(blockNumber)
-		if err != nil {
-			return 0, err
-		}
+	headers, err := chain.GetHeaderByNumbers(blockNumbers)
+	for _, header := range headers {
 		_, err = headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {
 			if err == repositories.ErrValidHeaderExists {

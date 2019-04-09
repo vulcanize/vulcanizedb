@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,12 +17,13 @@
 package history_test
 
 import (
+	"math/big"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"math/big"
 )
 
 var _ = Describe("Blocks validator", func() {
@@ -33,7 +34,8 @@ var _ = Describe("Blocks validator", func() {
 		blocksRepository := fakes.NewMockBlockRepository()
 		validator := history.NewBlockValidator(blockChain, blocksRepository, 2)
 
-		window := validator.ValidateBlocks()
+		window, err := validator.ValidateBlocks()
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(window).To(Equal(history.ValidationWindow{LowerBound: 5, UpperBound: 7}))
 		blocksRepository.AssertCreateOrUpdateBlockCallCountEquals(3)
@@ -42,7 +44,7 @@ var _ = Describe("Blocks validator", func() {
 	It("returns the number of largest block", func() {
 		blockChain := fakes.NewMockBlockChain()
 		blockChain.SetLastBlock(big.NewInt(3))
-		maxBlockNumber := blockChain.LastBlock()
+		maxBlockNumber, _ := blockChain.LastBlock()
 
 		Expect(maxBlockNumber.Int64()).To(Equal(int64(3)))
 	})

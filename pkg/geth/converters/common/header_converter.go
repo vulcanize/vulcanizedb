@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -20,13 +20,12 @@ import (
 	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type HeaderConverter struct{}
 
-func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) (core.Header, error) {
+func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash string) core.Header {
 	rawHeader, err := json.Marshal(gethHeader)
 	if err != nil {
 		panic(err)
@@ -37,5 +36,5 @@ func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash str
 		Raw:         rawHeader,
 		Timestamp:   gethHeader.Time.String(),
 	}
-	return coreHeader, nil
+	return coreHeader
 }

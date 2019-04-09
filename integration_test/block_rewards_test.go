@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -42,7 +42,7 @@ var _ = Describe("Rewards calculations", func() {
 		blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(block.Reward).To(Equal(5.31355))
+		Expect(block.Reward).To(Equal("5313550000000000000"))
 	})
 
 	It("calculates an uncle reward for a real block", func() {
@@ -56,7 +56,7 @@ var _ = Describe("Rewards calculations", func() {
 		blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(block.UnclesReward).To(Equal(6.875))
+		Expect(block.UnclesReward).To(Equal("6875000000000000000"))
 	})
 
 })

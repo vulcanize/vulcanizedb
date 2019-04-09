@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -19,15 +19,17 @@ package repositories_test
 import (
 	"database/sql"
 	"encoding/json"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/big"
 )
 
 var _ = Describe("Block header repository", func() {
@@ -35,29 +37,30 @@ var _ = Describe("Block header repository", func() {
 		rawHeader []byte
 		err       error
 		timestamp string
+		db        *postgres.DB
+		repo      repositories.HeaderRepository
+		header    core.Header
 	)
 
 	BeforeEach(func() {
 		rawHeader, err = json.Marshal(types.Header{})
 		Expect(err).NotTo(HaveOccurred())
 		timestamp = big.NewInt(123456789).String()
+
+		db = test_config.NewTestDB(test_config.NewTestNode())
+		test_config.CleanTestDB(db)
+		repo = repositories.NewHeaderRepository(db)
+		header = core.Header{
+			BlockNumber: 100,
+			Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
+			Raw:         rawHeader,
+			Timestamp:   timestamp,
+		}
 	})
 
 	Describe("creating or updating a header", func() {
 		It("adds a header", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-
-			_, err := repo.CreateOrUpdateHeader(header)
-
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			var dbHeader core.Header
 			err = db.Get(&dbHeader, `SELECT block_number, hash, raw, block_timestamp FROM public.headers WHERE block_number = $1`, header.BlockNumber)
@@ -69,18 +72,7 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("adds node data to header", func() {
-			node := core.Node{ID: "EthNodeFingerprint"}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-
-			_, err := repo.CreateOrUpdateHeader(header)
-
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			var ethNodeId int64
 			err = db.Get(&ethNodeId, `SELECT eth_node_id FROM public.headers WHERE block_number = $1`, header.BlockNumber)
@@ -93,18 +85,7 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("returns valid header exists error if attempting duplicate headers", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.CreateOrUpdateHeader(header)
@@ -118,18 +99,9 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("replaces header if hash is different", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
+
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
@@ -148,20 +120,12 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("does not replace header if node fingerprint is different", func() {
-			node := core.Node{ID: "Fingerprint"}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())
+
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
@@ -180,19 +144,13 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("only replaces header with matching node fingerprint", func() {
-			node := core.Node{ID: "Fingerprint"}
-			db := test_config.NewTestDB(node)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+
 			nodeTwo := core.Node{ID: "FingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())
+
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
@@ -222,43 +180,233 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
+	Describe("creating a receipt", func() {
+		It("adds a receipt in a tx", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+			tx, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId, txErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			Expect(txErr).ToNot(HaveOccurred())
+
+			contractAddr := common.HexToAddress("0x1234")
+			stateRoot := common.HexToHash("0x5678")
+			receipt := core.Receipt{
+				ContractAddress:   contractAddr.Hex(),
+				TxHash:            txHash.Hex(),
+				GasUsed:           10,
+				CumulativeGasUsed: 100,
+				StateRoot:         stateRoot.Hex(),
+				Rlp:               []byte{1, 2, 3},
+			}
+
+			_, receiptErr := repo.CreateReceiptInTx(tx, headerID, txId, receipt)
+			commitErr := tx.Commit()
+			Expect(commitErr).ToNot(HaveOccurred())
+			Expect(receiptErr).ToNot(HaveOccurred())
+
+			type idModel struct {
+				TransactionId int64 `db:"transaction_id"`
+				core.Receipt
+			}
+			var dbReceipt idModel
+			err = db.Get(&dbReceipt,
+				`SELECT transaction_id, contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
+				FROM public.light_sync_receipts WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbReceipt.TransactionId).To(Equal(txId))
+			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
+			Expect(dbReceipt.ContractAddress).To(Equal(contractAddr.Hex()))
+			Expect(dbReceipt.CumulativeGasUsed).To(Equal(uint64(100)))
+			Expect(dbReceipt.GasUsed).To(Equal(uint64(10)))
+			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
+			Expect(dbReceipt.Rlp).To(Equal([]byte{1, 2, 3}))
+		})
+	})
+
+	Describe("creating a transaction", func() {
+		var (
+			headerID     int64
+			transactions []core.TransactionModel
+		)
+
+		BeforeEach(func() {
+			var err error
+			headerID, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txHashTwo := common.HexToHash("0x5432")
+			txIndex := big.NewInt(123)
+			transactions = []core.TransactionModel{{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+				Receipt:  core.Receipt{},
+			}, {
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 1,
+				GasPrice: 1,
+				Hash:     txHashTwo.Hex(),
+				Nonce:    1,
+				Raw:      []byte{},
+				To:       toAddress.Hex(),
+				TxIndex:  1,
+				Value:    "1",
+			}}
+
+			insertErr := repo.CreateTransactions(headerID, transactions)
+			Expect(insertErr).NotTo(HaveOccurred())
+		})
+
+		It("adds transactions", func() {
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTransactions).To(ConsistOf(transactions))
+		})
+
+		It("silently ignores duplicate inserts", func() {
+			insertTwoErr := repo.CreateTransactions(headerID, transactions)
+			Expect(insertTwoErr).NotTo(HaveOccurred())
+
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbTransactions)).To(Equal(2))
+		})
+	})
+
+	Describe("creating a transaction in a sqlx tx", func() {
+		It("adds a transaction", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{1, 2, 3},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+
+			tx, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			_, insertErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			commitErr := tx.Commit()
+			Expect(commitErr).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			var dbTransaction core.TransactionModel
+			err = db.Get(&dbTransaction,
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dbTransaction).To(Equal(transaction))
+		})
+
+		It("silently upserts", func() {
+			headerID, err := repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+			fromAddress := common.HexToAddress("0x1234")
+			toAddress := common.HexToAddress("0x5678")
+			txHash := common.HexToHash("0x9876")
+			txIndex := big.NewInt(123)
+			transaction := core.TransactionModel{
+				Data:     []byte{},
+				From:     fromAddress.Hex(),
+				GasLimit: 0,
+				GasPrice: 0,
+				Hash:     txHash.Hex(),
+				Nonce:    0,
+				Raw:      []byte{},
+				Receipt:  core.Receipt{},
+				To:       toAddress.Hex(),
+				TxIndex:  txIndex.Int64(),
+				Value:    "0",
+			}
+
+			tx1, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId1, insertErr := repo.CreateTransactionInTx(tx1, headerID, transaction)
+			commit1Err := tx1.Commit()
+			Expect(commit1Err).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			tx2, err := db.Beginx()
+			Expect(err).ToNot(HaveOccurred())
+			txId2, insertErr := repo.CreateTransactionInTx(tx2, headerID, transaction)
+			commit2Err := tx2.Commit()
+			Expect(commit2Err).ToNot(HaveOccurred())
+			Expect(insertErr).NotTo(HaveOccurred())
+			Expect(txId1).To(Equal(txId2))
+
+			var dbTransactions []core.TransactionModel
+			err = db.Select(&dbTransactions,
+				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
+				FROM public.light_sync_transactions WHERE header_id = $1`, headerID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbTransactions)).To(Equal(1))
+		})
+	})
+
 	Describe("Getting a header", func() {
 		It("returns header if it exists", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
 			dbHeader, err := repo.GetHeader(header.BlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(dbHeader.Id).NotTo(BeZero())
 			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
 			Expect(dbHeader.Hash).To(Equal(header.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
+			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
 		It("does not return header for a different node fingerprint", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			header := core.Header{
-				BlockNumber: 100,
-				Hash:        common.BytesToHash(rawHeader).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err := repo.CreateOrUpdateHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
-			nodeTwo := core.Node{ID: "NodeFingerprintTwo"}
+
+			nodeTwo := core.Node{ID: "FingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
@@ -272,57 +420,62 @@ var _ = Describe("Block header repository", func() {
 
 	Describe("Getting missing headers", func() {
 		It("returns block numbers for headers not in the database", func() {
-			node := core.Node{}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			repo.CreateOrUpdateHeader(core.Header{
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			repo.CreateOrUpdateHeader(core.Header{
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			repo.CreateOrUpdateHeader(core.Header{
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
+			Expect(err).NotTo(HaveOccurred())
 
-			missingBlockNumbers := repo.MissingBlockNumbers(1, 5, node.ID)
+			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5, db.Node.ID)
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
 		})
 
 		It("does not count headers created by a different node fingerprint", func() {
-			node := core.Node{ID: "NodeFingerprint"}
-			db := test_config.NewTestDB(node)
-			test_config.CleanTestDB(db)
-			repo := repositories.NewHeaderRepository(db)
-			repo.CreateOrUpdateHeader(core.Header{
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			repo.CreateOrUpdateHeader(core.Header{
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			repo.CreateOrUpdateHeader(core.Header{
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			nodeTwo := core.Node{ID: "NodeFingerprintTwo"}
+			Expect(err).NotTo(HaveOccurred())
+
+			nodeTwo := core.Node{ID: "FingerprintTwo"}
 			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
 			Expect(err).NotTo(HaveOccurred())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
-			missingBlockNumbers := repoTwo.MissingBlockNumbers(1, 5, nodeTwo.ID)
+			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5, nodeTwo.ID)
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{1, 2, 3, 4, 5}))
 		})

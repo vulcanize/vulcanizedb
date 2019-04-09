@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,10 +17,9 @@
 package cmd
 
 import (
-	"log"
-	"os"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -37,12 +36,16 @@ var lightSyncCmd = &cobra.Command{
 	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
 Postgres with block headers.
+
 ./vulcanizedb lightSync --starting-block-number 0 --config public.toml
+
 Expects ethereum node to be running and requires a .toml config:
+
   [database]
   name = "vulcanize_public"
   hostname = "localhost"
   port = 5432
+
   [client]
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
@@ -59,7 +62,9 @@ func init() {
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 	if err != nil {
-		log.Fatal("Error populating headers: ", err)
+		// TODO Lots of possible errors in the call stack above. If errors occur, we still put
+		// 0 in the channel, triggering another round
+		log.Error("backfillAllHeaders: Error populating headers: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -79,20 +84,29 @@ func lightSync() {
 	for {
 		select {
 		case <-ticker.C:
-			window := validator.ValidateHeaders()
-			window.Log(os.Stdout)
-		case <-missingBlocksPopulated:
+			window, err := validator.ValidateHeaders()
+			if err != nil {
+				log.Error("lightSync: ValidateHeaders failed: ", err)
+			}
+			log.Info(window.GetString())
+		case n := <-missingBlocksPopulated:
+			if n == 0 {
+				time.Sleep(3 * time.Second)
+			}
 			go backFillAllHeaders(blockChain, headerRepository, missingBlocksPopulated, startingBlockNumber)
 		}
 	}
 }
 
 func validateArgs(blockChain *geth.BlockChain) {
-	lastBlock := blockChain.LastBlock().Int64()
-	if lastBlock == 0 {
+	lastBlock, err := blockChain.LastBlock()
+	if err != nil {
+		log.Error("validateArgs: Error getting last block: ", err)
+	}
+	if lastBlock.Int64() == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
-	if startingBlockNumber > lastBlock {
+	if startingBlockNumber > lastBlock.Int64() {
 		log.Fatal("starting block number > current block number")
 	}
 }

@@ -1,5 +1,5 @@
 // VulcanizeDB
-// Copyright © 2018 Vulcanize
+// Copyright © 2019 Vulcanize
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,7 +18,6 @@ package cold_db
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"golang.org/x/sync/errgroup"
@@ -31,9 +30,9 @@ func NewColdDbTransactionConverter() *ColdDbTransactionConverter {
 	return &ColdDbTransactionConverter{}
 }
 
-func (cdtc *ColdDbTransactionConverter) ConvertTransactionsToCore(gethBlock *types.Block) ([]core.Transaction, error) {
+func (cdtc *ColdDbTransactionConverter) ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error) {
 	var g errgroup.Group
-	coreTransactions := make([]core.Transaction, len(gethBlock.Transactions()))
+	coreTransactions := make([]core.TransactionModel, len(gethBlock.Transactions()))
 
 	for gethTransactionIndex, gethTransaction := range gethBlock.Transactions() {
 		transaction := gethTransaction
@@ -55,6 +54,10 @@ func (cdtc *ColdDbTransactionConverter) ConvertTransactionsToCore(gethBlock *typ
 	return coreTransactions, nil
 }
 
+func (cdtc *ColdDbTransactionConverter) ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error) {
+	panic("converting transaction indexes to integer not supported for cold import")
+}
+
 func getSigner(tx *types.Transaction) types.Signer {
 	v, _, _ := tx.RawSignatureValues()
 	if v.Sign() != 0 && tx.Protected() {
@@ -63,9 +66,8 @@ func getSigner(tx *types.Transaction) types.Signer {
 	return types.HomesteadSigner{}
 }
 
-func transToCoreTrans(transaction *types.Transaction, from *common.Address) core.Transaction {
-	data := hexutil.Encode(transaction.Data())
-	return core.Transaction{
+func transToCoreTrans(transaction *types.Transaction, from *common.Address) core.TransactionModel {
+	return core.TransactionModel{
 		Hash:     transaction.Hash().Hex(),
 		Nonce:    transaction.Nonce(),
 		To:       strings.ToLower(addressToHex(transaction.To())),
@@ -73,7 +75,7 @@ func transToCoreTrans(transaction *types.Transaction, from *common.Address) core
 		GasLimit: transaction.Gas(),
 		GasPrice: transaction.GasPrice().Int64(),
 		Value:    transaction.Value().String(),
-		Data:     data,
+		Data:     transaction.Data(),
 	}
 }
 

@@ -17,17 +17,26 @@
 package simulation
 
 import (
+	"bytes"
+	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/simulations"
 	"github.com/ethereum/go-ethereum/p2p/simulations/adapters"
+	"github.com/ethereum/go-ethereum/swarm/network"
+)
+
+var (
+	BucketKeyBzzPrivateKey BucketKey = "bzzprivkey"
 )
 
 // NodeIDs returns NodeIDs for all nodes in the network.
@@ -44,7 +53,7 @@ func (s *Simulation) NodeIDs() (ids []enode.ID) {
 func (s *Simulation) UpNodeIDs() (ids []enode.ID) {
 	nodes := s.Net.GetNodes()
 	for _, node := range nodes {
-		if node.Up {
+		if node.Up() {
 			ids = append(ids, node.ID())
 		}
 	}
@@ -55,7 +64,7 @@ func (s *Simulation) UpNodeIDs() (ids []enode.ID) {
 func (s *Simulation) DownNodeIDs() (ids []enode.ID) {
 	nodes := s.Net.GetNodes()
 	for _, node := range nodes {
-		if !node.Up {
+		if !node.Up() {
 			ids = append(ids, node.ID())
 		}
 	}
@@ -96,10 +105,32 @@ func (s *Simulation) AddNode(opts ...AddNodeOption) (id enode.ID, err error) {
 	if len(conf.Services) == 0 {
 		conf.Services = s.serviceNames
 	}
+
+	// add ENR records to the underlying node
+	// most importantly the bzz overlay address
+	//
+	// for now we have no way of setting bootnodes or lightnodes in sims
+	// so we just let them be set to false
+	// they should perhaps be possible to override them with AddNodeOption
+	bzzPrivateKey, err := BzzPrivateKeyFromConfig(conf)
+	if err != nil {
+		return enode.ID{}, err
+	}
+
+	enodeParams := &network.EnodeParams{
+		PrivateKey: bzzPrivateKey,
+	}
+	record, err := network.NewEnodeRecord(enodeParams)
+	conf.Record = *record
+
+	// Add the bzz address to the node config
 	node, err := s.Net.NewNodeWithConfig(conf)
 	if err != nil {
 		return id, err
 	}
+	s.buckets[node.ID()] = new(sync.Map)
+	s.SetNodeItem(node.ID(), BucketKeyBzzPrivateKey, bzzPrivateKey)
+
 	return node.ID(), s.Net.Start(node.ID())
 }
 
@@ -127,7 +158,7 @@ func (s *Simulation) AddNodesAndConnectFull(count int, opts ...AddNodeOption) (i
 	if err != nil {
 		return nil, err
 	}
-	err = s.ConnectNodesFull(ids)
+	err = s.Net.ConnectNodesFull(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +176,7 @@ func (s *Simulation) AddNodesAndConnectChain(count int, opts ...AddNodeOption) (
 	if err != nil {
 		return nil, err
 	}
-	err = s.ConnectToLastNode(id)
+	err = s.Net.ConnectToLastNode(id)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +185,7 @@ func (s *Simulation) AddNodesAndConnectChain(count int, opts ...AddNodeOption) (
 		return nil, err
 	}
 	ids = append([]enode.ID{id}, ids...)
-	err = s.ConnectNodesChain(ids)
+	err = s.Net.ConnectNodesChain(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +202,7 @@ func (s *Simulation) AddNodesAndConnectRing(count int, opts ...AddNodeOption) (i
 	if err != nil {
 		return nil, err
 	}
-	err = s.ConnectNodesRing(ids)
+	err = s.Net.ConnectNodesRing(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -188,76 +219,46 @@ func (s *Simulation) AddNodesAndConnectStar(count int, opts ...AddNodeOption) (i
 	if err != nil {
 		return nil, err
 	}
-	err = s.ConnectNodesStar(ids[0], ids[1:])
+	err = s.Net.ConnectNodesStar(ids[1:], ids[0])
 	if err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
-//UploadSnapshot uploads a snapshot to the simulation
-//This method tries to open the json file provided, applies the config to all nodes
-//and then loads the snapshot into the Simulation network
-func (s *Simulation) UploadSnapshot(snapshotFile string, opts ...AddNodeOption) error {
+// UploadSnapshot uploads a snapshot to the simulation
+// This method tries to open the json file provided, applies the config to all nodes
+// and then loads the snapshot into the Simulation network
+func (s *Simulation) UploadSnapshot(ctx context.Context, snapshotFile string, opts ...AddNodeOption) error {
 	f, err := os.Open(snapshotFile)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			log.Error("Error closing snapshot file", "err", err)
-		}
-	}()
+	defer f.Close()
+
 	jsonbyte, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
 	var snap simulations.Snapshot
-	err = json.Unmarshal(jsonbyte, &snap)
-	if err != nil {
+	if err := json.Unmarshal(jsonbyte, &snap); err != nil {
 		return err
 	}
 
 	//the snapshot probably has the property EnableMsgEvents not set
-	//just in case, set it to true!
-	//(we need this to wait for messages before uploading)
-	for _, n := range snap.Nodes {
-		n.Node.Config.EnableMsgEvents = true
-		n.Node.Config.Services = s.serviceNames
+	//set it to true (we need this to wait for messages before uploading)
+	for i := range snap.Nodes {
+		snap.Nodes[i].Node.Config.EnableMsgEvents = true
+		snap.Nodes[i].Node.Config.Services = s.serviceNames
 		for _, o := range opts {
-			o(n.Node.Config)
+			o(snap.Nodes[i].Node.Config)
 		}
 	}
 
-	log.Info("Waiting for p2p connections to be established...")
-
-	//now we can load the snapshot
-	err = s.Net.Load(&snap)
-	if err != nil {
+	if err := s.Net.Load(&snap); err != nil {
 		return err
 	}
-	log.Info("Snapshot loaded")
-	return nil
-}
-
-// SetPivotNode sets the NodeID of the network's pivot node.
-// Pivot node is just a specific node that should be treated
-// differently then other nodes in test. SetPivotNode and
-// PivotNodeID are just a convenient functions to set and
-// retrieve it.
-func (s *Simulation) SetPivotNode(id enode.ID) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.pivotNodeID = &id
-}
-
-// PivotNodeID returns NodeID of the pivot node set by
-// Simulation.SetPivotNode method.
-func (s *Simulation) PivotNodeID() (id *enode.ID) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.pivotNodeID
+	return s.WaitTillSnapshotRecreated(ctx, &snap)
 }
 
 // StartNode starts a node by NodeID.
@@ -267,27 +268,26 @@ func (s *Simulation) StartNode(id enode.ID) (err error) {
 
 // StartRandomNode starts a random node.
 func (s *Simulation) StartRandomNode() (id enode.ID, err error) {
-	n := s.randomDownNode()
+	n := s.Net.GetRandomDownNode()
 	if n == nil {
 		return id, ErrNodeNotFound
 	}
-	return n.ID, s.Net.Start(n.ID)
+	return n.ID(), s.Net.Start(n.ID())
 }
 
 // StartRandomNodes starts random nodes.
 func (s *Simulation) StartRandomNodes(count int) (ids []enode.ID, err error) {
 	ids = make([]enode.ID, 0, count)
-	downIDs := s.DownNodeIDs()
 	for i := 0; i < count; i++ {
-		n := s.randomNode(downIDs, ids...)
+		n := s.Net.GetRandomDownNode()
 		if n == nil {
 			return nil, ErrNodeNotFound
 		}
-		err = s.Net.Start(n.ID)
+		err = s.Net.Start(n.ID())
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, n.ID)
+		ids = append(ids, n.ID())
 	}
 	return ids, nil
 }
@@ -299,27 +299,26 @@ func (s *Simulation) StopNode(id enode.ID) (err error) {
 
 // StopRandomNode stops a random node.
 func (s *Simulation) StopRandomNode() (id enode.ID, err error) {
-	n := s.RandomUpNode()
+	n := s.Net.GetRandomUpNode()
 	if n == nil {
 		return id, ErrNodeNotFound
 	}
-	return n.ID, s.Net.Stop(n.ID)
+	return n.ID(), s.Net.Stop(n.ID())
 }
 
 // StopRandomNodes stops random nodes.
 func (s *Simulation) StopRandomNodes(count int) (ids []enode.ID, err error) {
 	ids = make([]enode.ID, 0, count)
-	upIDs := s.UpNodeIDs()
 	for i := 0; i < count; i++ {
-		n := s.randomNode(upIDs, ids...)
+		n := s.Net.GetRandomUpNode()
 		if n == nil {
 			return nil, ErrNodeNotFound
 		}
-		err = s.Net.Stop(n.ID)
+		err = s.Net.Stop(n.ID())
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, n.ID)
+		ids = append(ids, n.ID())
 	}
 	return ids, nil
 }
@@ -329,34 +328,14 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// RandomUpNode returns a random SimNode that is up.
-// Arguments are NodeIDs for nodes that should not be returned.
-func (s *Simulation) RandomUpNode(exclude ...enode.ID) *adapters.SimNode {
-	return s.randomNode(s.UpNodeIDs(), exclude...)
-}
-
-// randomDownNode returns a random SimNode that is not up.
-func (s *Simulation) randomDownNode(exclude ...enode.ID) *adapters.SimNode {
-	return s.randomNode(s.DownNodeIDs(), exclude...)
-}
-
-// randomNode returns a random SimNode from the slice of NodeIDs.
-func (s *Simulation) randomNode(ids []enode.ID, exclude ...enode.ID) *adapters.SimNode {
-	for _, e := range exclude {
-		var i int
-		for _, id := range ids {
-			if id == e {
-				ids = append(ids[:i], ids[i+1:]...)
-			} else {
-				i++
-			}
-		}
+// derive a private key for swarm for the node key
+// returns the private key used to generate the bzz key
+func BzzPrivateKeyFromConfig(conf *adapters.NodeConfig) (*ecdsa.PrivateKey, error) {
+	// pad the seed key some arbitrary data as ecdsa.GenerateKey takes 40 bytes seed data
+	privKeyBuf := append(crypto.FromECDSA(conf.PrivateKey), []byte{0x62, 0x7a, 0x7a, 0x62, 0x7a, 0x7a, 0x62, 0x7a}...)
+	bzzPrivateKey, err := ecdsa.GenerateKey(crypto.S256(), bytes.NewReader(privKeyBuf))
+	if err != nil {
+		return nil, err
 	}
-	l := len(ids)
-	if l == 0 {
-		return nil
-	}
-	n := s.Net.GetNode(ids[rand.Intn(l)])
-	node, _ := n.Node.(*adapters.SimNode)
-	return node
+	return bzzPrivateKey, nil
 }
