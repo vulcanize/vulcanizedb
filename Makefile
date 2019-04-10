@@ -70,7 +70,8 @@ build: dep
 HOST_NAME = localhost
 PORT = 5432
 NAME =
-CONNECT_STRING=postgresql://$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
+USER = vulcanize
+CONNECT_STRING=postgresql://$(USER)@$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
 # Parameter checks
 ## Check that DB variables are provided
@@ -79,6 +80,7 @@ checkdbvars:
 	test -n "$(HOST_NAME)" # $$HOST_NAME
 	test -n "$(PORT)" # $$PORT
 	test -n "$(NAME)" # $$NAME
+	test -n "$(USER)" # $$USER
 	@echo $(CONNECT_STRING)
 
 ## Check that the migration variable (id/timestamp) is provided
