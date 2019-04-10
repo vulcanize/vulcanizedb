@@ -1,7 +1,7 @@
 [database]
     name     = "vulcanize_public"
     hostname = "localhost"
-    port     = 5432
+    port     = 3333
 
 [client]
     ipcPath = ""
