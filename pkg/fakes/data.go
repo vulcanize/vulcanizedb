@@ -43,11 +43,15 @@ var FakeHeader = core.Header{
 }
 
 func GetFakeHeader(blockNumber int64) core.Header {
+	return GetFakeHeaderWithTimestamp(fakeTimestamp, blockNumber)
+}
+
+func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	return core.Header{
 		Hash:        FakeHash.String(),
 		BlockNumber: blockNumber,
 		Raw:         rawFakeHeader,
-		Timestamp:   strconv.FormatInt(fakeTimestamp, 10),
+		Timestamp:   strconv.FormatInt(timestamp, 10),
 	}
 }
 
