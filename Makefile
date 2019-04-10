@@ -70,7 +70,7 @@ build: dep
 HOST_NAME = localhost
 PORT = 5432
 NAME =
-USER = vulcanize
+USER = postgres
 CONNECT_STRING=postgresql://$(USER)@$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
 # Parameter checks
