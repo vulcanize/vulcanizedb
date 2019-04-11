@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.5
--- Dumped by pg_dump version 10.4
+-- Dumped from database version 10.6
+-- Dumped by pg_dump version 10.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -524,43 +524,6 @@ ALTER SEQUENCE public.uncles_id_seq OWNED BY public.uncles.id;
 
 
 --
--- Name: uncles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.uncles (
-    id integer NOT NULL,
-    hash character varying(66) NOT NULL,
-    block_id integer NOT NULL,
-    reward numeric NOT NULL,
-    miner character varying(42) NOT NULL,
-    raw jsonb,
-    block_timestamp numeric,
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128)
-);
-
-
---
--- Name: uncles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.uncles_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: uncles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.uncles_id_seq OWNED BY public.uncles.id;
-
-
---
 -- Name: watched_contracts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -696,13 +659,6 @@ ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id
 --
 
 ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('public.queued_storage_id_seq'::regclass);
-
-
---
--- Name: uncles id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles ALTER COLUMN id SET DEFAULT nextval('public.uncles_id_seq'::regclass);
 
 
 --
@@ -872,22 +828,6 @@ ALTER TABLE ONLY public.uncles
 
 
 --
--- Name: uncles uncles_block_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_block_id_hash_key UNIQUE (block_id, hash);
-
-
---
--- Name: uncles uncles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_pkey PRIMARY KEY (id);
-
-
---
 -- Name: watched_contracts watched_contracts_contract_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1015,22 +955,6 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.logs
     ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.full_sync_receipts(id) ON DELETE CASCADE;
-
-
---
--- Name: uncles uncles_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
-
-
---
--- Name: uncles uncles_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --
