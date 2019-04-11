@@ -1,0 +1,9 @@
+[database]
+name = "vulcanize_public"
+hostname = "localhost"
+port = 5432
+
+[client]
+ipcPath = "https://mainnet.infura.io/J5Vd2fRtGsw0zZ0Ov3BL"
+ipfsPath = "~/.ipfs"
+levelDbPath = "<local node's levelDB filepath>"
