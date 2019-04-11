@@ -52,7 +52,7 @@ func (bc BlockConverter) ToCoreBlock(gethBlock *types.Block) (core.Block, error)
 		Number:       gethBlock.Number().Int64(),
 		ParentHash:   gethBlock.ParentHash().Hex(),
 		Size:         gethBlock.Size().String(),
-		Time:         gethBlock.Time().Int64(),
+		Time:         int64(gethBlock.Time()),
 		Transactions: transactions,
 		UncleHash:    gethBlock.UncleHash().Hex(),
 	}
@@ -81,7 +81,7 @@ func (bc BlockConverter) ToCoreUncle(block core.Block, uncles []*types.Header) (
 			Hash:      uncle.Hash().Hex(),
 			Raw:       raw,
 			Reward:    thisUncleReward.String(),
-			Timestamp: uncle.Time.String(),
+			Timestamp: string(uncle.Time),
 		}
 		coreUncles = append(coreUncles, coreUncle)
 		totalUncleRewards.Add(totalUncleRewards, thisUncleReward)

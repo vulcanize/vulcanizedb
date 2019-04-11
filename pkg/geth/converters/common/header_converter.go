@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -34,7 +35,7 @@ func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash str
 		Hash:        blockHash,
 		BlockNumber: gethHeader.Number.Int64(),
 		Raw:         rawHeader,
-		Timestamp:   gethHeader.Time.String(),
+		Timestamp:   string(gethHeader.Time),
 	}
 	return coreHeader
 }

@@ -59,6 +59,8 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
+
+	StateDiff: false,
 }
 
 func init() {
@@ -92,7 +94,9 @@ type Config struct {
 	// Protocol options
 	NetworkId uint64 // Network ID to use for selecting peers to connect to
 	SyncMode  downloader.SyncMode
-	NoPruning bool
+
+	NoPruning  bool // Whether to disable pruning and flush everything to disk
+	NoPrefetch bool // Whether to disable prefetching and only load state on demand
 
 	// Whitelist of required block number -> hash values to accept
 	Whitelist map[uint64]common.Hash `toml:"-"`
@@ -149,6 +153,11 @@ type Config struct {
 
 	// Constantinople block override (TODO: remove after the fork)
 	ConstantinopleOverride *big.Int
+
+	// RPCGasCap is the global gas cap for eth-call variants.
+	RPCGasCap *big.Int `toml:",omitempty"`
+
+	StateDiff bool
 }
 
 type configMarshaling struct {

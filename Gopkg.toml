@@ -51,4 +51,5 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  revision = "cd79bc61a983d6482579d12cdd239b37bbfa12ef"
+  source = "github.com/vulcanize/go-ethereum"
+  branch = "rpc_statediffs_at_head"
