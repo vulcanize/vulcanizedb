@@ -1,0 +1,32 @@
+package eth_storage_trie_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_storage_trie"
+	"github.com/vulcanize/eth-block-extractor/test_helpers"
+	"github.com/vulcanize/eth-block-extractor/test_helpers/mocks/ipfs"
+)
+
+var _ = Describe("Ethereum storage trie node dag putter", func() {
+	It("adds passed storage trie node to ipfs", func() {
+		mockAdder := ipfs.NewMockAdder()
+		dagPutter := eth_storage_trie.NewStorageTrieDagPutter(mockAdder)
+
+		_, err := dagPutter.DagPut([]byte{1, 2, 3, 4, 5})
+
+		Expect(err).NotTo(HaveOccurred())
+		mockAdder.AssertAddCalled(1, &eth_storage_trie.EthStorageTrieNode{})
+	})
+
+	It("returns error if adding to ipfs fails", func() {
+		mockAdder := ipfs.NewMockAdder()
+		mockAdder.SetError(test_helpers.FakeError)
+		dagPutter := eth_storage_trie.NewStorageTrieDagPutter(mockAdder)
+
+		_, err := dagPutter.DagPut([]byte{1, 2, 3, 4, 5})
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(test_helpers.FakeError))
+	})
+})
