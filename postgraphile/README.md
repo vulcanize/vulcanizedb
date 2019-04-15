@@ -13,6 +13,15 @@ Build the docker image in this directory. Start the `GraphiQL` frontend by:
 * Run the container (ex. `docker run -e DATABASE_HOST=localhost -e DATABASE_NAME=vulcanize_public -e DATABASE_USER=vulcanize -e DATABASE_PASSWORD=vulcanize -d m0ar/images:postgraphile-alpine`)
 * GraphiQL is available at `:3000/graphiql`
 
+By default, this build will expose only the "public" schema - to add other schemas, use a config file `config.toml` and set the env var `CONFIG_PATH` to point to its location. Example `toml`:
+
+```
+[database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port = 5432
+    schemas = ["public", "yourschema"]
+```
 
 ## Building
 

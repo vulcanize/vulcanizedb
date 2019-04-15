@@ -9,7 +9,7 @@ import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 export interface PostgraphileMiddleware extends RequestHandler {}
 
 export interface PostgraphileOptions {
-  pluginHook: PluginHookFn,
+  pluginHook: PluginHookFn;
   simpleSubscriptions: boolean;
   watchPg: boolean;
   enableCors: boolean;
