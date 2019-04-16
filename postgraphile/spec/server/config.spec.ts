@@ -21,7 +21,11 @@ describe('buildServerConfig', () => {
   let databaseConfig: DatabaseConfig;
 
   beforeEach(() => {
-    databaseConfig = { host: 'example.com', database: 'example_database' };
+    databaseConfig = {
+      host: 'example.com',
+      database: 'example_database',
+      schemas: ['public']
+    };
 
     postgraphileMiddleware = jasmine
       .createSpyObj<PostgraphileMiddleware>(['call']),
@@ -84,7 +88,7 @@ describe('buildServerConfig', () => {
   it('provides the database config to Postgraphile', () => {
     expect(serverUtilities.postgraphile).toHaveBeenCalledWith(
       `${databaseConfig.host}/${databaseConfig.database}`,
-      ["public"],
+      databaseConfig.schemas,
       jasmine.any(Object));
   });
 

@@ -8,4 +8,4 @@ export type ReadFileSyncCallback = (
 ) => string | Buffer;
 
 export type TomlParseCallback
-  = (fileContents: string) => { [key: string]: { [key: string]: string } };
+  = (fileContents: string) => { [key: string]: { [key: string]: any } };
