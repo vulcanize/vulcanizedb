@@ -39,7 +39,7 @@ export function buildServerConfig(
 
   const middleware: PostgraphileMiddleware = utilities.postgraphile(
     `${databaseConfig.host}/${databaseConfig.database}`,
-    ["public"],
+    databaseConfig.schemas,
     options
   );
 
