@@ -24,11 +24,12 @@ describe('buildServerConfig', () => {
     databaseConfig = {
       host: 'example.com',
       database: 'example_database',
-      schemas: ['public']
+      schemas: ['public'],
+      ownerConnectionString: 'postgres://admin:admin@host'
     };
 
     postgraphileMiddleware = jasmine
-      .createSpyObj<PostgraphileMiddleware>(['call']),
+      .createSpyObj<PostgraphileMiddleware>(['call']);
 
     serverUtilities = {
       pluginHook: jasmine.createSpy('pluginHook'),

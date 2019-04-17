@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import { Server } from 'http';
-import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
+import {PluginHookFn, PostGraphilePlugin} from 'postgraphile/build/postgraphile/pluginHook';
+import {Plugin} from 'postgraphile';
 
 // NOTE: Shape of the middleware is not
 // currently important to this application, but if a need arises,
@@ -9,12 +10,17 @@ import { PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 export interface PostgraphileMiddleware extends RequestHandler {}
 
 export interface PostgraphileOptions {
+  appendPlugins: Plugin[];
+  disableDefaultMutations: boolean;
+  enableCors: boolean;
+  exportGqlSchemaPath: string;
+  graphiql: boolean;
+  ignoreRBAC: boolean;
+  ownerConnectionString: string;
   pluginHook: PluginHookFn;
   simpleSubscriptions: boolean;
   watchPg: boolean;
-  enableCors: boolean;
-  graphiql: boolean;
-  // NOTE: Shape of the middlewares is not
+  // NOTE Shape of the middlewares is not
   // currently important to this application, but if a need arises,
   // any needed shape can be assigned from a custom type here.
   webSocketMiddlewares: object[];

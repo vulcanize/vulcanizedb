@@ -18,6 +18,7 @@ export interface DatabaseConfig {
   host: string;
   database: string;
   schemas: string[];
+  ownerConnectionString: string;
 }
 
 export interface ServerConfig {
