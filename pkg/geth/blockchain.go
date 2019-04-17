@@ -159,7 +159,7 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 		Number:      POAHeader.Number.ToInt(),
 		GasLimit:    uint64(POAHeader.GasLimit),
 		GasUsed:     uint64(POAHeader.GasUsed),
-		Time:        POAHeader.Time.ToInt(),
+		Time:        POAHeader.Time.ToInt().Uint64(),
 		Extra:       POAHeader.Extra,
 	}, POAHeader.Hash.String()), nil
 }
@@ -208,7 +208,7 @@ func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []cor
 				Number:      POAHeader.Number.ToInt(),
 				GasLimit:    uint64(POAHeader.GasLimit),
 				GasUsed:     uint64(POAHeader.GasUsed),
-				Time:        POAHeader.Time.ToInt(),
+				Time:        POAHeader.Time.ToInt().Uint64(),
 				Extra:       POAHeader.Extra,
 			}, POAHeader.Hash.String())
 

@@ -17,6 +17,7 @@
 package client
 
 import (
+	"errors"
 	"context"
 	"reflect"
 
@@ -79,10 +80,10 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
-		panic("second argument to Subscribe must be a writable channel")
+		return nil, errors.New("second argument to Subscribe must be a writable channel")
 	}
 	if chanVal.IsNil() {
-		panic("channel given to Subscribe must not be nil")
+		return nil, errors.New("channel given to Subscribe must not be nil")
 	}
 	return client.client.Subscribe(context.Background(), namespace, payloadChan, args)
 }
