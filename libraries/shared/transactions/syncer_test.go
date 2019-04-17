@@ -24,10 +24,17 @@ var _ = Describe("Transaction syncer", func() {
 	})
 
 	It("fetches transactions for logs", func() {
-		err := syncer.SyncTransactions(0, []types.Log{})
+		err := syncer.SyncTransactions(0, []types.Log{{TxHash: fakes.FakeHash}})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(blockChain.GetTransactionsCalled).To(BeTrue())
+	})
+
+	It("does not fetch transactions if no logs", func() {
+		err := syncer.SyncTransactions(0, []types.Log{})
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(blockChain.GetTransactionsCalled).To(BeFalse())
 	})
 
 	It("only fetches transactions with unique hashes", func() {
@@ -44,7 +51,7 @@ var _ = Describe("Transaction syncer", func() {
 	It("returns error if fetching transactions fails", func() {
 		blockChain.GetTransactionsError = fakes.FakeError
 
-		err := syncer.SyncTransactions(0, []types.Log{})
+		err := syncer.SyncTransactions(0, []types.Log{{TxHash: fakes.FakeHash}})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -55,7 +62,7 @@ var _ = Describe("Transaction syncer", func() {
 		mockHeaderRepository := fakes.NewMockHeaderRepository()
 		syncer.Repository = mockHeaderRepository
 
-		err := syncer.SyncTransactions(0, []types.Log{})
+		err := syncer.SyncTransactions(0, []types.Log{{TxHash: fakes.FakeHash}})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(mockHeaderRepository.CreateTransactionsCalled).To(BeTrue())
@@ -67,7 +74,7 @@ var _ = Describe("Transaction syncer", func() {
 		mockHeaderRepository.CreateTransactionsError = fakes.FakeError
 		syncer.Repository = mockHeaderRepository
 
-		err := syncer.SyncTransactions(0, []types.Log{})
+		err := syncer.SyncTransactions(0, []types.Log{{TxHash: fakes.FakeHash}})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
