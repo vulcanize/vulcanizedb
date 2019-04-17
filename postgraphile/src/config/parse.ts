@@ -21,7 +21,9 @@ export function parseConfig(
   let database = '';
   let user = '';
   let password = '';
-  let schemas = ['public'];
+  let gqSchemas = ['public'];
+  let gqUser = '';
+  let gqPassword = '';
 
   if (configPath) {
     const tomlContents = readCallback(`${configPath}`).toString();
@@ -32,7 +34,9 @@ export function parseConfig(
     database = parsedToml['database']['name'];
     user = parsedToml['database']['user'];
     password = parsedToml['database']['password'];
-    schemas = parsedToml['database']['schemas'];
+    gqSchemas = parsedToml['database']['schemas'];
+    gqUser = parsedToml['database']['gq_user'] || gqUser;
+    gqPassword = parsedToml['database']['gq_password'] || gqPassword;
   }
 
   // Overwrite config values with env. vars if such are set
@@ -41,6 +45,11 @@ export function parseConfig(
   database = process.env.DATABASE_NAME || database;
   user = process.env.DATABASE_USER || user;
   password = process.env.DATABASE_PASSWORD || password;
+  gqSchemas = process.env.GQ_SCHEMAS
+      ? process.env.GQ_SCHEMAS.split(',')
+      : gqSchemas;
+  gqUser = process.env.GQ_USER || gqUser;
+  gqPassword = process.env.GQ_PASSWORD || gqPassword;
 
   if (!host) {
     throw new Error(MISSING_HOST_MESSAGE);
@@ -55,8 +64,11 @@ export function parseConfig(
   }
 
   return {
-    host: `postgres://${user}:${password}@${host}:${port}`,
+    host: gqUser && gqPassword
+        ? `postgres://${gqUser}:${gqPassword}@${host}:${port}`
+        : `postgres://${user}:${password}@${host}:${port}`,
     database,
-    schemas
+    schemas: gqSchemas,
+    ownerConnectionString: `postgres://${user}:${password}@${host}:${port}/${database}`
   };
 }

@@ -25,12 +25,17 @@ describe('bootServer', () => {
 
     serverConfig = {
       middleware: jasmine.createSpyObj<PostgraphileMiddleware>(['call']),
-      options: { 
-        pluginHook: jasmine.createSpy('pluginHook'),
-        watchPg: true,
+      options: {
+        appendPlugins: [],
+        disableDefaultMutations: false,
         enableCors: true,
-        simpleSubscriptions: true,
+        exportGqlSchemaPath: '',
         graphiql: true,
+        ignoreRBAC: false,
+        ownerConnectionString: '',
+        pluginHook: jasmine.createSpy('pluginHook'),
+        simpleSubscriptions: true,
+        watchPg: true,
         webSocketMiddlewares: [] },
       port: 5678
     };
