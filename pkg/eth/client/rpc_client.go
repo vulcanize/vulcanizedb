@@ -17,6 +17,7 @@
 package client
 
 import (
+	"errors"
 	"context"
 	"errors"
 	"reflect"

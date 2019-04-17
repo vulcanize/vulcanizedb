@@ -17,23 +17,27 @@
 package ipfs
 
 import (
-	log "github.com/sirupsen/logrus"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-const payloadChanBufferSize = 800 // 1/10th max size
+const payloadChanBufferSize = 800 // 1/10th max eth sub buffer size
 
+// Indexer is an interface for streaming, converting to IPLDs, publishing, and indexing all Ethereum data
+// This is the top-level interface used by the syncAndPublish command
 type Indexer interface {
-	Index() error
+	Index(wg sync.WaitGroup) error
 }
 
-type IPFSIndexer struct {
-	Syncer    Syncer
+// ipfsIndexer is the underlying struct for the Indexer interface
+// we are not exporting this to enforce proper initialization through the NewIPFSIndexer function
+type ipfsIndexer struct {
+	Streamer  Streamer
 	Converter Converter
 	Publisher Publisher
 	Repository Repository
@@ -41,13 +45,14 @@ type IPFSIndexer struct {
 	QuitChan    chan bool
 }
 
-func NewIPFSIndexer(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (*IPFSIndexer, error) {
+// NewIPFSIndexer creates a new Indexer interface using an underlying ipfsIndexer struct
+func NewIPFSIndexer(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (Indexer, error) {
 	publisher, err := NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
-	return &IPFSIndexer{
-		Syncer: NewStateDiffSyncer(rpcClient),
+	return &ipfsIndexer{
+		Streamer: NewStateDiffSyncer(rpcClient),
 		Repository: NewCIDRepository(db),
 		Converter: NewPayloadConverter(ethClient),
 		Publisher: publisher,
@@ -56,9 +61,9 @@ func NewIPFSIndexer(ipfsPath string, db *postgres.DB, ethClient core.EthClient, 
 	}, nil
 }
 
-// The main processing loop for the syncAndPublish
-func (i *IPFSIndexer) Index(wg sync.WaitGroup) error {
-	sub, err := i.Syncer.Sync(i.PayloadChan)
+// Index is the main processing loop
+func (i *ipfsIndexer) Index(wg sync.WaitGroup) error {
+	sub, err := i.Streamer.Stream(i.PayloadChan)
 	if err != nil {
 		return err
 	}
@@ -76,7 +81,7 @@ func (i *IPFSIndexer) Index(wg sync.WaitGroup) error {
 				if err != nil {
 					log.Error(err)
 				}
-				err = i.Repository.IndexCIDs(cidPayload)
+				err = i.Repository.Index(cidPayload)
 				if err != nil {
 					log.Error(err)
 				}

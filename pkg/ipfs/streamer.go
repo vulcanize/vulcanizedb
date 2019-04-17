@@ -23,22 +23,25 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type Syncer interface {
-	Sync(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
+// Streamer is the interface for streaming a statediff subscription
+type Streamer interface {
+	Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
 }
 
-type StateDiffSyncer struct {
+// StateDiffStreamer is the underlying struct for the Streamer interface
+type StateDiffStreamer struct {
 	Client      core.RpcClient
 	PayloadChan chan statediff.Payload
 }
 
-func NewStateDiffSyncer(client core.RpcClient) *StateDiffSyncer {
-	return &StateDiffSyncer{
+// NewStateDiffStreamer creates a pointer to a new StateDiffStreamer which satisfies the Streamer interface
+func NewStateDiffSyncer(client core.RpcClient) *StateDiffStreamer {
+	return &StateDiffStreamer{
 		Client: client,
 	}
 }
 
-// Sync is the main loop for subscribing to data from the Geth state diff process
-func (i *StateDiffSyncer) Sync(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+// Stream is the main loop for subscribing to data from the Geth state diff process
+func (i *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
 	return i.Client.Subscribe("statediff", i.PayloadChan)
 }
