@@ -26,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+//Note: The ContractAbi is not required in the EventTransformerConfig for LogNoteTransformers
 type LogNoteTransformer struct {
 	Config     transformer.EventTransformerConfig
 	Converter  LogNoteConverter
