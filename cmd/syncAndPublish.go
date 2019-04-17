@@ -20,7 +20,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -31,20 +30,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 // syncAndPublishCmd represents the syncAndPublish command
 var syncAndPublishCmd = &cobra.Command{
 	Use:   "syncAndPublish",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Syncs all Ethereum data into IPFS, indexing the CIDs",
+	Long: `This command works alongside a modified geth node which streams
+all block and state (diff) data over a websocket subscription. This process 
+then converts the eth objects to IPLDs and publishes them IPFS. Additionally,
+it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		syncAndPulish()
+		syncAndPublish()
 	},
 }
 
@@ -54,10 +52,10 @@ var (
 
 func init() {
 	rootCmd.AddCommand(syncAndPublishCmd)
-	syncAndPublishCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "", "Path for configuring IPFS node")
+	syncAndPublishCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "~/.ipfs", "Path for configuring IPFS node")
 }
 
-func syncAndPulish() {
+func syncAndPublish() {
 	blockChain, ethClient, rpcClient := getBlockChainAndClients()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -68,8 +66,11 @@ func syncAndPulish() {
 	}
 
 	wg := syn.WaitGroup{}
-	indexer.Index(wg)
-	wg.Wait()
+	err = indexer.Index(wg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
 }
 
 func getBlockChainAndClients() (*geth.BlockChain, core.EthClient, core.RpcClient) {
