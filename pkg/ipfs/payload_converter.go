@@ -28,14 +28,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// Converter interface is used to convert a geth statediff.Payload to our IPLDPayload type
 type Converter interface {
 	Convert(payload statediff.Payload) (*IPLDPayload, error)
 }
 
+// PayloadConverter is the underlying struct for the Converter interface
 type PayloadConverter struct {
 	client core.EthClient
 }
 
+// IPLDPayload is a custom type which packages ETH data for the IPFS publisher
 type IPLDPayload struct {
 	HeaderRLP  []byte
 	BlockNumber *big.Int
@@ -46,12 +49,14 @@ type IPLDPayload struct {
 	StorageLeafs map[common.Hash]map[common.Hash][]byte
 }
 
+// NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the Converter interface
 func NewPayloadConverter(client core.EthClient) *PayloadConverter {
 	return &PayloadConverter{
 		client: client,
 	}
 }
 
+// Convert method is used to convert a geth statediff.Payload to a IPLDPayload
 func (pc *PayloadConverter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	// Unpack block rlp to access fields
 	block := new(types.Block)
