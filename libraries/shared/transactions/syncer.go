@@ -28,6 +28,9 @@ func NewTransactionsSyncer(db *postgres.DB, blockChain core.BlockChain) Transact
 
 func (syncer TransactionsSyncer) SyncTransactions(headerID int64, logs []types.Log) error {
 	transactionHashes := getUniqueTransactionHashes(logs)
+	if len(transactionHashes) < 1 {
+		return nil
+	}
 	transactions, transactionErr := syncer.BlockChain.GetTransactions(transactionHashes)
 	if transactionErr != nil {
 		return transactionErr

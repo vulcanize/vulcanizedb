@@ -18,7 +18,6 @@ package geth
 
 import (
 	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"math/big"
 	"strconv"
@@ -122,7 +121,6 @@ func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) (
 
 	rpcErr := blockChain.rpcClient.BatchCall(batch)
 	if rpcErr != nil {
-		fmt.Println("rpc err")
 		return []core.TransactionModel{}, rpcErr
 	}
 
