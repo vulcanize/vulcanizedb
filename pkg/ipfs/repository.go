@@ -60,13 +60,12 @@ func (repo *CIDRepository) Index(cidPayload *CIDPayload) error {
 	return tx.Commit()
 }
 
-
 func (repo *CIDRepository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash string) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid) VALUES ($1, $2, $3)
 								ON CONFLICT DO UPDATE SET cid = $3
 								RETURNING id`,
-								blockNumber, hash, cid).Scan(&headerID)
+		blockNumber, hash, cid).Scan(&headerID)
 	return headerID, err
 }
 
@@ -76,7 +75,7 @@ func (repo *CIDRepository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *
 		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid) VALUES ($1, $2, $3) 
 										ON CONFLICT DO UPDATE SET cid = $3
 										RETURNING id`,
-										headerID, hash.Hex(), trxCid).Scan(&txID)
+			headerID, hash.Hex(), trxCid).Scan(&txID)
 		if err != nil {
 			return err
 		}
@@ -103,7 +102,7 @@ func (repo *CIDRepository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPay
 		err := tx.QueryRowx(`INSERT INTO public.state_cids (header_id, account_key, cid) VALUES ($1, $2, $3) 
 										ON CONFLICT DO UPDATE SET cid = $3
 										RETURNING id`,
-										headerID, accountKey.Hex(), stateCID).Scan(&stateID)
+			headerID, accountKey.Hex(), stateCID).Scan(&stateID)
 		if err != nil {
 			return err
 		}

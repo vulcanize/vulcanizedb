@@ -3,14 +3,14 @@ package eth_block_header
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"gx/ipfs/QmWi2BYBL5gJ3CiAiQchg6rn1A8iBsrWy51EYxvHVjFvLb/go-ipld-format"
-	"gx/ipfs/QmapdYm1b22Frv3k17fqrBYTFRxwiaVJkB299Mfn33edeB/go-cid"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-ipld-format"
 )
 
 type EthBlockHeaderNode struct {
 	*types.Header
 
-	cid     *cid.Cid
+	cid     cid.Cid
 	rawdata []byte
 }
 
@@ -18,7 +18,7 @@ func (ebh *EthBlockHeaderNode) RawData() []byte {
 	return ebh.rawdata
 }
 
-func (ebh *EthBlockHeaderNode) Cid() *cid.Cid {
+func (ebh *EthBlockHeaderNode) Cid() cid.Cid {
 	return ebh.cid
 }
 
