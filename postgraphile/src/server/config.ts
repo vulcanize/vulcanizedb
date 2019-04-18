@@ -23,13 +23,18 @@ export function buildServerConfig(
   const passportInitializer = utilities.passport.initialize();
   const passportSessionHandler = utilities.passport.session();
   const pluginHook = utilities.pluginHook;
+  const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
 
   const options: PostgraphileOptions = {
-    pluginHook: pluginHook,
-    simpleSubscriptions: true,
-    watchPg: true,
+    appendPlugins: [PgSimplifyInflectorPlugin],
+    disableDefaultMutations: true,
     enableCors: true,
+    exportGqlSchemaPath: 'schema.graphql',
     graphiql: true,
+    ignoreRBAC: false,
+    ownerConnectionString: databaseConfig.ownerConnectionString,
+    pluginHook: pluginHook,
+    watchPg: true,
     webSocketMiddlewares: [
       expressSessionHandler,
       passportInitializer,

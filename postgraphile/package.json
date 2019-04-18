@@ -5,7 +5,6 @@
   "scripts": {
     "build": "rm -rf ./build/dist && webpack --config=./webpack.config.js",
     "lint": "tslint --project ./tsconfig.json --config ./tslint.json",
-    "postinstall": "rm -rf node_modules/@graphile && mkdir node_modules/@graphile && cp -R ./vendor/postgraphile-supporter/ ./node_modules/@graphile/plugin-supporter/",
     "start": "npm run build && node ./build/dist/vulcanize-postgraphile-server.js",
     "dev": "./node_modules/typescript/bin/tsc && node build/dist/src/index.js",
     "test": "rm -rf ./build/spec && tsc --build ./tsconfig.test.json && jasmine --config=./spec/support/jasmine.json",
@@ -28,7 +27,7 @@
     "passport": "0.4.0",
     "pg": "6.4.2",
     "pg-native": "3.0.0",
-    "postgraphile": "4.0.0-rc.4",
+    "postgraphile": "4.4.0-beta.11",
     "subscriptions-transport-ws": "0.9.14",
     "toml": "2.3.3"
   },
@@ -40,6 +39,7 @@
     "@types/lodash": "4.14.116",
     "@types/node": "^10.12.21",
     "@types/passport": "0.4.6",
+    "@graphile-contrib/pg-simplify-inflector": "3.0.0",
     "awesome-typescript-loader": "5.2.0",
     "jasmine": "3.2.0",
     "jasmine-ts-console-reporter": "3.1.1",

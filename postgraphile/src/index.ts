@@ -7,11 +7,7 @@ import passport = require('passport');
 import session = require('express-session');
 import toml = require('toml');
 
-const {
-  default: PostGraphileSupporter,
-  enhanceHttpServerWithSubscriptions,
-} = require('@graphile/plugin-supporter');
-const pluginHook = makePluginHook([PostGraphileSupporter]);
+const pluginHook = makePluginHook([]);
 
 import { ServerUtilities } from './server/interface';
 import { bootServer } from './server/runtime';
@@ -27,7 +23,6 @@ const configPath = process.env[CONFIG_PATH_KEY];
 const serverPort = process.env[SERVER_PORT_KEY];
 
 const serverUtilities: ServerUtilities = {
-  enableSubscriptions: enhanceHttpServerWithSubscriptions,
   express,
   expressSession: session,
   httpServerFactory: createServer,
