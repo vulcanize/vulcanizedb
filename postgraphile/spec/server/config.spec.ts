@@ -24,15 +24,15 @@ describe('buildServerConfig', () => {
     databaseConfig = {
       host: 'example.com',
       database: 'example_database',
-      schemas: ['public']
+      schemas: ['public'],
+      ownerConnectionString: 'postgres://admin:admin@host'
     };
 
     postgraphileMiddleware = jasmine
-      .createSpyObj<PostgraphileMiddleware>(['call']),
+      .createSpyObj<PostgraphileMiddleware>(['call']);
 
     serverUtilities = {
       pluginHook: jasmine.createSpy('pluginHook'),
-      enableSubscriptions: jasmine.createSpy('enableSubscriptions'),
       express: jasmine.createSpy('express'),
       expressSession: jasmine.createSpy('expressSession'),
       httpServerFactory: jasmine.createSpy('httpServerFactory'),
@@ -64,10 +64,6 @@ describe('buildServerConfig', () => {
 
   it('provides the Postgraphile options', () => {
     expect(serverConfig.options).not.toBeNull();
-  });
-
-  it('enables simple subscriptions', () => {
-    expect(serverConfig.options.simpleSubscriptions).toBe(true);
   });
 
   it('it adds the express session handler as the first middleware', () => {

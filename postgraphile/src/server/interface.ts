@@ -7,7 +7,6 @@ import {
 } from '../adapters/session';
 
 import {
-  AddSubscriptionsCallback,
   PostgraphileInitCallback,
   PostgraphileMiddleware,
   PostgraphileOptions
@@ -18,6 +17,7 @@ export interface DatabaseConfig {
   host: string;
   database: string;
   schemas: string[];
+  ownerConnectionString: string;
 }
 
 export interface ServerConfig {
@@ -27,7 +27,6 @@ export interface ServerConfig {
 }
 
 export interface ServerUtilities {
-  enableSubscriptions: AddSubscriptionsCallback;
   express: ExpressInitCallback;
   expressSession: ExpressSessionInitCallback;
   httpServerFactory: CreateHttpServerCallback;
