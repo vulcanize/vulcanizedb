@@ -34,7 +34,7 @@ export function parseConfig(
     database = parsedToml['database']['name'];
     user = parsedToml['database']['user'];
     password = parsedToml['database']['password'];
-    gqSchemas = parsedToml['database']['schemas'];
+    gqSchemas = parsedToml['database']['gq_schemas'];
     gqUser = parsedToml['database']['gq_user'] || gqUser;
     gqPassword = parsedToml['database']['gq_password'] || gqPassword;
   }

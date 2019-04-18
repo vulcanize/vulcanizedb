@@ -23,14 +23,17 @@ Build the docker image in this directory. Start the `GraphiQL` frontend by:
 * GraphiQL frontend is available at `:3000/graphiql`
   GraphQL endpoint is available at `:3000/graphql`
 
-By default, this build will expose only the "public" schema - to add other schemas, use either the env variables, or a config file `config.toml` and set the env var `CONFIG_PATH` to point to its location. Example `toml`:
+By default, this build will expose only the "public" schema - to add other schemas, use either the env variables,
+or a config file `config.toml` and set the env var `CONFIG_PATH` to point to its location. Example `toml`:
 
 ```
 [database]
     name     = "vulcanize_public"
     hostname = "localhost"
     port = 5432
-    schemas = ["public", "yourschema"]
+    gq_schemas = ["public", "yourschema"]
+    gq_user = "graphql"
+    gq_password = "graphql"
 ```
 
 ## Building
