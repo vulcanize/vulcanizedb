@@ -34,7 +34,6 @@ export function buildServerConfig(
     ignoreRBAC: false,
     ownerConnectionString: databaseConfig.ownerConnectionString,
     pluginHook: pluginHook,
-    simpleSubscriptions: true,
     watchPg: true,
     webSocketMiddlewares: [
       expressSessionHandler,

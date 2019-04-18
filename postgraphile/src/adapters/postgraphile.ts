@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
-import { Server } from 'http';
-import {PluginHookFn, PostGraphilePlugin} from 'postgraphile/build/postgraphile/pluginHook';
+import {PluginHookFn } from 'postgraphile/build/postgraphile/pluginHook';
 import {Plugin} from 'postgraphile';
 
 // NOTE: Shape of the middleware is not
@@ -18,7 +17,6 @@ export interface PostgraphileOptions {
   ignoreRBAC: boolean;
   ownerConnectionString: string;
   pluginHook: PluginHookFn;
-  simpleSubscriptions: boolean;
   watchPg: boolean;
   // NOTE Shape of the middlewares is not
   // currently important to this application, but if a need arises,
@@ -32,8 +30,3 @@ export type PostgraphileInitCallback = (
   options: PostgraphileOptions
 ) => PostgraphileMiddleware;
 
-export type AddSubscriptionsCallback = (
-  httpServer: Server,
-  middleware: PostgraphileMiddleware,
-  options: PostgraphileOptions
-) => void;
