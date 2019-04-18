@@ -55,7 +55,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Nonce:      nonce,
 			Number:     big.NewInt(number),
 			ParentHash: common.Hash{64},
-			Time:       big.NewInt(time),
+			Time:       big.NewInt(time).Uint64(),
 			UncleHash:  common.Hash{128},
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})

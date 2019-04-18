@@ -1,11 +1,11 @@
 package util
 
 import (
-	mh "gx/ipfs/QmZyZDi491cCNTLfAhwcaDii2Kg4pwKRkhqQzURGDvY6ua/go-multihash"
-	"gx/ipfs/QmapdYm1b22Frv3k17fqrBYTFRxwiaVJkB299Mfn33edeB/go-cid"
+	"github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
 )
 
-func RawToCid(codec uint64, raw []byte) (*cid.Cid, error) {
+func RawToCid(codec uint64, raw []byte) (cid.Cid, error) {
 	c, err := cid.Prefix{
 		Codec:    codec,
 		Version:  1,
@@ -13,7 +13,7 @@ func RawToCid(codec uint64, raw []byte) (*cid.Cid, error) {
 		MhLength: -1,
 	}.Sum(raw)
 	if err != nil {
-		return nil, err
+		return cid.Cid{}, err
 	}
 	return c, nil
 }
