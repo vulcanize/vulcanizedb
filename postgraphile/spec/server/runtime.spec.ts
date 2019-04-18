@@ -15,7 +15,6 @@ describe('bootServer', () => {
   beforeEach(() => {
     serverUtilities = {
       pluginHook: jasmine.createSpy('pluginHook'),
-      enableSubscriptions: jasmine.createSpy('enableSubscriptions'),
       express: jasmine.createSpy('express'),
       expressSession: jasmine.createSpy('expressSession'),
       httpServerFactory: jasmine.createSpy('httpServerFactory'),
@@ -34,7 +33,6 @@ describe('bootServer', () => {
         ignoreRBAC: false,
         ownerConnectionString: '',
         pluginHook: jasmine.createSpy('pluginHook'),
-        simpleSubscriptions: true,
         watchPg: true,
         webSocketMiddlewares: [] },
       port: 5678
@@ -59,14 +57,6 @@ describe('bootServer', () => {
   it('provides Postgraphile middleware to the Express app', () => {
     const useSpy = mockExpressApp.use as jasmine.Spy;
     expect(useSpy).toHaveBeenCalledWith(serverConfig.middleware);
-  });
-
-  it('enahances the Node HTTP server with Postgraphile subscriptions', () => {
-    expect(serverUtilities.enableSubscriptions)
-      .toHaveBeenCalledWith(
-        mockHttpServer,
-        serverConfig.middleware,
-        serverConfig.options);
   });
 
   it('instructs the server to listen on the given port', () => {

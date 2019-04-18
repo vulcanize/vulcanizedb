@@ -8,11 +8,6 @@ export function bootServer(
   expressApp.use(config.middleware);
 
   const httpServer = utilities.httpServerFactory(expressApp);
-
-  utilities.enableSubscriptions(
-    httpServer,
-    config.middleware,
-    config.options);
   
   httpServer.listen(config.port);
 }

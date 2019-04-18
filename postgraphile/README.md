@@ -39,8 +39,6 @@ By default, this build will expose only the "public" schema - to add other schem
 
 Install dependencies with `yarn` and execute `yarn build`. The bundle produced by Webpack will be present in `build/dist/`.
 
-This application currently uses the Postgraphile supporter plugin. This plugin is present in the `vendor/` directory and is copied to `node_modules/` after installation of packages. It is a fresh checkout of the plugin as of August 31st, 2018.
-
 ## Running
 
 Provide the built bundle to node as a runnable script: `node ./build/dist/vulcanize-postgraphile-server.js`
