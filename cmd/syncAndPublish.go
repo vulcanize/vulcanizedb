@@ -24,13 +24,13 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 // syncAndPublishCmd represents the syncAndPublish command
@@ -65,7 +65,7 @@ func syncAndPublish() {
 		log.Fatal(err)
 	}
 
-	wg := syn.WaitGroup{}
+	wg := &syn.WaitGroup{}
 	err = indexer.Index(wg)
 	if err != nil {
 		log.Fatal(err)

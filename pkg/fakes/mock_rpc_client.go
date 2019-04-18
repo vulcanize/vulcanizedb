@@ -22,6 +22,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -157,4 +158,8 @@ func (client *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch 
 		Expect(batch.Method).To(Equal(method))
 	}
 	Expect(client.passedMethod).To(Equal(method))
+}
+
+func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+	panic("implement me")
 }

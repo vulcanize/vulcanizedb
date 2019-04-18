@@ -1,20 +1,20 @@
 package eth_block_receipts
 
 import (
-	"gx/ipfs/QmWi2BYBL5gJ3CiAiQchg6rn1A8iBsrWy51EYxvHVjFvLb/go-ipld-format"
-	"gx/ipfs/QmapdYm1b22Frv3k17fqrBYTFRxwiaVJkB299Mfn33edeB/go-cid"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-ipld-format"
 )
 
 type EthReceiptNode struct {
 	raw []byte
-	cid *cid.Cid
+	cid cid.Cid
 }
 
 func (node *EthReceiptNode) RawData() []byte {
 	return node.raw
 }
 
-func (node *EthReceiptNode) Cid() *cid.Cid {
+func (node *EthReceiptNode) Cid() cid.Cid {
 	return node.cid
 }
 

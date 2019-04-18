@@ -19,8 +19,8 @@ package ipfs
 import (
 	"sync"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/ethereum/go-ethereum/statediff"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -31,16 +31,16 @@ const payloadChanBufferSize = 800 // 1/10th max eth sub buffer size
 // Indexer is an interface for streaming, converting to IPLDs, publishing, and indexing all Ethereum data
 // This is the top-level interface used by the syncAndPublish command
 type Indexer interface {
-	Index(wg sync.WaitGroup) error
+	Index(wg *sync.WaitGroup) error
 }
 
 // ipfsIndexer is the underlying struct for the Indexer interface
 // we are not exporting this to enforce proper initialization through the NewIPFSIndexer function
 type ipfsIndexer struct {
-	Streamer  Streamer
-	Converter Converter
-	Publisher Publisher
-	Repository Repository
+	Streamer    Streamer
+	Converter   Converter
+	Publisher   Publisher
+	Repository  Repository
 	PayloadChan chan statediff.Payload
 	QuitChan    chan bool
 }
@@ -52,17 +52,17 @@ func NewIPFSIndexer(ipfsPath string, db *postgres.DB, ethClient core.EthClient, 
 		return nil, err
 	}
 	return &ipfsIndexer{
-		Streamer: NewStateDiffSyncer(rpcClient),
-		Repository: NewCIDRepository(db),
-		Converter: NewPayloadConverter(ethClient),
-		Publisher: publisher,
+		Streamer:    NewStateDiffSyncer(rpcClient),
+		Repository:  NewCIDRepository(db),
+		Converter:   NewPayloadConverter(ethClient),
+		Publisher:   publisher,
 		PayloadChan: make(chan statediff.Payload, payloadChanBufferSize),
-		QuitChan: qc,
+		QuitChan:    qc,
 	}, nil
 }
 
 // Index is the main processing loop
-func (i *ipfsIndexer) Index(wg sync.WaitGroup) error {
+func (i *ipfsIndexer) Index(wg *sync.WaitGroup) error {
 	sub, err := i.Streamer.Stream(i.PayloadChan)
 	if err != nil {
 		return err
@@ -73,6 +73,10 @@ func (i *ipfsIndexer) Index(wg sync.WaitGroup) error {
 		for {
 			select {
 			case payload := <-i.PayloadChan:
+				if payload.Err != nil {
+					log.Error(err)
+					continue
+				}
 				ipldPayload, err := i.Converter.Convert(payload)
 				if err != nil {
 					log.Error(err)
