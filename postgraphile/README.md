@@ -17,7 +17,7 @@ Build the docker image in this directory. Start the `GraphiQL` frontend by:
   * By doing `GRANT [SELECT | EXECUTE]` on tables/functions for this user,
     you can selectively assign things you want available in GraphQL.
   * You still need to pass in a superuser with `DATABASE_USER` & `DATABASE_PASSWORD` for
-    for the postgraphile watch fixtures to work.
+    the postgraphile watch fixtures to work.
 * By default, postgraphile publishes the `public` schema. This can be expanded with for example `GQ_SCHEMAS=public,maker`
 * Run the container (ex. `docker run -e DATABASE_HOST=localhost -e DATABASE_NAME=my_database -e DATABASE_USER=superuser -e DATABASE_PASSWORD=superuser -e GQ_USER=graphql -e GQ_PASSWORD=graphql -e GQ_SCHEMAS=public,anotherSchema -d my-postgraphile-image`)
 * GraphiQL frontend is available at `:3000/graphiql`
