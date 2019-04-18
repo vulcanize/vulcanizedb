@@ -2,7 +2,7 @@ package eth_block_header
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	ipld "gx/ipfs/QmWi2BYBL5gJ3CiAiQchg6rn1A8iBsrWy51EYxvHVjFvLb/go-ipld-format"
+	ipld "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/util"

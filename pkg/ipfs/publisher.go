@@ -19,8 +19,8 @@ package ipfs
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_header"
@@ -38,22 +38,22 @@ type Publisher interface {
 
 // IPLDPublisher is the underlying struct for the Publisher interface
 type IPLDPublisher struct {
-	Node *ipfs.IPFS
-	HeaderPutter *eth_block_header.BlockHeaderDagPutter
+	Node              *ipfs.IPFS
+	HeaderPutter      *eth_block_header.BlockHeaderDagPutter
 	TransactionPutter *eth_block_transactions.BlockTransactionsDagPutter
-	ReceiptPutter *eth_block_receipts.EthBlockReceiptDagPutter
-	StatePutter *eth_state_trie.StateTrieDagPutter
-	StoragePutter *eth_storage_trie.StorageTrieDagPutter
+	ReceiptPutter     *eth_block_receipts.EthBlockReceiptDagPutter
+	StatePutter       *eth_state_trie.StateTrieDagPutter
+	StoragePutter     *eth_storage_trie.StorageTrieDagPutter
 }
 
 // CID payload is a struct to hold all the CIDs and their meta data
 type CIDPayload struct {
-	BlockNumber string
-	BlockHash  string
-	HeaderCID  string
+	BlockNumber     string
+	BlockHash       string
+	HeaderCID       string
 	TransactionCIDs map[common.Hash]string
-	ReceiptCIDs map[common.Hash]string
-	StateLeafCIDs  map[common.Hash]string
+	ReceiptCIDs     map[common.Hash]string
+	StateLeafCIDs   map[common.Hash]string
 	StorageLeafCIDs map[common.Hash]map[common.Hash]string
 }
 
@@ -65,12 +65,12 @@ func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 	}
 	decoder := rlp.RlpDecoder{}
 	return &IPLDPublisher{
-		Node: node,
-		HeaderPutter: eth_block_header.NewBlockHeaderDagPutter(node, decoder),
+		Node:              node,
+		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, decoder),
 		TransactionPutter: eth_block_transactions.NewBlockTransactionsDagPutter(node),
-		ReceiptPutter: eth_block_receipts.NewEthBlockReceiptDagPutter(node),
-		StatePutter: eth_state_trie.NewStateTrieDagPutter(node),
-		StoragePutter: eth_storage_trie.NewStorageTrieDagPutter(node),
+		ReceiptPutter:     eth_block_receipts.NewEthBlockReceiptDagPutter(node),
+		StatePutter:       eth_state_trie.NewStateTrieDagPutter(node),
+		StoragePutter:     eth_storage_trie.NewStorageTrieDagPutter(node),
 	}, nil
 }
 
@@ -108,12 +108,12 @@ func (pub *IPLDPublisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 
 	// Package CIDs into a single struct
 	return &CIDPayload{
-		BlockHash: payload.BlockHash.Hex(),
-		BlockNumber: payload.BlockNumber.String(),
-		HeaderCID: headerCid,
+		BlockHash:       payload.BlockHash.Hex(),
+		BlockNumber:     payload.BlockNumber.String(),
+		HeaderCID:       headerCid,
 		TransactionCIDs: transactionCids,
-		ReceiptCIDs: receiptsCids,
-		StateLeafCIDs: stateLeafCids,
+		ReceiptCIDs:     receiptsCids,
+		StateLeafCIDs:   stateLeafCids,
 		StorageLeafCIDs: storageLeafCids,
 	}, nil
 }

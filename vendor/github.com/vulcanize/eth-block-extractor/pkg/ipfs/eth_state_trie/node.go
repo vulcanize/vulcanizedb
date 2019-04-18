@@ -1,12 +1,12 @@
 package eth_state_trie
 
 import (
-	"gx/ipfs/QmWi2BYBL5gJ3CiAiQchg6rn1A8iBsrWy51EYxvHVjFvLb/go-ipld-format"
-	"gx/ipfs/QmapdYm1b22Frv3k17fqrBYTFRxwiaVJkB299Mfn33edeB/go-cid"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-ipld-format"
 )
 
 type EthStateTrieNode struct {
-	cid     *cid.Cid
+	cid     cid.Cid
 	rawdata []byte
 }
 
@@ -14,7 +14,7 @@ func (estn EthStateTrieNode) RawData() []byte {
 	return estn.rawdata
 }
 
-func (estn EthStateTrieNode) Cid() *cid.Cid {
+func (estn EthStateTrieNode) Cid() cid.Cid {
 	return estn.cid
 }
 
