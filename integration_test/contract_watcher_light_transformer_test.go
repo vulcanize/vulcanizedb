@@ -49,6 +49,13 @@ var _ = Describe("contractWatcher light transformer", func() {
 			c, ok := t.Contracts[tusdAddr]
 			Expect(ok).To(Equal(true))
 
+			// TODO: Fix this
+			// This test sometimes randomly fails because
+			// for some reason the starting block number is not updated from
+			// its original value (5197514) to the block number (6194632)
+			// of the earliest header (mocks.MockHeader1) in the repository
+			// It is not clear how this happens without one of the above insertErrs
+			// having been thrown and without any errors thrown during the Init() call
 			Expect(c.StartingBlock).To(Equal(int64(6194632)))
 			Expect(c.Abi).To(Equal(constants.TusdAbiString))
 			Expect(c.Name).To(Equal("TrueUSD"))

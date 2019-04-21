@@ -108,11 +108,15 @@ These commands are described in detail [here](../staging/documentation/sync.md).
 ### Data transformation
 Contract watchers use the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest.
 
-There is a built-in `contractWatcher` command which provides generic transformation of most contract data. This command is described in detail [here](../staging/documentation/contractWatcher.md).
+There is a built-in `contractWatcher` command which provides generic transformation of most contract data.
+The `contractWatcher` command is described further [here](../staging/documentation/contractWatcher.md).
 
 In many cases a custom transformer or set of transformers will need to be written to provide complete or more comprehensive coverage or to optimize other aspects of the output for a specific end-use.
-In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. This is described in detail [here](../staging/documentation/composeAndExecute.md).
+In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories.
 
+Usage of the `compose`, `execute`, and `composeAndExecute` commands is described further [here](../staging/documentation/composeAndExecute.md).
+
+Documentation on how to build custom transformers to work with these commands can be found [here](../staging/documentation/transformers.md).
 
 ## Tests
 - Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
