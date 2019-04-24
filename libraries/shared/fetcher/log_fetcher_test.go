@@ -22,16 +22,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fetch "github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
-var _ = Describe("Fetcher", func() {
+var _ = Describe("LogFetcher", func() {
 	Describe("FetchLogs", func() {
 		It("fetches logs based on the given query", func() {
 			blockChain := fakes.NewMockBlockChain()
-			fetcher := fetch.NewFetcher(blockChain)
+			logFetcher := fetcher.NewLogFetcher(blockChain)
 			header := fakes.FakeHeader
 
 			addresses := []common.Address{
@@ -41,7 +41,7 @@ var _ = Describe("Fetcher", func() {
 
 			topicZeros := []common.Hash{common.BytesToHash([]byte{1, 2, 3, 4, 5})}
 
-			_, err := fetcher.FetchLogs(addresses, topicZeros, header)
+			_, err := logFetcher.FetchLogs(addresses, topicZeros, header)
 
 			address1 := common.HexToAddress("0xfakeAddress")
 			address2 := common.HexToAddress("0xanotherFakeAddress")
@@ -59,9 +59,9 @@ var _ = Describe("Fetcher", func() {
 		It("returns an error if fetching the logs fails", func() {
 			blockChain := fakes.NewMockBlockChain()
 			blockChain.SetGetEthLogsWithCustomQueryErr(fakes.FakeError)
-			fetcher := fetch.NewFetcher(blockChain)
+			logFetcher := fetcher.NewLogFetcher(blockChain)
 
-			_, err := fetcher.FetchLogs([]common.Address{}, []common.Hash{}, core.Header{})
+			_, err := logFetcher.FetchLogs([]common.Address{}, []common.Hash{}, core.Header{})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

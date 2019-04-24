@@ -16,16 +16,19 @@
 package cmd
 
 import (
+	"os"
+	"plugin"
+	syn "sync"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"os"
-	"plugin"
-	syn "sync"
 )
 
 // composeAndExecuteCmd represents the composeAndExecute command
@@ -170,7 +173,8 @@ func composeAndExecute() {
 
 	if len(ethStorageInitializers) > 0 {
 		tailer := fs.FileTailer{Path: storageDiffsPath}
-		sw := watcher.NewStorageWatcher(tailer, &db)
+		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+		sw := watcher.NewStorageWatcher(storageFetcher, &db)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)

@@ -6,24 +6,22 @@ import (
 )
 
 type MockTailer struct {
-	Lines      chan *tail.Line
-	TailCalled bool
+	Lines   chan *tail.Line
+	TailErr error
 }
 
 func NewMockTailer() *MockTailer {
 	return &MockTailer{
-		Lines:      make(chan *tail.Line, 1),
-		TailCalled: false,
+		Lines: make(chan *tail.Line, 1),
 	}
 }
 
 func (mock *MockTailer) Tail() (*tail.Tail, error) {
-	mock.TailCalled = true
 	fakeTail := &tail.Tail{
 		Filename: "",
 		Lines:    mock.Lines,
 		Config:   tail.Config{},
 		Tomb:     tomb.Tomb{},
 	}
-	return fakeTail, nil
+	return fakeTail, mock.TailErr
 }

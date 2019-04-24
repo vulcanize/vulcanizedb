@@ -18,33 +18,32 @@ package watcher
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
 )
 
 type StorageWatcher struct {
-	db           *postgres.DB
-	tailer       fs.Tailer
-	Queue        storage.IStorageQueue
-	Transformers map[common.Address]transformer.StorageTransformer
+	db             *postgres.DB
+	StorageFetcher fetcher.IStorageFetcher
+	Queue          storage.IStorageQueue
+	Transformers   map[common.Address]transformer.StorageTransformer
 }
 
-func NewStorageWatcher(tailer fs.Tailer, db *postgres.DB) StorageWatcher {
+func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
 	transformers := make(map[common.Address]transformer.StorageTransformer)
 	queue := storage.NewStorageQueue(db)
 	return StorageWatcher{
-		db:           db,
-		tailer:       tailer,
-		Queue:        queue,
-		Transformers: transformers,
+		db:             db,
+		StorageFetcher: fetcher,
+		Queue:          queue,
+		Transformers:   transformers,
 	}
 }
 
@@ -56,34 +55,36 @@ func (watcher StorageWatcher) AddTransformers(initializers []transformer.Storage
 }
 
 func (watcher StorageWatcher) Execute() error {
-	t, tailErr := watcher.tailer.Tail()
-	if tailErr != nil {
-		return tailErr
+	rows := make(chan utils.StorageDiffRow)
+	errs := make(chan error)
+	go watcher.StorageFetcher.FetchStorageDiffs(rows, errs)
+	for {
+		select {
+		case row := <-rows:
+			watcher.processRow(row)
+		case err := <-errs:
+			return err
+		}
 	}
-	for line := range t.Lines {
-		row, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
-		if parseErr != nil {
-			return parseErr
-		}
-		storageTransformer, ok := watcher.Transformers[row.Contract]
-		if !ok {
-			logrus.Warn(utils.ErrContractNotFound{Contract: row.Contract.Hex()}.Error())
-			continue
-		}
-		executeErr := storageTransformer.Execute(row)
-		if executeErr != nil {
-			if isKeyNotFound(executeErr) {
-				queueErr := watcher.Queue.Add(row)
-				if queueErr != nil {
-					logrus.Warn(queueErr.Error())
-				}
-			} else {
-				logrus.Warn(executeErr.Error())
+}
+
+func (watcher StorageWatcher) processRow(row utils.StorageDiffRow) {
+	storageTransformer, ok := watcher.Transformers[row.Contract]
+	if !ok {
+		// ignore rows from unwatched contracts
+		return
+	}
+	executeErr := storageTransformer.Execute(row)
+	if executeErr != nil {
+		if isKeyNotFound(executeErr) {
+			queueErr := watcher.Queue.Add(row)
+			if queueErr != nil {
+				logrus.Warn(queueErr.Error())
 			}
-			continue
+		} else {
+			logrus.Warn(executeErr.Error())
 		}
 	}
-	return nil
 }
 
 func isKeyNotFound(executeErr error) bool {

@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
@@ -118,7 +119,8 @@ func execute() {
 
 	if len(ethStorageInitializers) > 0 {
 		tailer := fs.FileTailer{Path: storageDiffsPath}
-		sw := watcher.NewStorageWatcher(tailer, &db)
+		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+		sw := watcher.NewStorageWatcher(storageFetcher, &db)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)

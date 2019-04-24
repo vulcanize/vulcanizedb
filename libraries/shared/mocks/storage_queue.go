@@ -23,9 +23,11 @@ import (
 type MockStorageQueue struct {
 	AddCalled bool
 	AddError  error
+	PassedRow utils.StorageDiffRow
 }
 
 func (queue *MockStorageQueue) Add(row utils.StorageDiffRow) error {
 	queue.AddCalled = true
+	queue.PassedRow = row
 	return queue.AddError
 }
