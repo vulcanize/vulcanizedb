@@ -30,39 +30,35 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
 	})
 
-	It("adds error to errors channel if tailing file fails", func() {
+	It("adds error to errors channel if tailing file fails", func(done Done) {
 		mockTailer.TailErr = fakes.FakeError
 
 		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
 
-		close(mockTailer.Lines)
-		returnedErr := <-errorsChannel
-		Expect(returnedErr).To(HaveOccurred())
-		Expect(returnedErr).To(MatchError(fakes.FakeError))
+		Expect(<-errorsChannel).To(MatchError(fakes.FakeError))
+		close(done)
 	})
 
-	It("adds parsed csv row to rows channel for storage diff", func() {
+	It("adds parsed csv row to rows channel for storage diff", func(done Done) {
 		line := getFakeLine()
 
 		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
-		close(mockTailer.Lines)
-		returnedRow := <-rowsChannel
 		expectedRow, err := utils.FromStrings(strings.Split(line.Text, ","))
 		Expect(err).NotTo(HaveOccurred())
-		Expect(expectedRow).To(Equal(returnedRow))
+		Expect(<-rowsChannel).To(Equal(expectedRow))
+		close(done)
 	})
 
-	It("adds error to errors channel if parsing csv fails", func() {
+	It("adds error to errors channel if parsing csv fails", func(done Done) {
 		line := &tail.Line{Text: "invalid"}
 
 		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
-		close(mockTailer.Lines)
-		returnedErr := <-errorsChannel
-		Expect(returnedErr).To(HaveOccurred())
+		Expect(<-errorsChannel).To(HaveOccurred())
+		close(done)
 	})
 })
 

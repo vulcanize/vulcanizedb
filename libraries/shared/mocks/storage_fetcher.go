@@ -12,12 +12,12 @@ func NewMockStorageFetcher() *MockStorageFetcher {
 }
 
 func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
+	defer close(out)
+	defer close(errs)
 	for _, err := range fetcher.ErrsToReturn {
 		errs <- err
 	}
 	for _, row := range fetcher.RowsToReturn {
 		out <- row
 	}
-	close(out)
-	close(errs)
 }

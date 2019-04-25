@@ -49,8 +49,9 @@ var (
 )
 
 const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
+	pollingInterval      = 7 * time.Second
+	queueRecheckInterval = 5 * time.Minute
+	validationWindow     = 15
 )
 
 var rootCmd = &cobra.Command{

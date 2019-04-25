@@ -27,6 +27,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
@@ -168,7 +169,9 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
-		w.Execute()
+		errs := make(chan error)
+		rows := make(chan storageUtils.StorageDiffRow)
+		w.Execute(rows, errs, queueRecheckInterval)
 	}
 }
 
