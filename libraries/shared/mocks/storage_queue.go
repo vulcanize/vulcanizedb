@@ -31,3 +31,11 @@ func (queue *MockStorageQueue) Add(row utils.StorageDiffRow) error {
 	queue.PassedRow = row
 	return queue.AddError
 }
+
+func (queue *MockStorageQueue) Delete(id int) error {
+	panic("implement me")
+}
+
+func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiffRow, error) {
+	panic("implement me")
+}

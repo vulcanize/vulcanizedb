@@ -23,6 +23,8 @@ import (
 
 type IStorageQueue interface {
 	Add(row utils.StorageDiffRow) error
+	Delete(id int) error
+	GetAll() ([]utils.StorageDiffRow, error)
 }
 
 type StorageQueue struct {
@@ -39,4 +41,15 @@ func (queue StorageQueue) Add(row utils.StorageDiffRow) error {
 		($1, $2, $3, $4, $5)`, row.Contract.Bytes(), row.BlockHash.Bytes(),
 		row.BlockHeight, row.StorageKey.Bytes(), row.StorageValue.Bytes())
 	return err
+}
+
+func (queue StorageQueue) Delete(id int) error {
+	_, err := queue.db.Exec(`DELETE FROM public.queued_storage WHERE id = $1`, id)
+	return err
+}
+
+func (queue StorageQueue) GetAll() ([]utils.StorageDiffRow, error) {
+	var result []utils.StorageDiffRow
+	err := queue.db.Select(&result, `SELECT * FROM public.queued_storage`)
+	return result, err
 }
