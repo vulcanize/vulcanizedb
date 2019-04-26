@@ -58,6 +58,12 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 		mockTailer.Lines <- line
 
 		Expect(<-errorsChannel).To(HaveOccurred())
+		select {
+		case <-rowsChannel:
+			Fail("value passed to rows channel on error")
+		default:
+			Succeed()
+		}
 		close(done)
 	})
 })

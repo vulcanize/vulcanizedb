@@ -27,7 +27,8 @@ func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.S
 		row, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
 		if parseErr != nil {
 			errs <- parseErr
+		} else {
+			out <- row
 		}
-		out <- row
 	}
 }
