@@ -24,6 +24,7 @@ export function parseConfig(
   let gqSchemas = ['public'];
   let gqUser = '';
   let gqPassword = '';
+  let disableDefaultMutations = true;
 
   if (configPath) {
     const tomlContents = readCallback(`${configPath}`).toString();
@@ -37,6 +38,9 @@ export function parseConfig(
     gqSchemas = parsedToml['database']['gq_schemas'];
     gqUser = parsedToml['database']['gq_user'] || gqUser;
     gqPassword = parsedToml['database']['gq_password'] || gqPassword;
+    disableDefaultMutations = parsedToml['database']['disable_default_mutations'] === undefined
+      ? true
+      : parsedToml['database']['disable_default_mutations'];
   }
 
   // Overwrite config values with env. vars if such are set
@@ -69,6 +73,7 @@ export function parseConfig(
         : `postgres://${user}:${password}@${host}:${port}`,
     database,
     schemas: gqSchemas,
-    ownerConnectionString: `postgres://${user}:${password}@${host}:${port}/${database}`
+    ownerConnectionString: `postgres://${user}:${password}@${host}:${port}/${database}`,
+    disableDefaultMutations
   };
 }

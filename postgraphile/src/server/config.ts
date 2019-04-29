@@ -27,7 +27,7 @@ export function buildServerConfig(
 
   const options: PostgraphileOptions = {
     appendPlugins: [PgSimplifyInflectorPlugin],
-    disableDefaultMutations: true,
+    disableDefaultMutations: databaseConfig.disableDefaultMutations,
     enableCors: true,
     exportGqlSchemaPath: 'schema.graphql',
     graphiql: true,

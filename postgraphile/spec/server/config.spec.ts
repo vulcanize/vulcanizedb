@@ -25,7 +25,8 @@ describe('buildServerConfig', () => {
       host: 'example.com',
       database: 'example_database',
       schemas: ['public'],
-      ownerConnectionString: 'postgres://admin:admin@host'
+      ownerConnectionString: 'postgres://admin:admin@host',
+      disableDefaultMutations: true
     };
 
     postgraphileMiddleware = jasmine

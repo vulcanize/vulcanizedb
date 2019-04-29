@@ -18,6 +18,7 @@ export interface DatabaseConfig {
   database: string;
   schemas: string[];
   ownerConnectionString: string;
+  disableDefaultMutations: boolean;
 }
 
 export interface ServerConfig {
