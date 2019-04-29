@@ -41,6 +41,7 @@ var (
 	genConfig           config.Plugin
 	ipc                 string
 	levelDbPath         string
+	queueRecheckInterval time.Duration
 	startingBlockNumber int64
 	storageDiffsPath    string
 	syncAll             bool
@@ -50,7 +51,6 @@ var (
 
 const (
 	pollingInterval      = 7 * time.Second
-	queueRecheckInterval = 5 * time.Minute
 	validationWindow     = 15
 )
 

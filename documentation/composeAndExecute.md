@@ -36,6 +36,20 @@ composeAndExecute:
 
 `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
 
+## Flags
+
+The `compose` and `composeAndExecute` commands can be passed optional flags to specify the operation of the watchers:
+
+- `--recheck-headers`/`-r` - specifies whether to re-check headers for events after the header has already been queried for watched logs.
+Can be useful for redundancy if you suspect that your node is not always returning all desired logs on every query.
+Argument is expected to be a boolean: e.g. `-r=true`.
+Defaults to `false`.
+
+- `query-recheck-interval`/`-q` - specifies interval for re-checking storage diffs that haven been queued for later processing
+(by default, the storage watched queues storage diffs if transformer execution fails, on the assumption that subsequent data derived from the event transformers may enable us to decode storage keys that we don't recognize right now).
+Argument is expected to be a duration (integer measured in nanoseconds): e.g. `-q=10m30s` (for 10 minute, 30 second intervals).
+Defaults to `5m` (5 minutes).
+
 ## Configuration
 A .toml config file is specified when executing the commands.
 The config provides information for composing a set of transformers from external repositories:
