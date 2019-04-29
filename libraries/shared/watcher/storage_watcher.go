@@ -79,13 +79,10 @@ func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
 	}
 	executeErr := storageTransformer.Execute(row)
 	if executeErr != nil {
-		if isKeyNotFound(executeErr) {
-			queueErr := storageWatcher.Queue.Add(row)
-			if queueErr != nil {
-				logrus.Warn(fmt.Sprintf("error queueing storage diff with unrecognized key: %s", queueErr))
-			}
-		} else {
-			logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
+		logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
+		queueErr := storageWatcher.Queue.Add(row)
+		if queueErr != nil {
+			logrus.Warn(fmt.Sprintf("error queueing storage diff: %s", queueErr))
 		}
 	}
 }

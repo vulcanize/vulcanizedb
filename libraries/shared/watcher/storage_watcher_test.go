@@ -109,8 +109,8 @@ var _ = Describe("Storage Watcher", func() {
 				close(done)
 			})
 
-			It("queues row for later processing if row's key not recognized", func(done Done) {
-				mockTransformer.ExecuteErr = utils.ErrStorageKeyNotFound{}
+			It("queues row for later processing if transformer execution fails", func(done Done) {
+				mockTransformer.ExecuteErr = fakes.FakeError
 
 				go storageWatcher.Execute(rows, errs, time.Hour)
 
@@ -137,22 +137,6 @@ var _ = Describe("Storage Watcher", func() {
 				Eventually(func() bool {
 					return mockQueue.AddCalled
 				}).Should(BeTrue())
-				Eventually(func() (string, error) {
-					logContent, err := ioutil.ReadFile(tempFile.Name())
-					return string(logContent), err
-				}).Should(ContainSubstring(fakes.FakeError.Error()))
-				close(done)
-			})
-
-			It("logs error if transformer execution fails for reason other than key not found", func(done Done) {
-				mockTransformer.ExecuteErr = fakes.FakeError
-				tempFile, fileErr := ioutil.TempFile("", "log")
-				Expect(fileErr).NotTo(HaveOccurred())
-				defer os.Remove(tempFile.Name())
-				logrus.SetOutput(tempFile)
-
-				go storageWatcher.Execute(rows, errs, time.Hour)
-
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())
 					return string(logContent), err
