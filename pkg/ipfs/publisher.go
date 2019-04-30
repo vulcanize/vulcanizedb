@@ -21,6 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	rlp2 "github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_header"
@@ -31,13 +32,13 @@ import (
 	"github.com/vulcanize/eth-block-extractor/pkg/wrappers/rlp"
 )
 
-// Publisher is the interface for publishing an IPLD payload
-type Publisher interface {
+// IPLDPublisher is the interface for publishing an IPLD payload
+type IPLDPublisher interface {
 	Publish(payload *IPLDPayload) (*CIDPayload, error)
 }
 
-// IPLDPublisher is the underlying struct for the Publisher interface
-type IPLDPublisher struct {
+// Publisher is the underlying struct for the IPLDPublisher interface
+type Publisher struct {
 	Node              *ipfs.IPFS
 	HeaderPutter      *eth_block_header.BlockHeaderDagPutter
 	TransactionPutter *eth_block_transactions.BlockTransactionsDagPutter
@@ -46,27 +47,15 @@ type IPLDPublisher struct {
 	StoragePutter     *eth_storage_trie.StorageTrieDagPutter
 }
 
-// CID payload is a struct to hold all the CIDs and their meta data
-type CIDPayload struct {
-	BlockNumber     string
-	BlockHash       string
-	HeaderCID       string
-	TransactionCIDs map[common.Hash]string
-	ReceiptCIDs     map[common.Hash]string
-	StateLeafCIDs   map[common.Hash]string
-	StorageLeafCIDs map[common.Hash]map[common.Hash]string
-}
-
-// NewIPLDPublisher creates a pointer to a new IPLDPublisher which satisfies the Publisher interface
-func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
+// NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
+func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
 	node, err := ipfs.InitIPFSNode(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
-	decoder := rlp.RlpDecoder{}
-	return &IPLDPublisher{
+	return &Publisher{
 		Node:              node,
-		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, decoder),
+		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, rlp.RlpDecoder{}),
 		TransactionPutter: eth_block_transactions.NewBlockTransactionsDagPutter(node),
 		ReceiptPutter:     eth_block_receipts.NewEthBlockReceiptDagPutter(node),
 		StatePutter:       eth_state_trie.NewStateTrieDagPutter(node),
@@ -75,21 +64,35 @@ func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
+func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	// Process and publish headers
 	headerCid, err := pub.publishHeaders(payload.HeaderRLP)
 	if err != nil {
 		return nil, err
 	}
 
+	// Process and publish uncles
+	uncleCids := make(map[common.Hash]string)
+	for _, uncle := range payload.BlockBody.Uncles {
+		uncleRlp, err := rlp2.EncodeToBytes(uncle)
+		if err != nil {
+			return nil, err
+		}
+		cid, err := pub.publishHeaders(uncleRlp)
+		if err != nil {
+			return nil, err
+		}
+		uncleCids[uncle.Hash()] = cid
+	}
+
 	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(payload.BlockBody)
+	transactionCids, err := pub.publishTransactions(payload.BlockBody, payload.TrxMetaData)
 	if err != nil {
 		return nil, err
 	}
 
 	// Process and publish receipts
-	receiptsCids, err := pub.publishReceipts(payload.Receipts)
+	receiptsCids, err := pub.publishReceipts(payload.Receipts, payload.ReceiptMetaData)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +114,7 @@ func (pub *IPLDPublisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 		BlockHash:       payload.BlockHash.Hex(),
 		BlockNumber:     payload.BlockNumber.String(),
 		HeaderCID:       headerCid,
+		UncleCIDS:       uncleCids,
 		TransactionCIDs: transactionCids,
 		ReceiptCIDs:     receiptsCids,
 		StateLeafCIDs:   stateLeafCids,
@@ -118,7 +122,7 @@ func (pub *IPLDPublisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	}, nil
 }
 
-func (pub *IPLDPublisher) publishHeaders(headerRLP []byte) (string, error) {
+func (pub *Publisher) publishHeaders(headerRLP []byte) (string, error) {
 	headerCids, err := pub.HeaderPutter.DagPut(headerRLP)
 	if err != nil {
 		return "", err
@@ -129,7 +133,7 @@ func (pub *IPLDPublisher) publishHeaders(headerRLP []byte) (string, error) {
 	return headerCids[0], nil
 }
 
-func (pub *IPLDPublisher) publishTransactions(blockBody *types.Body) (map[common.Hash]string, error) {
+func (pub *Publisher) publishTransactions(blockBody *types.Body, trxMeta []*TrxMetaData) (map[common.Hash]*TrxMetaData, error) {
 	transactionCids, err := pub.TransactionPutter.DagPut(blockBody)
 	if err != nil {
 		return nil, err
@@ -137,14 +141,15 @@ func (pub *IPLDPublisher) publishTransactions(blockBody *types.Body) (map[common
 	if len(transactionCids) != len(blockBody.Transactions) {
 		return nil, errors.New("expected one CID for each transaction")
 	}
-	mappedTrxCids := make(map[common.Hash]string, len(transactionCids))
+	mappedTrxCids := make(map[common.Hash]*TrxMetaData, len(transactionCids))
 	for i, trx := range blockBody.Transactions {
-		mappedTrxCids[trx.Hash()] = transactionCids[i]
+		mappedTrxCids[trx.Hash()] = trxMeta[i]
+		mappedTrxCids[trx.Hash()].CID = transactionCids[i]
 	}
 	return mappedTrxCids, nil
 }
 
-func (pub *IPLDPublisher) publishReceipts(receipts types.Receipts) (map[common.Hash]string, error) {
+func (pub *Publisher) publishReceipts(receipts types.Receipts, receiptMeta []*ReceiptMetaData) (map[common.Hash]*ReceiptMetaData, error) {
 	receiptsCids, err := pub.ReceiptPutter.DagPut(receipts)
 	if err != nil {
 		return nil, err
@@ -152,14 +157,15 @@ func (pub *IPLDPublisher) publishReceipts(receipts types.Receipts) (map[common.H
 	if len(receiptsCids) != len(receipts) {
 		return nil, errors.New("expected one CID for each receipt")
 	}
-	mappedRctCids := make(map[common.Hash]string, len(receiptsCids))
+	mappedRctCids := make(map[common.Hash]*ReceiptMetaData, len(receiptsCids))
 	for i, rct := range receipts {
-		mappedRctCids[rct.TxHash] = receiptsCids[i]
+		mappedRctCids[rct.TxHash] = receiptMeta[i]
+		mappedRctCids[rct.TxHash].CID = receiptsCids[i]
 	}
 	return mappedRctCids, nil
 }
 
-func (pub *IPLDPublisher) publishStateLeafs(stateLeafs map[common.Hash][]byte) (map[common.Hash]string, error) {
+func (pub *Publisher) publishStateLeafs(stateLeafs map[common.Hash][]byte) (map[common.Hash]string, error) {
 	stateLeafCids := make(map[common.Hash]string)
 	for addr, leaf := range stateLeafs {
 		stateLeafCid, err := pub.StatePutter.DagPut(leaf)
@@ -174,7 +180,7 @@ func (pub *IPLDPublisher) publishStateLeafs(stateLeafs map[common.Hash][]byte) (
 	return stateLeafCids, nil
 }
 
-func (pub *IPLDPublisher) publishStorageLeafs(storageLeafs map[common.Hash]map[common.Hash][]byte) (map[common.Hash]map[common.Hash]string, error) {
+func (pub *Publisher) publishStorageLeafs(storageLeafs map[common.Hash]map[common.Hash][]byte) (map[common.Hash]map[common.Hash]string, error) {
 	storageLeafCids := make(map[common.Hash]map[common.Hash]string)
 	for addr, storageTrie := range storageLeafs {
 		storageLeafCids[addr] = make(map[common.Hash]string)

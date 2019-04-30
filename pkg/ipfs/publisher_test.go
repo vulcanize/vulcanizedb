@@ -15,3 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package ipfs_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+)
+
+var _ = Describe("Publisher", func() {
+	Describe("Publish", func() {
+		It("Publishes IPLDPayload to IPFS", func() {
+			mockPublisher := mocks.IPLDPublisher{}
+			mockPublisher.ReturnCIDPayload = &test_helpers.MockCIDPayload
+			cidPayload, err := mockPublisher.Publish(&test_helpers.MockIPLDPayload)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cidPayload).To(Equal(&test_helpers.MockCIDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&test_helpers.MockIPLDPayload))
+		})
+
+		It("Fails if", func() {
+
+		})
+	})
+})

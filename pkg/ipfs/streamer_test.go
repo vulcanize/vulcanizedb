@@ -15,3 +15,41 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package ipfs_test
+
+import (
+	"sync"
+
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+)
+
+var _ = Describe("Streamer", func() {
+	Describe("Stream", func() {
+		It("Streams StatediffPayloads from a Geth RPC subscription", func() {
+			wg := new(sync.WaitGroup)
+			mockStreamer := mocks.StateDiffStreamer{}
+			mockStreamer.ReturnSub = &rpc.ClientSubscription{}
+			mockStreamer.WaitGroup = wg
+			mockStreamer.StreamPayloads = []statediff.Payload{
+				test_helpers.MockStatediffPayload,
+			}
+			payloadChan := make(chan statediff.Payload, 1)
+			sub, err := mockStreamer.Stream(payloadChan)
+			wg.Wait()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sub).To(Equal(&rpc.ClientSubscription{}))
+			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
+			streamedPayload := <-payloadChan
+			Expect(streamedPayload).To(Equal(test_helpers.MockStatediffPayload))
+		})
+
+		It("Fails if", func() {
+
+		})
+	})
+})
