@@ -15,3 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package mocks
+
+import "github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
+// CIDRepository is the underlying struct for the Repository interface
+type CIDRepository struct {
+	PassedCIDPayload *ipfs.CIDPayload
+	ReturnErr        error
+}
+
+// Index indexes a cidPayload in Postgres
+func (repo *CIDRepository) Index(cidPayload *ipfs.CIDPayload) error {
+	repo.PassedCIDPayload = cidPayload
+	return repo.ReturnErr
+}

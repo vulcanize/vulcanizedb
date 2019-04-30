@@ -4,6 +4,8 @@ CREATE TABLE public.transaction_cids (
   header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE,
   tx_hash               VARCHAR(66) NOT NULL,
   cid                   TEXT NOT NULL,
+  dst                   VARCHAR(66) NOT NULL,
+  src                   VARCHAR(66) NOT NULL,
   UNIQUE (header_id, tx_hash)
 );
 

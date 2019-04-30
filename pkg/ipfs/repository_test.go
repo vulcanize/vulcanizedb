@@ -15,3 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package ipfs_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+)
+
+var _ = Describe("Repository", func() {
+	Describe("Index", func() {
+		It("Indexes CIDs against their metadata", func() {
+			mockRepo := mocks.CIDRepository{}
+			err := mockRepo.Index(&test_helpers.MockCIDPayload)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(mockRepo.PassedCIDPayload).To(Equal(&test_helpers.MockCIDPayload))
+		})
+
+		It("Fails if", func() {
+
+		})
+	})
+})

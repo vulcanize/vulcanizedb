@@ -15,3 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package ipfs_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+)
+
+var _ = Describe("Converter", func() {
+	Describe("Convert", func() {
+		It("Converts StatediffPayloads into IPLDPayloads", func() {
+			mockConverter := mocks.PayloadConverter{}
+			mockConverter.ReturnIPLDPayload = &test_helpers.MockIPLDPayload
+			ipldPayload, err := mockConverter.Convert(test_helpers.MockStatediffPayload)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ipldPayload).To(Equal(&test_helpers.MockIPLDPayload))
+			Expect(mockConverter.PassedStatediffPayload).To(Equal(test_helpers.MockStatediffPayload))
+		})
+
+		It("Fails if", func() {
+
+		})
+	})
+})

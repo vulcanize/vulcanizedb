@@ -18,29 +18,30 @@ package ipfs
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Repository is an interface for indexing CIDPayloads
-type Repository interface {
+// CIDRepository is an interface for indexing CIDPayloads
+type CIDRepository interface {
 	Index(cidPayload *CIDPayload) error
 }
 
-// CIDRepository is the underlying struct for the Repository interface
-type CIDRepository struct {
+// Repository is the underlying struct for the CIDRepository interface
+type Repository struct {
 	db *postgres.DB
 }
 
-// NewCIDRepository creates a new pointer to a CIDRepository which satisfies the Repository interface
-func NewCIDRepository(db *postgres.DB) *CIDRepository {
-	return &CIDRepository{
+// NewCIDRepository creates a new pointer to a Repository which satisfies the CIDRepository interface
+func NewCIDRepository(db *postgres.DB) *Repository {
+	return &Repository{
 		db: db,
 	}
 }
 
-// IndexCIDs indexes a cidPayload in Postgres
-func (repo *CIDRepository) Index(cidPayload *CIDPayload) error {
+// Index indexes a cidPayload in Postgres
+func (repo *Repository) Index(cidPayload *CIDPayload) error {
 	tx, _ := repo.db.Beginx()
 	headerID, err := repo.indexHeaderCID(tx, cidPayload.HeaderCID, cidPayload.BlockNumber, cidPayload.BlockHash)
 	if err != nil {
@@ -60,7 +61,7 @@ func (repo *CIDRepository) Index(cidPayload *CIDPayload) error {
 	return tx.Commit()
 }
 
-func (repo *CIDRepository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash string) (int64, error) {
+func (repo *Repository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash string) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid) VALUES ($1, $2, $3)
 								ON CONFLICT DO UPDATE SET cid = $3
@@ -69,19 +70,19 @@ func (repo *CIDRepository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash st
 	return headerID, err
 }
 
-func (repo *CIDRepository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
-	for hash, trxCid := range payload.TransactionCIDs {
+func (repo *Repository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+	for hash, trxCidMeta := range payload.TransactionCIDs {
 		var txID int64
-		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid) VALUES ($1, $2, $3) 
-										ON CONFLICT DO UPDATE SET cid = $3
-										RETURNING id`,
-			headerID, hash.Hex(), trxCid).Scan(&txID)
+		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid, dst, src) VALUES ($1, $2, $3, $4, $5) 
+									ON CONFLICT DO UPDATE SET (cid, dst, src) = ($3, $4, $5)
+									RETURNING id`,
+			headerID, hash.Hex(), trxCidMeta.CID, trxCidMeta.To, trxCidMeta.From).Scan(&txID)
 		if err != nil {
 			return err
 		}
-		receiptCid, ok := payload.ReceiptCIDs[hash]
+		receiptCidMeta, ok := payload.ReceiptCIDs[hash]
 		if ok {
-			err = repo.indexReceiptCID(tx, receiptCid, txID)
+			err = repo.indexReceiptCID(tx, receiptCidMeta, txID)
 			if err != nil {
 				return err
 			}
@@ -90,18 +91,18 @@ func (repo *CIDRepository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *
 	return nil
 }
 
-func (repo *CIDRepository) indexReceiptCID(tx *sqlx.Tx, cid string, txId int64) error {
-	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid) VALUES ($1, $2) 
-										ON CONFLICT DO UPDATE SET cid = $2`, txId, cid)
+func (repo *Repository) indexReceiptCID(tx *sqlx.Tx, cidMeta *ReceiptMetaData, txID int64) error {
+	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, topic0s) VALUES ($1, $2, $3) 
+							  ON CONFLICT DO UPDATE SET (cid, topic0s) = ($2, $3)`, txID, cidMeta.CID, pq.Array(cidMeta.Topic0s))
 	return err
 }
 
-func (repo *CIDRepository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+func (repo *Repository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
 	for accountKey, stateCID := range payload.StateLeafCIDs {
 		var stateID int64
-		err := tx.QueryRowx(`INSERT INTO public.state_cids (header_id, account_key, cid) VALUES ($1, $2, $3) 
-										ON CONFLICT DO UPDATE SET cid = $3
-										RETURNING id`,
+		err := tx.QueryRowx(`INSERT INTO public.state_cids (header_id, account_key, cid) VALUES ($1, $2, $3)
+									ON CONFLICT DO UPDATE SET cid = $3
+									RETURNING id`,
 			headerID, accountKey.Hex(), stateCID).Scan(&stateID)
 		if err != nil {
 			return err
@@ -116,8 +117,8 @@ func (repo *CIDRepository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPay
 	return nil
 }
 
-func (repo *CIDRepository) indexStorageCID(tx *sqlx.Tx, key, cid string, stateId int64) error {
+func (repo *Repository) indexStorageCID(tx *sqlx.Tx, key, cid string, stateID int64) error {
 	_, err := repo.db.Exec(`INSERT INTO public.storage_cids (state_id, storage_key, cid) VALUES ($1, $2, $3) 
-										ON CONFLICT DO UPDATE SET cid = $3`, stateId, key, cid)
+								   ON CONFLICT DO UPDATE SET cid = $3`, stateID, key, cid)
 	return err
 }
