@@ -15,3 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package mocks
+
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+)
+
+// IPLDPublisher is the underlying struct for the Publisher interface
+type IPLDPublisher struct {
+	PassedIPLDPayload *ipfs.IPLDPayload
+	ReturnCIDPayload  *ipfs.CIDPayload
+	ReturnErr         error
+}
+
+// Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
+func (pub *IPLDPublisher) Publish(payload *ipfs.IPLDPayload) (*ipfs.CIDPayload, error) {
+	pub.PassedIPLDPayload = payload
+	return pub.ReturnCIDPayload, pub.ReturnErr
+}

@@ -60,13 +60,13 @@ func syncAndPublish() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool)
-	indexer, err := ipfs.NewIPFSIndexer(ipfsPath, &db, ethClient, rpcClient, quitChan)
+	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	wg := &syn.WaitGroup{}
-	err = indexer.Index(wg)
+	err = processor.Process(wg)
 	if err != nil {
 		log.Fatal(err)
 	}

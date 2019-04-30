@@ -15,3 +15,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package mocks
+
+import (
+	"github.com/ethereum/go-ethereum/statediff"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+)
+
+// PayloadConverter is the underlying struct for the Converter interface
+type PayloadConverter struct {
+	PassedStatediffPayload statediff.Payload
+	ReturnIPLDPayload      *ipfs.IPLDPayload
+	ReturnErr              error
+}
+
+// Convert method is used to convert a geth statediff.Payload to a IPLDPayload
+func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ipfs.IPLDPayload, error) {
+	pc.PassedStatediffPayload = payload
+	return pc.ReturnIPLDPayload, pc.ReturnErr
+}
