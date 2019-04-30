@@ -18,7 +18,6 @@ package ipfs
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,36 +27,25 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// Converter interface is used to convert a geth statediff.Payload to our IPLDPayload type
-type Converter interface {
+// PayloadConverter interface is used to convert a geth statediff.Payload to our IPLDPayload type
+type PayloadConverter interface {
 	Convert(payload statediff.Payload) (*IPLDPayload, error)
 }
 
-// PayloadConverter is the underlying struct for the Converter interface
-type PayloadConverter struct {
+// Converter is the underlying struct for the PayloadConverter interface
+type Converter struct {
 	client core.EthClient
 }
 
-// IPLDPayload is a custom type which packages ETH data for the IPFS publisher
-type IPLDPayload struct {
-	HeaderRLP    []byte
-	BlockNumber  *big.Int
-	BlockHash    common.Hash
-	BlockBody    *types.Body
-	Receipts     types.Receipts
-	StateLeafs   map[common.Hash][]byte
-	StorageLeafs map[common.Hash]map[common.Hash][]byte
-}
-
-// NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the Converter interface
-func NewPayloadConverter(client core.EthClient) *PayloadConverter {
-	return &PayloadConverter{
+// NewPayloadConverter creates a pointer to a new Converter which satisfies the PayloadConverter interface
+func NewPayloadConverter(client core.EthClient) *Converter {
+	return &Converter{
 		client: client,
 	}
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *PayloadConverter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
+func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	// Unpack block rlp to access fields
 	block := new(types.Block)
 	err := rlp.DecodeBytes(payload.BlockRlp, block)
@@ -66,21 +54,49 @@ func (pc *PayloadConverter) Convert(payload statediff.Payload) (*IPLDPayload, er
 	if err != nil {
 		return nil, err
 	}
+	trxLen := len(block.Transactions())
 	convertedPayload := &IPLDPayload{
-		BlockHash:    block.Hash(),
-		BlockNumber:  block.Number(),
-		HeaderRLP:    headerRlp,
-		BlockBody:    block.Body(),
-		Receipts:     make(types.Receipts, 0),
-		StateLeafs:   make(map[common.Hash][]byte),
-		StorageLeafs: make(map[common.Hash]map[common.Hash][]byte),
+		BlockHash:       block.Hash(),
+		BlockNumber:     block.Number(),
+		HeaderRLP:       headerRlp,
+		BlockBody:       block.Body(),
+		TrxMetaData:     make([]*TrxMetaData, 0, trxLen),
+		Receipts:        make(types.Receipts, 0, trxLen),
+		ReceiptMetaData: make([]*ReceiptMetaData, 0, trxLen),
+		StateLeafs:      make(map[common.Hash][]byte),
+		StorageLeafs:    make(map[common.Hash]map[common.Hash][]byte),
 	}
-	for _, trx := range block.Transactions() {
+	for gethTransactionIndex, trx := range block.Transactions() {
+		// Extract to and from data from the the transactions for indexing
+		from, err := pc.client.TransactionSender(context.Background(), trx, block.Hash(), uint(gethTransactionIndex))
+		if err != nil {
+			return nil, err
+		}
+		txMeta := &TrxMetaData{
+			To:   trx.To().Hex(),
+			From: from.Hex(),
+		}
+		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
+		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
+
+		// Retrieve receipt for this transaction
 		gethReceipt, err := pc.client.TransactionReceipt(context.Background(), trx.Hash())
 		if err != nil {
 			return nil, err
 		}
+		// Extract topic0 data from the receipt's logs for indexing
+		rctMeta := &ReceiptMetaData{
+			Topic0s: make([]string, 0, len(gethReceipt.Logs)),
+		}
+		for _, log := range gethReceipt.Logs {
+			if len(log.Topics[0]) < 1 {
+				continue
+			}
+			rctMeta.Topic0s = append(rctMeta.Topic0s, log.Topics[0].Hex())
+		}
+		// receipt and rctMeta will have same indexes
 		convertedPayload.Receipts = append(convertedPayload.Receipts, gethReceipt)
+		convertedPayload.ReceiptMetaData = append(convertedPayload.ReceiptMetaData, rctMeta)
 	}
 
 	// Unpack state diff rlp to access fields
