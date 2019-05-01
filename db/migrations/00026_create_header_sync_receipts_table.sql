@@ -1,7 +1,7 @@
 -- +goose Up
-CREATE TABLE light_sync_receipts(
+CREATE TABLE header_sync_receipts(
   id                  SERIAL PRIMARY KEY,
-  transaction_id      INTEGER NOT NULL REFERENCES light_sync_transactions(id) ON DELETE CASCADE,
+  transaction_id      INTEGER NOT NULL REFERENCES header_sync_transactions(id) ON DELETE CASCADE,
   header_id           INTEGER NOT NULL REFERENCES headers(id) ON DELETE CASCADE,
   contract_address    VARCHAR(42),
   cumulative_gas_used NUMERIC,
@@ -15,4 +15,4 @@ CREATE TABLE light_sync_receipts(
 
 
 -- +goose Down
-DROP TABLE light_sync_receipts;
+DROP TABLE header_sync_receipts;

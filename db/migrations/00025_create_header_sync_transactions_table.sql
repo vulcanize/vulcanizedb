@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE light_sync_transactions (
+CREATE TABLE header_sync_transactions (
   id          SERIAL PRIMARY KEY,
   header_id   INTEGER NOT NULL REFERENCES headers(id) ON DELETE CASCADE,
   hash        VARCHAR(66),
@@ -16,4 +16,4 @@ CREATE TABLE light_sync_transactions (
 );
 
 -- +goose Down
-DROP TABLE light_sync_transactions;
+DROP TABLE header_sync_transactions;

@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/converter"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/converter"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"

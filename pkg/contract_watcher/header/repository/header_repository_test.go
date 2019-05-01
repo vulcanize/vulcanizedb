@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -32,7 +32,7 @@ import (
 
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
-	var contractHeaderRepo repository.HeaderRepository // contract_watcher light header repository
+	var contractHeaderRepo repository.HeaderRepository // contract_watcher headerSync header repository
 	var coreHeaderRepo repositories.HeaderRepository   // pkg/datastore header repository
 	var eventIDs = []string{
 		"eventName_contractAddr",

@@ -2,13 +2,13 @@
 	
 One approach VulcanizeDB takes to caching and indexing smart contracts is to watch contract events emitted in receipt logs.
 
-With a light synced vDB we can watch events by iterating over headers retrieved from the synced `headers` table and using these headers to
+With a header synced vDB we can watch events by iterating over headers retrieved from the synced `headers` table and using these headers to
 fetch and verify relevant event logs from a full Ethereum node, keeping track of which headers we have checked for which events 
 with our `checked_headers` table.
 
 ## Assumptions
 
-This approach assumes you are running a vDB light sync which is itself run against a light Ethereum node,
+This approach assumes you are running a vDB header sync which is run against a light Ethereum node;
 this approach also assumes there is a full node available. 
 
 Looking forward, we will be building fetchers that enable sourcing data from IPFS instead of an ETH node.
@@ -17,7 +17,7 @@ Looking forward, we will be building fetchers that enable sourcing data from IPF
 
 VulcanizeDB has shared code built out for building and plugging in event transformers
 
-### [Event Watcher (light sync)](../staging/libraries/shared/watcher/event_watcher.go)
+### [Event Watcher (header sync)](../staging/libraries/shared/watcher/event_watcher.go)
 
 The event watcher is responsible for continuously fetching and delegating chunks of logs and their associated header to the appropriate transformers.
 

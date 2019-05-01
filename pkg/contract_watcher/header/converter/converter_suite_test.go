@@ -27,7 +27,7 @@ import (
 
 func TestConverter(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Light Converter Suite Test")
+	RunSpecs(t, "Header Sync Converter Suite Test")
 }
 
 var _ = BeforeSuite(func() {

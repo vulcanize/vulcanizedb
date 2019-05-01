@@ -59,7 +59,7 @@ type NewOwnerLog struct {
 	Owner          string `db:"owner_"`
 }
 
-type LightTransferLog struct {
+type HeaderSyncTransferLog struct {
 	Id        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
@@ -71,7 +71,7 @@ type LightTransferLog struct {
 	RawLog    []byte `db:"raw_log"`
 }
 
-type LightNewOwnerLog struct {
+type HeaderSyncNewOwnerLog struct {
 	Id        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
@@ -240,13 +240,13 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM full_sync_transactions`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec("DELETE FROM light_sync_transactions")
+	_, err = tx.Exec("DELETE FROM header_sync_transactions")
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM full_sync_receipts`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM light_sync_receipts`)
+	_, err = tx.Exec(`DELETE FROM header_sync_receipts`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP TABLE checked_headers`)
@@ -258,13 +258,13 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x314159265dd8dbb310642f98f50c066173c1259b CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP SCHEMA IF EXISTS light_0x314159265dd8dbb310642f98f50c066173c1259b CASCADE`)
+	_, err = tx.Exec(`DROP SCHEMA IF EXISTS header_0x314159265dd8dbb310642f98f50c066173c1259b CASCADE`)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = tx.Commit()

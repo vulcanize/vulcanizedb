@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
@@ -18,7 +18,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-var _ = Describe("contractWatcher light transformer", func() {
+var _ = Describe("contractWatcher headerSync transformer", func() {
 	var db *postgres.DB
 	var err error
 	var blockChain core.BlockChain
@@ -107,8 +107,8 @@ var _ = Describe("contractWatcher light transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.LightTransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", tusdAddr)).StructScan(&log)
+			log := test_helpers.HeaderSyncTransferLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.transfer_event", tusdAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.HeaderID).To(Equal(headerID))
@@ -175,12 +175,12 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.BalanceOf{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", tusdAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x1062a747393198f70F71ec65A582423Dba7E5Ab3' AND block = '6791669'", tusdAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Balance).To(Equal("55849938025000000000000"))
 			Expect(res.TokenName).To(Equal("TrueUSD"))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", tusdAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6791669'", tusdAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
@@ -215,8 +215,8 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(t.Start).To(Equal(int64(6885698)))
 
-			log := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
+			log := test_helpers.HeaderSyncNewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(log.HeaderID).To(Equal(headerID))
@@ -267,17 +267,17 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x0000000000000000000000000000000000000000"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x9THIS110dcc444fIS242510c09bbAbe21aFAKEcacNODE82f7b843HASH61ba391' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
@@ -294,8 +294,8 @@ var _ = Describe("contractWatcher light transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&log)
+			log := test_helpers.HeaderSyncNewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does not exist"))
 		})
@@ -316,12 +316,12 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			res := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(res.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&res)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})
@@ -345,16 +345,16 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(t.Start).To(Equal(int64(6885702)))
 
-			newOwnerLog := test_helpers.LightNewOwnerLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
+			newOwnerLog := test_helpers.HeaderSyncNewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(newOwnerLog.Node).To(Equal("0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae"))
 			Expect(newOwnerLog.Label).To(Equal("0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047"))
 			Expect(newOwnerLog.Owner).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 
-			transferLog := test_helpers.LightTransferLog{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
+			transferLog := test_helpers.HeaderSyncTransferLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
 			Expect(transferLog.From).To(Equal("0x8cA465764873E71CEa525F5EB6AE973d650c22C2"))
@@ -417,27 +417,27 @@ var _ = Describe("contractWatcher light transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			owner := test_helpers.Owner{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 			Expect(owner.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner.Address).To(Equal("0x0000000000000000000000000000000000000000"))
 			Expect(owner.TokenName).To(Equal(""))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHItransformers.8IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&owner)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x95832c7a47ff8a7840e28b78ceMADEUPaaf4HASHc186badTHItransformers.8IS625bFAKE' AND block = '6885696'", ensAddr)).StructScan(&owner)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 
 			bal := test_helpers.BalanceOf{}
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x8cA465764873E71CEa525F5EB6AE973d650c22C2' AND block = '6885701'", tusdAddr)).StructScan(&bal)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x8cA465764873E71CEa525F5EB6AE973d650c22C2' AND block = '6885701'", tusdAddr)).StructScan(&bal)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bal.Balance).To(Equal("1954436000000000000000"))
 			Expect(bal.TokenName).To(Equal("TrueUSD"))
 
-			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6885701'", tusdAddr)).StructScan(&bal)
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x09BbBBE21a5975cAc061D82f7b843b1234567890' AND block = '6885701'", tusdAddr)).StructScan(&bal)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
 		})

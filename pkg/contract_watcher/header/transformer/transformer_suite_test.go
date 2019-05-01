@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository_test
+package transformer_test
 
 import (
 	"github.com/sirupsen/logrus"
@@ -25,9 +25,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestRepository(t *testing.T) {
+func TestTransformer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Light Repository Suite Test")
+	RunSpecs(t, "Header Sync Transformer Suite Test")
 }
 
 var _ = BeforeSuite(func() {

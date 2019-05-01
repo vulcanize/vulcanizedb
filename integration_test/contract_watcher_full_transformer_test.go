@@ -286,7 +286,7 @@ var _ = Describe("contractWatcher full transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.LightNewOwnerLog{}
+			log := test_helpers.HeaderSyncNewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does not exist"))

@@ -78,7 +78,7 @@ func (converter *RpcTransactionConverter) ConvertRpcTransactionsToModels(transac
 			Hash:     transaction.Hash,
 			Nonce:    txData.AccountNonce,
 			Raw:      txRLP,
-			// NOTE: Light Sync transactions don't include receipt; would require separate RPC call
+			// NOTE: Header Sync transactions don't include receipt; would require separate RPC call
 			To:      transaction.Recipient,
 			TxIndex: txIndex.Int64(),
 			Value:   txData.Amount.String(),

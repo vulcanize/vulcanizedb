@@ -30,14 +30,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// lightSyncCmd represents the lightSync command
-var lightSyncCmd = &cobra.Command{
-	Use:   "lightSync",
+// headerSyncCmd represents the headerSync command
+var headerSyncCmd = &cobra.Command{
+	Use:   "headerSync",
 	Short: "Syncs VulcanizeDB with local ethereum node's block headers",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
 Postgres with block headers.
 
-./vulcanizedb lightSync --starting-block-number 0 --config public.toml
+./vulcanizedb headerSync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
@@ -50,13 +50,13 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		lightSync()
+		headerSync()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(lightSyncCmd)
-	lightSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	rootCmd.AddCommand(headerSyncCmd)
+	headerSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
@@ -69,7 +69,7 @@ func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.H
 	missingBlocksPopulated <- populated
 }
 
-func lightSync() {
+func headerSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	blockChain := getBlockChain()
@@ -86,7 +86,7 @@ func lightSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				log.Error("lightSync: ValidateHeaders failed: ", err)
+				log.Error("headerSync: ValidateHeaders failed: ", err)
 			}
 			log.Info(window.GetString())
 		case n := <-missingBlocksPopulated:

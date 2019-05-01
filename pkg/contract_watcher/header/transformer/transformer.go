@@ -24,10 +24,10 @@ import (
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/fetcher"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/retriever"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/converter"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/fetcher"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/poller"
@@ -37,7 +37,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Requires a light synced vDB (headers) and a running eth node (or infura)
+// Requires a header synced vDB (headers) and a running eth node (or infura)
 type Transformer struct {
 	// Database interfaces
 	EventRepository  srep.EventRepository        // Holds transformed watched event log data
@@ -77,14 +77,14 @@ type Transformer struct {
 func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.DB) *Transformer {
 
 	return &Transformer{
-		Poller:           poller.NewPoller(bc, db, types.LightSync),
+		Poller:           poller.NewPoller(bc, db, types.HeaderSync),
 		Fetcher:          fetcher.NewFetcher(bc),
 		Parser:           parser.NewParser(con.Network),
 		HeaderRepository: repository.NewHeaderRepository(db),
 		Retriever:        retriever.NewBlockRetriever(db),
 		Converter:        &converter.Converter{},
 		Contracts:        map[string]*contract.Contract{},
-		EventRepository:  srep.NewEventRepository(db, types.LightSync),
+		EventRepository:  srep.NewEventRepository(db, types.HeaderSync),
 		Config:           con,
 	}
 }
