@@ -130,7 +130,7 @@
 
 [[projects]]
   branch = "rpc_statediffs_at_head"
-  digest = "1:762bae8d82b8871999f15cb0694f55f99a56f764d68e00c49ee6eae479da5df6"
+  digest = "1:02b56bb807b0b602f7d64b786c3ad5277f0ee2dc841738904b0bd14576f4d9ed"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -191,7 +191,7 @@
     "statediff",
     "trie",
   ]
-  pruneopts = "UT"
+  pruneopts = "T"
   revision = "edf001e1d2296951e7e592c55e66ce074bd62807"
   source = "github.com/vulcanize/go-ethereum"
 
@@ -986,10 +986,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6addadad21c95f83b592099496bb250a30aa8882faff9f8bd22aa9a15b6d8db1"
+  digest = "1:447562773a19dc1719359c2cd70d275c62c0b89f79d763f41d5deedb0e69873f"
   name = "github.com/karalabe/hid"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = "T"
   revision = "d815e0c1a2e2082a287a2806bc90bc8fc7b276a9"
 
 [[projects]]
@@ -2170,6 +2170,7 @@
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/core/rawdb",
+    "github.com/ethereum/go-ethereum/core/state",
     "github.com/ethereum/go-ethereum/core/types",
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/ethclient",
@@ -2181,6 +2182,11 @@
     "github.com/ethereum/go-ethereum/statediff",
     "github.com/hashicorp/golang-lru",
     "github.com/hpcloud/tail",
+    "github.com/ipfs/go-block-format",
+    "github.com/ipfs/go-blockservice",
+    "github.com/ipfs/go-cid",
+    "github.com/ipfs/go-ipfs/core",
+    "github.com/ipfs/go-ipfs/repo/fsrepo",
     "github.com/jmoiron/sqlx",
     "github.com/lib/pq",
     "github.com/mitchellh/go-homedir",
