@@ -5,11 +5,11 @@ It also provides some state variable coverage by automating polling of public me
 1. The method's arguments must all be of type address or bytes32 (hash)
 1. The method must return a single value
 
-This command operates in two modes- `light` and `full`- which require a light or full-synced vulcanizeDB, respectively.
+This command operates in two modes- `header` and `full`- which require a header or full-synced vulcanizeDB, respectively.
 
 This command requires the contract ABI be available on Etherscan if it is not provided in the config file by the user.
 
-If method polling is turned on we require an archival node at the ETH ipc endpoint in our config, whether or not we are operating in `light` or `full` mode.
+If method polling is turned on we require an archival node at the ETH ipc endpoint in our config, whether or not we are operating in `header` or `full` mode.
 Otherwise we only need to connect to a full node.
 
 ## Configuration
@@ -97,16 +97,16 @@ Modify `./environments/example.toml` to replace the empty `ipcPath` with a path 
 This endpoint should be for an archival eth node if we want to perform method polling as this configuration is currently set up to do. To work with a non-archival full node,
 remove the `balanceOf` method from the `0x8dd5fbce2f6a956c3022ba3663759011dd51e73e` (TrueUSD) contract.
 
-If you are operating a light sync vDB, run:
+If you are operating a header sync vDB, run:
 
- `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=light`
+ `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=header`
 
 If instead you are operating a full sync vDB and provided an archival node IPC path, run in full mode:
 
  `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=full`
 
 This will run the contractWatcher and configures it to watch the contracts specified in the config file. Note that
-by default we operate in `light` mode but the flag is included here to demonstrate its use.
+by default we operate in `header` mode but the flag is included here to demonstrate its use.
 
 The example config we link to in this example watches two contracts, the ENS Registry (0x314159265dD8dbb310642f98f50C066173C1259b) and TrueUSD (0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E).
 
@@ -117,43 +117,43 @@ The TrueUSD contract is configured with two events (`Transfer` and `Mint`) and a
 to poll the `balanceOf` method with those addresses at every block. Note that we do not provide an ABI for TrueUSD as its ABI can be fetched from Etherscan.
 
 For the ENS contract, it produces and populates a schema with four tables"
-`light_0x314159265dd8dbb310642f98f50c066173c1259b.newowner_event`
-`light_0x314159265dd8dbb310642f98f50c066173c1259b.newresolver_event`
-`light_0x314159265dd8dbb310642f98f50c066173c1259b.newttl_event`
-`light_0x314159265dd8dbb310642f98f50c066173c1259b.transfer_event`
+`header_0x314159265dd8dbb310642f98f50c066173c1259b.newowner_event`
+`header_0x314159265dd8dbb310642f98f50c066173c1259b.newresolver_event`
+`header_0x314159265dd8dbb310642f98f50c066173c1259b.newttl_event`
+`header_0x314159265dd8dbb310642f98f50c066173c1259b.transfer_event`
 
 For the TrusUSD contract, it produces and populates a schema with three tables:
 
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`
-`light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`
+`header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event`
+`header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.mint_event`
+`header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method`
 
 Column ids and types for these tables are generated based on the event and method argument names and types and method return types, resulting in tables such as:
 
-Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"
+Table "header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event"
 
-|  Column    |         Type          | Collation | Nullable |                                           Default                                           | Storage  | Stats target | Description  
-|:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
-| id         | integer               |           | not null | nextval('light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event_id_seq'::regclass) | plain    |              |             |
-| header_id  | integer               |           | not null |                                                                                             | plain    |              |             |
-| token_name | character varying(66) |           | not null |                                                                                             | extended |              |             |
-| raw_log    | jsonb                 |           |          |                                                                                             | extended |              |             |
-| log_idx    | integer               |           | not null |                                                                                             | plain    |              |             |
-| tx_idx     | integer               |           | not null |                                                                                             | plain    |              |             |
-| from_      | character varying(66) |           | not null |                                                                                             | extended |              |             |
-| to_        | character varying(66) |           | not null |                                                                                             | extended |              |             |
-| value_     | numeric               |           | not null |                                                                                             | main     |              |             |
+|  Column    |         Type          | Collation | Nullable |                                           Default                                            | Storage  | Stats target | Description  
+|:----------:|:---------------------:|:---------:|:--------:|:--------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
+| id         | integer               |           | not null | nextval('header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.transfer_event_id_seq'::regclass) | plain    |              |             |
+| header_id  | integer               |           | not null |                                                                                              | plain    |              |             |
+| token_name | character varying(66) |           | not null |                                                                                              | extended |              |             |
+| raw_log    | jsonb                 |           |          |                                                                                              | extended |              |             |
+| log_idx    | integer               |           | not null |                                                                                              | plain    |              |             |
+| tx_idx     | integer               |           | not null |                                                                                              | plain    |              |             |
+| from_      | character varying(66) |           | not null |                                                                                              | extended |              |             |
+| to_        | character varying(66) |           | not null |                                                                                              | extended |              |             |
+| value_     | numeric               |           | not null |                                                                                              | main     |              |             |
 
 
-Table "light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
+Table "header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method"
 
-|   Column   |         Type          | Collation | Nullable |                                            Default                                            | Storage  | Stats target | Description |
-|:----------:|:---------------------:|:---------:|:--------:|:-------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
-| id         | integer               |           | not null | nextval('light_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method_id_seq'::regclass) | plain    |              |             |
-| token_name | character varying(66) |           | not null |                                                                                               | extended |              |             |
-| block      | integer               |           | not null |                                                                                               | plain    |              |             |
-| who_       | character varying(66) |           | not null |                                                                                               | extended |              |             |
-| returned   | numeric               |           | not null |                                                                                               | main     |              |             |
+|   Column   |         Type          | Collation | Nullable |                                            Default                                             | Storage  | Stats target | Description |
+|:----------:|:---------------------:|:---------:|:--------:|:----------------------------------------------------------------------------------------------:|:--------:|:------------:|:-----------:|
+| id         | integer               |           | not null | nextval('header_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e.balanceof_method_id_seq'::regclass) | plain    |              |             |
+| token_name | character varying(66) |           | not null |                                                                                                | extended |              |             |
+| block      | integer               |           | not null |                                                                                                | plain    |              |             |
+| who_       | character varying(66) |           | not null |                                                                                                | extended |              |             |
+| returned   | numeric               |           | not null |                                                                                                | main     |              |             |
   
 The addition of '_' after table names is to prevent collisions with reserved Postgres words.
 

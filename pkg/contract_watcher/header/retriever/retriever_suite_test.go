@@ -27,7 +27,7 @@ import (
 
 func TestRetriever(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Light Block Number Retriever Suite Test")
+	RunSpecs(t, "Header Sync Block Number Retriever Suite Test")
 }
 
 var _ = BeforeSuite(func() {

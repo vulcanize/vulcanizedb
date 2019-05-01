@@ -149,9 +149,9 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("Light Sync Mode", func() {
+	Describe("Header Sync Mode", func() {
 		BeforeEach(func() {
-			dataStore = repository.NewMethodRepository(db, types.LightSync)
+			dataStore = repository.NewMethodRepository(db, types.HeaderSync)
 		})
 
 		Describe("CreateContractSchema", func() {
@@ -199,7 +199,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				tableID := fmt.Sprintf("%s_%s.%s_method", types.LightSync, strings.ToLower(con.Address), strings.ToLower(method.Name))
+				tableID := fmt.Sprintf("%s_%s.%s_method", types.HeaderSync, strings.ToLower(con.Address), strings.ToLower(method.Name))
 				_, ok := dataStore.CheckTableCache(tableID)
 				Expect(ok).To(Equal(false))
 
@@ -214,13 +214,13 @@ var _ = Describe("Repository", func() {
 		})
 
 		Describe("PersistResult", func() {
-			It("Persists result from method polling in custom pg table for light sync mode vDB", func() {
+			It("Persists result from method polling in custom pg table for header sync mode vDB", func() {
 				err = dataStore.PersistResults([]types.Result{mockResult}, method, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.BalanceOf{}
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method", constants.TusdContractAddress)).StructScan(&scanStruct)
 				expectedLog := test_helpers.BalanceOf{
 					Id:        1,
 					TokenName: "TrueUSD",

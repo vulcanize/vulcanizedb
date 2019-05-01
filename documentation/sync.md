@@ -1,12 +1,12 @@
 # Syncing commands
 These commands are used to sync raw Ethereum data into Postgres.
 
-## lightSync
+## headerSync
 Syncs VulcanizeDB with the configured Ethereum node, populating only block headers.
 This command is useful when you want a minimal baseline from which to track targeted data on the blockchain (e.g. individual smart contract storage values or event logs).
 1. Start Ethereum node
 1. In a separate terminal start VulcanizeDB:
-    - `./vulcanizedb lightSync --config <config.toml> --starting-block-number <block-number>`
+    - `./vulcanizedb headerSync --config <config.toml> --starting-block-number <block-number>`
     
 ## sync
 Syncs VulcanizeDB with the configured Ethereum node, populating blocks, transactions, receipts, and logs.

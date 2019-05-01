@@ -21,18 +21,18 @@ import "fmt"
 type Mode int
 
 const (
-	LightSync Mode = iota
+	HeaderSync Mode = iota
 	FullSync
 )
 
 func (mode Mode) IsValid() bool {
-	return mode >= LightSync && mode <= FullSync
+	return mode >= HeaderSync && mode <= FullSync
 }
 
 func (mode Mode) String() string {
 	switch mode {
-	case LightSync:
-		return "light"
+	case HeaderSync:
+		return "header"
 	case FullSync:
 		return "full"
 	default:
@@ -42,23 +42,23 @@ func (mode Mode) String() string {
 
 func (mode Mode) MarshalText() ([]byte, error) {
 	switch mode {
-	case LightSync:
-		return []byte("light"), nil
+	case HeaderSync:
+		return []byte("header"), nil
 	case FullSync:
 		return []byte("full"), nil
 	default:
-		return nil, fmt.Errorf("contract watcher: unknown mode %d, want LightSync or FullSync", mode)
+		return nil, fmt.Errorf("contract watcher: unknown mode %d, want HeaderSync or FullSync", mode)
 	}
 }
 
 func (mode *Mode) UnmarshalText(text []byte) error {
 	switch string(text) {
-	case "light":
-		*mode = LightSync
+	case "header":
+		*mode = HeaderSync
 	case "full":
 		*mode = FullSync
 	default:
-		return fmt.Errorf(`contract watcher: unknown mode %q, want "light" or "full"`, text)
+		return fmt.Errorf(`contract watcher: unknown mode %q, want "header" or "full"`, text)
 	}
 	return nil
 }

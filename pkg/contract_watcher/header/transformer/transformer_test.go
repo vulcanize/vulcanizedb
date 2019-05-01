@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/retriever"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/retriever"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
@@ -33,7 +33,7 @@ var _ = Describe("Transformer", func() {
 	var fakeAddress = "0x1234567890abcdef"
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.MockLightBlockRetriever{}
+			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -61,7 +61,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
-			blockRetriever := &fakes.MockLightBlockRetriever{}
+			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 
@@ -74,7 +74,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Execute", func() {
 		It("Executes contract transformations", func() {
-			blockRetriever := &fakes.MockLightBlockRetriever{}
+			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -102,7 +102,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
-			blockRetriever := &fakes.MockLightBlockRetriever{}
+			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 
@@ -119,7 +119,7 @@ func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Pa
 		Parser:           parsr,
 		Retriever:        blockRetriever,
 		Poller:           pollr,
-		HeaderRepository: &fakes.MockLightHeaderRepository{},
+		HeaderRepository: &fakes.MockHeaderSyncHeaderRepository{},
 		Contracts:        map[string]*contract.Contract{},
 		Config:           mocks.MockConfig,
 	}

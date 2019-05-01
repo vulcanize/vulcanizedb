@@ -102,7 +102,7 @@ Usage is broken up into two processes:
 
 ### Data syncing
 To provide data for transformations, raw Ethereum data must first be synced into vDB.
-This is accomplished through the use of the `lightSync`, `sync`, or `coldImport` commands.
+This is accomplished through the use of the `headerSync`, `sync`, or `coldImport` commands.
 These commands are described in detail [here](../staging/documentation/sync.md).
 
 ### Data transformation

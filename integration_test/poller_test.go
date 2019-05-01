@@ -130,10 +130,10 @@ var _ = Describe("Poller", func() {
 		})
 	})
 
-	Describe("Light sync mode", func() {
+	Describe("Header sync mode", func() {
 		BeforeEach(func() {
 			db, bc = test_helpers.SetupDBandBC()
-			contractPoller = poller.NewPoller(bc, db, types.LightSync)
+			contractPoller = poller.NewPoller(bc, db, types.HeaderSync)
 		})
 
 		Describe("PollContract", func() {
@@ -148,22 +148,22 @@ var _ = Describe("Poller", func() {
 
 				scanStruct := test_helpers.BalanceOf{}
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Balance).To(Equal("66386309548896882859581786"))
 				Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Balance).To(Equal("66386309548896882859581786"))
 				Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Balance).To(Equal("17982350181394112023885864"))
 				Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE' AND block = '6707323'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Balance).To(Equal("17982350181394112023885864"))
 				Expect(scanStruct.TokenName).To(Equal("TrueUSD"))
@@ -180,12 +180,12 @@ var _ = Describe("Poller", func() {
 
 				scanStruct := test_helpers.Owner{}
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x7e74a86b6e146964fb965db04dc2590516da77f720bb6759337bf5632415fd86' AND block = '6885877'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x7e74a86b6e146964fb965db04dc2590516da77f720bb6759337bf5632415fd86' AND block = '6885877'", constants.EnsContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Address).To(Equal("0x546aA2EaE2514494EeaDb7bbb35243348983C59d"))
 				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885877'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.owner_method WHERE node_ = '0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae' AND block = '6885877'", constants.EnsContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Address).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
@@ -202,7 +202,7 @@ var _ = Describe("Poller", func() {
 
 				scanStruct := test_helpers.BalanceOf{}
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method WHERE who_ = '0xfE9e8709d3215310075d67E3ed32A380CCf451C8' AND block = '6707322'", constants.TusdContractAddress)).StructScan(&scanStruct)
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -217,7 +217,7 @@ var _ = Describe("Poller", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				scanStruct := test_helpers.Resolver{}
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Address).To(Equal("0x5FfC014343cd971B7eb70732021E26C35B744cc4"))
 				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
@@ -225,13 +225,13 @@ var _ = Describe("Poller", func() {
 
 				test_helpers.TearDown(db)
 				db, bc = test_helpers.SetupDBandBC()
-				contractPoller = poller.NewPoller(bc, db, types.LightSync)
+				contractPoller = poller.NewPoller(bc, db, types.HeaderSync)
 
 				con.Piping = true
 				err = contractPoller.PollContract(*con, 6921968)
 				Expect(err).ToNot(HaveOccurred())
 
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.resolver_method WHERE node_ = '0x495b6e6efdedb750aa519919b5cf282bdaa86067b82a2293a3ff5723527141e8' AND block = '6921967'", constants.EnsContractAddress)).StructScan(&scanStruct)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanStruct.Address).To(Equal("0x5FfC014343cd971B7eb70732021E26C35B744cc4"))
 				Expect(scanStruct.TokenName).To(Equal("ENS-Registry"))
