@@ -14,33 +14,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package mocks
+package fetcher
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"strings"
 )
 
-type MockStorageQueue struct {
-	AddCalled      bool
-	AddError       error
-	AddPassedRow   utils.StorageDiffRow
-	DeleteErr      error
-	DeletePassedId int
-	GetAllErr      error
-	RowsToReturn   []utils.StorageDiffRow
+type IStorageFetcher interface {
+	FetchStorageDiffs(chan<- utils.StorageDiffRow, chan<- error)
 }
 
-func (queue *MockStorageQueue) Add(row utils.StorageDiffRow) error {
-	queue.AddCalled = true
-	queue.AddPassedRow = row
-	return queue.AddError
+type CsvTailStorageFetcher struct {
+	tailer fs.Tailer
 }
 
-func (queue *MockStorageQueue) Delete(id int) error {
-	queue.DeletePassedId = id
-	return queue.DeleteErr
+func NewCsvTailStorageFetcher(tailer fs.Tailer) CsvTailStorageFetcher {
+	return CsvTailStorageFetcher{tailer: tailer}
 }
 
-func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiffRow, error) {
-	return queue.RowsToReturn, queue.GetAllErr
+func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
+	t, tailErr := storageFetcher.tailer.Tail()
+	if tailErr != nil {
+		errs <- tailErr
+	}
+	for line := range t.Lines {
+		row, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
+		if parseErr != nil {
+			errs <- parseErr
+		} else {
+			out <- row
+		}
+	}
 }

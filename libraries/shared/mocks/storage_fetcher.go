@@ -14,27 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package fakes
+package mocks
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-)
+import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 
-type MockPoller struct {
-	ContractName string
+type MockStorageFetcher struct {
+	RowsToReturn []utils.StorageDiffRow
+	ErrsToReturn []error
 }
 
-func (*MockPoller) PollContract(con contract.Contract, lastBlock int64) error {
-	panic("implement me")
+func NewMockStorageFetcher() *MockStorageFetcher {
+	return &MockStorageFetcher{}
 }
 
-func (*MockPoller) PollContractAt(con contract.Contract, blockNumber int64) error {
-	panic("implement me")
-}
-
-func (poller *MockPoller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
-	if p, ok := result.(*string); ok {
-		*p = poller.ContractName
+func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
+	defer close(out)
+	defer close(errs)
+	for _, err := range fetcher.ErrsToReturn {
+		errs <- err
 	}
-	return nil
+	for _, row := range fetcher.RowsToReturn {
+		out <- row
+	}
 }

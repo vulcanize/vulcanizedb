@@ -25,6 +25,7 @@ import (
 const ExpectedRowLength = 5
 
 type StorageDiffRow struct {
+	Id           int
 	Contract     common.Address
 	BlockHash    common.Hash `db:"block_hash"`
 	BlockHeight  int         `db:"block_height"`
