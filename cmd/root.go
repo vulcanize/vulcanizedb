@@ -36,22 +36,22 @@ import (
 )
 
 var (
-	cfgFile             string
-	databaseConfig      config.Database
-	genConfig           config.Plugin
-	ipc                 string
-	levelDbPath         string
+	cfgFile              string
+	databaseConfig       config.Database
+	genConfig            config.Plugin
+	ipc                  string
+	levelDbPath          string
 	queueRecheckInterval time.Duration
-	startingBlockNumber int64
-	storageDiffsPath    string
-	syncAll             bool
-	endingBlockNumber   int64
-	recheckHeadersArg   bool
+	startingBlockNumber  int64
+	storageDiffsPath     string
+	syncAll              bool
+	endingBlockNumber    int64
+	recheckHeadersArg    bool
 )
 
 const (
-	pollingInterval      = 7 * time.Second
-	validationWindow     = 15
+	pollingInterval  = 7 * time.Second
+	validationWindow = 15
 )
 
 var rootCmd = &cobra.Command{
