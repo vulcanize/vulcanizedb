@@ -23,7 +23,7 @@ Build the docker image in this directory. Start the `GraphiQL` frontend by:
 * GraphiQL frontend is available at `:3000/graphiql`
   GraphQL endpoint is available at `:3000/graphql`
 
-By default, this build will expose only the "public" schema and will disable mutations - to change mutation behaviour, you can use an optional config file `config.toml` and set the env var `CONFIG_PATH` to point to its location. Example `toml`:
+By default, this build will expose only the "public" schema and will disable mutations - to change mutation behaviour, you can use an optional config file `config.toml` and set the env var `POSTGRAPHILE_CONFIG_PATH` to point to its location. Example `toml`:
 
 ```
 [database]
