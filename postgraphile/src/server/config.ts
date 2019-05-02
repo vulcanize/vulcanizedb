@@ -5,7 +5,7 @@ import {
   PostgraphileOptions
 } from '../adapters/postgraphile';
 
-export const CONFIG_PATH_KEY = 'CONFIG_PATH';
+export const CONFIG_PATH_KEY = 'POSTGRAPHILE_CONFIG_PATH';
 export const SERVER_PORT_KEY = 'SERVER_PORT';
 
 const DEFAULT_SERVER_PORT = '3000';
@@ -27,7 +27,7 @@ export function buildServerConfig(
 
   const options: PostgraphileOptions = {
     appendPlugins: [PgSimplifyInflectorPlugin],
-    disableDefaultMutations: true,
+    disableDefaultMutations: databaseConfig.disableDefaultMutations,
     enableCors: true,
     exportGqlSchemaPath: 'schema.graphql',
     graphiql: true,
