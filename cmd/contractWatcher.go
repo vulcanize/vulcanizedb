@@ -26,7 +26,7 @@ import (
 
 	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
-	lt "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
+	ht "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -99,7 +99,7 @@ func contractWatcher() {
 	con.PrepConfig()
 	switch mode {
 	case "header":
-		t = lt.NewTransformer(con, blockChain, &db)
+		t = ht.NewTransformer(con, blockChain, &db)
 	case "full":
 		t = ft.NewTransformer(con, blockChain, &db)
 	default:
