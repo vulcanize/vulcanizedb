@@ -1,6 +1,6 @@
 # composeAndExecute
 The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
-This is accomplished by generating a Go pluggin which allows the `vulcanizedb` binary to link to external transformers, so
+This is accomplished by generating a Go plugin which allows the `vulcanizedb` binary to link to external transformers, so
 long as they abide by one of the standard [interfaces](../staging/libraries/shared/transformer).
 
 Additionally, there are separate `compose` and `execute` commands to allow pre-building and linking to a pre-built .so file.

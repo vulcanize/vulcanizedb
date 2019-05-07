@@ -22,6 +22,10 @@ The same data structures and encodings that make Ethereum an effective and trust
 complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by 
 providing a suite of tools to ease the extraction and transformation of data into a more useful state.
 
+VulanizeDB includes processes that sync, transform and expose data. Syncing involves
+querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to
+query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting
+data from VulcanizeDB's underlying Postgres database and making it accessible.
 
 ## Dependencies
  - Go 1.11+
@@ -80,8 +84,9 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
         - The IPC file is called `geth.ipc`.
         - The geth IPC file path is printed to the console when you start geth.
         - The default location is:
-          - Mac: `<full home path>/Library/Ethereum`
+          - Mac: `<full home path>/Library/Ethereum/geth.ipc`
           - Linux: `<full home path>/ethereum/geth.ipc`
+        - Note: the geth.ipc file may not exist until you've started the geth process
 
       - For Parity:
         - The IPC file is called `jsonrpc.ipc`.
@@ -98,10 +103,10 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
 
 
 ## Usage
-Usage is broken up into two processes:
+As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.
 
 ### Data syncing
-To provide data for transformations, raw Ethereum data must first be synced into vDB.
+To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
 This is accomplished through the use of the `headerSync`, `sync`, or `coldImport` commands.
 These commands are described in detail [here](../staging/documentation/sync.md).
 
@@ -118,6 +123,10 @@ Usage of the `compose`, `execute`, and `composeAndExecute` commands is described
 
 Documentation on how to build custom transformers to work with these commands can be found [here](../staging/documentation/transformers.md).
 
+### Exposing the data
+[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/documentation/postgraphile.md).
+
+
 ## Tests
 - Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
     - Note: integration tests require configuration with an archival node
@@ -125,9 +134,6 @@ Documentation on how to build custom transformers to work with these commands ca
 - `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
-
-## API
-[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/documentation/postgraphile.md).
 
 
 ## Contributing
