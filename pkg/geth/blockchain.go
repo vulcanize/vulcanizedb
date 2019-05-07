@@ -79,7 +79,7 @@ func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.
 	return blockChain.getPOWHeader(blockNumber)
 }
 
-func (blockChain *BlockChain) GetHeaderByNumbers(blockNumbers []int64) (header []core.Header, err error) {
+func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header []core.Header, err error) {
 	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
 		return blockChain.getPOAHeaders(blockNumbers)
 	}

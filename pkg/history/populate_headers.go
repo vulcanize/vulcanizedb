@@ -48,8 +48,8 @@ func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datasto
 	return len(blockNumbers), nil
 }
 
-func RetrieveAndUpdateHeaders(chain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
-	headers, err := chain.GetHeaderByNumbers(blockNumbers)
+func RetrieveAndUpdateHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
+	headers, err := blockchain.GetHeadersByNumbers(blockNumbers)
 	for _, header := range headers {
 		_, err = headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {
