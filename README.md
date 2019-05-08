@@ -140,10 +140,9 @@ Documentation on how to build custom transformers to work with these commands ca
 
 
 ## Contributing
-Contributions are welcome! For more on this, please see [here](../staging/documentation/contributing.md).
+Contributions are welcome!
 
-Small note: If editing the Readme, please conform to the [standard-readme specification](https://github.com/RichardLitt/standard-readme).
-
+For more on this, please see [here](../staging/documentation/contributing.md).
 
 ## License
 [AGPL-3.0](../staging/LICENSE) © Vulcanize Inc
