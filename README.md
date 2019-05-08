@@ -19,13 +19,16 @@
 
 ## Background
 The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine
-complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by 
-providing a suite of tools to ease the extraction and transformation of data into a more useful state.
+complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by
+providing a suite of tools to ease the extraction and transformation of data into a more useful state, including
+allowing for exposing aggregate data from a suite of smart contracts.
 
 VulanizeDB includes processes that sync, transform and expose data. Syncing involves
 querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to
 query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting
 data from VulcanizeDB's underlying Postgres database and making it accessible.
+
+![VulcanizeDB Overview Diagram](../documentation-updates/documentation/diagrams/vdb-overview.png)
 
 ## Dependencies
  - Go 1.11+
