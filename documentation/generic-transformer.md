@@ -1,4 +1,4 @@
-# contractWatcher
+# Generic Transformer
 The `contractWatcher` command is a built-in generic contract watcher. It can watch any and all events for a given contract provided the contract's ABI is available.
 It also provides some state variable coverage by automating polling of public methods, with some restrictions:
 1. The method must have 2 or less arguments

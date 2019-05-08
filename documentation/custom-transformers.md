@@ -1,43 +1,78 @@
-# composeAndExecute
-The `composeAndExecute` command is used to compose and execute over an arbitrary set of custom transformers.
-This is accomplished by generating a Go plugin which allows the `vulcanizedb` binary to link to external transformers, so
-long as they abide by one of the standard [interfaces](../staging/libraries/shared/transformer).
+# Custom Transformers
+When the capabilities of the generic `contractWatcher` are not sufficient, custom transformers tailored to a specific
+purpose can be leveraged.
 
-Additionally, there are separate `compose` and `execute` commands to allow pre-building and linking to a pre-built .so file.
+Individual custom transformers can be composed together from any number of external repositories and executed as a 
+single process using the `compose` and `execute` commands or the `composeAndExecute` command. This is accomplished by
+generating a Go plugin which allows the `vulcanizedb` binary to link to the external transformers, so long as they 
+abide by one of the standard [interfaces](../staging/libraries/shared/transformer).
 
-**NOTE:**
-1. It is necessary that the .so file was built with the same exact dependencies that are present in the execution environment,
-i.e. we need to `compose` and `execute` the plugin .so file with the same exact version of vulcanizeDB.
-1. The plugin migrations are run during the plugin's composition. As such, if `execute` is used to run a prebuilt .so in a different
-environment than the one it was composed in then the migrations for that plugin will first need to be manually ran against that environment's Postgres database.
+## Writing custom transformers
+For help with writing different types of custom transformers please see below:
 
-These commands require Go 1.11+ and use [Go plugins](https://golang.org/pkg/plugin/) which only work on Unix-based systems.
-There is also an ongoing [conflict](https://github.com/golang/go/issues/20481) between Go plugins and the use vendored dependencies which
-imposes certain limitations on how the plugins are built.
+Storage Transformers
+   * [Guide](../../staging/libraries/shared/factories/storage/README.md)
+   * [Example](../../staging/libraries/shared/factories/storage/EXAMPLE.md)
 
-## Commands
-The `compose` and `composeAndExecute` commands assume you are in the vulcanizdb directory located at your system's `$GOPATH`,
-and that all of the transformer repositories for building the plugin are present at their `$GOPATH` directories.
+Event Transformers
+   * [Guide](../../staging/libraries/shared/factories/event/README.md)
+   * [Example 1](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registar)
+   * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registry)
+   * [Example 3](https://github.com/vulcanize/ens_transformers/tree/master/transformers/resolver)
 
-The `execute` command does not require the plugin transformer dependencies be located in their
-`$GOPATH` directories, instead it expects a prebuilt .so file (of the name specified in the config file)
-to be in `$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/` and, as noted above, also expects the plugin
-db migrations to have already been ran against the database.
+Contract Transformers
+   * [Example 1](https://github.com/vulcanize/account_transformers)
+   * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/domain_records)
 
-compose:
+## Preparing custom transformers to work as part of a plugin
+To plug in an external transformer we need to:
 
-`./vulcanizedb compose --config=./environments/config_name.toml`
+1. Create a package that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](../staging/libraries/shared/transformer/event_transformer.go#L33)
+or [StorageTransformerInitializer](../../staging/libraries/shared/transformer/storage_transformer.go#L31),
+or [ContractTransformerInitializer](../../staging/libraries/shared/transformer/contract_transformer.go#L31), respectively
+2. Design the transformers to work in the context of their [event](../staging/libraries/shared/watcher/event_watcher.go#L83),
+[storage](../../staging/libraries/shared/watcher/storage_watcher.go#L53),
+or [contract](../../staging/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
+3. Create db migrations to run against vulcanizeDB so that we can store the transformer output
+    * Do not `goose fix` the transformer migrations, this is to ensure they are always ran after the core vulcanizedb migrations which are kept in their fixed form
+    * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
+    * If the base vDB migrations occupy this path as well, they need to be in their `goose fix`ed form
+    as they are [here](../../staging/db/migrations)
 
-execute:
+To update a plugin repository with changes to the core vulcanizedb repository, run `dep ensure` to update its dependencies.
 
-`./vulcanizedb execute --config=./environments/config_name.toml`
+## Building and Running Custom Transformers
+### Commands
+* The `compose`, `execute`, `composeAndExecute` commands require Go 1.11+ and use [Go plugins](https://golang
+.org/pkg/plugin/) which only work on Unix-based systems.
 
-composeAndExecute:
+* There is an ongoing [conflict](https://github.com/golang/go/issues/20481) between Go plugins and the use vendored
+dependencies which imposes certain limitations on how the plugins are built.
 
-`./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
+* Separate `compose` and `execute` commands allow pre-building and linking to a pre-built .so file. So, if
+these are run independently, instead of using `composeAndExecute`, a couple of things need to be considered:
+    * It is necessary that the .so file was built with the same exact dependencies that are present in the execution
+    environment, i.e. we need to `compose` and `execute` the plugin .so file with the same exact version of vulcanizeDB.
+    * The plugin migrations are run during the plugin's composition. As such, if `execute` is used to run a prebuilt .so
+    in a different environment than the one it was composed in then the migrations for that plugin will first need to
+    be manually ran against that environment's Postgres database.
+     
+* The `compose` and `composeAndExecute` commands assume you are in the vulcanizdb directory located at your system's 
+`$GOPATH`, and that all of the transformer repositories for building the plugin are present at their `$GOPATH` directories.
 
-## Flags
+* The `execute` command does not require the plugin transformer dependencies be located in their `$GOPATH` directories,
+instead it expects a prebuilt .so file (of the name specified in the config file) to be in
+`$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/` and, as noted above, also expects the plugin db migrations to
+ have already been ran against the database.
 
+ * Usage:
+     * compose: `./vulcanizedb compose --config=./environments/config_name.toml`
+
+     * execute: `./vulcanizedb execute --config=./environments/config_name.toml`
+
+     * composeAndExecute: `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
+
+### Flags
 The `compose` and `composeAndExecute` commands can be passed optional flags to specify the operation of the watchers:
 
 - `--recheck-headers`/`-r` - specifies whether to re-check headers for events after the header has already been queried for watched logs.
@@ -50,7 +85,7 @@ Defaults to `false`.
 Argument is expected to be a duration (integer measured in nanoseconds): e.g. `-q=10m30s` (for 10 minute, 30 second intervals).
 Defaults to `5m` (5 minutes).
 
-## Configuration
+### Configuration
 A .toml config file is specified when executing the commands.
 The config provides information for composing a set of transformers from external repositories:
 

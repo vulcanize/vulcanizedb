@@ -111,20 +111,24 @@ As mentioned above, VulcanizeDB's processes can be split into three categories: 
 ### Data syncing
 To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
 This is accomplished through the use of the `headerSync`, `sync`, or `coldImport` commands.
-These commands are described in detail [here](../staging/documentation/sync.md).
+These commands are described in detail [here](../documentation-updates/documentation/sync.md).
 
 ### Data transformation
-Contract watchers use the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest.
+Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to
+specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it
+follows that there are different ways to transform this data. We've started by categorizing this into Generic and
+Custom transformers:
 
-There is a built-in `contractWatcher` command which provides generic transformation of most contract data.
-The `contractWatcher` command is described further [here](../staging/documentation/contractWatcher.md).
+- Generic Contract Transformer: Generic contract transformation can be done using a built-in command,
+`contractWatcher`, which transforms contract events provided the contract's ABI is available. It also
+provides some state variable coverage by automating polling of public methods, with some restrictions.
+`contractWatcher` is described further [here](../documentation-updates/documentation/generic-transformer.md).
 
-In many cases a custom transformer or set of transformers will need to be written to provide complete or more comprehensive coverage or to optimize other aspects of the output for a specific end-use.
-In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories.
-
-Usage of the `compose`, `execute`, and `composeAndExecute` commands is described further [here](../staging/documentation/composeAndExecute.md).
-
-Documentation on how to build custom transformers to work with these commands can be found [here](../staging/documentation/transformers.md).
+- Custom Transformers: In many cases custom transformers will need to be written to provide
+more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and
+`composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write,
+build and run custom transformers as Go plugins can be found
+[here](../documentation-updates/documentation/custom-transformers.md).
 
 ### Exposing the data
 [Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/documentation/postgraphile.md).
@@ -142,7 +146,7 @@ Documentation on how to build custom transformers to work with these commands ca
 ## Contributing
 Contributions are welcome!
 
-For more on this, please see [here](../staging/documentation/contributing.md).
+For more on this, please see [here](../documentation-updates/documentation/contributing.md).
 
 ## License
 [AGPL-3.0](../staging/LICENSE) © Vulcanize Inc
