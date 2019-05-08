@@ -127,7 +127,7 @@ Documentation on how to build custom transformers to work with these commands ca
 - `make integrationtest` will run just the integration tests
 
 ## API
-[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/postgraphile/README.md).
+[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/documentation/postgraphile.md).
 
 
 ## Contributing
