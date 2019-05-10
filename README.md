@@ -146,7 +146,9 @@ build and run custom transformers as Go plugins can be found
 ## Contributing
 Contributions are welcome!
 
-For more on this, please see [here](../documentation-updates/documentation/contributing.md).
+VulcanizeDB follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct).
+
+For more information on contributing, please see [here](../documentation/contributing.md).
 
 ## License
 [AGPL-3.0](../staging/LICENSE) © Vulcanize Inc

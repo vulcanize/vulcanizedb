@@ -21,3 +21,5 @@ conform to the
     - Goose automatically runs each migration in a transaction; don't add `BEGIN` and `COMMIT` statements.
 1. Core migrations should be committed in their `goose fix`ed form. To do this, run `make version_migrations` which
 converts timestamped migrations to migrations versioned by an incremented integer.
+
+VulcanizeDB follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct).
