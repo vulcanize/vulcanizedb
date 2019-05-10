@@ -46,10 +46,10 @@ To update a plugin repository with changes to the core vulcanizedb repository, r
 * The `compose`, `execute`, `composeAndExecute` commands require Go 1.11+ and use [Go plugins](https://golang
 .org/pkg/plugin/) which only work on Unix-based systems.
 
-* There is an ongoing [conflict](https://github.com/golang/go/issues/20481) between Go plugins and the use vendored
+* There is an ongoing [conflict](https://github.com/golang/go/issues/20481) between Go plugins and the use of vendored
 dependencies which imposes certain limitations on how the plugins are built.
 
-* Separate `compose` and `execute` commands allow pre-building and linking to a pre-built .so file. So, if
+* Separate `compose` and `execute` commands allow pre-building and linking to the pre-built .so file. So, if
 these are run independently, instead of using `composeAndExecute`, a couple of things need to be considered:
     * It is necessary that the .so file was built with the same exact dependencies that are present in the execution
     environment, i.e. we need to `compose` and `execute` the plugin .so file with the same exact version of vulcanizeDB.
@@ -61,19 +61,19 @@ these are run independently, instead of using `composeAndExecute`, a couple of t
 `$GOPATH`, and that all of the transformer repositories for building the plugin are present at their `$GOPATH` directories.
 
 * The `execute` command does not require the plugin transformer dependencies be located in their `$GOPATH` directories,
-instead it expects a prebuilt .so file (of the name specified in the config file) to be in
+instead it expects a .so file (of the name specified in the config file) to be in
 `$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/` and, as noted above, also expects the plugin db migrations to
  have already been ran against the database.
 
  * Usage:
-     * compose: `./vulcanizedb compose --config=./environments/config_name.toml`
+     * compose: `./vulcanizedb compose --config=environments/config_name.toml`
 
-     * execute: `./vulcanizedb execute --config=./environments/config_name.toml`
+     * execute: `./vulcanizedb execute --config=environments/config_name.toml`
 
-     * composeAndExecute: `./vulcanizedb composeAndExecute --config=./environments/config_name.toml`
+     * composeAndExecute: `./vulcanizedb composeAndExecute --config=environments/config_name.toml`
 
 ### Flags
-The `compose` and `composeAndExecute` commands can be passed optional flags to specify the operation of the watchers:
+The `execute` and `composeAndExecute` commands can be passed optional flags to specify the operation of the watchers:
 
 - `--recheck-headers`/`-r` - specifies whether to re-check headers for events after the header has already been queried for watched logs.
 Can be useful for redundancy if you suspect that your node is not always returning all desired logs on every query.

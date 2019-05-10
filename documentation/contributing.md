@@ -12,7 +12,7 @@ can be run together with other custom transformers using the [composeAndExeucte]
 - Update the README or any [documentation files](./) as necessary. If editing the Readme, please
 conform to the
 [standard-readme specification](https://github.com/RichardLitt/standard-readme).
-- You may merge a Pull Request once you have an approval from core developer.
+- Once a Pull Request has received two approvals it can be merged in by a core developer.
 
 ## Creating a new migration file
 1. `make new_migration NAME=add_columnA_to_table1`
