@@ -10,17 +10,17 @@ abide by one of the standard [interfaces](../staging/libraries/shared/transforme
 ## Writing custom transformers
 For help with writing different types of custom transformers please see below:
 
-Storage Transformers
+Storage Transformers: transform data derived from contract storage tries
    * [Guide](../../staging/libraries/shared/factories/storage/README.md)
    * [Example](../../staging/libraries/shared/factories/storage/EXAMPLE.md)
 
-Event Transformers
+Event Transformers: transform data derived from Ethereum log events
    * [Guide](../../staging/libraries/shared/factories/event/README.md)
    * [Example 1](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registar)
    * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registry)
    * [Example 3](https://github.com/vulcanize/ens_transformers/tree/master/transformers/resolver)
 
-Contract Transformers
+Contract Transformers: transform data derived from Ethereum log events and use it to poll public contract methods
    * [Example 1](https://github.com/vulcanize/account_transformers)
    * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/domain_records)
 
