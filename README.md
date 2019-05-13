@@ -8,10 +8,8 @@
 
 ## Table of Contents
 1. [Background](#background)
-1. [Dependencies](#dependencies)
 1. [Install](#install)
 1. [Usage](#usage)
-1. [Tests](#tests)
 1. [Contributing](#contributing)
 1. [License](#license)
 
@@ -29,18 +27,19 @@ data from VulcanizeDB's underlying Postgres database and making it accessible.
 
 ![VulcanizeDB Overview Diagram](documentation/diagrams/vdb-overview.png)
 
-## Dependencies
+## Install
+
+1. [Dependencies](#dependencies)
+1. [Building the project](#building-the-project)
+1. [Setting up the database](#setting-up-the-database)
+1. [Configuring a synced Ethereum node](#configuring-a-synced-ethereum-node)
+
+### Dependencies
  - Go 1.11+
  - Postgres 10.6
  - Ethereum Node
    - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
-
-
-## Install
-1. [Building the project](#building-the-project)
-1. [Setting up the database](#setting-up-the-database)
-1. [Configuring a synced Ethereum node](#configuring-a-synced-ethereum-node)
 
 ### Building the project
 Download the codebase to your local `GOPATH` via:
@@ -134,7 +133,7 @@ build and run custom transformers as Go plugins can be found
 [Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](documentation/postgraphile.md).
 
 
-## Tests
+### Tests
 - Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
     - Note: integration tests require configuration with an archival node
 - `createdb vulcanize_private` will create the test db
