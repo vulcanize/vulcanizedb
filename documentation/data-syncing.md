@@ -5,7 +5,10 @@ These commands are used to sync raw Ethereum data into Postgres, with varying le
 Syncs block headers from a running Ethereum node into the VulcanizeDB table `headers`.
 - Queries the Ethereum node using RPC calls.
 - Validates headers from the last 15 blocks to ensure that data is up to date.
-- Useful when you want a minimal baseline from which to track targeted data on the blockchain (e.g. individual smart contract storage values or event logs).
+- Useful when you want a minimal baseline from which to track targeted data on the blockchain (e.g. individual smart
+contract storage values or event logs).
+- Handles chain reorgs by [validating the most recent blocks' hashes](../pkg/history/header_validator.go). If the hash is
+different from what we have already stored in the database, the header record will be updated.
 
 #### Usage
 - Run: `./vulcanizedb headerSync --config <config.toml> --starting-block-number <block-number>`
@@ -29,6 +32,8 @@ Syncs blocks, transactions, receipts and logs from a running Ethereum node into 
 - Queries the Ethereum node using RPC calls.
 - Validates headers from the last 15 blocks to ensure that data is up to date.
 - Useful when you want to maintain a broad cache of what's happening on the blockchain.
+- Handles chain reorgs by [validating the most recent blocks' hashes](../pkg/history/header_validator.go). If the hash is
+different from what we have already stored in the database, the header record will be updated.
 
 #### Usage
 - Run `./vulcanizedb fullSync --config <config.toml> --starting-block-number <block-number>`
