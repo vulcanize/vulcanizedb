@@ -54,11 +54,12 @@ these are run independently, instead of using `composeAndExecute`, a couple of t
     * It is necessary that the .so file was built with the same exact dependencies that are present in the execution
     environment, i.e. we need to `compose` and `execute` the plugin .so file with the same exact version of vulcanizeDB.
     * The plugin migrations are run during the plugin's composition. As such, if `execute` is used to run a prebuilt .so
-    in a different environment than the one it was composed in then the migrations for that plugin will first need to
-    be manually ran against that environment's Postgres database.
+    in a different environment than the one it was composed in, then the database structure will need to be loaded 
+    into the environment's Postgres database. This can either be done by manually loading the plugin's schema into 
+    Postgres, or by manually running the plugin's migrations.
      
 * The `compose` and `composeAndExecute` commands assume you are in the vulcanizdb directory located at your system's 
-`$GOPATH`, and that all of the transformer repositories for building the plugin are present at their `$GOPATH` directories.
+`$GOPATH`, and that the plugin dependencies are present at their `$GOPATH` directories.
 
 * The `execute` command does not require the plugin transformer dependencies be located in their `$GOPATH` directories,
 instead it expects a .so file (of the name specified in the config file) to be in
