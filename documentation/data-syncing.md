@@ -23,7 +23,7 @@ Syncs block headers from a running Ethereum node into the VulcanizeDB table `hea
 ```
 - Alternatively, the ipc path can be passed as a flag instead `--client-ipcPath`.
 
-## sync
+## fullSync
 Syncs blocks, transactions, receipts and logs from a running Ethereum node into VulcanizeDB tables named
 `blocks`, `uncles`, `full_sync_transactions`, `full_sync_receipts` and `logs`. 
 - Queries the Ethereum node using RPC calls.
@@ -31,7 +31,7 @@ Syncs blocks, transactions, receipts and logs from a running Ethereum node into 
 - Useful when you want to maintain a broad cache of what's happening on the blockchain.
 
 #### Usage
-- Run `./vulcanizedb sync --config <config.toml> --starting-block-number <block-number>`
+- Run `./vulcanizedb fullSync --config <config.toml> --starting-block-number <block-number>`
 - The config file must be formatted as follows, and should contain an ipc path to a running Ethereum node:
 ```toml
 [database]
