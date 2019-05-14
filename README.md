@@ -25,7 +25,7 @@ providing a suite of tools to ease the extraction and transformation of data int
 
 ## Dependencies
  - Go 1.11+
- - Postgres 10.6
+ - Postgres 11.2
  - Ethereum Node
    - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
