@@ -9,13 +9,15 @@ As of April 30, 2019, you can run Postgraphile pointed at the default `vulcanize
 
 ```
 npm install -g postgraphile
-postgraphile --connection postgres://localhost/vulcanize_public --schema=public,custom --disable-default-mutations
+postgraphile --connection postgres://localhost/vulcanize_public --schema=public,custom --disable-default-mutations --no-ignore-rbac
 ```
 
 Arguments:
-- `--connection` specifies the database. The above command connects to the default `vulcanize_public` database defined in [the example config](../staging/environments/public.toml.example).
+- `--connection` specifies the database. The above command connects to the default `vulcanize_public` database 
+defined in [the example config](../environments/public.toml.example).
 - `--schema` defines what schema(s) to expose. The above exposes the `public` schema (for core VulcanizeDB data) as well as a `custom` schema (where `custom` is the name of a schema defined in executed transformers).
 - `--disable-default-mutations` prevents Postgraphile from exposing create, update, and delete operations on your data, which are otherwise enabled by default.
+- `--no-ignore-rbac` ensures that Postgraphile will only expose the tables, columns, fields, and query functions that the user has explicit access to.
 
 ## Customizing Postgraphile
 

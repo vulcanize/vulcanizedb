@@ -93,7 +93,7 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("fetches headers with multiple blocks", func() {
-				_, err := blockChain.GetHeaderByNumbers([]int64{100, 99})
+				_, err := blockChain.GetHeadersByNumbers([]int64{100, 99})
 
 				Expect(err).NotTo(HaveOccurred())
 				mockRpcClient.AssertBatchCalledWith("eth_getBlockByNumber", 2)
@@ -139,7 +139,7 @@ var _ = Describe("Geth blockchain", func() {
 				blockNumber := hexutil.Big(*big.NewInt(100))
 				mockRpcClient.SetReturnPOAHeaders([]vulcCore.POAHeader{{Number: &blockNumber}})
 
-				_, err := blockChain.GetHeaderByNumbers([]int64{100, 99})
+				_, err := blockChain.GetHeadersByNumbers([]int64{100, 99})
 
 				Expect(err).NotTo(HaveOccurred())
 				mockRpcClient.AssertBatchCalledWith("eth_getBlockByNumber", 2)

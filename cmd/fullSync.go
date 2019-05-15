@@ -29,14 +29,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// syncCmd represents the sync command
-var syncCmd = &cobra.Command{
-	Use:   "sync",
+// fullSyncCmd represents the fullSync command
+var fullSyncCmd = &cobra.Command{
+	Use:   "fullSync",
 	Short: "Syncs VulcanizeDB with local ethereum node",
 	Long: `Syncs VulcanizeDB with local ethereum node. Populates
 Postgres with blocks, transactions, receipts, and logs.
 
-./vulcanizedb sync --starting-block-number 0 --config public.toml
+./vulcanizedb fullSync --starting-block-number 0 --config public.toml
 
 Expects ethereum node to be running and requires a .toml config:
 
@@ -49,14 +49,14 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		sync()
+		fullSync()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(fullSyncCmd)
 
-	syncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
+	fullSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
 func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
@@ -67,20 +67,20 @@ func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.Blo
 	missingBlocksPopulated <- populated
 }
 
-func sync() {
+func fullSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
 	blockChain := getBlockChain()
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.Error("sync: Error getting last block: ", err)
+		log.Error("fullSync: Error getting last block: ", err)
 	}
 	if lastBlock.Int64() == 0 {
 		log.Fatal("geth initial: state sync not finished")
 	}
 	if startingBlockNumber > lastBlock.Int64() {
-		log.Fatal("sync: starting block number > current block number")
+		log.Fatal("fullSync: starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -94,7 +94,7 @@ func sync() {
 		case <-ticker.C:
 			window, err := validator.ValidateBlocks()
 			if err != nil {
-				log.Error("sync: error in validateBlocks: ", err)
+				log.Error("fullSync: error in validateBlocks: ", err)
 			}
 			log.Info(window.GetString())
 		case <-missingBlocksPopulated:

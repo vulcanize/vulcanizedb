@@ -98,7 +98,7 @@ func (chain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, 
 	return core.Header{BlockNumber: blockNumber}, nil
 }
 
-func (chain *MockBlockChain) GetHeaderByNumbers(blockNumbers []int64) ([]core.Header, error) {
+func (chain *MockBlockChain) GetHeadersByNumbers(blockNumbers []int64) ([]core.Header, error) {
 	var headers []core.Header
 	for _, blockNumber := range blockNumbers {
 		var header = core.Header{BlockNumber: int64(blockNumber)}

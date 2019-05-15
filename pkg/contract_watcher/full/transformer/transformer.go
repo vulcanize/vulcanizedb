@@ -164,7 +164,7 @@ func (tr *Transformer) Init() error {
 // Iterates through stored, initialized contract objects
 // Iterates through contract's event filters, grabbing watched event logs
 // Uses converter to convert logs into custom log type
-// Persists converted logs into custuom postgres tables
+// Persists converted logs into custom postgres tables
 // Calls selected methods, using token holder address generated during event log conversion
 func (tr *Transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
