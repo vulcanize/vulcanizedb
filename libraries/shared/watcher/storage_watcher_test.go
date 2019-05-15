@@ -109,18 +109,6 @@ var _ = Describe("Storage Watcher", func() {
 				close(done)
 			})
 
-			It("does not queue row if transformer execution fails because row already exists", func(done Done) {
-				mockTransformer.ExecuteErr = utils.ErrRowExists
-
-				go storageWatcher.Execute(rows, errs, time.Hour)
-
-				Expect(<-errs).To(BeNil())
-				Consistently(func() bool {
-					return mockQueue.AddCalled
-				}).Should(BeFalse())
-				close(done)
-			})
-
 			It("queues row for later processing if transformer execution fails", func(done Done) {
 				mockTransformer.ExecuteErr = fakes.FakeError
 
@@ -191,17 +179,6 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("deletes row from queue if transformer execution successful", func(done Done) {
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
-
-				Eventually(func() int {
-					return mockQueue.DeletePassedId
-				}).Should(Equal(row.Id))
-				close(done)
-			})
-
-			It("deletes row from queue if transformer execution errors because row already exists", func(done Done) {
-				mockTransformer.ExecuteErr = utils.ErrRowExists
-
 				go storageWatcher.Execute(rows, errs, time.Nanosecond)
 
 				Eventually(func() int {

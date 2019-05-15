@@ -100,6 +100,7 @@ type Repository interface {
 A contract-specific implementation of the repository interface enables the transformer to write the decoded storage value to the appropriate table in postgres.
 
 The `Create` function is expected to recognize and persist a given storage value by the variable's name, as indicated on the row's metadata.
+Note: we advise silently discarding duplicates in `Create` - as it's possible that you may read the same diff several times, and an error will trigger the storage watcher to queue that diff for later processing.
 
 The `SetDB` function is required for the repository to connect to the database.
 

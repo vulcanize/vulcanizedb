@@ -17,11 +17,8 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 )
-
-var ErrRowExists = errors.New("parsed row for storage diff already exists")
 
 type ErrContractNotFound struct {
 	Contract string
