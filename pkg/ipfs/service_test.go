@@ -30,9 +30,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
 )
 
-var _ = Describe("Processor", func() {
+var _ = Describe("Service", func() {
 
-	Describe("Process", func() {
+	Describe("Loop", func() {
 		It("Streams StatediffPayloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan statediff.Payload, 1)
@@ -55,7 +55,7 @@ var _ = Describe("Processor", func() {
 				ReturnIPLDPayload: &test_helpers.MockIPLDPayload,
 				ReturnErr:         nil,
 			}
-			processor := &ipfs.Processor{
+			processor := &ipfs.Service{
 				Repository:  mockCidRepo,
 				Publisher:   mockPublisher,
 				Streamer:    mockStreamer,
@@ -63,7 +63,7 @@ var _ = Describe("Processor", func() {
 				PayloadChan: payloadChan,
 				QuitChan:    quitChan,
 			}
-			err := processor.Process(wg)
+			err := processor.SyncAndPublish(wg, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			quitChan <- true
