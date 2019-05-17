@@ -17,11 +17,48 @@
 package ipfs
 
 import (
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+//
+type Subscription struct {
+	PayloadChan chan<- ResponsePayload
+	QuitChan    chan<- bool
+}
+
+type ResponsePayload struct {
+	HeadersRlp      [][]byte `json:"headersRlp"`
+	UnclesRlp       [][]byte `json:"unclesRlp"`
+	TransactionsRlp [][]byte `json:"transactionsRlp"`
+	ReceiptsRlp     [][]byte `json:"receiptsRlp"`
+	StateNodesRlp   [][]byte `json:"stateNodesRlp"`
+	StorageNodesRlp [][]byte `json:"storageNodesRlp"`
+
+	encoded []byte
+	err     error
+}
+
+func (sd *ResponsePayload) ensureEncoded() {
+	if sd.encoded == nil && sd.err == nil {
+		sd.encoded, sd.err = json.Marshal(sd)
+	}
+}
+
+// Length to implement Encoder interface for StateDiff
+func (sd *ResponsePayload) Length() int {
+	sd.ensureEncoded()
+	return len(sd.encoded)
+}
+
+// Encode to implement Encoder interface for StateDiff
+func (sd *ResponsePayload) Encode() ([]byte, error) {
+	sd.ensureEncoded()
+	return sd.encoded, sd.err
+}
 
 // IPLDPayload is a custom type which packages ETH data for the IPFS publisher
 type IPLDPayload struct {
@@ -81,4 +118,42 @@ type TrxMetaData struct {
 	CID  string
 	To   string
 	From string
+}
+
+// Params are set by the client to tell the server how to filter that is fed into their subscription
+type Params struct {
+	HeaderFilter struct {
+		Off           bool
+		StartingBlock int64
+		EndingBlock   int64 // set to 0 or a negative value to have no ending block
+		Uncles        bool
+	}
+	TrxFilter struct {
+		Off           bool
+		StartingBlock int64
+		EndingBlock   int64
+		Src           string
+		Dst           string
+	}
+	ReceiptFilter struct {
+		Off           bool
+		StartingBlock int64
+		EndingBlock   int64
+		Topic0s       []string
+	}
+	StateFilter struct {
+		Off           bool
+		StartingBlock int64
+		EndingBlock   int64
+		Address       string // is converted to state key by taking its keccak256 hash
+		LeafsOnly     bool
+	}
+	StorageFilter struct {
+		Off           bool
+		StartingBlock int64
+		EndingBlock   int64
+		Address       string
+		StorageKey    string
+		LeafsOnly     bool
+	}
 }
