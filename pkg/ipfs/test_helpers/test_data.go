@@ -38,7 +38,7 @@ func AddressToLeafKey(address common.Address) common.Hash {
 
 // Test variables
 var (
-	BlockNumber     = rand.Int63()
+	BlockNumber     = big.NewInt(rand.Int63())
 	BlockHash       = "0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"
 	CodeHash        = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
 	NewNonceValue   = rand.Uint64()
@@ -65,26 +65,26 @@ var (
 		CodeHash: CodeHash,
 	}
 	valueBytes, _       = rlp.EncodeToBytes(testAccount)
-	CreatedAccountDiffs = statediff.AccountDiffsMap{
-		ContractLeafKey: {
+	CreatedAccountDiffs = []statediff.AccountDiff{
+		{
 			Key:     ContractLeafKey.Bytes(),
 			Value:   valueBytes,
 			Storage: storage,
 		},
-		AnotherContractLeafKey: {
+		{
 			Key:     AnotherContractLeafKey.Bytes(),
 			Value:   valueBytes,
 			Storage: emptyStorage,
 		},
 	}
 
-	UpdatedAccountDiffs = statediff.AccountDiffsMap{ContractLeafKey: {
+	UpdatedAccountDiffs = []statediff.AccountDiff{{
 		Key:     ContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storage,
 	}}
 
-	DeletedAccountDiffs = statediff.AccountDiffsMap{ContractLeafKey: {
+	DeletedAccountDiffs = []statediff.AccountDiff{{
 		Key:     ContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storage,
@@ -97,7 +97,7 @@ var (
 		DeletedAccounts: DeletedAccountDiffs,
 		UpdatedAccounts: UpdatedAccountDiffs,
 	}
-	MockStateDiffRlp, _ = rlp.EncodeToBytes(MockStateDiff)
+	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 
 	mockTransaction1 = types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
 	mockTransaction2 = types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
@@ -119,7 +119,7 @@ var (
 
 	MockStatediffPayload = statediff.Payload{
 		BlockRlp:     MockBlockRlp,
-		StateDiffRlp: MockStateDiffRlp,
+		StateDiffRlp: MockStateDiffBytes,
 		Err:          nil,
 	}
 
@@ -139,7 +139,7 @@ var (
 
 	MockCIDPayload = ipfs.CIDPayload{
 		BlockNumber: "1",
-		BlockHash:   "0x0",
+		BlockHash:   common.HexToHash("0x0"),
 		HeaderCID:   "mockHeaderCID",
 		TransactionCIDs: map[common.Hash]*ipfs.TrxMetaData{
 			common.HexToHash("0x0"): {
@@ -163,16 +163,30 @@ var (
 				Topic0s: []string{"mockTopic1", "mockTopic2"},
 			},
 		},
-		StateLeafCIDs: map[common.Hash]string{
-			common.HexToHash("0x0"): "mockStateCID1",
-			common.HexToHash("0x1"): "mockStateCID2",
-		},
-		StorageLeafCIDs: map[common.Hash]map[common.Hash]string{
+		StateNodeCIDs: map[common.Hash]ipfs.StateNodeCID{
 			common.HexToHash("0x0"): {
-				common.HexToHash("0x0"): "mockStorageCID1",
+				CID:  "mockStateCID1",
+				Leaf: true,
 			},
 			common.HexToHash("0x1"): {
-				common.HexToHash("0x1"): "mockStorageCID2",
+				CID:  "mockStateCID2",
+				Leaf: true,
+			},
+		},
+		StorageNodeCIDs: map[common.Hash][]ipfs.StorageNodeCID{
+			common.HexToHash("0x0"): {
+				{
+					CID:  "mockStorageCID1",
+					Key:  common.HexToHash("0x0"),
+					Leaf: true,
+				},
+			},
+			common.HexToHash("0x1"): {
+				{
+					CID:  "mockStorageCID2",
+					Key:  common.HexToHash("0x1"),
+					Leaf: true,
+				},
 			},
 		},
 	}

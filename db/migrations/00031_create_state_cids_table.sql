@@ -2,9 +2,10 @@
 CREATE TABLE public.state_cids (
   id                    SERIAL PRIMARY KEY,
   header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE,
-  account_key           VARCHAR(66) NOT NULL,
+  state_key             VARCHAR(66) NOT NULL,
+  leaf                  BOOLEAN NOT NULL,
   cid                   TEXT NOT NULL,
-  UNIQUE (header_id, account_key)
+  UNIQUE (header_id, state_key)
 );
 
 -- +goose Down

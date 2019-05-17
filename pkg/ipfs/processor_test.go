@@ -18,6 +18,7 @@ package ipfs_test
 
 import (
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
@@ -34,36 +35,43 @@ var _ = Describe("Processor", func() {
 	Describe("Process", func() {
 		It("Streams StatediffPayloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
-			payloadChan := make(chan statediff.Payload, 800)
-			processor := ipfs.Processor{
-				Repository: &mocks.CIDRepository{
-					ReturnErr: nil,
+			payloadChan := make(chan statediff.Payload, 1)
+			quitChan := make(chan bool, 1)
+			mockCidRepo := &mocks.CIDRepository{
+				ReturnErr: nil,
+			}
+			mockPublisher := &mocks.IPLDPublisher{
+				ReturnCIDPayload: &test_helpers.MockCIDPayload,
+				ReturnErr:        nil,
+			}
+			mockStreamer := &mocks.StateDiffStreamer{
+				ReturnSub: &rpc.ClientSubscription{},
+				StreamPayloads: []statediff.Payload{
+					test_helpers.MockStatediffPayload,
 				},
-				Publisher: &mocks.IPLDPublisher{
-					ReturnCIDPayload: &test_helpers.MockCIDPayload,
-					ReturnErr:        nil,
-				},
-				Streamer: &mocks.StateDiffStreamer{
-					ReturnSub: &rpc.ClientSubscription{},
-					StreamPayloads: []statediff.Payload{
-						test_helpers.MockStatediffPayload,
-					},
-					ReturnErr: nil,
-					WaitGroup: wg,
-				},
-				Converter: &mocks.PayloadConverter{
-					ReturnIPLDPayload: &test_helpers.MockIPLDPayload,
-					ReturnErr:         nil,
-				},
+				ReturnErr: nil,
+			}
+			mockConverter := &mocks.PayloadConverter{
+				ReturnIPLDPayload: &test_helpers.MockIPLDPayload,
+				ReturnErr:         nil,
+			}
+			processor := &ipfs.Processor{
+				Repository:  mockCidRepo,
+				Publisher:   mockPublisher,
+				Streamer:    mockStreamer,
+				Converter:   mockConverter,
 				PayloadChan: payloadChan,
+				QuitChan:    quitChan,
 			}
 			err := processor.Process(wg)
 			Expect(err).ToNot(HaveOccurred())
+			time.Sleep(2 * time.Second)
+			quitChan <- true
 			wg.Wait()
-		})
-
-		It("Fails if", func() {
-
+			Expect(mockConverter.PassedStatediffPayload).To(Equal(test_helpers.MockStatediffPayload))
+			Expect(mockCidRepo.PassedCIDPayload).To(Equal(&test_helpers.MockCIDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&test_helpers.MockIPLDPayload))
+			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})
 	})
 })

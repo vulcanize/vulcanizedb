@@ -72,8 +72,8 @@ func (i *Processor) Process(wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		for {
 			select {
 			case payload := <-i.PayloadChan:
@@ -98,6 +98,7 @@ func (i *Processor) Process(wg *sync.WaitGroup) error {
 			case err = <-sub.Err():
 				log.Error(err)
 			case <-i.QuitChan:
+				println("quiting")
 				log.Info("quiting IPFSProcessor")
 				wg.Done()
 				return

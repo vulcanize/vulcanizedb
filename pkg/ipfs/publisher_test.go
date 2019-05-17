@@ -34,9 +34,5 @@ var _ = Describe("Publisher", func() {
 			Expect(cidPayload).To(Equal(&test_helpers.MockCIDPayload))
 			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&test_helpers.MockIPLDPayload))
 		})
-
-		It("Fails if", func() {
-
-		})
 	})
 })

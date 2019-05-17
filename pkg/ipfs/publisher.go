@@ -98,27 +98,27 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	}
 
 	// Process and publish state leafs
-	stateLeafCids, err := pub.publishStateLeafs(payload.StateLeafs)
+	stateLeafCids, err := pub.publishStateNodes(payload.StateNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Process and publish storage leafs
-	storageLeafCids, err := pub.publishStorageLeafs(payload.StorageLeafs)
+	storageLeafCids, err := pub.publishStorageNodes(payload.StorageNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Package CIDs into a single struct
 	return &CIDPayload{
-		BlockHash:       payload.BlockHash.Hex(),
+		BlockHash:       payload.BlockHash,
 		BlockNumber:     payload.BlockNumber.String(),
 		HeaderCID:       headerCid,
 		UncleCIDS:       uncleCids,
 		TransactionCIDs: transactionCids,
 		ReceiptCIDs:     receiptsCids,
-		StateLeafCIDs:   stateLeafCids,
-		StorageLeafCIDs: storageLeafCids,
+		StateNodeCIDs:   stateLeafCids,
+		StorageNodeCIDs: storageLeafCids,
 	}, nil
 }
 
@@ -165,34 +165,41 @@ func (pub *Publisher) publishReceipts(receipts types.Receipts, receiptMeta []*Re
 	return mappedRctCids, nil
 }
 
-func (pub *Publisher) publishStateLeafs(stateLeafs map[common.Hash][]byte) (map[common.Hash]string, error) {
-	stateLeafCids := make(map[common.Hash]string)
-	for addr, leaf := range stateLeafs {
-		stateLeafCid, err := pub.StatePutter.DagPut(leaf)
+func (pub *Publisher) publishStateNodes(stateNodes map[common.Hash]StateNode) (map[common.Hash]StateNodeCID, error) {
+	stateNodeCids := make(map[common.Hash]StateNodeCID)
+	for addr, node := range stateNodes {
+		stateNodeCid, err := pub.StatePutter.DagPut(node.Value)
 		if err != nil {
 			return nil, err
 		}
-		if len(stateLeafCid) != 1 {
+		if len(stateNodeCid) != 1 {
 			return nil, errors.New("single CID expected to be returned for state leaf")
 		}
-		stateLeafCids[addr] = stateLeafCid[0]
+		stateNodeCids[addr] = StateNodeCID{
+			CID:  stateNodeCid[0],
+			Leaf: node.Leaf,
+		}
 	}
-	return stateLeafCids, nil
+	return stateNodeCids, nil
 }
 
-func (pub *Publisher) publishStorageLeafs(storageLeafs map[common.Hash]map[common.Hash][]byte) (map[common.Hash]map[common.Hash]string, error) {
-	storageLeafCids := make(map[common.Hash]map[common.Hash]string)
-	for addr, storageTrie := range storageLeafs {
-		storageLeafCids[addr] = make(map[common.Hash]string)
-		for key, leaf := range storageTrie {
-			storageLeafCid, err := pub.StoragePutter.DagPut(leaf)
+func (pub *Publisher) publishStorageNodes(storageNodes map[common.Hash][]StorageNode) (map[common.Hash][]StorageNodeCID, error) {
+	storageLeafCids := make(map[common.Hash][]StorageNodeCID)
+	for addr, storageTrie := range storageNodes {
+		storageLeafCids[addr] = make([]StorageNodeCID, 0)
+		for _, node := range storageTrie {
+			storageNodeCid, err := pub.StoragePutter.DagPut(node.Value)
 			if err != nil {
 				return nil, err
 			}
-			if len(storageLeafCid) != 1 {
+			if len(storageNodeCid) != 1 {
 				return nil, errors.New("single CID expected to be returned for storage leaf")
 			}
-			storageLeafCids[addr][key] = storageLeafCid[0]
+			storageLeafCids[addr] = append(storageLeafCids[addr], StorageNodeCID{
+				Key:  node.Key,
+				CID:  storageNodeCid[0],
+				Leaf: node.Leaf,
+			})
 		}
 	}
 	return storageLeafCids, nil
