@@ -85,7 +85,7 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 }
 
 // Subscribe subscribes to a geth websocket "namespace_subscribe" subscription with the given channel
-func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, subName string, args ...interface{}) (*rpc.ClientSubscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
 		return nil, errors.New("second argument to Subscribe must be a writable channel")
@@ -93,5 +93,5 @@ func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, arg
 	if chanVal.IsNil() {
 		return nil, errors.New("channel given to Subscribe must not be nil")
 	}
-	return client.client.Subscribe(context.Background(), namespace, payloadChan, args)
+	return client.client.Subscribe(context.Background(), namespace, payloadChan, subName, args)
 }
