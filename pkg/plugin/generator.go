@@ -18,6 +18,7 @@ package plugin
 
 import (
 	"errors"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/builder"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/manager"

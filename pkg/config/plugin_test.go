@@ -17,11 +17,12 @@
 package config_test
 
 import (
+	"os"
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"os"
-	"path/filepath"
 )
 
 var allDifferentPathsConfig = config.Plugin{
