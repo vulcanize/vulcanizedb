@@ -1025,16 +1025,19 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 					bc.triegc.Push(root, number)
 					break
 				}
-
 				if bc.cacheConfig.ProcessingStateDiffs {
 					if !bc.allowedRootToBeDereferenced(root.(common.Hash)) {
 						bc.triegc.Push(root, number)
 						break
 					} else {
+						log.Debug("Current root found in stateDiffsProcessed collection with a count of 2, okay to dereference",
+							"root", root.(common.Hash).Hex(),
+							"blockNumber", uint64(-number),
+							"size of stateDiffsProcessed", len(bc.stateDiffsProcessed))
 						delete(bc.stateDiffsProcessed, root.(common.Hash))
 					}
 				}
-
+				log.Debug("Dereferencing", "root", root.(common.Hash).Hex())
 				triedb.Dereference(root.(common.Hash))
 			}
 		}

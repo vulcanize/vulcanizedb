@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	rlp2 "github.com/ethereum/go-ethereum/rlp"
+	"github.com/ipfs/go-ipfs/plugin/loader"
 
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_header"
@@ -49,6 +50,18 @@ type Publisher struct {
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
 func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
+	l, err := loader.NewPluginLoader("~/.ipfs/plugins")
+	if err != nil {
+		return nil, err
+	}
+	err = l.Initialize()
+	if err != nil {
+		return nil, err
+	}
+	err = l.Inject()
+	if err != nil {
+		return nil, err
+	}
 	node, err := ipfs.InitIPFSNode(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -98,13 +111,13 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	}
 
 	// Process and publish state leafs
-	stateLeafCids, err := pub.publishStateNodes(payload.StateNodes)
+	stateNodeCids, err := pub.publishStateNodes(payload.StateNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Process and publish storage leafs
-	storageLeafCids, err := pub.publishStorageNodes(payload.StorageNodes)
+	storageNodeCids, err := pub.publishStorageNodes(payload.StorageNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +130,8 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 		UncleCIDS:       uncleCids,
 		TransactionCIDs: transactionCids,
 		ReceiptCIDs:     receiptsCids,
-		StateNodeCIDs:   stateLeafCids,
-		StorageNodeCIDs: storageLeafCids,
+		StateNodeCIDs:   stateNodeCids,
+		StorageNodeCIDs: storageNodeCids,
 	}, nil
 }
 

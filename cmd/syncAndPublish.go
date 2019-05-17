@@ -66,7 +66,7 @@ func syncAndPublish() {
 	}
 
 	wg := &syn.WaitGroup{}
-	err = processor.Process(wg)
+	err = processor.SyncAndPublish(wg, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

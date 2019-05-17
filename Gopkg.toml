@@ -62,6 +62,10 @@
   name = "github.com/ipfs/go-ipfs"
   version = "0.4.20"
 
+[[override]]
+  name = "github.com/ipfs/go-ds-badger"
+  version = "0.0.3"
+
 [prune]
   go-tests = true
   unused-packages = true

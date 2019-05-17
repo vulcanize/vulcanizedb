@@ -42,7 +42,7 @@ func NewPublicSeedNodeAPI(snp SyncPublishAndServe) *PublicSeedNodeAPI {
 }
 
 // Subscribe is the public method to setup a subscription that fires off state-diff payloads as they are created
-func (api *PublicSeedNodeAPI) Subscribe(ctx context.Context, params *Params) (*rpc.Subscription, error) {
+func (api *PublicSeedNodeAPI) Subscribe(ctx context.Context, payloadChan chan ResponsePayload, params *Params) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
