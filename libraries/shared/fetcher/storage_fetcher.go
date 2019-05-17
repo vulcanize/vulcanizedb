@@ -17,9 +17,10 @@
 package fetcher
 
 import (
+	"strings"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"strings"
 )
 
 type IStorageFetcher interface {

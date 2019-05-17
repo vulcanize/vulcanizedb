@@ -18,8 +18,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"time"
+
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

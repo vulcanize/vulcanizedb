@@ -18,6 +18,7 @@ package ethereum
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/sirupsen/logrus"
 

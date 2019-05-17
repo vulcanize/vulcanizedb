@@ -20,9 +20,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"math/big"
+
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"math/big"
 )
 
 var _ = Describe("Validation window", func() {

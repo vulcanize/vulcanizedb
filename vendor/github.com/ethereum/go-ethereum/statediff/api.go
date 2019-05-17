@@ -18,7 +18,6 @@ package statediff
 
 import (
 	"context"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -35,15 +34,12 @@ const APIVersion = "0.0.1"
 // are produced by a full node
 type PublicStateDiffAPI struct {
 	sds IService
-
-	mu sync.Mutex
 }
 
 // NewPublicStateDiffAPI create a new state diff websocket streaming service.
 func NewPublicStateDiffAPI(sds IService) *PublicStateDiffAPI {
 	return &PublicStateDiffAPI{
 		sds: sds,
-		mu:  sync.Mutex{},
 	}
 }
 

@@ -18,6 +18,7 @@ package repository_test
 
 import (
 	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 
 	. "github.com/onsi/ginkgo"

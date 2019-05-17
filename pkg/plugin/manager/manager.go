@@ -19,12 +19,13 @@ package manager
 import (
 	"errors"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 )
 
 // Interface for managing the db migrations for plugin transformers
