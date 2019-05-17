@@ -143,6 +143,10 @@ var (
 		utils.EWASMInterpreterFlag,
 		utils.EVMInterpreterFlag,
 		utils.StateDiffFlag,
+		utils.StateDiffPathsAndProofs,
+		utils.StateDiffAllNodeTypes,
+		utils.StateDiffStreamBlock,
+		utils.StateDiffWatchedAddresses,
 		configFileFlag,
 	}
 
