@@ -35,7 +35,7 @@ import (
 )
 
 type blockChain interface {
-	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
+	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	GetBlockByHash(hash common.Hash) *types.Block
 	AddToStateDiffProcessedCollection(hash common.Hash)
 }
@@ -45,7 +45,7 @@ type IService interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for processing state diffs
-	Loop(chainEventCh chan core.ChainEvent)
+	Loop(chainEventCh chan core.ChainHeadEvent)
 	// Method to subscribe to receive state diff processing output
 	Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- bool)
 	// Method to unsubscribe from state diff processing
@@ -100,8 +100,8 @@ func (sds *Service) APIs() []rpc.API {
 }
 
 // Loop is the main processing method
-func (sds *Service) Loop(chainEventCh chan core.ChainEvent) {
-	chainEventSub := sds.BlockChain.SubscribeChainEvent(chainEventCh)
+func (sds *Service) Loop(chainEventCh chan core.ChainHeadEvent) {
+	chainEventSub := sds.BlockChain.SubscribeChainHeadEvent(chainEventCh)
 	defer chainEventSub.Unsubscribe()
 	errCh := chainEventSub.Err()
 
@@ -129,11 +129,11 @@ func (sds *Service) Loop(chainEventCh chan core.ChainEvent) {
 				log.Error("Error building statediff", "block number", currentBlock.Number(), "error", err)
 			}
 		case err := <-errCh:
-			log.Warn("Error from chain event subscription, breaking loop.", "error", err)
+			log.Warn("Error from chain event subscription, breaking loop", "error", err)
 			sds.close()
 			return
 		case <-sds.QuitChan:
-			log.Info("Quitting the statediff block channel")
+			log.Info("Quitting the statediffing process")
 			sds.close()
 			return
 		}
@@ -195,7 +195,7 @@ func (sds *Service) Unsubscribe(id rpc.ID) error {
 func (sds *Service) Start(*p2p.Server) error {
 	log.Info("Starting statediff service")
 
-	chainEventCh := make(chan core.ChainEvent, 10)
+	chainEventCh := make(chan core.ChainHeadEvent, 10)
 	go sds.Loop(chainEventCh)
 
 	return nil
@@ -214,9 +214,9 @@ func (sds *Service) send(payload Payload) {
 	for id, sub := range sds.Subscriptions {
 		select {
 		case sub.PayloadChan <- payload:
-			log.Info("sending state diff payload to subscription %s", id)
+			log.Info(fmt.Sprintf("sending state diff payload to subscription %s", id))
 		default:
-			log.Info("unable to send payload to subscription %s; channel has no receiver", id)
+			log.Info(fmt.Sprintf("unable to send payload to subscription %s", id))
 		}
 	}
 	sds.Unlock()
@@ -229,9 +229,9 @@ func (sds *Service) close() {
 		select {
 		case sub.QuitChan <- true:
 			delete(sds.Subscriptions, id)
-			log.Info("closing subscription %s", id)
+			log.Info(fmt.Sprintf("closing subscription %s", id))
 		default:
-			log.Info("unable to close subscription %s; channel has no receiver", id)
+			log.Info(fmt.Sprintf("unable to close subscription %s; channel has no receiver", id))
 		}
 	}
 	sds.Unlock()

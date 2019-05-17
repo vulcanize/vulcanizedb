@@ -29,5 +29,5 @@ type RpcClient interface {
 	BatchCall(batch []client.BatchElem) error
 	IpcPath() string
 	SupportedModules() (map[string]string, error)
-	Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error)
+	Subscribe(namespace string, payloadChan interface{}, subName string, args ...interface{}) (*rpc.ClientSubscription, error)
 }

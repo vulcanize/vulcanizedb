@@ -30,8 +30,7 @@ type StateDiffStreamer interface {
 
 // Streamer is the underlying struct for the StateDiffStreamer interface
 type Streamer struct {
-	Client      core.RpcClient
-	PayloadChan chan statediff.Payload
+	Client core.RpcClient
 }
 
 // NewStateDiffStreamer creates a pointer to a new Streamer which satisfies the StateDiffStreamer interface
@@ -43,5 +42,5 @@ func NewStateDiffStreamer(client core.RpcClient) *Streamer {
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
 func (sds *Streamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("statediff", sds.PayloadChan)
+	return sds.Client.Subscribe("statediff", payloadChan, "subscribe")
 }

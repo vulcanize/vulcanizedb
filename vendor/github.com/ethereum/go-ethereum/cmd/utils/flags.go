@@ -714,6 +714,22 @@ var (
 		Name:  "statediff",
 		Usage: "Enables the calculation of state diffs between each block, persists these state diffs the configured persistence mode.",
 	}
+	StateDiffPathsAndProofs = cli.BoolFlag{
+		Name:  "statediff.pathsandproofs",
+		Usage: "Set to true to generate paths and proof sets for diffed state and storage trie lead nodes",
+	}
+	StateDiffAllNodeTypes = cli.BoolFlag{
+		Name:  "statediff.allnodes",
+		Usage: "Set to true to consider all node types: leaf, branch, and extension; default (false) processes leaf nodes only",
+	}
+	StateDiffWatchedAddresses = cli.StringSliceFlag{
+		Name:  "statediff.watchedaddresses",
+		Usage: "If provided, state diffing process is restricted to these addresses",
+	}
+	StateDiffStreamBlock = cli.BoolFlag{
+		Name:  "statediff.streamblock",
+		Usage: "Set to true to stream the block data alongside state diff data",
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1528,12 +1544,18 @@ func RegisterEthStatsService(stack *node.Node, url string) {
 
 // RegisterStateDiffService configures and registers a service to stream state diff data over RPC
 func RegisterStateDiffService(stack *node.Node, ctx *cli.Context) {
+	config := statediff.Config{
+		StreamBlock:      ctx.GlobalBool(StateDiffStreamBlock.Name),
+		PathsAndProofs:   ctx.GlobalBool(StateDiffPathsAndProofs.Name),
+		AllNodes:         ctx.GlobalBool(StateDiffAllNodeTypes.Name),
+		WatchedAddresses: ctx.GlobalStringSlice(StateDiffWatchedAddresses.Name),
+	}
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		var ethServ *eth.Ethereum
 		ctx.Service(&ethServ)
 		chainDb := ethServ.ChainDb()
 		blockChain := ethServ.BlockChain()
-		return statediff.NewStateDiffService(chainDb, blockChain)
+		return statediff.NewStateDiffService(chainDb, blockChain, config)
 	}); err != nil {
 		Fatalf("Failed to register State Diff Service", err)
 	}
