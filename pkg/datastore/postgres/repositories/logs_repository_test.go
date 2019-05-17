@@ -17,8 +17,9 @@
 package repositories_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"sort"
+
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
 
 	"github.com/ethereum/go-ethereum/common"

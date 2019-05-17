@@ -18,8 +18,9 @@ package retriever
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"strings"
+
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"

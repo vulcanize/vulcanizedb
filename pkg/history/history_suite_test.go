@@ -20,9 +20,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {

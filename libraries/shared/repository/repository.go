@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"fmt"
+
 	"github.com/jmoiron/sqlx"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
