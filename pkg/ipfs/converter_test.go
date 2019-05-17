@@ -34,9 +34,5 @@ var _ = Describe("Converter", func() {
 			Expect(ipldPayload).To(Equal(&test_helpers.MockIPLDPayload))
 			Expect(mockConverter.PassedStatediffPayload).To(Equal(test_helpers.MockStatediffPayload))
 		})
-
-		It("Fails if", func() {
-
-		})
 	})
 })

@@ -1,4 +1,4 @@
-// Copyright 2015 The go-ethereum Authors
+// Copyright 2019 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@ package statediff
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -37,16 +36,14 @@ const APIVersion = "0.0.1"
 type PublicStateDiffAPI struct {
 	sds IService
 
-	mu       sync.Mutex
-	lastUsed map[string]time.Time // keeps track when a filter was polled for the last time.
+	mu sync.Mutex
 }
 
 // NewPublicStateDiffAPI create a new state diff websocket streaming service.
 func NewPublicStateDiffAPI(sds IService) *PublicStateDiffAPI {
 	return &PublicStateDiffAPI{
-		sds:      sds,
-		lastUsed: make(map[string]time.Time),
-		mu:       sync.Mutex{},
+		sds: sds,
+		mu:  sync.Mutex{},
 	}
 }
 
@@ -75,12 +72,6 @@ func (api *PublicStateDiffAPI) Subscribe(ctx context.Context) (*rpc.Subscription
 					log.Error("Failed to send state diff packet", "err", err)
 				}
 			case <-rpcSub.Err():
-				err := api.sds.Unsubscribe(rpcSub.ID)
-				if err != nil {
-					log.Error("Failed to unsubscribe from the state diff service", err)
-				}
-				return
-			case <-notifier.Closed():
 				err := api.sds.Unsubscribe(rpcSub.ID)
 				if err != nil {
 					log.Error("Failed to unsubscribe from the state diff service", err)
