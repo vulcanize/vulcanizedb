@@ -1,4 +1,4 @@
-// Copyright 2015 The go-ethereum Authors
+// Copyright 2019 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 )
@@ -41,6 +42,7 @@ type MockStateDiffService struct {
 	ParentBlockChan chan *types.Block
 	QuitChan        chan bool
 	Subscriptions   map[rpc.ID]statediff.Subscription
+	streamBlock     bool
 }
 
 // Protocols mock method
@@ -63,7 +65,6 @@ func (sds *MockStateDiffService) APIs() []rpc.API {
 // Loop mock method
 func (sds *MockStateDiffService) Loop(chan core.ChainEvent) {
 	//loop through chain events until no more
-HandleBlockChLoop:
 	for {
 		select {
 		case block := <-sds.BlockChan:
@@ -74,30 +75,46 @@ HandleBlockChLoop:
 				log.Error("Parent block is nil, skipping this block",
 					"parent block hash", parentHash.String(),
 					"current block number", currentBlock.Number())
-				break HandleBlockChLoop
+				continue
 			}
-
-			stateDiff, err := sds.Builder.BuildStateDiff(parentBlock.Root(), currentBlock.Root(), currentBlock.Number().Int64(), currentBlock.Hash())
-			if err != nil {
+			if err := sds.process(currentBlock, parentBlock); err != nil {
+				println(err.Error())
 				log.Error("Error building statediff", "block number", currentBlock.Number(), "error", err)
 			}
-			rlpBuff := new(bytes.Buffer)
-			currentBlock.EncodeRLP(rlpBuff)
-			blockRlp := rlpBuff.Bytes()
-			stateDiffRlp, _ := rlp.EncodeToBytes(stateDiff)
-			payload := statediff.Payload{
-				BlockRlp:     blockRlp,
-				StateDiffRlp: stateDiffRlp,
-				Err:          err,
-			}
-			// If we have any websocket subscription listening in, send the data to them
-			sds.send(payload)
 		case <-sds.QuitChan:
 			log.Debug("Quitting the statediff block channel")
 			sds.close()
 			return
 		}
 	}
+}
+
+// process method builds the state diff payload from the current and parent block and streams it to listening subscriptions
+func (sds *MockStateDiffService) process(currentBlock, parentBlock *types.Block) error {
+	stateDiff, err := sds.Builder.BuildStateDiff(parentBlock.Root(), currentBlock.Root(), currentBlock.Number(), currentBlock.Hash())
+	if err != nil {
+		return err
+	}
+
+	stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
+	if err != nil {
+		return err
+	}
+	payload := statediff.Payload{
+		StateDiffRlp: stateDiffRlp,
+		Err:          err,
+	}
+	if sds.streamBlock {
+		rlpBuff := new(bytes.Buffer)
+		if err = currentBlock.EncodeRLP(rlpBuff); err != nil {
+			return err
+		}
+		payload.BlockRlp = rlpBuff.Bytes()
+	}
+
+	// If we have any websocket subscription listening in, send the data to them
+	sds.send(payload)
+	return nil
 }
 
 // Subscribe mock method

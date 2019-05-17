@@ -52,7 +52,7 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
   source = "github.com/vulcanize/go-ethereum"
-  branch = "rpc_statediffs_at_head"
+  branch = "rpc_statediffing"
 
 [[constraint]]
   name = "github.com/vulcanize/eth-block-extractor"

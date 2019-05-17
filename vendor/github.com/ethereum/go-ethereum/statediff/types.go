@@ -1,4 +1,4 @@
-// Copyright 2015 The go-ethereum Authors
+// Copyright 2019 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -21,30 +21,33 @@ package statediff
 
 import (
 	"encoding/json"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/state"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 )
 
-// AccountsMap is a mapping of keccak256(address) => accountWrapper
-type AccountsMap map[common.Hash]accountWrapper
+// Subscription struct holds our subscription channels
+type Subscription struct {
+	PayloadChan chan<- Payload
+	QuitChan    chan<- bool
+}
 
-// AccountWrapper is used to temporary associate the unpacked account with its raw values
-type accountWrapper struct {
-	Account  state.Account
-	RawKey   []byte
-	RawValue []byte
-	Proof    [][]byte
-	Path     []byte
+// Payload packages the data to send to StateDiffingService subscriptions
+type Payload struct {
+	BlockRlp     []byte `json:"blockRlp"     gencodec:"required"`
+	StateDiffRlp []byte `json:"stateDiff"    gencodec:"required"`
+	Err          error  `json:"error"`
 }
 
 // StateDiff is the final output structure from the builder
 type StateDiff struct {
-	BlockNumber     int64           `json:"blockNumber"	    gencodec:"required"`
-	BlockHash       common.Hash     `json:"blockHash" 	    gencodec:"required"`
-	CreatedAccounts AccountDiffsMap `json:"createdAccounts" gencodec:"required"`
-	DeletedAccounts AccountDiffsMap `json:"deletedAccounts" gencodec:"required"`
-	UpdatedAccounts AccountDiffsMap `json:"updatedAccounts" gencodec:"required"`
+	BlockNumber     *big.Int      `json:"blockNumber"	    gencodec:"required"`
+	BlockHash       common.Hash   `json:"blockHash" 	    gencodec:"required"`
+	CreatedAccounts []AccountDiff `json:"createdAccounts" gencodec:"required"`
+	DeletedAccounts []AccountDiff `json:"deletedAccounts" gencodec:"required"`
+	UpdatedAccounts []AccountDiff `json:"updatedAccounts" gencodec:"required"`
 
 	encoded []byte
 	err     error
@@ -68,46 +71,34 @@ func (sd *StateDiff) Encode() ([]byte, error) {
 	return sd.encoded, sd.err
 }
 
-// AccountDiffsMap is a mapping of keccak256(address) => AccountDiff
-type AccountDiffsMap map[common.Hash]AccountDiff
-
-// AccountDiff holds the data for a single state diff leaf node
+// AccountDiff holds the data for a single state diff node
 type AccountDiff struct {
+	Leaf    bool          `json:"leaf"	      gencodec:"required"`
 	Key     []byte        `json:"key"         gencodec:"required"`
 	Value   []byte        `json:"value"       gencodec:"required"`
 	Proof   [][]byte      `json:"proof"       gencodec:"required"`
-	Storage []StorageDiff `json:"storage"     gencodec:"required"`
 	Path    []byte        `json:"path"        gencodec:"required"`
+	Storage []StorageDiff `json:"storage"     gencodec:"required"`
 }
 
-// StorageDiff holds the data for a single storage diff leaf node
+// StorageDiff holds the data for a single storage diff node
 type StorageDiff struct {
+	Leaf  bool     `json:"leaf"	       gencodec:"required"`
 	Key   []byte   `json:"key"         gencodec:"required"`
 	Value []byte   `json:"value"       gencodec:"required"`
 	Proof [][]byte `json:"proof"       gencodec:"required"`
 	Path  []byte   `json:"path"        gencodec:"required"`
 }
 
-/*
-// State trie leaf is just a short node, below
-// that has an rlp encoded account as the value
+// AccountsMap is a mapping of keccak256(address) => accountWrapper
+type AccountsMap map[common.Hash]accountWrapper
 
-
-// SO each account diffs map is reall a map of shortnode keys to values
-// Flatten to a slice of short nodes?
-
-// Need to coerce into:
-
-type TrieNode struct {
-	// leaf, extension or branch
-	nodeKind string
-
-	// If leaf or extension: [0] is key, [1] is val.
-	// If branch: [0] - [16] are children.
-	elements []interface{}
-
-	// IPLD block information
-	cid     *cid.Cid
-	rawdata []byte
+// AccountWrapper is used to temporary associate the unpacked account with its raw values
+type accountWrapper struct {
+	Account  *state.Account
+	Leaf     bool
+	RawKey   []byte
+	RawValue []byte
+	Proof    [][]byte
+	Path     []byte
 }
-*/
