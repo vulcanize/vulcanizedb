@@ -17,9 +17,10 @@
 package ipfs
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
 )
 
 // IPLDPayload is a custom type which packages ETH data for the IPFS publisher
@@ -31,20 +32,42 @@ type IPLDPayload struct {
 	TrxMetaData     []*TrxMetaData
 	Receipts        types.Receipts
 	ReceiptMetaData []*ReceiptMetaData
-	StateLeafs      map[common.Hash][]byte
-	StorageLeafs    map[common.Hash]map[common.Hash][]byte
+	StateNodes      map[common.Hash]StateNode
+	StorageNodes    map[common.Hash][]StorageNode
+}
+
+type StateNode struct {
+	Value []byte
+	Leaf  bool
+}
+
+type StorageNode struct {
+	Key   common.Hash
+	Value []byte
+	Leaf  bool
 }
 
 // CIDPayload is a struct to hold all the CIDs and their meta data
 type CIDPayload struct {
 	BlockNumber     string
-	BlockHash       string
+	BlockHash       common.Hash
 	HeaderCID       string
 	UncleCIDS       map[common.Hash]string
 	TransactionCIDs map[common.Hash]*TrxMetaData
 	ReceiptCIDs     map[common.Hash]*ReceiptMetaData
-	StateLeafCIDs   map[common.Hash]string
-	StorageLeafCIDs map[common.Hash]map[common.Hash]string
+	StateNodeCIDs   map[common.Hash]StateNodeCID
+	StorageNodeCIDs map[common.Hash][]StorageNodeCID
+}
+
+type StateNodeCID struct {
+	CID  string
+	Leaf bool
+}
+
+type StorageNodeCID struct {
+	Key  common.Hash
+	CID  string
+	Leaf bool
 }
 
 // ReceiptMetaData wraps some additional data around our receipt CIDs for indexing

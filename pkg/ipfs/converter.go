@@ -63,8 +63,8 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		TrxMetaData:     make([]*TrxMetaData, 0, trxLen),
 		Receipts:        make(types.Receipts, 0, trxLen),
 		ReceiptMetaData: make([]*ReceiptMetaData, 0, trxLen),
-		StateLeafs:      make(map[common.Hash][]byte),
-		StorageLeafs:    make(map[common.Hash]map[common.Hash][]byte),
+		StateNodes:      make(map[common.Hash]StateNode),
+		StorageNodes:    make(map[common.Hash][]StorageNode),
 	}
 	for gethTransactionIndex, trx := range block.Transactions() {
 		// Extract to and from data from the the transactions for indexing
@@ -105,25 +105,49 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	for addr, createdAccount := range stateDiff.CreatedAccounts {
-		convertedPayload.StateLeafs[addr] = createdAccount.Value
-		convertedPayload.StorageLeafs[addr] = make(map[common.Hash][]byte)
+	for _, createdAccount := range stateDiff.CreatedAccounts {
+		hashKey := common.BytesToHash(createdAccount.Key)
+		convertedPayload.StateNodes[hashKey] = StateNode{
+			Value: createdAccount.Value,
+			Leaf:  createdAccount.Leaf,
+		}
+		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range createdAccount.Storage {
-			convertedPayload.StorageLeafs[addr][common.BytesToHash(storageDiff.Key)] = storageDiff.Value
+			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
+				Key:   common.BytesToHash(storageDiff.Key),
+				Value: storageDiff.Value,
+				Leaf:  storageDiff.Leaf,
+			})
 		}
 	}
-	for addr, deletedAccount := range stateDiff.DeletedAccounts {
-		convertedPayload.StateLeafs[addr] = deletedAccount.Value
-		convertedPayload.StorageLeafs[addr] = make(map[common.Hash][]byte)
+	for _, deletedAccount := range stateDiff.DeletedAccounts {
+		hashKey := common.BytesToHash(deletedAccount.Key)
+		convertedPayload.StateNodes[hashKey] = StateNode{
+			Value: deletedAccount.Value,
+			Leaf:  deletedAccount.Leaf,
+		}
+		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range deletedAccount.Storage {
-			convertedPayload.StorageLeafs[addr][common.BytesToHash(storageDiff.Key)] = storageDiff.Value
+			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
+				Key:   common.BytesToHash(storageDiff.Key),
+				Value: storageDiff.Value,
+				Leaf:  storageDiff.Leaf,
+			})
 		}
 	}
-	for addr, updatedAccount := range stateDiff.UpdatedAccounts {
-		convertedPayload.StateLeafs[addr] = updatedAccount.Value
-		convertedPayload.StorageLeafs[addr] = make(map[common.Hash][]byte)
+	for _, updatedAccount := range stateDiff.UpdatedAccounts {
+		hashKey := common.BytesToHash(updatedAccount.Key)
+		convertedPayload.StateNodes[hashKey] = StateNode{
+			Value: updatedAccount.Value,
+			Leaf:  updatedAccount.Leaf,
+		}
+		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range updatedAccount.Storage {
-			convertedPayload.StorageLeafs[addr][common.BytesToHash(storageDiff.Key)] = storageDiff.Value
+			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
+				Key:   common.BytesToHash(storageDiff.Key),
+				Value: storageDiff.Value,
+				Leaf:  storageDiff.Leaf,
+			})
 		}
 	}
 	return convertedPayload, nil

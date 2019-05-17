@@ -17,8 +17,6 @@
 package mocks
 
 import (
-	"sync"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 )
@@ -29,7 +27,6 @@ type StateDiffStreamer struct {
 	ReturnSub         *rpc.ClientSubscription
 	ReturnErr         error
 	StreamPayloads    []statediff.Payload
-	WaitGroup         *sync.WaitGroup
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
@@ -37,11 +34,9 @@ func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.C
 	sds.PassedPayloadChan = payloadChan
 
 	go func() {
-		sds.WaitGroup.Add(1)
 		for _, payload := range sds.StreamPayloads {
 			sds.PassedPayloadChan <- payload
 		}
-		sds.WaitGroup.Done()
 	}()
 
 	return sds.ReturnSub, sds.ReturnErr

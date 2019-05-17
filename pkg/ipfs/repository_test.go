@@ -32,9 +32,5 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mockRepo.PassedCIDPayload).To(Equal(&test_helpers.MockCIDPayload))
 		})
-
-		It("Fails if", func() {
-
-		})
 	})
 })

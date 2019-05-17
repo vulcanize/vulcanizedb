@@ -24,37 +24,31 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
-// IPLDFetcher is the interface for fetching IPLD objects from IPFS
-type IPLDFetcher interface {
-	Fetch(cid cid.Cid) (blocks.Block, error)
-	FetchBatch(cids []cid.Cid) []blocks.Block
-}
-
-// Fetcher is the underlying struct which supports the IPLDFetcher interface
-type Fetcher struct {
+// IPLDFetcher is the underlying struct which supports a IPLD fetching interface
+type IPLDFetcher struct {
 	BlockService blockservice.BlockService
 }
 
-// NewIPLDFetcher creates a pointer to a new Fetcher which satisfies the IPLDFetcher interface
-func NewIPLDFetcher(ipfsPath string) (*Fetcher, error) {
+// NewIPLDFetcher creates a pointer to a new IPLDFetcher
+func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
 	blockService, err := InitIPFSBlockService(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
-	return &Fetcher{
+	return &IPLDFetcher{
 		BlockService: blockService,
 	}, nil
 }
 
-// Fetch is used to fetch a batch of IPFS data blocks by cid
-func (f *Fetcher) Fetch(cid cid.Cid) (blocks.Block, error) {
+// Fetch is used to fetch a single block of IPFS data by cid
+func (f *IPLDFetcher) Fetch(cid cid.Cid) (blocks.Block, error) {
 	return f.BlockService.GetBlock(context.Background(), cid)
 }
 
 // FetchBatch is used to fetch a batch of IPFS data blocks by cid
 // There is no guarantee all are fetched, and no error in such a case, so
 // downstream we will need to confirm which CIDs were fetched in the result set
-func (f *Fetcher) FetchBatch(cids []cid.Cid) []blocks.Block {
+func (f *IPLDFetcher) FetchBatch(cids []cid.Cid) []blocks.Block {
 	fetchedBlocks := make([]blocks.Block, 0, len(cids))
 	blockChan := f.BlockService.GetBlocks(context.Background(), cids)
 	for block := range blockChan {
