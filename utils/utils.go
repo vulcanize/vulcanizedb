@@ -17,11 +17,12 @@
 package utils
 
 import (
-	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"

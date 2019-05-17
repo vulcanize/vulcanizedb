@@ -18,11 +18,12 @@ package cold_import
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"strings"
 )
 
 const (

@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package mocks
+package rpc
 
-import "github.com/vulcanize/vulcanizedb/pkg/ipfs"
-
-// CIDRepository is the underlying struct for the Repository interface
-type CIDRepository struct {
-	PassedCIDPayload *ipfs.CIDPayload
-	ReturnErr        error
+type Server interface {
 }
 
-// Index indexes a cidPayload in Postgres
-func (repo *CIDRepository) Index(cidPayload *ipfs.CIDPayload) error {
-	repo.PassedCIDPayload = cidPayload
-	return repo.ReturnErr
+type RpcServer struct {
+}
+
+func NewRpcServer() *RpcServer {
+	return &RpcServer{}
+}
+
+func (rpcs *RpcServer) Serve() error {
+	return nil
 }

@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"strings"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	log "github.com/sirupsen/logrus"

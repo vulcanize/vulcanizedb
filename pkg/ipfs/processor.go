@@ -98,7 +98,6 @@ func (i *Processor) Process(wg *sync.WaitGroup) error {
 			case err = <-sub.Err():
 				log.Error(err)
 			case <-i.QuitChan:
-				println("quiting")
 				log.Info("quiting IPFSProcessor")
 				wg.Done()
 				return
