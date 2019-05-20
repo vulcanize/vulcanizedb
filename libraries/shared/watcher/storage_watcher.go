@@ -78,7 +78,7 @@ func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
 		return
 	}
 	executeErr := storageTransformer.Execute(row)
-	if executeErr != nil && executeErr != utils.ErrRowExists {
+	if executeErr != nil {
 		logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
 		queueErr := storageWatcher.Queue.Add(row)
 		if queueErr != nil {
@@ -100,7 +100,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 			continue
 		}
 		executeErr := storageTransformer.Execute(row)
-		if executeErr == nil || executeErr == utils.ErrRowExists {
+		if executeErr == nil {
 			storageWatcher.deleteRow(row.Id)
 		}
 	}
