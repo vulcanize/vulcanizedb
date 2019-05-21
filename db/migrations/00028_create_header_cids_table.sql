@@ -4,7 +4,7 @@ CREATE TABLE public.header_cids (
   block_number          BIGINT NOT NULL,
   block_hash            VARCHAR(66) NOT NULL,
   cid                   TEXT NOT NULL,
-  uncle                 BOOLEAN NOT NULL,
+  final                 BOOLEAN NOT NULL,
   UNIQUE (block_number, block_hash)
 );
 

@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Still seeing some errors from tx and storage indexing processes... due to fk constraints being broken
 package ipfs
 
 import (
@@ -23,6 +22,8 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
+
+// Still seeing some errors from tx and storage indexing processes... due to fk constraints being broken
 
 // CIDRepository is an interface for indexing CIDPayloads
 type CIDRepository interface {
@@ -70,17 +71,17 @@ func (repo *Repository) Index(cidPayload *CIDPayload) error {
 
 func (repo *Repository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash string) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid, uncle) VALUES ($1, $2, $3, $4)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, uncle) = ($3, $4)
+	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid, final) VALUES ($1, $2, $3, $4)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, final) = ($3, $4)
 								RETURNING id`,
-		blockNumber, hash, cid, false).Scan(&headerID)
+		blockNumber, hash, cid, true).Scan(&headerID)
 	return headerID, err
 }
 
 func (repo *Repository) indexUncleCID(tx *sqlx.Tx, cid, blockNumber, hash string) error {
-	_, err := tx.Queryx(`INSERT INTO public.header_cids (block_number, block_hash, cid, uncle) VALUES ($1, $2, $3, $4)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, uncle) = ($3, $4)`,
-		blockNumber, hash, cid, true)
+	_, err := tx.Queryx(`INSERT INTO public.header_cids (block_number, block_hash, cid, final) VALUES ($1, $2, $3, $4)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, final) = ($3, $4)`,
+		blockNumber, hash, cid, false)
 	return err
 }
 
@@ -91,7 +92,7 @@ func (repo *Repository) indexTransactionAndReceiptCIDs(payload *CIDPayload, head
 		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid, dst, src) VALUES ($1, $2, $3, $4, $5) 
 									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src) = ($3, $4, $5)
 									RETURNING id`,
-			headerID, hash.Hex(), trxCidMeta.CID, trxCidMeta.To, trxCidMeta.From).Scan(&txID)
+			headerID, hash.Hex(), trxCidMeta.CID, trxCidMeta.Dst, trxCidMeta.Src).Scan(&txID)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -140,6 +141,6 @@ func (repo *Repository) indexStateAndStorageCIDs(payload *CIDPayload, headerID i
 func (repo *Repository) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeCID, stateID int64) error {
 	_, err := repo.db.Exec(`INSERT INTO public.storage_cids (state_id, storage_key, cid, leaf) VALUES ($1, $2, $3, $4) 
 								   ON CONFLICT (state_id, storage_key) DO UPDATE SET (cid, leaf) = ($3, $4)`,
-		stateID, storageCID.Key.Hex(), storageCID.CID, storageCID.Leaf)
+		stateID, storageCID.Key, storageCID.CID, storageCID.Leaf)
 	return err
 }

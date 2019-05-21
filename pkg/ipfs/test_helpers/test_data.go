@@ -24,17 +24,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
-
-// AddressToLeafKey hashes an returns an address
-func AddressToLeafKey(address common.Address) common.Hash {
-	return common.BytesToHash(crypto.Keccak256(address[:]))
-}
 
 // Test variables
 var (
@@ -55,9 +49,9 @@ var (
 	}}
 	emptyStorage           = make([]statediff.StorageDiff, 0)
 	address                = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
-	ContractLeafKey        = AddressToLeafKey(address)
+	ContractLeafKey        = ipfs.AddressToKey(address)
 	anotherAddress         = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
-	AnotherContractLeafKey = AddressToLeafKey(anotherAddress)
+	AnotherContractLeafKey = ipfs.AddressToKey(anotherAddress)
 	testAccount            = state.Account{
 		Nonce:    NewNonceValue,
 		Balance:  big.NewInt(NewBalanceValue),
@@ -143,14 +137,14 @@ var (
 		HeaderCID:   "mockHeaderCID",
 		TransactionCIDs: map[common.Hash]*ipfs.TrxMetaData{
 			common.HexToHash("0x0"): {
-				CID:  "mockTrxCID1",
-				To:   "mockTo1",
-				From: "mockFrom1",
+				CID: "mockTrxCID1",
+				Dst: "mockTo1",
+				Src: "mockFrom1",
 			},
 			common.HexToHash("0x1"): {
-				CID:  "mockTrxCID2",
-				To:   "mockTo2",
-				From: "mockFrom2",
+				CID: "mockTrxCID2",
+				Dst: "mockTo2",
+				Src: "mockFrom2",
 			},
 		},
 		ReceiptCIDs: map[common.Hash]*ipfs.ReceiptMetaData{
