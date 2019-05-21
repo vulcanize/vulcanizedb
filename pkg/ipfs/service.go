@@ -32,22 +32,22 @@ import (
 
 const payloadChanBufferSize = 800 // 1/10th max eth sub buffer size
 
-// SyncAndPublish is an interface for streaming, converting to IPLDs, publishing, and indexing all Ethereum data
-// This is the top-level interface used by the syncAndPublish command
-type SyncPublishAndServe interface {
+// SyncPublishScreenAndServe is an interface for streaming, converting to IPLDs, publishing,
+// indexing all Ethereum data screening this data, and serving it up to subscribed clients
+type SyncPublishScreenAndServe interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for syncAndPublish processes
 	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- IPLDPayload, forwardQuitchan chan<- bool) error
 	// Main event loop for handling client pub-sub
-	Serve(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool)
+	ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, params *Params)
+	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *StreamFilters)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID) error
 }
 
-// Processor is the underlying struct for the SyncAndPublish interface
+// Service is the underlying struct for the SyncAndPublish interface
 type Service struct {
 	// Used to sync access to the Subscriptions
 	sync.Mutex
@@ -59,6 +59,14 @@ type Service struct {
 	Publisher IPLDPublisher
 	// Interface for indexing the CIDs of the published ETH-IPLDs in Postgres
 	Repository CIDRepository
+	// Interface for filtering and serving data according to subscribed clients according to their specification
+	Screener ResponseScreener
+	// Interface for fetching ETH-IPLD objects from IPFS
+	Fetcher IPLDFetcher
+	// Interface for searching and retrieving CIDs from Postgres index
+	Retriever CIDRetriever
+	// Interface for resolving ipfs blocks to their data types
+	Resolver IPLDResolver
 	// Chan the processor uses to subscribe to state diff payloads from the Streamer
 	PayloadChan chan statediff.Payload
 	// Used to signal shutdown of the service
@@ -68,18 +76,27 @@ type Service struct {
 }
 
 // NewIPFSProcessor creates a new Processor interface using an underlying Processor struct
-func NewIPFSProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (SyncPublishAndServe, error) {
+func NewIPFSProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (SyncPublishScreenAndServe, error) {
 	publisher, err := NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
+	fetcher, err := NewIPLDFetcher(ipfsPath)
+	if err != nil {
+		return nil, err
+	}
 	return &Service{
-		Streamer:    NewStateDiffStreamer(rpcClient),
-		Repository:  NewCIDRepository(db),
-		Converter:   NewPayloadConverter(ethClient),
-		Publisher:   publisher,
-		PayloadChan: make(chan statediff.Payload, payloadChanBufferSize),
-		QuitChan:    qc,
+		Streamer:      NewStateDiffStreamer(rpcClient),
+		Repository:    NewCIDRepository(db),
+		Converter:     NewPayloadConverter(ethClient),
+		Publisher:     publisher,
+		Screener:      NewResponseScreener(),
+		Fetcher:       fetcher,
+		Retriever:     NewCIDRetriever(db),
+		Resolver:      NewIPLDResolver(),
+		PayloadChan:   make(chan statediff.Payload, payloadChanBufferSize),
+		QuitChan:      qc,
+		Subscriptions: make(map[rpc.ID]Subscription),
 	}, nil
 }
 
@@ -121,6 +138,8 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<-
 					log.Error(err)
 					continue
 				}
+				// If we have a ScreenAndServe process running, forward the payload to it
+				// If the ScreenAndServe process loop is slower than this one, will it miss some incoming payloads??
 				select {
 				case forwardPayloadChan <- *ipldPayload:
 				default:
@@ -137,6 +156,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<-
 			case err = <-sub.Err():
 				log.Error(err)
 			case <-sap.QuitChan:
+				// If we have a ScreenAndServe process running, forward the quit signal to it
 				select {
 				case forwardQuitchan <- true:
 				default:
@@ -151,16 +171,19 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<-
 	return nil
 }
 
-func (sap *Service) Serve(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool) {
+// ScreenAndServe is the processing loop used to screen data streamed from the state diffing eth node and send the appropriate data to a requesting client subscription
+func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool) {
 	wg.Add(1)
 	go func() {
 		for {
 			select {
 			case payload := <-receivePayloadChan:
-				println(payload.BlockNumber.Int64())
-				// Method for using subscription parameters to filter payload and stream relevent info to sub channel
+				err := sap.processResponse(payload)
+				if err != nil {
+					log.Error(err)
+				}
 			case <-receiveQuitchan:
-				log.Info("quiting Serve process")
+				log.Info("quiting ScreenAndServe process")
 				wg.Done()
 				return
 			}
@@ -168,15 +191,59 @@ func (sap *Service) Serve(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayl
 	}()
 }
 
-// Subscribe is used by the API to subscribe to the StateDiffingService loop
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, params *Params) {
+func (sap *Service) processResponse(payload IPLDPayload) error {
+	for id, sub := range sap.Subscriptions {
+		response, err := sap.Screener.ScreenResponse(sub.StreamFilters, payload)
+		if err != nil {
+			return err
+		}
+		sap.serve(id, *response)
+	}
+	return nil
+}
+
+// Subscribe is used by the API to subscribe to the service loop
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *StreamFilters) {
 	log.Info("Subscribing to the statediff service")
 	sap.Lock()
 	sap.Subscriptions[id] = Subscription{
-		PayloadChan: sub,
-		QuitChan:    quitChan,
+		PayloadChan:   sub,
+		QuitChan:      quitChan,
+		StreamFilters: streamFilters,
 	}
 	sap.Unlock()
+	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
+	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
+	if streamFilters.BackFill {
+		// Retrieve cached CIDs relevant to this subscriber
+		cids, err := sap.Retriever.RetrieveCIDs(*streamFilters)
+		if err != nil {
+			log.Error(err)
+			sap.serve(id, ResponsePayload{
+				Err: err,
+			})
+			return
+		}
+		for _, cid := range cids {
+			blocksWrapper, err := sap.Fetcher.FetchCIDs(cid)
+			if err != nil {
+				log.Error(err)
+				sap.serve(id, ResponsePayload{
+					Err: err,
+				})
+				return
+			}
+			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
+			if err != nil {
+				log.Error(err)
+				sap.serve(id, ResponsePayload{
+					Err: err,
+				})
+				return
+			}
+			sap.serve(id, *backFillIplds)
+		}
+	}
 }
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop
@@ -192,28 +259,29 @@ func (sap *Service) Unsubscribe(id rpc.ID) error {
 	return nil
 }
 
-// Start is used to begin the StateDiffingService
+// Start is used to begin the service
 func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting statediff service")
 	wg := new(sync.WaitGroup)
 	payloadChan := make(chan IPLDPayload)
 	quitChan := make(chan bool)
-	go sap.SyncAndPublish(wg, payloadChan, quitChan)
-	go sap.Serve(wg, payloadChan, quitChan)
+	sap.SyncAndPublish(wg, payloadChan, quitChan)
+	sap.ScreenAndServe(wg, payloadChan, quitChan)
 	return nil
 }
 
-// Stop is used to close down the StateDiffingService
+// Stop is used to close down the service
 func (sap *Service) Stop() error {
 	log.Info("Stopping statediff service")
 	close(sap.QuitChan)
 	return nil
 }
 
-// send is used to fan out and serve a payload to any subscriptions
-func (sap *Service) send(payload ResponsePayload) {
+// serve is used to send screened payloads to their requesting sub
+func (sap *Service) serve(id rpc.ID, payload ResponsePayload) {
 	sap.Lock()
-	for id, sub := range sap.Subscriptions {
+	sub, ok := sap.Subscriptions[id]
+	if ok {
 		select {
 		case sub.PayloadChan <- payload:
 			log.Infof("sending state diff payload to subscription %s", id)
