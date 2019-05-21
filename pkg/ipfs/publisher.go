@@ -209,7 +209,7 @@ func (pub *Publisher) publishStorageNodes(storageNodes map[common.Hash][]Storage
 				return nil, errors.New("single CID expected to be returned for storage leaf")
 			}
 			storageLeafCids[addr] = append(storageLeafCids[addr], StorageNodeCID{
-				Key:  node.Key,
+				Key:  node.Key.Hex(),
 				CID:  storageNodeCid[0],
 				Leaf: node.Leaf,
 			})

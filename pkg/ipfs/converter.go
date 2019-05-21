@@ -73,8 +73,8 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 			return nil, err
 		}
 		txMeta := &TrxMetaData{
-			To:   handleNullAddr(trx.To()),
-			From: from.Hex(),
+			Dst: handleNullAddr(trx.To()),
+			Src: from.Hex(),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
