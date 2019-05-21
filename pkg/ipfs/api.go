@@ -18,7 +18,6 @@ package ipfs
 
 import (
 	"context"
-
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -29,26 +28,36 @@ const APIName = "vulcanizedb"
 // APIVersion is the version of the state diffing service API
 const APIVersion = "0.0.1"
 
-// PublicSeedNodeAPI
+// PublicSeedNodeAPI is the public api for the seed node
 type PublicSeedNodeAPI struct {
-	snp SyncPublishAndServe
+	snp SyncPublishScreenAndServe
 }
 
-// NewPublicSeedNodeAPI
-func NewPublicSeedNodeAPI(snp SyncPublishAndServe) *PublicSeedNodeAPI {
+// NewPublicSeedNodeAPI creates a new PublicSeedNodeAPI with the provided underlying SyncPublishScreenAndServe process
+func NewPublicSeedNodeAPI(snp SyncPublishScreenAndServe) *PublicSeedNodeAPI {
 	return &PublicSeedNodeAPI{
 		snp: snp,
 	}
 }
 
 // Subscribe is the public method to setup a subscription that fires off state-diff payloads as they are created
-func (api *PublicSeedNodeAPI) Subscribe(ctx context.Context, payloadChan chan ResponsePayload, params *Params) (*rpc.Subscription, error) {
+func (api *PublicSeedNodeAPI) Subscribe(ctx context.Context, payloadChanForTypeDefOnly chan ResponsePayload) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
 		return nil, rpc.ErrNotificationsUnsupported
 	}
 
+	streamFilters := StreamFilters{}
+	streamFilters.HeaderFilter.FinalOnly = true
+	streamFilters.TrxFilter.Src = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	streamFilters.TrxFilter.Dst = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	streamFilters.ReceiptFilter.Topic0s = []string{
+		"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+		"0x930a61a57a70a73c2a503615b87e2e54fe5b9cdeacda518270b852296ab1a377",
+	}
+	streamFilters.StateFilter.Addresses = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	streamFilters.StorageFilter.Off = true
 	// create subscription and start waiting for statediff events
 	rpcSub := notifier.CreateSubscription()
 
@@ -56,7 +65,7 @@ func (api *PublicSeedNodeAPI) Subscribe(ctx context.Context, payloadChan chan Re
 		// subscribe to events from the state diff service
 		payloadChannel := make(chan ResponsePayload)
 		quitChan := make(chan bool)
-		api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
+		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, &streamFilters)
 
 		// loop and await state diff payloads and relay them to the subscriber with then notifier
 		for {

@@ -19,6 +19,8 @@ package ipfs
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
@@ -40,4 +42,15 @@ func InitIPFSBlockService(ipfsPath string) (blockservice.BlockService, error) {
 		return nil, err
 	}
 	return ipfsNode.Blocks, nil
+}
+
+// AddressToKey hashes an address
+func AddressToKey(address common.Address) common.Hash {
+	return crypto.Keccak256Hash(address[:])
+}
+
+// HexToKey hashes a hex (0x leading) string
+func HexToKey(hex string) common.Hash {
+	addr := common.HexToAddress(hex)
+	return crypto.Keccak256Hash(addr[:])
 }

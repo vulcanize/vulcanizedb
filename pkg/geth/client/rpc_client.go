@@ -84,7 +84,7 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 	return client.client.BatchCall(rpcBatch)
 }
 
-// Subscribe subscribes to a geth websocket "namespace_subscribe" subscription with the given channel
+// Subscribe subscribes to a websocket "namespace_subscribe" subscription with the given channel
 func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, subName string, args ...interface{}) (*rpc.ClientSubscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {

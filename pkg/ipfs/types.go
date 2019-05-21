@@ -20,23 +20,28 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"github.com/ipfs/go-block-format"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-//
+// Subscription holds the information for an individual client subscription
 type Subscription struct {
-	PayloadChan chan<- ResponsePayload
-	QuitChan    chan<- bool
+	PayloadChan   chan<- ResponsePayload
+	QuitChan      chan<- bool
+	StreamFilters *StreamFilters
 }
 
+// ResponsePayload holds the data returned from the seed node to the requesting client
 type ResponsePayload struct {
-	HeadersRlp      [][]byte `json:"headersRlp"`
-	UnclesRlp       [][]byte `json:"unclesRlp"`
-	TransactionsRlp [][]byte `json:"transactionsRlp"`
-	ReceiptsRlp     [][]byte `json:"receiptsRlp"`
-	StateNodesRlp   [][]byte `json:"stateNodesRlp"`
-	StorageNodesRlp [][]byte `json:"storageNodesRlp"`
+	HeadersRlp      [][]byte                               `json:"headersRlp"`
+	UnclesRlp       [][]byte                               `json:"unclesRlp"`
+	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
+	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
+	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
+	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
+	Err             error                                  `json:"error"`
 
 	encoded []byte
 	err     error
@@ -60,6 +65,23 @@ func (sd *ResponsePayload) Encode() ([]byte, error) {
 	return sd.encoded, sd.err
 }
 
+type cidWrapper struct {
+	BlockNumber  int64
+	Headers      []string
+	Transactions []string
+	Receipts     []string
+	StateNodes   []StateNodeCID
+	StorageNodes []StorageNodeCID
+}
+
+type ipfsBlockWrapper struct {
+	Headers      []blocks.Block
+	Transactions []blocks.Block
+	Receipts     []blocks.Block
+	StateNodes   map[common.Hash]blocks.Block
+	StorageNodes map[common.Hash]map[common.Hash]blocks.Block
+}
+
 // IPLDPayload is a custom type which packages ETH data for the IPFS publisher
 type IPLDPayload struct {
 	HeaderRLP       []byte
@@ -73,11 +95,13 @@ type IPLDPayload struct {
 	StorageNodes    map[common.Hash][]StorageNode
 }
 
+// StateNode struct used to flag node as leaf or not
 type StateNode struct {
 	Value []byte
 	Leaf  bool
 }
 
+// StorageNode struct used to flag node as leaf or not
 type StorageNode struct {
 	Key   common.Hash
 	Value []byte
@@ -96,15 +120,19 @@ type CIDPayload struct {
 	StorageNodeCIDs map[common.Hash][]StorageNodeCID
 }
 
+// StateNodeCID is used to associate a leaf flag with a state node cid
 type StateNodeCID struct {
 	CID  string
 	Leaf bool
+	Key  string `db:"state_key"`
 }
 
+// StorageNodeCID is used to associate a leaf flag with a storage node cid
 type StorageNodeCID struct {
-	Key  common.Hash
-	CID  string
-	Leaf bool
+	Key      string `db:"storage_key"`
+	CID      string
+	Leaf     bool
+	StateKey string `db:"state_key"`
 }
 
 // ReceiptMetaData wraps some additional data around our receipt CIDs for indexing
@@ -115,45 +143,39 @@ type ReceiptMetaData struct {
 
 // TrxMetaData wraps some additional data around our transaction CID for indexing
 type TrxMetaData struct {
-	CID  string
-	To   string
-	From string
+	CID string
+	Src string
+	Dst string
 }
 
-// Params are set by the client to tell the server how to filter that is fed into their subscription
-type Params struct {
-	HeaderFilter struct {
-		Off           bool
-		StartingBlock int64
-		EndingBlock   int64 // set to 0 or a negative value to have no ending block
-		Uncles        bool
+// StreamFilters are defined by the client to specifiy which data to receive from the seed node
+type StreamFilters struct {
+	BackFill      bool
+	BackFillOnly  bool
+	StartingBlock int64
+	EndingBlock   int64 // set to 0 or a negative value to have no ending block
+	HeaderFilter  struct {
+		Off       bool
+		FinalOnly bool
 	}
 	TrxFilter struct {
-		Off           bool
-		StartingBlock int64
-		EndingBlock   int64
-		Src           string
-		Dst           string
+		Off bool
+		Src []string
+		Dst []string
 	}
 	ReceiptFilter struct {
-		Off           bool
-		StartingBlock int64
-		EndingBlock   int64
-		Topic0s       []string
+		Off     bool
+		Topic0s []string
 	}
 	StateFilter struct {
-		Off           bool
-		StartingBlock int64
-		EndingBlock   int64
-		Address       string // is converted to state key by taking its keccak256 hash
-		LeafsOnly     bool
+		Off               bool
+		Addresses         []string // is converted to state key by taking its keccak256 hash
+		IntermediateNodes bool
 	}
 	StorageFilter struct {
-		Off           bool
-		StartingBlock int64
-		EndingBlock   int64
-		Address       string
-		StorageKey    string
-		LeafsOnly     bool
+		Off               bool
+		Addresses         []string
+		StorageKeys       []string
+		IntermediateNodes bool
 	}
 }
