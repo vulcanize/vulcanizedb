@@ -46,10 +46,6 @@ it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 	},
 }
 
-var (
-	ipfsPath string
-)
-
 func init() {
 	rootCmd.AddCommand(syncAndPublishCmd)
 	syncAndPublishCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "~/.ipfs", "Path for configuring IPFS node")
