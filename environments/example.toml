@@ -4,7 +4,7 @@
     port     = 5432
 
 [client]
-    ipcPath  = ""
+    ipcPath  = "http://localhost:8545"
 
 [contract]
     network  = ""
