@@ -23,5 +23,5 @@ command:
 --since-tag {PREVIOUS_RELEASE_TAG}
 ```
 
-More information on why your github token is needed, and how to generate it here:https://github
-.com/github-changelog-generator/github-changelog-generator#github-token 
+More information on why your github token is needed, and how to generate it here: 
+https://github.com/github-changelog-generator/github-changelog-generator#github-token 
