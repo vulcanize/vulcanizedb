@@ -3,7 +3,7 @@
 Contributions are welcome! Please open an Issues or Pull Request for any changes.
 
 In addition to core contributions, developers are encouraged to build their own custom transformers which
-can be run together with other custom transformers using the [composeAndExeucte](../../staging/documentation/composeAndExecute.md) command.
+can be run together with other custom transformers using the [composeAndExecute](../../staging/documentation/custom-transformers.md) command.
 
 ## Pull Requests
 - `go fmt` is run as part of `make test` and `make integrationtest`, please make sure to check in the format changes.
@@ -23,12 +23,12 @@ conform to the
 converts timestamped migrations to migrations versioned by an incremented integer.
 
 ## Diagrams
-- Diagrams were created with [draw.io](draw.io).
+- Diagrams were created with [draw.io](https://www.draw.io).
 - To update a diagram:
-  1. Go to [draw.io](draw.io).
+  1. Go to [draw.io](https://www.draw.io).
   1. Click on *File > Open from* and choose the location of the diagram you want to update.
   1. Once open in draw.io, you may update it.
-  1. Export the diagram to this repository's directory and add commit it.
+  1. Export the diagram to this repository's directory and commit it.
 
 
 ## Generating the Changelog
