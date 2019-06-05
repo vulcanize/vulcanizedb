@@ -27,8 +27,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	fc "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/converter"
-	lc "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/converter"
-	lr "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
+	lc "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/converter"
+	lr "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
@@ -208,9 +208,9 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("Light sync mode", func() {
+	Describe("Header sync mode", func() {
 		BeforeEach(func() {
-			dataStore = sr.NewEventRepository(db, types.LightSync)
+			dataStore = sr.NewEventRepository(db, types.HeaderSync)
 		})
 
 		Describe("CreateContractSchema", func() {
@@ -242,7 +242,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(created).To(Equal(true))
 
-				tableID := fmt.Sprintf("%s_%s.%s_event", types.LightSync, strings.ToLower(con.Address), strings.ToLower(event.Name))
+				tableID := fmt.Sprintf("%s_%s.%s_event", types.HeaderSync, strings.ToLower(con.Address), strings.ToLower(event.Name))
 				_, ok := dataStore.CheckTableCache(tableID)
 				Expect(ok).To(Equal(false))
 
@@ -292,12 +292,12 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				var count int
-				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM light_%s.transfer_event", constants.TusdContractAddress))
+				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM header_%s.transfer_event", constants.TusdContractAddress))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(count).To(Equal(2))
 
-				scanLog := test_helpers.LightTransferLog{}
-				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM light_%s.transfer_event LIMIT 1", constants.TusdContractAddress)).StructScan(&scanLog)
+				scanLog := test_helpers.HeaderSyncTransferLog{}
+				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.transfer_event LIMIT 1", constants.TusdContractAddress)).StructScan(&scanLog)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(scanLog.HeaderID).To(Equal(headerID))
 				Expect(scanLog.TokenName).To(Equal("TrueUSD"))
@@ -334,7 +334,7 @@ var _ = Describe("Repository", func() {
 
 				// Show that no new logs were entered
 				var count int
-				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM light_%s.transfer_event", constants.TusdContractAddress))
+				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM header_%s.transfer_event", constants.TusdContractAddress))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(count).To(Equal(2))
 			})

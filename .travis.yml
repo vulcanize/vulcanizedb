@@ -5,21 +5,18 @@ go:
 services:
   - postgresql
 addons:
-  postgresql: '9.6'
+  postgresql: '11.2'
 go_import_path: github.com/vulcanize/vulcanizedb
 before_install:
   - make installtools
-  - bash ./scripts/install-postgres-10.sh
+  - bash ./scripts/install-postgres-11.sh
   - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
   - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   - sudo apt-get update && sudo apt-get install yarn
 before_script:
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
-  - cd postgraphile && yarn
 script:
-  - yarn test
-  - cd ../
   - make test
   - make integrationtest
 notifications:

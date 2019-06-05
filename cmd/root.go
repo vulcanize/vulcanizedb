@@ -36,16 +36,17 @@ import (
 )
 
 var (
-	cfgFile             string
-	databaseConfig      config.Database
-	genConfig           config.Plugin
-	ipc                 string
-	levelDbPath         string
-	startingBlockNumber int64
-	storageDiffsPath    string
-	syncAll             bool
-	endingBlockNumber   int64
-	recheckHeadersArg   bool
+	cfgFile              string
+	databaseConfig       config.Database
+	genConfig            config.Plugin
+	ipc                  string
+	levelDbPath          string
+	queueRecheckInterval time.Duration
+	startingBlockNumber  int64
+	storageDiffsPath     string
+	syncAll              bool
+	endingBlockNumber    int64
+	recheckHeadersArg    bool
 )
 
 const (

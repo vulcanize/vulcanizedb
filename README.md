@@ -7,34 +7,39 @@
 
 
 ## Table of Contents
-1. [Background](../staging/README.md#background)
-1. [Dependencies](../staging/README.md#dependencies)
-1. [Install](../staging/README.md#install)
-1. [Usage](../staging/README.md#usage)
-1. [Tests](../staging/README.md#tests)
-1. [API](../staging/README.md#API)
-1. [Contributing](../staging/README.md#contributing)
-1. [License](../staging/README.md#license)
+1. [Background](#background)
+1. [Install](#install)
+1. [Usage](#usage)
+1. [Contributing](#contributing)
+1. [License](#license)
 
 
 ## Background
 The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine
-complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by 
-providing a suite of tools to ease the extraction and transformation of data into a more useful state.
+complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by
+providing a suite of tools to ease the extraction and transformation of data into a more useful state, including
+allowing for exposing aggregate data from a suite of smart contracts.
 
+VulanizeDB includes processes that sync, transform and expose data. Syncing involves
+querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to
+query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting
+data from VulcanizeDB's underlying Postgres database and making it accessible.
 
-## Dependencies
+![VulcanizeDB Overview Diagram](documentation/diagrams/vdb-overview.png)
+
+## Install
+
+1. [Dependencies](#dependencies)
+1. [Building the project](#building-the-project)
+1. [Setting up the database](#setting-up-the-database)
+1. [Configuring a synced Ethereum node](#configuring-a-synced-ethereum-node)
+
+### Dependencies
  - Go 1.11+
- - Postgres 10.6
+ - Postgres 11.2
  - Ethereum Node
    - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
-
-
-## Install
-1. [Building the project](../staging/README.md#building-the-project)
-1. [Setting up the database](../staging/README.md#setting-up-the-database)
-1. [Configuring a synced Ethereum node](../staging/README.md#configuring-a-synced-ethereum-node)
 
 ### Building the project
 Download the codebase to your local `GOPATH` via:
@@ -68,7 +73,8 @@ It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
     * See below for configuring additional environments
     
-In some cases (such as recent Ubuntu systems), it may be necessary to overcome failures of password authentication from localhost. To allow access on Ubuntu, set localhost connections via hostname, ipv4, and ipv6 from peer/md5 to trust in: /etc/postgresql/<version>/pg_hba.conf
+In some cases (such as recent Ubuntu systems), it may be necessary to overcome failures of password authentication from
+localhost. To allow access on Ubuntu, set localhost connections via hostname, ipv4, and ipv6 from peer/md5 to trust in: /etc/postgresql/<version>/pg_hba.conf
 
 (It should be noted that trusted auth should only be enabled on systems without sensitive data in them: development and local test databases)
 
@@ -80,8 +86,9 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
         - The IPC file is called `geth.ipc`.
         - The geth IPC file path is printed to the console when you start geth.
         - The default location is:
-          - Mac: `<full home path>/Library/Ethereum`
+          - Mac: `<full home path>/Library/Ethereum/geth.ipc`
           - Linux: `<full home path>/ethereum/geth.ipc`
+        - Note: the geth.ipc file may not exist until you've started the geth process
 
       - For Parity:
         - The IPC file is called `jsonrpc.ipc`.
@@ -98,23 +105,35 @@ In some cases (such as recent Ubuntu systems), it may be necessary to overcome f
 
 
 ## Usage
-Usage is broken up into two processes:
+As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.
 
 ### Data syncing
-To provide data for transformations, raw Ethereum data must first be synced into vDB.
-This is accomplished through the use of the `lightSync`, `sync`, or `coldImport` commands.
-These commands are described in detail [here](../staging/documentation/sync.md).
+To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
+This is accomplished through the use of the `headerSync`, `fullSync`, or `coldImport` commands.
+These commands are described in detail [here](documentation/data-syncing.md).
 
 ### Data transformation
-Contract watchers use the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest.
+Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to
+specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it
+follows that there are different ways to transform this data. We've started by categorizing this into Generic and
+Custom transformers:
 
-There is a built-in `contractWatcher` command which provides generic transformation of most contract data. This command is described in detail [here](../staging/documentation/contractWatcher.md).
+- Generic Contract Transformer: Generic contract transformation can be done using a built-in command,
+`contractWatcher`, which transforms contract events provided the contract's ABI is available. It also
+provides some state variable coverage by automating polling of public methods, with some restrictions.
+`contractWatcher` is described further [here](documentation/generic-transformer.md).
 
-In many cases a custom transformer or set of transformers will need to be written to provide complete or more comprehensive coverage or to optimize other aspects of the output for a specific end-use.
-In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. This is described in detail [here](../staging/documentation/composeAndExecute.md).
+- Custom Transformers: In many cases custom transformers will need to be written to provide
+more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and
+`composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write,
+build and run custom transformers as Go plugins can be found
+[here](documentation/custom-transformers.md).
+
+### Exposing the data
+[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](documentation/postgraphile.md).
 
 
-## Tests
+### Tests
 - Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
     - Note: integration tests require configuration with an archival node
 - `createdb vulcanize_private` will create the test db
@@ -122,15 +141,13 @@ In this case we have provided the `compose`, `execute`, and `composeAndExecute` 
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
 
-## API
-[Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](../staging/postgraphile/README.md).
-
 
 ## Contributing
-Contributions are welcome! For more on this, please see [here](../staging/documentation/contributing.md).
+Contributions are welcome!
 
-Small note: If editing the Readme, please conform to the [standard-readme specification](https://github.com/RichardLitt/standard-readme).
+VulcanizeDB follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct).
 
+For more information on contributing, please see [here](documentation/contributing.md).
 
 ## License
-[AGPL-3.0](../staging/LICENSE) © Vulcanize Inc
+[AGPL-3.0](LICENSE) © Vulcanize Inc

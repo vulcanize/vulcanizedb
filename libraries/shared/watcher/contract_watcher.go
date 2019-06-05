@@ -54,10 +54,10 @@ func (watcher *ContractWatcher) AddTransformers(inits interface{}) error {
 		watcher.Transformers = append(watcher.Transformers, t)
 	}
 
-	for _, transformer := range watcher.Transformers {
-		err := transformer.Init()
+	for _, contractTransformer := range watcher.Transformers {
+		err := contractTransformer.Init()
 		if err != nil {
-			log.Print("Unable to initialize transformer:", transformer.GetConfig().Name, err)
+			log.Print("Unable to initialize transformer:", contractTransformer.GetConfig().Name, err)
 			return err
 		}
 	}
@@ -65,10 +65,10 @@ func (watcher *ContractWatcher) AddTransformers(inits interface{}) error {
 }
 
 func (watcher *ContractWatcher) Execute() error {
-	for _, transformer := range watcher.Transformers {
-		err := transformer.Execute()
+	for _, contractTransformer := range watcher.Transformers {
+		err := contractTransformer.Execute()
 		if err != nil {
-			log.Error("Unable to execute transformer:", transformer.GetConfig().Name, err)
+			log.Error("Unable to execute transformer:", contractTransformer.GetConfig().Name, err)
 			return err
 		}
 	}

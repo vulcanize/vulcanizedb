@@ -2,7 +2,7 @@ S
 `Dockerfile` will build an alpine image containing:
 - vDB as a binary with runtime deps statically linked: `/app/vulcanizedb`
 - The migration tool goose: `/app/goose`
-- Two services for running `lightSync` and `continuousLogSync`, started with the default configuration `environments/staging.toml`.
+- Two services for running `headerSync` and `continuousLogSync`, started with the default configuration `environments/staging.toml`.
 
 By default, vDB is configured towards the Kovan deploy. The configuration values can be overridden using environment variables, using the same hierarchical naming pattern but in CAPS and using underscores. For example, the contract address for the `Pit` can be set with the variable `CONTRACT_ADDRESS_PIT="0x123..."`.
 
@@ -18,8 +18,8 @@ e`
   * `CONTRACT_ADDRESS_[CONTRACT NAME]=0x123...`
   * `CONTRACT_ABI_[CONTRACT NAME]="ABI STRING"`
   * `CONTRACT_DEPLOYMENT-BLOCK_[CONTRACT NAME]=0` (doesn't really matter on a short chain, just avoids long unnecessary searching)
-6. Start the `lightSync` and `continuousLogSync` services:
-  * `./vulcanizedb lightSync --config environments/staging.toml`
+6. Start the `headerSync` and `continuousLogSync` services:
+  * `./vulcanizedb headerSync --config environments/staging.toml`
   * `./vulcanizedb continuousLogSync --config environments/staging.toml`
 
 ### Automated

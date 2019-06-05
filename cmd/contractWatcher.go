@@ -26,7 +26,7 @@ import (
 
 	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
-	lt "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/transformer"
+	ht "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -98,8 +98,8 @@ func contractWatcher() {
 	con := config.ContractConfig{}
 	con.PrepConfig()
 	switch mode {
-	case "light":
-		t = lt.NewTransformer(con, blockChain, &db)
+	case "header":
+		t = ht.NewTransformer(con, blockChain, &db)
 	case "full":
 		t = ft.NewTransformer(con, blockChain, &db)
 	default:
@@ -121,5 +121,5 @@ func contractWatcher() {
 
 func init() {
 	rootCmd.AddCommand(contractWatcherCmd)
-	contractWatcherCmd.Flags().StringVarP(&mode, "mode", "o", "light", "'light' or 'full' mode to work with either light synced or fully synced vDB (default is light)")
+	contractWatcherCmd.Flags().StringVarP(&mode, "mode", "o", "header", "'header' or 'full' mode to work with either header synced or fully synced vDB (default is header)")
 }

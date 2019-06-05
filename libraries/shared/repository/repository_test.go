@@ -26,7 +26,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	shared "github.com/vulcanize/vulcanizedb/libraries/shared/repository"
-	r2 "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/light/repository"
+	r2 "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"

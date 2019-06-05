@@ -21,11 +21,26 @@ import (
 )
 
 type MockStorageQueue struct {
-	AddCalled bool
-	AddError  error
+	AddCalled      bool
+	AddError       error
+	AddPassedRow   utils.StorageDiffRow
+	DeleteErr      error
+	DeletePassedId int
+	GetAllErr      error
+	RowsToReturn   []utils.StorageDiffRow
 }
 
 func (queue *MockStorageQueue) Add(row utils.StorageDiffRow) error {
 	queue.AddCalled = true
+	queue.AddPassedRow = row
 	return queue.AddError
+}
+
+func (queue *MockStorageQueue) Delete(id int) error {
+	queue.DeletePassedId = id
+	return queue.DeleteErr
+}
+
+func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiffRow, error) {
+	return queue.RowsToReturn, queue.GetAllErr
 }

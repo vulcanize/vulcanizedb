@@ -39,7 +39,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.MockFullBlockRetriever{}
+			blockRetriever := &fakes.MockFullSyncBlockRetriever{}
 			firstBlock := int64(1)
 			mostRecentBlock := int64(2)
 			blockRetriever.FirstBlock = firstBlock
@@ -74,7 +74,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Fails to initialize if first and most recent blocks cannot be fetched from vDB", func() {
-			blockRetriever := &fakes.MockFullBlockRetriever{}
+			blockRetriever := &fakes.MockFullSyncBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 

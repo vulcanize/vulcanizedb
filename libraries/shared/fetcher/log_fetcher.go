@@ -24,22 +24,22 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type LogFetcher interface {
+type ILogFetcher interface {
 	FetchLogs(contractAddresses []common.Address, topics []common.Hash, missingHeader core.Header) ([]types.Log, error)
 }
 
-type Fetcher struct {
+type LogFetcher struct {
 	blockChain core.BlockChain
 }
 
-func NewFetcher(blockchain core.BlockChain) *Fetcher {
-	return &Fetcher{
+func NewLogFetcher(blockchain core.BlockChain) *LogFetcher {
+	return &LogFetcher{
 		blockChain: blockchain,
 	}
 }
 
 // Checks all topic0s, on all addresses, fetching matching logs for the given header
-func (fetcher Fetcher) FetchLogs(addresses []common.Address, topic0s []common.Hash, header core.Header) ([]types.Log, error) {
+func (logFetcher LogFetcher) FetchLogs(addresses []common.Address, topic0s []common.Hash, header core.Header) ([]types.Log, error) {
 	blockHash := common.HexToHash(header.Hash)
 	query := ethereum.FilterQuery{
 		BlockHash: &blockHash,
@@ -48,7 +48,7 @@ func (fetcher Fetcher) FetchLogs(addresses []common.Address, topic0s []common.Ha
 		Topics: [][]common.Hash{topic0s},
 	}
 
-	logs, err := fetcher.blockChain.GetEthLogsWithCustomQuery(query)
+	logs, err := logFetcher.blockChain.GetEthLogsWithCustomQuery(query)
 	if err != nil {
 		// TODO review aggregate fetching error handling
 		return []types.Log{}, err

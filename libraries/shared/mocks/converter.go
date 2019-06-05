@@ -53,6 +53,6 @@ func (converter *MockConverter) SetToEntityConverterError(err error) {
 	converter.entityConverterError = err
 }
 
-func (c *MockConverter) SetToModelConverterError(err error) {
-	c.modelConverterError = err
+func (converter *MockConverter) SetToModelConverterError(err error) {
+	converter.modelConverterError = err
 }

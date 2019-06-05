@@ -38,14 +38,14 @@ type Field struct {
 
 // Struct to hold instance of an event log data
 type Log struct {
-	Id     int64             // VulcanizeIdLog for full sync and header ID for light sync contract watcher
+	Id     int64             // VulcanizeIdLog for full sync and header ID for header sync contract watcher
 	Values map[string]string // Map of event input names to their values
 
 	// Used for full sync only
 	Block int64
 	Tx    string
 
-	// Used for lightSync only
+	// Used for headerSync only
 	LogIndex         uint
 	TransactionIndex uint
 	Raw              []byte // json.Unmarshalled byte array of geth/core/types.Log{}

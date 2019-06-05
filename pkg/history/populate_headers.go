@@ -24,14 +24,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
-	lastBlock, err := blockchain.LastBlock()
+func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
+	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
 		log.Error("PopulateMissingHeaders: Error getting last block: ", err)
 		return 0, err
 	}
 
-	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockchain.Node().ID)
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockChain.Node().ID)
 	if err != nil {
 		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
 		return 0, err
@@ -40,7 +40,7 @@ func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datasto
 	}
 
 	log.Printf("Backfilling %d blocks\n\n", len(blockNumbers))
-	_, err = RetrieveAndUpdateHeaders(blockchain, headerRepository, blockNumbers)
+	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
 		log.Error("PopulateMissingHeaders: Error getting/updating headers:", err)
 		return 0, err
@@ -48,8 +48,8 @@ func PopulateMissingHeaders(blockchain core.BlockChain, headerRepository datasto
 	return len(blockNumbers), nil
 }
 
-func RetrieveAndUpdateHeaders(chain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
-	headers, err := chain.GetHeaderByNumbers(blockNumbers)
+func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
+	headers, err := blockChain.GetHeadersByNumbers(blockNumbers)
 	for _, header := range headers {
 		_, err = headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {

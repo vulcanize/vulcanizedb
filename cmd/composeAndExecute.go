@@ -16,16 +16,20 @@
 package cmd
 
 import (
+	"os"
+	"plugin"
+	syn "sync"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"github.com/vulcanize/vulcanizedb/utils"
-	"os"
-	"plugin"
-	syn "sync"
 )
 
 // composeAndExecuteCmd represents the composeAndExecute command
@@ -170,7 +174,8 @@ func composeAndExecute() {
 
 	if len(ethStorageInitializers) > 0 {
 		tailer := fs.FileTailer{Path: storageDiffsPath}
-		sw := watcher.NewStorageWatcher(tailer, &db)
+		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+		sw := watcher.NewStorageWatcher(storageFetcher, &db)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
@@ -187,5 +192,6 @@ func composeAndExecute() {
 
 func init() {
 	rootCmd.AddCommand(composeAndExecuteCmd)
-	composeAndExecuteCmd.Flags().BoolVar(&recheckHeadersArg, "recheckHeaders", false, "checks headers that are already checked for each transformer.")
+	composeAndExecuteCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
+	composeAndExecuteCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
 }

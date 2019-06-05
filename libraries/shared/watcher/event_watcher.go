@@ -37,7 +37,7 @@ type EventWatcher struct {
 	Transformers  []transformer.EventTransformer
 	BlockChain    core.BlockChain
 	DB            *postgres.DB
-	Fetcher       fetcher.LogFetcher
+	Fetcher       fetcher.ILogFetcher
 	Chunker       chunker.Chunker
 	Addresses     []common.Address
 	Topics        []common.Hash
@@ -47,7 +47,7 @@ type EventWatcher struct {
 
 func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 	logChunker := chunker.NewLogChunker()
-	logFetcher := fetcher.NewFetcher(bc)
+	logFetcher := fetcher.NewLogFetcher(bc)
 	transactionSyncer := transactions.NewTransactionsSyncer(db, bc)
 	return EventWatcher{
 		BlockChain: bc,
