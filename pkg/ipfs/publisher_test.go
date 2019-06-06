@@ -20,19 +20,19 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
 )
 
 var _ = Describe("Publisher", func() {
 	Describe("Publish", func() {
 		It("Publishes IPLDPayload to IPFS", func() {
 			mockPublisher := mocks.IPLDPublisher{}
-			mockPublisher.ReturnCIDPayload = &test_helpers.MockCIDPayload
-			cidPayload, err := mockPublisher.Publish(&test_helpers.MockIPLDPayload)
+			mockPublisher.ReturnCIDPayload = &helpers.MockCIDPayload
+			cidPayload, err := mockPublisher.Publish(&helpers.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(cidPayload).To(Equal(&test_helpers.MockCIDPayload))
-			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&test_helpers.MockIPLDPayload))
+			Expect(cidPayload).To(Equal(&helpers.MockCIDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&helpers.MockIPLDPayload))
 		})
 	})
 })

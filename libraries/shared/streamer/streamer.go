@@ -19,6 +19,7 @@ package streamer
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
@@ -26,7 +27,7 @@ import (
 
 // IStreamer is the interface for streaming data from a vulcanizeDB seed node
 type IStreamer interface {
-	Stream(payloadChan chan ipfs.ResponsePayload, streamFilters ipfs.StreamFilters) (*rpc.ClientSubscription, error)
+	Stream(payloadChan chan ipfs.ResponsePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error)
 }
 
 // Streamer is the underlying struct for the IStreamer interface
@@ -42,6 +43,6 @@ func NewSeedStreamer(client core.RpcClient) *Streamer {
 }
 
 // Stream is the main loop for subscribing to data from a vulcanizedb seed node
-func (sds *Streamer) Stream(payloadChan chan ipfs.ResponsePayload, streamFilters ipfs.StreamFilters) (*rpc.ClientSubscription, error) {
+func (sds *Streamer) Stream(payloadChan chan ipfs.ResponsePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error) {
 	return sds.Client.Subscribe("vulcanizedb", payloadChan, "stream", streamFilters)
 }
