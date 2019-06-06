@@ -19,6 +19,8 @@ package ipfs
 import (
 	"bytes"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,7 +29,7 @@ import (
 
 // ResponseScreener is the inteface used to screen eth data and package appropriate data into a response payload
 type ResponseScreener interface {
-	ScreenResponse(streamFilters *StreamFilters, payload IPLDPayload) (*ResponsePayload, error)
+	ScreenResponse(streamFilters *config.Subscription, payload IPLDPayload) (*ResponsePayload, error)
 }
 
 // Screener is the underlying struct for the ReponseScreener interface
@@ -39,7 +41,7 @@ func NewResponseScreener() *Screener {
 }
 
 // ScreenResponse is used to filter through eth data to extract and package requested data into a ResponsePayload
-func (s *Screener) ScreenResponse(streamFilters *StreamFilters, payload IPLDPayload) (*ResponsePayload, error) {
+func (s *Screener) ScreenResponse(streamFilters *config.Subscription, payload IPLDPayload) (*ResponsePayload, error) {
 	response := new(ResponsePayload)
 	err := s.filterHeaders(streamFilters, response, payload)
 	if err != nil {
@@ -64,7 +66,7 @@ func (s *Screener) ScreenResponse(streamFilters *StreamFilters, payload IPLDPayl
 	return response, nil
 }
 
-func (s *Screener) filterHeaders(streamFilters *StreamFilters, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Screener) filterHeaders(streamFilters *config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
 	if !streamFilters.HeaderFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
 		if !streamFilters.HeaderFilter.FinalOnly {
@@ -87,7 +89,7 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *Screener) filterTransactions(streamFilters *StreamFilters, response *ResponsePayload, payload IPLDPayload) ([]common.Hash, error) {
+func (s *Screener) filterTransactions(streamFilters *config.Subscription, response *ResponsePayload, payload IPLDPayload) ([]common.Hash, error) {
 	trxHashes := make([]common.Hash, 0, len(payload.BlockBody.Transactions))
 	if !streamFilters.TrxFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		for i, trx := range payload.BlockBody.Transactions {
@@ -123,7 +125,7 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 	return false
 }
 
-func (s *Screener) filerReceipts(streamFilters *StreamFilters, response *ResponsePayload, payload IPLDPayload, trxHashes []common.Hash) error {
+func (s *Screener) filerReceipts(streamFilters *config.Subscription, response *ResponsePayload, payload IPLDPayload, trxHashes []common.Hash) error {
 	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		for i, receipt := range payload.Receipts {
 			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, trxHashes) {
@@ -159,7 +161,7 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics []string, want
 	return false
 }
 
-func (s *Screener) filterState(streamFilters *StreamFilters, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Screener) filterState(streamFilters *config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
 	response.StateNodesRlp = make(map[common.Hash][]byte)
 	if !streamFilters.StateFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		keyFilters := make([]common.Hash, 0, len(streamFilters.StateFilter.Addresses))
@@ -191,7 +193,7 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *Screener) filterStorage(streamFilters *StreamFilters, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Screener) filterStorage(streamFilters *config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
 	if !streamFilters.StorageFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		stateKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.Addresses))
 		for _, addr := range streamFilters.StorageFilter.Addresses {

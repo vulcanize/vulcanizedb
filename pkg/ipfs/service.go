@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -42,7 +44,7 @@ type SyncPublishScreenAndServe interface {
 	// Main event loop for handling client pub-sub
 	ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *StreamFilters)
+	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID) error
 }
@@ -202,7 +204,7 @@ func (sap *Service) processResponse(payload IPLDPayload) error {
 }
 
 // Subscribe is used by the API to subscribe to the service loop
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *StreamFilters) {
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription) {
 	log.Info("Subscribing to the statediff service")
 	sap.Lock()
 	sap.Subscriptions[id] = Subscription{

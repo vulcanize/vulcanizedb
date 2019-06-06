@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+
 	"github.com/ipfs/go-block-format"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -30,7 +32,7 @@ import (
 type Subscription struct {
 	PayloadChan   chan<- ResponsePayload
 	QuitChan      chan<- bool
-	StreamFilters *StreamFilters
+	StreamFilters *config.Subscription
 }
 
 // ResponsePayload holds the data returned from the seed node to the requesting client
@@ -148,36 +150,4 @@ type TrxMetaData struct {
 	CID string
 	Src string
 	Dst string
-}
-
-// StreamFilters are defined by the client to specifiy which data to receive from the seed node
-type StreamFilters struct {
-	BackFill      bool
-	BackFillOnly  bool
-	StartingBlock int64
-	EndingBlock   int64 // set to 0 or a negative value to have no ending block
-	HeaderFilter  struct {
-		Off       bool
-		FinalOnly bool
-	}
-	TrxFilter struct {
-		Off bool
-		Src []string
-		Dst []string
-	}
-	ReceiptFilter struct {
-		Off     bool
-		Topic0s []string
-	}
-	StateFilter struct {
-		Off               bool
-		Addresses         []string // is converted to state key by taking its keccak256 hash
-		IntermediateNodes bool
-	}
-	StorageFilter struct {
-		Off               bool
-		Addresses         []string
-		StorageKeys       []string
-		IntermediateNodes bool
-	}
 }
