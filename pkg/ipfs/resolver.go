@@ -22,17 +22,21 @@ import (
 	"github.com/ipfs/go-block-format"
 )
 
+// IPLDResolver is the interface to resolving IPLDs
 type IPLDResolver interface {
-	ResolveIPLDs(ipfsBlocks ipfsBlockWrapper) (*ResponsePayload, error)
+	ResolveIPLDs(ipfsBlocks IpldWrapper) (*ResponsePayload, error)
 }
 
+// EthIPLDResolver is the underlying struct to support the IPLDResolver interface
 type EthIPLDResolver struct{}
 
+// NewIPLDResolver returns a pointer to an EthIPLDResolver which satisfies the IPLDResolver interface
 func NewIPLDResolver() *EthIPLDResolver {
 	return &EthIPLDResolver{}
 }
 
-func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks ipfsBlockWrapper) (*ResponsePayload, error) {
+// ResolveIPLDs is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
+func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IpldWrapper) (*ResponsePayload, error) {
 	response := new(ResponsePayload)
 	eir.resolveHeaders(ipfsBlocks.Headers, response)
 	eir.resolveTransactions(ipfsBlocks.Transactions, response)

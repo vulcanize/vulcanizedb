@@ -122,7 +122,7 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 		return nil, err
 	}
 
-	// Package CIDs into a single struct
+	// Package CIDs and their metadata into a single struct
 	return &CIDPayload{
 		BlockHash:       payload.BlockHash,
 		BlockNumber:     payload.BlockNumber.String(),
@@ -147,6 +147,13 @@ func (pub *Publisher) publishHeaders(headerRLP []byte) (string, error) {
 }
 
 func (pub *Publisher) publishTransactions(blockBody *types.Body, trxMeta []*TrxMetaData) (map[common.Hash]*TrxMetaData, error) {
+	/*
+		println("publishing transactions")
+		for _, trx := range blockBody.Transactions {
+			println("trx value:")
+			println(trx.Value().Int64())
+		}
+	*/
 	transactionCids, err := pub.TransactionPutter.DagPut(blockBody)
 	if err != nil {
 		return nil, err
