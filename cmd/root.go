@@ -40,6 +40,7 @@ var (
 	cfgFile              string
 	databaseConfig       config.Database
 	genConfig            config.Plugin
+	subConfig            config.Subscription
 	ipc                  string
 	levelDbPath          string
 	queueRecheckInterval time.Duration

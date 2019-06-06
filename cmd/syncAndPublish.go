@@ -39,7 +39,7 @@ var syncAndPublishCmd = &cobra.Command{
 	Short: "Syncs all Ethereum data into IPFS, indexing the CIDs",
 	Long: `This command works alongside a modified geth node which streams
 all block and state (diff) data over a websocket subscription. This process 
-then converts the eth objects to IPLDs and publishes them IPFS. Additionally,
+then converts the eth data to IPLD objects and publishes them to IPFS. Additionally,
 it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		syncAndPublish()

@@ -14,23 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs_test
+package mocks
 
-import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+import "github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
-)
+// CIDRepository is the underlying struct for the Repository interface
+type CIDRepository struct {
+	PassedCIDPayload *ipfs.CIDPayload
+	ReturnErr        error
+}
 
-var _ = Describe("Repository", func() {
-	Describe("Index", func() {
-		It("Indexes CIDs against their metadata", func() {
-			mockRepo := mocks.CIDRepository{}
-			err := mockRepo.Index(&helpers.MockCIDPayload)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(mockRepo.PassedCIDPayload).To(Equal(&helpers.MockCIDPayload))
-		})
-	})
-})
+// Index indexes a cidPayload in Postgres
+func (repo *CIDRepository) Index(cidPayload *ipfs.CIDPayload) error {
+	repo.PassedCIDPayload = cidPayload
+	return repo.ReturnErr
+}

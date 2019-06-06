@@ -19,6 +19,8 @@ package ipfs
 import (
 	"context"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -42,7 +44,7 @@ func NewPublicSeedNodeAPI(snp SyncPublishScreenAndServe) *PublicSeedNodeAPI {
 }
 
 // Stream is the public method to setup a subscription that fires off SyncPublishScreenAndServe payloads as they are created
-func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters StreamFilters) (*rpc.Subscription, error) {
+func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.Subscription) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {

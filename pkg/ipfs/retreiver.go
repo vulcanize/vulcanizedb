@@ -19,12 +19,13 @@ package ipfs
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 // CIDRetriever is the interface for retrieving CIDs from the Postgres cache
 type CIDRetriever interface {
-	RetrieveCIDs(streamFilters StreamFilters) ([]CidWrapper, error)
+	RetrieveCIDs(streamFilters config.Subscription) ([]CidWrapper, error)
 }
 
 // EthCIDRetriever is the underlying struct supporting the CIDRetriever interface
@@ -47,7 +48,7 @@ func (ecr *EthCIDRetriever) GetLastBlockNumber() (int64, error) {
 }
 
 // RetrieveCIDs is used to retrieve all of the CIDs which conform to the passed StreamFilters
-func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]CidWrapper, error) {
+func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]CidWrapper, error) {
 	var endingBlock int64
 	var err error
 	if streamFilters.EndingBlock <= 0 || streamFilters.EndingBlock <= streamFilters.StartingBlock {
@@ -112,7 +113,7 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]CidWrap
 	return cids, err
 }
 
-func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
 	var pgStr string
 	if streamFilters.HeaderFilter.FinalOnly {
 		pgStr = `SELECT cid FROM header_cids
@@ -125,7 +126,7 @@ func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters Stream
 	return tx.Select(cids.Headers, pgStr, blockNumber)
 }
 
-func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) ([]int64, error) {
+func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) ([]int64, error) {
 	args := make([]interface{}, 0, 3)
 	type result struct {
 		ID  int64  `db:"id"`
@@ -155,7 +156,7 @@ func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters StreamFil
 	return ids, nil
 }
 
-func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64, trxIds []int64) error {
+func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64, trxIds []int64) error {
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -175,7 +176,7 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters StreamFil
 	return tx.Select(cids.Receipts, pgStr, args...)
 }
 
-func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.cid, state_cids.state_key FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.block_number = $1`
@@ -192,7 +193,7 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters StreamF
 	return tx.Select(cids.StateNodes, pgStr, args...)
 }
 
-func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key FROM storage_cids, state_cids, header_cids
 			WHERE storage_cids.state_id = state_cids.id 

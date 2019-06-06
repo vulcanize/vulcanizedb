@@ -29,13 +29,12 @@ import (
 // syncPublishScreenAndServeCmd represents the syncPublishScreenAndServe command
 var syncPublishScreenAndServeCmd = &cobra.Command{
 	Use:   "syncPublishScreenAndServe",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Syncs all Ethereum data into IPFS, indexing the CIDs, and uses this to serve data requests to requesting clients",
+	Long: `This command works alongside a modified geth node which streams
+all block and state (diff) data over a websocket subscription. This process 
+then converts the eth data to IPLD objects and publishes them to IPFS. Additionally,
+it maintains a local index of the IPLD objects' CIDs in Postgres. It then opens up a server which 
+relays relevant data to requesting clients.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		syncPublishScreenAndServe()
 	},
@@ -44,7 +43,7 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(syncPublishScreenAndServeCmd)
 	syncPublishScreenAndServeCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "~/.ipfs", "Path for configuring IPFS node")
-	syncPublishScreenAndServeCmd.Flags().StringVarP(&vulcPath, "ipc-path", "p", "~/.vulcanize/vulcanize.ipc", "IPC path for the Vulcanize seed node server")
+	syncPublishScreenAndServeCmd.Flags().StringVarP(&vulcPath, "sub-path", "p", "~/.vulcanize/vulcanize.ipc", "IPC path for the Vulcanize seed node server")
 }
 
 func syncPublishScreenAndServe() {
