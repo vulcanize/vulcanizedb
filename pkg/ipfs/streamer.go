@@ -42,5 +42,5 @@ func NewStateDiffStreamer(client core.RpcClient) *Streamer {
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
 func (sds *Streamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("statediff", payloadChan, "subscribe")
+	return sds.Client.Subscribe("statediff", payloadChan, "stream")
 }
