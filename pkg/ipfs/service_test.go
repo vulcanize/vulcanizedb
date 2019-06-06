@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/test_helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
 )
 
 var _ = Describe("Service", func() {
@@ -41,18 +41,18 @@ var _ = Describe("Service", func() {
 				ReturnErr: nil,
 			}
 			mockPublisher := &mocks.IPLDPublisher{
-				ReturnCIDPayload: &test_helpers.MockCIDPayload,
+				ReturnCIDPayload: &helpers.MockCIDPayload,
 				ReturnErr:        nil,
 			}
 			mockStreamer := &mocks.StateDiffStreamer{
 				ReturnSub: &rpc.ClientSubscription{},
 				StreamPayloads: []statediff.Payload{
-					test_helpers.MockStatediffPayload,
+					helpers.MockStatediffPayload,
 				},
 				ReturnErr: nil,
 			}
 			mockConverter := &mocks.PayloadConverter{
-				ReturnIPLDPayload: &test_helpers.MockIPLDPayload,
+				ReturnIPLDPayload: &helpers.MockIPLDPayload,
 				ReturnErr:         nil,
 			}
 			processor := &ipfs.Service{
@@ -68,9 +68,9 @@ var _ = Describe("Service", func() {
 			time.Sleep(2 * time.Second)
 			quitChan <- true
 			wg.Wait()
-			Expect(mockConverter.PassedStatediffPayload).To(Equal(test_helpers.MockStatediffPayload))
-			Expect(mockCidRepo.PassedCIDPayload).To(Equal(&test_helpers.MockCIDPayload))
-			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&test_helpers.MockIPLDPayload))
+			Expect(mockConverter.PassedStatediffPayload).To(Equal(helpers.MockStatediffPayload))
+			Expect(mockCidRepo.PassedCIDPayload).To(Equal(&helpers.MockCIDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(&helpers.MockIPLDPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})
 	})
