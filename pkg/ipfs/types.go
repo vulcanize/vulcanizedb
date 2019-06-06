@@ -65,7 +65,8 @@ func (sd *ResponsePayload) Encode() ([]byte, error) {
 	return sd.encoded, sd.err
 }
 
-type cidWrapper struct {
+// CidWrapper is used to package CIDs retrieved from the local Postgres cache
+type CidWrapper struct {
 	BlockNumber  int64
 	Headers      []string
 	Transactions []string
@@ -74,7 +75,8 @@ type cidWrapper struct {
 	StorageNodes []StorageNodeCID
 }
 
-type ipfsBlockWrapper struct {
+// IpldWrapper is used to package raw IPLD block data for resolution
+type IpldWrapper struct {
 	Headers      []blocks.Block
 	Transactions []blocks.Block
 	Receipts     []blocks.Block

@@ -16,10 +16,11 @@
 package cmd
 
 import (
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/i-norden/go-ethereum/rlp"
+	"bytes"
 
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,15 +49,18 @@ to quickly create a Cobra application.`,
 func test2() {
 	rpcClient := getRpcClient()
 	str := streamer.NewSeedStreamer(rpcClient)
-	payloadChan := make(chan ipfs.ResponsePayload, 800)
-	filter := ipfs.StreamFilters{}
-	filter.HeaderFilter.FinalOnly = true
-	filter.TrxFilter.Src = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
-	filter.TrxFilter.Dst = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
-	filter.ReceiptFilter.Topic0s = []string{}
-	filter.StateFilter.Addresses = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
-	filter.StorageFilter.Off = true
-	sub, err := str.Stream(payloadChan, filter)
+	payloadChan := make(chan ipfs.ResponsePayload, 8000)
+	streamFilters := ipfs.StreamFilters{}
+	streamFilters.HeaderFilter.FinalOnly = true
+	streamFilters.ReceiptFilter.Topic0s = []string{
+		"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+		"0x930a61a57a70a73c2a503615b87e2e54fe5b9cdeacda518270b852296ab1a377",
+	}
+	streamFilters.StateFilter.Addresses = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	streamFilters.StorageFilter.Off = true
+	//streamFilters.TrxFilter.Src = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	//streamFilters.TrxFilter.Dst = []string{"0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"}
+	sub, err := str.Stream(payloadChan, streamFilters)
 	if err != nil {
 		println(err.Error())
 		log.Fatal(err)
@@ -68,29 +72,52 @@ func test2() {
 				log.Error(payload.Err)
 			}
 			for _, headerRlp := range payload.HeadersRlp {
-				header := new(types.Header)
-				err = rlp.DecodeBytes(headerRlp, header)
+				var header types.Header
+				err = rlp.Decode(bytes.NewBuffer(headerRlp), &header)
+				if err != nil {
+					println(err.Error())
+					log.Error(err)
+				}
 				println("header")
-				println(header.TxHash.Hex())
+				println(header.Hash().Hex())
 				println(header.Number.Int64())
 			}
 			for _, trxRlp := range payload.TransactionsRlp {
-				trx := new(types.Transaction)
-				err = rlp.DecodeBytes(trxRlp, trx)
+				var trx types.Transaction
+				buff := bytes.NewBuffer(trxRlp)
+				stream := rlp.NewStream(buff, 0)
+				err := trx.DecodeRLP(stream)
+				if err != nil {
+					println(err.Error())
+					log.Error(err)
+				}
 				println("trx")
 				println(trx.Hash().Hex())
-				println(trx.Value().Int64())
 			}
 			for _, rctRlp := range payload.ReceiptsRlp {
-				rct := new(types.Receipt)
-				err = rlp.DecodeBytes(rctRlp, rct)
+				var rct types.Receipt
+				buff := bytes.NewBuffer(rctRlp)
+				stream := rlp.NewStream(buff, 0)
+				err = rct.DecodeRLP(stream)
+				if err != nil {
+					println(err.Error())
+					log.Error(err)
+				}
 				println("rct")
-				println(rct.TxHash.Hex())
-				println(rct.BlockNumber.Bytes())
+				for _, l := range rct.Logs {
+					println("log")
+					println(l.BlockHash.Hex())
+					println(l.TxHash.Hex())
+					println(l.Address.Hex())
+				}
 			}
 			for _, stateRlp := range payload.StateNodesRlp {
-				acct := new(state.Account)
-				err = rlp.DecodeBytes(stateRlp, acct)
+				var acct state.Account
+				err = rlp.Decode(bytes.NewBuffer(stateRlp), &acct)
+				if err != nil {
+					println(err.Error())
+					log.Error(err)
+				}
 				println("state")
 				println(acct.Root.Hex())
 				println(acct.Balance.Int64())

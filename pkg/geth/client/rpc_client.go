@@ -78,14 +78,14 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 			Args:   batchElem.Args,
 			Error:  batchElem.Error,
 		}
-
 		rpcBatch = append(rpcBatch, newBatchElem)
 	}
 	return client.client.BatchCall(rpcBatch)
 }
 
-// Subscribe subscribes to a websocket "namespace_subscribe" subscription with the given channel
-func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, subName string, args ...interface{}) (*rpc.ClientSubscription, error) {
+// Subscribe subscribes to an rpc "namespace_subscribe" subscription with the given channel
+// The first argument needs to be the method we wish to invoke
+func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
 		return nil, errors.New("second argument to Subscribe must be a writable channel")
@@ -93,5 +93,5 @@ func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, sub
 	if chanVal.IsNil() {
 		return nil, errors.New("channel given to Subscribe must not be nil")
 	}
-	return client.client.Subscribe(context.Background(), namespace, payloadChan, subName, args)
+	return client.client.Subscribe(context.Background(), namespace, payloadChan, args...)
 }

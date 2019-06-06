@@ -22,26 +22,32 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// CIDRetriever is the interface for retrieving CIDs from the Postgres cache
 type CIDRetriever interface {
-	RetrieveCIDs(streamFilters StreamFilters) ([]cidWrapper, error)
+	RetrieveCIDs(streamFilters StreamFilters) ([]CidWrapper, error)
 }
 
+// EthCIDRetriever is the underlying struct supporting the CIDRetriever interface
 type EthCIDRetriever struct {
 	db *postgres.DB
 }
 
+// NewCIDRetriever returns a pointer to a new EthCIDRetriever which supports the CIDRetriever interface
 func NewCIDRetriever(db *postgres.DB) *EthCIDRetriever {
 	return &EthCIDRetriever{
 		db: db,
 	}
 }
 
+// GetLastBlockNumber is used to retrieve the latest block number in the cache
 func (ecr *EthCIDRetriever) GetLastBlockNumber() (int64, error) {
 	var blockNumber int64
 	err := ecr.db.Get(&blockNumber, "SELECT block_number FROM header_cids ORDER BY block_number DESC LIMIT 1 ")
 	return blockNumber, err
 }
-func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]cidWrapper, error) {
+
+// RetrieveCIDs is used to retrieve all of the CIDs which conform to the passed StreamFilters
+func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]CidWrapper, error) {
 	var endingBlock int64
 	var err error
 	if streamFilters.EndingBlock <= 0 || streamFilters.EndingBlock <= streamFilters.StartingBlock {
@@ -50,13 +56,13 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]cidWrap
 			return nil, err
 		}
 	}
-	cids := make([]cidWrapper, 0, endingBlock+1-streamFilters.StartingBlock)
+	cids := make([]CidWrapper, 0, endingBlock+1-streamFilters.StartingBlock)
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
 	for i := streamFilters.StartingBlock; i <= endingBlock; i++ {
-		cw := &cidWrapper{
+		cw := &CidWrapper{
 			BlockNumber:  i,
 			Headers:      make([]string, 0),
 			Transactions: make([]string, 0),
@@ -106,7 +112,7 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters StreamFilters) ([]cidWrap
 	return cids, err
 }
 
-func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *cidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
 	var pgStr string
 	if streamFilters.HeaderFilter.FinalOnly {
 		pgStr = `SELECT cid FROM header_cids
@@ -119,10 +125,10 @@ func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters Stream
 	return tx.Select(cids.Headers, pgStr, blockNumber)
 }
 
-func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *cidWrapper, blockNumber int64) ([]int64, error) {
+func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) ([]int64, error) {
 	args := make([]interface{}, 0, 3)
 	type result struct {
-		Id  int64  `db:"id"`
+		ID  int64  `db:"id"`
 		Cid string `db:"cid"`
 	}
 	results := make([]result, 0)
@@ -144,12 +150,12 @@ func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters StreamFil
 	ids := make([]int64, 0)
 	for _, res := range results {
 		cids.Transactions = append(cids.Transactions, res.Cid)
-		ids = append(ids, res.Id)
+		ids = append(ids, res.ID)
 	}
 	return ids, nil
 }
 
-func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *cidWrapper, blockNumber int64, trxIds []int64) error {
+func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64, trxIds []int64) error {
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -169,7 +175,7 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters StreamFil
 	return tx.Select(cids.Receipts, pgStr, args...)
 }
 
-func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *cidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.cid, state_cids.state_key FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.block_number = $1`
@@ -186,7 +192,7 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters StreamF
 	return tx.Select(cids.StateNodes, pgStr, args...)
 }
 
-func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *cidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters StreamFilters, cids *CidWrapper, blockNumber int64) error {
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key FROM storage_cids, state_cids, header_cids
 			WHERE storage_cids.state_id = state_cids.id 
