@@ -43,5 +43,5 @@ func NewSeedStreamer(client core.RpcClient) *Streamer {
 
 // Stream is the main loop for subscribing to data from a vulcanizedb seed node
 func (sds *Streamer) Stream(payloadChan chan ipfs.ResponsePayload, streamFilters ipfs.StreamFilters) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("vulcanizedb", payloadChan, "subscribe")
+	return sds.Client.Subscribe("vulcanizedb", payloadChan, "stream", streamFilters)
 }

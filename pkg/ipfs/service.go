@@ -30,7 +30,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-const payloadChanBufferSize = 800 // 1/10th max eth sub buffer size
+const payloadChanBufferSize = 8000 // the max eth sub buffer size
 
 // SyncPublishScreenAndServe is an interface for streaming, converting to IPLDs, publishing,
 // indexing all Ethereum data screening this data, and serving it up to subscribed clients
@@ -118,7 +118,7 @@ func (sap *Service) APIs() []rpc.API {
 }
 
 // SyncAndPublish is the backend processing loop which streams data from geth, converts it to iplds, publishes them to ipfs, and indexes their cids
-// It then forwards the data to the Serve() loop which filters and sends relevent data to client subscriptions
+// It then forwards the data to the Serve() loop which filters and sends relevant data to client subscriptions
 func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- IPLDPayload, forwardQuitchan chan<- bool) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
@@ -139,7 +139,6 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<-
 					continue
 				}
 				// If we have a ScreenAndServe process running, forward the payload to it
-				// If the ScreenAndServe process loop is slower than this one, will it miss some incoming payloads??
 				select {
 				case forwardPayloadChan <- *ipldPayload:
 				default:
@@ -284,7 +283,7 @@ func (sap *Service) serve(id rpc.ID, payload ResponsePayload) {
 	if ok {
 		select {
 		case sub.PayloadChan <- payload:
-			log.Infof("sending state diff payload to subscription %s", id)
+			log.Infof("sending seed node payload to subscription %s", id)
 		default:
 			log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
 		}

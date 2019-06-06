@@ -171,14 +171,14 @@ var (
 			common.HexToHash("0x0"): {
 				{
 					CID:  "mockStorageCID1",
-					Key:  common.HexToHash("0x0"),
+					Key:  "0x0",
 					Leaf: true,
 				},
 			},
 			common.HexToHash("0x1"): {
 				{
 					CID:  "mockStorageCID2",
-					Key:  common.HexToHash("0x1"),
+					Key:  "0x1",
 					Leaf: true,
 				},
 			},

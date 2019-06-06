@@ -27,9 +27,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// IPLDFethcer is an interface for fetching IPLDs
+// IPLDFetcher is an interface for fetching IPLDs
 type IPLDFetcher interface {
-	FetchCIDs(cids cidWrapper) (*ipfsBlockWrapper, error)
+	FetchCIDs(cids CidWrapper) (*IpldWrapper, error)
 }
 
 // EthIPLDFetcher is used to fetch ETH IPLD objects from IPFS
@@ -48,9 +48,9 @@ func NewIPLDFetcher(ipfsPath string) (*EthIPLDFetcher, error) {
 	}, nil
 }
 
-// FetchCIDs is the exported method for fetching and returning all the cids passed in a cidWrapper
-func (f *EthIPLDFetcher) FetchCIDs(cids cidWrapper) (*ipfsBlockWrapper, error) {
-	blocks := &ipfsBlockWrapper{
+// FetchCIDs is the exported method for fetching and returning all the cids passed in a CidWrapper
+func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
+	blocks := &IpldWrapper{
 		Headers:      make([]blocks.Block, 0),
 		Transactions: make([]blocks.Block, 0),
 		Receipts:     make([]blocks.Block, 0),
@@ -84,7 +84,7 @@ func (f *EthIPLDFetcher) FetchCIDs(cids cidWrapper) (*ipfsBlockWrapper, error) {
 
 // fetchHeaders fetches headers
 // It uses the f.fetchBatch method
-func (f *EthIPLDFetcher) fetchHeaders(cids cidWrapper, blocks *ipfsBlockWrapper) error {
+func (f *EthIPLDFetcher) fetchHeaders(cids CidWrapper, blocks *IpldWrapper) error {
 	headerCids := make([]cid.Cid, 0, len(cids.Headers))
 	for _, c := range cids.Headers {
 		dc, err := cid.Decode(c)
@@ -102,7 +102,7 @@ func (f *EthIPLDFetcher) fetchHeaders(cids cidWrapper, blocks *ipfsBlockWrapper)
 
 // fetchTrxs fetches transactions
 // It uses the f.fetchBatch method
-func (f *EthIPLDFetcher) fetchTrxs(cids cidWrapper, blocks *ipfsBlockWrapper) error {
+func (f *EthIPLDFetcher) fetchTrxs(cids CidWrapper, blocks *IpldWrapper) error {
 	trxCids := make([]cid.Cid, 0, len(cids.Transactions))
 	for _, c := range cids.Transactions {
 		dc, err := cid.Decode(c)
@@ -120,7 +120,7 @@ func (f *EthIPLDFetcher) fetchTrxs(cids cidWrapper, blocks *ipfsBlockWrapper) er
 
 // fetchRcts fetches receipts
 // It uses the f.fetchBatch method
-func (f *EthIPLDFetcher) fetchRcts(cids cidWrapper, blocks *ipfsBlockWrapper) error {
+func (f *EthIPLDFetcher) fetchRcts(cids CidWrapper, blocks *IpldWrapper) error {
 	rctCids := make([]cid.Cid, 0, len(cids.Receipts))
 	for _, c := range cids.Receipts {
 		dc, err := cid.Decode(c)
@@ -139,7 +139,7 @@ func (f *EthIPLDFetcher) fetchRcts(cids cidWrapper, blocks *ipfsBlockWrapper) er
 // fetchState fetches state nodes
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state keys
-func (f *EthIPLDFetcher) fetchState(cids cidWrapper, blocks *ipfsBlockWrapper) error {
+func (f *EthIPLDFetcher) fetchState(cids CidWrapper, blocks *IpldWrapper) error {
 	for _, stateNode := range cids.StateNodes {
 		if stateNode.CID == "" || stateNode.Key == "" {
 			continue
@@ -160,7 +160,7 @@ func (f *EthIPLDFetcher) fetchState(cids cidWrapper, blocks *ipfsBlockWrapper) e
 // fetchStorage fetches storage nodes
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state and storage keys
-func (f *EthIPLDFetcher) fetchStorage(cids cidWrapper, blocks *ipfsBlockWrapper) error {
+func (f *EthIPLDFetcher) fetchStorage(cids CidWrapper, blocks *IpldWrapper) error {
 	for _, storageNode := range cids.StorageNodes {
 		if storageNode.CID == "" || storageNode.Key == "" || storageNode.StateKey == "" {
 			continue
