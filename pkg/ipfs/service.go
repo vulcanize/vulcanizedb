@@ -32,10 +32,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-const payloadChanBufferSize = 8000 // the max eth sub buffer size
+const payloadChanBufferSize = 20000 // the max eth sub buffer size
 
 // SyncPublishScreenAndServe is an interface for streaming, converting to IPLDs, publishing,
 // indexing all Ethereum data screening this data, and serving it up to subscribed clients
+// This service is compatible with the Ethereum service interface (node.Service)
 type SyncPublishScreenAndServe interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
@@ -264,9 +265,11 @@ func (sap *Service) Unsubscribe(id rpc.ID) error {
 func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting statediff service")
 	wg := new(sync.WaitGroup)
-	payloadChan := make(chan IPLDPayload)
-	quitChan := make(chan bool)
-	sap.SyncAndPublish(wg, payloadChan, quitChan)
+	payloadChan := make(chan IPLDPayload, payloadChanBufferSize)
+	quitChan := make(chan bool, 1)
+	if err := sap.SyncAndPublish(wg, payloadChan, quitChan); err != nil {
+		return err
+	}
 	sap.ScreenAndServe(wg, payloadChan, quitChan)
 	return nil
 }
@@ -299,11 +302,11 @@ func (sap *Service) close() {
 	for id, sub := range sap.Subscriptions {
 		select {
 		case sub.QuitChan <- true:
-			delete(sap.Subscriptions, id)
 			log.Infof("closing subscription %s", id)
 		default:
 			log.Infof("unable to close subscription %s; channel has no receiver", id)
 		}
+		delete(sap.Subscriptions, id)
 	}
 	sap.Unlock()
 }

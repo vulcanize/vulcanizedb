@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE public.transaction_cids (
   id                    SERIAL PRIMARY KEY,
-  header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE,
+  header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   tx_hash               VARCHAR(66) NOT NULL,
   cid                   TEXT NOT NULL,
   dst                   VARCHAR(66) NOT NULL,

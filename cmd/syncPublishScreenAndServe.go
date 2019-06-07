@@ -50,15 +50,15 @@ func syncPublishScreenAndServe() {
 	blockChain, ethClient, rpcClient := getBlockChainAndClients()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	quitChan := make(chan bool)
+	quitChan := make(chan bool, 1)
 	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	wg := &syn.WaitGroup{}
-	forwardPayloadChan := make(chan ipfs.IPLDPayload)
-	forwardQuitChan := make(chan bool)
+	forwardPayloadChan := make(chan ipfs.IPLDPayload, 20000)
+	forwardQuitChan := make(chan bool, 1)
 	err = processor.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
 	if err != nil {
 		log.Fatal(err)
