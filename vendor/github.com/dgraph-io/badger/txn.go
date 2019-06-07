@@ -27,9 +27,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	farm "gx/ipfs/QmRFFHk2jw9tgjxv12bCuuTnSbVXxEvYQkuNCLMEv9eUwP/go-farm"
-	"gx/ipfs/QmU4emVTYFKnoJ5yK3pPEN9joyEx6U7y892PDx26ZtNxQd/badger/y"
-	"gx/ipfs/QmVmDhyTTUcQXFD1rRQ64fGLMSAoaQvNH3hwuaCFAPq2hy/errors"
+	"github.com/dgraph-io/badger/y"
+	farm "github.com/dgryski/go-farm"
+	"github.com/pkg/errors"
 )
 
 type oracle struct {
@@ -125,6 +125,12 @@ func (o *oracle) nextTs() uint64 {
 	o.Lock()
 	defer o.Unlock()
 	return o.nextTxnTs
+}
+
+func (o *oracle) incrementNextTs() {
+	o.Lock()
+	defer o.Unlock()
+	o.nextTxnTs++
 }
 
 // Any deleted or invalid versions at or below ts would be discarded during
@@ -353,7 +359,7 @@ func (txn *Txn) SetWithDiscard(key, val []byte, meta byte) error {
 
 // SetWithTTL adds a key-value pair to the database, along with a time-to-live
 // (TTL) setting. A key stored with a TTL would automatically expire after the
-// time has elapsed , and be eligible for garbage collection.
+// time has elapsed, and be eligible for garbage collection.
 //
 // The current transaction keeps a reference to the key and val byte slice
 // arguments. Users must not modify key and val until the end of the
@@ -361,6 +367,12 @@ func (txn *Txn) SetWithDiscard(key, val []byte, meta byte) error {
 func (txn *Txn) SetWithTTL(key, val []byte, dur time.Duration) error {
 	expire := time.Now().Add(dur).Unix()
 	e := &Entry{Key: key, Value: val, ExpiresAt: uint64(expire)}
+	return txn.SetEntry(e)
+}
+
+// setMergeEntry is similar to SetEntry but it sets the bitMergeEntry flag
+func (txn *Txn) setMergeEntry(key, val []byte) error {
+	e := &Entry{Key: key, Value: val, meta: bitMergeEntry}
 	return txn.SetEntry(e)
 }
 

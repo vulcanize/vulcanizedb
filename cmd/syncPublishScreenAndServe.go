@@ -47,6 +47,7 @@ func init() {
 }
 
 func syncPublishScreenAndServe() {
+	log.SetLevel(log.DebugLevel)
 	blockChain, ethClient, rpcClient := getBlockChainAndClients()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())

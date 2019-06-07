@@ -64,8 +64,13 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 		for {
 			select {
 			case packet := <-payloadChannel:
-				if err := notifier.Notify(rpcSub.ID, packet); err != nil {
-					log.Error("Failed to send state diff packet", "err", err)
+				if notifyErr := notifier.Notify(rpcSub.ID, packet); notifyErr != nil {
+					log.Error("Failed to send state diff packet", "err", notifyErr)
+					unSubErr := api.snp.Unsubscribe(rpcSub.ID)
+					if unSubErr != nil {
+						log.Error("Failed to unsubscribe from the state diff service", unSubErr)
+					}
+					return
 				}
 			case <-rpcSub.Err():
 				err := api.snp.Unsubscribe(rpcSub.ID)

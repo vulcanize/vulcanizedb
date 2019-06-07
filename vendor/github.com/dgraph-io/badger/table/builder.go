@@ -22,8 +22,8 @@ import (
 	"io"
 	"math"
 
-	"gx/ipfs/QmU4emVTYFKnoJ5yK3pPEN9joyEx6U7y892PDx26ZtNxQd/badger/y"
-	"gx/ipfs/QmWaLViWQF8jgyoLLqqcSrnp6dJpHESiJfzor1vrfDyTZf/bbloom"
+	"github.com/AndreasBriese/bbloom"
+	"github.com/dgraph-io/badger/y"
 )
 
 var (
@@ -201,7 +201,7 @@ func (b *Builder) blockIndex() []byte {
 
 // Finish finishes the table by appending the index.
 func (b *Builder) Finish() []byte {
-	bf, _ := bbloom.New(float64(b.keyCount), 0.01)
+	bf := bbloom.New(float64(b.keyCount), 0.01)
 	var klen [2]byte
 	key := make([]byte, 1024)
 	for {
@@ -224,7 +224,7 @@ func (b *Builder) Finish() []byte {
 	b.buf.Write(index)
 
 	// Write bloom filter.
-	bdata, _ := bf.JSONMarshal()
+	bdata := bf.JSONMarshal()
 	n, err := b.buf.Write(bdata)
 	y.Check(err)
 	var buf [4]byte

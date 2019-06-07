@@ -22,8 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 )
 
 var _ = Describe("Streamer", func() {
@@ -32,7 +31,7 @@ var _ = Describe("Streamer", func() {
 			mockStreamer := mocks.StateDiffStreamer{}
 			mockStreamer.ReturnSub = &rpc.ClientSubscription{}
 			mockStreamer.StreamPayloads = []statediff.Payload{
-				helpers.MockStatediffPayload,
+				mocks.MockStatediffPayload,
 			}
 			payloadChan := make(chan statediff.Payload, 1)
 			sub, err := mockStreamer.Stream(payloadChan)
@@ -40,7 +39,7 @@ var _ = Describe("Streamer", func() {
 			Expect(sub).To(Equal(&rpc.ClientSubscription{}))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 			streamedPayload := <-payloadChan
-			Expect(streamedPayload).To(Equal(helpers.MockStatediffPayload))
+			Expect(streamedPayload).To(Equal(mocks.MockStatediffPayload))
 		})
 	})
 })
