@@ -209,8 +209,7 @@ func (sap *Service) processResponse(payload IPLDPayload) error {
 // Subscribe is used by the API to subscribe to the service loop
 func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription) {
 	log.Info("Subscribing to the seed node service")
-	sap.Lock()
-	sap.Subscriptions[id] = Subscription{
+	subscription := Subscription{
 		PayloadChan:   sub,
 		QuitChan:      quitChan,
 		StreamFilters: streamFilters,
@@ -218,40 +217,46 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan ch
 	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
 	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
 	if streamFilters.BackFill || streamFilters.BackFillOnly {
-		log.Debug("back-filling data for id", id)
-		// Retrieve cached CIDs relevant to this subscriber
-		cidWrappers, err := sap.Retriever.RetrieveCIDs(*streamFilters)
-		if err != nil {
-			log.Error(err)
-			sap.serve(id, ResponsePayload{
-				ErrMsg: "CID retrieval error: " + err.Error(),
-			})
-			return
-		}
-		for _, cidWrapper := range cidWrappers {
-			blocksWrapper, err := sap.Fetcher.FetchCIDs(cidWrapper)
-			if err != nil {
-				log.Error(err)
-				sap.serve(id, ResponsePayload{
-					ErrMsg: "IPLD fetching error: " + err.Error(),
-				})
-				return
-			}
-			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
-			if err != nil {
-				log.Error(err)
-				sap.serve(id, ResponsePayload{
-					ErrMsg: "IPLD resolving error: " + err.Error(),
-				})
-				return
-			}
-			sap.serve(id, *backFillIplds)
-		}
-		if streamFilters.BackFillOnly {
-			delete(sap.Subscriptions, id)
+		sap.backFill(subscription, id)
+	}
+	if !streamFilters.BackFillOnly {
+		sap.Lock()
+		sap.Subscriptions[id] = subscription
+		sap.Unlock()
+	}
+}
+
+func (sap *Service) backFill(sub Subscription, id rpc.ID) {
+	log.Debug("back-filling data for id", id)
+	// Retrieve cached CIDs relevant to this subscriber
+	cidWrappers, err := sap.Retriever.RetrieveCIDs(*sub.StreamFilters)
+	if err != nil {
+		sub.PayloadChan <- ResponsePayload{
+			ErrMsg: "CID retrieval error: " + err.Error(),
 		}
 	}
-	sap.Unlock()
+	for _, cidWrapper := range cidWrappers {
+		blocksWrapper, err := sap.Fetcher.FetchCIDs(cidWrapper)
+		if err != nil {
+			log.Error(err)
+			sub.PayloadChan <- ResponsePayload{
+				ErrMsg: "IPLD fetching error: " + err.Error(),
+			}
+		}
+		backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
+		if err != nil {
+			log.Error(err)
+			sub.PayloadChan <- ResponsePayload{
+				ErrMsg: "IPLD resolving error: " + err.Error(),
+			}
+		}
+		select {
+		case sub.PayloadChan <- *backFillIplds:
+			log.Infof("sending seed node back-fill payload to subscription %s", id)
+		default:
+			log.Infof("unable to send back-fill ppayload to subscription %s; channel has no receiver", id)
+		}
+	}
 }
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop

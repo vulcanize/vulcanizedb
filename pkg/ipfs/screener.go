@@ -128,8 +128,9 @@ func (s *Screener) filerReceipts(streamFilters *config.Subscription, response *R
 	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock, streamFilters.EndingBlock, payload.BlockNumber.Int64()) {
 		for i, receipt := range payload.Receipts {
 			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, trxHashes) {
+				receiptForStorage := (*types.ReceiptForStorage)(receipt)
 				receiptBuffer := new(bytes.Buffer)
-				err := receipt.EncodeRLP(receiptBuffer)
+				err := receiptForStorage.EncodeRLP(receiptBuffer)
 				if err != nil {
 					return err
 				}

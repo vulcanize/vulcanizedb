@@ -95,10 +95,10 @@ func streamSubscribe() {
 					continue
 				}
 				fmt.Printf("Transaction with hash %s\n", trx.Hash().Hex())
-				fmt.Printf("trx: %v", trx)
+				fmt.Printf("trx: %v\n", trx)
 			}
 			for _, rctRlp := range payload.ReceiptsRlp {
-				var rct types.Receipt
+				var rct types.ReceiptForStorage
 				buff := bytes.NewBuffer(rctRlp)
 				stream := rlp.NewStream(buff, 0)
 				err = rct.DecodeRLP(stream)
@@ -107,7 +107,7 @@ func streamSubscribe() {
 					continue
 				}
 				fmt.Printf("Receipt with block hash %s, trx hash %s\n", rct.BlockHash.Hex(), rct.TxHash.Hex())
-				fmt.Printf("rct: %v", rct)
+				fmt.Printf("rct: %v\n", rct)
 				for _, l := range rct.Logs {
 					if len(l.Topics) < 1 {
 						log.Error(fmt.Sprintf("log only has %d topics", len(l.Topics)))
