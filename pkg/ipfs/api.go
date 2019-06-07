@@ -56,8 +56,8 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan ResponsePayload)
-		quitChan := make(chan bool)
+		payloadChannel := make(chan ResponsePayload, payloadChanBufferSize)
+		quitChan := make(chan bool, 1)
 		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, &streamFilters)
 
 		// loop and await state diff payloads and relay them to the subscriber with then notifier
