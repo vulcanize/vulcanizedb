@@ -56,7 +56,7 @@ func streamSubscribe() {
 	str := streamer.NewSeedStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan ipfs.ResponsePayload, 8000)
+	payloadChan := make(chan ipfs.ResponsePayload, 20000)
 
 	// Subscribe to the seed node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, subConfig)
