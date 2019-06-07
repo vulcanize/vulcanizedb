@@ -20,19 +20,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 )
 
 var _ = Describe("Converter", func() {
 	Describe("Convert", func() {
 		It("Converts StatediffPayloads into IPLDPayloads", func() {
 			mockConverter := mocks.PayloadConverter{}
-			mockConverter.ReturnIPLDPayload = &helpers.MockIPLDPayload
-			ipldPayload, err := mockConverter.Convert(helpers.MockStatediffPayload)
+			mockConverter.ReturnIPLDPayload = &mocks.MockIPLDPayload
+			ipldPayload, err := mockConverter.Convert(mocks.MockStatediffPayload)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(ipldPayload).To(Equal(&helpers.MockIPLDPayload))
-			Expect(mockConverter.PassedStatediffPayload).To(Equal(helpers.MockStatediffPayload))
+			Expect(ipldPayload).To(Equal(&mocks.MockIPLDPayload))
+			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStatediffPayload))
 		})
 	})
 })

@@ -18,7 +18,6 @@ package ipfs
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/ipfs/go-block-format"
 )
 

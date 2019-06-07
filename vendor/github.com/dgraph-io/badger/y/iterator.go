@@ -21,7 +21,7 @@ import (
 	"container/heap"
 	"encoding/binary"
 
-	"gx/ipfs/QmVmDhyTTUcQXFD1rRQ64fGLMSAoaQvNH3hwuaCFAPq2hy/errors"
+	"github.com/pkg/errors"
 )
 
 // ValueStruct represents the value info that can be associated with a key, but also the internal

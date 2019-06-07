@@ -63,8 +63,8 @@
   version = "0.4.20"
 
 [[override]]
-  name = "github.com/ipfs/go-ds-badger"
-  version = "0.0.3"
+  name = "github.com/dgraph-io/badger"
+  revision = "0ce1d2e26af1ba8b8a72ea864145a3e1e3b382cd"
 
 [prune]
   go-tests = true

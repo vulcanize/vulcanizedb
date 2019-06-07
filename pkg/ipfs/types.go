@@ -43,7 +43,7 @@ type ResponsePayload struct {
 	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
 	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
 	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
-	Err             error                                  `json:"error"`
+	ErrMsg          string                                 `json:"errMsg"`
 
 	encoded []byte
 	err     error
