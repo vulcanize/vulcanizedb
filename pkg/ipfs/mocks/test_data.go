@@ -14,20 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package helpers
+package mocks
 
 import (
 	"errors"
 	"math/big"
 	"math/rand"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // Test variables

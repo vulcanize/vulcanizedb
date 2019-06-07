@@ -20,17 +20,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 )
 
 var _ = Describe("Repository", func() {
 	Describe("Index", func() {
 		It("Indexes CIDs against their metadata", func() {
 			mockRepo := mocks.CIDRepository{}
-			err := mockRepo.Index(&helpers.MockCIDPayload)
+			err := mockRepo.Index(&mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(mockRepo.PassedCIDPayload).To(Equal(&helpers.MockCIDPayload))
+			Expect(mockRepo.PassedCIDPayload).To(Equal(&mocks.MockCIDPayload))
 		})
 	})
 })

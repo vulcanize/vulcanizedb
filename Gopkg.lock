@@ -129,19 +129,18 @@
   version = "v1.7.1"
 
 [[projects]]
-  digest = "1:5f5090f05382959db941fa45acbeb7f4c5241aa8ac0f8f4393dec696e5953f53"
+  digest = "1:98436a9785f711ffee66f06265296dd36afd6e3dc532410c98a9051b5fd4c2f1"
   name = "github.com/dgraph-io/badger"
   packages = [
     ".",
     "options",
-    "protos",
+    "pb",
     "skl",
     "table",
     "y",
   ]
   pruneopts = "UT"
-  revision = "99233d725dbdd26d156c61b2f42ae1671b794656"
-  version = "gx/v1.5.4"
+  revision = "0ce1d2e26af1ba8b8a72ea864145a3e1e3b382cd"
 
 [[projects]]
   branch = "master"
@@ -2289,6 +2288,7 @@
     "github.com/ethereum/go-ethereum/accounts/abi/bind",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
+    "github.com/ethereum/go-ethereum/core",
     "github.com/ethereum/go-ethereum/core/rawdb",
     "github.com/ethereum/go-ethereum/core/state",
     "github.com/ethereum/go-ethereum/core/types",

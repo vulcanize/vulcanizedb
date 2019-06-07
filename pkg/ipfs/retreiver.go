@@ -19,6 +19,8 @@ package ipfs
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -49,6 +51,7 @@ func (ecr *EthCIDRetriever) GetLastBlockNumber() (int64, error) {
 
 // RetrieveCIDs is used to retrieve all of the CIDs which conform to the passed StreamFilters
 func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]CidWrapper, error) {
+	log.Debug("retrieving cids")
 	var endingBlock int64
 	var err error
 	if streamFilters.EndingBlock <= 0 || streamFilters.EndingBlock <= streamFilters.StartingBlock {
@@ -63,70 +66,68 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 		return nil, err
 	}
 	for i := streamFilters.StartingBlock; i <= endingBlock; i++ {
-		cw := &CidWrapper{
-			BlockNumber:  i,
-			Headers:      make([]string, 0),
-			Transactions: make([]string, 0),
-			Receipts:     make([]string, 0),
-			StateNodes:   make([]StateNodeCID, 0),
-			StorageNodes: make([]StorageNodeCID, 0),
-		}
+		cw := CidWrapper{}
 		if !streamFilters.HeaderFilter.Off {
-			err = ecr.retrieveHeaderCIDs(tx, streamFilters, cw, i)
+			cw.Headers, err = ecr.retrieveHeaderCIDs(tx, streamFilters, i)
 			if err != nil {
 				tx.Rollback()
+				log.Error("header cid retrieval error")
 				return nil, err
 			}
 		}
 		var trxIds []int64
 		if !streamFilters.TrxFilter.Off {
-			trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, cw, i)
+			cw.Transactions, trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, i)
 			if err != nil {
 				tx.Rollback()
+				log.Error("transaction cid retrieval error")
 				return nil, err
 			}
 		}
 		if !streamFilters.ReceiptFilter.Off {
-			err = ecr.retrieveRctCIDs(tx, streamFilters, cw, i, trxIds)
+			cw.Receipts, err = ecr.retrieveRctCIDs(tx, streamFilters, i, trxIds)
 			if err != nil {
 				tx.Rollback()
+				log.Error("receipt cid retrieval error")
 				return nil, err
 			}
 		}
 		if !streamFilters.StateFilter.Off {
-			err = ecr.retrieveStateCIDs(tx, streamFilters, cw, i)
+			cw.StateNodes, err = ecr.retrieveStateCIDs(tx, streamFilters, i)
 			if err != nil {
 				tx.Rollback()
+				log.Error("state cid retrieval error")
 				return nil, err
 			}
 		}
 		if !streamFilters.StorageFilter.Off {
-			err = ecr.retrieveStorageCIDs(tx, streamFilters, cw, i)
+			cw.StorageNodes, err = ecr.retrieveStorageCIDs(tx, streamFilters, i)
 			if err != nil {
 				tx.Rollback()
+				log.Error("storage cid retrieval error")
 				return nil, err
 			}
 		}
-		cids = append(cids, *cw)
+		cids = append(cids, cw)
 	}
 
-	return cids, err
+	return cids, tx.Commit()
 }
 
-func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
-	var pgStr string
-	if streamFilters.HeaderFilter.FinalOnly {
-		pgStr = `SELECT cid FROM header_cids
-				WHERE block_number = $1
-				AND final IS TRUE`
-	} else {
-		pgStr = `SELECT cid FROM header_cids
+func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, error) {
+	log.Debug("retrieving header cids")
+	headers := make([]string, 0)
+	pgStr := `SELECT cid FROM header_cids
 				WHERE block_number = $1`
+	if streamFilters.HeaderFilter.FinalOnly {
+		pgStr += ` AND final IS TRUE`
 	}
-	return tx.Select(cids.Headers, pgStr, blockNumber)
+	err := tx.Select(&headers, pgStr, blockNumber)
+	return headers, err
 }
 
-func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) ([]int64, error) {
+func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, []int64, error) {
+	log.Debug("retrieving transaction cids")
 	args := make([]interface{}, 0, 3)
 	type result struct {
 		ID  int64  `db:"id"`
@@ -144,19 +145,21 @@ func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Su
 		pgStr += ` AND transaction_cids.src = ANY($3::VARCHAR(66)[])`
 		args = append(args, pq.Array(streamFilters.TrxFilter.Src))
 	}
-	err := tx.Select(results, pgStr, args...)
+	err := tx.Select(&results, pgStr, args...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	ids := make([]int64, 0)
+	ids := make([]int64, 0, len(results))
+	cids := make([]string, 0, len(results))
 	for _, res := range results {
-		cids.Transactions = append(cids.Transactions, res.Cid)
+		cids = append(cids, res.Cid)
 		ids = append(ids, res.ID)
 	}
-	return ids, nil
+	return cids, ids, nil
 }
 
-func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64, trxIds []int64) error {
+func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64, trxIds []int64) ([]string, error) {
+	log.Debug("retrieving receipt cids")
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -173,10 +176,13 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Su
 	} else {
 		pgStr += `)`
 	}
-	return tx.Select(cids.Receipts, pgStr, args...)
+	receiptCids := make([]string, 0)
+	err := tx.Select(&receiptCids, pgStr, args...)
+	return receiptCids, err
 }
 
-func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StateNodeCID, error) {
+	log.Debug("retrieving state cids")
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.cid, state_cids.state_key FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.block_number = $1`
@@ -190,10 +196,16 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.
 		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
 	}
-	return tx.Select(cids.StateNodes, pgStr, args...)
+	if !streamFilters.StorageFilter.IntermediateNodes {
+		pgStr += ` AND state_cids.leaf = TRUE`
+	}
+	stateNodeCIDs := make([]StateNodeCID, 0)
+	err := tx.Select(&stateNodeCIDs, pgStr, args...)
+	return stateNodeCIDs, err
 }
 
-func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, cids *CidWrapper, blockNumber int64) error {
+func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StorageNodeCID, error) {
+	log.Debug("retrieving storage cids")
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key FROM storage_cids, state_cids, header_cids
 			WHERE storage_cids.state_id = state_cids.id 
@@ -213,7 +225,10 @@ func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters confi
 		pgStr += ` AND storage_cids.storage_key = ANY($3::VARCHAR(66)[])`
 		args = append(args, pq.Array(streamFilters.StorageFilter.StorageKeys))
 	}
-	return tx.Select(cids.StorageNodes, pgStr, args...)
+	if !streamFilters.StorageFilter.IntermediateNodes {
+		pgStr += ` AND storage_cids.leaf = TRUE`
+	}
+	storageNodeCIDs := make([]StorageNodeCID, 0)
+	err := tx.Select(&storageNodeCIDs, pgStr, args...)
+	return storageNodeCIDs, err
 }
-
-// ADD IF LEAF ONLY!!

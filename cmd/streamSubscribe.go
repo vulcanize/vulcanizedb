@@ -17,7 +17,9 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -48,6 +50,7 @@ func init() {
 }
 
 func streamSubscribe() {
+	log.SetLevel(log.DebugLevel)
 	// Prep the subscription config/filters to be sent to the server
 	subscriptionConfig()
 
@@ -61,27 +64,26 @@ func streamSubscribe() {
 	// Subscribe to the seed node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, subConfig)
 	if err != nil {
-		println(err.Error())
 		log.Fatal(err)
 	}
-
+	log.Info("awaiting payloads")
 	// Receive response payloads and print out the results
 	for {
 		select {
 		case payload := <-payloadChan:
-			if payload.Err != nil {
-				log.Error(payload.Err)
+			if payload.ErrMsg != "" {
+				log.Error(payload.ErrMsg)
+				continue
 			}
 			for _, headerRlp := range payload.HeadersRlp {
 				var header types.Header
 				err = rlp.Decode(bytes.NewBuffer(headerRlp), &header)
 				if err != nil {
-					println(err.Error())
 					log.Error(err)
+					continue
 				}
-				println("Header")
-				println(header.Hash().Hex())
-				println(header.Number.Int64())
+				fmt.Printf("Header number %d, hash %s\n", header.Number.Int64(), header.Hash().Hex())
+				fmt.Printf("header: %v\n", header)
 			}
 			for _, trxRlp := range payload.TransactionsRlp {
 				var trx types.Transaction
@@ -89,11 +91,11 @@ func streamSubscribe() {
 				stream := rlp.NewStream(buff, 0)
 				err := trx.DecodeRLP(stream)
 				if err != nil {
-					println(err.Error())
 					log.Error(err)
+					continue
 				}
-				println("Trx")
-				println(trx.Hash().Hex())
+				fmt.Printf("Transaction with hash %s\n", trx.Hash().Hex())
+				fmt.Printf("trx: %v", trx)
 			}
 			for _, rctRlp := range payload.ReceiptsRlp {
 				var rct types.Receipt
@@ -101,52 +103,59 @@ func streamSubscribe() {
 				stream := rlp.NewStream(buff, 0)
 				err = rct.DecodeRLP(stream)
 				if err != nil {
-					println(err.Error())
 					log.Error(err)
+					continue
 				}
-				println("Rct")
+				fmt.Printf("Receipt with block hash %s, trx hash %s\n", rct.BlockHash.Hex(), rct.TxHash.Hex())
+				fmt.Printf("rct: %v", rct)
 				for _, l := range rct.Logs {
-					println("log")
-					println(l.BlockHash.Hex())
-					println(l.TxHash.Hex())
-					println(l.Address.Hex())
+					if len(l.Topics) < 1 {
+						log.Error(fmt.Sprintf("log only has %d topics", len(l.Topics)))
+						continue
+					}
+					fmt.Printf("Log for block hash %s, trx hash %s, address %s, and with topic0 %s\n",
+						l.BlockHash.Hex(), l.TxHash.Hex(), l.Address.Hex(), l.Topics[0].Hex())
+					fmt.Printf("log: %v\n", l)
 				}
 			}
+			// This assumes leafs only
 			for key, stateRlp := range payload.StateNodesRlp {
 				var acct state.Account
 				err = rlp.Decode(bytes.NewBuffer(stateRlp), &acct)
 				if err != nil {
-					println(err.Error())
 					log.Error(err)
+					continue
 				}
-				println("State")
-				print("key: ")
-				println(key.Hex())
-				print("root: ")
-				println(acct.Root.Hex())
-				print("balance: ")
-				println(acct.Balance.Int64())
+				fmt.Printf("Account for key %s, and root %s, with balance %d\n",
+					key.Hex(), acct.Root.Hex(), acct.Balance.Int64())
+				fmt.Printf("state account: %v\n", acct)
 			}
 			for stateKey, mappedRlp := range payload.StorageNodesRlp {
-				println("Storage")
-				print("state key: ")
-				println(stateKey.Hex())
+				fmt.Printf("Storage for state key %s ", stateKey.Hex())
 				for storageKey, storageRlp := range mappedRlp {
-					println("Storage")
-					print("key: ")
-					println(storageKey.Hex())
+					fmt.Printf("with storage key %s\n", storageKey.Hex())
 					var i []interface{}
 					err := rlp.DecodeBytes(storageRlp, i)
 					if err != nil {
-						println(err.Error())
 						log.Error(err)
+						continue
 					}
-					print("bytes: ")
-					println(storageRlp)
+					// if a leaf node
+					if len(i) == 2 {
+						keyBytes, ok := i[0].([]byte)
+						if !ok {
+							continue
+						}
+						valueBytes, ok := i[0].([]byte)
+						if !ok {
+							continue
+						}
+						fmt.Printf("Storage leaf key: %s, and value hash: %s\n",
+							common.BytesToHash(keyBytes).Hex(), common.BytesToHash(valueBytes).Hex())
+					}
 				}
 			}
 		case err = <-sub.Err():
-			println(err.Error())
 			log.Fatal(err)
 		}
 	}

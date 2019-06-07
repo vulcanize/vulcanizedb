@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"hash/crc32"
 
-	"gx/ipfs/QmU4emVTYFKnoJ5yK3pPEN9joyEx6U7y892PDx26ZtNxQd/badger/y"
+	"github.com/dgraph-io/badger/y"
 )
 
 type valuePointer struct {
@@ -85,7 +85,8 @@ type Entry struct {
 	meta      byte
 
 	// Fields maintained internally.
-	offset uint32
+	offset   uint32
+	skipVlog bool
 }
 
 func (e *Entry) estimateSize(threshold int) int {

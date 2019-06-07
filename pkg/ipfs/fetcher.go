@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
@@ -50,6 +49,7 @@ func NewIPLDFetcher(ipfsPath string) (*EthIPLDFetcher, error) {
 
 // FetchCIDs is the exported method for fetching and returning all the cids passed in a CidWrapper
 func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
+	log.Debug("fetching iplds")
 	blocks := &IpldWrapper{
 		Headers:      make([]blocks.Block, 0),
 		Transactions: make([]blocks.Block, 0),
@@ -85,6 +85,7 @@ func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
 // fetchHeaders fetches headers
 // It uses the f.fetchBatch method
 func (f *EthIPLDFetcher) fetchHeaders(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching header iplds")
 	headerCids := make([]cid.Cid, 0, len(cids.Headers))
 	for _, c := range cids.Headers {
 		dc, err := cid.Decode(c)
@@ -103,6 +104,7 @@ func (f *EthIPLDFetcher) fetchHeaders(cids CidWrapper, blocks *IpldWrapper) erro
 // fetchTrxs fetches transactions
 // It uses the f.fetchBatch method
 func (f *EthIPLDFetcher) fetchTrxs(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching transaction iplds")
 	trxCids := make([]cid.Cid, 0, len(cids.Transactions))
 	for _, c := range cids.Transactions {
 		dc, err := cid.Decode(c)
@@ -121,6 +123,7 @@ func (f *EthIPLDFetcher) fetchTrxs(cids CidWrapper, blocks *IpldWrapper) error {
 // fetchRcts fetches receipts
 // It uses the f.fetchBatch method
 func (f *EthIPLDFetcher) fetchRcts(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching receipt iplds")
 	rctCids := make([]cid.Cid, 0, len(cids.Receipts))
 	for _, c := range cids.Receipts {
 		dc, err := cid.Decode(c)
@@ -140,6 +143,7 @@ func (f *EthIPLDFetcher) fetchRcts(cids CidWrapper, blocks *IpldWrapper) error {
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state keys
 func (f *EthIPLDFetcher) fetchState(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching state iplds")
 	for _, stateNode := range cids.StateNodes {
 		if stateNode.CID == "" || stateNode.Key == "" {
 			continue
@@ -161,6 +165,7 @@ func (f *EthIPLDFetcher) fetchState(cids CidWrapper, blocks *IpldWrapper) error 
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state and storage keys
 func (f *EthIPLDFetcher) fetchStorage(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching storage iplds")
 	for _, storageNode := range cids.StorageNodes {
 		if storageNode.CID == "" || storageNode.Key == "" || storageNode.StateKey == "" {
 			continue
