@@ -121,7 +121,8 @@ func (sap *Service) APIs() []rpc.API {
 }
 
 // SyncAndPublish is the backend processing loop which streams data from geth, converts it to iplds, publishes them to ipfs, and indexes their cids
-// It then forwards the data to the Serve() loop which filters and sends relevant data to client subscriptions
+// This continues on no matter if or how many subscribers there are, it then forwards the data to the ScreenAndServe() loop
+// which filters and sends relevant data to client subscriptions, if there are any
 func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- IPLDPayload, forwardQuitchan chan<- bool) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
@@ -173,7 +174,8 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<-
 	return nil
 }
 
-// ScreenAndServe is the processing loop used to screen data streamed from the state diffing eth node and send the appropriate data to a requesting client subscription
+// ScreenAndServe is the loop used to screen data streamed from the state diffing eth node
+// and send the appropriate portions of it to a requesting client subscription, according to their subscription configuration
 func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool) {
 	wg.Add(1)
 	go func() {
@@ -206,32 +208,32 @@ func (sap *Service) processResponse(payload IPLDPayload) error {
 
 // Subscribe is used by the API to subscribe to the service loop
 func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription) {
-	log.Info("Subscribing to the statediff service")
+	log.Info("Subscribing to the seed node service")
 	sap.Lock()
 	sap.Subscriptions[id] = Subscription{
 		PayloadChan:   sub,
 		QuitChan:      quitChan,
 		StreamFilters: streamFilters,
 	}
-	sap.Unlock()
 	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
 	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
-	if streamFilters.BackFill {
+	if streamFilters.BackFill || streamFilters.BackFillOnly {
+		log.Debug("back-filling data for id", id)
 		// Retrieve cached CIDs relevant to this subscriber
-		cids, err := sap.Retriever.RetrieveCIDs(*streamFilters)
+		cidWrappers, err := sap.Retriever.RetrieveCIDs(*streamFilters)
 		if err != nil {
 			log.Error(err)
 			sap.serve(id, ResponsePayload{
-				Err: err,
+				ErrMsg: "CID retrieval error: " + err.Error(),
 			})
 			return
 		}
-		for _, cid := range cids {
-			blocksWrapper, err := sap.Fetcher.FetchCIDs(cid)
+		for _, cidWrapper := range cidWrappers {
+			blocksWrapper, err := sap.Fetcher.FetchCIDs(cidWrapper)
 			if err != nil {
 				log.Error(err)
 				sap.serve(id, ResponsePayload{
-					Err: err,
+					ErrMsg: "IPLD fetching error: " + err.Error(),
 				})
 				return
 			}
@@ -239,18 +241,22 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan ch
 			if err != nil {
 				log.Error(err)
 				sap.serve(id, ResponsePayload{
-					Err: err,
+					ErrMsg: "IPLD resolving error: " + err.Error(),
 				})
 				return
 			}
 			sap.serve(id, *backFillIplds)
 		}
+		if streamFilters.BackFillOnly {
+			delete(sap.Subscriptions, id)
+		}
 	}
+	sap.Unlock()
 }
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop
 func (sap *Service) Unsubscribe(id rpc.ID) error {
-	log.Info("Unsubscribing from the statediff service")
+	log.Info("Unsubscribing from the seed node service")
 	sap.Lock()
 	_, ok := sap.Subscriptions[id]
 	if !ok {
@@ -263,7 +269,7 @@ func (sap *Service) Unsubscribe(id rpc.ID) error {
 
 // Start is used to begin the service
 func (sap *Service) Start(*p2p.Server) error {
-	log.Info("Starting statediff service")
+	log.Info("Starting seed node service")
 	wg := new(sync.WaitGroup)
 	payloadChan := make(chan IPLDPayload, payloadChanBufferSize)
 	quitChan := make(chan bool, 1)
@@ -276,7 +282,7 @@ func (sap *Service) Start(*p2p.Server) error {
 
 // Stop is used to close down the service
 func (sap *Service) Stop() error {
-	log.Info("Stopping statediff service")
+	log.Info("Stopping seed node service")
 	close(sap.QuitChan)
 	return nil
 }

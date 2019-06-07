@@ -23,9 +23,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gx/ipfs/QmU4emVTYFKnoJ5yK3pPEN9joyEx6U7y892PDx26ZtNxQd/badger/table"
-	"gx/ipfs/QmU4emVTYFKnoJ5yK3pPEN9joyEx6U7y892PDx26ZtNxQd/badger/y"
-	"gx/ipfs/QmVmDhyTTUcQXFD1rRQ64fGLMSAoaQvNH3hwuaCFAPq2hy/errors"
+	"github.com/dgraph-io/badger/table"
+	"github.com/dgraph-io/badger/y"
+	"github.com/pkg/errors"
 )
 
 // summary is produced when DB is closed. Currently it is used only for testing.
