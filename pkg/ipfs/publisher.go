@@ -147,13 +147,6 @@ func (pub *Publisher) publishHeaders(headerRLP []byte) (string, error) {
 }
 
 func (pub *Publisher) publishTransactions(blockBody *types.Body, trxMeta []*TrxMetaData) (map[common.Hash]*TrxMetaData, error) {
-	/*
-		println("publishing transactions")
-		for _, trx := range blockBody.Transactions {
-			println("trx value:")
-			println(trx.Value().Int64())
-		}
-	*/
 	transactionCids, err := pub.TransactionPutter.DagPut(blockBody)
 	if err != nil {
 		return nil, err
@@ -206,7 +199,7 @@ func (pub *Publisher) publishStateNodes(stateNodes map[common.Hash]StateNode) (m
 func (pub *Publisher) publishStorageNodes(storageNodes map[common.Hash][]StorageNode) (map[common.Hash][]StorageNodeCID, error) {
 	storageLeafCids := make(map[common.Hash][]StorageNodeCID)
 	for addr, storageTrie := range storageNodes {
-		storageLeafCids[addr] = make([]StorageNodeCID, 0)
+		storageLeafCids[addr] = make([]StorageNodeCID, 0, len(storageTrie))
 		for _, node := range storageTrie {
 			storageNodeCid, err := pub.StoragePutter.DagPut(node.Value)
 			if err != nil {
