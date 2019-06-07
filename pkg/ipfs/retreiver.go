@@ -65,6 +65,8 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 	if err != nil {
 		return nil, err
 	}
+	log.Debug("backfill starting block:", streamFilters.StartingBlock)
+	log.Debug("backfill ending block:", endingBlock)
 	for i := streamFilters.StartingBlock; i <= endingBlock; i++ {
 		cw := CidWrapper{}
 		if !streamFilters.HeaderFilter.Off {
@@ -115,7 +117,7 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 }
 
 func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, error) {
-	log.Debug("retrieving header cids")
+	log.Debug("retrieving header cids for block ", blockNumber)
 	headers := make([]string, 0)
 	pgStr := `SELECT cid FROM header_cids
 				WHERE block_number = $1`
@@ -127,7 +129,7 @@ func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config
 }
 
 func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, []int64, error) {
-	log.Debug("retrieving transaction cids")
+	log.Debug("retrieving transaction cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
 	type result struct {
 		ID  int64  `db:"id"`
@@ -159,7 +161,7 @@ func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Su
 }
 
 func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64, trxIds []int64) ([]string, error) {
-	log.Debug("retrieving receipt cids")
+	log.Debug("retrieving receipt cids for block ", blockNumber)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
@@ -182,7 +184,7 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Su
 }
 
 func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StateNodeCID, error) {
-	log.Debug("retrieving state cids")
+	log.Debug("retrieving state cids for block ", blockNumber)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.cid, state_cids.state_key FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.block_number = $1`
@@ -205,7 +207,7 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.
 }
 
 func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StorageNodeCID, error) {
-	log.Debug("retrieving storage cids")
+	log.Debug("retrieving storage cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key FROM storage_cids, state_cids, header_cids
 			WHERE storage_cids.state_id = state_cids.id 

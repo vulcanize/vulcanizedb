@@ -22,7 +22,8 @@ func (dagPutter *EthBlockReceiptDagPutter) DagPut(raw interface{}) ([]string, er
 	input := raw.(types.Receipts)
 	var output []string
 	for _, r := range input {
-		node, err := getReceiptNode(r)
+		receiptForStorage := (*types.ReceiptForStorage)(r)
+		node, err := getReceiptNode(receiptForStorage)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +36,7 @@ func (dagPutter *EthBlockReceiptDagPutter) DagPut(raw interface{}) ([]string, er
 	return output, nil
 }
 
-func getReceiptNode(receipt *types.Receipt) (*EthReceiptNode, error) {
+func getReceiptNode(receipt *types.ReceiptForStorage) (*EthReceiptNode, error) {
 	buffer := new(bytes.Buffer)
 	err := receipt.EncodeRLP(buffer)
 	if err != nil {

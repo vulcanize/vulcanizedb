@@ -16,11 +16,14 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	syn "sync"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/utils"
@@ -65,7 +68,27 @@ func syncPublishScreenAndServe() {
 		log.Fatal(err)
 	}
 	processor.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
+
+	var ipcPath string
+	ipcPath = viper.GetString("server.ipcPath")
+	if ipcPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
+	}
 	_, _, err = rpc.StartIPCEndpoint(vulcPath, processor.APIs())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wsEndpoint string
+	wsEndpoint = viper.GetString("server.wsEndpoint")
+	if wsEndpoint == "" {
+		wsEndpoint = "127.0.0.1:2019"
+	}
+	_, _, err = rpc.StartWSEndpoint(wsEndpoint, processor.APIs(), []string{"vulcanizedb"}, nil, true)
 	if err != nil {
 		log.Fatal(err)
 	}
