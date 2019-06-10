@@ -163,7 +163,6 @@ func streamSubscribe() {
 
 func subscriptionConfig() {
 	log.Info("loading subscription config")
-	vulcPath = viper.GetString("subscription.path")
 	subConfig = config.Subscription{
 		// Below default to false, which means we do not backfill by default
 		BackFill:     viper.GetBool("subscription.backfill"),
@@ -215,6 +214,10 @@ func subscriptionConfig() {
 }
 
 func getRpcClient() core.RpcClient {
+	vulcPath := viper.GetString("subscription.path")
+	if vulcPath == "" {
+		vulcPath = "ws://127.0.0.1:2019" // default to and try the default ws url if no path is provided
+	}
 	rawRpcClient, err := rpc.Dial(vulcPath)
 	if err != nil {
 		log.Fatal(err)
