@@ -67,6 +67,8 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 	}
 	log.Debug("backfill starting block:", streamFilters.StartingBlock)
 	log.Debug("backfill ending block:", endingBlock)
+	// THIS IS SUPER EXPENSIVE HAVING TO CYCLE THROUGH EACH BLOCK, NEED BETTER WAY TO FETCH CIDS
+	// WHILE STILL MAINTAINING RELATION INFO ABOUT WHAT BLOCK THE CIDS BELONG TO
 	for i := streamFilters.StartingBlock; i <= endingBlock; i++ {
 		cw := CidWrapper{}
 		if !streamFilters.HeaderFilter.Off {

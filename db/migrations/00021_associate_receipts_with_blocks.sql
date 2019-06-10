@@ -11,9 +11,9 @@ ALTER TABLE full_sync_receipts
   ALTER COLUMN block_id SET NOT NULL;
 
 ALTER TABLE full_sync_receipts
-  ADD CONSTRAINT blocks_fk
+  ADD CONSTRAINT eth_blocks_fk
 FOREIGN KEY (block_id)
-REFERENCES blocks (id)
+REFERENCES eth_blocks (id)
 ON DELETE CASCADE;
 
 ALTER TABLE full_sync_receipts
