@@ -16,7 +16,11 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	syn "sync"
+
+	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,7 +52,6 @@ it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 
 func init() {
 	rootCmd.AddCommand(syncAndPublishCmd)
-	syncAndPublishCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "~/.ipfs", "Path for configuring IPFS node")
 }
 
 func syncAndPublish() {
@@ -56,6 +59,15 @@ func syncAndPublish() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool)
+
+	ipfsPath := viper.GetString("client.ipfsPath")
+	if ipfsPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipfsPath = filepath.Join(home, ".ipfs")
+	}
 	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)

@@ -48,8 +48,6 @@ var (
 	syncAll              bool
 	endingBlockNumber    int64
 	recheckHeadersArg    bool
-	ipfsPath             string
-	vulcPath             string
 )
 
 const (

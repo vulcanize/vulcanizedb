@@ -50,7 +50,7 @@ type Publisher struct {
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
 func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
-	l, err := loader.NewPluginLoader("~/.ipfs/plugins")
+	l, err := loader.NewPluginLoader("")
 	if err != nil {
 		return nil, err
 	}

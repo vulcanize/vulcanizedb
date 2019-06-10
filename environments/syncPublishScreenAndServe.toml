@@ -5,6 +5,7 @@
 
 [client]
     ipcPath  = "ws://127.0.0.1:8546"
+    ipfsPath = "/Users/iannorden/.ipfs"
 
 [server]
     ipcPath = "/Users/iannorden/.vulcanize/vulcanize.ipc"
