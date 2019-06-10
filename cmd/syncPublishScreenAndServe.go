@@ -45,8 +45,6 @@ relays relevant data to requesting clients.`,
 
 func init() {
 	rootCmd.AddCommand(syncPublishScreenAndServeCmd)
-	syncPublishScreenAndServeCmd.Flags().StringVarP(&ipfsPath, "ipfs-path", "i", "~/.ipfs", "Path for configuring IPFS node")
-	syncPublishScreenAndServeCmd.Flags().StringVarP(&vulcPath, "sub-path", "p", "~/.vulcanize/vulcanize.ipc", "IPC path for the Vulcanize seed node server")
 }
 
 func syncPublishScreenAndServe() {
@@ -55,6 +53,15 @@ func syncPublishScreenAndServe() {
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool, 1)
+
+	ipfsPath := viper.GetString("client.ipfsPath")
+	if ipfsPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		ipfsPath = filepath.Join(home, ".ipfs")
+	}
 	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +85,7 @@ func syncPublishScreenAndServe() {
 		}
 		ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
 	}
-	_, _, err = rpc.StartIPCEndpoint(vulcPath, processor.APIs())
+	_, _, err = rpc.StartIPCEndpoint(ipcPath, processor.APIs())
 	if err != nil {
 		log.Fatal(err)
 	}
