@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE public.blocks (
+CREATE TABLE public.eth_blocks (
   id            SERIAL PRIMARY KEY,
   difficulty    BIGINT,
   extra_data    VARCHAR,
@@ -20,4 +20,4 @@ CREATE TABLE public.blocks (
 
 
 -- +goose Down
-DROP TABLE public.blocks;
+DROP TABLE public.eth_blocks;

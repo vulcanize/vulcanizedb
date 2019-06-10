@@ -2,7 +2,7 @@
 CREATE TABLE public.uncles (
   id                    SERIAL PRIMARY KEY,
   hash                  VARCHAR(66) NOT NULL,
-  block_id              INTEGER NOT NULL REFERENCES blocks (id) ON DELETE CASCADE,
+  block_id              INTEGER NOT NULL REFERENCES eth_blocks (id) ON DELETE CASCADE,
   reward                NUMERIC NOT NULL,
   miner                 VARCHAR(42) NOT NULL,
   raw                   JSONB,

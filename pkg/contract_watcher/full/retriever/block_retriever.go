@@ -64,7 +64,7 @@ func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (in
 	}
 	err := r.db.Get(
 		&firstBlock,
-		`SELECT number FROM blocks
+		`SELECT number FROM eth_blocks
 		       WHERE id = (SELECT block_id FROM full_sync_receipts
                            WHERE contract_address_id = $1
 		                   ORDER BY block_id ASC
@@ -92,7 +92,7 @@ func (r *blockRetriever) RetrieveMostRecentBlock() (int64, error) {
 	var lastBlock int64
 	err := r.db.Get(
 		&lastBlock,
-		"SELECT number FROM blocks ORDER BY number DESC LIMIT 1",
+		"SELECT number FROM eth_blocks ORDER BY number DESC LIMIT 1",
 	)
 
 	return lastBlock, err
