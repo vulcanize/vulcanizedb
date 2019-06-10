@@ -225,7 +225,7 @@ func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM blocks`)
+	_, err = tx.Exec(`DELETE FROM eth_blocks`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM headers`)

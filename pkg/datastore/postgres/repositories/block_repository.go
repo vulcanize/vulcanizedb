@@ -45,7 +45,7 @@ func NewBlockRepository(database *postgres.DB) *BlockRepository {
 func (blockRepository BlockRepository) SetBlocksStatus(chainHead int64) error {
 	cutoff := chainHead - blocksFromHeadBeforeFinal
 	_, err := blockRepository.database.Exec(`
-                  UPDATE blocks SET is_final = TRUE
+                  UPDATE eth_blocks SET is_final = TRUE
                   WHERE is_final = FALSE AND number < $1`,
 		cutoff)
 
@@ -76,12 +76,12 @@ func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber i
           FROM (
               SELECT generate_series($1::INT, $2::INT) AS all_block_numbers) series
           WHERE all_block_numbers NOT IN (
-		  	  SELECT number FROM blocks WHERE eth_node_fingerprint = $3
+			  SELECT number FROM eth_blocks WHERE eth_node_fingerprint = $3
 		  ) `,
 		startingBlockNumber,
 		highestBlockNumber, nodeId)
 	if err != nil {
-		log.Error("MissingBlockNumbers: error getting blocks: ", err)
+		log.Error("MissingBlockNumbers: error getting eth_blocks: ", err)
 	}
 	return numbers
 }
@@ -104,7 +104,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
                        extra_data,
                        reward,
                        uncles_reward
-               FROM blocks
+               FROM eth_blocks
                WHERE eth_node_id = $1 AND number = $2`, blockRepository.database.NodeID, blockNumber)
 	savedBlock, err := blockRepository.loadBlock(blockRows)
 	if err != nil {
@@ -112,7 +112,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 		case sql.ErrNoRows:
 			return core.Block{}, datastore.ErrBlockDoesNotExist(blockNumber)
 		default:
-			log.Error("GetBlock: error loading blocks: ", err)
+			log.Error("GetBlock: error loading eth_blocks: ", err)
 			return savedBlock, err
 		}
 	}
@@ -126,7 +126,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		return 0, postgres.ErrBeginTransactionFailed(beginErr)
 	}
 	insertBlockErr := tx.QueryRow(
-		`INSERT INTO blocks
+		`INSERT INTO eth_blocks
                 (eth_node_id, number, gas_limit, gas_used, time, difficulty, hash, nonce, parent_hash, size, uncle_hash, is_final, miner, extra_data, reward, uncles_reward, eth_node_fingerprint)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING id `,
@@ -277,7 +277,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 	// TODO: handle possible error
 	blockRepository.database.Get(&retrievedBlockHash,
 		`SELECT hash
-               FROM blocks
+               FROM eth_blocks
                WHERE number = $1 AND eth_node_id = $2`,
 		block.Number, blockRepository.database.NodeID)
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
@@ -304,7 +304,7 @@ func blockExists(retrievedBlockHash string) bool {
 
 func (blockRepository BlockRepository) removeBlock(blockNumber int64) error {
 	_, err := blockRepository.database.Exec(
-		`DELETE FROM blocks WHERE number=$1 AND eth_node_id=$2`,
+		`DELETE FROM eth_blocks WHERE number=$1 AND eth_node_id=$2`,
 		blockNumber, blockRepository.database.NodeID)
 	if err != nil {
 		return postgres.ErrDBDeleteFailed(err)

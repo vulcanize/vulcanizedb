@@ -105,7 +105,7 @@ func NewTestDB(node core.Node) *postgres.DB {
 }
 
 func CleanTestDB(db *postgres.DB) {
-	db.MustExec("DELETE FROM blocks")
+	db.MustExec("DELETE FROM eth_blocks")
 	db.MustExec("DELETE FROM checked_headers")
 	// can't delete from eth_nodes since this function is called after the required eth_node is persisted
 	db.MustExec("DELETE FROM full_sync_transactions")
