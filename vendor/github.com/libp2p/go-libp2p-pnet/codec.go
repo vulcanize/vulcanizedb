@@ -1,35 +1,66 @@
 package pnet
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
-
-	mc "github.com/multiformats/go-multicodec"
-	bmux "github.com/multiformats/go-multicodec/base/mux"
 )
 
 var (
-	pathPSKv1   = []byte("/key/swarm/psk/1.0.0/")
-	headerPSKv1 = mc.Header(pathPSKv1)
+	pathPSKv1  = []byte("/key/swarm/psk/1.0.0/")
+	pathBin    = "/bin/"
+	pathBase16 = "/base16/"
+	pathBase64 = "/base64/"
 )
 
-func decodeV1PSK(in io.Reader) (*[32]byte, error) {
-	var err error
-	in, err = mc.WrapTransformPathToHeader(in)
+func readHeader(r *bufio.Reader) ([]byte, error) {
+	header, err := r.ReadBytes('\n')
 	if err != nil {
 		return nil, err
 	}
-	err = mc.ConsumeHeader(in, headerPSKv1)
+
+	return bytes.TrimRight(header, "\r\n"), nil
+}
+
+func expectHeader(r *bufio.Reader, expected []byte) error {
+	header, err := readHeader(r)
 	if err != nil {
-		return nil, fmt.Errorf("psk header error: %s", err.Error())
+		return err
+	}
+	if !bytes.Equal(header, expected) {
+		return fmt.Errorf("expected file header %s, got: %s", pathPSKv1, header)
+	}
+	return nil
+}
+
+func decodeV1PSK(in io.Reader) (*[32]byte, error) {
+	reader := bufio.NewReader(in)
+	if err := expectHeader(reader, pathPSKv1); err != nil {
+		return nil, err
+	}
+	header, err := readHeader(reader)
+	if err != nil {
+		return nil, err
 	}
 
-	in, err = mc.WrapTransformPathToHeader(in)
-	if err != nil {
-		return nil, fmt.Errorf("wrapping error: %s", err.Error())
+	var decoder io.Reader
+	switch string(header) {
+	case pathBase16:
+		decoder = hex.NewDecoder(reader)
+	case pathBase64:
+		decoder = base64.NewDecoder(base64.StdEncoding, reader)
+	case pathBin:
+		decoder = reader
+	default:
+		return nil, fmt.Errorf("unknown encoding: %s", header)
 	}
-	out := [32]byte{}
-
-	err = bmux.AllBasesMux().Decoder(in).Decode(out[:])
-	return &out, err
+	out := new([32]byte)
+	_, err = io.ReadFull(decoder, out[:])
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }

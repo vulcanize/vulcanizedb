@@ -1,4 +1,4 @@
-// package bitswap implements the IPFS exchange interface with the BitSwap
+// Package bitswap implements the IPFS exchange interface with the BitSwap
 // bilateral exchange protocol.
 package bitswap
 
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	bssrs "github.com/ipfs/go-bitswap/sessionrequestsplitter"
+	delay "github.com/ipfs/go-ipfs-delay"
 
 	decision "github.com/ipfs/go-bitswap/decision"
 	bsgetter "github.com/ipfs/go-bitswap/getter"
@@ -24,14 +25,12 @@ import (
 	blocks "github.com/ipfs/go-block-format"
 	cid "github.com/ipfs/go-cid"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	delay "github.com/ipfs/go-ipfs-delay"
 	exchange "github.com/ipfs/go-ipfs-exchange-interface"
-	flags "github.com/ipfs/go-ipfs-flags"
 	logging "github.com/ipfs/go-log"
 	metrics "github.com/ipfs/go-metrics-interface"
 	process "github.com/jbenet/goprocess"
 	procctx "github.com/jbenet/goprocess/context"
-	peer "github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 )
 
 var log = logging.Logger("bitswap")
@@ -39,19 +38,16 @@ var log = logging.Logger("bitswap")
 var _ exchange.SessionExchange = (*Bitswap)(nil)
 
 const (
-	// maxProvidersPerRequest specifies the maximum number of providers desired
-	// from the network. This value is specified because the network streams
-	// results.
-	// TODO: if a 'non-nice' strategy is implemented, consider increasing this value
-	maxProvidersPerRequest = 3
-	findProviderDelay      = 1 * time.Second
-	providerRequestTimeout = time.Second * 10
 	// these requests take at _least_ two minutes at the moment.
-	provideTimeout       = time.Minute * 3
-	sizeBatchRequestChan = 32
+	provideTimeout         = time.Minute * 3
+	defaultProvSearchDelay = time.Second
 )
 
 var (
+	// HasBlockBufferSize is the buffer size of the channel for new blocks
+	// that need to be provided. They should get pulled over by the
+	// provideCollector even before they are actually provided.
+	// TODO: Does this need to be this large givent that?
 	HasBlockBufferSize    = 256
 	provideKeysBufferSize = 2048
 	provideWorkerMax      = 6
@@ -60,22 +56,36 @@ var (
 	metricsBuckets = []float64{1 << 6, 1 << 10, 1 << 14, 1 << 18, 1<<18 + 15, 1 << 22}
 )
 
-func init() {
-	if flags.LowMemMode {
-		HasBlockBufferSize = 64
-		provideKeysBufferSize = 512
-		provideWorkerMax = 16
+// Option defines the functional option type that can be used to configure
+// bitswap instances
+type Option func(*Bitswap)
+
+// ProvideEnabled is an option for enabling/disabling provide announcements
+func ProvideEnabled(enabled bool) Option {
+	return func(bs *Bitswap) {
+		bs.provideEnabled = enabled
 	}
 }
 
-var rebroadcastDelay = delay.Fixed(time.Minute)
+// ProviderSearchDelay overwrites the global provider search delay
+func ProviderSearchDelay(newProvSearchDelay time.Duration) Option {
+	return func(bs *Bitswap) {
+		bs.provSearchDelay = newProvSearchDelay
+	}
+}
+
+// RebroadcastDelay overwrites the global provider rebroadcast delay
+func RebroadcastDelay(newRebroadcastDelay delay.D) Option {
+	return func(bs *Bitswap) {
+		bs.rebroadcastDelay = newRebroadcastDelay
+	}
+}
 
 // New initializes a BitSwap instance that communicates over the provided
 // BitSwapNetwork. This function registers the returned instance as the network
-// delegate.
-// Runs until context is cancelled.
+// delegate. Runs until context is cancelled or bitswap.Close is called.
 func New(parent context.Context, network bsnet.BitSwapNetwork,
-	bstore blockstore.Blockstore) exchange.Interface {
+	bstore blockstore.Blockstore, options ...Option) exchange.Interface {
 
 	// important to use provided parent context (since it may include important
 	// loggable data). It's probably not a good idea to allow bitswap to be
@@ -102,11 +112,13 @@ func New(parent context.Context, network bsnet.BitSwapNetwork,
 		return bsmq.New(ctx, p, network)
 	}
 
-	wm := bswm.New(ctx)
+	wm := bswm.New(ctx, bspm.New(ctx, peerQueueFactory))
 	pqm := bspqm.New(ctx, network)
 
-	sessionFactory := func(ctx context.Context, id uint64, pm bssession.PeerManager, srs bssession.RequestSplitter) bssm.Session {
-		return bssession.New(ctx, id, wm, pm, srs)
+	sessionFactory := func(ctx context.Context, id uint64, pm bssession.PeerManager, srs bssession.RequestSplitter,
+		provSearchDelay time.Duration,
+		rebroadcastDelay delay.D) bssm.Session {
+		return bssession.New(ctx, id, wm, pm, srs, provSearchDelay, rebroadcastDelay)
 	}
 	sessionPeerManagerFactory := func(ctx context.Context, id uint64) bssession.PeerManager {
 		return bsspm.New(ctx, id, network.ConnectionManager(), pqm)
@@ -116,29 +128,35 @@ func New(parent context.Context, network bsnet.BitSwapNetwork,
 	}
 
 	bs := &Bitswap{
-		blockstore:    bstore,
-		engine:        decision.NewEngine(ctx, bstore), // TODO close the engine with Close() method
-		network:       network,
-		process:       px,
-		newBlocks:     make(chan cid.Cid, HasBlockBufferSize),
-		provideKeys:   make(chan cid.Cid, provideKeysBufferSize),
-		wm:            wm,
-		pqm:           pqm,
-		pm:            bspm.New(ctx, peerQueueFactory),
-		sm:            bssm.New(ctx, sessionFactory, sessionPeerManagerFactory, sessionRequestSplitterFactory),
-		counters:      new(counters),
-		dupMetric:     dupHist,
-		allMetric:     allHist,
-		sentHistogram: sentHistogram,
+		blockstore:       bstore,
+		engine:           decision.NewEngine(ctx, bstore, network.ConnectionManager()), // TODO close the engine with Close() method
+		network:          network,
+		process:          px,
+		newBlocks:        make(chan cid.Cid, HasBlockBufferSize),
+		provideKeys:      make(chan cid.Cid, provideKeysBufferSize),
+		wm:               wm,
+		pqm:              pqm,
+		sm:               bssm.New(ctx, sessionFactory, sessionPeerManagerFactory, sessionRequestSplitterFactory),
+		counters:         new(counters),
+		dupMetric:        dupHist,
+		allMetric:        allHist,
+		sentHistogram:    sentHistogram,
+		provideEnabled:   true,
+		provSearchDelay:  defaultProvSearchDelay,
+		rebroadcastDelay: delay.Fixed(time.Minute),
 	}
 
-	bs.wm.SetDelegate(bs.pm)
+	// apply functional options before starting and running bitswap
+	for _, option := range options {
+		option(bs)
+	}
+
 	bs.wm.Startup()
 	bs.pqm.Startup()
 	network.SetDelegate(bs)
 
 	// Start up bitswaps async worker routines
-	bs.startWorkers(px, ctx)
+	bs.startWorkers(ctx, px)
 
 	// bind the context and process.
 	// do it over here to avoid closing before all setup is done.
@@ -153,10 +171,6 @@ func New(parent context.Context, network bsnet.BitSwapNetwork,
 
 // Bitswap instances implement the bitswap protocol.
 type Bitswap struct {
-	// the peermanager manages sending messages to peers in a way that
-	// wont block bitswap operation
-	pm *bspm.PeerManager
-
 	// the wantlist tracks global wants for bitswap
 	wm *bswm.WantManager
 
@@ -193,6 +207,15 @@ type Bitswap struct {
 
 	// the sessionmanager manages tracking sessions
 	sm *bssm.SessionManager
+
+	// whether or not to make provide announcements
+	provideEnabled bool
+
+	// how long to wait before looking for providers in a session
+	provSearchDelay time.Duration
+
+	// how often to rebroadcast providing requests to find more optimized providers
+	rebroadcastDelay delay.D
 }
 
 type counters struct {
@@ -205,17 +228,14 @@ type counters struct {
 	messagesRecvd  uint64
 }
 
-type blockRequest struct {
-	Cid cid.Cid
-	Ctx context.Context
-}
-
 // GetBlock attempts to retrieve a particular block from peers within the
 // deadline enforced by the context.
 func (bs *Bitswap) GetBlock(parent context.Context, k cid.Cid) (blocks.Block, error) {
 	return bsgetter.SyncGetBlock(parent, k, bs.GetBlocks)
 }
 
+// WantlistForPeer returns the currently understood list of blocks requested by a
+// given peer.
 func (bs *Bitswap) WantlistForPeer(p peer.ID) []cid.Cid {
 	var out []cid.Cid
 	for _, e := range bs.engine.WantlistForPeer(p) {
@@ -224,6 +244,8 @@ func (bs *Bitswap) WantlistForPeer(p peer.ID) []cid.Cid {
 	return out
 }
 
+// LedgerForPeer returns aggregated data about blocks swapped and communication
+// with a given peer.
 func (bs *Bitswap) LedgerForPeer(p peer.ID) *decision.Receipt {
 	return bs.engine.LedgerForPeer(p)
 }
@@ -236,7 +258,7 @@ func (bs *Bitswap) LedgerForPeer(p peer.ID) *decision.Receipt {
 // resources, provide a context with a reasonably short deadline (ie. not one
 // that lasts throughout the lifetime of the server)
 func (bs *Bitswap) GetBlocks(ctx context.Context, keys []cid.Cid) (<-chan blocks.Block, error) {
-	session := bs.sm.NewSession(ctx)
+	session := bs.sm.NewSession(ctx, bs.provSearchDelay, bs.rebroadcastDelay)
 	return session.GetBlocks(ctx, keys)
 }
 
@@ -273,15 +295,19 @@ func (bs *Bitswap) receiveBlockFrom(blk blocks.Block, from peer.ID) error {
 
 	bs.engine.AddBlock(blk)
 
-	select {
-	case bs.newBlocks <- blk.Cid():
-		// send block off to be reprovided
-	case <-bs.process.Closing():
-		return bs.process.Close()
+	if bs.provideEnabled {
+		select {
+		case bs.newBlocks <- blk.Cid():
+			// send block off to be reprovided
+		case <-bs.process.Closing():
+			return bs.process.Close()
+		}
 	}
 	return nil
 }
 
+// ReceiveMessage is called by the network interface when a new message is
+// received.
 func (bs *Bitswap) ReceiveMessage(ctx context.Context, p peer.ID, incoming bsmsg.BitSwapMessage) {
 	bs.counterLk.Lock()
 	bs.counters.messagesRecvd++
@@ -324,8 +350,6 @@ func (bs *Bitswap) ReceiveMessage(ctx context.Context, p peer.ID, incoming bsmsg
 	wg.Wait()
 }
 
-var ErrAlreadyHaveBlock = errors.New("already have block")
-
 func (bs *Bitswap) updateReceiveCounters(b blocks.Block) {
 	blkLen := len(b.RawData())
 	has, err := bs.blockstore.Has(b.Cid())
@@ -351,28 +375,34 @@ func (bs *Bitswap) updateReceiveCounters(b blocks.Block) {
 	}
 }
 
-// Connected/Disconnected warns bitswap about peer connections.
+// PeerConnected is called by the network interface
+// when a peer initiates a new connection to bitswap.
 func (bs *Bitswap) PeerConnected(p peer.ID) {
 	bs.wm.Connected(p)
 	bs.engine.PeerConnected(p)
 }
 
-// Connected/Disconnected warns bitswap about peer connections.
+// PeerDisconnected is called by the network interface when a peer
+// closes a connection
 func (bs *Bitswap) PeerDisconnected(p peer.ID) {
 	bs.wm.Disconnected(p)
 	bs.engine.PeerDisconnected(p)
 }
 
+// ReceiveError is called by the network interface when an error happens
+// at the network layer. Currently just logs error.
 func (bs *Bitswap) ReceiveError(err error) {
 	log.Infof("Bitswap ReceiveError: %s", err)
 	// TODO log the network error
 	// TODO bubble the network error up to the parent context/error logger
 }
 
+// Close is called to shutdown Bitswap
 func (bs *Bitswap) Close() error {
 	return bs.process.Close()
 }
 
+// GetWantlist returns the current local wantlist.
 func (bs *Bitswap) GetWantlist() []cid.Cid {
 	entries := bs.wm.CurrentWants()
 	out := make([]cid.Cid, 0, len(entries))
@@ -382,10 +412,17 @@ func (bs *Bitswap) GetWantlist() []cid.Cid {
 	return out
 }
 
+// IsOnline is needed to match go-ipfs-exchange-interface
 func (bs *Bitswap) IsOnline() bool {
 	return true
 }
 
+// NewSession generates a new Bitswap session. You should use this, rather
+// that calling Bitswap.GetBlocks, any time you intend to do several related
+// block requests in a row. The session returned will have it's own GetBlocks
+// method, but the session will use the fact that the requests are related to
+// be more efficient in its requests to peers. If you are using a session
+// from go-blockservice, it will create a bitswap session automatically.
 func (bs *Bitswap) NewSession(ctx context.Context) exchange.Fetcher {
-	return bs.sm.NewSession(ctx)
+	return bs.sm.NewSession(ctx, bs.provSearchDelay, bs.rebroadcastDelay)
 }

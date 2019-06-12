@@ -6,17 +6,18 @@ import (
 	"io"
 	"net"
 
-	salsa20 "github.com/davidlazar/go-crypto/salsa20"
+	"github.com/libp2p/go-libp2p-core/pnet"
+
+	"github.com/davidlazar/go-crypto/salsa20"
 	pool "github.com/libp2p/go-buffer-pool"
-	ipnet "github.com/libp2p/go-libp2p-interface-pnet"
 )
 
 // we are using buffer pool as user needs their slice back
 // so we can't do XOR cripter in place
 var (
-	errShortNonce  = ipnet.NewError("could not read full nonce")
-	errInsecureNil = ipnet.NewError("insecure is nil")
-	errPSKNil      = ipnet.NewError("pre-shread key is nil")
+	errShortNonce  = pnet.NewError("could not read full nonce")
+	errInsecureNil = pnet.NewError("insecure is nil")
+	errPSKNil      = pnet.NewError("pre-shread key is nil")
 )
 
 type pskConn struct {

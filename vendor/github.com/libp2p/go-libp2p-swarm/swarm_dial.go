@@ -7,14 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/transport"
+	lgbl "github.com/libp2p/go-libp2p-loggables"
 
 	logging "github.com/ipfs/go-log"
 	addrutil "github.com/libp2p/go-addr-util"
-	lgbl "github.com/libp2p/go-libp2p-loggables"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
-	transport "github.com/libp2p/go-libp2p-transport"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -34,15 +33,23 @@ var (
 	// been dialed too frequently
 	ErrDialBackoff = errors.New("dial backoff")
 
-	// ErrDialFailed is returned when connecting to a peer has ultimately failed
-	ErrDialFailed = errors.New("dial attempt failed")
-
 	// ErrDialToSelf is returned if we attempt to dial our own peer
 	ErrDialToSelf = errors.New("dial to self attempted")
 
 	// ErrNoTransport is returned when we don't know a transport for the
 	// given multiaddr.
 	ErrNoTransport = errors.New("no transport for protocol")
+
+	// ErrAllDialsFailed is returned when connecting to a peer has ultimately failed
+	ErrAllDialsFailed = errors.New("all dials failed")
+
+	// ErrNoAddresses is returned when we fail to find any addresses for a
+	// peer we're trying to dial.
+	ErrNoAddresses = errors.New("no addresses")
+
+	// ErrNoAddresses is returned when we find addresses for a peer but
+	// can't use any of them.
+	ErrNoGoodAddresses = errors.New("no good addresses")
 )
 
 // DialAttempts governs how many times a goroutine will try to dial a given peer.
@@ -174,7 +181,7 @@ func (db *DialBackoff) Clear(p peer.ID) {
 // the connection will happen over. Swarm can use whichever it choses.
 // This allows us to use various transport protocols, do NAT traversal/relay,
 // etc. to achieve connection.
-func (s *Swarm) DialPeer(ctx context.Context, p peer.ID) (inet.Conn, error) {
+func (s *Swarm) DialPeer(ctx context.Context, p peer.ID) (network.Conn, error) {
 	return s.dialPeer(ctx, p)
 }
 
@@ -210,7 +217,7 @@ func (s *Swarm) dialPeer(ctx context.Context, p peer.ID) (*Conn, error) {
 	}
 
 	// apply the DialPeer timeout
-	ctx, cancel := context.WithTimeout(ctx, inet.GetDialPeerTimeout(ctx))
+	ctx, cancel := context.WithTimeout(ctx, network.GetDialPeerTimeout(ctx))
 	defer cancel()
 
 	conn, err = s.dsync.DialLock(ctx, p)
@@ -256,7 +263,7 @@ func (s *Swarm) doDial(ctx context.Context, p peer.ID) (*Conn, error) {
 		}
 
 		// ok, we failed.
-		return nil, fmt.Errorf("dial attempt failed: %s", err)
+		return nil, err
 	}
 	return conn, nil
 }
@@ -293,11 +300,11 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 	*/
 	peerAddrs := s.peers.Addrs(p)
 	if len(peerAddrs) == 0 {
-		return nil, errors.New("no addresses")
+		return nil, &DialError{Peer: p, Cause: ErrNoAddresses}
 	}
 	goodAddrs := s.filterKnownUndialables(peerAddrs)
 	if len(goodAddrs) == 0 {
-		return nil, errors.New("no good addresses")
+		return nil, &DialError{Peer: p, Cause: ErrNoGoodAddresses}
 	}
 	goodAddrsChan := make(chan ma.Multiaddr, len(goodAddrs))
 	for _, a := range goodAddrs {
@@ -307,20 +314,28 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 	/////////
 
 	// try to get a connection to any addr
-	connC, err := s.dialAddrs(ctx, p, goodAddrsChan)
-	if err != nil {
-		logdial["error"] = err.Error()
-		return nil, err
+	connC, dialErr := s.dialAddrs(ctx, p, goodAddrsChan)
+	if dialErr != nil {
+		logdial["error"] = dialErr.Cause.Error()
+		if dialErr.Cause == context.Canceled {
+			// always prefer the "context canceled" error.
+			// we rely on behing able to check `err == context.Canceled`
+			//
+			// Removing this will BREAK backoff (causing us to
+			// backoff when canceling dials).
+			return nil, context.Canceled
+		}
+		return nil, dialErr
 	}
 	logdial["conn"] = logging.Metadata{
 		"localAddr":  connC.LocalMultiaddr(),
 		"remoteAddr": connC.RemoteMultiaddr(),
 	}
-	swarmC, err := s.addConn(connC, inet.DirOutbound)
+	swarmC, err := s.addConn(connC, network.DirOutbound)
 	if err != nil {
 		logdial["error"] = err.Error()
 		connC.Close() // close the connection. didn't work out :(
-		return nil, err
+		return nil, &DialError{Peer: p, Cause: err}
 	}
 
 	logdial["dial"] = "success"
@@ -352,7 +367,7 @@ func (s *Swarm) filterKnownUndialables(addrs []ma.Multiaddr) []ma.Multiaddr {
 	)
 }
 
-func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.Multiaddr) (transport.Conn, error) {
+func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.Multiaddr) (transport.CapableConn, *DialError) {
 	log.Debugf("%s swarm dialing %s", s.local, p)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -360,26 +375,23 @@ func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.
 
 	// use a single response type instead of errs and conns, reduces complexity *a ton*
 	respch := make(chan dialResult)
-	var dialErrors *multierror.Error
+	err := new(DialError)
 
 	defer s.limiter.clearAllPeerDials(p)
 
 	var active int
+dialLoop:
 	for remoteAddrs != nil || active > 0 {
 		// Check for context cancellations and/or responses first.
 		select {
 		case <-ctx.Done():
-			if dialError := dialErrors.ErrorOrNil(); dialError != nil {
-				return nil, dialError
-			}
-
-			return nil, ctx.Err()
+			break dialLoop
 		case resp := <-respch:
 			active--
 			if resp.Err != nil {
 				// Errors are normal, lots of dials will fail
 				log.Infof("got error on dial: %s", resp.Err)
-				dialErrors = multierror.Append(dialErrors, resp.Err)
+				err.recordErr(resp.Addr, resp.Err)
 			} else if resp.Conn != nil {
 				return resp.Conn, nil
 			}
@@ -400,28 +412,27 @@ func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.
 			s.limitedDial(ctx, p, addr, respch)
 			active++
 		case <-ctx.Done():
-			if dialError := dialErrors.ErrorOrNil(); dialError != nil {
-				return nil, dialError
-			}
-
-			return nil, ctx.Err()
+			break dialLoop
 		case resp := <-respch:
 			active--
 			if resp.Err != nil {
 				// Errors are normal, lots of dials will fail
 				log.Infof("got error on dial: %s", resp.Err)
-				dialErrors = multierror.Append(dialErrors, resp.Err)
+				err.recordErr(resp.Addr, resp.Err)
 			} else if resp.Conn != nil {
 				return resp.Conn, nil
 			}
 		}
 	}
 
-	if dialError := dialErrors.ErrorOrNil(); dialError != nil {
-		return nil, dialError
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		err.Cause = ctxErr
+	} else if len(err.DialErrors) == 0 {
+		err.Cause = network.ErrNoRemoteAddrs
+	} else {
+		err.Cause = ErrAllDialsFailed
 	}
-
-	return nil, inet.ErrNoRemoteAddrs
+	return nil, err
 }
 
 // limitedDial will start a dial to the given peer when
@@ -436,7 +447,7 @@ func (s *Swarm) limitedDial(ctx context.Context, p peer.ID, a ma.Multiaddr, resp
 	})
 }
 
-func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (transport.Conn, error) {
+func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (transport.CapableConn, error) {
 	// Just to double check. Costs nothing.
 	if s.local == p {
 		return nil, ErrDialToSelf
@@ -450,7 +461,7 @@ func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (tra
 
 	connC, err := tpt.Dial(ctx, addr, p)
 	if err != nil {
-		return nil, fmt.Errorf("%s --> %s (%s) dial attempt failed: %s", s.local, p, addr, err)
+		return nil, err
 	}
 
 	// Trust the transport? Yeah... right.

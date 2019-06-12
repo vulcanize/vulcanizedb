@@ -392,6 +392,18 @@ func (hs *clientHandshakeStateTLS13) readServerParameters() error {
 		c.sendAlert(alertUnsupportedExtension)
 		return errors.New("tls: server advertised unrequested ALPN extension")
 	}
+	if c.config.EnforceNextProtoSelection {
+		if len(encryptedExtensions.alpnProtocol) == 0 {
+			// the server didn't select an ALPN
+			c.sendAlert(alertNoApplicationProtocol)
+			return errors.New("ALPN negotiation failed")
+		}
+		if _, fallback := mutualProtocol([]string{encryptedExtensions.alpnProtocol}, hs.c.config.NextProtos); fallback {
+			// the protocol selected by the server was not offered
+			c.sendAlert(alertNoApplicationProtocol)
+			return errors.New("ALPN negotiation failed")
+		}
+	}
 	c.clientProtocol = encryptedExtensions.alpnProtocol
 
 	return nil

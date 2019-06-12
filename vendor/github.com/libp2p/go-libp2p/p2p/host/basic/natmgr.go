@@ -7,8 +7,8 @@ import (
 
 	goprocess "github.com/jbenet/goprocess"
 	goprocessctx "github.com/jbenet/goprocess/context"
+	"github.com/libp2p/go-libp2p-core/network"
 	inat "github.com/libp2p/go-libp2p-nat"
-	inet "github.com/libp2p/go-libp2p-net"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -26,7 +26,7 @@ type NATManager interface {
 }
 
 // Create a NAT manager.
-func NewNATManager(net inet.Network) NATManager {
+func NewNATManager(net network.Network) NATManager {
 	return newNatManager(net)
 }
 
@@ -37,7 +37,7 @@ func NewNATManager(net inet.Network) NATManager {
 //    as the network signals Listen() or ListenClose().
 //  * closing the natManager closes the nat and its mappings.
 type natManager struct {
-	net   inet.Network
+	net   network.Network
 	natmu sync.RWMutex
 	nat   *inat.NAT
 
@@ -48,7 +48,7 @@ type natManager struct {
 	proc goprocess.Process // natManager has a process + children. can be closed.
 }
 
-func newNatManager(net inet.Network) *natManager {
+func newNatManager(net network.Network) *natManager {
 	nmgr := &natManager{
 		net:   net,
 		ready: make(chan struct{}),
@@ -229,15 +229,15 @@ func (nn *nmgrNetNotifiee) natManager() *natManager {
 	return (*natManager)(nn)
 }
 
-func (nn *nmgrNetNotifiee) Listen(n inet.Network, addr ma.Multiaddr) {
+func (nn *nmgrNetNotifiee) Listen(n network.Network, addr ma.Multiaddr) {
 	nn.natManager().sync()
 }
 
-func (nn *nmgrNetNotifiee) ListenClose(n inet.Network, addr ma.Multiaddr) {
+func (nn *nmgrNetNotifiee) ListenClose(n network.Network, addr ma.Multiaddr) {
 	nn.natManager().sync()
 }
 
-func (nn *nmgrNetNotifiee) Connected(inet.Network, inet.Conn)      {}
-func (nn *nmgrNetNotifiee) Disconnected(inet.Network, inet.Conn)   {}
-func (nn *nmgrNetNotifiee) OpenedStream(inet.Network, inet.Stream) {}
-func (nn *nmgrNetNotifiee) ClosedStream(inet.Network, inet.Stream) {}
+func (nn *nmgrNetNotifiee) Connected(network.Network, network.Conn)      {}
+func (nn *nmgrNetNotifiee) Disconnected(network.Network, network.Conn)   {}
+func (nn *nmgrNetNotifiee) OpenedStream(network.Network, network.Stream) {}
+func (nn *nmgrNetNotifiee) ClosedStream(network.Network, network.Stream) {}

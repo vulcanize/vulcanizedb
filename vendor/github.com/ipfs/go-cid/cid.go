@@ -368,7 +368,7 @@ func (c Cid) String() string {
 	case 0:
 		return c.Hash().B58String()
 	case 1:
-		mbstr, err := mbase.Encode(mbase.Base58BTC, c.Bytes())
+		mbstr, err := mbase.Encode(mbase.Base32, c.Bytes())
 		if err != nil {
 			panic("should not error with hardcoded mbase: " + err.Error())
 		}

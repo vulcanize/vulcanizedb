@@ -114,16 +114,17 @@ func (s *blockService) Exchange() exchange.Interface {
 func NewSession(ctx context.Context, bs BlockService) *Session {
 	exch := bs.Exchange()
 	if sessEx, ok := exch.(exchange.SessionExchange); ok {
-		ses := sessEx.NewSession(ctx)
 		return &Session{
-			ses:    ses,
-			sessEx: sessEx,
-			bs:     bs.Blockstore(),
+			sessCtx: ctx,
+			ses:     nil,
+			sessEx:  sessEx,
+			bs:      bs.Blockstore(),
 		}
 	}
 	return &Session{
-		ses: exch,
-		bs:  bs.Blockstore(),
+		ses:     exch,
+		sessCtx: ctx,
+		bs:      bs.Blockstore(),
 	}
 }
 
@@ -177,6 +178,10 @@ func (s *blockService) AddBlocks(bs []blocks.Block) error {
 		}
 	} else {
 		toput = bs
+	}
+
+	if len(toput) == 0 {
+		return nil
 	}
 
 	err := s.blockstore.PutMany(toput)

@@ -1,11 +1,9 @@
 # go-libp2p-crypto
 [![](https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square)](http://libp2p.io/)
-[![](https://img.shields.io/badge/pm-waffle-yellow.svg?style=flat-square)](http://github.com/libp2p/libp2p)
 [![](https://img.shields.io/badge/freenode-%23libp2p-yellow.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23libp2p)
-[![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 [![GoDoc](https://godoc.org/github.com/libp2p/go-libp2p-crypto?status.svg)](https://godoc.org/github.com/ipfs/go-libp2p-crypto)
-[![Coverage Status](https://coveralls.io/repos/github/ipfs/go-libp2p-crypto/badge.svg?branch=master)](https://coveralls.io/github/ipfs/go-libp2p-crypto?branch=master)
 [![Build Status](https://travis-ci.org/libp2p/go-libp2p-crypto.svg?branch=master)](https://travis-ci.org/libp2p/go-libp2p-crypto)
+[![Discourse posts](https://img.shields.io/discourse/https/discuss.libp2p.io/posts.svg)](https://discuss.libp2p.io)
 
 > Various cryptographic utilities used by ipfs
 
@@ -38,3 +36,7 @@ Small note: If editing the README, please conform to the [standard-readme](https
 ## License
 
 [MIT](LICENSE) © 2016 Jeromy Johnson
+
+---
+
+The last gx published version of this module was: 2.0.7: QmTW4SdgBWq9GjsBsHeUx8WuGxzhgzAf88UMH2w62PC8yK

@@ -10,12 +10,12 @@ import (
 
 	ggio "github.com/gogo/protobuf/io"
 	cid "github.com/ipfs/go-cid"
-	inet "github.com/libp2p/go-libp2p-net"
+
+	"github.com/libp2p/go-libp2p-core/network"
 )
 
-// TODO move message.go into the bitswap package
-// TODO move bs/msg/internal/pb to bs/internal/pb and rename pb package to bitswap_pb
-
+// BitSwapMessage is the basic interface for interacting building, encoding,
+// and decoding messages sent on the BitSwap protocol.
 type BitSwapMessage interface {
 	// Wantlist returns a slice of unique keys that represent data wanted by
 	// the sender.
@@ -40,6 +40,8 @@ type BitSwapMessage interface {
 	Loggable() map[string]interface{}
 }
 
+// Exportable is an interface for structures than can be
+// encoded in a bitswap protobuf.
 type Exportable interface {
 	ToProtoV0() *pb.Message
 	ToProtoV1() *pb.Message
@@ -53,6 +55,7 @@ type impl struct {
 	blocks   map[cid.Cid]blocks.Block
 }
 
+// New returns a new, empty bitswap message
 func New(full bool) BitSwapMessage {
 	return newMsg(full)
 }
@@ -65,6 +68,8 @@ func newMsg(full bool) *impl {
 	}
 }
 
+// Entry is an wantlist entry in a Bitswap message (along with whether it's an
+// add or cancel).
 type Entry struct {
 	wantlist.Entry
 	Cancel bool
@@ -163,11 +168,13 @@ func (m *impl) AddBlock(b blocks.Block) {
 	m.blocks[b.Cid()] = b
 }
 
+// FromNet generates a new BitswapMessage from incoming data on an io.Reader.
 func FromNet(r io.Reader) (BitSwapMessage, error) {
-	pbr := ggio.NewDelimitedReader(r, inet.MessageSizeMax)
+	pbr := ggio.NewDelimitedReader(r, network.MessageSizeMax)
 	return FromPBReader(pbr)
 }
 
+// FromPBReader generates a new Bitswap message from a gogo-protobuf reader
 func FromPBReader(pbr ggio.Reader) (BitSwapMessage, error) {
 	pb := new(pb.Message)
 	if err := pbr.ReadMsg(pb); err != nil {

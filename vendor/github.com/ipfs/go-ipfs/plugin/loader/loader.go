@@ -30,6 +30,7 @@ type PluginLoader struct {
 func NewPluginLoader(pluginDir string) (*PluginLoader, error) {
 	plMap := make(map[string]plugin.Plugin)
 	for _, v := range preloadPlugins {
+		println(v.Name())
 		plMap[v.Name()] = v
 	}
 

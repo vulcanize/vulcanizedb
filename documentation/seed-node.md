@@ -16,81 +16,32 @@ To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs)
 
 `make install`
 
-If we want to use Postgres as our backing datastore, the setup is currently considerably more complicated because the Postgres support
-exists on a fork.
+If we want to use Postgres as our backing datastore, we need to use the vulcanize fork of go-ipfs. This fork supports
+the Postgres datastore plugin and has been adjusted to use `dep` instead of Go modules since Go modules cannot work with
+un-versioned forks and we need to use an un-versioned fork of go-ipfs-config.
 
-Begin by downloading and installing the normal IPFS as shown above.
-Once that is done we need to initialize and then startup an IPFS daemon,
-due to the employment of `gx` we need to first have a daemon running in order to publish the hashes that are needed to update it to work with Postgres.
-
-`ipfs init` 
-
-`ipfs daemon`
-
-Now we can go about updating our ipfs dependencies. Start by switching to the Postgres supporting fork:
+Start by adding the fork and switching over to it:
 
 `git remote add vulcanize https://github.com/vulcanize/go-ipfs.git`
 
 `git fetch vulcanize`
 
-`git checkout -b postgres vulcanize/postgres`
+`git checkout -b postgres_update vulcanize/postgres_update`
 
-Switch it's gx dep to use the fork of go-ipfs-config which supports Postgres.
-This go-ipfs-config fork is approved but awaiting merger. It will be gx-ed when it is merged but not before,
-so for now we need to do it ourselves locally:
+Now install this fork of ipfs, first be sure to remove any previous installation. It is important to use the below command
+instead of using `make install`, as `make install` will default to using Go modules and this will wreck our dependencies
+since Go modules cannot work with un-versioned forks.
 
-`go get github.com/ipfs/go-ipfs-config`
+`go install ./cmd/ipfs`
 
-`cd $GOPATH/src/github.com/ipfs/go-ipfs-config`
+Check that is installed properly by running
 
-`git remote add vulcanize https://github.com/vulcanize/go-ipfs-config.git`
+`ipfs`
 
-`git fetch vulcanize`
+You should see the CLI info/help output.
 
-`gx release patch` 
-
-This outputs a hash, let's call it "go-ipfs-config-hash", this hash now needs to be gx imported into go-ipfs:
-
-`cd $GOPATH/src/github.com/ipfs/go-ipfs`
-
-`gx update go-ipfs-config-hash`
-
-This should update the go-ipfs-config dependency, it should also notify that the iptb-plugins has a different,
-conflicting, go-ipfs-config dependency- so we need to patch a fix for that too:
-
-`go get github.com/ipfs/iptb-plugins`
-
-`cd $GOPATH/src/github.com/ipfs/iptb-plugins`
-
-`gx update go-ipfs-config-hash`
-
-`gx release patch`
-
-This outputs a hash, let's call it "iptb-plugins-hash", this hash now needs to be gx imported into go-ipfs too:
-
-`cd $GOPATH/src/github.com/ipfs/go-ipfs`
-
-`gx update iptb-plugins-hash`
-
-And now we should have resolved all of the `gx` dependency issues.
-We can close the ipfs daemon at this point.
-
-Before installing this updated version of ipfs, we first need to edit the `GOPATH/src/github.com/ipfs/go-ipfs/plugin/loader/preload_list` so that
-the postgresds plugin is not commented out on the bottom line. 
-
-After that we need to delete the old, non-postgres, profile we initialized for the ipfs daemon.
-
-`rm ~/.ipfs/config`
-
-And get rid of the old executable
-
-`rm $GOPATH/bin/ipfs`
-
-And now we should be ready to install PG-IPFS.
-
-`make install` 
-
-And this time we initialize with the `postgresds` profile.
+And now we initialize with the `postgresds` profile.
+If ipfs was previously initialized we will need to remove the old profile first.
 We also need to provide env variables for the postgres connection: 
 
 We can either set these manually, e.g.
@@ -113,10 +64,10 @@ which has usage:
 
 and will ask us to enter the password, avoiding storing it to an ENV variable.
 
-Once we have initialized IPFS, that is all we need to do with it- we do not need to run a daemon during the subsequent processes.
+Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes.
 
 ### Geth 
-For Geth, we currently *require* a special fork but the setup is considerably more straight forward than the forked ipfs setup: 
+For Geth, we currently *require* a special fork, and we can set this up as follows:
 
 Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch
 
