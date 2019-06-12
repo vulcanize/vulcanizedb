@@ -9,9 +9,10 @@ import (
 	"net"
 	"sync"
 
-	ic "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	tpt "github.com/libp2p/go-libp2p-transport"
+	ic "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	tpt "github.com/libp2p/go-libp2p-core/transport"
+
 	quic "github.com/lucas-clemente/quic-go"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
@@ -31,26 +32,30 @@ var quicConfig = &quic.Config{
 }
 
 type connManager struct {
-	connIPv4Once sync.Once
-	connIPv4     net.PacketConn
+	mutex sync.Mutex
 
-	connIPv6Once sync.Once
-	connIPv6     net.PacketConn
+	connIPv4 net.PacketConn
+	connIPv6 net.PacketConn
 }
 
 func (c *connManager) GetConnForAddr(network string) (net.PacketConn, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	switch network {
 	case "udp4":
+		if c.connIPv4 != nil {
+			return c.connIPv4, nil
+		}
 		var err error
-		c.connIPv4Once.Do(func() {
-			c.connIPv4, err = c.createConn(network, "0.0.0.0:0")
-		})
+		c.connIPv4, err = c.createConn(network, "0.0.0.0:0")
 		return c.connIPv4, err
 	case "udp6":
+		if c.connIPv6 != nil {
+			return c.connIPv6, nil
+		}
 		var err error
-		c.connIPv6Once.Do(func() {
-			c.connIPv6, err = c.createConn(network, ":0")
-		})
+		c.connIPv6, err = c.createConn(network, ":0")
 		return c.connIPv6, err
 	default:
 		return nil, fmt.Errorf("unsupported network: %s", network)
@@ -95,7 +100,7 @@ func NewTransport(key ic.PrivKey) (tpt.Transport, error) {
 }
 
 // Dial dials a new QUIC connection
-func (t *transport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (tpt.Conn, error) {
+func (t *transport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (tpt.CapableConn, error) {
 	network, host, err := manet.DialArgs(raddr)
 	if err != nil {
 		return nil, err

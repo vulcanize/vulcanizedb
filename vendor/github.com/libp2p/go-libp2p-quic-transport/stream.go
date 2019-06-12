@@ -1,7 +1,8 @@
 package libp2pquic
 
 import (
-	smux "github.com/libp2p/go-stream-muxer"
+	"github.com/libp2p/go-libp2p-core/mux"
+
 	quic "github.com/lucas-clemente/quic-go"
 )
 
@@ -9,7 +10,7 @@ type stream struct {
 	quic.Stream
 }
 
-var _ smux.Stream = &stream{}
+var _ mux.MuxedStream = &stream{}
 
 func (s *stream) Reset() error {
 	s.Stream.CancelRead(0)

@@ -5,15 +5,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/helpers"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	pb "github.com/libp2p/go-libp2p-autonat/pb"
 
 	ggio "github.com/gogo/protobuf/io"
-	libp2p "github.com/libp2p/go-libp2p"
 	autonat "github.com/libp2p/go-libp2p-autonat"
-	host "github.com/libp2p/go-libp2p-host"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 )
@@ -57,13 +58,13 @@ func NewAutoNATService(ctx context.Context, h host.Host, opts ...libp2p.Option) 
 	return as, nil
 }
 
-func (as *AutoNATService) handleStream(s inet.Stream) {
-	defer inet.FullClose(s)
+func (as *AutoNATService) handleStream(s network.Stream) {
+	defer helpers.FullClose(s)
 
 	pid := s.Conn().RemotePeer()
 	log.Debugf("New stream from %s", pid.Pretty())
 
-	r := ggio.NewDelimitedReader(s, inet.MessageSizeMax)
+	r := ggio.NewDelimitedReader(s, network.MessageSizeMax)
 	w := ggio.NewDelimitedWriter(s)
 
 	var req pb.Message
@@ -146,7 +147,7 @@ func (as *AutoNATService) handleDial(p peer.ID, obsaddr ma.Multiaddr, mpi *pb.Me
 		return newDialResponseError(pb.Message_E_DIAL_ERROR, "no dialable addresses")
 	}
 
-	return as.doDial(pstore.PeerInfo{ID: p, Addrs: addrs})
+	return as.doDial(peer.AddrInfo{ID: p, Addrs: addrs})
 }
 
 func (as *AutoNATService) skipDial(addr ma.Multiaddr) bool {
@@ -164,7 +165,7 @@ func (as *AutoNATService) skipDial(addr ma.Multiaddr) bool {
 	return false
 }
 
-func (as *AutoNATService) doDial(pi pstore.PeerInfo) *pb.Message_DialResponse {
+func (as *AutoNATService) doDial(pi peer.AddrInfo) *pb.Message_DialResponse {
 	// rate limit check
 	as.mx.Lock()
 	count := as.reqs[pi.ID]

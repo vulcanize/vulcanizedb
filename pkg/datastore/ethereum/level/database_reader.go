@@ -48,7 +48,7 @@ func (ldbr *LevelDatabaseReader) GetBlockNumber(hash common.Hash) *uint64 {
 }
 
 func (ldbr *LevelDatabaseReader) GetBlockReceipts(hash common.Hash, number uint64) types.Receipts {
-	return rawdb.ReadReceipts(ldbr.reader, hash, number)
+	return rawdb.ReadReceipts(ldbr.reader, hash, number, nil)
 }
 
 func (ldbr *LevelDatabaseReader) GetCanonicalHash(number uint64) common.Hash {

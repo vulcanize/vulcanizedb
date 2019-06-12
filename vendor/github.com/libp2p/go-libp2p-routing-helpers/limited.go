@@ -4,11 +4,9 @@ import (
 	"context"
 	"strings"
 
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
-
-	ci "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
+	ci "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
 )
 
 // LimitedValueStore limits the internal value store to the given namespaces.
@@ -28,7 +26,7 @@ func (lvs *LimitedValueStore) GetPublicKey(ctx context.Context, p peer.ID) (ci.P
 }
 
 // PutValue returns ErrNotSupported
-func (lvs *LimitedValueStore) PutValue(ctx context.Context, key string, value []byte, opts ...ropts.Option) error {
+func (lvs *LimitedValueStore) PutValue(ctx context.Context, key string, value []byte, opts ...routing.Option) error {
 	if !lvs.KeySupported(key) {
 		return routing.ErrNotSupported
 	}
@@ -53,7 +51,7 @@ func (lvs *LimitedValueStore) KeySupported(key string) bool {
 }
 
 // GetValue returns routing.ErrNotFound if key isn't supported
-func (lvs *LimitedValueStore) GetValue(ctx context.Context, key string, opts ...ropts.Option) ([]byte, error) {
+func (lvs *LimitedValueStore) GetValue(ctx context.Context, key string, opts ...routing.Option) ([]byte, error) {
 	if !lvs.KeySupported(key) {
 		return nil, routing.ErrNotFound
 	}
@@ -62,7 +60,7 @@ func (lvs *LimitedValueStore) GetValue(ctx context.Context, key string, opts ...
 
 // SearchValue returns empty channel if key isn't supported or calls SearchValue
 // on the underlying ValueStore
-func (lvs *LimitedValueStore) SearchValue(ctx context.Context, key string, opts ...ropts.Option) (<-chan []byte, error) {
+func (lvs *LimitedValueStore) SearchValue(ctx context.Context, key string, opts ...routing.Option) (<-chan []byte, error) {
 	if !lvs.KeySupported(key) {
 		out := make(chan []byte)
 		close(out)

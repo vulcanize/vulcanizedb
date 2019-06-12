@@ -8,19 +8,19 @@ import (
 	"sync"
 	"time"
 
-	cid "github.com/ipfs/go-cid"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
+
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	record "github.com/libp2p/go-libp2p-record"
+
+	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dssync "github.com/ipfs/go-datastore/sync"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	u "github.com/ipfs/go-ipfs-util"
 	logging "github.com/ipfs/go-log"
-	p2phost "github.com/libp2p/go-libp2p-host"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	record "github.com/libp2p/go-libp2p-record"
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
 )
 
 var log = logging.Logger("pubsub-valuestore")
@@ -33,7 +33,7 @@ type watchGroup struct {
 type PubsubValueStore struct {
 	ctx  context.Context
 	ds   ds.Datastore
-	host p2phost.Host
+	host host.Host
 	cr   routing.ContentRouting
 	ps   *pubsub.PubSub
 
@@ -60,7 +60,7 @@ func KeyToTopic(key string) string {
 // NewPubsubPublisher constructs a new Publisher that publishes IPNS records through pubsub.
 // The constructor interface is complicated by the need to bootstrap the pubsub topic.
 // This could be greatly simplified if the pubsub implementation handled bootstrap itself
-func NewPubsubValueStore(ctx context.Context, host p2phost.Host, cr routing.ContentRouting, ps *pubsub.PubSub, validator record.Validator) *PubsubValueStore {
+func NewPubsubValueStore(ctx context.Context, host host.Host, cr routing.ContentRouting, ps *pubsub.PubSub, validator record.Validator) *PubsubValueStore {
 	return &PubsubValueStore{
 		ctx: ctx,
 
@@ -77,21 +77,13 @@ func NewPubsubValueStore(ctx context.Context, host p2phost.Host, cr routing.Cont
 }
 
 // Publish publishes an IPNS record through pubsub with default TTL
-func (p *PubsubValueStore) PutValue(ctx context.Context, key string, value []byte, opts ...ropts.Option) error {
+func (p *PubsubValueStore) PutValue(ctx context.Context, key string, value []byte, opts ...routing.Option) error {
 	// Record-store keys are arbitrary binary. However, pubsub requires UTF-8 string topic IDs.
 	// Encode to "/record/base64url(key)"
 	topic := KeyToTopic(key)
 
-	p.mx.Lock()
-	_, bootstraped := p.subs[key]
-
-	if !bootstraped {
-		p.subs[key] = nil
-		p.mx.Unlock()
-
-		bootstrapPubsub(p.ctx, p.cr, p.host, topic)
-	} else {
-		p.mx.Unlock()
+	if err := p.Subscribe(key); err != nil {
+		return err
 	}
 
 	log.Debugf("PubsubPublish: publish value for key", key)
@@ -183,7 +175,7 @@ func (p *PubsubValueStore) getLocal(key string) ([]byte, error) {
 	return val, nil
 }
 
-func (p *PubsubValueStore) GetValue(ctx context.Context, key string, opts ...ropts.Option) ([]byte, error) {
+func (p *PubsubValueStore) GetValue(ctx context.Context, key string, opts ...routing.Option) ([]byte, error) {
 	if err := p.Subscribe(key); err != nil {
 		return nil, err
 	}
@@ -191,7 +183,7 @@ func (p *PubsubValueStore) GetValue(ctx context.Context, key string, opts ...rop
 	return p.getLocal(key)
 }
 
-func (p *PubsubValueStore) SearchValue(ctx context.Context, key string, opts ...ropts.Option) (<-chan []byte, error) {
+func (p *PubsubValueStore) SearchValue(ctx context.Context, key string, opts ...routing.Option) (<-chan []byte, error) {
 	if err := p.Subscribe(key); err != nil {
 		return nil, err
 	}
@@ -336,18 +328,18 @@ func (p *PubsubValueStore) notifyWatchers(key string, data []byte) {
 
 // rendezvous with peers in the name topic through provider records
 // Note: rendezvous/boostrap should really be handled by the pubsub implementation itself!
-func bootstrapPubsub(ctx context.Context, cr routing.ContentRouting, host p2phost.Host, name string) {
+func bootstrapPubsub(ctx context.Context, cr routing.ContentRouting, host host.Host, name string) {
 	// TODO: consider changing this to `pubsub:...`
 	topic := "floodsub:" + name
 	hash := u.Hash([]byte(topic))
 	rz := cid.NewCidV1(cid.Raw, hash)
 
-	err := cr.Provide(ctx, rz, true)
-	if err != nil {
-		log.Warningf("bootstrapPubsub: error providing rendezvous for %s: %s", topic, err.Error())
-	}
-
 	go func() {
+		err := cr.Provide(ctx, rz, true)
+		if err != nil {
+			log.Warningf("bootstrapPubsub: error providing rendezvous for %s: %s", topic, err.Error())
+		}
+
 		for {
 			select {
 			case <-time.After(8 * time.Hour):
@@ -370,7 +362,7 @@ func bootstrapPubsub(ctx context.Context, cr routing.ContentRouting, host p2phos
 			continue
 		}
 		wg.Add(1)
-		go func(pi pstore.PeerInfo) {
+		go func(pi peer.AddrInfo) {
 			defer wg.Done()
 
 			ctx, cancel := context.WithTimeout(ctx, time.Second*10)

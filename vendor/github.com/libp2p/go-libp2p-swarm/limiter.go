@@ -7,14 +7,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/transport"
+
 	addrutil "github.com/libp2p/go-addr-util"
-	peer "github.com/libp2p/go-libp2p-peer"
-	transport "github.com/libp2p/go-libp2p-transport"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 type dialResult struct {
-	Conn transport.Conn
+	Conn transport.CapableConn
 	Addr ma.Multiaddr
 	Err  error
 }
@@ -53,7 +54,7 @@ type dialLimiter struct {
 	waitingOnPeerLimit map[peer.ID][]*dialJob
 }
 
-type dialfunc func(context.Context, peer.ID, ma.Multiaddr) (transport.Conn, error)
+type dialfunc func(context.Context, peer.ID, ma.Multiaddr) (transport.CapableConn, error)
 
 func newDialLimiter(df dialfunc) *dialLimiter {
 	fd := ConcurrentFdDials

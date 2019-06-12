@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	host "github.com/libp2p/go-libp2p-host"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -157,10 +157,10 @@ func (as *AmbientAutoNAT) autodetect() {
 
 	for _, pi := range peers[:probe] {
 		wg.Add(1)
-		go func(pi pstore.PeerInfo) {
+		go func(pi peer.AddrInfo) {
 			defer wg.Done()
 
-			as.host.Peerstore().AddAddrs(pi.ID, pi.Addrs, pstore.TempAddrTTL)
+			as.host.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.TempAddrTTL)
 			a, err := cli.DialBack(ctx, pi.ID)
 
 			switch {
@@ -217,7 +217,7 @@ func (as *AmbientAutoNAT) autodetect() {
 	as.mx.Unlock()
 }
 
-func (as *AmbientAutoNAT) getPeers() []pstore.PeerInfo {
+func (as *AmbientAutoNAT) getPeers() []peer.AddrInfo {
 	as.mx.Lock()
 	defer as.mx.Unlock()
 
@@ -225,13 +225,13 @@ func (as *AmbientAutoNAT) getPeers() []pstore.PeerInfo {
 		return nil
 	}
 
-	var connected, others []pstore.PeerInfo
+	var connected, others []peer.AddrInfo
 
 	for p, addrs := range as.peers {
-		if as.host.Network().Connectedness(p) == inet.Connected {
-			connected = append(connected, pstore.PeerInfo{ID: p, Addrs: addrs})
+		if as.host.Network().Connectedness(p) == network.Connected {
+			connected = append(connected, peer.AddrInfo{ID: p, Addrs: addrs})
 		} else {
-			others = append(others, pstore.PeerInfo{ID: p, Addrs: addrs})
+			others = append(others, peer.AddrInfo{ID: p, Addrs: addrs})
 		}
 	}
 
@@ -245,7 +245,7 @@ func (as *AmbientAutoNAT) getPeers() []pstore.PeerInfo {
 	}
 }
 
-func shufflePeers(peers []pstore.PeerInfo) {
+func shufflePeers(peers []peer.AddrInfo) {
 	for i := range peers {
 		j := rand.Intn(i + 1)
 		peers[i], peers[j] = peers[j], peers[i]

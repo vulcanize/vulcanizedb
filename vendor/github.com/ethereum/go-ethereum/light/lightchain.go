@@ -101,7 +101,7 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 	if bc.genesisBlock == nil {
 		return nil, core.ErrNoGenesis
 	}
-	if cp, ok := trustedCheckpoints[bc.genesisBlock.Hash()]; ok {
+	if cp, ok := params.TrustedCheckpoints[bc.genesisBlock.Hash()]; ok {
 		bc.addTrustedCheckpoint(cp)
 	}
 	if err := bc.loadLastState(); err != nil {
@@ -165,12 +165,12 @@ func (lc *LightChain) loadLastState() error {
 
 // SetHead rewinds the local chain to a new head. Everything above the new
 // head will be deleted and the new one set.
-func (lc *LightChain) SetHead(head uint64) {
+func (lc *LightChain) SetHead(head uint64) error {
 	lc.chainmu.Lock()
 	defer lc.chainmu.Unlock()
 
-	lc.hc.SetHead(head, nil)
-	lc.loadLastState()
+	lc.hc.SetHead(head, nil, nil)
+	return lc.loadLastState()
 }
 
 // GasLimit returns the gas limit of the current HEAD block.

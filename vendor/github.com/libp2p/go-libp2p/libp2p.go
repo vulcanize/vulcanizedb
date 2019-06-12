@@ -5,7 +5,7 @@ import (
 
 	config "github.com/libp2p/go-libp2p/config"
 
-	host "github.com/libp2p/go-libp2p-host"
+	"github.com/libp2p/go-libp2p-core/host"
 )
 
 // Config describes a set of settings for a libp2p node

@@ -7,15 +7,16 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/libp2p/go-libp2p-core/connmgr"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/metrics"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+	"github.com/libp2p/go-libp2p-core/pnet"
+
+	circuit "github.com/libp2p/go-libp2p-circuit"
 	config "github.com/libp2p/go-libp2p/config"
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 
-	circuit "github.com/libp2p/go-libp2p-circuit"
-	crypto "github.com/libp2p/go-libp2p-crypto"
-	ifconnmgr "github.com/libp2p/go-libp2p-interface-connmgr"
-	pnet "github.com/libp2p/go-libp2p-interface-pnet"
-	metrics "github.com/libp2p/go-libp2p-metrics"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
 	filter "github.com/libp2p/go-maddr-filter"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -132,7 +133,7 @@ func Transport(tpt interface{}) Option {
 }
 
 // Peerstore configures libp2p to use the given peerstore.
-func Peerstore(ps pstore.Peerstore) Option {
+func Peerstore(ps peerstore.Peerstore) Option {
 	return func(cfg *Config) error {
 		if cfg.Peerstore != nil {
 			return fmt.Errorf("cannot specify multiple peerstore options")
@@ -180,7 +181,7 @@ func Identity(sk crypto.PrivKey) Option {
 }
 
 // ConnectionManager configures libp2p to use the given connection manager.
-func ConnectionManager(connman ifconnmgr.ConnManager) Option {
+func ConnectionManager(connman connmgr.ConnManager) Option {
 	return func(cfg *Config) error {
 		if cfg.ConnManager != nil {
 			return fmt.Errorf("cannot specify multiple connection managers")

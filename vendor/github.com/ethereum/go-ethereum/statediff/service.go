@@ -20,8 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
-
-	"github.com/ethereum/go-ethereum/rlp"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -31,11 +30,14 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+const chainEventChanSize = 20000
+
 type blockChain interface {
-	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
+	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	GetBlockByHash(hash common.Hash) *types.Block
 	AddToStateDiffProcessedCollection(hash common.Hash)
 }
@@ -45,7 +47,7 @@ type IService interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for processing state diffs
-	Loop(chainEventCh chan core.ChainHeadEvent)
+	Loop(chainEventCh chan core.ChainEvent)
 	// Method to subscribe to receive state diff processing output
 	Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- bool)
 	// Method to unsubscribe from state diff processing
@@ -68,6 +70,8 @@ type Service struct {
 	lastBlock *types.Block
 	// Whether or not the block data is streamed alongside the state diff data in the subscription payload
 	streamBlock bool
+	// Whether or not we have any subscribers; only if we do, do we processes state diffs
+	subscribers int32
 }
 
 // NewStateDiffService creates a new StateDiffingService
@@ -100,8 +104,8 @@ func (sds *Service) APIs() []rpc.API {
 }
 
 // Loop is the main processing method
-func (sds *Service) Loop(chainEventCh chan core.ChainHeadEvent) {
-	chainEventSub := sds.BlockChain.SubscribeChainHeadEvent(chainEventCh)
+func (sds *Service) Loop(chainEventCh chan core.ChainEvent) {
+	chainEventSub := sds.BlockChain.SubscribeChainEvent(chainEventCh)
 	defer chainEventSub.Unsubscribe()
 	errCh := chainEventSub.Err()
 
@@ -110,6 +114,11 @@ func (sds *Service) Loop(chainEventCh chan core.ChainHeadEvent) {
 		//Notify chain event channel of events
 		case chainEvent := <-chainEventCh:
 			log.Debug("Event received from chainEventCh", "event", chainEvent)
+			// if we don't have any subscribers, do not process a statediff
+			if atomic.LoadInt32(&sds.subscribers) == 0 {
+				log.Debug("Currently no subscribers to the statediffing service; processing is halted")
+				continue
+			}
 			currentBlock := chainEvent.Block
 			parentHash := currentBlock.ParentHash()
 			var parentBlock *types.Block
@@ -120,13 +129,11 @@ func (sds *Service) Loop(chainEventCh chan core.ChainHeadEvent) {
 			}
 			sds.lastBlock = currentBlock
 			if parentBlock == nil {
-				log.Error("Parent block is nil, skipping this block",
-					"parent block hash", parentHash.String(),
-					"current block number", currentBlock.Number())
+				log.Error(fmt.Sprintf("Parent block is nil, skipping this block (%d)", currentBlock.Number()))
 				continue
 			}
-			if err := sds.process(currentBlock, parentBlock); err != nil {
-				log.Error("Error building statediff", "block number", currentBlock.Number(), "error", err)
+			if err := sds.processStateDiff(currentBlock, parentBlock); err != nil {
+				log.Error(fmt.Sprintf("Error building statediff for block %d; error: ", currentBlock.Number()) + err.Error())
 			}
 		case err := <-errCh:
 			log.Warn("Error from chain event subscription, breaking loop", "error", err)
@@ -140,8 +147,8 @@ func (sds *Service) Loop(chainEventCh chan core.ChainHeadEvent) {
 	}
 }
 
-// process method builds the state diff payload from the current and parent block and streams it to listening subscriptions
-func (sds *Service) process(currentBlock, parentBlock *types.Block) error {
+// processStateDiff method builds the state diff payload from the current and parent block and sends it to listening subscriptions
+func (sds *Service) processStateDiff(currentBlock, parentBlock *types.Block) error {
 	stateDiff, err := sds.Builder.BuildStateDiff(parentBlock.Root(), currentBlock.Root(), currentBlock.Number(), currentBlock.Hash())
 	if err != nil {
 		return err
@@ -170,6 +177,9 @@ func (sds *Service) process(currentBlock, parentBlock *types.Block) error {
 // Subscribe is used by the API to subscribe to the StateDiffingService loop
 func (sds *Service) Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- bool) {
 	log.Info("Subscribing to the statediff service")
+	if atomic.CompareAndSwapInt32(&sds.subscribers, 0, 1) {
+		log.Info("State diffing subscription received; beginning statediff processing")
+	}
 	sds.Lock()
 	sds.Subscriptions[id] = Subscription{
 		PayloadChan: sub,
@@ -187,6 +197,11 @@ func (sds *Service) Unsubscribe(id rpc.ID) error {
 		return fmt.Errorf("cannot unsubscribe; subscription for id %s does not exist", id)
 	}
 	delete(sds.Subscriptions, id)
+	if len(sds.Subscriptions) == 0 {
+		if atomic.CompareAndSwapInt32(&sds.subscribers, 1, 0) {
+			log.Info("No more subscriptions; halting statediff processing")
+		}
+	}
 	sds.Unlock()
 	return nil
 }
@@ -195,7 +210,7 @@ func (sds *Service) Unsubscribe(id rpc.ID) error {
 func (sds *Service) Start(*p2p.Server) error {
 	log.Info("Starting statediff service")
 
-	chainEventCh := make(chan core.ChainHeadEvent, 10)
+	chainEventCh := make(chan core.ChainEvent, chainEventChanSize)
 	go sds.Loop(chainEventCh)
 
 	return nil
@@ -208,7 +223,7 @@ func (sds *Service) Stop() error {
 	return nil
 }
 
-// send is used to fan out and serve a payload to any subscriptions
+// send is used to fan out and serve the statediff payload to all subscriptions
 func (sds *Service) send(payload Payload) {
 	sds.Lock()
 	for id, sub := range sds.Subscriptions {
@@ -216,7 +231,21 @@ func (sds *Service) send(payload Payload) {
 		case sub.PayloadChan <- payload:
 			log.Info(fmt.Sprintf("sending state diff payload to subscription %s", id))
 		default:
-			log.Info(fmt.Sprintf("unable to send payload to subscription %s", id))
+			log.Info(fmt.Sprintf("unable to send payload to subscription %s; channel has no receiver", id))
+			// in this case, try to close the bad subscription and remove it
+			select {
+			case sub.QuitChan <- true:
+				log.Info(fmt.Sprintf("closing subscription %s", id))
+			default:
+				log.Info(fmt.Sprintf("unable to close subscription %s; channel has no receiver", id))
+			}
+			delete(sds.Subscriptions, id)
+		}
+	}
+	// If after removing all bad subscriptions we have none left, halt processing
+	if len(sds.Subscriptions) == 0 {
+		if atomic.CompareAndSwapInt32(&sds.subscribers, 1, 0) {
+			log.Info("No more subscriptions; halting statediff processing")
 		}
 	}
 	sds.Unlock()
@@ -228,11 +257,11 @@ func (sds *Service) close() {
 	for id, sub := range sds.Subscriptions {
 		select {
 		case sub.QuitChan <- true:
-			delete(sds.Subscriptions, id)
 			log.Info(fmt.Sprintf("closing subscription %s", id))
 		default:
 			log.Info(fmt.Sprintf("unable to close subscription %s; channel has no receiver", id))
 		}
+		delete(sds.Subscriptions, id)
 	}
 	sds.Unlock()
 }

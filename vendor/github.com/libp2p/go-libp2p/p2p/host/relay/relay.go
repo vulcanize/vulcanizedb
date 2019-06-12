@@ -4,13 +4,15 @@ import (
 	"context"
 	"time"
 
-	discovery "github.com/libp2p/go-libp2p-discovery"
+	"github.com/libp2p/go-libp2p-discovery"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 var (
 	// this is purposefully long to require some node stability before advertising as a relay
 	AdvertiseBootDelay = 15 * time.Minute
+	AdvertiseTTL       = 30 * time.Minute
 )
 
 // Advertise advertises this node as a libp2p relay.
@@ -18,7 +20,7 @@ func Advertise(ctx context.Context, advertise discovery.Advertiser) {
 	go func() {
 		select {
 		case <-time.After(AdvertiseBootDelay):
-			discovery.Advertise(ctx, advertise, RelayRendezvous)
+			discovery.Advertise(ctx, advertise, RelayRendezvous, discovery.TTL(AdvertiseTTL))
 		case <-ctx.Done():
 		}
 	}()

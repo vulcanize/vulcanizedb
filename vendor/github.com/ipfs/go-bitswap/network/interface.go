@@ -6,16 +6,19 @@ import (
 	bsmsg "github.com/ipfs/go-bitswap/message"
 
 	cid "github.com/ipfs/go-cid"
-	ifconnmgr "github.com/libp2p/go-libp2p-interface-connmgr"
-	peer "github.com/libp2p/go-libp2p-peer"
-	protocol "github.com/libp2p/go-libp2p-protocol"
+
+	"github.com/libp2p/go-libp2p-core/connmgr"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
 var (
-	// These two are equivalent, legacy
-	ProtocolBitswapOne    protocol.ID = "/ipfs/bitswap/1.0.0"
+	// ProtocolBitswapOne is the prefix for the legacy bitswap protocol
+	ProtocolBitswapOne protocol.ID = "/ipfs/bitswap/1.0.0"
+	// ProtocolBitswapNoVers is equivalent to the legacy bitswap protocol
 	ProtocolBitswapNoVers protocol.ID = "/ipfs/bitswap"
 
+	// ProtocolBitswap is the current version of bitswap protocol, 1.1.0
 	ProtocolBitswap protocol.ID = "/ipfs/bitswap/1.1.0"
 )
 
@@ -36,20 +39,22 @@ type BitSwapNetwork interface {
 
 	NewMessageSender(context.Context, peer.ID) (MessageSender, error)
 
-	ConnectionManager() ifconnmgr.ConnManager
+	ConnectionManager() connmgr.ConnManager
 
-	Stats() NetworkStats
+	Stats() Stats
 
 	Routing
 }
 
+// MessageSender is an interface for sending a series of messages over the bitswap
+// network
 type MessageSender interface {
 	SendMsg(context.Context, bsmsg.BitSwapMessage) error
 	Close() error
 	Reset() error
 }
 
-// Implement Receiver to receive messages from the BitSwapNetwork.
+// Receiver is an interface that can receive messages from the BitSwapNetwork.
 type Receiver interface {
 	ReceiveMessage(
 		ctx context.Context,
@@ -63,6 +68,8 @@ type Receiver interface {
 	PeerDisconnected(peer.ID)
 }
 
+// Routing is an interface to providing and finding providers on a bitswap
+// network.
 type Routing interface {
 	// FindProvidersAsync returns a channel of providers for the given key.
 	FindProvidersAsync(context.Context, cid.Cid, int) <-chan peer.ID
@@ -71,10 +78,10 @@ type Routing interface {
 	Provide(context.Context, cid.Cid) error
 }
 
-// NetworkStats is a container for statistics about the bitswap network
+// Stats is a container for statistics about the bitswap network
 // the numbers inside are specific to bitswap, and not any other protocols
 // using the same underlying network.
-type NetworkStats struct {
+type Stats struct {
 	MessagesSent  uint64
 	MessagesRecvd uint64
 }

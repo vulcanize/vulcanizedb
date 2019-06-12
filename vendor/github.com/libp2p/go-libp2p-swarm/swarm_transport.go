@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	transport "github.com/libp2p/go-libp2p-transport"
+	"github.com/libp2p/go-libp2p-core/transport"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
