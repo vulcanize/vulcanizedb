@@ -576,6 +576,10 @@ func (hs *serverHandshakeStateTLS13) sendServerParameters() error {
 			c.clientProtocol = selectedProto
 		}
 	}
+	if c.config.EnforceNextProtoSelection && len(c.clientProtocol) == 0 {
+		c.sendAlert(alertNoApplicationProtocol)
+		return errors.New("ALPN negotiation failed")
+	}
 	if hs.c.config.GetExtensions != nil {
 		encryptedExtensions.additionalExtensions = hs.c.config.GetExtensions(typeEncryptedExtensions)
 	}

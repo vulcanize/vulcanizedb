@@ -28,8 +28,8 @@ set +e
 ./goose postgres "$CONNECT_STRING" up
 if [ $? -eq 0 ]; then
   # Fire up the services
-  ipfs ipfs init --profile=postgresds
-  geth --statediff --statediff.streamblock --ws --syncmode=full
+  ipfs ipfs init --profile=postgresds &
+  geth --statediff --statediff.streamblock --ws --syncmode=full &
   ./vulcanizedb syncPublishScreenAndServe --config environments/seedNodeStaging.toml &
 else
   echo "Could not run migrations. Are the database details correct?"

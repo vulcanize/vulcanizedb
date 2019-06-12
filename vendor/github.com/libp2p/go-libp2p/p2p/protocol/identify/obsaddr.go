@@ -5,8 +5,9 @@ import (
 	"sync"
 	"time"
 
-	net "github.com/libp2p/go-libp2p-net"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -16,7 +17,7 @@ var GCInterval = 10 * time.Minute
 
 type observation struct {
 	seenTime      time.Time
-	connDirection net.Direction
+	connDirection network.Direction
 }
 
 // ObservedAddr is an entry for an address reported by our peers.
@@ -38,7 +39,7 @@ func (oa *ObservedAddr) activated(ttl time.Duration) bool {
 
 type newObservation struct {
 	observed, local, observer ma.Multiaddr
-	direction                 net.Direction
+	direction                 network.Direction
 }
 
 // ObservedAddrSet keeps track of a set of ObservedAddrs
@@ -57,7 +58,7 @@ type ObservedAddrSet struct {
 func NewObservedAddrSet(ctx context.Context) *ObservedAddrSet {
 	oas := &ObservedAddrSet{
 		addrs: make(map[string][]*ObservedAddr),
-		ttl:   pstore.OwnObservedAddrTTL,
+		ttl:   peerstore.OwnObservedAddrTTL,
 		wch:   make(chan newObservation, 16),
 	}
 	go oas.worker(ctx)
@@ -111,7 +112,7 @@ func (oas *ObservedAddrSet) Addrs() (addrs []ma.Multiaddr) {
 }
 
 func (oas *ObservedAddrSet) Add(observed, local, observer ma.Multiaddr,
-	direction net.Direction) {
+	direction network.Direction) {
 	select {
 	case oas.wch <- newObservation{observed: observed, local: local, observer: observer, direction: direction}:
 	default:
@@ -168,7 +169,7 @@ func (oas *ObservedAddrSet) gc() {
 }
 
 func (oas *ObservedAddrSet) doAdd(observed, local, observer ma.Multiaddr,
-	direction net.Direction) {
+	direction network.Direction) {
 
 	now := time.Now()
 	observerString := observerGroup(observer)

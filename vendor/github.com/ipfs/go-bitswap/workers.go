@@ -11,9 +11,11 @@ import (
 	procctx "github.com/jbenet/goprocess/context"
 )
 
+// TaskWorkerCount is the total number of simultaneous threads sending
+// outgoing messages
 var TaskWorkerCount = 8
 
-func (bs *Bitswap) startWorkers(px process.Process, ctx context.Context) {
+func (bs *Bitswap) startWorkers(ctx context.Context, px process.Process) {
 
 	// Start up workers to handle requests from other nodes for the data on this node
 	for i := 0; i < TaskWorkerCount; i++ {
@@ -23,15 +25,17 @@ func (bs *Bitswap) startWorkers(px process.Process, ctx context.Context) {
 		})
 	}
 
-	// Start up a worker to manage sending out provides messages
-	px.Go(func(px process.Process) {
-		bs.provideCollector(ctx)
-	})
+	if bs.provideEnabled {
+		// Start up a worker to manage sending out provides messages
+		px.Go(func(px process.Process) {
+			bs.provideCollector(ctx)
+		})
 
-	// Spawn up multiple workers to handle incoming blocks
-	// consider increasing number if providing blocks bottlenecks
-	// file transfers
-	px.Go(bs.provideWorker)
+		// Spawn up multiple workers to handle incoming blocks
+		// consider increasing number if providing blocks bottlenecks
+		// file transfers
+		px.Go(bs.provideWorker)
+	}
 }
 
 func (bs *Bitswap) taskWorker(ctx context.Context, id int) {

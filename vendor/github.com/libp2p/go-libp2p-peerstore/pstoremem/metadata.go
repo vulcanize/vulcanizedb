@@ -16,7 +16,7 @@ type memoryPeerMetadata struct {
 	// store other data, like versions
 	//ds ds.ThreadSafeDatastore
 	ds     map[metakey]interface{}
-	dslock sync.Mutex
+	dslock sync.RWMutex
 }
 
 var _ pstore.PeerMetadata = (*memoryPeerMetadata)(nil)
@@ -35,8 +35,8 @@ func (ps *memoryPeerMetadata) Put(p peer.ID, key string, val interface{}) error 
 }
 
 func (ps *memoryPeerMetadata) Get(p peer.ID, key string) (interface{}, error) {
-	ps.dslock.Lock()
-	defer ps.dslock.Unlock()
+	ps.dslock.RLock()
+	defer ps.dslock.RUnlock()
 	i, ok := ps.ds[metakey{p, key}]
 	if !ok {
 		return nil, pstore.ErrNotFound

@@ -1,0 +1,28 @@
+dist: trusty
+group: travis_latest
+
+language: go
+
+go:
+  - "1.12.x"
+
+# first part of the GOARCH workaround
+# setting the GOARCH directly doesn't work, since the value will be overwritten later
+# so set it to a temporary environment variable first
+env:
+  global:
+    - GO111MODULE=on
+  matrix:
+    - TRAVIS_GOARCH=amd64
+    - TRAVIS_GOARCH=386
+
+
+# second part of the GOARCH workaround
+# now actually set the GOARCH env variable to the value of the temporary variable set earlier
+before_install:
+  - export GOARCH=$TRAVIS_GOARCH
+  - go env # for debugging
+
+script:
+  - go test
+  - if [ ${TRAVIS_GOARCH} == 'amd64' ]; then go test -race; fi

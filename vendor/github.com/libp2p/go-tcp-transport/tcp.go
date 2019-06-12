@@ -6,13 +6,14 @@ import (
 	"time"
 
 	logging "github.com/ipfs/go-log"
-	peer "github.com/libp2p/go-libp2p-peer"
-	tpt "github.com/libp2p/go-libp2p-transport"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/transport"
 	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
 	rtpt "github.com/libp2p/go-reuseport-transport"
+
 	ma "github.com/multiformats/go-multiaddr"
+	mafmt "github.com/multiformats/go-multiaddr-fmt"
 	manet "github.com/multiformats/go-multiaddr-net"
-	mafmt "github.com/whyrusleeping/mafmt"
 )
 
 // DefaultConnectTimeout is the (default) maximum amount of time the TCP
@@ -23,9 +24,11 @@ var log = logging.Logger("tcp-tpt")
 
 // try to set linger on the connection, if possible.
 func tryLinger(conn net.Conn, sec int) {
-	if lingerConn, ok := conn.(interface {
+	type canLinger interface {
 		SetLinger(int) error
-	}); ok {
+	}
+
+	if lingerConn, ok := conn.(canLinger); ok {
 		_ = lingerConn.SetLinger(sec)
 	}
 }
@@ -59,7 +62,7 @@ type TcpTransport struct {
 	reuse rtpt.Transport
 }
 
-var _ tpt.Transport = &TcpTransport{}
+var _ transport.Transport = &TcpTransport{}
 
 // NewTCPTransport creates a tcp transport object that tracks dialers and listeners
 // created. It represents an entire tcp stack (though it might not necessarily be)
@@ -92,7 +95,7 @@ func (t *TcpTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (manet.Co
 }
 
 // Dial dials the peer at the remote address.
-func (t *TcpTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (tpt.Conn, error) {
+func (t *TcpTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (transport.CapableConn, error) {
 	conn, err := t.maDial(ctx, raddr)
 	if err != nil {
 		return nil, err
@@ -117,7 +120,7 @@ func (t *TcpTransport) maListen(laddr ma.Multiaddr) (manet.Listener, error) {
 }
 
 // Listen listens on the given multiaddr.
-func (t *TcpTransport) Listen(laddr ma.Multiaddr) (tpt.Listener, error) {
+func (t *TcpTransport) Listen(laddr ma.Multiaddr) (transport.Listener, error) {
 	list, err := t.maListen(laddr)
 	if err != nil {
 		return nil, err
