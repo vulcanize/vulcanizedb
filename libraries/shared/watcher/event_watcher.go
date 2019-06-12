@@ -134,7 +134,7 @@ func (watcher *EventWatcher) transformLogs(logs []types.Log, header core.Header)
 	for _, t := range watcher.Transformers {
 		transformerName := t.GetConfig().TransformerName
 		logChunk := chunkedLogs[transformerName]
-		err := t.Execute(logChunk, header, constants.HeaderMissing)
+		err := t.Execute(logChunk, header)
 		if err != nil {
 			logrus.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
 			return err
