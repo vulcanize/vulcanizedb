@@ -3,29 +3,27 @@ package routinghelpers
 import (
 	"context"
 
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
 
-	cid "github.com/ipfs/go-cid"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/ipfs/go-cid"
 )
 
 // Null is a router that doesn't do anything.
 type Null struct{}
 
 // PutValue always returns ErrNotSupported
-func (nr Null) PutValue(context.Context, string, []byte, ...ropts.Option) error {
+func (nr Null) PutValue(context.Context, string, []byte, ...routing.Option) error {
 	return routing.ErrNotSupported
 }
 
 // GetValue always returns ErrNotFound
-func (nr Null) GetValue(context.Context, string, ...ropts.Option) ([]byte, error) {
+func (nr Null) GetValue(context.Context, string, ...routing.Option) ([]byte, error) {
 	return nil, routing.ErrNotFound
 }
 
 // SearchValue always returns ErrNotFound
-func (nr Null) SearchValue(ctx context.Context, key string, opts ...ropts.Option) (<-chan []byte, error) {
+func (nr Null) SearchValue(ctx context.Context, key string, opts ...routing.Option) (<-chan []byte, error) {
 	return nil, routing.ErrNotFound
 }
 
@@ -35,15 +33,15 @@ func (nr Null) Provide(context.Context, cid.Cid, bool) error {
 }
 
 // FindProvidersAsync always returns a closed channel
-func (nr Null) FindProvidersAsync(context.Context, cid.Cid, int) <-chan pstore.PeerInfo {
-	ch := make(chan pstore.PeerInfo)
+func (nr Null) FindProvidersAsync(context.Context, cid.Cid, int) <-chan peer.AddrInfo {
+	ch := make(chan peer.AddrInfo)
 	close(ch)
 	return ch
 }
 
 // FindPeer always returns ErrNotFound
-func (nr Null) FindPeer(context.Context, peer.ID) (pstore.PeerInfo, error) {
-	return pstore.PeerInfo{}, routing.ErrNotFound
+func (nr Null) FindPeer(context.Context, peer.ID) (peer.AddrInfo, error) {
+	return peer.AddrInfo{}, routing.ErrNotFound
 }
 
 // Bootstrap always succeeds instantly
@@ -51,4 +49,4 @@ func (nr Null) Bootstrap(context.Context) error {
 	return nil
 }
 
-var _ routing.IpfsRouting = Null{}
+var _ routing.Routing = Null{}

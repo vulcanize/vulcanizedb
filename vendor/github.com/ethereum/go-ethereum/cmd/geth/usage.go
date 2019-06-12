@@ -69,8 +69,10 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			configFileFlag,
 			utils.DataDirFlag,
+			utils.AncientFlag,
 			utils.KeyStoreDirFlag,
 			utils.NoUSBFlag,
+			utils.SmartCardDaemonPathFlag,
 			utils.NetworkIdFlag,
 			utils.TestnetFlag,
 			utils.RinkebyFlag,
@@ -250,9 +252,9 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.StateDiffFlag,
 			utils.StateDiffPathsAndProofs,
-			utils.StateDiffAllNodeTypes,
-			utils.StateDiffWatchedAddresses,
+			utils.StateDiffIntermediateNodes,
 			utils.StateDiffStreamBlock,
+			utils.StateDiffWatchedAddresses,
 		},
 	},
 	{

@@ -2,32 +2,25 @@ go-libp2p-connmgr
 ==================
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
-[![](https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square)](http://libp2p.io/)
-[![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23ipfs)
-[![Coverage Status](https://coveralls.io/repos/github/libp2p/go-libp2p-connmgr/badge.svg?branch=master)](https://coveralls.io/github/libp2p/go-libp2p-connmgr?branch=master)
-[![Travis CI](https://travis-ci.org/libp2p/go-libp2p-connmgr.svg?branch=master)](https://travis-ci.org/libp2p/go-libp2p-connmgr)
+[![](https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square)](https://libp2p.io/)
+[![](https://img.shields.io/badge/freenode-%23libp2p-yellow.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23libp2p)
+[![Travis CI](https://travis-ci.com/libp2p/go-libp2p-connmgr.svg?branch=master)](https://travis-ci.com/libp2p/go-libp2p-connmgr)
+[![Discourse posts](https://img.shields.io/discourse/https/discuss.libp2p.io/posts.svg)](https://discuss.libp2p.io)
 
-> A package to help manage connections in go-libp2p
+
+> A package to help manage connections in go-libp2p.
 
 
 ## Table of Contents
 
 - [Install](#install)
-- [Usage](#usage)
-- [API](#api)
 - [Contribute](#contribute)
 - [License](#license)
 
 ## Install
 
 ```sh
-make install
-```
-
-## Examples
-
-```go
-// TODO:
+go get github.com/libp2p/go-libp2p-connmgr
 ```
 
 ## Contribute
@@ -39,3 +32,7 @@ Small note: If editing the Readme, please conform to the [standard-readme](https
 ## License
 
 MIT © Whyrusleeping
+
+---
+
+The last gx published version of this module was: 0.3.34: QmSTKY2v62v9RjcfTMCFKMVAWvVjWGixkYWEi68iG7e1TT

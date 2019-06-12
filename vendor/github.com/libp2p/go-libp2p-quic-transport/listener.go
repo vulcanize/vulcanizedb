@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"net"
 
-	ic "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	tpt "github.com/libp2p/go-libp2p-transport"
+	ic "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	tpt "github.com/libp2p/go-libp2p-core/transport"
+
 	quic "github.com/lucas-clemente/quic-go"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
@@ -57,7 +58,7 @@ func newListener(addr ma.Multiaddr, transport tpt.Transport, localPeer peer.ID, 
 }
 
 // Accept accepts new connections.
-func (l *listener) Accept() (tpt.Conn, error) {
+func (l *listener) Accept() (tpt.CapableConn, error) {
 	for {
 		sess, err := l.quicListener.Accept()
 		if err != nil {
@@ -72,7 +73,7 @@ func (l *listener) Accept() (tpt.Conn, error) {
 	}
 }
 
-func (l *listener) setupConn(sess quic.Session) (tpt.Conn, error) {
+func (l *listener) setupConn(sess quic.Session) (tpt.CapableConn, error) {
 	remotePubKey, err := getRemotePubKey(sess.ConnectionState().PeerCertificates)
 	if err != nil {
 		return nil, err

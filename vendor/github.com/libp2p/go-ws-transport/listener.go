@@ -26,7 +26,7 @@ func (l *listener) serve() {
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		http.Error(w, "Failed to upgrade websocket", 400)
+		// The upgrader writes a response for us.
 		return
 	}
 

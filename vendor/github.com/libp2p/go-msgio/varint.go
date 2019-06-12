@@ -12,8 +12,8 @@ import (
 type varintWriter struct {
 	W io.Writer
 
-	lbuf []byte      // for encoding varints
-	lock sync.Locker // for threadsafe writes
+	lbuf [binary.MaxVarintLen64]byte // for encoding varints
+	lock sync.Mutex                  // for threadsafe writes
 }
 
 // NewVarintWriter wraps an io.Writer with a varint msgio framed writer.
@@ -21,9 +21,7 @@ type varintWriter struct {
 // as a varint, using https://golang.org/pkg/encoding/binary/#PutUvarint
 func NewVarintWriter(w io.Writer) WriteCloser {
 	return &varintWriter{
-		W:    w,
-		lbuf: make([]byte, binary.MaxVarintLen64),
-		lock: new(sync.Mutex),
+		W: w,
 	}
 }
 
@@ -40,7 +38,7 @@ func (s *varintWriter) WriteMsg(msg []byte) error {
 	defer s.lock.Unlock()
 
 	length := uint64(len(msg))
-	n := binary.PutUvarint(s.lbuf, length)
+	n := binary.PutUvarint(s.lbuf[:], length)
 	if _, err := s.W.Write(s.lbuf[:n]); err != nil {
 		return err
 	}
@@ -60,10 +58,9 @@ type varintReader struct {
 	R  io.Reader
 	br io.ByteReader // for reading varints.
 
-	lbuf []byte
 	next int
 	pool *pool.BufferPool
-	lock sync.Locker
+	lock sync.Mutex
 	max  int // the maximal message size (in bytes) this reader handles
 }
 
@@ -87,10 +84,8 @@ func NewVarintReaderWithPool(r io.Reader, p *pool.BufferPool) ReadCloser {
 	return &varintReader{
 		R:    r,
 		br:   &simpleByteReader{R: r},
-		lbuf: make([]byte, binary.MaxVarintLen64),
 		next: -1,
 		pool: p,
-		lock: new(sync.Mutex),
 		max:  defaultMaxSize,
 	}
 }
@@ -168,15 +163,11 @@ func (s *varintReader) Close() error {
 
 type simpleByteReader struct {
 	R   io.Reader
-	buf []byte
+	buf [1]byte
 }
 
 func (r *simpleByteReader) ReadByte() (c byte, err error) {
-	if r.buf == nil {
-		r.buf = make([]byte, 1)
-	}
-
-	if _, err := io.ReadFull(r.R, r.buf); err != nil {
+	if _, err := io.ReadFull(r.R, r.buf[:]); err != nil {
 		return 0, err
 	}
 	return r.buf[0], nil

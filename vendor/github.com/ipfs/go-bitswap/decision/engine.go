@@ -1,18 +1,22 @@
-// package decision implements the decision engine for the bitswap service.
+// Package decision implements the decision engine for the bitswap service.
 package decision
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	bsmsg "github.com/ipfs/go-bitswap/message"
 	wl "github.com/ipfs/go-bitswap/wantlist"
-
 	blocks "github.com/ipfs/go-block-format"
+	cid "github.com/ipfs/go-cid"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	logging "github.com/ipfs/go-log"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/ipfs/go-peertaskqueue"
+	"github.com/ipfs/go-peertaskqueue/peertask"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 )
 
 // TODO consider taking responsibility for other types of requests. For
@@ -54,6 +58,11 @@ const (
 	outboxChanBuffer = 0
 	// maxMessageSize is the maximum size of the batched payload
 	maxMessageSize = 512 * 1024
+	// tagPrefix is the tag given to peers associated an engine
+	tagPrefix = "bs-engine-%s"
+
+	// tagWeight is the default weight for peers associated with an engine
+	tagWeight = 5
 )
 
 // Envelope contains a message for a Peer.
@@ -68,11 +77,19 @@ type Envelope struct {
 	Sent func()
 }
 
+// PeerTagger covers the methods on the connection manager used by the decision
+// engine to tag peers
+type PeerTagger interface {
+	TagPeer(peer.ID, string, int)
+	UntagPeer(p peer.ID, tag string)
+}
+
+// Engine manages sending requested blocks to peers.
 type Engine struct {
 	// peerRequestQueue is a priority queue of requests received from peers.
 	// Requests are popped from the queue, packaged up, and placed in the
 	// outbox.
-	peerRequestQueue *prq
+	peerRequestQueue *peertaskqueue.PeerTaskQueue
 
 	// FIXME it's a bit odd for the client and the worker to both share memory
 	// (both modify the peerRequestQueue) and also to communicate over the
@@ -87,6 +104,9 @@ type Engine struct {
 
 	bs bstore.Blockstore
 
+	peerTagger PeerTagger
+
+	tag  string
 	lock sync.Mutex // protects the fields immediatly below
 	// ledgerMap lists Ledgers by their Partner key.
 	ledgerMap map[peer.ID]*ledger
@@ -94,19 +114,31 @@ type Engine struct {
 	ticker *time.Ticker
 }
 
-func NewEngine(ctx context.Context, bs bstore.Blockstore) *Engine {
+// NewEngine creates a new block sending engine for the given block store
+func NewEngine(ctx context.Context, bs bstore.Blockstore, peerTagger PeerTagger) *Engine {
 	e := &Engine{
-		ledgerMap:        make(map[peer.ID]*ledger),
-		bs:               bs,
-		peerRequestQueue: newPRQ(),
-		outbox:           make(chan (<-chan *Envelope), outboxChanBuffer),
-		workSignal:       make(chan struct{}, 1),
-		ticker:           time.NewTicker(time.Millisecond * 100),
+		ledgerMap:  make(map[peer.ID]*ledger),
+		bs:         bs,
+		peerTagger: peerTagger,
+		outbox:     make(chan (<-chan *Envelope), outboxChanBuffer),
+		workSignal: make(chan struct{}, 1),
+		ticker:     time.NewTicker(time.Millisecond * 100),
 	}
+	e.tag = fmt.Sprintf(tagPrefix, uuid.New().String())
+	e.peerRequestQueue = peertaskqueue.New(peertaskqueue.OnPeerAddedHook(e.onPeerAdded), peertaskqueue.OnPeerRemovedHook(e.onPeerRemoved))
 	go e.taskWorker(ctx)
 	return e
 }
 
+func (e *Engine) onPeerAdded(p peer.ID) {
+	e.peerTagger.TagPeer(p, e.tag, tagWeight)
+}
+
+func (e *Engine) onPeerRemoved(p peer.ID) {
+	e.peerTagger.UntagPeer(p, e.tag)
+}
+
+// WantlistForPeer returns the currently understood want list for a given peer
 func (e *Engine) WantlistForPeer(p peer.ID) (out []wl.Entry) {
 	partner := e.findOrCreate(p)
 	partner.lk.Lock()
@@ -114,6 +146,8 @@ func (e *Engine) WantlistForPeer(p peer.ID) (out []wl.Entry) {
 	return partner.wantList.SortedEntries()
 }
 
+// LedgerForPeer returns aggregated data about blocks swapped and communication
+// with a given peer.
 func (e *Engine) LedgerForPeer(p peer.ID) *Receipt {
 	ledger := e.findOrCreate(p)
 
@@ -154,23 +188,23 @@ func (e *Engine) taskWorker(ctx context.Context) {
 // context is cancelled before the next Envelope can be created.
 func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
 	for {
-		nextTask := e.peerRequestQueue.Pop()
+		nextTask := e.peerRequestQueue.PopBlock()
 		for nextTask == nil {
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			case <-e.workSignal:
-				nextTask = e.peerRequestQueue.Pop()
+				nextTask = e.peerRequestQueue.PopBlock()
 			case <-e.ticker.C:
-				e.peerRequestQueue.thawRound()
-				nextTask = e.peerRequestQueue.Pop()
+				e.peerRequestQueue.ThawRound()
+				nextTask = e.peerRequestQueue.PopBlock()
 			}
 		}
 
 		// with a task in hand, we're ready to prepare the envelope...
 		msg := bsmsg.New(true)
-		for _, entry := range nextTask.Entries {
-			block, err := e.bs.Get(entry.Cid)
+		for _, entry := range nextTask.Tasks {
+			block, err := e.bs.Get(entry.Identifier.(cid.Cid))
 			if err != nil {
 				log.Errorf("tried to execute a task and errored fetching block: %s", err)
 				continue
@@ -181,7 +215,7 @@ func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
 		if msg.Empty() {
 			// If we don't have the block, don't hold that against the peer
 			// make sure to update that the task has been 'completed'
-			nextTask.Done(nextTask.Entries)
+			nextTask.Done(nextTask.Tasks)
 			continue
 		}
 
@@ -189,7 +223,7 @@ func (e *Engine) nextEnvelope(ctx context.Context) (*Envelope, error) {
 			Peer:    nextTask.Target,
 			Message: msg,
 			Sent: func() {
-				nextTask.Done(nextTask.Entries)
+				nextTask.Done(nextTask.Tasks)
 				select {
 				case e.workSignal <- struct{}{}:
 					// work completing may mean that our queue will provide new
@@ -221,7 +255,7 @@ func (e *Engine) Peers() []peer.ID {
 
 // MessageReceived performs book-keeping. Returns error if passed invalid
 // arguments.
-func (e *Engine) MessageReceived(p peer.ID, m bsmsg.BitSwapMessage) error {
+func (e *Engine) MessageReceived(p peer.ID, m bsmsg.BitSwapMessage) {
 	if m.Empty() {
 		log.Debugf("received empty message from %s", p)
 	}
@@ -241,7 +275,7 @@ func (e *Engine) MessageReceived(p peer.ID, m bsmsg.BitSwapMessage) error {
 	}
 
 	var msgSize int
-	var activeEntries []wl.Entry
+	var activeEntries []peertask.Task
 	for _, entry := range m.Wantlist() {
 		if entry.Cancel {
 			log.Debugf("%s cancel %s", p, entry.Cid)
@@ -260,23 +294,22 @@ func (e *Engine) MessageReceived(p peer.ID, m bsmsg.BitSwapMessage) error {
 				// we have the block
 				newWorkExists = true
 				if msgSize+blockSize > maxMessageSize {
-					e.peerRequestQueue.Push(p, activeEntries...)
-					activeEntries = []wl.Entry{}
+					e.peerRequestQueue.PushBlock(p, activeEntries...)
+					activeEntries = []peertask.Task{}
 					msgSize = 0
 				}
-				activeEntries = append(activeEntries, entry.Entry)
+				activeEntries = append(activeEntries, peertask.Task{Identifier: entry.Cid, Priority: entry.Priority})
 				msgSize += blockSize
 			}
 		}
 	}
 	if len(activeEntries) > 0 {
-		e.peerRequestQueue.Push(p, activeEntries...)
+		e.peerRequestQueue.PushBlock(p, activeEntries...)
 	}
 	for _, block := range m.Blocks() {
 		log.Debugf("got block %s %d bytes", block, len(block.RawData()))
 		l.ReceivedBytes(len(block.RawData()))
 	}
-	return nil
 }
 
 func (e *Engine) addBlock(block blocks.Block) {
@@ -285,7 +318,10 @@ func (e *Engine) addBlock(block blocks.Block) {
 	for _, l := range e.ledgerMap {
 		l.lk.Lock()
 		if entry, ok := l.WantListContains(block.Cid()); ok {
-			e.peerRequestQueue.Push(l.Partner, entry)
+			e.peerRequestQueue.PushBlock(l.Partner, peertask.Task{
+				Identifier: entry.Cid,
+				Priority:   entry.Priority,
+			})
 			work = true
 		}
 		l.lk.Unlock()
@@ -296,6 +332,8 @@ func (e *Engine) addBlock(block blocks.Block) {
 	}
 }
 
+// AddBlock is called to when a new block is received and added to a block store
+// meaning there may be peers who want that block that we should send it to.
 func (e *Engine) AddBlock(block blocks.Block) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
@@ -309,7 +347,9 @@ func (e *Engine) AddBlock(block blocks.Block) {
 // inconsistent. Would need to ensure that Sends and acknowledgement of the
 // send happen atomically
 
-func (e *Engine) MessageSent(p peer.ID, m bsmsg.BitSwapMessage) error {
+// MessageSent is called when a message has successfully been sent out, to record
+// changes.
+func (e *Engine) MessageSent(p peer.ID, m bsmsg.BitSwapMessage) {
 	l := e.findOrCreate(p)
 	l.lk.Lock()
 	defer l.lk.Unlock()
@@ -320,9 +360,10 @@ func (e *Engine) MessageSent(p peer.ID, m bsmsg.BitSwapMessage) error {
 		e.peerRequestQueue.Remove(block.Cid(), p)
 	}
 
-	return nil
 }
 
+// PeerConnected is called when a new peer connects, meaning we should start
+// sending blocks.
 func (e *Engine) PeerConnected(p peer.ID) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
@@ -336,6 +377,7 @@ func (e *Engine) PeerConnected(p peer.ID) {
 	l.ref++
 }
 
+// PeerDisconnected is called when a peer disconnects.
 func (e *Engine) PeerDisconnected(p peer.ID) {
 	e.lock.Lock()
 	defer e.lock.Unlock()

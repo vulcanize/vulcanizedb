@@ -3,13 +3,12 @@ package routinghelpers
 import (
 	"context"
 
+	ci "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
+
 	multierror "github.com/hashicorp/go-multierror"
 	cid "github.com/ipfs/go-cid"
-	ci "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
 )
 
 // Compose composes the components into a single router. Not specifying a
@@ -29,7 +28,7 @@ type Compose struct {
 // functionality.
 
 // PutValue adds value corresponding to given Key.
-func (cr *Compose) PutValue(ctx context.Context, key string, value []byte, opts ...ropts.Option) error {
+func (cr *Compose) PutValue(ctx context.Context, key string, value []byte, opts ...routing.Option) error {
 	if cr.ValueStore == nil {
 		return routing.ErrNotSupported
 	}
@@ -37,7 +36,7 @@ func (cr *Compose) PutValue(ctx context.Context, key string, value []byte, opts 
 }
 
 // GetValue searches for the value corresponding to given Key.
-func (cr *Compose) GetValue(ctx context.Context, key string, opts ...ropts.Option) ([]byte, error) {
+func (cr *Compose) GetValue(ctx context.Context, key string, opts ...routing.Option) ([]byte, error) {
 	if cr.ValueStore == nil {
 		return nil, routing.ErrNotFound
 	}
@@ -45,7 +44,7 @@ func (cr *Compose) GetValue(ctx context.Context, key string, opts ...ropts.Optio
 }
 
 // SearchValue searches for the value corresponding to given Key.
-func (cr *Compose) SearchValue(ctx context.Context, key string, opts ...ropts.Option) (<-chan []byte, error) {
+func (cr *Compose) SearchValue(ctx context.Context, key string, opts ...routing.Option) (<-chan []byte, error) {
 	if cr.ValueStore == nil {
 		out := make(chan []byte)
 		close(out)
@@ -65,20 +64,20 @@ func (cr *Compose) Provide(ctx context.Context, c cid.Cid, local bool) error {
 }
 
 // FindProvidersAsync searches for peers who are able to provide a given key
-func (cr *Compose) FindProvidersAsync(ctx context.Context, c cid.Cid, count int) <-chan pstore.PeerInfo {
+func (cr *Compose) FindProvidersAsync(ctx context.Context, c cid.Cid, count int) <-chan peer.AddrInfo {
 	if cr.ContentRouting == nil {
-		ch := make(chan pstore.PeerInfo)
+		ch := make(chan peer.AddrInfo)
 		close(ch)
 		return ch
 	}
 	return cr.ContentRouting.FindProvidersAsync(ctx, c, count)
 }
 
-// FindPeer searches for a peer with given ID, returns a pstore.PeerInfo
+// FindPeer searches for a peer with given ID, returns a peer.AddrInfo
 // with relevant addresses.
-func (cr *Compose) FindPeer(ctx context.Context, p peer.ID) (pstore.PeerInfo, error) {
+func (cr *Compose) FindPeer(ctx context.Context, p peer.ID) (peer.AddrInfo, error) {
 	if cr.PeerRouting == nil {
-		return pstore.PeerInfo{}, routing.ErrNotFound
+		return peer.AddrInfo{}, routing.ErrNotFound
 	}
 	return cr.PeerRouting.FindPeer(ctx, p)
 }
@@ -119,5 +118,5 @@ func (cr *Compose) Bootstrap(ctx context.Context) error {
 	return me.ErrorOrNil()
 }
 
-var _ routing.IpfsRouting = (*Compose)(nil)
+var _ routing.Routing = (*Compose)(nil)
 var _ routing.PubKeyFetcher = (*Compose)(nil)

@@ -43,8 +43,8 @@ func NewPublicStateDiffAPI(sds IService) *PublicStateDiffAPI {
 	}
 }
 
-// Subscribe is the public method to setup a subscription that fires off state-diff payloads as they are created
-func (api *PublicStateDiffAPI) Subscribe(ctx context.Context, payloadChan chan Payload) (*rpc.Subscription, error) {
+// Stream is the public method to setup a subscription that fires off state-diff payloads as they are created
+func (api *PublicStateDiffAPI) Stream(ctx context.Context) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
@@ -56,25 +56,30 @@ func (api *PublicStateDiffAPI) Subscribe(ctx context.Context, payloadChan chan P
 
 	go func() {
 		// subscribe to events from the state diff service
-		payloadChannel := make(chan Payload, 10)
-		quitChan := make(chan bool)
+		payloadChannel := make(chan Payload, chainEventChanSize)
+		quitChan := make(chan bool, 1)
 		api.sds.Subscribe(rpcSub.ID, payloadChannel, quitChan)
-		// loop and await state diff payloads and relay them to the subscriber with then notifier
+		// loop and await state diff payloads and relay them to the subscriber with the notifier
 		for {
 			select {
 			case packet := <-payloadChannel:
-				if err := notifier.Notify(rpcSub.ID, packet); err != nil {
-					log.Error("Failed to send state diff packet", "err", err)
+				if notifyErr := notifier.Notify(rpcSub.ID, packet); notifyErr != nil {
+					log.Error("Failed to send state diff packet; error: " + notifyErr.Error())
+					unSubErr := api.sds.Unsubscribe(rpcSub.ID)
+					if unSubErr != nil {
+						log.Error("Failed to unsubscribe from the state diff service; error: " + unSubErr.Error())
+					}
+					return
 				}
 			case err := <-rpcSub.Err():
-				log.Error("State diff service rpcSub error", err)
-				println("err")
-				println(err.Error())
-				err = api.sds.Unsubscribe(rpcSub.ID)
 				if err != nil {
-					log.Error("Failed to unsubscribe from the state diff service", err)
+					log.Error("State diff service rpcSub error: " + err.Error())
+					err = api.sds.Unsubscribe(rpcSub.ID)
+					if err != nil {
+						log.Error("Failed to unsubscribe from the state diff service; error: " + err.Error())
+					}
+					return
 				}
-				return
 			case <-quitChan:
 				// don't need to unsubscribe, statediff service does so before sending the quit signal
 				return

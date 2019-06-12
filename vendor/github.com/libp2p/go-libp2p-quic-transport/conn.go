@@ -1,10 +1,11 @@
 package libp2pquic
 
 import (
-	ic "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	tpt "github.com/libp2p/go-libp2p-transport"
-	smux "github.com/libp2p/go-stream-muxer"
+	ic "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/mux"
+	"github.com/libp2p/go-libp2p-core/peer"
+	tpt "github.com/libp2p/go-libp2p-core/transport"
+
 	quic "github.com/lucas-clemente/quic-go"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -22,7 +23,7 @@ type conn struct {
 	remoteMultiaddr ma.Multiaddr
 }
 
-var _ tpt.Conn = &conn{}
+var _ tpt.CapableConn = &conn{}
 
 func (c *conn) Close() error {
 	return c.sess.Close()
@@ -34,13 +35,13 @@ func (c *conn) IsClosed() bool {
 }
 
 // OpenStream creates a new stream.
-func (c *conn) OpenStream() (smux.Stream, error) {
+func (c *conn) OpenStream() (mux.MuxedStream, error) {
 	qstr, err := c.sess.OpenStreamSync()
 	return &stream{Stream: qstr}, err
 }
 
 // AcceptStream accepts a stream opened by the other side.
-func (c *conn) AcceptStream() (smux.Stream, error) {
+func (c *conn) AcceptStream() (mux.MuxedStream, error) {
 	qstr, err := c.sess.AcceptStream()
 	return &stream{Stream: qstr}, err
 }

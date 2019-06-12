@@ -8,23 +8,22 @@ import (
 	"sync"
 	"time"
 
-	ggio "github.com/gogo/protobuf/io"
-	ctxio "github.com/jbenet/go-context/io"
+	"github.com/libp2p/go-libp2p-core/helpers"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	"github.com/libp2p/go-libp2p-kad-dht/metrics"
 	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+
+	ggio "github.com/gogo/protobuf/io"
+
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
 var dhtReadMessageTimeout = time.Minute
+var dhtStreamIdleTimeout = 10 * time.Minute
 var ErrReadTimeout = fmt.Errorf("timed out reading response")
-
-type bufferedWriteCloser interface {
-	ggio.WriteCloser
-	Flush() error
-}
 
 // The Protobuf writer performs multiple small writes when writing a message.
 // We need to buffer those writes, to make sure that we're not sending a new
@@ -34,20 +33,34 @@ type bufferedDelimitedWriter struct {
 	ggio.WriteCloser
 }
 
-func newBufferedDelimitedWriter(str io.Writer) bufferedWriteCloser {
-	w := bufio.NewWriter(str)
-	return &bufferedDelimitedWriter{
-		Writer:      w,
-		WriteCloser: ggio.NewDelimitedWriter(w),
+var writerPool = sync.Pool{
+	New: func() interface{} {
+		w := bufio.NewWriter(nil)
+		return &bufferedDelimitedWriter{
+			Writer:      w,
+			WriteCloser: ggio.NewDelimitedWriter(w),
+		}
+	},
+}
+
+func writeMsg(w io.Writer, mes *pb.Message) error {
+	bw := writerPool.Get().(*bufferedDelimitedWriter)
+	bw.Reset(w)
+	err := bw.WriteMsg(mes)
+	if err == nil {
+		err = bw.Flush()
 	}
+	bw.Reset(nil)
+	writerPool.Put(bw)
+	return err
 }
 
 func (w *bufferedDelimitedWriter) Flush() error {
 	return w.Writer.Flush()
 }
 
-// handleNewStream implements the inet.StreamHandler
-func (dht *IpfsDHT) handleNewStream(s inet.Stream) {
+// handleNewStream implements the network.StreamHandler
+func (dht *IpfsDHT) handleNewStream(s network.Stream) {
 	defer s.Reset()
 	if dht.handleNewMessage(s) {
 		// Gracefully close the stream for writes.
@@ -56,14 +69,14 @@ func (dht *IpfsDHT) handleNewStream(s inet.Stream) {
 }
 
 // Returns true on orderly completion of writes (so we can Close the stream).
-func (dht *IpfsDHT) handleNewMessage(s inet.Stream) bool {
+func (dht *IpfsDHT) handleNewMessage(s network.Stream) bool {
 	ctx := dht.ctx
+	r := ggio.NewDelimitedReader(s, network.MessageSizeMax)
 
-	cr := ctxio.NewReader(ctx, s) // ok to use. we defer close stream in this func
-	cw := ctxio.NewWriter(ctx, s) // ok to use. we defer close stream in this func
-	r := ggio.NewDelimitedReader(cr, inet.MessageSizeMax)
-	w := newBufferedDelimitedWriter(cw)
 	mPeer := s.Conn().RemotePeer()
+
+	timer := time.AfterFunc(dhtStreamIdleTimeout, func() { s.Reset() })
+	defer timer.Stop()
 
 	for {
 		var req pb.Message
@@ -84,6 +97,8 @@ func (dht *IpfsDHT) handleNewMessage(s inet.Stream) bool {
 			return false
 		case nil:
 		}
+
+		timer.Reset(dhtStreamIdleTimeout)
 
 		startTime := time.Now()
 		ctx, _ = tag.New(
@@ -118,10 +133,7 @@ func (dht *IpfsDHT) handleNewMessage(s inet.Stream) bool {
 		}
 
 		// send out response msg
-		err = w.WriteMsg(resp)
-		if err == nil {
-			err = w.Flush()
-		}
+		err = writeMsg(s, resp)
 		if err != nil {
 			stats.Record(ctx, metrics.ReceivedMessageErrors.M(1))
 			logger.Debugf("error writing response: %v", err)
@@ -235,9 +247,8 @@ func (dht *IpfsDHT) messageSenderForPeer(ctx context.Context, p peer.ID) (*messa
 }
 
 type messageSender struct {
-	s   inet.Stream
+	s   network.Stream
 	r   ggio.ReadCloser
-	w   bufferedWriteCloser
 	lk  sync.Mutex
 	p   peer.ID
 	dht *IpfsDHT
@@ -280,8 +291,7 @@ func (ms *messageSender) prep(ctx context.Context) error {
 		return err
 	}
 
-	ms.r = ggio.NewDelimitedReader(nstr, inet.MessageSizeMax)
-	ms.w = newBufferedDelimitedWriter(nstr)
+	ms.r = ggio.NewDelimitedReader(nstr, network.MessageSizeMax)
 	ms.s = nstr
 
 	return nil
@@ -317,7 +327,7 @@ func (ms *messageSender) SendMessage(ctx context.Context, pmes *pb.Message) erro
 		logger.Event(ctx, "dhtSentMessage", ms.dht.self, ms.p, pmes)
 
 		if ms.singleMes > streamReuseTries {
-			go inet.FullClose(ms.s)
+			go helpers.FullClose(ms.s)
 			ms.s = nil
 		} else if retry {
 			ms.singleMes++
@@ -366,7 +376,7 @@ func (ms *messageSender) SendRequest(ctx context.Context, pmes *pb.Message) (*pb
 		logger.Event(ctx, "dhtSentMessage", ms.dht.self, ms.p, pmes)
 
 		if ms.singleMes > streamReuseTries {
-			go inet.FullClose(ms.s)
+			go helpers.FullClose(ms.s)
 			ms.s = nil
 		} else if retry {
 			ms.singleMes++
@@ -377,10 +387,7 @@ func (ms *messageSender) SendRequest(ctx context.Context, pmes *pb.Message) (*pb
 }
 
 func (ms *messageSender) writeMsg(pmes *pb.Message) error {
-	if err := ms.w.WriteMsg(pmes); err != nil {
-		return err
-	}
-	return ms.w.Flush()
+	return writeMsg(ms.s, pmes)
 }
 
 func (ms *messageSender) ctxReadMsg(ctx context.Context, mes *pb.Message) error {
