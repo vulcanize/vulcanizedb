@@ -69,31 +69,6 @@ func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.D
 	return result, err
 }
 
-func RecheckHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, checkedHeadersColumn string) ([]core.Header, error) {
-	var result []core.Header
-	var query string
-	var err error
-
-	if endingBlockNumber == -1 {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE ` + checkedHeadersColumn + ` between 1 and ` + constants.RecheckHeaderCap + `
-				AND headers.block_number >= $1
-				AND headers.eth_node_fingerprint = $2`
-		err = db.Select(&result, query, startingBlockNumber, db.Node.ID)
-	} else {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE ` + checkedHeadersColumn + ` between 1 and ` + constants.RecheckHeaderCap + `
-				AND headers.block_number >= $1
-				AND headers.block_number <= $2
-				AND headers.eth_node_fingerprint = $3`
-		err = db.Select(&result, query, startingBlockNumber, endingBlockNumber, db.Node.ID)
-	}
-
-	return result, err
-}
-
 func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 	// Query returns `[]driver.Value`, nullable polymorphic interface
 	var queryResult []driver.Value
