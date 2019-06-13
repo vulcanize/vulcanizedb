@@ -47,7 +47,7 @@ const (
 )
 
 func GetMapping(indexOnContract, key string) common.Hash {
-	keyBytes := common.FromHex("0x" + key + indexOnContract)
+	keyBytes := common.FromHex(key + indexOnContract)
 	encoded := crypto.Keccak256(keyBytes)
 	return common.BytesToHash(encoded)
 }
