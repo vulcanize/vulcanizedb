@@ -135,7 +135,7 @@ var _ = Describe("Repository", func() {
 
 			columnNames, err := shared.GetCheckedColumnNames(db)
 			Expect(err).NotTo(HaveOccurred())
-			notCheckedSQL = shared.CreateNotCheckedSQL(columnNames, constants.HeaderMissing)
+			notCheckedSQL = shared.CreateHeaderCheckedPredicateSQL(columnNames, constants.HeaderMissing)
 
 			startingBlockNumber = rand.Int63()
 			eventSpecificBlockNumber = startingBlockNumber + 1
@@ -285,33 +285,51 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("CreateNotCheckedSQL", func() {
-		It("generates a correct SQL string for one column", func() {
-			columns := []string{"columnA"}
-			expected := "NOT (columnA!=0)"
-			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderMissing)
-			Expect(actual).To(Equal(expected))
+	Describe("CreateCustomColumnNamesSQL", func() {
+		Describe("for MissingHeaders", func() {
+			It("generates a correct SQL string for one column", func() {
+				columns := []string{"columnA"}
+				expected := " (columnA=0)"
+				actual := shared.CreateHeaderCheckedPredicateSQL(columns, constants.HeaderMissing)
+				Expect(actual).To(Equal(expected))
+			})
+
+			It("generates a correct SQL string for several columns", func() {
+				columns := []string{"columnA", "columnB"}
+				expected := " (columnA=0 OR columnB=0)"
+				actual := shared.CreateHeaderCheckedPredicateSQL(columns, constants.HeaderMissing)
+				Expect(actual).To(Equal(expected))
+			})
+
+			It("defaults to FALSE when there are no columns", func() {
+				expected := "FALSE"
+				actual := shared.CreateHeaderCheckedPredicateSQL([]string{}, constants.HeaderMissing)
+				Expect(actual).To(Equal(expected))
+			})
 		})
 
-		It("generates a correct SQL string for several columns", func() {
-			columns := []string{"columnA", "columnB"}
-			expected := "NOT (columnA!=0 AND columnB!=0)"
-			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderMissing)
-			Expect(actual).To(Equal(expected))
+		Describe("RecheckHeadersCustomColumnNames", func() {
+			It("defaults to FALSE when there are no columns", func() {
+				expected := "FALSE"
+				actual := shared.CreateHeaderCheckedPredicateSQL([]string{}, constants.HeaderRecheck)
+				Expect(actual).To(Equal(expected))
+			})
+
+			It("generates a correct SQL string for rechecking headers for one column", func() {
+				columns := []string{"columnA"}
+				expected := fmt.Sprintf(" (columnA<%s)", constants.RecheckHeaderCap)
+				actual := shared.CreateHeaderCheckedPredicateSQL(columns, constants.HeaderRecheck)
+				Expect(actual).To(Equal(expected))
+			})
+
+			It("generates a correct SQL string for rechecking headers for several columns", func() {
+				columns := []string{"columnA", "columnB"}
+				expected := fmt.Sprintf(" (columnA<%s OR columnB<%s)", constants.RecheckHeaderCap, constants.RecheckHeaderCap)
+				actual := shared.CreateHeaderCheckedPredicateSQL(columns, constants.HeaderRecheck)
+				Expect(actual).To(Equal(expected))
+			})
 		})
 
-		It("defaults to FALSE when there are no columns", func() {
-			expected := "FALSE"
-			actual := shared.CreateNotCheckedSQL([]string{}, constants.HeaderMissing)
-			Expect(actual).To(Equal(expected))
-		})
-
-		It("generates a correct SQL string for rechecking headers", func() {
-			columns := []string{"columnA", "columnB"}
-			expected := fmt.Sprintf("NOT (columnA>=%s AND columnB>=%s)", constants.RecheckHeaderCap, constants.RecheckHeaderCap)
-			actual := shared.CreateNotCheckedSQL(columns, constants.HeaderRecheck)
-			Expect(actual).To(Equal(expected))
-		})
 	})
 })
 

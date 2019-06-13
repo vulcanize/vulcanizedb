@@ -96,7 +96,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	if err != nil {
 		return err
 	}
-	notCheckedSQL := repository.CreateNotCheckedSQL(checkedColumnNames, recheckHeaders)
+	notCheckedSQL := repository.CreateHeaderCheckedPredicateSQL(checkedColumnNames, recheckHeaders)
 
 	missingHeaders, err := repository.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {

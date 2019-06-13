@@ -121,37 +121,47 @@ func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 	return columnNames, nil
 }
 
-// Builds a SQL string that checks if any column value is 0, given the column names.
+// Builds a SQL string that checks if any column should be checked/rechecked.
 // Defaults to FALSE when no columns are provided.
 // Ex: ["columnA", "columnB"] => "NOT (columnA!=0 AND columnB!=0)"
 //     [] => "FALSE"
-func CreateNotCheckedSQL(boolColumns []string, recheckHeaders constants.TransformerExecution) string {
-
-	var result bytes.Buffer
-
+func CreateHeaderCheckedPredicateSQL(boolColumns []string, recheckHeaders constants.TransformerExecution) string {
 	if len(boolColumns) == 0 {
 		return "FALSE"
 	}
 
-	result.WriteString("NOT (")
+	if recheckHeaders {
+		return createHeaderCheckedPredicateSQLForRecheckedHeaders(boolColumns)
+	} else {
+		return createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns)
+	}
+}
+
+func createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns []string) string {
+	var result bytes.Buffer
+	result.WriteString(" (")
 
 	// Loop excluding last column name
 	for _, column := range boolColumns[:len(boolColumns)-1] {
+		result.WriteString(fmt.Sprintf("%v=0 OR ", column))
+	}
 
-		if recheckHeaders {
-			result.WriteString(fmt.Sprintf("%v>=%s AND ", column, constants.RecheckHeaderCap))
-		} else {
-			result.WriteString(fmt.Sprintf("%v!=0 AND ", column))
-		}
+	result.WriteString(fmt.Sprintf("%v=0)", boolColumns[len(boolColumns)-1]))
+
+	return result.String()
+}
+
+func createHeaderCheckedPredicateSQLForRecheckedHeaders(boolColumns []string) string {
+	var result bytes.Buffer
+	result.WriteString(" (")
+
+	// Loop excluding last column name
+	for _, column := range boolColumns[:len(boolColumns)-1] {
+		result.WriteString(fmt.Sprintf("%v<%s OR ", column, constants.RecheckHeaderCap))
 	}
 
 	// No trailing "OR" for the last column name
-	if recheckHeaders {
-		result.WriteString(fmt.Sprintf("%v>=%s)", boolColumns[len(boolColumns)-1], constants.RecheckHeaderCap))
-	} else {
-		result.WriteString(fmt.Sprintf("%v!=0)", boolColumns[len(boolColumns)-1]))
-
-	}
+	result.WriteString(fmt.Sprintf("%v<%s)", boolColumns[len(boolColumns)-1], constants.RecheckHeaderCap))
 
 	return result.String()
 }
