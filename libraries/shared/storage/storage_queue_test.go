@@ -49,11 +49,22 @@ var _ = Describe("Storage queue", func() {
 		Expect(addErr).NotTo(HaveOccurred())
 	})
 
-	It("adds a storage row to the db", func() {
-		var result utils.StorageDiffRow
-		getErr := db.Get(&result, `SELECT contract, block_hash, block_height, storage_key, storage_value FROM public.queued_storage`)
-		Expect(getErr).NotTo(HaveOccurred())
-		Expect(result).To(Equal(row))
+	Describe("Add", func() {
+		It("adds a storage row to the db", func() {
+			var result utils.StorageDiffRow
+			getErr := db.Get(&result, `SELECT contract, block_hash, block_height, storage_key, storage_value FROM public.queued_storage`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(result).To(Equal(row))
+		})
+
+		It("does not duplicate storage rows", func() {
+			addErr := queue.Add(row)
+			Expect(addErr).NotTo(HaveOccurred())
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.queued_storage`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(1))
+		})
 	})
 
 	It("deletes storage row from db", func() {
