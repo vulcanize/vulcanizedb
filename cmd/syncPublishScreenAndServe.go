@@ -49,6 +49,7 @@ func init() {
 
 func syncPublishScreenAndServe() {
 	log.SetLevel(log.DebugLevel)
+	log.SetOutput(os.Stdout)
 	blockChain, ethClient, rpcClient := getBlockChainAndClients()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -93,7 +94,7 @@ func syncPublishScreenAndServe() {
 	var wsEndpoint string
 	wsEndpoint = viper.GetString("server.wsEndpoint")
 	if wsEndpoint == "" {
-		wsEndpoint = "127.0.0.1:2019"
+		wsEndpoint = "127.0.0.1:80"
 	}
 	_, _, err = rpc.StartWSEndpoint(wsEndpoint, processor.APIs(), []string{"vulcanizedb"}, nil, true)
 	if err != nil {

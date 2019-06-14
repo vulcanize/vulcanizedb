@@ -50,7 +50,6 @@ func init() {
 }
 
 func streamSubscribe() {
-	log.SetLevel(log.DebugLevel)
 	// Prep the subscription config/filters to be sent to the server
 	subscriptionConfig()
 

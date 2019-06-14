@@ -16,3 +16,4 @@ db/migrations/20*.sql
 plugins/*.so
 postgraphile/*.toml
 postgraphile/schema.graphql
+vulcanizedb.pem
