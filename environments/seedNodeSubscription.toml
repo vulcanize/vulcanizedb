@@ -1,0 +1,40 @@
+[subscription]
+    path = "ws://127.0.0.1:80"
+    backfill = true
+    backfillOnly = false
+    startingBlock = 0
+    endingBlock = 0
+    [subscription.headerFilter]
+        off = false
+        finalOnly = true
+    [subscription.trxFilter]
+        off = false
+        src = [
+            "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe",
+        ]
+        dst = [
+            "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe",
+        ]
+    [subscription.receiptFilter]
+        off = false
+        topic0s = [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x930a61a57a70a73c2a503615b87e2e54fe5b9cdeacda518270b852296ab1a377"
+        ]
+    [subscription.stateFilter]
+        off = false
+        addresses = [
+           "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
+       ]
+       intermediateNodes = false
+    [subscription.storageFilter]
+        off = true
+        addresses = [
+            "",
+            ""
+        ]
+        storageKeys = [
+            "",
+            ""
+        ]
+        intermediateNodes = false
