@@ -169,19 +169,20 @@ func (ptq *PeerTaskQueue) Remove(identifier peertask.Identifier, p peer.ID) {
 	ptq.lock.Lock()
 	peerTracker, ok := ptq.peerTrackers[p]
 	if ok {
-		peerTracker.Remove(identifier)
-		// we now also 'freeze' that partner. If they sent us a cancel for a
-		// block we were about to send them, we should wait a short period of time
-		// to make sure we receive any other in-flight cancels before sending
-		// them a block they already potentially have
-		if !ptq.ignoreFreezing {
-			if !peerTracker.IsFrozen() {
-				ptq.frozenPeers[p] = struct{}{}
-			}
+		if peerTracker.Remove(identifier) {
+			// we now also 'freeze' that partner. If they sent us a cancel for a
+			// block we were about to send them, we should wait a short period of time
+			// to make sure we receive any other in-flight cancels before sending
+			// them a block they already potentially have
+			if !ptq.ignoreFreezing {
+				if !peerTracker.IsFrozen() {
+					ptq.frozenPeers[p] = struct{}{}
+				}
 
-			peerTracker.Freeze()
+				peerTracker.Freeze()
+			}
+			ptq.pQueue.Update(peerTracker.Index())
 		}
-		ptq.pQueue.Update(peerTracker.Index())
 	}
 	ptq.lock.Unlock()
 }

@@ -179,12 +179,13 @@ func (p *PeerTracker) PopBlock() *peertask.TaskBlock {
 }
 
 // Remove removes the task with the given identifier from this peers queue
-func (p *PeerTracker) Remove(identifier peertask.Identifier) {
+func (p *PeerTracker) Remove(identifier peertask.Identifier) bool {
 	taskBlock, ok := p.taskMap[identifier]
 	if ok {
 		taskBlock.MarkPrunable(identifier)
 		p.numTasks--
 	}
+	return ok
 }
 
 // Freeze increments the freeze value for this peer. While a peer is frozen
