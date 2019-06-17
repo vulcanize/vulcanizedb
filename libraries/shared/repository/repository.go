@@ -69,31 +69,6 @@ func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.D
 	return result, err
 }
 
-func RecheckHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.DB, checkedHeadersColumn string) ([]core.Header, error) {
-	var result []core.Header
-	var query string
-	var err error
-
-	if endingBlockNumber == -1 {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE ` + checkedHeadersColumn + ` between 1 and ` + constants.RecheckHeaderCap + `
-				AND headers.block_number >= $1
-				AND headers.eth_node_fingerprint = $2`
-		err = db.Select(&result, query, startingBlockNumber, db.Node.ID)
-	} else {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE ` + checkedHeadersColumn + ` between 1 and ` + constants.RecheckHeaderCap + `
-				AND headers.block_number >= $1
-				AND headers.block_number <= $2
-				AND headers.eth_node_fingerprint = $3`
-		err = db.Select(&result, query, startingBlockNumber, endingBlockNumber, db.Node.ID)
-	}
-
-	return result, err
-}
-
 func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 	// Query returns `[]driver.Value`, nullable polymorphic interface
 	var queryResult []driver.Value
@@ -121,37 +96,47 @@ func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 	return columnNames, nil
 }
 
-// Builds a SQL string that checks if any column value is 0, given the column names.
+// Builds a SQL string that checks if any column should be checked/rechecked.
 // Defaults to FALSE when no columns are provided.
 // Ex: ["columnA", "columnB"] => "NOT (columnA!=0 AND columnB!=0)"
 //     [] => "FALSE"
-func CreateNotCheckedSQL(boolColumns []string, recheckHeaders constants.TransformerExecution) string {
-
-	var result bytes.Buffer
-
+func CreateHeaderCheckedPredicateSQL(boolColumns []string, recheckHeaders constants.TransformerExecution) string {
 	if len(boolColumns) == 0 {
 		return "FALSE"
 	}
 
-	result.WriteString("NOT (")
+	if recheckHeaders {
+		return createHeaderCheckedPredicateSQLForRecheckedHeaders(boolColumns)
+	} else {
+		return createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns)
+	}
+}
+
+func createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns []string) string {
+	var result bytes.Buffer
+	result.WriteString(" (")
 
 	// Loop excluding last column name
 	for _, column := range boolColumns[:len(boolColumns)-1] {
+		result.WriteString(fmt.Sprintf("%v=0 OR ", column))
+	}
 
-		if recheckHeaders {
-			result.WriteString(fmt.Sprintf("%v>=%s AND ", column, constants.RecheckHeaderCap))
-		} else {
-			result.WriteString(fmt.Sprintf("%v!=0 AND ", column))
-		}
+	result.WriteString(fmt.Sprintf("%v=0)", boolColumns[len(boolColumns)-1]))
+
+	return result.String()
+}
+
+func createHeaderCheckedPredicateSQLForRecheckedHeaders(boolColumns []string) string {
+	var result bytes.Buffer
+	result.WriteString(" (")
+
+	// Loop excluding last column name
+	for _, column := range boolColumns[:len(boolColumns)-1] {
+		result.WriteString(fmt.Sprintf("%v<%s OR ", column, constants.RecheckHeaderCap))
 	}
 
 	// No trailing "OR" for the last column name
-	if recheckHeaders {
-		result.WriteString(fmt.Sprintf("%v>=%s)", boolColumns[len(boolColumns)-1], constants.RecheckHeaderCap))
-	} else {
-		result.WriteString(fmt.Sprintf("%v!=0)", boolColumns[len(boolColumns)-1]))
-
-	}
+	result.WriteString(fmt.Sprintf("%v<%s)", boolColumns[len(boolColumns)-1], constants.RecheckHeaderCap))
 
 	return result.String()
 }

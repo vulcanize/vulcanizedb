@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -37,7 +36,7 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.Event
 	return transformer
 }
 
-func (transformer Transformer) Execute(logs []types.Log, header core.Header, recheckHeaders constants.TransformerExecution) error {
+func (transformer Transformer) Execute(logs []types.Log, header core.Header) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
 
