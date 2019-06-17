@@ -21,6 +21,16 @@ var _ = Describe("Mappings", func() {
 			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
+
+		It("returns same result if value includes hex prefix", func() {
+			indexOfMappingOnContract := storage.IndexZero
+			keyForDesiredValueInMapping := "0x1234567890abcdef"
+
+			storageKey := storage.GetMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+
+			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
+			Expect(storageKey).To(Equal(expectedStorageKey))
+		})
 	})
 
 	Describe("GetNestedMapping", func() {
