@@ -149,7 +149,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		AfterEach(func() {
-			//test_config.CleanCheckedHeadersTable(db, getExpectedColumnNames())
+			test_config.CleanCheckedHeadersTable(db, getExpectedColumnNames())
 		})
 
 		It("only treats headers as checked if the event specific logs have been checked", func() {
@@ -246,8 +246,8 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("CreateCustomColumnNamesSQL", func() {
-		Describe("for MissingHeaders", func() {
+	Describe("CreateHeaderCheckedPredicateSQL", func() {
+		Describe("for headers that haven't been checked for logs", func() {
 			It("generates a correct SQL string for one column", func() {
 				columns := []string{"columnA"}
 				expected := " (columnA=0)"
@@ -269,13 +269,7 @@ var _ = Describe("Repository", func() {
 			})
 		})
 
-		Describe("RecheckHeadersCustomColumnNames", func() {
-			It("defaults to FALSE when there are no columns", func() {
-				expected := "FALSE"
-				actual := shared.CreateHeaderCheckedPredicateSQL([]string{}, constants.HeaderRecheck)
-				Expect(actual).To(Equal(expected))
-			})
-
+		Describe("for headers that are being rechecked for logs", func() {
 			It("generates a correct SQL string for rechecking headers for one column", func() {
 				columns := []string{"columnA"}
 				expected := fmt.Sprintf(" (columnA<%s)", constants.RecheckHeaderCap)
@@ -289,8 +283,13 @@ var _ = Describe("Repository", func() {
 				actual := shared.CreateHeaderCheckedPredicateSQL(columns, constants.HeaderRecheck)
 				Expect(actual).To(Equal(expected))
 			})
-		})
 
+			It("defaults to FALSE when there are no columns", func() {
+				expected := "FALSE"
+				actual := shared.CreateHeaderCheckedPredicateSQL([]string{}, constants.HeaderRecheck)
+				Expect(actual).To(Equal(expected))
+			})
+		})
 	})
 })
 
