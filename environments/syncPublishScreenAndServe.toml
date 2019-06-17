@@ -5,8 +5,8 @@
 
 [client]
     ipcPath  = "ws://127.0.0.1:8546"
-    ipfsPath = "/Users/iannorden/.ipfs"
+    ipfsPath = "/root/.ipfs"
 
 [server]
-    ipcPath = "/Users/iannorden/.vulcanize/vulcanize.ipc"
+    ipcPath = "/root/.vulcanize/vulcanize.ipc"
     wsEndpoint = "127.0.0.1:80"
