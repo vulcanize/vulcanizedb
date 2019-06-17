@@ -38,7 +38,7 @@ func NewStorageQueue(db *postgres.DB) StorageQueue {
 func (queue StorageQueue) Add(row utils.StorageDiffRow) error {
 	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (contract,
 		block_hash, block_height, storage_key, storage_value) VALUES
-		($1, $2, $3, $4, $5)`, row.Contract.Bytes(), row.BlockHash.Bytes(),
+		($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, row.Contract.Bytes(), row.BlockHash.Bytes(),
 		row.BlockHeight, row.StorageKey.Bytes(), row.StorageValue.Bytes())
 	return err
 }
