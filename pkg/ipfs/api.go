@@ -19,10 +19,10 @@ package ipfs
 import (
 	"context"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 )
 
 // APIName is the namespace used for the state diffing service API
@@ -58,7 +58,7 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 		// subscribe to events from the SyncPublishScreenAndServe service
 		payloadChannel := make(chan ResponsePayload, payloadChanBufferSize)
 		quitChan := make(chan bool, 1)
-		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, &streamFilters)
+		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
 
 		// loop and await state diff payloads and relay them to the subscriber with then notifier
 		for {
@@ -66,17 +66,11 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 			case packet := <-payloadChannel:
 				if notifyErr := notifier.Notify(rpcSub.ID, packet); notifyErr != nil {
 					log.Error("Failed to send state diff packet", "err", notifyErr)
-					unSubErr := api.snp.Unsubscribe(rpcSub.ID)
-					if unSubErr != nil {
-						log.Error("Failed to unsubscribe from the state diff service", unSubErr)
-					}
+					api.snp.Unsubscribe(rpcSub.ID)
 					return
 				}
 			case <-rpcSub.Err():
-				err := api.snp.Unsubscribe(rpcSub.ID)
-				if err != nil {
-					log.Error("Failed to unsubscribe from the state diff service", err)
-				}
+				api.snp.Unsubscribe(rpcSub.ID)
 				return
 			case <-quitChan:
 				// don't need to unsubscribe, SyncPublishScreenAndServe service does so before sending the quit signal

@@ -16,21 +16,23 @@
 
 package config
 
+import "math/big"
+
 // Subscription config is used by a subscribing transformer to specifiy which data to receive from the seed node
 type Subscription struct {
 	BackFill      bool
 	BackFillOnly  bool
-	StartingBlock int64
-	EndingBlock   int64 // set to 0 or a negative value to have no ending block
+	StartingBlock *big.Int
+	EndingBlock   *big.Int // set to 0 or a negative value to have no ending block
 	HeaderFilter  HeaderFilter
-	TrxFilter TrxFilter
+	TrxFilter     TrxFilter
 	ReceiptFilter ReceiptFilter
-	StateFilter StateFilter
+	StateFilter   StateFilter
 	StorageFilter StorageFilter
 }
 
 type HeaderFilter struct {
-	Off bool
+	Off       bool
 	FinalOnly bool
 }
 

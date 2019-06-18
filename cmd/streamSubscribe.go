@@ -18,6 +18,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -169,8 +170,8 @@ func subscriptionConfig() {
 
 		// Below default to 0
 		// 0 start means we start at the beginning and 0 end means we continue indefinitely
-		StartingBlock: viper.GetInt64("subscription.startingBlock"),
-		EndingBlock:   viper.GetInt64("subscription.endingBlock"),
+		StartingBlock: big.NewInt(viper.GetInt64("subscription.startingBlock")),
+		EndingBlock:   big.NewInt(viper.GetInt64("subscription.endingBlock")),
 
 		// Below default to false, which means we get all headers by default
 		HeaderFilter: config.HeaderFilter{
@@ -215,7 +216,7 @@ func subscriptionConfig() {
 func getRpcClient() core.RpcClient {
 	vulcPath := viper.GetString("subscription.path")
 	if vulcPath == "" {
-		vulcPath = "ws://127.0.0.1:2019" // default to and try the default ws url if no path is provided
+		vulcPath = "ws://127.0.0.1:80" // default to and try the default ws url if no path is provided
 	}
 	rawRpcClient, err := rpc.Dial(vulcPath)
 	if err != nil {

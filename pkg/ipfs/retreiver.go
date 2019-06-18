@@ -17,6 +17,8 @@
 package ipfs
 
 import (
+	"math/big"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
@@ -54,13 +56,13 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 	log.Debug("retrieving cids")
 	var endingBlock int64
 	var err error
-	if streamFilters.EndingBlock <= 0 || streamFilters.EndingBlock <= streamFilters.StartingBlock {
+	if streamFilters.EndingBlock.Int64() <= 0 || streamFilters.EndingBlock.Int64() <= streamFilters.StartingBlock.Int64() {
 		endingBlock, err = ecr.GetLastBlockNumber()
 		if err != nil {
 			return nil, err
 		}
 	}
-	cids := make([]CidWrapper, 0, endingBlock+1-streamFilters.StartingBlock)
+	cids := make([]CidWrapper, 0, endingBlock+1-streamFilters.StartingBlock.Int64())
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return nil, err
@@ -69,8 +71,11 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 	log.Debug("backfill ending block:", endingBlock)
 	// THIS IS SUPER EXPENSIVE HAVING TO CYCLE THROUGH EACH BLOCK, NEED BETTER WAY TO FETCH CIDS
 	// WHILE STILL MAINTAINING RELATION INFO ABOUT WHAT BLOCK THE CIDS BELONG TO
-	for i := streamFilters.StartingBlock; i <= endingBlock; i++ {
+	for i := streamFilters.StartingBlock.Int64(); i <= endingBlock; i++ {
 		cw := CidWrapper{}
+		cw.BlockNumber = big.NewInt(i)
+
+		// Retrieve cached header CIDs
 		if !streamFilters.HeaderFilter.Off {
 			cw.Headers, err = ecr.retrieveHeaderCIDs(tx, streamFilters, i)
 			if err != nil {
@@ -78,7 +83,17 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 				log.Error("header cid retrieval error")
 				return nil, err
 			}
+			if !streamFilters.HeaderFilter.FinalOnly {
+				cw.Uncles, err = ecr.retrieveUncleCIDs(tx, streamFilters, i)
+				if err != nil {
+					tx.Rollback()
+					log.Error("header cid retrieval error")
+					return nil, err
+				}
+			}
 		}
+
+		// Retrieve cached trx CIDs
 		var trxIds []int64
 		if !streamFilters.TrxFilter.Off {
 			cw.Transactions, trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, i)
@@ -88,6 +103,8 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 				return nil, err
 			}
 		}
+
+		// Retrieve cached receipt CIDs
 		if !streamFilters.ReceiptFilter.Off {
 			cw.Receipts, err = ecr.retrieveRctCIDs(tx, streamFilters, i, trxIds)
 			if err != nil {
@@ -96,6 +113,8 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 				return nil, err
 			}
 		}
+
+		// Retrieve cached state CIDs
 		if !streamFilters.StateFilter.Off {
 			cw.StateNodes, err = ecr.retrieveStateCIDs(tx, streamFilters, i)
 			if err != nil {
@@ -104,6 +123,8 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]C
 				return nil, err
 			}
 		}
+
+		// Retrieve cached storage CIDs
 		if !streamFilters.StorageFilter.Off {
 			cw.StorageNodes, err = ecr.retrieveStorageCIDs(tx, streamFilters, i)
 			if err != nil {
@@ -122,10 +143,16 @@ func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config
 	log.Debug("retrieving header cids for block ", blockNumber)
 	headers := make([]string, 0)
 	pgStr := `SELECT cid FROM header_cids
-				WHERE block_number = $1`
-	if streamFilters.HeaderFilter.FinalOnly {
-		pgStr += ` AND final IS TRUE`
-	}
+				WHERE block_number = $1 AND final IS TRUE`
+	err := tx.Select(&headers, pgStr, blockNumber)
+	return headers, err
+}
+
+func (ecr *EthCIDRetriever) retrieveUncleCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, error) {
+	log.Debug("retrieving header cids for block ", blockNumber)
+	headers := make([]string, 0)
+	pgStr := `SELECT cid FROM header_cids
+				WHERE block_number = $1 AND final IS FALSE`
 	err := tx.Select(&headers, pgStr, blockNumber)
 	return headers, err
 }
