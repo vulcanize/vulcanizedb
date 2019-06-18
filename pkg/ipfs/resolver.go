@@ -38,6 +38,7 @@ func NewIPLDResolver() *EthIPLDResolver {
 func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IpldWrapper) (*ResponsePayload, error) {
 	response := new(ResponsePayload)
 	eir.resolveHeaders(ipfsBlocks.Headers, response)
+	eir.resolveUncles(ipfsBlocks.Uncles, response)
 	eir.resolveTransactions(ipfsBlocks.Transactions, response)
 	eir.resolveReceipts(ipfsBlocks.Receipts, response)
 	eir.resolveState(ipfsBlocks.StateNodes, response)
@@ -49,6 +50,13 @@ func (eir *EthIPLDResolver) resolveHeaders(blocks []blocks.Block, response *Resp
 	for _, block := range blocks {
 		raw := block.RawData()
 		response.HeadersRlp = append(response.HeadersRlp, raw)
+	}
+}
+
+func (eir *EthIPLDResolver) resolveUncles(blocks []blocks.Block, response *ResponsePayload) {
+	for _, block := range blocks {
+		raw := block.RawData()
+		response.UnclesRlp = append(response.UnclesRlp, raw)
 	}
 }
 

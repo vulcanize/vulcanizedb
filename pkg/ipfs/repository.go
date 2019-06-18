@@ -17,7 +17,6 @@
 package ipfs
 
 import (
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
@@ -137,8 +136,4 @@ func (repo *Repository) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeCID, 
 								   ON CONFLICT (state_id, storage_key) DO UPDATE SET (cid, leaf) = ($3, $4)`,
 		stateID, storageCID.Key, storageCID.CID, storageCID.Leaf)
 	return err
-}
-
-type RepositoryError struct {
-	core.Message
 }

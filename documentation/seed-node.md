@@ -1,5 +1,6 @@
 # Seed node commands
-Another way that Vulcanizedb can serve as a caching layer for Ethereum is through the use of the `syncAndPublish` and
+
+Vulcanizedb can act as an index for Ethereum data stored on IPFS through the use of the `syncAndPublish` and
 `syncPublishScreenAndServe` commands. 
 
 ## Setup
@@ -60,7 +61,7 @@ And then run the ipfs command
 Or we can use the pre-made script at `GOPATH/src/github.com/ipfs/go-ipfs/misc/utility/ipfs_postgres.sh`
 which has usage: 
 
-`./ipfs_postgres.sh <IPFS_PGHOST> <IPFS_PGUSER> <IPFS_PGDATABASE>`
+`./ipfs_postgres.sh <IPFS_PGHOST> <IPFS_PGPORT> <IPFS_PGUSER> <IPFS_PGDATABASE>"`
 
 and will ask us to enter the password, avoiding storing it to an ENV variable.
 

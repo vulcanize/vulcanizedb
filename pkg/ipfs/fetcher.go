@@ -51,7 +51,9 @@ func NewIPLDFetcher(ipfsPath string) (*EthIPLDFetcher, error) {
 func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
 	log.Debug("fetching iplds")
 	blocks := &IpldWrapper{
+		BlockNumber:  cids.BlockNumber,
 		Headers:      make([]blocks.Block, 0),
+		Uncles:       make([]blocks.Block, 0),
 		Transactions: make([]blocks.Block, 0),
 		Receipts:     make([]blocks.Block, 0),
 		StateNodes:   make(map[common.Hash]blocks.Block),
@@ -59,6 +61,10 @@ func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
 	}
 
 	err := f.fetchHeaders(cids, blocks)
+	if err != nil {
+		return nil, err
+	}
+	err = f.fetchUncles(cids, blocks)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +103,25 @@ func (f *EthIPLDFetcher) fetchHeaders(cids CidWrapper, blocks *IpldWrapper) erro
 	blocks.Headers = f.fetchBatch(headerCids)
 	if len(blocks.Headers) != len(headerCids) {
 		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(blocks.Headers), len(headerCids))
+	}
+	return nil
+}
+
+// fetchUncles fetches uncles
+// It uses the f.fetchBatch method
+func (f *EthIPLDFetcher) fetchUncles(cids CidWrapper, blocks *IpldWrapper) error {
+	log.Debug("fetching uncle iplds")
+	uncleCids := make([]cid.Cid, 0, len(cids.Uncles))
+	for _, c := range cids.Uncles {
+		dc, err := cid.Decode(c)
+		if err != nil {
+			return err
+		}
+		uncleCids = append(uncleCids, dc)
+	}
+	blocks.Uncles = f.fetchBatch(uncleCids)
+	if len(blocks.Uncles) != len(uncleCids) {
+		log.Errorf("ipfs fetcher: number of uncle blocks returned (%d) does not match number expected (%d)", len(blocks.Uncles), len(uncleCids))
 	}
 	return nil
 }
