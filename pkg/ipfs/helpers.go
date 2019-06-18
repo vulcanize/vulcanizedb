@@ -49,8 +49,8 @@ func AddressToKey(address common.Address) common.Hash {
 	return crypto.Keccak256Hash(address[:])
 }
 
-// HexToKey hashes a hex (0x leading) string
+// HexToKey hashes a hex (0x leading or not) string
 func HexToKey(hex string) common.Hash {
-	addr := common.HexToAddress(hex)
+	addr := common.FromHex(hex)
 	return crypto.Keccak256Hash(addr[:])
 }

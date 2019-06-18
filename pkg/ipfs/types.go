@@ -20,23 +20,20 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-
-	"github.com/ipfs/go-block-format"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ipfs/go-block-format"
 )
 
 // Subscription holds the information for an individual client subscription
 type Subscription struct {
-	PayloadChan   chan<- ResponsePayload
-	QuitChan      chan<- bool
-	StreamFilters *config.Subscription
+	PayloadChan chan<- ResponsePayload
+	QuitChan    chan<- bool
 }
 
 // ResponsePayload holds the data returned from the seed node to the requesting client
 type ResponsePayload struct {
+	BlockNumber     *big.Int                               `json:"blockNumber"`
 	HeadersRlp      [][]byte                               `json:"headersRlp"`
 	UnclesRlp       [][]byte                               `json:"unclesRlp"`
 	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
@@ -69,8 +66,9 @@ func (sd *ResponsePayload) Encode() ([]byte, error) {
 
 // CidWrapper is used to package CIDs retrieved from the local Postgres cache
 type CidWrapper struct {
-	BlockNumber  int64
+	BlockNumber  *big.Int
 	Headers      []string
+	Uncles       []string
 	Transactions []string
 	Receipts     []string
 	StateNodes   []StateNodeCID
@@ -79,7 +77,9 @@ type CidWrapper struct {
 
 // IpldWrapper is used to package raw IPLD block data for resolution
 type IpldWrapper struct {
+	BlockNumber  *big.Int
 	Headers      []blocks.Block
+	Uncles       []blocks.Block
 	Transactions []blocks.Block
 	Receipts     []blocks.Block
 	StateNodes   map[common.Hash]blocks.Block

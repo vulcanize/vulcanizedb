@@ -20,22 +20,24 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 const payloadChanBufferSize = 20000 // the max eth sub buffer size
 
-// SyncPublishScreenAndServe is an interface for streaming, converting to IPLDs, publishing,
-// indexing all Ethereum data screening this data, and serving it up to subscribed clients
+// SyncPublishScreenAndServe is the top level interface for streaming, converting to IPLDs, publishing,
+// and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
 // This service is compatible with the Ethereum service interface (node.Service)
 type SyncPublishScreenAndServe interface {
 	// APIs(), Protocols(), Start() and Stop()
@@ -45,9 +47,9 @@ type SyncPublishScreenAndServe interface {
 	// Main event loop for handling client pub-sub
 	ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan IPLDPayload, receiveQuitchan <-chan bool)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription)
+	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters config.Subscription)
 	// Method to unsubscribe from state diff processing
-	Unsubscribe(id rpc.ID) error
+	Unsubscribe(id rpc.ID)
 }
 
 // Service is the underlying struct for the SyncAndPublish interface
@@ -74,8 +76,10 @@ type Service struct {
 	PayloadChan chan statediff.Payload
 	// Used to signal shutdown of the service
 	QuitChan chan bool
-	// A mapping of rpc.IDs to their subscription channels
-	Subscriptions map[rpc.ID]Subscription
+	// A mapping of rpc.IDs to their subscription channels, mapped to their subscription type (hash of the StreamFilters)
+	Subscriptions map[common.Hash]map[rpc.ID]Subscription
+	// A mapping of subscription hash type to the corresponding StreamFilters
+	SubscriptionTypes map[common.Hash]config.Subscription
 }
 
 // NewIPFSProcessor creates a new Processor interface using an underlying Processor struct
@@ -89,17 +93,18 @@ func NewIPFSProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient
 		return nil, err
 	}
 	return &Service{
-		Streamer:      NewStateDiffStreamer(rpcClient),
-		Repository:    NewCIDRepository(db),
-		Converter:     NewPayloadConverter(ethClient),
-		Publisher:     publisher,
-		Screener:      NewResponseScreener(),
-		Fetcher:       fetcher,
-		Retriever:     NewCIDRetriever(db),
-		Resolver:      NewIPLDResolver(),
-		PayloadChan:   make(chan statediff.Payload, payloadChanBufferSize),
-		QuitChan:      qc,
-		Subscriptions: make(map[rpc.ID]Subscription),
+		Streamer:          NewStateDiffStreamer(rpcClient),
+		Repository:        NewCIDRepository(db),
+		Converter:         NewPayloadConverter(ethClient),
+		Publisher:         publisher,
+		Screener:          NewResponseScreener(),
+		Fetcher:           fetcher,
+		Retriever:         NewCIDRetriever(db),
+		Resolver:          NewIPLDResolver(),
+		PayloadChan:       make(chan statediff.Payload, payloadChanBufferSize),
+		QuitChan:          qc,
+		Subscriptions:     make(map[common.Hash]map[rpc.ID]Subscription),
+		SubscriptionTypes: make(map[common.Hash]config.Subscription),
 	}, nil
 }
 
@@ -196,40 +201,60 @@ func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, receivePayloadChan <-chan
 }
 
 func (sap *Service) processResponse(payload IPLDPayload) error {
-	for id, sub := range sap.Subscriptions {
-		response, err := sap.Screener.ScreenResponse(sub.StreamFilters, payload)
+	for ty, subs := range sap.Subscriptions {
+		// Retreive the subscription paramaters for this subscription type
+		subConfig, ok := sap.SubscriptionTypes[ty]
+		if !ok {
+			return fmt.Errorf("subscription configuration for subscription type %s not available", ty.Hex())
+		}
+		response, err := sap.Screener.ScreenResponse(subConfig, payload)
 		if err != nil {
 			return err
 		}
-		sap.serve(id, *response)
+		for id := range subs {
+			//TODO send payloads to this type of sub
+			sap.serve(id, *response, ty)
+
+		}
 	}
 	return nil
 }
 
 // Subscribe is used by the API to subscribe to the service loop
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters *config.Subscription) {
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters config.Subscription) {
 	log.Info("Subscribing to the seed node service")
+	// Subscription type is defined as the hash of its content
+	// Group subscriptions by type and screen payloads once for subs of the same type
+	by, err := rlp.EncodeToBytes(streamFilters)
+	if err != nil {
+		log.Error(err)
+	}
+	subscriptionHash := crypto.Keccak256(by)
+	subscriptionType := common.BytesToHash(subscriptionHash)
 	subscription := Subscription{
-		PayloadChan:   sub,
-		QuitChan:      quitChan,
-		StreamFilters: streamFilters,
+		PayloadChan: sub,
+		QuitChan:    quitChan,
 	}
 	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
 	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
 	if streamFilters.BackFill || streamFilters.BackFillOnly {
-		sap.backFill(subscription, id)
+		sap.backFill(subscription, id, streamFilters)
 	}
 	if !streamFilters.BackFillOnly {
 		sap.Lock()
-		sap.Subscriptions[id] = subscription
+		if sap.Subscriptions[subscriptionType] == nil {
+			sap.Subscriptions[subscriptionType] = make(map[rpc.ID]Subscription)
+		}
+		sap.Subscriptions[subscriptionType][id] = subscription
+		sap.SubscriptionTypes[subscriptionType] = streamFilters
 		sap.Unlock()
 	}
 }
 
-func (sap *Service) backFill(sub Subscription, id rpc.ID) {
+func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscription) {
 	log.Debug("back-filling data for id", id)
 	// Retrieve cached CIDs relevant to this subscriber
-	cidWrappers, err := sap.Retriever.RetrieveCIDs(*sub.StreamFilters)
+	cidWrappers, err := sap.Retriever.RetrieveCIDs(con)
 	if err != nil {
 		sub.PayloadChan <- ResponsePayload{
 			ErrMsg: "CID retrieval error: " + err.Error(),
@@ -260,16 +285,18 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID) {
 }
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop
-func (sap *Service) Unsubscribe(id rpc.ID) error {
+func (sap *Service) Unsubscribe(id rpc.ID) {
 	log.Info("Unsubscribing from the seed node service")
 	sap.Lock()
-	_, ok := sap.Subscriptions[id]
-	if !ok {
-		return fmt.Errorf("cannot unsubscribe; subscription for id %s does not exist", id)
+	for ty := range sap.Subscriptions {
+		delete(sap.Subscriptions[ty], id)
+		if len(sap.Subscriptions[ty]) == 0 {
+			// If we removed the last subscription of this type, remove the subscription type outright
+			delete(sap.Subscriptions, ty)
+			delete(sap.SubscriptionTypes, ty)
+		}
 	}
-	delete(sap.Subscriptions, id)
 	sap.Unlock()
-	return nil
 }
 
 // Start is used to begin the service
@@ -293,9 +320,9 @@ func (sap *Service) Stop() error {
 }
 
 // serve is used to send screened payloads to their requesting sub
-func (sap *Service) serve(id rpc.ID, payload ResponsePayload) {
+func (sap *Service) serve(id rpc.ID, payload ResponsePayload, ty common.Hash) {
 	sap.Lock()
-	sub, ok := sap.Subscriptions[id]
+	sub, ok := sap.Subscriptions[ty][id]
 	if ok {
 		select {
 		case sub.PayloadChan <- payload:
@@ -310,14 +337,17 @@ func (sap *Service) serve(id rpc.ID, payload ResponsePayload) {
 // close is used to close all listening subscriptions
 func (sap *Service) close() {
 	sap.Lock()
-	for id, sub := range sap.Subscriptions {
-		select {
-		case sub.QuitChan <- true:
-			log.Infof("closing subscription %s", id)
-		default:
-			log.Infof("unable to close subscription %s; channel has no receiver", id)
+	for ty, subs := range sap.Subscriptions {
+		for id, sub := range subs {
+			select {
+			case sub.QuitChan <- true:
+				log.Infof("closing subscription %s", id)
+			default:
+				log.Infof("unable to close subscription %s; channel has no receiver", id)
+			}
 		}
-		delete(sap.Subscriptions, id)
+		delete(sap.Subscriptions, ty)
+		delete(sap.SubscriptionTypes, ty)
 	}
 	sap.Unlock()
 }
