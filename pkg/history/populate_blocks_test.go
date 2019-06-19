@@ -53,7 +53,8 @@ var _ = Describe("Populating blocks", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(blocksAdded).To(Equal(3))
-		blockRepository.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(3, []int64{5, 8, 10})
+		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(3))
+		Expect(blockRepository.CreateOrUpdateBlockPassedBlockNumbers).To(Equal([]int64{5, 8, 10}))
 	})
 
 	It("returns the number of blocks created", func() {
@@ -73,7 +74,8 @@ var _ = Describe("Populating blocks", func() {
 		_, err := history.RetrieveAndUpdateBlocks(blockChain, blockRepository, history.MakeRange(2, 5))
 
 		Expect(err).NotTo(HaveOccurred())
-		blockRepository.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(4, []int64{2, 3, 4, 5})
+		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(4))
+		Expect(blockRepository.CreateOrUpdateBlockPassedBlockNumbers).To(Equal([]int64{2, 3, 4, 5}))
 	})
 
 	It("does not call repository create block when there is an error", func() {
@@ -84,6 +86,6 @@ var _ = Describe("Populating blocks", func() {
 		_, err := history.RetrieveAndUpdateBlocks(blockChain, blockRepository, blocks)
 
 		Expect(err).To(HaveOccurred())
-		blockRepository.AssertCreateOrUpdateBlockCallCountEquals(0)
+		Expect(blockRepository.CreateOrUpdateBlockCallCount).To(Equal(0))
 	})
 })

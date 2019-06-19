@@ -17,42 +17,34 @@
 package fakes
 
 import (
-	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type MockBlockRepository struct {
-	createOrUpdateBlockCallCount                 int
-	createOrUpdateBlockCalled                    bool
-	createOrUpdateBlockPassedBlock               core.Block
-	createOrUpdateBlockPassedBlockNumbers        []int64
+	CreateOrUpdateBlockCallCount                 int
+	CreateOrUpdateBlockPassedBlock               core.Block
+	CreateOrUpdateBlockPassedBlockNumbers        []int64
 	createOrUpdateBlockReturnErr                 error
 	createOrUpdateBlockReturnInt                 int64
-	missingBlockNumbersCalled                    bool
-	missingBlockNumbersPassedEndingBlockNumber   int64
-	missingBlockNumbersPassedNodeId              string
-	missingBlockNumbersPassedStartingBlockNumber int64
+	MissingBlockNumbersPassedEndingBlockNumber   int64
+	MissingBlockNumbersPassedNodeId              string
+	MissingBlockNumbersPassedStartingBlockNumber int64
 	missingBlockNumbersReturnArray               []int64
-	setBlockStatusCalled                         bool
-	setBlockStatusPassedChainHead                int64
+	SetBlockStatusPassedChainHead                int64
 }
 
 func NewMockBlockRepository() *MockBlockRepository {
 	return &MockBlockRepository{
-		createOrUpdateBlockCallCount:                 0,
-		createOrUpdateBlockCalled:                    false,
-		createOrUpdateBlockPassedBlock:               core.Block{},
-		createOrUpdateBlockPassedBlockNumbers:        nil,
+		CreateOrUpdateBlockCallCount:                 0,
+		CreateOrUpdateBlockPassedBlock:               core.Block{},
+		CreateOrUpdateBlockPassedBlockNumbers:        nil,
 		createOrUpdateBlockReturnErr:                 nil,
 		createOrUpdateBlockReturnInt:                 0,
-		missingBlockNumbersCalled:                    false,
-		missingBlockNumbersPassedEndingBlockNumber:   0,
-		missingBlockNumbersPassedNodeId:              "",
-		missingBlockNumbersPassedStartingBlockNumber: 0,
+		MissingBlockNumbersPassedEndingBlockNumber:   0,
+		MissingBlockNumbersPassedNodeId:              "",
+		MissingBlockNumbersPassedStartingBlockNumber: 0,
 		missingBlockNumbersReturnArray:               nil,
-		setBlockStatusCalled:                         false,
-		setBlockStatusPassedChainHead:                0,
+		SetBlockStatusPassedChainHead:                0,
 	}
 }
 
@@ -66,10 +58,9 @@ func (repository *MockBlockRepository) SetMissingBlockNumbersReturnArray(returnA
 }
 
 func (repository *MockBlockRepository) CreateOrUpdateBlock(block core.Block) (int64, error) {
-	repository.createOrUpdateBlockCallCount++
-	repository.createOrUpdateBlockCalled = true
-	repository.createOrUpdateBlockPassedBlock = block
-	repository.createOrUpdateBlockPassedBlockNumbers = append(repository.createOrUpdateBlockPassedBlockNumbers, block.Number)
+	repository.CreateOrUpdateBlockCallCount++
+	repository.CreateOrUpdateBlockPassedBlock = block
+	repository.CreateOrUpdateBlockPassedBlockNumbers = append(repository.CreateOrUpdateBlockPassedBlockNumbers, block.Number)
 	return repository.createOrUpdateBlockReturnInt, repository.createOrUpdateBlockReturnErr
 }
 
@@ -78,41 +69,13 @@ func (repository *MockBlockRepository) GetBlock(blockNumber int64) (core.Block, 
 }
 
 func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64 {
-	repository.missingBlockNumbersCalled = true
-	repository.missingBlockNumbersPassedStartingBlockNumber = startingBlockNumber
-	repository.missingBlockNumbersPassedEndingBlockNumber = endingBlockNumber
-	repository.missingBlockNumbersPassedNodeId = nodeId
+	repository.MissingBlockNumbersPassedStartingBlockNumber = startingBlockNumber
+	repository.MissingBlockNumbersPassedEndingBlockNumber = endingBlockNumber
+	repository.MissingBlockNumbersPassedNodeId = nodeId
 	return repository.missingBlockNumbersReturnArray
 }
 
 func (repository *MockBlockRepository) SetBlocksStatus(chainHead int64) error {
-	repository.setBlockStatusCalled = true
-	repository.setBlockStatusPassedChainHead = chainHead
+	repository.SetBlockStatusPassedChainHead = chainHead
 	return nil
-}
-
-func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCallCountEquals(times int) {
-	Expect(repository.createOrUpdateBlockCallCount).To(Equal(times))
-}
-
-func (repository *MockBlockRepository) AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(times int, blockNumbers []int64) {
-	Expect(repository.createOrUpdateBlockCallCount).To(Equal(times))
-	Expect(repository.createOrUpdateBlockPassedBlockNumbers).To(Equal(blockNumbers))
-}
-
-func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCalledWith(block core.Block) {
-	Expect(repository.createOrUpdateBlockCalled).To(BeTrue())
-	Expect(repository.createOrUpdateBlockPassedBlock).To(Equal(block))
-}
-
-func (repository *MockBlockRepository) AssertMissingBlockNumbersCalledWith(startingBlockNumber int64, endingBlockNumber int64, nodeId string) {
-	Expect(repository.missingBlockNumbersCalled).To(BeTrue())
-	Expect(repository.missingBlockNumbersPassedStartingBlockNumber).To(Equal(startingBlockNumber))
-	Expect(repository.missingBlockNumbersPassedEndingBlockNumber).To(Equal(endingBlockNumber))
-	Expect(repository.missingBlockNumbersPassedNodeId).To(Equal(nodeId))
-}
-
-func (repository *MockBlockRepository) AssertSetBlockStatusCalledWith(chainHead int64) {
-	Expect(repository.setBlockStatusCalled).To(BeTrue())
-	Expect(repository.setBlockStatusPassedChainHead).To(Equal(chainHead))
 }

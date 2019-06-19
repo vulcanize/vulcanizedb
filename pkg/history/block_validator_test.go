@@ -38,7 +38,7 @@ var _ = Describe("Blocks validator", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(window).To(Equal(history.ValidationWindow{LowerBound: 5, UpperBound: 7}))
-		blocksRepository.AssertCreateOrUpdateBlockCallCountEquals(3)
+		Expect(blocksRepository.CreateOrUpdateBlockCallCount).To(Equal(3))
 	})
 
 	It("returns the number of largest block", func() {

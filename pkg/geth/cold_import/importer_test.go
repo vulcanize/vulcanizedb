@@ -57,7 +57,9 @@ var _ = Describe("Geth cold importer", func() {
 		err := importer.Execute(startingBlockNumber, endingBlockNumber, nodeId)
 		Expect(err).NotTo(HaveOccurred())
 
-		mockBlockRepository.AssertMissingBlockNumbersCalledWith(startingBlockNumber, endingBlockNumber, nodeId)
+		Expect(mockBlockRepository.MissingBlockNumbersPassedStartingBlockNumber).To(Equal(startingBlockNumber))
+		Expect(mockBlockRepository.MissingBlockNumbersPassedEndingBlockNumber).To(Equal(endingBlockNumber))
+		Expect(mockBlockRepository.MissingBlockNumbersPassedNodeId).To(Equal(nodeId))
 		mockEthereumDatabase.AssertGetBlockHashCalledWith(missingBlockNumber)
 		mockEthereumDatabase.AssertGetBlockCalledWith(fakeHash, missingBlockNumber)
 	})
@@ -85,7 +87,7 @@ var _ = Describe("Geth cold importer", func() {
 		Expect(mockTransactionConverter.ConvertBlockTransactionsToCorePassedBlock).To(Equal(fakeGethBlock))
 		convertedBlock, err := blockConverter.ToCoreBlock(fakeGethBlock)
 		Expect(err).NotTo(HaveOccurred())
-		mockBlockRepository.AssertCreateOrUpdateBlockCalledWith(convertedBlock)
+		Expect(mockBlockRepository.CreateOrUpdateBlockPassedBlock).To(Equal(convertedBlock))
 	})
 
 	It("sets is_final status on populated blocks", func() {
@@ -105,7 +107,7 @@ var _ = Describe("Geth cold importer", func() {
 
 		err := importer.Execute(startingBlockNumber, endingBlockNumber, "node_id")
 		Expect(err).NotTo(HaveOccurred())
-		mockBlockRepository.AssertSetBlockStatusCalledWith(endingBlockNumber)
+		Expect(mockBlockRepository.SetBlockStatusPassedChainHead).To(Equal(endingBlockNumber))
 	})
 
 	It("fetches receipts from level db and persists them to pg", func() {

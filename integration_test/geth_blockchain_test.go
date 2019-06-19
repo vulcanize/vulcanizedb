@@ -56,7 +56,8 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		_, err = history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
 		Expect(err).NotTo(HaveOccurred())
 
-		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
+		Expect(blocks.CreateOrUpdateBlockCallCount).To(Equal(2))
+		Expect(blocks.CreateOrUpdateBlockPassedBlockNumbers).To(Equal([]int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}))
 		close(done)
 	}, 30)
 
