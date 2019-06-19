@@ -1309,10 +1309,45 @@ CREATE INDEX block_id_index ON public.full_sync_transactions USING btree (block_
 
 
 --
+-- Name: header_sync_receipts_header; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_receipts_header ON public.header_sync_receipts USING btree (header_id);
+
+
+--
+-- Name: header_sync_receipts_transaction; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_receipts_transaction ON public.header_sync_receipts USING btree (transaction_id);
+
+
+--
+-- Name: header_sync_transactions_header; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_transactions_header ON public.header_sync_transactions USING btree (header_id);
+
+
+--
+-- Name: header_sync_transactions_tx_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_transactions_tx_index ON public.header_sync_transactions USING btree (tx_index);
+
+
+--
 -- Name: headers_block_number; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
+
+
+--
+-- Name: headers_block_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX headers_block_timestamp ON public.headers USING btree (block_timestamp);
 
 
 --
