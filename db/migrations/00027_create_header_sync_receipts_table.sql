@@ -14,6 +14,14 @@ CREATE TABLE header_sync_receipts
     UNIQUE (header_id, transaction_id)
 );
 
+CREATE INDEX header_sync_receipts_header
+    ON public.header_sync_receipts (header_id);
+
+CREATE INDEX header_sync_receipts_transaction
+    ON public.header_sync_receipts (transaction_id);
 
 -- +goose Down
+DROP INDEX public.header_sync_receipts_header;
+DROP INDEX public.header_sync_receipts_transaction;
+
 DROP TABLE header_sync_receipts;
