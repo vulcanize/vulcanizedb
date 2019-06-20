@@ -141,8 +141,9 @@ type StorageNodeCID struct {
 
 // ReceiptMetaData wraps some additional data around our receipt CIDs for indexing
 type ReceiptMetaData struct {
-	CID     string
-	Topic0s []string
+	CID             string
+	Topic0s         []string
+	ContractAddress string
 }
 
 // TrxMetaData wraps some additional data around our transaction CID for indexing

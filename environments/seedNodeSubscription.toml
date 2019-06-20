@@ -17,6 +17,7 @@
         ]
     [subscription.receiptFilter]
         off = false
+        contracts = []
         topic0s = [
             "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
             "0x930a61a57a70a73c2a503615b87e2e54fe5b9cdeacda518270b852296ab1a377"
@@ -29,12 +30,6 @@
        intermediateNodes = false
     [subscription.storageFilter]
         off = true
-        addresses = [
-            "",
-            ""
-        ]
-        storageKeys = [
-            "",
-            ""
-        ]
+        addresses = []
+        storageKeys = []
         intermediateNodes = false

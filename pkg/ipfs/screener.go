@@ -128,7 +128,7 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 func (s *Screener) filerReceipts(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload, trxHashes []common.Hash) error {
 	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		for i, receipt := range payload.Receipts {
-			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, trxHashes) {
+			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, streamFilters.ReceiptFilter.Contracts, payload.ReceiptMetaData[i].ContractAddress, trxHashes) {
 				receiptForStorage := (*types.ReceiptForStorage)(receipt)
 				receiptBuffer := new(bytes.Buffer)
 				err := receiptForStorage.EncodeRLP(receiptBuffer)
@@ -142,23 +142,42 @@ func (s *Screener) filerReceipts(streamFilters config.Subscription, response *Re
 	return nil
 }
 
-func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics []string, wantedTrxHashes []common.Hash) bool {
-	// If we aren't filtering for any topics, all topics are a go
-	if len(wantedTopics) == 0 {
+func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash) bool {
+	// If we aren't filtering for any topics or contracts, all topics are a go
+	if len(wantedTopics) == 0 && len(wantedContracts) == 0 {
 		return true
 	}
+	// No matter what filters we have, we keep receipts for the trxs we are interested in
 	for _, wantedTrxHash := range wantedTrxHashes {
 		if bytes.Equal(wantedTrxHash.Bytes(), rct.TxHash.Bytes()) {
 			return true
 		}
 	}
-	for _, wantedTopic := range wantedTopics {
-		for _, actualTopic := range actualTopics {
-			if wantedTopic == actualTopic {
-				return true
+
+	if len(wantedContracts) == 0 {
+		// We keep all receipts that have logs we are interested in
+		for _, wantedTopic := range wantedTopics {
+			for _, actualTopic := range actualTopics {
+				if wantedTopic == actualTopic {
+					return true
+				}
+			}
+		}
+	} else {
+		// We only keep receipts with logs of interest if we are interested in that contract
+		for _, wantedTopic := range wantedTopics {
+			for _, actualTopic := range actualTopics {
+				if wantedTopic == actualTopic {
+					for _, wantedContract := range wantedContracts {
+						if wantedContract == actualContract {
+							return true
+						}
+					}
+				}
 			}
 		}
 	}
+
 	return false
 }
 

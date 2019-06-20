@@ -170,6 +170,7 @@ func (pub *Publisher) publishReceipts(receipts types.Receipts, receiptMeta []*Re
 	if len(receiptsCids) != len(receipts) {
 		return nil, errors.New("expected one CID for each receipt")
 	}
+	// Keep receipts associated with their transaction
 	mappedRctCids := make(map[common.Hash]*ReceiptMetaData, len(receiptsCids))
 	for i, rct := range receipts {
 		mappedRctCids[rct.TxHash] = receiptMeta[i]
