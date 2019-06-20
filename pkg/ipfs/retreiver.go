@@ -198,11 +198,16 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Su
 			AND header_cids.block_number = $1`
 	args = append(args, blockNumber)
 	if len(streamFilters.ReceiptFilter.Topic0s) > 0 {
-		pgStr += ` AND (receipt_cids.topic0s && $2::VARCHAR(66)[]`
+		pgStr += ` AND ((receipt_cids.topic0s && $2::VARCHAR(66)[]`
 		args = append(args, pq.Array(streamFilters.ReceiptFilter.Topic0s))
 	}
+	if len(streamFilters.ReceiptFilter.Contracts) > 0 {
+		pgStr += ` AND receipt_cids.contract = ANY($3::VARCHAR(66)[])`
+	} else {
+		pgStr += `)`
+	}
 	if len(trxIds) > 0 {
-		pgStr += ` OR receipt_cids.tx_id = ANY($3::INTEGER[]))`
+		pgStr += ` OR receipt_cids.tx_id = ANY($4::INTEGER[]))`
 		args = append(args, pq.Array(trxIds))
 	} else {
 		pgStr += `)`

@@ -190,8 +190,9 @@ func subscriptionConfig() {
 		// Below defaults to false and one slice of length 0
 		// Which means we get all receipts by default
 		ReceiptFilter: config.ReceiptFilter{
-			Off:     viper.GetBool("subscription.receiptFilter.off"),
-			Topic0s: viper.GetStringSlice("subscription.receiptFilter.topic0s"),
+			Off:       viper.GetBool("subscription.receiptFilter.off"),
+			Contracts: viper.GetStringSlice("subscription.receiptFilter.contracts"),
+			Topic0s:   viper.GetStringSlice("subscription.receiptFilter.topic0s"),
 		},
 
 		// Below defaults to two false, and a slice of length 0
