@@ -106,8 +106,8 @@ func (repo *Repository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CID
 }
 
 func (repo *Repository) indexReceiptCID(tx *sqlx.Tx, cidMeta *ReceiptMetaData, txID int64) error {
-	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, topic0s) VALUES ($1, $2, $3)`,
-		txID, cidMeta.CID, pq.Array(cidMeta.Topic0s))
+	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, contract, topic0s) VALUES ($1, $2, $3, $4)`,
+		txID, cidMeta.CID, cidMeta.ContractAddress, pq.Array(cidMeta.Topic0s))
 	return err
 }
 

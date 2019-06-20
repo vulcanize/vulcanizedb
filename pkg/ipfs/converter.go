@@ -86,7 +86,8 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		}
 		// Extract topic0 data from the receipt's logs for indexing
 		rctMeta := &ReceiptMetaData{
-			Topic0s: make([]string, 0, len(gethReceipt.Logs)),
+			Topic0s:         make([]string, 0, len(gethReceipt.Logs)),
+			ContractAddress: gethReceipt.ContractAddress.Hex(),
 		}
 		for _, log := range gethReceipt.Logs {
 			if len(log.Topics[0]) < 1 {
