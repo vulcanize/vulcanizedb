@@ -7,7 +7,7 @@ RUN apk add busybox-extras
 # Get and build vulcanizedb syncAndPublish fork
 RUN go get -u -d github.com/vulcanize/vulcanizedb
 WORKDIR /go/src/github.com/vulcanize/vulcanizedb
-RUN git checkout syncAndPublish
+RUN git checkout ipfs_concurrency
 RUN dep ensure
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o vulcanizedb .
 

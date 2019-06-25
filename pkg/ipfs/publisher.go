@@ -40,7 +40,6 @@ type IPLDPublisher interface {
 
 // Publisher is the underlying struct for the IPLDPublisher interface
 type Publisher struct {
-	Node              *ipfs.IPFS
 	HeaderPutter      *eth_block_header.BlockHeaderDagPutter
 	TransactionPutter *eth_block_transactions.BlockTransactionsDagPutter
 	ReceiptPutter     *eth_block_receipts.EthBlockReceiptDagPutter
@@ -67,7 +66,6 @@ func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
 		return nil, err
 	}
 	return &Publisher{
-		Node:              node,
 		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, rlp.RlpDecoder{}),
 		TransactionPutter: eth_block_transactions.NewBlockTransactionsDagPutter(node),
 		ReceiptPutter:     eth_block_receipts.NewEthBlockReceiptDagPutter(node),

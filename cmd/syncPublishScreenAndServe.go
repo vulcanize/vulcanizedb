@@ -73,7 +73,7 @@ func syncPublishScreenAndServe() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	processor.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
+	processor.ScreenAndServe(forwardPayloadChan, forwardQuitChan)
 
 	var ipcPath string
 	ipcPath = viper.GetString("server.ipcPath")

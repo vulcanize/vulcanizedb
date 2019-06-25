@@ -42,7 +42,10 @@ func NewCIDRepository(db *postgres.DB) *Repository {
 
 // Index indexes a cidPayload in Postgres
 func (repo *Repository) Index(cidPayload *CIDPayload) error {
-	tx, _ := repo.db.Beginx()
+	tx, err := repo.db.Beginx()
+	if err != nil {
+		return err
+	}
 	headerID, err := repo.indexHeaderCID(tx, cidPayload.HeaderCID, cidPayload.BlockNumber, cidPayload.BlockHash.Hex())
 	if err != nil {
 		tx.Rollback()
