@@ -1,6 +1,6 @@
 [database]
     name     = "vulcanize_public"
-    hostname = "localhost"
+    hostname = "host.docker.internal"
     port     = 5432
 
 [client]
