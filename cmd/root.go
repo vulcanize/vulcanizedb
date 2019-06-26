@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -56,15 +55,20 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:              "vulcanizedb",
-	PersistentPreRun: database,
+	PersistentPreRun: initFuncs,
 }
 
 func Execute() {
 	log.Info("----- Starting vDB -----")
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
+}
+
+func initFuncs(cmd *cobra.Command, args []string) {
+	database(cmd, args)
+	logLevel(cmd, args)
+
 }
 
 func database(cmd *cobra.Command, args []string) {
@@ -79,6 +83,16 @@ func database(cmd *cobra.Command, args []string) {
 		Password: viper.GetString("database.password"),
 	}
 	viper.Set("database.config", databaseConfig)
+}
+
+func logLevel(cmd *cobra.Command, args []string) error {
+	lvl, err := log.ParseLevel(viper.GetString("log.level"))
+	if err != nil {
+		return err
+	}
+	log.SetLevel(lvl)
+	log.Info("Log level set to ", lvl.String())
+	return nil
 }
 
 func init() {
@@ -97,6 +111,7 @@ func init() {
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
+	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -107,6 +122,7 @@ func init() {
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
 	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
+	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 }
 
 func initConfig() {
@@ -116,7 +132,6 @@ func initConfig() {
 		noConfigError := "No config file passed with --config flag"
 		fmt.Println("Error: ", noConfigError)
 		log.Fatal(noConfigError)
-		os.Exit(1)
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
@@ -125,7 +140,6 @@ func initConfig() {
 		invalidConfigError := "Couldn't read config file"
 		fmt.Println("Error: ", invalidConfigError)
 		log.Fatal(invalidConfigError)
-		os.Exit(1)
 	}
 }
 

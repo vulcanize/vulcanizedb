@@ -39,7 +39,7 @@ func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datasto
 		return 0, nil
 	}
 
-	log.Printf("Backfilling %d blocks\n\n", len(blockNumbers))
+	log.Debug(getBlockRangeString(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
 		log.Error("PopulateMissingHeaders: Error getting/updating headers:", err)
@@ -61,3 +61,4 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 	}
 	return len(blockNumbers), nil
 }
+
