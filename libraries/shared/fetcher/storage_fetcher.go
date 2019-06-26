@@ -17,9 +17,12 @@
 package fetcher
 
 import (
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"strings"
 )
 
 type IStorageFetcher interface {
@@ -39,6 +42,7 @@ func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.S
 	if tailErr != nil {
 		errs <- tailErr
 	}
+	log.Debug("fetching storage diffs...")
 	for line := range t.Lines {
 		row, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
 		if parseErr != nil {

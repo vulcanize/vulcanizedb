@@ -96,7 +96,7 @@ func fullSync() {
 			if err != nil {
 				log.Error("fullSync: error in validateBlocks: ", err)
 			}
-			log.Info(window.GetString())
+			log.Debug(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}

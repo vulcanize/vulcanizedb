@@ -50,6 +50,6 @@ func MakeRange(min, max int64) []int64 {
 }
 
 func (window ValidationWindow) GetString() string {
-	return fmt.Sprintf("Validating Blocks |%v|-- Validation Window --|%v}|",
+	return fmt.Sprintf("Validating Blocks |%v|-- Validation Window --|%v|",
 		window.LowerBound, window.UpperBound)
 }
