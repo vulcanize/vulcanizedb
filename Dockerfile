@@ -21,6 +21,12 @@ WORKDIR /go/src/github.com/vulcanize/vulcanizedb
 FROM alpine
 WORKDIR /app
 
+RUN apk update \
+        && apk upgrade \
+        && apk add --no-cache \
+        ca-certificates \
+        && update-ca-certificates 2>/dev/null || true
+
 ARG USER
 ARG config_file=environments/example.toml
 ARG vdb_command=headerSync
