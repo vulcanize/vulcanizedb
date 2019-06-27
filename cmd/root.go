@@ -138,8 +138,8 @@ func initConfig() {
 		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
 	} else {
 		invalidConfigError := "Couldn't read config file"
-		fmt.Println("Error: ", invalidConfigError)
-		log.Fatal(invalidConfigError)
+		formattedError := fmt.Sprintf("%s: %s", invalidConfigError, err.Error())
+		log.Fatal(formattedError)
 	}
 }
 
