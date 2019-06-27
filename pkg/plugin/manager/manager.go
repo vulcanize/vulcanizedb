@@ -77,13 +77,15 @@ func (m *manager) setupMigrationEnv() error {
 	if err != nil {
 		return err
 	}
-	err = os.RemoveAll(m.tmpMigDir)
-	if err != nil {
-		return errors.New(fmt.Sprintf("unable to remove file found at %s where tmp directory needs to be written", m.tmpMigDir))
+	removeErr := os.RemoveAll(m.tmpMigDir)
+	if removeErr != nil {
+		removeErrString := "unable to remove file found at %s where tmp directory needs to be written: %s"
+		return errors.New(fmt.Sprintf(removeErrString, m.tmpMigDir, removeErr.Error()))
 	}
-	err = os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
-	if err != nil {
-		return errors.New(fmt.Sprintf("unable to create temporary migration directory %s", m.tmpMigDir))
+	mkdirErr := os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
+	if mkdirErr != nil {
+		mkdirErrString := "unable to create temporary migration directory %s: %s"
+		return errors.New(fmt.Sprintf(mkdirErrString, m.tmpMigDir, mkdirErr.Error()))
 	}
 
 	return nil
