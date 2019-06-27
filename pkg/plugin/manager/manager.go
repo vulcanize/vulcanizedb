@@ -17,13 +17,15 @@
 package manager
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
+	"github.com/pressly/goose"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -36,6 +38,7 @@ type manager struct {
 	GenConfig config.Plugin
 	DBConfig  config.Database
 	tmpMigDir string
+	db        *sql.DB
 }
 
 // Manager requires both filled in generator and database configs
@@ -44,6 +47,22 @@ func NewMigrationManager(gc config.Plugin, dbc config.Database) *manager {
 		GenConfig: gc,
 		DBConfig:  dbc,
 	}
+}
+
+func (m *manager) setDB() error {
+	var pgStr string
+	if len(m.DBConfig.User) > 0 && len(m.DBConfig.Password) > 0 {
+		pgStr = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+			m.DBConfig.User, m.DBConfig.Password, m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	} else {
+		pgStr = fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	}
+	dbConnector, err := pq.NewConnector(pgStr)
+	if err != nil {
+		return errors.New(fmt.Sprintf("can't connect to db: %s", err.Error()))
+	}
+	m.db = sql.OpenDB(dbConnector)
+	return nil
 }
 
 func (m *manager) RunMigrations() error {
@@ -122,28 +141,23 @@ func (m *manager) createMigrationCopies(paths []string) error {
 }
 
 func (m *manager) fixAndRun(path string) error {
+	// Setup DB if not set
+	if m.db == nil {
+		setErr := m.setDB()
+		if setErr != nil {
+			return errors.New(fmt.Sprintf("could not open db: %s", setErr.Error()))
+		}
+	}
 	// Fix the migrations
-	cmd := exec.Command("goose", "fix")
-	cmd.Dir = m.tmpMigDir
-	err := cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, err.Error()))
+	fixErr := goose.Fix(m.tmpMigDir)
+	if fixErr != nil {
+		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, fixErr.Error()))
 	}
 	// Run the copied migrations with goose
-	var pgStr string
-	if len(m.DBConfig.User) > 0 && len(m.DBConfig.Password) > 0 {
-		pgStr = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			m.DBConfig.User, m.DBConfig.Password, m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	} else {
-		pgStr = fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	upErr := goose.Up(m.db, m.tmpMigDir)
+	if upErr != nil {
+		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, upErr.Error()))
 	}
-	cmd = exec.Command("goose", "postgres", pgStr, "up")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, err.Error()))
-	}
-
 	return nil
 }
 
