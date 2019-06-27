@@ -88,7 +88,7 @@ func headerSync() {
 			if err != nil {
 				log.Error("headerSync: ValidateHeaders failed: ", err)
 			}
-			log.Info(window.GetString())
+			log.Debug(window.GetString())
 		case n := <-missingBlocksPopulated:
 			if n == 0 {
 				time.Sleep(3 * time.Second)

@@ -17,6 +17,7 @@
 package history
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -35,7 +36,7 @@ func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore
 		return 0, nil
 	}
 
-	log.Printf("Backfilling %d blocks\n\n", len(blockRange))
+	log.Debug(getBlockRangeString(blockRange))
 	_, err = RetrieveAndUpdateBlocks(blockchain, blockRepository, blockRange)
 	if err != nil {
 		log.Error("PopulateMissingBlocks: error gettings/updating blocks: ", err)
@@ -60,4 +61,8 @@ func RetrieveAndUpdateBlocks(blockchain core.BlockChain, blockRepository datasto
 
 	}
 	return len(blockNumbers), nil
+}
+
+func getBlockRangeString(blockRange []int64) string {
+	return fmt.Sprintf("Backfilling |%v| blocks", len(blockRange))
 }

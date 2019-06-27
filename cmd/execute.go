@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"plugin"
 	syn "sync"
 	"time"
@@ -82,7 +81,7 @@ func execute() {
 	log.Info("linking plugin", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		log.Debug("linking plugin failed")
+		log.Warn("linking plugin failed")
 		log.Fatal(err)
 	}
 
@@ -90,15 +89,14 @@ func execute() {
 	log.Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		log.Debug("loading Exporter symbol failed")
+		log.Warn("loading Exporter symbol failed")
 		log.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		log.Debug("plugged-in symbol not of type Exporter")
-		os.Exit(1)
+		log.Fatal("plugged-in symbol not of type Exporter")
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
