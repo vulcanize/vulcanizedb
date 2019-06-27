@@ -17,13 +17,15 @@
 package manager
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
+	"github.com/pressly/goose"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -36,6 +38,7 @@ type manager struct {
 	GenConfig config.Plugin
 	DBConfig  config.Database
 	tmpMigDir string
+	db        *sql.DB
 }
 
 // Manager requires both filled in generator and database configs
@@ -44,6 +47,22 @@ func NewMigrationManager(gc config.Plugin, dbc config.Database) *manager {
 		GenConfig: gc,
 		DBConfig:  dbc,
 	}
+}
+
+func (m *manager) setDB() error {
+	var pgStr string
+	if len(m.DBConfig.User) > 0 && len(m.DBConfig.Password) > 0 {
+		pgStr = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+			m.DBConfig.User, m.DBConfig.Password, m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	} else {
+		pgStr = fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	}
+	dbConnector, err := pq.NewConnector(pgStr)
+	if err != nil {
+		return errors.New(fmt.Sprintf("can't connect to db: %s", err.Error()))
+	}
+	m.db = sql.OpenDB(dbConnector)
+	return nil
 }
 
 func (m *manager) RunMigrations() error {
@@ -73,17 +92,19 @@ func (m *manager) RunMigrations() error {
 // Setup a temporary directory to hold transformer db migrations
 func (m *manager) setupMigrationEnv() error {
 	var err error
-	m.tmpMigDir, err = helpers.CleanPath(filepath.Join("$GOPATH/src", m.GenConfig.Home+".plugin_migrations"))
+	m.tmpMigDir, err = helpers.CleanPath(filepath.Join("$GOPATH/src", m.GenConfig.Home, ".plugin_migrations"))
 	if err != nil {
 		return err
 	}
-	err = os.RemoveAll(m.tmpMigDir)
-	if err != nil {
-		return errors.New(fmt.Sprintf("unable to remove file found at %s where tmp directory needs to be written", m.tmpMigDir))
+	removeErr := os.RemoveAll(m.tmpMigDir)
+	if removeErr != nil {
+		removeErrString := "unable to remove file found at %s where tmp directory needs to be written: %s"
+		return errors.New(fmt.Sprintf(removeErrString, m.tmpMigDir, removeErr.Error()))
 	}
-	err = os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
-	if err != nil {
-		return errors.New(fmt.Sprintf("unable to create temporary migration directory %s", m.tmpMigDir))
+	mkdirErr := os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
+	if mkdirErr != nil {
+		mkdirErrString := "unable to create temporary migration directory %s: %s"
+		return errors.New(fmt.Sprintf(mkdirErrString, m.tmpMigDir, mkdirErr.Error()))
 	}
 
 	return nil
@@ -120,28 +141,23 @@ func (m *manager) createMigrationCopies(paths []string) error {
 }
 
 func (m *manager) fixAndRun(path string) error {
+	// Setup DB if not set
+	if m.db == nil {
+		setErr := m.setDB()
+		if setErr != nil {
+			return errors.New(fmt.Sprintf("could not open db: %s", setErr.Error()))
+		}
+	}
 	// Fix the migrations
-	cmd := exec.Command("goose", "fix")
-	cmd.Dir = m.tmpMigDir
-	err := cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, err.Error()))
+	fixErr := goose.Fix(m.tmpMigDir)
+	if fixErr != nil {
+		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, fixErr.Error()))
 	}
 	// Run the copied migrations with goose
-	var pgStr string
-	if len(m.DBConfig.User) > 0 && len(m.DBConfig.Password) > 0 {
-		pgStr = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			m.DBConfig.User, m.DBConfig.Password, m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
-	} else {
-		pgStr = fmt.Sprintf("postgres://%s:%d/%s?sslmode=disable", m.DBConfig.Hostname, m.DBConfig.Port, m.DBConfig.Name)
+	upErr := goose.Up(m.db, m.tmpMigDir)
+	if upErr != nil {
+		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, upErr.Error()))
 	}
-	cmd = exec.Command("goose", "postgres", pgStr, "up")
-	cmd.Dir = m.tmpMigDir
-	err = cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, err.Error()))
-	}
-
 	return nil
 }
 
