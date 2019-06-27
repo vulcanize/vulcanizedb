@@ -1,0 +1,11 @@
+.DS_Store
+cmd/goose/goose*
+*.swp
+*.test
+
+# Files output by tests
+bin
+go.db
+sql.db
+
+
