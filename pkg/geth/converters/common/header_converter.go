@@ -31,6 +31,7 @@ func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash str
 	if err != nil {
 		panic(err)
 	}
+	strInt := strconv.FormatUint(gethHeader.Time, 10)
 	coreHeader := core.Header{
 		Hash:        blockHash,
 		BlockNumber: gethHeader.Number.Int64(),
