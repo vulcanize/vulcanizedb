@@ -294,34 +294,67 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan ch
 func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscription) {
 	log.Debug("back-filling data for id", id)
 	// Retrieve cached CIDs relevant to this subscriber
-	cidWrappers, err := sap.Retriever.RetrieveCIDs(con)
+	var endingBlock int64
+	var startingBlock int64
+	var err error
+	startingBlock, err = sap.Retriever.RetrieveFirstBlockNumber()
 	if err != nil {
 		sub.PayloadChan <- ResponsePayload{
-			ErrMsg: "CID retrieval error: " + err.Error(),
+			ErrMsg: "unable to set block range; error: " + err.Error(),
 		}
 	}
-	for _, cidWrapper := range cidWrappers {
-		blocksWrapper, err := sap.Fetcher.FetchCIDs(cidWrapper)
+	if startingBlock < con.StartingBlock.Int64() {
+		startingBlock = con.StartingBlock.Int64()
+	}
+	if con.EndingBlock.Int64() <= 0 || con.EndingBlock.Int64() <= startingBlock {
+		endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
 		if err != nil {
-			log.Error(err)
 			sub.PayloadChan <- ResponsePayload{
-				ErrMsg: "IPLD fetching error: " + err.Error(),
+				ErrMsg: "unable to set block range; error: " + err.Error(),
 			}
-		}
-		backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
-		if err != nil {
-			log.Error(err)
-			sub.PayloadChan <- ResponsePayload{
-				ErrMsg: "IPLD resolving error: " + err.Error(),
-			}
-		}
-		select {
-		case sub.PayloadChan <- *backFillIplds:
-			log.Infof("sending seed node back-fill payload to subscription %s", id)
-		default:
-			log.Infof("unable to send back-fill ppayload to subscription %s; channel has no receiver", id)
 		}
 	}
+	log.Debug("backfill starting block:", con.StartingBlock)
+	log.Debug("backfill ending block:", endingBlock)
+	// Backfilled payloads are sent concurrently to the streamed payloads, so the receiver needs to pay attention to
+	// the blocknumbers in the payloads they receive to keep things in order
+	// TODO: separate backfill into a different rpc subscription method altogether?
+	go func() {
+		for i := con.StartingBlock.Int64(); i <= endingBlock; i++ {
+			cidWrapper, err := sap.Retriever.RetrieveCIDs(con, i)
+			if err != nil {
+				sub.PayloadChan <- ResponsePayload{
+					ErrMsg: "CID retrieval error: " + err.Error(),
+				}
+				continue
+			}
+			if emptyCidWrapper(*cidWrapper) {
+				continue
+			}
+			blocksWrapper, err := sap.Fetcher.FetchCIDs(*cidWrapper)
+			if err != nil {
+				log.Error(err)
+				sub.PayloadChan <- ResponsePayload{
+					ErrMsg: "IPLD fetching error: " + err.Error(),
+				}
+				continue
+			}
+			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
+			if err != nil {
+				log.Error(err)
+				sub.PayloadChan <- ResponsePayload{
+					ErrMsg: "IPLD resolving error: " + err.Error(),
+				}
+				continue
+			}
+			select {
+			case sub.PayloadChan <- *backFillIplds:
+				log.Infof("sending seed node back-fill payload to subscription %s", id)
+			default:
+				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
+			}
+		}
+	}()
 }
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop

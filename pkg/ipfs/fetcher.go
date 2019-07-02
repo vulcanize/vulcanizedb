@@ -49,6 +49,7 @@ func NewIPLDFetcher(ipfsPath string) (*EthIPLDFetcher, error) {
 
 // FetchCIDs is the exported method for fetching and returning all the cids passed in a CidWrapper
 func (f *EthIPLDFetcher) FetchCIDs(cids CidWrapper) (*IpldWrapper, error) {
+
 	log.Debug("fetching iplds")
 	blocks := &IpldWrapper{
 		BlockNumber:  cids.BlockNumber,

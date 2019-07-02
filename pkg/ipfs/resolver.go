@@ -37,6 +37,7 @@ func NewIPLDResolver() *EthIPLDResolver {
 // ResolveIPLDs is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
 func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IpldWrapper) (*ResponsePayload, error) {
 	response := new(ResponsePayload)
+	response.BlockNumber = ipfsBlocks.BlockNumber
 	eir.resolveHeaders(ipfsBlocks.Headers, response)
 	eir.resolveUncles(ipfsBlocks.Uncles, response)
 	eir.resolveTransactions(ipfsBlocks.Transactions, response)

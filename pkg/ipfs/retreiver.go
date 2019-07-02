@@ -29,7 +29,9 @@ import (
 
 // CIDRetriever is the interface for retrieving CIDs from the Postgres cache
 type CIDRetriever interface {
-	RetrieveCIDs(streamFilters config.Subscription) ([]CidWrapper, error)
+	RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*CidWrapper, error)
+	RetrieveLastBlockNumber() (int64, error)
+	RetrieveFirstBlockNumber() (int64, error)
 }
 
 // EthCIDRetriever is the underlying struct supporting the CIDRetriever interface
@@ -44,99 +46,92 @@ func NewCIDRetriever(db *postgres.DB) *EthCIDRetriever {
 	}
 }
 
+func (ecr *EthCIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
+	var blockNumber int64
+	err := ecr.db.Get(&blockNumber, "SELECT block_number FROM header_cids ORDER BY block_number ASC LIMIT 1")
+	return blockNumber, err
+}
+
 // GetLastBlockNumber is used to retrieve the latest block number in the cache
-func (ecr *EthCIDRetriever) GetLastBlockNumber() (int64, error) {
+func (ecr *EthCIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 	var blockNumber int64
 	err := ecr.db.Get(&blockNumber, "SELECT block_number FROM header_cids ORDER BY block_number DESC LIMIT 1 ")
 	return blockNumber, err
 }
 
 // RetrieveCIDs is used to retrieve all of the CIDs which conform to the passed StreamFilters
-func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription) ([]CidWrapper, error) {
+func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*CidWrapper, error) {
 	log.Debug("retrieving cids")
-	var endingBlock int64
 	var err error
-	if streamFilters.EndingBlock.Int64() <= 0 || streamFilters.EndingBlock.Int64() <= streamFilters.StartingBlock.Int64() {
-		endingBlock, err = ecr.GetLastBlockNumber()
-		if err != nil {
-			return nil, err
-		}
-	}
-	cids := make([]CidWrapper, 0, endingBlock+1-streamFilters.StartingBlock.Int64())
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("backfill starting block:", streamFilters.StartingBlock)
-	log.Debug("backfill ending block:", endingBlock)
 	// THIS IS SUPER EXPENSIVE HAVING TO CYCLE THROUGH EACH BLOCK, NEED BETTER WAY TO FETCH CIDS
 	// WHILE STILL MAINTAINING RELATION INFO ABOUT WHAT BLOCK THE CIDS BELONG TO
-	for i := streamFilters.StartingBlock.Int64(); i <= endingBlock; i++ {
-		cw := CidWrapper{}
-		cw.BlockNumber = big.NewInt(i)
+	cw := new(CidWrapper)
+	cw.BlockNumber = big.NewInt(blockNumber)
 
-		// Retrieve cached header CIDs
-		if !streamFilters.HeaderFilter.Off {
-			cw.Headers, err = ecr.retrieveHeaderCIDs(tx, streamFilters, i)
+	// Retrieve cached header CIDs
+	if !streamFilters.HeaderFilter.Off {
+		cw.Headers, err = ecr.retrieveHeaderCIDs(tx, streamFilters, blockNumber)
+		if err != nil {
+			tx.Rollback()
+			log.Error("header cid retrieval error")
+			return nil, err
+		}
+		if !streamFilters.HeaderFilter.FinalOnly {
+			cw.Uncles, err = ecr.retrieveUncleCIDs(tx, streamFilters, blockNumber)
 			if err != nil {
 				tx.Rollback()
 				log.Error("header cid retrieval error")
 				return nil, err
 			}
-			if !streamFilters.HeaderFilter.FinalOnly {
-				cw.Uncles, err = ecr.retrieveUncleCIDs(tx, streamFilters, i)
-				if err != nil {
-					tx.Rollback()
-					log.Error("header cid retrieval error")
-					return nil, err
-				}
-			}
 		}
-
-		// Retrieve cached trx CIDs
-		var trxIds []int64
-		if !streamFilters.TrxFilter.Off {
-			cw.Transactions, trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, i)
-			if err != nil {
-				tx.Rollback()
-				log.Error("transaction cid retrieval error")
-				return nil, err
-			}
-		}
-
-		// Retrieve cached receipt CIDs
-		if !streamFilters.ReceiptFilter.Off {
-			cw.Receipts, err = ecr.retrieveRctCIDs(tx, streamFilters, i, trxIds)
-			if err != nil {
-				tx.Rollback()
-				log.Error("receipt cid retrieval error")
-				return nil, err
-			}
-		}
-
-		// Retrieve cached state CIDs
-		if !streamFilters.StateFilter.Off {
-			cw.StateNodes, err = ecr.retrieveStateCIDs(tx, streamFilters, i)
-			if err != nil {
-				tx.Rollback()
-				log.Error("state cid retrieval error")
-				return nil, err
-			}
-		}
-
-		// Retrieve cached storage CIDs
-		if !streamFilters.StorageFilter.Off {
-			cw.StorageNodes, err = ecr.retrieveStorageCIDs(tx, streamFilters, i)
-			if err != nil {
-				tx.Rollback()
-				log.Error("storage cid retrieval error")
-				return nil, err
-			}
-		}
-		cids = append(cids, cw)
 	}
 
-	return cids, tx.Commit()
+	// Retrieve cached trx CIDs
+	var trxIds []int64
+	if !streamFilters.TrxFilter.Off {
+		cw.Transactions, trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, blockNumber)
+		if err != nil {
+			tx.Rollback()
+			log.Error("transaction cid retrieval error")
+			return nil, err
+		}
+	}
+
+	// Retrieve cached receipt CIDs
+	if !streamFilters.ReceiptFilter.Off {
+		cw.Receipts, err = ecr.retrieveRctCIDs(tx, streamFilters, blockNumber, trxIds)
+		if err != nil {
+			tx.Rollback()
+			log.Error("receipt cid retrieval error")
+			return nil, err
+		}
+	}
+
+	// Retrieve cached state CIDs
+	if !streamFilters.StateFilter.Off {
+		cw.StateNodes, err = ecr.retrieveStateCIDs(tx, streamFilters, blockNumber)
+		if err != nil {
+			tx.Rollback()
+			log.Error("state cid retrieval error")
+			return nil, err
+		}
+	}
+
+	// Retrieve cached storage CIDs
+	if !streamFilters.StorageFilter.Off {
+		cw.StorageNodes, err = ecr.retrieveStorageCIDs(tx, streamFilters, blockNumber)
+		if err != nil {
+			tx.Rollback()
+			log.Error("storage cid retrieval error")
+			return nil, err
+		}
+	}
+
+	return cw, tx.Commit()
 }
 
 func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]string, error) {
