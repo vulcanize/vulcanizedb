@@ -25,10 +25,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 )
 
-type IStorageFetcher interface {
-	FetchStorageDiffs(chan<- utils.StorageDiffRow, chan<- error)
-}
-
 type CsvTailStorageFetcher struct {
 	tailer fs.Tailer
 }
