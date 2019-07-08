@@ -32,21 +32,21 @@ import (
 )
 
 type MockRpcClient struct {
-	callContextErr    error
-	ipcPath           string
-	nodeType          core.NodeType
-	passedContext     context.Context
-	passedMethod      string
-	passedResult      interface{}
-	passedBatch       []client.BatchElem
-	passedNamespace   string
-	passedPayloadChan chan statediff.Payload
+	callContextErr      error
+	ipcPath             string
+	nodeType            core.NodeType
+	passedContext       context.Context
+	passedMethod        string
+	passedResult        interface{}
+	passedBatch         []client.BatchElem
+	passedNamespace     string
+	passedPayloadChan   chan statediff.Payload
 	passedSubscribeArgs []interface{}
-	lengthOfBatch     int
-	returnPOAHeader   core.POAHeader
-	returnPOAHeaders  []core.POAHeader
-	returnPOWHeaders  []*types.Header
-	supportedModules  map[string]string
+	lengthOfBatch       int
+	returnPOAHeader     core.POAHeader
+	returnPOAHeaders    []core.POAHeader
+	returnPOWHeaders    []*types.Header
+	supportedModules    map[string]string
 }
 
 func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
@@ -65,7 +65,6 @@ func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}
 	subscription := rpc.ClientSubscription{}
 	return &subscription, nil
 }
-
 
 func (client *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
 	Expect(client.passedNamespace).To(Equal(namespace))

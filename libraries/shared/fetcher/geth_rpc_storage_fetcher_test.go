@@ -27,9 +27,9 @@ import (
 )
 
 type MockStoragediffStreamer struct {
-	subscribeError error
+	subscribeError    error
 	PassedPayloadChan chan statediff.Payload
-	streamPayloads []statediff.Payload
+	streamPayloads    []statediff.Payload
 }
 
 func (streamer *MockStoragediffStreamer) Stream(statediffPayloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
@@ -59,7 +59,6 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	var statediffFetcher fetcher.GethRpcStorageFetcher
 	var storagediffRowChan chan utils.StorageDiffRow
 	var errorChan chan error
-
 
 	BeforeEach(func() {
 		streamer = MockStoragediffStreamer{}

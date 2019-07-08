@@ -22,15 +22,15 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
 
-type GethRpcStorageFetcher struct{
+type GethRpcStorageFetcher struct {
 	statediffPayloadChan chan statediff.Payload
-	streamer streamer.Streamer
+	streamer             streamer.Streamer
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRpcStorageFetcher{
+func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRpcStorageFetcher {
 	return GethRpcStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
-		streamer:  streamer,
+		streamer:             streamer,
 	}
 }
 
@@ -64,6 +64,6 @@ func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.Storage
 }
 
 func getAccountDiffs(stateDiff statediff.StateDiff) []statediff.AccountDiff {
-	accounts :=append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
+	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
 	return append(accounts, stateDiff.DeletedAccounts...)
 }

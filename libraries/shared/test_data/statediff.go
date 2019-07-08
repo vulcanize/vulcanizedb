@@ -48,7 +48,7 @@ var (
 	anotherContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
 	AnotherContractLeafKey = crypto.Keccak256Hash(anotherContractAddress[:])
 
-	testAccount            = state.Account{
+	testAccount = state.Account{
 		Nonce:    NewNonceValue,
 		Balance:  big.NewInt(NewBalanceValue),
 		Root:     ContractRoot,
@@ -125,4 +125,3 @@ var (
 		Err:          errors.New("mock error"),
 	}
 )
-

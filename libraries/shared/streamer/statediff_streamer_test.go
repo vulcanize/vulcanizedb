@@ -33,4 +33,3 @@ var _ = Describe("StateDiff Streamer", func() {
 		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream"})
 	})
 })
-
