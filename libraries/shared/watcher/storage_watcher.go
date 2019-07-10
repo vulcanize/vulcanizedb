@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 	"reflect"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 
 type StorageWatcher struct {
 	db             *postgres.DB
+	diffSource     string
 	StorageFetcher fetcher.IStorageFetcher
 	Queue          storage.IStorageQueue
 	Transformers   map[common.Address]transformer.StorageTransformer
@@ -43,10 +45,15 @@ func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) Storage
 	queue := storage.NewStorageQueue(db)
 	return StorageWatcher{
 		db:             db,
+		diffSource:     "csv",
 		StorageFetcher: fetcher,
 		Queue:          queue,
 		Transformers:   transformers,
 	}
+}
+
+func (storageWatcher *StorageWatcher) SetStorageDiffSource(source string) {
+	storageWatcher.diffSource = source
 }
 
 func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
@@ -71,10 +78,29 @@ func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, err
 	}
 }
 
+func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Address) (transformer.StorageTransformer, bool) {
+	if storageWatcher.diffSource == "csv" {
+		storageTransformer, ok :=  storageWatcher.Transformers[contractAddress]
+		return storageTransformer, ok
+	} else if storageWatcher.diffSource == "geth" {
+		logrus.Debug("number of transformers", len(storageWatcher.Transformers))
+		for address, t := range storageWatcher.Transformers {
+			keccakOfTransformerAddress := common.BytesToAddress(crypto.Keccak256(address[:]))
+			if keccakOfTransformerAddress == contractAddress {
+				return t, true
+			}
+		}
+
+		return nil, false
+	}
+	return nil, false
+}
+
+
 func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
-	storageTransformer, ok := storageWatcher.Transformers[row.Contract]
+	storageTransformer, ok := storageWatcher.getTransformer(row.Contract)
 	if !ok {
-		// ignore rows from unwatched contracts
+		logrus.Debug("ignoring a row from an unwatched contract")
 		return
 	}
 	executeErr := storageTransformer.Execute(row)
@@ -93,7 +119,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 		logrus.Warn(fmt.Sprintf("error getting queued storage: %s", fetchErr))
 	}
 	for _, row := range rows {
-		storageTransformer, ok := storageWatcher.Transformers[row.Contract]
+		storageTransformer, ok := storageWatcher.getTransformer(row.Contract)
 		if !ok {
 			// delete row from queue if address no longer watched
 			storageWatcher.deleteRow(row.Id)
