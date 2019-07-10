@@ -52,8 +52,8 @@ var _ = Describe("Storage Watcher", func() {
 			mockFetcher     *mocks.MockStorageFetcher
 			mockQueue       *mocks.MockStorageQueue
 			mockTransformer *mocks.MockStorageTransformer
-			csvRow             utils.StorageDiffRow
-			gethRow            utils.StorageDiffRow
+			csvRow          utils.StorageDiffRow
+			gethRow         utils.StorageDiffRow
 			rows            chan utils.StorageDiffRow
 			storageWatcher  watcher.StorageWatcher
 		)
@@ -291,7 +291,7 @@ var _ = Describe("Storage Watcher", func() {
 				})
 			})
 
-		Describe("where diff source is geth RPC pub sub", func() {
+			Describe("where diff source is geth RPC pub sub", func() {
 				BeforeEach(func() {
 					mockQueue.RowsToReturn = []utils.StorageDiffRow{gethRow}
 					storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))

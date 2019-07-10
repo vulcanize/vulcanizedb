@@ -80,7 +80,7 @@ func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, err
 
 func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Address) (transformer.StorageTransformer, bool) {
 	if storageWatcher.diffSource == "csv" {
-		storageTransformer, ok :=  storageWatcher.Transformers[contractAddress]
+		storageTransformer, ok := storageWatcher.Transformers[contractAddress]
 		return storageTransformer, ok
 	} else if storageWatcher.diffSource == "geth" {
 		logrus.Debug("number of transformers", len(storageWatcher.Transformers))
@@ -95,7 +95,6 @@ func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Addre
 	}
 	return nil, false
 }
-
 
 func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
 	storageTransformer, ok := storageWatcher.getTransformer(row.Contract)
