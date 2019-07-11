@@ -4,4 +4,4 @@
     port     = 5432
 
 [client]
-    ipcPath  = ""
+    ipcPath  = "https://kovan.infura.io/v3/be5f83b248b74b34890cbf76e0945e29"

@@ -3,15 +3,15 @@ package main
 import (
 	"github.com/vulcanize/vulcanizedb/cmd"
 
-	log "github.com/sirupsen/logrus"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{
 		PrettyPrint: true,
 	})
-	log.SetReportCaller(true)
 	file, err := os.OpenFile("vulcanizedb.log",
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
