@@ -75,7 +75,7 @@ func initFuncs(cmd *cobra.Command, args []string) {
 
 }
 
-func database(cmd *cobra.Command, args []string) {
+func database() {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
@@ -89,12 +89,15 @@ func database(cmd *cobra.Command, args []string) {
 	viper.Set("database.config", databaseConfig)
 }
 
-func logLevel(cmd *cobra.Command, args []string) error {
+func logLevel() error {
 	lvl, err := log.ParseLevel(viper.GetString("log.level"))
 	if err != nil {
 		return err
 	}
 	log.SetLevel(lvl)
+	if lvl > log.InfoLevel {
+		log.SetReportCaller(true)
+	}
 	log.Info("Log level set to ", lvl.String())
 	return nil
 }
