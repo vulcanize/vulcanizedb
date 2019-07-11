@@ -18,6 +18,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"plugin"
 	syn "sync"
 	"time"
@@ -26,11 +30,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -123,12 +125,27 @@ func execute() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		tailer := fs.FileTailer{Path: storageDiffsPath}
-		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-		sw := watcher.NewStorageWatcher(storageFetcher, &db)
-		sw.AddTransformers(ethStorageInitializers)
-		wg.Add(1)
-		go watchEthStorage(&sw, &wg)
+		switch stateDiffSource {
+		case "geth":
+			log.Debug("fetching storage diffs from geth pub sub")
+			rpcClient, _ := getClients()
+			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
+			payloadChan := make(chan statediff.Payload)
+			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
+			sw := watcher.NewStorageWatcher(&storageFetcher, &db)
+			sw.SetStorageDiffSource("geth")
+			sw.AddTransformers(ethStorageInitializers)
+			wg.Add(1)
+			go watchEthStorage(&sw, &wg)
+		default:
+			log.Debug("fetching storage diffs from csv")
+			tailer := fs.FileTailer{Path: storageDiffsPath}
+			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+			sw := watcher.NewStorageWatcher(storageFetcher, &db)
+			sw.AddTransformers(ethStorageInitializers)
+			wg.Add(1)
+			go watchEthStorage(&sw, &wg)
+		}
 	}
 
 	if len(ethContractInitializers) > 0 {
