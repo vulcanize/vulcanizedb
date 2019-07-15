@@ -13,7 +13,7 @@ import (
 
 const (
 	test_networkid   = 10
-	protocol_version = 2123
+	protocol_version = lpv2
 )
 
 var (
@@ -29,9 +29,9 @@ func TestPeerHandshakeSetAnnounceTypeToAnnounceTypeSignedForTrustedPeer(t *testi
 
 	//peer to connect(on ulc side)
 	p := peer{
-		Peer:      p2p.NewPeer(id, "test peer", []p2p.Cap{}),
-		version:   protocol_version,
-		isTrusted: true,
+		Peer:    p2p.NewPeer(id, "test peer", []p2p.Cap{}),
+		version: protocol_version,
+		trusted: true,
 		rw: &rwStub{
 			WriteHook: func(recvList keyValueList) {
 				//checking that ulc sends to peer allowedRequests=onlyAnnounceRequests and announceType = announceTypeSigned
@@ -54,7 +54,7 @@ func TestPeerHandshakeSetAnnounceTypeToAnnounceTypeSignedForTrustedPeer(t *testi
 				l = l.add("txRelay", nil)
 				l = l.add("flowControl/BL", uint64(0))
 				l = l.add("flowControl/MRR", uint64(0))
-				l = l.add("flowControl/MRC", RequestCostList{})
+				l = l.add("flowControl/MRC", testCostList(0))
 
 				return l
 			},
@@ -99,7 +99,7 @@ func TestPeerHandshakeAnnounceTypeSignedForTrustedPeersPeerNotInTrusted(t *testi
 				l = l.add("txRelay", nil)
 				l = l.add("flowControl/BL", uint64(0))
 				l = l.add("flowControl/MRR", uint64(0))
-				l = l.add("flowControl/MRC", RequestCostList{})
+				l = l.add("flowControl/MRC", testCostList(0))
 
 				return l
 			},
@@ -140,7 +140,7 @@ func TestPeerHandshakeDefaultAllRequests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if p.isOnlyAnnounce {
+	if p.onlyAnnounce {
 		t.Fatal("Incorrect announceType")
 	}
 }
@@ -196,8 +196,8 @@ func TestPeerHandshakeClientReceiveOnlyAnnounceRequestsHeaders(t *testing.T) {
 				return l
 			},
 		},
-		network:   test_networkid,
-		isTrusted: true,
+		network: test_networkid,
+		trusted: true,
 	}
 
 	err := p.Handshake(td, hash, headNum, genesis, nil)
@@ -205,8 +205,8 @@ func TestPeerHandshakeClientReceiveOnlyAnnounceRequestsHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !p.isOnlyAnnounce {
-		t.Fatal("isOnlyAnnounce must be true")
+	if !p.onlyAnnounce {
+		t.Fatal("onlyAnnounce must be true")
 	}
 }
 

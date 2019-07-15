@@ -6,11 +6,14 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"strings"
 	"sync"
 
 	"github.com/aristanetworks/glog"
+	"github.com/aristanetworks/goarista/gnmi"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -59,25 +62,29 @@ func (c *collector) update(addr string, message proto.Message) {
 	}
 
 	device := strings.Split(addr, ":")[0]
-	prefix := "/" + strings.Join(notif.Prefix.Element, "/")
+	prefix := gnmi.StrPath(notif.Prefix)
 	// Process deletes first
 	for _, del := range notif.Delete {
-		path := prefix + "/" + strings.Join(del.Element, "/")
+		path := prefix + gnmi.StrPath(del)
 		key := source{addr: device, path: path}
 		c.m.Lock()
-		delete(c.metrics, key)
+		if _, ok := c.metrics[key]; ok {
+			delete(c.metrics, key)
+		} else {
+			// TODO: replace this with a prefix tree
+			p := path + "/"
+			for k := range c.metrics {
+				if k.addr == device && strings.HasPrefix(k.path, p) {
+					delete(c.metrics, k)
+				}
+			}
+		}
 		c.m.Unlock()
 	}
 
 	// Process updates next
 	for _, update := range notif.Update {
-		// We only use JSON encoded values
-		if update.Value == nil || update.Value.Type != pb.Encoding_JSON {
-			glog.V(9).Infof("Ignoring incompatible update value in %s", update)
-			continue
-		}
-
-		path := prefix + "/" + strings.Join(update.Path.Element, "/")
+		path := prefix + gnmi.StrPath(update.Path)
 		value, suffix, ok := parseValue(update)
 		if !ok {
 			continue
@@ -125,7 +132,8 @@ func (c *collector) update(addr string, message proto.Message) {
 		// Get the descriptor and labels for this source
 		metric := c.config.getMetricValues(src)
 		if metric == nil || metric.desc == nil {
-			glog.V(8).Infof("Ignoring unmatched update at %s:%s: %+v", device, path, update.Value)
+			glog.V(8).Infof("Ignoring unmatched update %v at %s:%s with value %+v",
+				update, device, path, value)
 			continue
 		}
 
@@ -153,26 +161,50 @@ func (c *collector) update(addr string, message proto.Message) {
 	}
 }
 
-// ParseValue takes in an update and parses a value and suffix
+// parseValue takes in an update and parses a value and suffix
 // Returns an interface that contains either a string or a float64 as well as a suffix
 // Unparseable updates return (0, empty string, false)
 func parseValue(update *pb.Update) (interface{}, string, bool) {
-	var intf interface{}
-	if err := json.Unmarshal(update.Value.Value, &intf); err != nil {
-		glog.Errorf("Can't parse value in update %v: %v", update, err)
+	intf, err := gnmi.ExtractValue(update)
+	if err != nil {
 		return 0, "", false
 	}
 
 	switch value := intf.(type) {
-	case float64:
-		return value, "", true
+	// float64 or string expected as the return value
+	case int64:
+		return float64(value), "", true
+	case uint64:
+		return float64(value), "", true
+	case float32:
+		return float64(value), "", true
+	case *pb.Decimal64:
+		val := gnmi.DecimalToFloat(value)
+		if math.IsInf(val, 0) || math.IsNaN(val) {
+			return 0, "", false
+		}
+		return val, "", true
+	case json.Number:
+		valFloat, err := value.Float64()
+		if err != nil {
+			return value, "", true
+		}
+		return valFloat, "", true
+	case *any.Any:
+		return value.String(), "", true
+	case []interface{}:
+		// extract string represetation for now
+		return gnmi.StrVal(update.Val), "", false
 	case map[string]interface{}:
 		if vIntf, ok := value["value"]; ok {
-			if val, ok := vIntf.(float64); ok {
-				return val, "value", true
+			if num, ok := vIntf.(json.Number); ok {
+				valFloat, err := num.Float64()
+				if err != nil {
+					return num, "value", true
+				}
+				return valFloat, "value", true
 			}
 		}
-	// float64 or string expected as the return value
 	case bool:
 		if value {
 			return float64(1), "", true

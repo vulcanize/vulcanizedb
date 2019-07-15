@@ -129,7 +129,10 @@ func bufferToRedis(addr string, notif *pb.Notification) {
 		pub := make(map[string]interface{}, len(notif.Update))
 		for _, update := range notif.Update {
 			key := joinPath(update.Path)
-			value := convertUpdate(update)
+			value, err := gnmi.ExtractValue(update)
+			if err != nil {
+				glog.Fatalf("Failed to extract valid type from %#v", update)
+			}
 			pub[key] = value
 			marshaledValue, err := json.Marshal(value)
 			if err != nil {
@@ -186,23 +189,5 @@ func redisPublish(path, kind string, payload interface{}) {
 }
 
 func joinPath(path *pb.Path) string {
-	// path.Elem is empty for some reason so using path.Element instead
-	return strings.Join(path.Element, "/")
-}
-
-func convertUpdate(update *pb.Update) interface{} {
-	switch update.Value.Type {
-	case pb.Encoding_JSON:
-		var value interface{}
-		err := json.Unmarshal(update.Value.Value, &value)
-		if err != nil {
-			glog.Fatalf("Malformed JSON update %q in %s", update.Value.Value, update)
-		}
-		return value
-	case pb.Encoding_BYTES:
-		return update.Value.Value
-	default:
-		glog.Fatalf("Unhandled type of value %v in %s", update.Value.Type, update)
-		return nil
-	}
+	return gnmi.StrPath(path)
 }

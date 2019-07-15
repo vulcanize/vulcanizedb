@@ -29,6 +29,10 @@
   name = "github.com/pressly/sup"
   version = "0.5.3"
 
+[[override]]
+  name = "github.com/golang/protobuf"
+  version = "1.3.2"
+
 [[constraint]]
   name = "github.com/onsi/ginkgo"
   version = "1.4.0"
@@ -51,4 +55,4 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  revision = "cd79bc61a983d6482579d12cdd239b37bbfa12ef"
+  version = "1.9.0"

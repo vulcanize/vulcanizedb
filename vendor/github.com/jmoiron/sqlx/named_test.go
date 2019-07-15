@@ -7,14 +7,15 @@ import (
 
 func TestCompileQuery(t *testing.T) {
 	table := []struct {
-		Q, R, D, N string
-		V          []string
+		Q, R, D, T, N string
+		V             []string
 	}{
 		// basic test for named parameters, invalid char ',' terminating
 		{
 			Q: `INSERT INTO foo (a,b,c,d) VALUES (:name, :age, :first, :last)`,
 			R: `INSERT INTO foo (a,b,c,d) VALUES (?, ?, ?, ?)`,
 			D: `INSERT INTO foo (a,b,c,d) VALUES ($1, $2, $3, $4)`,
+			T: `INSERT INTO foo (a,b,c,d) VALUES (@p1, @p2, @p3, @p4)`,
 			N: `INSERT INTO foo (a,b,c,d) VALUES (:name, :age, :first, :last)`,
 			V: []string{"name", "age", "first", "last"},
 		},
@@ -23,6 +24,7 @@ func TestCompileQuery(t *testing.T) {
 			Q: `SELECT * FROM a WHERE first_name=:name1 AND last_name=:name2`,
 			R: `SELECT * FROM a WHERE first_name=? AND last_name=?`,
 			D: `SELECT * FROM a WHERE first_name=$1 AND last_name=$2`,
+			T: `SELECT * FROM a WHERE first_name=@p1 AND last_name=@p2`,
 			N: `SELECT * FROM a WHERE first_name=:name1 AND last_name=:name2`,
 			V: []string{"name1", "name2"},
 		},
@@ -30,6 +32,7 @@ func TestCompileQuery(t *testing.T) {
 			Q: `SELECT "::foo" FROM a WHERE first_name=:name1 AND last_name=:name2`,
 			R: `SELECT ":foo" FROM a WHERE first_name=? AND last_name=?`,
 			D: `SELECT ":foo" FROM a WHERE first_name=$1 AND last_name=$2`,
+			T: `SELECT ":foo" FROM a WHERE first_name=@p1 AND last_name=@p2`,
 			N: `SELECT ":foo" FROM a WHERE first_name=:name1 AND last_name=:name2`,
 			V: []string{"name1", "name2"},
 		},
@@ -37,8 +40,17 @@ func TestCompileQuery(t *testing.T) {
 			Q: `SELECT 'a::b::c' || first_name, '::::ABC::_::' FROM person WHERE first_name=:first_name AND last_name=:last_name`,
 			R: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=? AND last_name=?`,
 			D: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=$1 AND last_name=$2`,
+			T: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=@p1 AND last_name=@p2`,
 			N: `SELECT 'a:b:c' || first_name, '::ABC:_:' FROM person WHERE first_name=:first_name AND last_name=:last_name`,
 			V: []string{"first_name", "last_name"},
+		},
+		{
+			Q: `SELECT @name := "name", :age, :first, :last`,
+			R: `SELECT @name := "name", ?, ?, ?`,
+			D: `SELECT @name := "name", $1, $2, $3`,
+			N: `SELECT @name := "name", :age, :first, :last`,
+			T: `SELECT @name := "name", @p1, @p2, @p3`,
+			V: []string{"age", "first", "last"},
 		},
 		/* This unicode awareness test sadly fails, because of our byte-wise worldview.
 		 * We could certainly iterate by Rune instead, though it's a great deal slower,
@@ -72,6 +84,11 @@ func TestCompileQuery(t *testing.T) {
 		qd, _, _ := compileNamedQuery([]byte(test.Q), DOLLAR)
 		if qd != test.D {
 			t.Errorf("\nexpected: `%s`\ngot:      `%s`", test.D, qd)
+		}
+
+		qt, _, _ := compileNamedQuery([]byte(test.Q), AT)
+		if qt != test.T {
+			t.Errorf("\nexpected: `%s`\ngot:      `%s`", test.T, qt)
 		}
 
 		qq, _, _ := compileNamedQuery([]byte(test.Q), NAMED)
@@ -165,6 +182,26 @@ func TestNamedQueries(t *testing.T) {
 		}
 		if p.Email != people[0].Email {
 			t.Errorf("got %s, expected %s", p.Email, people[0].Email)
+		}
+
+		// test batch inserts
+		sls := []Person{
+			{FirstName: "Ardie", LastName: "Savea", Email: "asavea@ab.co.nz"},
+			{FirstName: "Sonny Bill", LastName: "Williams", Email: "sbw@ab.co.nz"},
+			{FirstName: "Ngani", LastName: "Laumape", Email: "nlaumape@ab.co.nz"},
+		}
+
+		_, err = db.NamedExec(`INSERT INTO person (first_name, last_name, email)
+			VALUES (:first_name, :last_name, :email)`, sls)
+		test.Error(err)
+
+		for _, p := range sls {
+			dest := Person{}
+			err = db.Get(&dest, db.Rebind("SELECT * FROM person WHERE email=?"), p.Email)
+			test.Error(err)
+			if dest.Email != p.Email {
+				t.Errorf("expected %s, got %s", p.Email, dest.Email)
+			}
 		}
 
 		// test Exec

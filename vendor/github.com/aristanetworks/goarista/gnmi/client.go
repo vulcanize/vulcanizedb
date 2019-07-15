@@ -20,6 +20,7 @@ import (
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -29,13 +30,15 @@ const (
 
 // Config is the gnmi.Client config
 type Config struct {
-	Addr     string
-	CAFile   string
-	CertFile string
-	KeyFile  string
-	Password string
-	Username string
-	TLS      bool
+	Addr        string
+	CAFile      string
+	CertFile    string
+	KeyFile     string
+	Password    string
+	Username    string
+	TLS         bool
+	Compression string
+	DialOptions []grpc.DialOption
 }
 
 // SubscribeOptions is the gNMI subscription request options
@@ -47,11 +50,21 @@ type SubscribeOptions struct {
 	SampleInterval    uint64
 	HeartbeatInterval uint64
 	Paths             [][]string
+	Origin            string
 }
 
 // Dial connects to a gnmi service and returns a client
 func Dial(cfg *Config) (pb.GNMIClient, error) {
-	var opts []grpc.DialOption
+	opts := append([]grpc.DialOption(nil), cfg.DialOptions...)
+
+	switch cfg.Compression {
+	case "":
+	case "gzip":
+		opts = append(opts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
+	default:
+		return nil, fmt.Errorf("unsupported compression option: %q", cfg.Compression)
+	}
+
 	if cfg.TLS || cfg.CAFile != "" || cfg.CertFile != "" {
 		tlsConfig := &tls.Config{}
 		if cfg.CAFile != "" {
@@ -126,7 +139,7 @@ func NewContext(ctx context.Context, cfg *Config) context.Context {
 }
 
 // NewGetRequest returns a GetRequest for the given paths
-func NewGetRequest(paths [][]string) (*pb.GetRequest, error) {
+func NewGetRequest(paths [][]string, origin string) (*pb.GetRequest, error) {
 	req := &pb.GetRequest{
 		Path: make([]*pb.Path, len(paths)),
 	}
@@ -136,6 +149,7 @@ func NewGetRequest(paths [][]string) (*pb.GetRequest, error) {
 			return nil, err
 		}
 		req.Path[i] = gnmiPath
+		req.Path[i].Origin = origin
 	}
 	return req, nil
 }
@@ -148,6 +162,8 @@ func NewSubscribeRequest(subscribeOptions *SubscribeOptions) (*pb.SubscribeReque
 		mode = pb.SubscriptionList_ONCE
 	case "poll":
 		mode = pb.SubscriptionList_POLL
+	case "":
+		fallthrough
 	case "stream":
 		mode = pb.SubscriptionList_STREAM
 	default:
@@ -160,6 +176,8 @@ func NewSubscribeRequest(subscribeOptions *SubscribeOptions) (*pb.SubscribeReque
 		streamMode = pb.SubscriptionMode_ON_CHANGE
 	case "sample":
 		streamMode = pb.SubscriptionMode_SAMPLE
+	case "":
+		fallthrough
 	case "target_defined":
 		streamMode = pb.SubscriptionMode_TARGET_DEFINED
 	default:
@@ -181,6 +199,7 @@ func NewSubscribeRequest(subscribeOptions *SubscribeOptions) (*pb.SubscribeReque
 		if err != nil {
 			return nil, err
 		}
+		gnmiPath.Origin = subscribeOptions.Origin
 		subList.Subscription[i] = &pb.Subscription{
 			Path:              gnmiPath,
 			Mode:              streamMode,

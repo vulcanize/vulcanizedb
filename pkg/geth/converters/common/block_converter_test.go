@@ -44,7 +44,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		extraData, _ := hexutil.Decode("0xe4b883e5bda9e7a59ee4bb99e9b1bc")
 		nonce := types.BlockNonce{10}
 		number := int64(1)
-		time := int64(140000000)
+		time := uint64(140000000)
 
 		header := types.Header{
 			Difficulty: difficulty,
@@ -55,7 +55,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			Nonce:      nonce,
 			Number:     big.NewInt(number),
 			ParentHash: common.Hash{64},
-			Time:       big.NewInt(time),
+			Time:       time,
 			UncleHash:  common.Hash{128},
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})

@@ -19,6 +19,7 @@ package common_test
 import (
 	"encoding/json"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -37,7 +38,7 @@ var _ = Describe("Block header converter", func() {
 			ParentHash:  common.HexToHash("0xParent"),
 			ReceiptHash: common.HexToHash("0xReceipt"),
 			Root:        common.HexToHash("0xRoot"),
-			Time:        big.NewInt(123456789),
+			Time:        uint64(123456789),
 			TxHash:      common.HexToHash("0xTransaction"),
 			UncleHash:   common.HexToHash("0xUncle"),
 		}
@@ -48,7 +49,7 @@ var _ = Describe("Block header converter", func() {
 
 		Expect(coreHeader.BlockNumber).To(Equal(gethHeader.Number.Int64()))
 		Expect(coreHeader.Hash).To(Equal(hash))
-		Expect(coreHeader.Timestamp).To(Equal(gethHeader.Time.String()))
+		Expect(coreHeader.Timestamp).To(Equal(strconv.FormatUint(gethHeader.Time, 10)))
 	})
 
 	It("includes raw bytes for header as JSON", func() {

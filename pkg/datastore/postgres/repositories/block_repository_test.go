@@ -80,7 +80,7 @@ var _ = Describe("Saving blocks", func() {
 		blockNonce := "0x881db2ca900682e9a9"
 		miner := "x123"
 		extraData := "xextraData"
-		blockTime := int64(1508981640)
+		blockTime := uint64(1508981640)
 		uncleHash := "x789"
 		blockSize := string("1000")
 		difficulty := int64(10)
@@ -98,7 +98,7 @@ var _ = Describe("Saving blocks", func() {
 			Number:       blockNumber,
 			ParentHash:   blockParentHash,
 			Size:         blockSize,
-			Time:         blockTime,
+			Time:         uint64(blockTime),
 			UncleHash:    uncleHash,
 			UnclesReward: unclesReward,
 		}

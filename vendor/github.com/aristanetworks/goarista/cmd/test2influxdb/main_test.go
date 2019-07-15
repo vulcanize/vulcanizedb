@@ -10,8 +10,33 @@ import (
 	"time"
 
 	"github.com/aristanetworks/goarista/test"
-	"github.com/influxdata/influxdb/client/v2"
+	client "github.com/influxdata/influxdb1-client/v2"
 )
+
+type mockedConn struct {
+	bp client.BatchPoints
+}
+
+func (m *mockedConn) Ping(timeout time.Duration) (time.Duration, string, error) {
+	return time.Duration(0), "", nil
+}
+
+func (m *mockedConn) Write(bp client.BatchPoints) error {
+	m.bp = bp
+	return nil
+}
+
+func (m *mockedConn) Query(q client.Query) (*client.Response, error) {
+	return nil, nil
+}
+
+func (m *mockedConn) QueryAsChunk(q client.Query) (*client.ChunkedResponse, error) {
+	return nil, nil
+}
+
+func (m *mockedConn) Close() error {
+	return nil
+}
 
 func newPoint(t *testing.T, measurement string, tags map[string]string,
 	fields map[string]interface{}, timeString string) *client.Point {
@@ -27,7 +52,7 @@ func newPoint(t *testing.T, measurement string, tags map[string]string,
 	return p
 }
 
-func TestParseTestOutput(t *testing.T) {
+func TestRunWithTestData(t *testing.T) {
 	// Verify tags and fields set by flags are set in records
 	flagTags.Set("tag=foo")
 	flagFields.Set("field=true")
@@ -40,6 +65,7 @@ func TestParseTestOutput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer f.Close()
 
 	makeTags := func(pkg, resultType string) map[string]string {
 		return map[string]string{"package": pkg, "type": resultType, "tag": "foo"}
@@ -91,15 +117,12 @@ func TestParseTestOutput(t *testing.T) {
 		),
 	}
 
-	batch, err := client.NewBatchPoints(client.BatchPointsConfig{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := parseTestOutput(f, batch); err != nil {
+	var mc mockedConn
+	if err := run(&mc, f); err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := test.Diff(expected, batch.Points()); diff != "" {
+	if diff := test.Diff(expected, mc.bp.Points()); diff != "" {
 		t.Errorf("unexpected diff: %s", diff)
 	}
 }
@@ -147,5 +170,108 @@ func TestFieldsFlag(t *testing.T) {
 				t.Errorf("unexpected diff from String: %q vs. %q", tc, s)
 			}
 		})
+	}
+}
+
+func TestRunWithBenchmarkData(t *testing.T) {
+	// Verify tags and fields set by flags are set in records
+	flagTags.Set("tag=foo")
+	flagFields.Set("field=true")
+	defaultMeasurement := *flagMeasurement
+	*flagMeasurement = "benchmarks"
+	*flagBenchOnly = true
+	defer func() {
+		flagTags = nil
+		flagFields = nil
+		*flagMeasurement = defaultMeasurement
+		*flagBenchOnly = false
+	}()
+
+	f, err := os.Open("testdata/bench-output.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	makeTags := func(pkg, benchmark string) map[string]string {
+		return map[string]string{
+			"package":   pkg,
+			"benchmark": benchmark,
+			"tag":       "foo",
+		}
+	}
+	makeFields := func(nsPerOp, mbPerS, bPerOp, allocsPerOp float64) map[string]interface{} {
+		m := map[string]interface{}{
+			"field": true,
+		}
+		if nsPerOp > 0 {
+			m[fieldNsPerOp] = nsPerOp
+		}
+		if mbPerS > 0 {
+			m[fieldMBPerS] = mbPerS
+		}
+		if bPerOp > 0 {
+			m[fieldAllocedBytesPerOp] = bPerOp
+		}
+		if allocsPerOp > 0 {
+			m[fieldAllocsPerOp] = allocsPerOp
+		}
+		return m
+	}
+
+	expected := []*client.Point{
+		newPoint(t,
+			"benchmarks",
+			makeTags("arista/pkg", "BenchmarkPassed-8"),
+			makeFields(127, 0, 16, 1),
+			"2018-11-08T15:53:12.935603594-08:00",
+		),
+		newPoint(t,
+			"benchmarks",
+			makeTags("arista/pkg/subpkg1", "BenchmarkLogged-8"),
+			makeFields(120, 0, 16, 1),
+			"2018-11-08T15:53:14.359792815-08:00",
+		),
+		newPoint(t,
+			"benchmarks",
+			makeTags("arista/pkg/subpkg2", "BenchmarkSetBytes-8"),
+			makeFields(120, 8.31, 16, 1),
+			"2018-11-08T15:53:15.717036333-08:00",
+		),
+		newPoint(t,
+			"benchmarks",
+			makeTags("arista/pkg/subpkg3", "BenchmarkWithSubs/sub_1-8"),
+			makeFields(118, 0, 16, 1),
+			"2018-11-08T15:53:17.952644273-08:00",
+		),
+		newPoint(t,
+			"benchmarks",
+			makeTags("arista/pkg/subpkg3", "BenchmarkWithSubs/sub_2-8"),
+			makeFields(117, 0, 16, 1),
+			"2018-11-08T15:53:20.443187742-08:00",
+		),
+	}
+
+	var mc mockedConn
+	err = run(&mc, f)
+	switch err.(type) {
+	case duplicateTestsErr:
+	default:
+		t.Fatal(err)
+	}
+
+	// parseBenchmarkOutput arranges the data in maps so the generated points
+	// are in random order. Therefore, we're diffing as map instead of a slice
+	pointsAsMap := func(points []*client.Point) map[string]*client.Point {
+		m := make(map[string]*client.Point, len(points))
+		for _, p := range points {
+			m[p.String()] = p
+		}
+		return m
+	}
+	expectedMap := pointsAsMap(expected)
+	actualMap := pointsAsMap(mc.bp.Points())
+	if diff := test.Diff(expectedMap, actualMap); diff != "" {
+		t.Errorf("unexpected diff: %s\nexpected: %v\nactual: %v", diff, expectedMap, actualMap)
 	}
 }

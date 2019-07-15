@@ -1,7 +1,10 @@
 package bigcache
 
 import (
+	"bytes"
 	"fmt"
+	"math/rand"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -105,7 +108,7 @@ func TestEntryNotFound(t *testing.T) {
 	_, err := cache.Get("nonExistingKey")
 
 	// then
-	assert.EqualError(t, err, "Entry \"nonExistingKey\" not found")
+	assert.EqualError(t, err, ErrEntryNotFound.Error())
 }
 
 func TestTimingEviction(t *testing.T) {
@@ -127,7 +130,7 @@ func TestTimingEviction(t *testing.T) {
 	_, err := cache.Get("key")
 
 	// then
-	assert.EqualError(t, err, "Entry \"key\" not found")
+	assert.EqualError(t, err, ErrEntryNotFound.Error())
 }
 
 func TestTimingEvictionShouldEvictOnlyFromUpdatedShard(t *testing.T) {
@@ -149,7 +152,7 @@ func TestTimingEvictionShouldEvictOnlyFromUpdatedShard(t *testing.T) {
 	value, err := cache.Get("key")
 
 	// then
-	assert.NoError(t, err, "Entry \"key\" not found")
+	assert.NoError(t, err, ErrEntryNotFound.Error())
 	assert.Equal(t, []byte("value"), value)
 }
 
@@ -171,7 +174,7 @@ func TestCleanShouldEvictAll(t *testing.T) {
 	value, err := cache.Get("key")
 
 	// then
-	assert.EqualError(t, err, "Entry \"key\" not found")
+	assert.EqualError(t, err, ErrEntryNotFound.Error())
 	assert.Equal(t, value, []byte(nil))
 }
 
@@ -181,10 +184,14 @@ func TestOnRemoveCallback(t *testing.T) {
 	// given
 	clock := mockedClock{value: 0}
 	onRemoveInvoked := false
+	onRemoveExtInvoked := false
 	onRemove := func(key string, entry []byte) {
 		onRemoveInvoked = true
 		assert.Equal(t, "key", key)
 		assert.Equal(t, []byte("value"), entry)
+	}
+	onRemoveExt := func(key string, entry []byte, reason RemoveReason) {
+		onRemoveExtInvoked = true
 	}
 	cache, _ := newBigCache(Config{
 		Shards:             1,
@@ -192,12 +199,77 @@ func TestOnRemoveCallback(t *testing.T) {
 		MaxEntriesInWindow: 1,
 		MaxEntrySize:       256,
 		OnRemove:           onRemove,
+		OnRemoveWithReason: onRemoveExt,
 	}, &clock)
 
 	// when
 	cache.Set("key", []byte("value"))
 	clock.set(5)
 	cache.Set("key2", []byte("value2"))
+
+	// then
+	assert.True(t, onRemoveInvoked)
+	assert.False(t, onRemoveExtInvoked)
+}
+
+func TestOnRemoveWithReasonCallback(t *testing.T) {
+	t.Parallel()
+
+	// given
+	clock := mockedClock{value: 0}
+	onRemoveInvoked := false
+	onRemove := func(key string, entry []byte, reason RemoveReason) {
+		onRemoveInvoked = true
+		assert.Equal(t, "key", key)
+		assert.Equal(t, []byte("value"), entry)
+		assert.Equal(t, reason, RemoveReason(Expired))
+	}
+	cache, _ := newBigCache(Config{
+		Shards:             1,
+		LifeWindow:         time.Second,
+		MaxEntriesInWindow: 1,
+		MaxEntrySize:       256,
+		OnRemoveWithReason: onRemove,
+	}, &clock)
+
+	// when
+	cache.Set("key", []byte("value"))
+	clock.set(5)
+	cache.Set("key2", []byte("value2"))
+
+	// then
+	assert.True(t, onRemoveInvoked)
+}
+
+func TestOnRemoveFilter(t *testing.T) {
+	t.Parallel()
+
+	// given
+	clock := mockedClock{value: 0}
+	onRemoveInvoked := false
+	onRemove := func(key string, entry []byte, reason RemoveReason) {
+		onRemoveInvoked = true
+	}
+	c := Config{
+		Shards:             1,
+		LifeWindow:         time.Second,
+		MaxEntriesInWindow: 1,
+		MaxEntrySize:       256,
+		OnRemoveWithReason: onRemove,
+	}.OnRemoveFilterSet(Deleted, NoSpace)
+
+	cache, _ := newBigCache(c, &clock)
+
+	// when
+	cache.Set("key", []byte("value"))
+	clock.set(5)
+	cache.Set("key2", []byte("value2"))
+
+	// then
+	assert.False(t, onRemoveInvoked)
+
+	// and when
+	cache.Delete("key2")
 
 	// then
 	assert.True(t, onRemoveInvoked)
@@ -276,7 +348,7 @@ func TestCacheDel(t *testing.T) {
 	err := cache.Delete("nonExistingKey")
 
 	// then
-	assert.Equal(t, err.Error(), "Entry \"nonExistingKey\" not found")
+	assert.Equal(t, err.Error(), ErrEntryNotFound.Error())
 
 	// and when
 	cache.Set("existingKey", nil)
@@ -286,6 +358,67 @@ func TestCacheDel(t *testing.T) {
 	// then
 	assert.Nil(t, err)
 	assert.Len(t, cachedValue, 0)
+}
+
+// TestCacheDelRandomly does simultaneous deletes, puts and gets, to check for corruption errors.
+func TestCacheDelRandomly(t *testing.T) {
+	t.Parallel()
+	c := Config{
+		Shards:             1,
+		LifeWindow:         time.Second,
+		CleanWindow:        0,
+		MaxEntriesInWindow: 10,
+		MaxEntrySize:       10,
+		Verbose:            true,
+		Hasher:             newDefaultHasher(),
+		HardMaxCacheSize:   1,
+		Logger:             DefaultLogger(),
+	}
+	//c.Hasher = hashStub(5)
+	cache, _ := NewBigCache(c)
+	var wg sync.WaitGroup
+	var ntest = 800000
+	wg.Add(1)
+	go func() {
+		for i := 0; i < ntest; i++ {
+			r := uint8(rand.Int())
+			key := fmt.Sprintf("thekey%d", r)
+
+			cache.Delete(key)
+		}
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		val := make([]byte, 1024)
+		for i := 0; i < ntest; i++ {
+			r := byte(rand.Int())
+			key := fmt.Sprintf("thekey%d", r)
+
+			for j := 0; j < len(val); j++ {
+				val[j] = r
+			}
+			cache.Set(key, val)
+		}
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		val := make([]byte, 1024)
+		for i := 0; i < ntest; i++ {
+			r := byte(rand.Int())
+			key := fmt.Sprintf("thekey%d", r)
+
+			for j := 0; j < len(val); j++ {
+				val[j] = r
+			}
+			if got, err := cache.Get(key); err == nil && !bytes.Equal(got, val) {
+				t.Errorf("got %s ->\n %x\n expected:\n %x\n ", key, got, val)
+			}
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 }
 
 func TestCacheReset(t *testing.T) {
@@ -369,7 +502,7 @@ func TestGetOnResetCache(t *testing.T) {
 	// then
 	value, err := cache.Get("key1")
 
-	assert.Equal(t, err.Error(), "Entry \"key1\" not found")
+	assert.Equal(t, err.Error(), ErrEntryNotFound.Error())
 	assert.Equal(t, value, []byte(nil))
 }
 
@@ -419,8 +552,8 @@ func TestOldestEntryDeletionWhenMaxCacheSizeIsReached(t *testing.T) {
 	entry3, _ := cache.Get("key3")
 
 	// then
-	assert.EqualError(t, key1Err, "Entry \"key1\" not found")
-	assert.EqualError(t, key2Err, "Entry \"key2\" not found")
+	assert.EqualError(t, key1Err, ErrEntryNotFound.Error())
+	assert.EqualError(t, key2Err, ErrEntryNotFound.Error())
 	assert.Equal(t, blob('c', 1024*800), entry3)
 }
 
@@ -546,6 +679,28 @@ func TestNilValueCaching(t *testing.T) {
 	// then
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{}, cachedValue)
+}
+
+func TestClosing(t *testing.T) {
+	// given
+	config := Config{
+		CleanWindow: time.Minute,
+	}
+	startGR := runtime.NumGoroutine()
+
+	// when
+	for i := 0; i < 100; i++ {
+		cache, _ := NewBigCache(config)
+		cache.Close()
+	}
+
+	// wait till all goroutines are stopped.
+	time.Sleep(200 * time.Millisecond)
+
+	// then
+	endGR := runtime.NumGoroutine()
+	assert.True(t, endGR >= startGR)
+	assert.InDelta(t, endGR, startGR, 25)
 }
 
 type mockedLogger struct {

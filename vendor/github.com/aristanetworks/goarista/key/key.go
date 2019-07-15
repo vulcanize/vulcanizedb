@@ -55,10 +55,10 @@ type int16Key int16
 type int32Key int32
 type int64Key int64
 
-type uint8Key int8
-type uint16Key int16
-type uint32Key int32
-type uint64Key int64
+type uint8Key uint8
+type uint16Key uint16
+type uint32Key uint32
+type uint64Key uint64
 
 type float32Key float32
 type float64Key float64
@@ -68,6 +68,8 @@ type boolKey bool
 type pointerKey compositeKey
 
 type pathKey compositeKey
+
+type nilKey struct{}
 
 func pathToSlice(path Path) []interface{} {
 	s := make([]interface{}, len(path))
@@ -98,6 +100,8 @@ func sliceToPointer(s []interface{}) pointer {
 // doesn't implement value.Value.
 func New(intf interface{}) Key {
 	switch t := intf.(type) {
+	case nil:
+		return nilKey{}
 	case map[string]interface{}:
 		return compositeKey{sentinel: sentinel, m: t}
 	case []interface{}:
@@ -565,4 +569,26 @@ func (k pathKey) Equal(other interface{}) bool {
 		return false
 	}
 	return ok && sliceToPath(k.s).Equal(key.Key())
+}
+
+// Key interface implementation for nil
+func (k nilKey) Key() interface{} {
+	return nil
+}
+
+func (k nilKey) String() string {
+	return "<nil>"
+}
+
+func (k nilKey) GoString() string {
+	return "key.New(nil)"
+}
+
+func (k nilKey) MarshalJSON() ([]byte, error) {
+	return []byte("null"), nil
+}
+
+func (k nilKey) Equal(other interface{}) bool {
+	_, ok := other.(nilKey)
+	return ok
 }
