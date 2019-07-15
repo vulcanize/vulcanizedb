@@ -5,8 +5,8 @@
 package key
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
 )
 
 // Path represents a path decomposed into elements where each
@@ -19,12 +19,18 @@ func (p Path) String() string {
 	if len(p) == 0 {
 		return "/"
 	}
-	var buf bytes.Buffer
+	var b strings.Builder
 	for _, element := range p {
-		buf.WriteByte('/')
-		buf.WriteString(element.String())
+		b.WriteByte('/')
+		// Use StringifyInterface instead of element.String() because
+		// that will escape any invalid UTF-8.
+		s, err := StringifyInterface(element.Key())
+		if err != nil {
+			panic(fmt.Errorf("unable to stringify %#v: %s", element, err))
+		}
+		b.WriteString(s)
 	}
-	return buf.String()
+	return b.String()
 }
 
 // MarshalJSON marshals a Path to JSON.

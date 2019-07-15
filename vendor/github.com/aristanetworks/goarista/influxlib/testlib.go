@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	influx "github.com/influxdata/influxdb/client/v2"
+	influx "github.com/influxdata/influxdb1-client/v2"
 )
 
 // This will serve as a fake client object to test off of.
@@ -32,6 +32,10 @@ func (w *fakeClient) Query(q influx.Query) (*influx.Response, error) {
 	}
 
 	return &influx.Response{Results: nil, Err: ""}, nil
+}
+
+func (w *fakeClient) QueryAsChunk(q influx.Query) (*influx.ChunkedResponse, error) {
+	return nil, nil
 }
 
 func (w *fakeClient) Close() error {

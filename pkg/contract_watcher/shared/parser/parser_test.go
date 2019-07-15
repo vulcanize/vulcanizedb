@@ -220,7 +220,7 @@ var _ = Describe("Parser", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			selectMethods := p.GetMethods([]string{})
-			Expect(len(selectMethods)).To(Equal(22))
+			Expect(len(selectMethods)).To(Equal(25))
 		})
 	})
 })

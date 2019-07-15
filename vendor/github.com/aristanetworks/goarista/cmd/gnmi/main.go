@@ -22,8 +22,8 @@ import (
 var help = `Usage of gnmi:
 gnmi -addr [<VRF-NAME>/]ADDRESS:PORT [options...]
   capabilities
-  get PATH+
-  subscribe PATH+
+  get (origin=ORIGIN) PATH+
+  subscribe (origin=ORIGIN) PATH+
   ((update|replace (origin=ORIGIN) PATH JSON|FILE)|(delete (origin=ORIGIN) PATH))+
 `
 
@@ -43,6 +43,8 @@ func main() {
 	flag.StringVar(&cfg.KeyFile, "keyfile", "", "Path to client TLS private key file")
 	flag.StringVar(&cfg.Password, "password", "", "Password to authenticate with")
 	flag.StringVar(&cfg.Username, "username", "", "Username to authenticate with")
+	flag.StringVar(&cfg.Compression, "compression", "gzip", "Compression method. "+
+		`Supported options: "" and "gzip"`)
 	flag.BoolVar(&cfg.TLS, "tls", false, "Enable TLS")
 
 	subscribeOptions := &gnmi.SubscribeOptions{}
@@ -103,7 +105,11 @@ func main() {
 			if len(setOps) != 0 {
 				usageAndExit("error: 'get' not allowed after 'merge|replace|delete'")
 			}
-			err := gnmi.Get(ctx, client, gnmi.SplitPaths(args[i+1:]))
+			origin, ok := parseOrigin(args[i+1])
+			if ok {
+				i++
+			}
+			err := gnmi.Get(ctx, client, gnmi.SplitPaths(args[i+1:]), origin)
 			if err != nil {
 				glog.Fatal(err)
 			}
@@ -112,9 +118,14 @@ func main() {
 			if len(setOps) != 0 {
 				usageAndExit("error: 'subscribe' not allowed after 'merge|replace|delete'")
 			}
+			origin, ok := parseOrigin(args[i+1])
+			if ok {
+				i++
+			}
 			respChan := make(chan *pb.SubscribeResponse)
 			errChan := make(chan error)
 			defer close(errChan)
+			subscribeOptions.Origin = origin
 			subscribeOptions.Paths = gnmi.SplitPaths(args[i+1:])
 			go gnmi.Subscribe(ctx, client, subscribeOptions, respChan, errChan)
 			for {
@@ -138,8 +149,9 @@ func main() {
 				Type: args[i],
 			}
 			i++
-			if strings.HasPrefix(args[i], "origin=") {
-				op.Origin = strings.TrimPrefix(args[i], "origin=")
+			var ok bool
+			op.Origin, ok = parseOrigin(args[i])
+			if ok {
 				i++
 			}
 			op.Path = gnmi.SplitPath(args[i])
@@ -163,4 +175,11 @@ func main() {
 		glog.Fatal(err)
 	}
 
+}
+
+func parseOrigin(s string) (string, bool) {
+	if strings.HasPrefix(s, "origin=") {
+		return strings.TrimPrefix(s, "origin="), true
+	}
+	return "", false
 }

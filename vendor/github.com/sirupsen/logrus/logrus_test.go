@@ -3,9 +3,11 @@ package logrus_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -38,7 +40,29 @@ func TestReportCallerWhenConfigured(t *testing.T) {
 		assert.Equal(t, "testWithCaller", fields["msg"])
 		assert.Equal(t, "info", fields["level"])
 		assert.Equal(t,
-			"github.com/sirupsen/logrus_test.TestReportCallerWhenConfigured.func3", fields["func"])
+			"github.com/sirupsen/logrus_test.TestReportCallerWhenConfigured.func3", fields[FieldKeyFunc])
+	})
+
+	LogAndAssertJSON(t, func(log *Logger) {
+		log.ReportCaller = true
+		log.Formatter.(*JSONFormatter).CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+			return "somekindoffunc", "thisisafilename"
+		}
+		log.Print("testWithCallerPrettyfier")
+	}, func(fields Fields) {
+		assert.Equal(t, "somekindoffunc", fields[FieldKeyFunc])
+		assert.Equal(t, "thisisafilename", fields[FieldKeyFile])
+	})
+
+	LogAndAssertText(t, func(log *Logger) {
+		log.ReportCaller = true
+		log.Formatter.(*TextFormatter).CallerPrettyfier = func(f *runtime.Frame) (string, string) {
+			return "somekindoffunc", "thisisafilename"
+		}
+		log.Print("testWithCallerPrettyfier")
+	}, func(fields map[string]string) {
+		assert.Equal(t, "somekindoffunc", fields[FieldKeyFunc])
+		assert.Equal(t, "thisisafilename", fields[FieldKeyFile])
 	})
 }
 
@@ -103,6 +127,15 @@ func TestInfo(t *testing.T) {
 func TestWarn(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Warn("test")
+	}, func(fields Fields) {
+		assert.Equal(t, "test", fields["msg"])
+		assert.Equal(t, "warning", fields["level"])
+	})
+}
+
+func TestLog(t *testing.T) {
+	LogAndAssertJSON(t, func(log *Logger) {
+		log.Log(WarnLevel, "test")
 	}, func(fields Fields) {
 		assert.Equal(t, "test", fields["msg"])
 		assert.Equal(t, "warning", fields["level"])
@@ -338,6 +371,7 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	llog := logger.WithField("context", "eating raw fish")
 
 	llog.Info("looks delicious")
+	_, _, line, _ := runtime.Caller(0)
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
 	require.NoError(t, err, "should have decoded first message")
@@ -348,7 +382,7 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 		"github.com/sirupsen/logrus_test.TestNestedLoggingReportsCorrectCaller", fields["func"])
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	assert.Equal(t, filepath.ToSlash(cwd+"/logrus_test.go:340"), filepath.ToSlash(fields["file"].(string)))
+	assert.Equal(t, filepath.ToSlash(fmt.Sprintf("%s/logrus_test.go:%d", cwd, line-1)), filepath.ToSlash(fields["file"].(string)))
 
 	buffer.Reset()
 
@@ -363,6 +397,7 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	}).WithFields(Fields{
 		"James": "Brown",
 	}).Print("The hardest workin' man in show business")
+	_, _, line, _ = runtime.Caller(0)
 
 	err = json.Unmarshal(buffer.Bytes(), &fields)
 	assert.NoError(t, err, "should have decoded second message")
@@ -377,7 +412,7 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	assert.Equal(t,
 		"github.com/sirupsen/logrus_test.TestNestedLoggingReportsCorrectCaller", fields["func"])
 	require.NoError(t, err)
-	assert.Equal(t, filepath.ToSlash(cwd+"/logrus_test.go:365"), filepath.ToSlash(fields["file"].(string)))
+	assert.Equal(t, filepath.ToSlash(fmt.Sprintf("%s/logrus_test.go:%d", cwd, line-1)), filepath.ToSlash(fields["file"].(string)))
 
 	logger.ReportCaller = false // return to default value
 }
@@ -508,17 +543,11 @@ func TestParseLevel(t *testing.T) {
 	assert.Equal(t, "not a valid logrus Level: \"invalid\"", err.Error())
 }
 
-func TestUnmarshalText(t *testing.T) {
-	var u Level
-	for _, level := range AllLevels {
-		t.Run(level.String(), func(t *testing.T) {
-			assert.NoError(t, u.UnmarshalText([]byte(level.String())))
-			assert.Equal(t, level, u)
-		})
-	}
-	t.Run("invalid", func(t *testing.T) {
-		assert.Error(t, u.UnmarshalText([]byte("invalid")))
-	})
+func TestLevelString(t *testing.T) {
+	var loggerlevel Level
+	loggerlevel = 32000
+
+	_ = loggerlevel.String()
 }
 
 func TestGetSetLevelRace(t *testing.T) {
@@ -713,4 +742,21 @@ func TestReportCallerOnTextFormatter(t *testing.T) {
 	l.Formatter.(*TextFormatter).ForceColors = false
 	l.Formatter.(*TextFormatter).DisableColors = true
 	l.WithFields(Fields{"func": "func", "file": "file"}).Info("test")
+}
+
+func TestSetReportCallerRace(t *testing.T) {
+	l := New()
+	l.Out = ioutil.Discard
+	l.SetReportCaller(true)
+
+	var wg sync.WaitGroup
+	wg.Add(100)
+
+	for i := 0; i < 100; i++ {
+		go func() {
+			l.Error("Some Error")
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }

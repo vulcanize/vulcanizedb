@@ -52,6 +52,7 @@ type freeClientPool struct {
 
 	connectedLimit, totalLimit int
 	freeClientCap              uint64
+	connectedCap               uint64
 
 	addressMap            map[string]*freeClientPoolEntry
 	connPool, disconnPool *prque.Prque
@@ -88,10 +89,25 @@ func (f *freeClientPool) stop() {
 	f.lock.Unlock()
 }
 
+// freeClientId returns a string identifier for the peer. Multiple peers with the
+// same identifier can not be in the free client pool simultaneously.
+func freeClientId(p *peer) string {
+	if addr, ok := p.RemoteAddr().(*net.TCPAddr); ok {
+		if addr.IP.IsLoopback() {
+			// using peer id instead of loopback ip address allows multiple free
+			// connections from local machine to own server
+			return p.id
+		} else {
+			return addr.IP.String()
+		}
+	}
+	return ""
+}
+
 // registerPeer implements clientPool
 func (f *freeClientPool) registerPeer(p *peer) {
-	if addr, ok := p.RemoteAddr().(*net.TCPAddr); ok {
-		if !f.connect(addr.IP.String(), p.id) {
+	if freeId := freeClientId(p); freeId != "" {
+		if !f.connect(freeId, p.id) {
 			f.removePeer(p.id)
 		}
 	}
@@ -106,7 +122,6 @@ func (f *freeClientPool) connect(address, id string) bool {
 	if f.closed {
 		return false
 	}
-
 	if f.connectedLimit == 0 {
 		log.Debug("Client rejected", "address", address)
 		return false
@@ -131,10 +146,13 @@ func (f *freeClientPool) connect(address, id string) bool {
 		if e.linUsage+int64(connectedBias)-i.linUsage < 0 {
 			// kick it out and accept the new client
 			f.dropClient(i, now)
+			clientKickedMeter.Mark(1)
+			f.connectedCap -= f.freeClientCap
 		} else {
 			// keep the old client and reject the new one
 			f.connPool.Push(i, i.linUsage)
 			log.Debug("Client rejected", "address", address)
+			clientRejectedMeter.Mark(1)
 			return false
 		}
 	}
@@ -145,14 +163,17 @@ func (f *freeClientPool) connect(address, id string) bool {
 	if f.connPool.Size()+f.disconnPool.Size() > f.totalLimit {
 		f.disconnPool.Pop()
 	}
+	f.connectedCap += f.freeClientCap
+	totalConnectedGauge.Update(int64(f.connectedCap))
+	clientConnectedMeter.Mark(1)
 	log.Debug("Client accepted", "address", address)
 	return true
 }
 
 // unregisterPeer implements clientPool
 func (f *freeClientPool) unregisterPeer(p *peer) {
-	if addr, ok := p.RemoteAddr().(*net.TCPAddr); ok {
-		f.disconnect(addr.IP.String())
+	if freeId := freeClientId(p); freeId != "" {
+		f.disconnect(freeId)
 	}
 }
 
@@ -166,17 +187,22 @@ func (f *freeClientPool) disconnect(address string) {
 	if f.closed {
 		return
 	}
+	// Short circuit if the peer hasn't been registered.
 	e := f.addressMap[address]
+	if e == nil {
+		return
+	}
 	now := f.clock.Now()
 	if !e.connected {
 		log.Debug("Client already disconnected", "address", address)
 		return
 	}
-
 	f.connPool.Remove(e.index)
 	f.calcLogUsage(e, now)
 	e.connected = false
 	f.disconnPool.Push(e, -e.logUsage)
+	f.connectedCap -= f.freeClientCap
+	totalConnectedGauge.Update(int64(f.connectedCap))
 	log.Debug("Client disconnected", "address", address)
 }
 
@@ -194,7 +220,9 @@ func (f *freeClientPool) setLimits(count int, totalCap uint64) {
 	for f.connPool.Size() > f.connectedLimit {
 		i := f.connPool.PopItem().(*freeClientPoolEntry)
 		f.dropClient(i, now)
+		f.connectedCap -= f.freeClientCap
 	}
+	totalConnectedGauge.Update(int64(f.connectedCap))
 }
 
 // dropClient disconnects a client and also moves it from the connected to the
