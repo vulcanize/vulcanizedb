@@ -34,7 +34,7 @@ var _ = Describe("Blocks validator", func() {
 		blocksRepository := fakes.NewMockBlockRepository()
 		validator := history.NewBlockValidator(blockChain, blocksRepository, 2)
 
-		window, err := validator.ValidateBlocks()
+		window, err := validator.ValidateBlocks("subCommandForLogs")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(window).To(Equal(history.ValidationWindow{LowerBound: 5, UpperBound: 7}))
