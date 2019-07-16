@@ -129,6 +129,9 @@ func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) (
 
 func (blockChain *BlockChain) LastBlock() (*big.Int, error) {
 	block, err := blockChain.ethClient.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		return big.NewInt(0), err
+	}
 	return block.Number, err
 }
 

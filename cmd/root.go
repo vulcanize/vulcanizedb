@@ -67,7 +67,11 @@ func Execute() {
 
 func initFuncs(cmd *cobra.Command, args []string) {
 	database(cmd, args)
-	logLevel(cmd, args)
+
+	logLvlErr := logLevel(cmd, args)
+	if logLvlErr != nil {
+		log.Fatal("Could not set log level: ", logLvlErr)
+	}
 
 }
 
@@ -147,7 +151,7 @@ func getBlockChain() *geth.BlockChain {
 	rawRpcClient, err := rpc.Dial(ipc)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Could not dial client: ", err)
 	}
 	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
 	ethClient := ethclient.NewClient(rawRpcClient)

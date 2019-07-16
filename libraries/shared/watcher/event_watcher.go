@@ -100,7 +100,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 	missingHeaders, err := repository.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
-		logrus.Error("Fetching of missing headers failed in watcher!")
+		logrus.Error("Couldn't fetch missing headers in watcher: ", err)
 		return err
 	}
 
@@ -108,7 +108,11 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 		// TODO Extend FetchLogs for doing several blocks at a time
 		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 		if err != nil {
-			logrus.Errorf("Error while fetching logs for header %v in watcher", header.Id)
+			logrus.WithFields(logrus.Fields{
+				"headerId": header.Id,
+				"headerHash": header.Hash,
+				"blockNumber": header.BlockNumber,
+			}).Errorf("Couldn't fetch logs for header: %v", err)
 			return err
 		}
 
@@ -120,6 +124,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 		transformErr := watcher.transformLogs(logs, header)
 		if transformErr != nil {
+			logrus.Errorf("Could not transform logs: ", transformErr)
 			return transformErr
 		}
 	}
