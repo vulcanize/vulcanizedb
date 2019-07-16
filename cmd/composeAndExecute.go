@@ -105,6 +105,7 @@ single config file or in separate command instances using different config files
 Specify config location when executing the command:
 ./vulcanizedb composeAndExecute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
 		composeAndExecute()
 	},
 }
@@ -114,44 +115,44 @@ func composeAndExecute() {
 	prepConfig()
 
 	// Generate code to build the plugin according to the config file
-	log.Info("generating plugin")
+	log.WithField("subCommand", subCommand).Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	err = generator.GenerateExporterPlugin()
 	if err != nil {
-		log.Debug("generating plugin failed")
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Debug("generating plugin failed")
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
-	log.Info("linking plugin", pluginPath)
+	log.WithField("subCommand", subCommand).Info("linking plugin", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		log.Debug("linking plugin failed")
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Debug("linking plugin failed")
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
-	log.Info("loading transformers from plugin")
+	log.WithField("subCommand", subCommand).Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		log.Debug("loading Exporter symbol failed")
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Debug("loading Exporter symbol failed")
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		log.Debug("plugged-in symbol not of type Exporter")
+		log.WithField("subCommand", subCommand).Debug("plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 
@@ -159,7 +160,7 @@ func composeAndExecute() {
 	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
 
 	// Setup bc and db objects
-	blockChain := getBlockChain()
+	blockChain := getBlockChain(subCommand)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
 	// Execute over transformer sets returned by the exporter

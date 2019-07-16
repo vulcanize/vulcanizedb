@@ -101,6 +101,7 @@ single config file or in separate command instances using different config files
 Specify config location when executing the command:
 ./vulcanizedb compose --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
 		compose()
 	},
 }
@@ -110,23 +111,23 @@ func compose() {
 	prepConfig()
 
 	// Generate code to build the plugin according to the config file
-	log.Info("generating plugin")
+	log.WithField("subCommand", subCommand).Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	err = generator.GenerateExporterPlugin()
 	if err != nil {
-		log.Debug("generating plugin failed")
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Debug("generating plugin failed")
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	fmt.Printf("Composed plugin %s", pluginPath)
-	log.Info("plugin .so file output to", pluginPath)
+	log.WithField("subCommand", subCommand).Info("plugin .so file output to", pluginPath)
 }
 
 func init() {
@@ -134,38 +135,38 @@ func init() {
 }
 
 func prepConfig() {
-	log.Info("configuring plugin")
+	log.WithField("subCommand", subCommand).Info("configuring plugin")
 	names := viper.GetStringSlice("exporter.transformerNames")
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
 		transformer := viper.GetStringMapString("exporter." + name)
 		p, pOK := transformer["path"]
 		if !pOK || p == "" {
-			log.Fatal(name, "transformer config is missing `path` value")
+			log.WithField("subCommand", subCommand).Fatal(name, "transformer config is missing `path` value")
 		}
 		r, rOK := transformer["repository"]
 		if !rOK || r == "" {
-			log.Fatal(name, "transformer config is missing `repository` value")
+			log.WithField("subCommand", subCommand).Fatal(name, "transformer config is missing `repository` value")
 		}
 		m, mOK := transformer["migrations"]
 		if !mOK || m == "" {
-			log.Fatal(name, "transformer config is missing `migrations` value")
+			log.WithField("subCommand", subCommand).Fatal(name, "transformer config is missing `migrations` value")
 		}
 		mr, mrOK := transformer["rank"]
 		if !mrOK || mr == "" {
-			log.Fatal(name, "transformer config is missing `rank` value")
+			log.WithField("subCommand", subCommand).Fatal(name, "transformer config is missing `rank` value")
 		}
 		rank, err := strconv.ParseUint(mr, 10, 64)
 		if err != nil {
-			log.Fatal(name, "migration `rank` can't be converted to an unsigned integer")
+			log.WithField("subCommand", subCommand).Fatal(name, "migration `rank` can't be converted to an unsigned integer")
 		}
 		t, tOK := transformer["type"]
 		if !tOK {
-			log.Fatal(name, "transformer config is missing `type` value")
+			log.WithField("subCommand", subCommand).Fatal(name, "transformer config is missing `type` value")
 		}
 		transformerType := config.GetTransformerType(t)
 		if transformerType == config.UnknownTransformerType {
-			log.Fatal(errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`))
+			log.WithField("subCommand", subCommand).Fatal(errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`))
 		}
 
 		transformers[name] = config.Transformer{

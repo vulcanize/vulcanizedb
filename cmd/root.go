@@ -150,11 +150,11 @@ func initConfig() {
 	}
 }
 
-func getBlockChain() *geth.BlockChain {
+func getBlockChain(subCommand string) *geth.BlockChain {
 	rawRpcClient, err := rpc.Dial(ipc)
 
 	if err != nil {
-		log.Fatal("Could not dial client: ", err)
+		log.WithField("subCommand", subCommand).Fatal(err)
 	}
 	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
 	ethClient := ethclient.NewClient(rawRpcClient)
