@@ -109,8 +109,8 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"headerId": header.Id,
-				"headerHash": header.Hash,
+				"headerId":    header.Id,
+				"headerHash":  header.Hash,
 				"blockNumber": header.BlockNumber,
 			}).Errorf("Couldn't fetch logs for header: %v", err)
 			return err
@@ -124,7 +124,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 		transformErr := watcher.transformLogs(logs, header)
 		if transformErr != nil {
-			logrus.Errorf("Could not transform logs: ", transformErr)
+			logrus.Error("Could not transform logs: ", transformErr)
 			return transformErr
 		}
 	}
