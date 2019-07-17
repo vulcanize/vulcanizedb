@@ -66,9 +66,8 @@ func Execute() {
 }
 
 func initFuncs(cmd *cobra.Command, args []string) {
-	database(cmd, args)
-
-	logLvlErr := logLevel(cmd, args)
+	database()
+	logLvlErr := logLevel()
 	if logLvlErr != nil {
 		log.Fatal("Could not set log level: ", logLvlErr)
 	}
