@@ -39,7 +39,7 @@ or [contract](../../staging/libraries/shared/watcher/contract_watcher.go#L68) wa
     * If the base vDB migrations occupy this path as well, they need to be in their `goose fix`ed form
     as they are [here](../../staging/db/migrations)
 
-To update a plugin repository with changes to the core vulcanizedb repository, run `dep ensure` to update its dependencies.
+To update a plugin repository with changes to the core vulcanizedb repository, use your dependency manager to install the desired version of vDB.
 
 ## Building and Running Custom Transformers
 ### Commands
