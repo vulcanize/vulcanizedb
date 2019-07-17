@@ -3,11 +3,6 @@ BASE = $(GOPATH)/src/$(PACKAGE)
 PKGS = go list ./... | grep -v "^vendor/"
 
 # Tools
-## Dependency management
-DEP = $(BIN)/dep
-$(BIN)/dep:
-	go get -u github.com/golang/dep/cmd/dep
-
 ## Testing library
 GINKGO = $(BIN)/ginkgo
 $(BIN)/ginkgo:
@@ -32,7 +27,7 @@ $(BIN)/gometalinter.v2:
 
 
 .PHONY: installtools
-installtools: | $(LINT) $(GOOSE) $(GINKGO) $(DEP)
+installtools: | $(LINT) $(GOOSE) $(GINKGO)
 	echo "Installing tools"
 
 .PHONY: metalint
@@ -58,11 +53,7 @@ integrationtest: | $(GINKGO) $(LINT)
 	go fmt ./...
 	$(GINKGO) -r integration_test/
 
-.PHONY: dep
-dep: | $(DEP)
-	$(DEP) ensure
-
-build: dep
+build:
 	go fmt ./...
 	go build
 
