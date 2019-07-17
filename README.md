@@ -35,7 +35,7 @@ data from VulcanizeDB's underlying Postgres database and making it accessible.
 1. [Configuring a synced Ethereum node](#configuring-a-synced-ethereum-node)
 
 ### Dependencies
- - Go 1.11+
+ - Go 1.12+
  - Postgres 11.2
  - Ethereum Node
    - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
@@ -46,15 +46,16 @@ Download the codebase to your local `GOPATH` via:
 
 `go get github.com/vulcanize/vulcanizedb`
 
-Move to the project directory and use [golang/dep](https://github.com/golang/dep) to install the dependencies:
+Move to the project directory:
 
 `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
 
-`dep ensure`
-
-Once the dependencies have been successfully installed, build the executable with:
+Be sure you have enabled Go Modules (`export GO111MODULE=on`), and build the executable with:
 
 `make build`
+
+If you need to use a different dependency than what is currently defined in `go.mod`, it may helpful to look into [the replace directive](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive).
+This instruction enables you to point at a fork or the local filesystem for dependency resolution.
 
 If you are running into issues at this stage, ensure that `GOPATH` is defined in your shell.
 If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system.
