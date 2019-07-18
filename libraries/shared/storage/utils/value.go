@@ -21,6 +21,7 @@ type ValueType int
 const (
 	Uint256 ValueType = iota
 	Uint48
+	Uint128
 	Bytes32
 	Address
 	PackedSlot
