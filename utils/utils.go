@@ -31,7 +31,7 @@ import (
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 	db, err := postgres.NewDB(database, node)
 	if err != nil {
-		log.Fatalf("Error loading postgres\n%v", err)
+		log.Fatal("Error loading postgres: ", err)
 	}
 	return *db
 }
@@ -65,7 +65,7 @@ func GetAbi(abiFilepath string, contractHash string, network string) string {
 	}
 	_, err := geth.ParseAbi(contractAbiString)
 	if err != nil {
-		log.Fatalln("Invalid ABI")
+		log.Fatalln("Invalid ABI: ", err)
 	}
 	return contractAbiString
 }
