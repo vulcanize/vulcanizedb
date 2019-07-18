@@ -56,7 +56,7 @@ func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId
 func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
 			log.BlockNumber, log.Address, log.TxHash, log.Index, log.Topics[0], log.Topics[1], log.Topics[2], log.Topics[3], log.Data, receiptId,

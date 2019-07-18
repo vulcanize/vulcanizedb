@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.3
--- Dumped by pg_dump version 11.3
+-- Dumped from database version 11.4
+-- Dumped by pg_dump version 11.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -51,10 +51,10 @@ ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
 
 
 --
--- Name: logs; Type: TABLE; Schema: public; Owner: -
+-- Name: full_sync_logs; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.logs (
+CREATE TABLE public.full_sync_logs (
     id integer NOT NULL,
     block_number bigint,
     address character varying(66),
@@ -74,9 +74,9 @@ CREATE TABLE public.logs (
 --
 
 CREATE VIEW public.block_stats AS
- SELECT max(logs.block_number) AS max_block,
-    min(logs.block_number) AS min_block
-   FROM public.logs;
+ SELECT max(full_sync_logs.block_number) AS max_block,
+    min(full_sync_logs.block_number) AS min_block
+   FROM public.full_sync_logs;
 
 
 --
@@ -166,6 +166,26 @@ CREATE TABLE public.eth_nodes (
     network_id numeric,
     eth_node_id character varying(128)
 );
+
+
+--
+-- Name: full_sync_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.full_sync_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: full_sync_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.full_sync_logs_id_seq OWNED BY public.full_sync_logs.id;
 
 
 --
@@ -430,26 +450,6 @@ ALTER SEQUENCE public.log_filters_id_seq OWNED BY public.log_filters.id;
 
 
 --
--- Name: logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.logs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.logs_id_seq OWNED BY public.logs.id;
-
-
---
 -- Name: nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -577,21 +577,21 @@ ALTER SEQUENCE public.watched_contracts_contract_id_seq OWNED BY public.watched_
 
 CREATE VIEW public.watched_event_logs AS
  SELECT log_filters.name,
-    logs.id,
-    logs.block_number,
-    logs.address,
-    logs.tx_hash,
-    logs.index,
-    logs.topic0,
-    logs.topic1,
-    logs.topic2,
-    logs.topic3,
-    logs.data,
-    logs.receipt_id
+    full_sync_logs.id,
+    full_sync_logs.block_number,
+    full_sync_logs.address,
+    full_sync_logs.tx_hash,
+    full_sync_logs.index,
+    full_sync_logs.topic0,
+    full_sync_logs.topic1,
+    full_sync_logs.topic2,
+    full_sync_logs.topic3,
+    full_sync_logs.data,
+    full_sync_logs.receipt_id
    FROM ((public.log_filters
      CROSS JOIN public.block_stats)
-     JOIN public.logs ON ((((logs.address)::text = (log_filters.address)::text) AND (logs.block_number >= COALESCE(log_filters.from_block, block_stats.min_block)) AND (logs.block_number <= COALESCE(log_filters.to_block, block_stats.max_block)))))
-  WHERE ((((log_filters.topic0)::text = (logs.topic0)::text) OR (log_filters.topic0 IS NULL)) AND (((log_filters.topic1)::text = (logs.topic1)::text) OR (log_filters.topic1 IS NULL)) AND (((log_filters.topic2)::text = (logs.topic2)::text) OR (log_filters.topic2 IS NULL)) AND (((log_filters.topic3)::text = (logs.topic3)::text) OR (log_filters.topic3 IS NULL)));
+     JOIN public.full_sync_logs ON ((((full_sync_logs.address)::text = (log_filters.address)::text) AND (full_sync_logs.block_number >= COALESCE(log_filters.from_block, block_stats.min_block)) AND (full_sync_logs.block_number <= COALESCE(log_filters.to_block, block_stats.max_block)))))
+  WHERE ((((log_filters.topic0)::text = (full_sync_logs.topic0)::text) OR (log_filters.topic0 IS NULL)) AND (((log_filters.topic1)::text = (full_sync_logs.topic1)::text) OR (log_filters.topic1 IS NULL)) AND (((log_filters.topic2)::text = (full_sync_logs.topic2)::text) OR (log_filters.topic2 IS NULL)) AND (((log_filters.topic3)::text = (full_sync_logs.topic3)::text) OR (log_filters.topic3 IS NULL)));
 
 
 --
@@ -620,6 +620,13 @@ ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.eth_nodes ALTER COLUMN id SET DEFAULT nextval('public.nodes_id_seq'::regclass);
+
+
+--
+-- Name: full_sync_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_logs ALTER COLUMN id SET DEFAULT nextval('public.full_sync_logs_id_seq'::regclass);
 
 
 --
@@ -669,13 +676,6 @@ ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.head
 --
 
 ALTER TABLE ONLY public.log_filters ALTER COLUMN id SET DEFAULT nextval('public.log_filters_id_seq'::regclass);
-
-
---
--- Name: logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.logs ALTER COLUMN id SET DEFAULT nextval('public.logs_id_seq'::regclass);
 
 
 --
@@ -756,6 +756,14 @@ ALTER TABLE ONLY public.eth_nodes
 
 
 --
+-- Name: full_sync_logs full_sync_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_logs
+    ADD CONSTRAINT full_sync_logs_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: full_sync_receipts full_sync_receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -817,14 +825,6 @@ ALTER TABLE ONLY public.header_sync_transactions
 
 ALTER TABLE ONLY public.headers
     ADD CONSTRAINT headers_pkey PRIMARY KEY (id);
-
-
---
--- Name: logs logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.logs
-    ADD CONSTRAINT logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -1014,10 +1014,10 @@ ALTER TABLE ONLY public.blocks
 
 
 --
--- Name: logs receipts_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: full_sync_logs receipts_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.logs
+ALTER TABLE ONLY public.full_sync_logs
     ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.full_sync_receipts(id) ON DELETE CASCADE;
 
 

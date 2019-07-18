@@ -109,15 +109,15 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM blocks")
 	db.MustExec("DELETE FROM checked_headers")
 	// can't delete from eth_nodes since this function is called after the required eth_node is persisted
+	db.MustExec("DELETE FROM full_sync_logs")
+	db.MustExec("DELETE FROM full_sync_receipts")
 	db.MustExec("DELETE FROM full_sync_transactions")
 	db.MustExec("DELETE FROM goose_db_version")
-	db.MustExec("DELETE FROM headers")
-	db.MustExec("DELETE FROM header_sync_transactions")
-	db.MustExec("DELETE FROM log_filters")
-	db.MustExec("DELETE FROM logs")
-	db.MustExec("DELETE FROM queued_storage")
-	db.MustExec("DELETE FROM full_sync_receipts")
 	db.MustExec("DELETE FROM header_sync_receipts")
+	db.MustExec("DELETE FROM header_sync_transactions")
+	db.MustExec("DELETE FROM headers")
+	db.MustExec("DELETE FROM log_filters")
+	db.MustExec("DELETE FROM queued_storage")
 	db.MustExec("DELETE FROM watched_contracts")
 }
 

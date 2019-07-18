@@ -271,7 +271,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.Log, receiptId int64) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
