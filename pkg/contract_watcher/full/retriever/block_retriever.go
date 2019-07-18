@@ -68,7 +68,7 @@ func (r *blockRetriever) retrieveFirstBlockFromLogs(contractAddr string) (int64,
 	var firstBlock int
 	err := r.db.Get(
 		&firstBlock,
-		"SELECT block_number FROM logs WHERE lower(address) = $1 ORDER BY block_number ASC LIMIT 1",
+		"SELECT block_number FROM full_sync_logs WHERE lower(address) = $1 ORDER BY block_number ASC LIMIT 1",
 		contractAddr,
 	)
 

@@ -149,7 +149,7 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM logs`)
+	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM full_sync_logs`)
 	Expect(err).ToNot(HaveOccurred())
 
 	info := SetupTusdContract(wantedEvents, wantedMethods)
@@ -195,7 +195,7 @@ func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (
 	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM logs`)
+	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM full_sync_logs`)
 	Expect(err).ToNot(HaveOccurred())
 
 	info := SetupENSContract(wantedEvents, wantedMethods)
@@ -231,7 +231,7 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM logs`)
+	_, err = tx.Exec(`DELETE FROM full_sync_logs`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM log_filters`)

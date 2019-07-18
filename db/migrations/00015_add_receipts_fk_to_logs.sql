@@ -1,11 +1,11 @@
 -- +goose Up
-ALTER TABLE logs
-    DROP CONSTRAINT log_uc;
+ALTER TABLE full_sync_logs
+    DROP CONSTRAINT full_sync_log_uc;
 
-ALTER TABLE logs
+ALTER TABLE full_sync_logs
   ADD COLUMN receipt_id INT;
 
-ALTER TABLE logs
+ALTER TABLE full_sync_logs
   ADD CONSTRAINT receipts_fk
 FOREIGN KEY (receipt_id)
 REFERENCES full_sync_receipts (id)
@@ -13,11 +13,11 @@ ON DELETE CASCADE;
 
 
 -- +goose Down
-ALTER TABLE logs
+ALTER TABLE full_sync_logs
   DROP CONSTRAINT receipts_fk;
 
-ALTER TABLE logs
+ALTER TABLE full_sync_logs
   DROP COLUMN receipt_id;
 
-ALTER TABLE logs
-  ADD CONSTRAINT log_uc UNIQUE (block_number, index);
+ALTER TABLE full_sync_logs
+  ADD CONSTRAINT full_sync_log_uc UNIQUE (block_number, index);

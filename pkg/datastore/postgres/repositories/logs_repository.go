@@ -33,7 +33,7 @@ func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) e
 	tx, _ := logRepository.DB.Beginx()
 	for _, tlog := range lgs {
 		_, insertLogErr := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
 			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
@@ -68,7 +68,7 @@ func (logRepository LogRepository) GetLogs(address string, blockNumber int64) ([
 					  topic2,
 					  topic3,
 					  data
-				FROM logs
+				FROM full_sync_logs
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
 	if err != nil {
