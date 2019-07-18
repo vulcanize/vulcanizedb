@@ -100,4 +100,54 @@ var _ = Describe("Storage transformer", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
+
+	Describe("when a storage row contains more than one item packed in storage", func() {
+		var (
+			rawValue = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
+			fakeBlockNumber = 123
+			fakeBlockHash = "0x67890"
+		    packedTypes = make(map[int]utils.ValueType)
+		)
+		packedTypes[0] = utils.Uint48
+		packedTypes[1] = utils.Uint48
+
+		var fakeMetadata = utils.StorageValueMetadata{
+			Name:        "",
+			Keys:        nil,
+			Type:        utils.PackedSlot,
+			PackedTypes: packedTypes,
+		}
+
+		It("passes the decoded data items to the repository", func() {
+			mappings.Metadata = fakeMetadata
+			fakeRow := utils.StorageDiffRow{
+				Contract:     common.Address{},
+				BlockHash:    common.HexToHash(fakeBlockHash),
+				BlockHeight:  fakeBlockNumber,
+				StorageKey:   common.Hash{},
+				StorageValue: rawValue.Hash(),
+			}
+
+			err := t.Execute(fakeRow)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
+			Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
+			expectedPassedValue := make(map[int]string)
+			expectedPassedValue[0]= "10800"
+			expectedPassedValue[1]= "172800"
+			Expect(repository.PassedValue.(map[int]string)).To(Equal(expectedPassedValue))
+		})
+
+		It("returns error if creating a row fails", func() {
+			mappings.Metadata = fakeMetadata
+			repository.CreateErr = fakes.FakeError
+
+			err := t.Execute(utils.StorageDiffRow{StorageValue: rawValue.Hash()})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+	})
 })

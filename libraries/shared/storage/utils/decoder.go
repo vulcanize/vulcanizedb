@@ -18,9 +18,8 @@ package utils
 
 import (
 	"fmt"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, error) {
@@ -61,17 +60,20 @@ func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
 }
 
-func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) []string{
+func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string{
 	storageSlot := raw
-	var results []string
+	var results = map[int]string{}
+
 	//the reason we're using a map and not a slice is that golang doesn't guarantee the order of a slice
-	for _, valueType := range packedTypes {
+	numberOfTypes := len(packedTypes)
+	for position := 0; position < numberOfTypes; position++ {
+		valueType := packedTypes[position]
 		lengthOfStorageSlot := len(storageSlot)
 		lengthOfItem := getNumberOfBytes(valueType)
 		itemStartingIndex := lengthOfStorageSlot - lengthOfItem
 		value := storageSlot[itemStartingIndex:]
 		decodedValue := decodeIndividualItems(value, valueType)
-		results = append(results, decodedValue)
+		results[position] = decodedValue
 
 		//pop last item off slot before moving on
 		storageSlot = storageSlot[0:itemStartingIndex]
