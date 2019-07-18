@@ -47,9 +47,11 @@ func (transformer Transformer) Execute(row utils.StorageDiffRow) error {
 	if lookupErr != nil {
 		return lookupErr
 	}
+	//packed storage slots return a slice of decoded values
 	value, decodeErr := utils.Decode(row, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}
+
 	return transformer.Repository.Create(row.BlockHeight, row.BlockHash.Hex(), metadata, value)
 }

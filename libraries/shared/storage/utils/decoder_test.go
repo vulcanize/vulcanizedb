@@ -85,12 +85,11 @@ var _ = Describe("Storage decoder", func() {
 			}
 
 			result, err := utils.Decode(row, metadata)
-			decodedValues := result.([]string)
+			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedResult1 := big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()
-			expectedResult2 := big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()
-			Expect(decodedValues).To(ConsistOf(expectedResult1, expectedResult2))
+			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
+			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
 		})
 
 		It("decodes 5 uint48 items", func() {
@@ -113,15 +112,14 @@ var _ = Describe("Storage decoder", func() {
 			}
 
 			result, err := utils.Decode(row, metadata)
-			decodedValues := result.([]string)
+			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedResult1 := big.NewInt(0).SetBytes(common.HexToHash("A5D1A").Bytes()).String()
-			expectedResult2 := big.NewInt(0).SetBytes(common.HexToHash("FFFFFFFFFFFE").Bytes()).String()
-			expectedResult3 := big.NewInt(0).SetBytes(common.HexToHash("9F3C6").Bytes()).String()
-			expectedResult4 := big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()
-			expectedResult5 := big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()
-			Expect(decodedValues).To(ConsistOf(expectedResult1, expectedResult2, expectedResult3, expectedResult4, expectedResult5))
+			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
+			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
+			Expect(decodedValues[2]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("9F3C6").Bytes()).String()))
+			Expect(decodedValues[3]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("FFFFFFFFFFFE").Bytes()).String()))
+			Expect(decodedValues[4]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("A5D1A").Bytes()).String()))
 		})
 
 		It("decodes 2 uint128 items", func() {
@@ -141,12 +139,11 @@ var _ = Describe("Storage decoder", func() {
 			}
 
 			result, err := utils.Decode(row, metadata)
-			decodedValues := result.([]string)
+			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedResult1 := big.NewInt(0).SetBytes(common.HexToHash("000000038D7EA4C67FF8E502B6730000").Bytes()).String()
-			expectedResult2 := big.NewInt(0).SetBytes(common.HexToHash("AB54A98CEB1F0AD2").Bytes()).String()
-			Expect(decodedValues).To(ConsistOf(expectedResult1, expectedResult2))
+			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("AB54A98CEB1F0AD2").Bytes()).String()))
+			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("38D7EA4C67FF8E502B6730000").Bytes()).String()))
 		})
 	})
 })
