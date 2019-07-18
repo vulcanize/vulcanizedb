@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE logs (
+CREATE TABLE full_sync_logs (
   id           SERIAL PRIMARY KEY,
   block_number BIGINT,
   address      VARCHAR(66),
@@ -10,10 +10,10 @@ CREATE TABLE logs (
   topic2       VARCHAR(66),
   topic3       VARCHAR(66),
   data         TEXT,
-  CONSTRAINT log_uc UNIQUE (block_number, index)
+  CONSTRAINT full_sync_log_uc UNIQUE (block_number, index)
 );
 
 
 
 -- +goose Down
-DROP TABLE logs;
+DROP TABLE full_sync_logs;
