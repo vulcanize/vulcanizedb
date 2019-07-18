@@ -49,6 +49,31 @@ var _ = Describe("Storage decoder", func() {
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
+	Describe("when there are multiple items packed in the storage slot", func() {
+		It("decodes the first uint48 item packed in", func() {
+			packedStorage := common.HexToHash("000000000000000000000000000000000000000000000002a300000000002a30")
+			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			packedTypes := map[int]utils.ValueType{}
+			packedTypes[0] = utils.Uint48
+			packedTypes[1] = utils.Uint48
+
+			metadata := utils.StorageValueMetadata{
+				Type:        utils.PackedSlot,
+				PackedTypes: packedTypes,
+			}
+
+			result, err := utils.Decode(row, metadata)
+			decodedValues := result.([]string)
+
+			Expect(err).NotTo(HaveOccurred())
+			expectedResult1 := big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()
+			expectedResult2 := big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()
+			Expect(decodedValues[0]).To(Equal(expectedResult1))
+			Expect(decodedValues[1]).To(Equal(expectedResult2))
+		})
+
+	})
+
 	It("decodes address", func() {
 		fakeAddress := common.HexToAddress("0x12345")
 		row := utils.StorageDiffRow{StorageValue: fakeAddress.Hash()}

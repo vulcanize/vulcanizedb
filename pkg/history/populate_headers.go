@@ -61,4 +61,3 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 	}
 	return len(blockNumbers), nil
 }
-

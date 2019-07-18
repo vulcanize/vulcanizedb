@@ -33,6 +33,8 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 		return decodeAddress(row.StorageValue.Bytes()), nil
 	case Bytes32:
 		return row.StorageValue.Hex(), nil
+	case PackedSlot:
+		return decodePackedSlot(row.StorageValue.Bytes(), metadata.PackedTypes), nil
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
 	}
@@ -50,4 +52,42 @@ func decodeUint48(raw []byte) string {
 
 func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
+}
+
+//this may need to return a slice of strings, a string for each item
+func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) []string{
+	storageSlot := raw
+	var results []string
+	//the reason we're using a map and not a slice is that golang doesn't guarantee the order of a slice
+	for _, valueType := range packedTypes {
+		lengthOfStorageSlot := len(storageSlot)
+		lengthOfItem := getLengthOfItem(valueType)
+		itemStartingIndex := lengthOfStorageSlot - lengthOfItem
+		value := storageSlot[itemStartingIndex:]
+		decodedValue := decodeIndividualItems(value, valueType)
+		results = append(results, decodedValue)
+
+		//pop last item off slot before moving on
+		storageSlot = storageSlot[0:itemStartingIndex]
+	}
+
+	return results
+}
+
+func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
+	switch valueType {
+	case Uint48:
+		return decodeUint48(itemBytes)
+	default:
+		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
+	}
+}
+
+func getLengthOfItem(valueType ValueType) int{
+	switch valueType {
+	case Uint48:
+		return 6
+	default:
+		panic(fmt.Sprintf("ValueType %d not recognized", valueType))
+	}
 }

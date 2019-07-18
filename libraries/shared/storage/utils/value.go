@@ -23,6 +23,7 @@ const (
 	Uint48
 	Bytes32
 	Address
+	PackedSlot
 )
 
 type Key string
@@ -31,6 +32,7 @@ type StorageValueMetadata struct {
 	Name string
 	Keys map[Key]string
 	Type ValueType
+	PackedTypes map[int]ValueType //type of each item packed and their order
 }
 
 func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
