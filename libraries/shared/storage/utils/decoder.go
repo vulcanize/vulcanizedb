@@ -18,8 +18,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, error) {
@@ -60,26 +61,30 @@ func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
 }
 
-func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string{
-	storageSlot := raw
-	var results = map[int]string{}
-
-	//the reason we're using a map and not a slice is that golang doesn't guarantee the order of a slice
+func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string {
+	storageSlotData := raw
+	decodedStorageSlotItems := map[int]string{}
 	numberOfTypes := len(packedTypes)
-	for position := 0; position < numberOfTypes; position++ {
-		valueType := packedTypes[position]
-		lengthOfStorageSlot := len(storageSlot)
-		lengthOfItem := getNumberOfBytes(valueType)
-		itemStartingIndex := lengthOfStorageSlot - lengthOfItem
-		value := storageSlot[itemStartingIndex:]
-		decodedValue := decodeIndividualItems(value, valueType)
-		results[position] = decodedValue
 
-		//pop last item off slot before moving on
-		storageSlot = storageSlot[0:itemStartingIndex]
+	for position := 0; position < numberOfTypes; position++ {
+		//get length of remaining storage date
+		lengthOfStorageData := len(storageSlotData)
+
+		//get item details (type, length, starting index, value bytes)
+		itemType := packedTypes[position]
+		lengthOfItem := getNumberOfBytes(itemType)
+		itemStartingIndex := lengthOfStorageData - lengthOfItem
+		itemValueBytes := storageSlotData[itemStartingIndex:]
+
+		//decode item's bytes and set in results map
+		decodedValue := decodeIndividualItems(itemValueBytes, itemType)
+		decodedStorageSlotItems[position] = decodedValue
+
+		//pop last item off raw slot data before moving on
+		storageSlotData = storageSlotData[0:itemStartingIndex]
 	}
 
-	return results
+	return decodedStorageSlotItems
 }
 
 func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
@@ -93,7 +98,7 @@ func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
 	}
 }
 
-func getNumberOfBytes(valueType ValueType) int{
+func getNumberOfBytes(valueType ValueType) int {
 	// 8 bits per byte
 	switch valueType {
 	case Uint48:
