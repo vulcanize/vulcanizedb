@@ -7,7 +7,7 @@ import (
 )
 
 var _ = Describe("Storage value metadata getter", func() {
-	It("returns a storage value metadata instance with corresponding fields assigned", func() {
+	It("returns storage value metadata for a single storage variable", func() {
 		metadataName := "fake_name"
 		metadataKeys := map[utils.Key]string{"key": "value"}
 		metadataType := utils.Uint256
@@ -18,5 +18,22 @@ var _ = Describe("Storage value metadata getter", func() {
 			Type: metadataType,
 		}
 		Expect(utils.GetStorageValueMetadata(metadataName, metadataKeys, metadataType)).To(Equal(expectedMetadata))
+	})
+
+	It("returns metadata for a packed storage slot variables", func() {
+		metadataName := "fake_name"
+		metadataKeys := map[utils.Key]string{"key": "value"}
+		metadataType := utils.Uint256
+		metadataPackedNames := map[int]string{0: "name"}
+		metadataPackedTypes := map[int]utils.ValueType{0: utils.Uint48}
+
+		expectedMetadata := utils.StorageValueMetadata{
+			Name:        metadataName,
+			Keys:        metadataKeys,
+			Type:        metadataType,
+			PackedTypes: metadataPackedTypes,
+			PackedNames: metadataPackedNames,
+		}
+		Expect(utils.GetStorageValueMetadataForPackedSlot(metadataName, metadataKeys, metadataType, metadataPackedNames, metadataPackedTypes)).To(Equal(expectedMetadata))
 	})
 })

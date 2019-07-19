@@ -30,17 +30,27 @@ const (
 type Key string
 
 type StorageValueMetadata struct {
-	Name string
-	Keys map[Key]string
-	Type ValueType
+	Name        string
+	Keys        map[Key]string
+	Type        ValueType
+	PackedNames map[int]string    //name of each item packed and their order
 	PackedTypes map[int]ValueType //type of each item packed and their order
-	PackedNames map[int]string //name of each item packed and their order
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, t ValueType) StorageValueMetadata {
+func GetStorageValueMetadata(name string, keys map[Key]string, valueType ValueType) StorageValueMetadata {
+	return getMetadata(name, keys, valueType, nil, nil)
+}
+
+func GetStorageValueMetadataForPackedSlot(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
+	return getMetadata(name, keys, valueType, packedNames, packedTypes)
+}
+
+func getMetadata(name string, keys map[Key]string, t ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
 	return StorageValueMetadata{
-		Name: name,
-		Keys: keys,
-		Type: t,
+		Name:        name,
+		Keys:        keys,
+		Type:        t,
+		PackedNames: packedNames,
+		PackedTypes: packedTypes,
 	}
 }
