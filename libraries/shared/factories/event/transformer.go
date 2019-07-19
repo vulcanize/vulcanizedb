@@ -18,10 +18,9 @@ package event
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -36,14 +35,14 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.Event
 	return transformer
 }
 
-func (transformer Transformer) Execute(logs []types.Log, header core.Header) error {
+func (transformer Transformer) Execute(logs []types.Log, headerID int64) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
 
 	if len(logs) < 1 {
-		err := transformer.Repository.MarkHeaderChecked(header.Id)
+		err := transformer.Repository.MarkHeaderChecked(headerID)
 		if err != nil {
-			log.Printf("Error marking header as checked in %v: %v", transformerName, err)
+			logrus.Printf("Error marking header as checked in %v: %v", transformerName, err)
 			return err
 		}
 		return nil
@@ -51,19 +50,19 @@ func (transformer Transformer) Execute(logs []types.Log, header core.Header) err
 
 	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
 	if err != nil {
-		log.Printf("Error converting logs to entities in %v: %v", transformerName, err)
+		logrus.Printf("Error converting logs to entities in %v: %v", transformerName, err)
 		return err
 	}
 
 	models, err := transformer.Converter.ToModels(entities)
 	if err != nil {
-		log.Printf("Error converting entities to models in %v: %v", transformerName, err)
+		logrus.Printf("Error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
-	err = transformer.Repository.Create(header.Id, models)
+	err = transformer.Repository.Create(headerID, models)
 	if err != nil {
-		log.Printf("Error persisting %v record: %v", transformerName, err)
+		logrus.Printf("Error persisting %v record: %v", transformerName, err)
 		return err
 	}
 

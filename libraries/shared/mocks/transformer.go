@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -28,17 +27,17 @@ type MockTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
 	PassedLogs       []types.Log
-	PassedHeader     core.Header
+	PassedHeaderID   int64
 	config           shared_t.EventTransformerConfig
 }
 
-func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
+func (mh *MockTransformer) Execute(logs []types.Log, headerID int64) error {
 	if mh.ExecuteError != nil {
 		return mh.ExecuteError
 	}
 	mh.ExecuteWasCalled = true
 	mh.PassedLogs = logs
-	mh.PassedHeader = header
+	mh.PassedHeaderID = headerID
 	return nil
 }
 
