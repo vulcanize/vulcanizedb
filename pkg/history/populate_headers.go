@@ -24,25 +24,25 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
-func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64, subCommand string) (int, error) {
+func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("PopulateMissingHeaders: Error getting last block: ", err)
+		log.Error("PopulateMissingHeaders: Error getting last block: ", err)
 		return 0, err
 	}
 
 	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockChain.Node().ID)
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
+		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
 		return 0, err
 	} else if len(blockNumbers) == 0 {
 		return 0, nil
 	}
 
-	log.WithField("subCommand", subCommand).Debug(getBlockRangeString(blockNumbers))
+	log.Debug(getBlockRangeString(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("PopulateMissingHeaders: Error getting/updating headers:", err)
+		log.Error("PopulateMissingHeaders: Error getting/updating headers: ", err)
 		return 0, err
 	}
 	return len(blockNumbers), nil
