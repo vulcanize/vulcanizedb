@@ -33,8 +33,8 @@ type StorageValueMetadata struct {
 	Name        string
 	Keys        map[Key]string
 	Type        ValueType
-	PackedNames map[int]string    //name of each item packed and their order
-	PackedTypes map[int]ValueType //type of each item packed and their order
+	PackedNames map[int]string    //position in map (zero indexed) => name of packed item
+	PackedTypes map[int]ValueType //position in map (zero indexed)=> type of packed item
 }
 
 func GetStorageValueMetadata(name string, keys map[Key]string, valueType ValueType) StorageValueMetadata {

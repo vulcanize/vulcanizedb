@@ -103,10 +103,10 @@ var _ = Describe("Storage transformer", func() {
 
 	Describe("when a storage row contains more than one item packed in storage", func() {
 		var (
-			rawValue = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
+			rawValue        = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
 			fakeBlockNumber = 123
-			fakeBlockHash = "0x67890"
-		    packedTypes = make(map[int]utils.ValueType)
+			fakeBlockHash   = "0x67890"
+			packedTypes     = make(map[int]utils.ValueType)
 		)
 		packedTypes[0] = utils.Uint48
 		packedTypes[1] = utils.Uint48
@@ -135,8 +135,8 @@ var _ = Describe("Storage transformer", func() {
 			Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
 			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 			expectedPassedValue := make(map[int]string)
-			expectedPassedValue[0]= "10800"
-			expectedPassedValue[1]= "172800"
+			expectedPassedValue[0] = "10800"
+			expectedPassedValue[1] = "172800"
 			Expect(repository.PassedValue.(map[int]string)).To(Equal(expectedPassedValue))
 		})
 

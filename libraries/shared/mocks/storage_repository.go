@@ -33,7 +33,6 @@ func (repository *MockStorageRepository) Create(blockNumber int, blockHash strin
 	repository.PassedBlockNumber = blockNumber
 	repository.PassedBlockHash = blockHash
 	repository.PassedMetadata = metadata
-
 	repository.PassedValue = value
 	return repository.CreateErr
 }

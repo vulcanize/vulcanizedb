@@ -17,10 +17,11 @@
 package utils_test
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/big"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
