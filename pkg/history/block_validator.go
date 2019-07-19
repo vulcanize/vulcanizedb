@@ -17,7 +17,7 @@
 package history
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
@@ -36,29 +36,29 @@ func NewBlockValidator(blockchain core.BlockChain, blockRepository datastore.Blo
 	}
 }
 
-func (bv BlockValidator) ValidateBlocks(subCommand string) (ValidationWindow, error) {
+func (bv BlockValidator) ValidateBlocks() (ValidationWindow, error) {
 	window, err := MakeValidationWindow(bv.blockchain, bv.windowSize)
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("ValidateBlocks: error creating validation window: ", err)
+		logrus.Error("ValidateBlocks: error creating validation window: ", err)
 		return ValidationWindow{}, err
 	}
 
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
 	_, err = RetrieveAndUpdateBlocks(bv.blockchain, bv.blockRepository, blockNumbers)
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("ValidateBlocks: error getting and updating blocks: ", err)
+		logrus.Error("ValidateBlocks: error getting and updating blocks: ", err)
 		return ValidationWindow{}, err
 	}
 
 	lastBlock, err := bv.blockchain.LastBlock()
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("ValidateBlocks: error getting last block: ", err)
+		logrus.Error("ValidateBlocks: error getting last block: ", err)
 		return ValidationWindow{}, err
 	}
 
 	err = bv.blockRepository.SetBlocksStatus(lastBlock.Int64())
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("ValidateBlocks: error setting block status: ", err)
+		logrus.Error("ValidateBlocks: error setting block status: ", err)
 		return ValidationWindow{}, err
 	}
 	return window, nil

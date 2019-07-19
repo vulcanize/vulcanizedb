@@ -49,7 +49,8 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		subCommand = cmd.CalledAs()
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		fullSync()
 	},
 }
@@ -62,7 +63,7 @@ func init() {
 func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	populated, err := history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
+		LogWithCommand.Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -71,16 +72,16 @@ func fullSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 
-	blockChain := getBlockChain(subCommand)
+	blockChain := getBlockChain()
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("fullSync: Error getting last block: ", err)
+		LogWithCommand.Error("fullSync: Error getting last block: ", err)
 	}
 	if lastBlock.Int64() == 0 {
-		log.WithField("subCommand", subCommand).Fatal("geth initial: state sync not finished")
+		LogWithCommand.Fatal("geth initial: state sync not finished")
 	}
 	if startingBlockNumber > lastBlock.Int64() {
-		log.WithField("subCommand", subCommand).Fatal("fullSync: starting block number > current block number")
+		LogWithCommand.Fatal("fullSync: starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -92,11 +93,11 @@ func fullSync() {
 	for {
 		select {
 		case <-ticker.C:
-			window, err := validator.ValidateBlocks(subCommand)
+			window, err := validator.ValidateBlocks()
 			if err != nil {
-				log.WithField("subCommand", subCommand).Error("fullSync: error in validateBlocks: ", err)
+				LogWithCommand.Error("fullSync: error in validateBlocks: ", err)
 			}
-			log.WithField("subCommand", subCommand).Debug(window.GetString())
+			LogWithCommand.Debug(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}

@@ -46,6 +46,8 @@ var (
 	syncAll              bool
 	endingBlockNumber    int64
 	recheckHeadersArg    bool
+	SubCommand           string
+	LogWithCommand       log.Entry
 )
 
 const (
@@ -66,7 +68,7 @@ func Execute() {
 }
 
 func initFuncs(cmd *cobra.Command, args []string) {
-	database()
+	setViperConfigs()
 	logLvlErr := logLevel()
 	if logLvlErr != nil {
 		log.Fatal("Could not set log level: ", logLvlErr)
@@ -74,7 +76,7 @@ func initFuncs(cmd *cobra.Command, args []string) {
 
 }
 
-func database() {
+func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
@@ -149,11 +151,11 @@ func initConfig() {
 	}
 }
 
-func getBlockChain(subCommand string) *geth.BlockChain {
+func getBlockChain() *geth.BlockChain {
 	rawRpcClient, err := rpc.Dial(ipc)
 
 	if err != nil {
-		log.WithField("subCommand", subCommand).Fatal(err)
+		LogWithCommand.Fatal(err)
 	}
 	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
 	ethClient := ethclient.NewClient(rawRpcClient)

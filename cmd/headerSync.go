@@ -30,8 +30,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-var subCommand string
-
 // headerSyncCmd represents the headerSync command
 var headerSyncCmd = &cobra.Command{
 	Use:   "headerSync",
@@ -52,7 +50,8 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		subCommand = cmd.CalledAs()
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		headerSync()
 	},
 }
@@ -63,11 +62,11 @@ func init() {
 }
 
 func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.HeaderRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
-	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber, subCommand)
+	populated, err := history.PopulateMissingHeaders(blockchain, headerRepository, startingBlockNumber)
 	if err != nil {
 		// TODO Lots of possible errors in the call stack above. If errors occur, we still put
 		// 0 in the channel, triggering another round
-		log.WithField("subCommand", subCommand).Error("backfillAllHeaders: Error populating headers: ", err)
+		LogWithCommand.Error("backfillAllHeaders: Error populating headers: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -75,7 +74,7 @@ func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.H
 func headerSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	blockChain := getBlockChain(subCommand)
+	blockChain := getBlockChain()
 	validateArgs(blockChain)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
@@ -89,9 +88,9 @@ func headerSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				log.WithField("subCommand", subCommand).Error("headerSync: ValidateHeaders failed: ", err)
+				LogWithCommand.Error("headerSync: ValidateHeaders failed: ", err)
 			}
-			log.WithField("subCommand", subCommand).Debug(window.GetString())
+			LogWithCommand.Debug(window.GetString())
 		case n := <-missingBlocksPopulated:
 			if n == 0 {
 				time.Sleep(3 * time.Second)
@@ -104,12 +103,12 @@ func headerSync() {
 func validateArgs(blockChain *geth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.WithField("subCommand", subCommand).Error("validateArgs: Error getting last block: ", err)
+		LogWithCommand.Error("validateArgs: Error getting last block: ", err)
 	}
 	if lastBlock.Int64() == 0 {
-		log.WithField("subCommand", subCommand).Fatal("geth initial: state sync not finished")
+		LogWithCommand.Fatal("geth initial: state sync not finished")
 	}
 	if startingBlockNumber > lastBlock.Int64() {
-		log.WithField("subCommand", subCommand).Fatal("starting block number > current block number")
+		LogWithCommand.Fatal("starting block number > current block number")
 	}
 }

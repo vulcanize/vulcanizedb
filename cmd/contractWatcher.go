@@ -79,7 +79,8 @@ Requires a .toml config file:
         piping = true
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		subCommand = cmd.CalledAs()
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		contractWatcher()
 	},
 }
@@ -92,7 +93,7 @@ func contractWatcher() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	blockChain := getBlockChain(subCommand)
+	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
 	var t st.ContractTransformer
@@ -104,18 +105,18 @@ func contractWatcher() {
 	case "full":
 		t = ft.NewTransformer(con, blockChain, &db)
 	default:
-		log.WithField("subCommand", subCommand).Fatal("Invalid mode")
+		LogWithCommand.Fatal("Invalid mode")
 	}
 
 	err := t.Init()
 	if err != nil {
-		log.WithField("subCommand", subCommand).Fatal(fmt.Sprintf("Failed to initialized transformer\r\nerr: %v\r\n", err))
+		LogWithCommand.Fatal(fmt.Sprintf("Failed to initialize transformer, err: %v ", err))
 	}
 
 	for range ticker.C {
 		err = t.Execute()
 		if err != nil {
-			log.WithField("subCommand", subCommand).Error("Execution error for transformer:", t.GetConfig().Name, err)
+			LogWithCommand.Error("Execution error for transformer: ", t.GetConfig().Name, err)
 		}
 	}
 }
