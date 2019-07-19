@@ -122,7 +122,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 			return transactionsSyncErr
 		}
 
-		transformErr := watcher.transformLogs(logs, header)
+		transformErr := watcher.transformLogs(logs, header.Id)
 		if transformErr != nil {
 			logrus.Error("Could not transform logs: ", transformErr)
 			return transformErr
@@ -131,7 +131,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	return err
 }
 
-func (watcher *EventWatcher) transformLogs(logs []types.Log, header core.Header) error {
+func (watcher *EventWatcher) transformLogs(logs []types.Log, headerID int64) error {
 	chunkedLogs := watcher.Chunker.ChunkLogs(logs)
 
 	// Can't quit early and mark as checked if there are no logs. If we are running continuousLogSync,
@@ -139,7 +139,7 @@ func (watcher *EventWatcher) transformLogs(logs []types.Log, header core.Header)
 	for _, t := range watcher.Transformers {
 		transformerName := t.GetConfig().TransformerName
 		logChunk := chunkedLogs[transformerName]
-		err := t.Execute(logChunk, header)
+		err := t.Execute(logChunk, headerID)
 		if err != nil {
 			logrus.Errorf("%v transformer failed to execute in watcher: %v", transformerName, err)
 			return err
