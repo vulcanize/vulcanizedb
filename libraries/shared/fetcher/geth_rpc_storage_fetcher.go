@@ -41,7 +41,8 @@ func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.Storage
 		errs <- err
 	}
 
-	for diff := range ethStatediffPayloadChan {
+	for {
+		diff := <-ethStatediffPayloadChan
 		stateDiff := new(statediff.StateDiff)
 		err = rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
 		if err != nil {
