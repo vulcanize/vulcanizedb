@@ -20,13 +20,23 @@ This work is adapted from work by Charles Crain at https://github.com/jpmorganch
 Package statediff provides an auxiliary service that processes state diff objects from incoming chain events,
 relaying the objects to any rpc subscriptions.
 
+The service is spun up using the below CLI flags
+--statediff: boolean flag, turns on the service
+--statediff.streamblock: boolean flag, configures the service to associate and stream out the rest of the block data with the state diffs.
+--statediff.intermediatenodes: boolean flag, tells service to include intermediate (branch and extension) nodes; default (false) processes leaf nodes only.
+--statediff.pathsandproofs: boolean flag, tells service to generate paths and proofs for the diffed storage and state trie leaf nodes.
+--statediff.watchedaddresses: string slice flag, used to limit the state diffing process to the given addresses. Usage: --statediff.watchedaddresses=addr1 --statediff.watchedaddresses=addr2 --statediff.watchedaddresses=addr3
+
+If you wish to use the websocket endpoint to subscribe to the statediff service, be sure to open up the Websocket RPC server with the `--ws` flag.
+
 Rpc subscriptions to the service can be created using the rpc.Client.Subscribe() method,
 with the "statediff" namespace, a statediff.Payload channel, and the name of the statediff api's rpc method- "stream".
 
 e.g.
 
+cli, _ := rpc.Dial("ipcPathOrWsURL")
 stateDiffPayloadChan := make(chan statediff.Payload, 20000)
-rpcSub, err := Subscribe(context.Background(), "statediff", stateDiffPayloadChan, "stream"})
+rpcSub, err := cli.Subscribe(context.Background(), "statediff", stateDiffPayloadChan, "stream"})
 for {
 	select {
 	case stateDiffPayload := <- stateDiffPayloadChan:
@@ -35,6 +45,5 @@ for {
 		log.Error(err)
 	}
 }
-
 */
 package statediff

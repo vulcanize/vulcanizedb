@@ -36,15 +36,16 @@ type Subscription struct {
 
 // Payload packages the data to send to StateDiffingService subscriptions
 type Payload struct {
-	BlockRlp     []byte `json:"blockRlp"     gencodec:"required"`
+	BlockRlp     []byte `json:"blockRlp"`
+	ReceiptsRlp  []byte `json:"receiptsRlp"`
 	StateDiffRlp []byte `json:"stateDiff"    gencodec:"required"`
 	Err          error  `json:"error"`
 }
 
 // StateDiff is the final output structure from the builder
 type StateDiff struct {
-	BlockNumber     *big.Int      `json:"blockNumber"	    gencodec:"required"`
-	BlockHash       common.Hash   `json:"blockHash" 	    gencodec:"required"`
+	BlockNumber     *big.Int      `json:"blockNumber"	  gencodec:"required"`
+	BlockHash       common.Hash   `json:"blockHash" 	  gencodec:"required"`
 	CreatedAccounts []AccountDiff `json:"createdAccounts" gencodec:"required"`
 	DeletedAccounts []AccountDiff `json:"deletedAccounts" gencodec:"required"`
 	UpdatedAccounts []AccountDiff `json:"updatedAccounts" gencodec:"required"`

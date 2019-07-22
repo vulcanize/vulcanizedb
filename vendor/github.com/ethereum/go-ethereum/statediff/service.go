@@ -40,6 +40,7 @@ type blockChain interface {
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	GetBlockByHash(hash common.Hash) *types.Block
 	AddToStateDiffProcessedCollection(hash common.Hash)
+	GetReceiptsByHash(hash common.Hash) types.Receipts
 }
 
 // IService is the state-diffing service interface
@@ -69,7 +70,7 @@ type Service struct {
 	// Cache the last block so that we can avoid having to lookup the next block's parent
 	lastBlock *types.Block
 	// Whether or not the block data is streamed alongside the state diff data in the subscription payload
-	streamBlock bool
+	StreamBlock bool
 	// Whether or not we have any subscribers; only if we do, do we processes state diffs
 	subscribers int32
 }
@@ -82,7 +83,7 @@ func NewStateDiffService(db ethdb.Database, blockChain *core.BlockChain, config 
 		Builder:       NewBuilder(db, blockChain, config),
 		QuitChan:      make(chan bool),
 		Subscriptions: make(map[rpc.ID]Subscription),
-		streamBlock:   config.StreamBlock,
+		StreamBlock:   config.StreamBlock,
 	}, nil
 }
 
@@ -108,7 +109,6 @@ func (sds *Service) Loop(chainEventCh chan core.ChainEvent) {
 	chainEventSub := sds.BlockChain.SubscribeChainEvent(chainEventCh)
 	defer chainEventSub.Unsubscribe()
 	errCh := chainEventSub.Err()
-
 	for {
 		select {
 		//Notify chain event channel of events
@@ -161,12 +161,19 @@ func (sds *Service) processStateDiff(currentBlock, parentBlock *types.Block) err
 		StateDiffRlp: stateDiffRlp,
 		Err:          err,
 	}
-	if sds.streamBlock {
-		rlpBuff := new(bytes.Buffer)
-		if err = currentBlock.EncodeRLP(rlpBuff); err != nil {
+	if sds.StreamBlock {
+		blockBuff := new(bytes.Buffer)
+		if err = currentBlock.EncodeRLP(blockBuff); err != nil {
 			return err
 		}
-		payload.BlockRlp = rlpBuff.Bytes()
+		payload.BlockRlp = blockBuff.Bytes()
+		receiptBuff := new(bytes.Buffer)
+		receipts := sds.BlockChain.GetReceiptsByHash(currentBlock.Hash())
+		if err = rlp.Encode(receiptBuff, receipts); err != nil {
+			println(err.Error())
+			return err
+		}
+		payload.ReceiptsRlp = receiptBuff.Bytes()
 	}
 
 	// If we have any websocket subscriptions listening in, send the data to them
