@@ -217,6 +217,8 @@ func (tx *Tx) StmtxContext(ctx context.Context, stmt interface{}) *Stmt {
 		s = v.Stmt
 	case *Stmt:
 		s = v.Stmt
+	case sql.Stmt:
+		s = &v
 	case *sql.Stmt:
 		s = v
 	default:

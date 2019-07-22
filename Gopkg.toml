@@ -58,6 +58,10 @@
   name = "github.com/dgraph-io/badger"
   revision = "0ce1d2e26af1ba8b8a72ea864145a3e1e3b382cd"
 
+[[override]]
+  name = "github.com/golang/protobuf"
+  revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
+
 [prune]
   go-tests = true
   unused-packages = true
