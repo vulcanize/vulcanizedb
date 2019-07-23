@@ -23,31 +23,82 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+const (
+	bitsPerByte = 8
+)
+
 func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, error) {
 	switch metadata.Type {
 	case Uint256:
-		return decodeUint256(row.StorageValue.Bytes()), nil
+		return decodeInteger(row.StorageValue.Bytes()), nil
 	case Uint48:
-		return decodeUint48(row.StorageValue.Bytes()), nil
+		return decodeInteger(row.StorageValue.Bytes()), nil
+	case Uint128:
+		return decodeInteger(row.StorageValue.Bytes()), nil
 	case Address:
 		return decodeAddress(row.StorageValue.Bytes()), nil
 	case Bytes32:
 		return row.StorageValue.Hex(), nil
+	case PackedSlot:
+		return decodePackedSlot(row.StorageValue.Bytes(), metadata.PackedTypes), nil
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
 	}
 }
 
-func decodeUint256(raw []byte) string {
-	n := big.NewInt(0).SetBytes(raw)
-	return n.String()
-}
-
-func decodeUint48(raw []byte) string {
+func decodeInteger(raw []byte) string {
 	n := big.NewInt(0).SetBytes(raw)
 	return n.String()
 }
 
 func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
+}
+
+func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string {
+	storageSlotData := raw
+	decodedStorageSlotItems := map[int]string{}
+	numberOfTypes := len(packedTypes)
+
+	for position := 0; position < numberOfTypes; position++ {
+		//get length of remaining storage date
+		lengthOfStorageData := len(storageSlotData)
+
+		//get item details (type, length, starting index, value bytes)
+		itemType := packedTypes[position]
+		lengthOfItem := getNumberOfBytes(itemType)
+		itemStartingIndex := lengthOfStorageData - lengthOfItem
+		itemValueBytes := storageSlotData[itemStartingIndex:]
+
+		//decode item's bytes and set in results map
+		decodedValue := decodeIndividualItems(itemValueBytes, itemType)
+		decodedStorageSlotItems[position] = decodedValue
+
+		//pop last item off raw slot data before moving on
+		storageSlotData = storageSlotData[0:itemStartingIndex]
+	}
+
+	return decodedStorageSlotItems
+}
+
+func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
+	switch valueType {
+	case Uint48:
+		return decodeInteger(itemBytes)
+	case Uint128:
+		return decodeInteger(itemBytes)
+	default:
+		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
+	}
+}
+
+func getNumberOfBytes(valueType ValueType) int {
+	switch valueType {
+	case Uint48:
+		return 48 / bitsPerByte
+	case Uint128:
+		return 128 / bitsPerByte
+	default:
+		panic(fmt.Sprintf("ValueType %d not recognized", valueType))
+	}
 }
