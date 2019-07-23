@@ -18,14 +18,22 @@ package repository
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
+
+const insertHeaderSyncLogQuery = `INSERT INTO header_sync_logs
+	(header_id, address, topics, data, block_number, block_hash, tx_index, tx_hash, log_index, raw)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING RETURNING id`
 
 func MarkHeaderChecked(headerID int64, db *postgres.DB, checkedHeadersColumn string) error {
 	_, err := db.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
@@ -111,6 +119,62 @@ func CreateHeaderCheckedPredicateSQL(boolColumns []string, recheckHeaders consta
 	} else {
 		return createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns)
 	}
+}
+
+func CreateLogs(headerID int64, logs []types.Log, db *postgres.DB) ([]core.HeaderSyncLog, error) {
+	tx, txErr := db.Beginx()
+	if txErr != nil {
+		return nil, txErr
+	}
+	var results []core.HeaderSyncLog
+	for _, log := range logs {
+		logID, err := insertLog(headerID, log, tx)
+		if err != nil {
+			if logWasADuplicate(err) {
+				continue
+			}
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Errorf("failed to rollback header sync log insert: %s", rollbackErr.Error())
+			}
+			return nil, err
+		}
+		results = append(results, buildLog(logID, headerID, log))
+	}
+	return results, tx.Commit()
+}
+
+func logWasADuplicate(err error) bool {
+	return err == sql.ErrNoRows
+}
+
+func insertLog(headerID int64, log types.Log, tx *sqlx.Tx) (int64, error) {
+	topics := buildTopics(log)
+	raw, jsonErr := log.MarshalJSON()
+	if jsonErr != nil {
+		return 0, jsonErr
+	}
+	var logID int64
+	err := tx.QueryRowx(insertHeaderSyncLogQuery, headerID, log.Address.Hex(), topics, log.Data, log.BlockNumber,
+		log.BlockHash.Hex(), log.TxIndex, log.TxHash.Hex(), log.Index, raw).Scan(&logID)
+	return logID, err
+}
+
+func buildLog(logID int64, headerID int64, log types.Log) core.HeaderSyncLog {
+	return core.HeaderSyncLog{
+		ID:          logID,
+		HeaderID:    headerID,
+		Log:         log,
+		Transformed: false,
+	}
+}
+
+func buildTopics(log types.Log) pq.ByteaArray {
+	var topics pq.ByteaArray
+	for _, topic := range log.Topics {
+		topics = append(topics, topic.Bytes())
+	}
+	return topics
 }
 
 func createHeaderCheckedPredicateSQLForMissingHeaders(boolColumns []string) string {

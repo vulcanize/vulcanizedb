@@ -17,21 +17,20 @@
 package mocks
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
-
-	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
-	PassedLogs       []types.Log
+	PassedLogs       []core.HeaderSyncLog
 	PassedHeaderID   int64
-	config           shared_t.EventTransformerConfig
+	config           transformer.EventTransformerConfig
 }
 
-func (mh *MockTransformer) Execute(logs []types.Log, headerID int64) error {
+func (mh *MockTransformer) Execute(logs []core.HeaderSyncLog, headerID int64) error {
 	if mh.ExecuteError != nil {
 		return mh.ExecuteError
 	}
@@ -41,19 +40,19 @@ func (mh *MockTransformer) Execute(logs []types.Log, headerID int64) error {
 	return nil
 }
 
-func (mh *MockTransformer) GetConfig() shared_t.EventTransformerConfig {
+func (mh *MockTransformer) GetConfig() transformer.EventTransformerConfig {
 	return mh.config
 }
 
-func (mh *MockTransformer) SetTransformerConfig(config shared_t.EventTransformerConfig) {
+func (mh *MockTransformer) SetTransformerConfig(config transformer.EventTransformerConfig) {
 	mh.config = config
 }
 
-func (mh *MockTransformer) FakeTransformerInitializer(db *postgres.DB) shared_t.EventTransformer {
+func (mh *MockTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.EventTransformer {
 	return mh
 }
 
-var FakeTransformerConfig = shared_t.EventTransformerConfig{
+var FakeTransformerConfig = transformer.EventTransformerConfig{
 	TransformerName:   "FakeTransformer",
 	ContractAddresses: []string{"FakeAddress"},
 	Topic:             "FakeTopic",

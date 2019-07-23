@@ -17,10 +17,10 @@
 package event
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -35,7 +35,7 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.Event
 	return transformer
 }
 
-func (transformer Transformer) Execute(logs []types.Log, headerID int64) error {
+func (transformer Transformer) Execute(logs []core.HeaderSyncLog, headerID int64) error {
 	transformerName := transformer.Config.TransformerName
 	config := transformer.Config
 

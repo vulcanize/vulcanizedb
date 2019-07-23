@@ -18,6 +18,10 @@ package repository_test
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/lib/pq"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"math/rand"
 	"strconv"
 
@@ -289,6 +293,154 @@ var _ = Describe("Repository", func() {
 				actual := shared.CreateHeaderCheckedPredicateSQL([]string{}, constants.HeaderRecheck)
 				Expect(actual).To(Equal(expected))
 			})
+		})
+	})
+
+	Describe("CreateHeaderSyncLogs", func() {
+		var headerID int64
+
+		type HeaderSyncLog struct {
+			ID          int64
+			HeaderID    int64 `db:"header_id"`
+			Address     string
+			Topics      pq.ByteaArray
+			Data        []byte
+			BlockNumber uint64 `db:"block_number"`
+			BlockHash   string `db:"block_hash"`
+			TxHash      string `db:"tx_hash"`
+			TxIndex     uint   `db:"tx_index"`
+			LogIndex    uint   `db:"log_index"`
+			Transformed bool
+			Raw         []byte
+		}
+
+		BeforeEach(func() {
+			db = test_config.NewTestDB(test_config.NewTestNode())
+			test_config.CleanTestDB(db)
+			headerRepository := repositories.NewHeaderRepository(db)
+			var headerErr error
+			headerID, headerErr = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
+			Expect(headerErr).NotTo(HaveOccurred())
+		})
+
+		It("writes a log to the db", func() {
+			log := test_data.GenericTestLog()
+
+			_, err := shared.CreateLogs(headerID, []types.Log{log}, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			var dbLog HeaderSyncLog
+			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
+			Expect(lookupErr).NotTo(HaveOccurred())
+			Expect(dbLog.ID).NotTo(BeZero())
+			Expect(dbLog.HeaderID).To(Equal(headerID))
+			Expect(dbLog.Address).To(Equal(log.Address.Hex()))
+			Expect(dbLog.Topics[0]).To(Equal(log.Topics[0].Bytes()))
+			Expect(dbLog.Topics[1]).To(Equal(log.Topics[1].Bytes()))
+			Expect(dbLog.Data).To(Equal(log.Data))
+			Expect(dbLog.BlockNumber).To(Equal(log.BlockNumber))
+			Expect(dbLog.BlockHash).To(Equal(log.BlockHash.Hex()))
+			Expect(dbLog.TxIndex).To(Equal(log.TxIndex))
+			Expect(dbLog.TxHash).To(Equal(log.TxHash.Hex()))
+			Expect(dbLog.LogIndex).To(Equal(log.Index))
+			expectedRaw, jsonErr := log.MarshalJSON()
+			Expect(jsonErr).NotTo(HaveOccurred())
+			Expect(dbLog.Raw).To(MatchJSON(expectedRaw))
+			Expect(dbLog.Transformed).To(BeFalse())
+		})
+
+		It("writes several logs to the db", func() {
+			log1 := test_data.GenericTestLog()
+			log2 := test_data.GenericTestLog()
+			logs := []types.Log{log1, log2}
+
+			_, err := shared.CreateLogs(headerID, logs, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			var count int
+			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM header_sync_logs`)
+			Expect(lookupErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(len(logs)))
+		})
+
+		It("persists record that can be unpacked into types.Log", func() {
+			// important if we want to decouple log persistence from transforming and still make use of
+			// tools on types.Log like abi.Unpack
+
+			log := test_data.GenericTestLog()
+
+			_, err := shared.CreateLogs(headerID, []types.Log{log}, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			var dbLog HeaderSyncLog
+			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
+			Expect(lookupErr).NotTo(HaveOccurred())
+
+			var logTopics []common.Hash
+			for _, topic := range dbLog.Topics {
+				logTopics = append(logTopics, common.BytesToHash(topic))
+			}
+
+			reconstructedLog := types.Log{
+				Address:     common.HexToAddress(dbLog.Address),
+				Topics:      logTopics,
+				Data:        dbLog.Data,
+				BlockNumber: dbLog.BlockNumber,
+				TxHash:      common.HexToHash(dbLog.TxHash),
+				TxIndex:     dbLog.TxIndex,
+				BlockHash:   common.HexToHash(dbLog.BlockHash),
+				Index:       dbLog.LogIndex,
+				Removed:     false,
+			}
+			Expect(reconstructedLog).To(Equal(log))
+		})
+
+		It("does not duplicate logs", func() {
+			log := test_data.GenericTestLog()
+
+			results, err := shared.CreateLogs(headerID, []types.Log{log, log}, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(results)).To(Equal(1))
+			var count int
+			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM header_sync_logs`)
+			Expect(lookupErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(1))
+		})
+
+		It("returns results with log id and header id for persisted logs", func() {
+			log1 := test_data.GenericTestLog()
+			log2 := test_data.GenericTestLog()
+			logs := []types.Log{log1, log2}
+
+			results, err := shared.CreateLogs(headerID, logs, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(results)).To(Equal(len(logs)))
+			var log1ID, log2ID int64
+			lookupErr := db.Get(&log1ID, `SELECT id FROM header_sync_logs WHERE data = $1`, log1.Data)
+			Expect(lookupErr).NotTo(HaveOccurred())
+			lookup2Err := db.Get(&log2ID, `SELECT id FROM header_sync_logs WHERE data = $1`, log2.Data)
+			Expect(lookup2Err).NotTo(HaveOccurred())
+			Expect(results[0].ID).To(Or(Equal(log1ID), Equal(log2ID)))
+			Expect(results[1].ID).To(Or(Equal(log1ID), Equal(log2ID)))
+			Expect(results[0].HeaderID).To(Equal(headerID))
+			Expect(results[1].HeaderID).To(Equal(headerID))
+		})
+
+		It("returns results with properties for persisted logs", func() {
+			log1 := test_data.GenericTestLog()
+			log2 := test_data.GenericTestLog()
+			logs := []types.Log{log1, log2}
+
+			results, err := shared.CreateLogs(headerID, logs, db)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(results)).To(Equal(len(logs)))
+			Expect(results[0].Log).To(Or(Equal(log1), Equal(log2)))
+			Expect(results[1].Log).To(Or(Equal(log1), Equal(log2)))
+			Expect(results[0].Transformed).To(BeFalse())
+			Expect(results[1].Transformed).To(BeFalse())
 		})
 	})
 })

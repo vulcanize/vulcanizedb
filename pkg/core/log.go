@@ -16,6 +16,8 @@
 
 package core
 
+import "github.com/ethereum/go-ethereum/core/types"
+
 type Log struct {
 	BlockNumber int64
 	TxHash      string
@@ -23,4 +25,11 @@ type Log struct {
 	Topics
 	Index int64
 	Data  string
+}
+
+type HeaderSyncLog struct {
+	ID          int64
+	HeaderID    int64 `db:"header_id"`
+	Log         types.Log
+	Transformed bool
 }

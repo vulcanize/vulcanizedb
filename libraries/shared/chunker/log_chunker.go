@@ -20,14 +20,13 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-
-	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type Chunker interface {
-	AddConfigs(transformerConfigs []shared_t.EventTransformerConfig)
-	ChunkLogs(logs []types.Log) map[string][]types.Log
+	AddConfigs(transformerConfigs []transformer.EventTransformerConfig)
+	ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog
 }
 
 type LogChunker struct {
@@ -45,7 +44,7 @@ func NewLogChunker() *LogChunker {
 }
 
 // Configures the chunker by adding more addreses and topics to consider.
-func (chunker *LogChunker) AddConfigs(transformerConfigs []shared_t.EventTransformerConfig) {
+func (chunker *LogChunker) AddConfigs(transformerConfigs []transformer.EventTransformerConfig) {
 	for _, config := range transformerConfigs {
 		for _, address := range config.ContractAddresses {
 			var lowerCaseAddress = strings.ToLower(address)
@@ -56,15 +55,15 @@ func (chunker *LogChunker) AddConfigs(transformerConfigs []shared_t.EventTransfo
 }
 
 // Goes through an array of logs, associating relevant logs (matching addresses and topic) with transformers
-func (chunker *LogChunker) ChunkLogs(logs []types.Log) map[string][]types.Log {
-	chunks := map[string][]types.Log{}
+func (chunker *LogChunker) ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog {
+	chunks := map[string][]core.HeaderSyncLog{}
 	for _, log := range logs {
 		// Topic0 is not unique to each transformer, also need to consider the contract address
-		relevantTransformers := chunker.AddressToNames[strings.ToLower(log.Address.String())]
+		relevantTransformers := chunker.AddressToNames[strings.ToLower(log.Log.Address.Hex())]
 
-		for _, transformer := range relevantTransformers {
-			if chunker.NameToTopic0[transformer] == log.Topics[0] {
-				chunks[transformer] = append(chunks[transformer], log)
+		for _, t := range relevantTransformers {
+			if chunker.NameToTopic0[t] == log.Log.Topics[0] {
+				chunks[t] = append(chunks[t], log)
 			}
 		}
 	}
