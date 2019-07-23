@@ -267,6 +267,45 @@ ALTER SEQUENCE public.goose_db_version_id_seq OWNED BY public.goose_db_version.i
 
 
 --
+-- Name: header_sync_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.header_sync_logs (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    address character varying(66),
+    topics bytea[],
+    data bytea,
+    block_number bigint,
+    block_hash character varying(66),
+    tx_hash character varying(66),
+    tx_index integer,
+    log_index integer,
+    raw jsonb
+);
+
+
+--
+-- Name: header_sync_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.header_sync_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: header_sync_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.header_sync_logs_id_seq OWNED BY public.header_sync_logs.id;
+
+
+--
 -- Name: header_sync_receipts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -614,6 +653,13 @@ ALTER TABLE ONLY public.goose_db_version ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: header_sync_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs ALTER COLUMN id SET DEFAULT nextval('public.header_sync_logs_id_seq'::regclass);
+
+
+--
 -- Name: header_sync_receipts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -732,6 +778,22 @@ ALTER TABLE ONLY public.full_sync_transactions
 
 ALTER TABLE ONLY public.goose_db_version
     ADD CONSTRAINT goose_db_version_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: header_sync_logs header_sync_logs_header_id_tx_index_log_index_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs
+    ADD CONSTRAINT header_sync_logs_header_id_tx_index_log_index_key UNIQUE (header_id, tx_index, log_index);
+
+
+--
+-- Name: header_sync_logs header_sync_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs
+    ADD CONSTRAINT header_sync_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -902,6 +964,14 @@ ALTER TABLE ONLY public.checked_headers
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: header_sync_logs header_sync_logs_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs
+    ADD CONSTRAINT header_sync_logs_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
 
 
 --

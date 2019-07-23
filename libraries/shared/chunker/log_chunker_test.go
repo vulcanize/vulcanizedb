@@ -23,34 +23,35 @@ import (
 	. "github.com/onsi/gomega"
 
 	chunk "github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
-	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 var _ = Describe("Log chunker", func() {
 	var (
-		configs []shared_t.EventTransformerConfig
+		configs []transformer.EventTransformerConfig
 		chunker *chunk.LogChunker
 	)
 
 	BeforeEach(func() {
-		configA := shared_t.EventTransformerConfig{
+		configA := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerA",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A1", "0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xA",
 		}
-		configB := shared_t.EventTransformerConfig{
+		configB := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerB",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000B1"},
 			Topic:             "0xB",
 		}
 
-		configC := shared_t.EventTransformerConfig{
+		configC := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerC",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xC",
 		}
 
-		configs = []shared_t.EventTransformerConfig{configA, configB, configC}
+		configs = []transformer.EventTransformerConfig{configA, configB, configC}
 		chunker = chunk.NewLogChunker()
 		chunker.AddConfigs(configs)
 	})
@@ -73,24 +74,24 @@ var _ = Describe("Log chunker", func() {
 
 	Describe("AddConfigs", func() {
 		It("can add more configs later", func() {
-			configD := shared_t.EventTransformerConfig{
+			configD := transformer.EventTransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]shared_t.EventTransformerConfig{configD})
+			chunker.AddConfigs([]transformer.EventTransformerConfig{configD})
 
 			Expect(chunker.AddressToNames).To(ContainElement([]string{"TransformerD"}))
 			Expect(chunker.NameToTopic0).To(ContainElement(common.HexToHash("0xD")))
 		})
 
 		It("lower cases address", func() {
-			configD := shared_t.EventTransformerConfig{
+			configD := transformer.EventTransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]shared_t.EventTransformerConfig{configD})
+			chunker.AddConfigs([]transformer.EventTransformerConfig{configD})
 
 			Expect(chunker.AddressToNames["0x000000000000000000000000000000000000000d"]).To(Equal([]string{"TransformerD"}))
 		})
@@ -98,7 +99,7 @@ var _ = Describe("Log chunker", func() {
 
 	Describe("ChunkLogs", func() {
 		It("only associates logs with relevant topic0 and address to transformers", func() {
-			logs := []types.Log{log1, log2, log3, log4, log5}
+			logs := []core.HeaderSyncLog{log1, log2, log3, log4, log5}
 			chunks := chunker.ChunkLogs(logs)
 
 			Expect(chunks["TransformerA"]).To(And(ContainElement(log1), ContainElement(log4)))
@@ -110,43 +111,53 @@ var _ = Describe("Log chunker", func() {
 
 var (
 	// Match TransformerA
-	log1 = types.Log{
-		Address: common.HexToAddress("0xA1"),
-		Topics: []common.Hash{
-			common.HexToHash("0xA"),
-			common.HexToHash("0xLogTopic1"),
+	log1 = core.HeaderSyncLog{
+		Log: types.Log{
+			Address: common.HexToAddress("0xA1"),
+			Topics: []common.Hash{
+				common.HexToHash("0xA"),
+				common.HexToHash("0xLogTopic1"),
+			},
 		},
 	}
 	// Match TransformerA address, but not topic0
-	log2 = types.Log{
-		Address: common.HexToAddress("0xA1"),
-		Topics: []common.Hash{
-			common.HexToHash("0xB"),
-			common.HexToHash("0xLogTopic2"),
+	log2 = core.HeaderSyncLog{
+		Log: types.Log{
+			Address: common.HexToAddress("0xA1"),
+			Topics: []common.Hash{
+				common.HexToHash("0xB"),
+				common.HexToHash("0xLogTopic2"),
+			},
 		},
 	}
 	// Match TransformerA topic, but TransformerB address
-	log3 = types.Log{
-		Address: common.HexToAddress("0xB1"),
-		Topics: []common.Hash{
-			common.HexToHash("0xA"),
-			common.HexToHash("0xLogTopic3"),
+	log3 = core.HeaderSyncLog{
+		Log: types.Log{
+			Address: common.HexToAddress("0xB1"),
+			Topics: []common.Hash{
+				common.HexToHash("0xA"),
+				common.HexToHash("0xLogTopic3"),
+			},
 		},
 	}
 	// Match TransformerA, with the other address
-	log4 = types.Log{
-		Address: common.HexToAddress("0xA2"),
-		Topics: []common.Hash{
-			common.HexToHash("0xA"),
-			common.HexToHash("0xLogTopic4"),
+	log4 = core.HeaderSyncLog{
+		Log: types.Log{
+			Address: common.HexToAddress("0xA2"),
+			Topics: []common.Hash{
+				common.HexToHash("0xA"),
+				common.HexToHash("0xLogTopic4"),
+			},
 		},
 	}
 	// Match TransformerC, which shares address with TransformerA
-	log5 = types.Log{
-		Address: common.HexToAddress("0xA2"),
-		Topics: []common.Hash{
-			common.HexToHash("0xC"),
-			common.HexToHash("0xLogTopic5"),
+	log5 = core.HeaderSyncLog{
+		Log: types.Log{
+			Address: common.HexToAddress("0xA2"),
+			Topics: []common.Hash{
+				common.HexToHash("0xC"),
+				common.HexToHash("0xLogTopic5"),
+			},
 		},
 	}
 )

@@ -19,7 +19,6 @@ package event_test
 import (
 	"math/rand"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -38,7 +37,7 @@ var _ = Describe("Transformer", func() {
 		t          transformer.EventTransformer
 		headerOne  core.Header
 		config     = test_data.GenericTestConfig
-		logs       = test_data.GenericTestLogs
+		logs       []core.HeaderSyncLog
 	)
 
 	BeforeEach(func() {
@@ -52,6 +51,13 @@ var _ = Describe("Transformer", func() {
 		}.NewTransformer(nil)
 
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+
+		logs = []core.HeaderSyncLog{{
+			ID:          0,
+			HeaderID:    headerOne.Id,
+			Log:         test_data.GenericTestLog(),
+			Transformed: false,
+		}}
 	})
 
 	It("sets the db", func() {
@@ -59,14 +65,14 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("marks header checked if no logs returned", func() {
-		err := t.Execute([]types.Log{}, headerOne.Id)
+		err := t.Execute([]core.HeaderSyncLog{}, headerOne.Id)
 
 		Expect(err).NotTo(HaveOccurred())
 		repository.AssertMarkHeaderCheckedCalledWith(headerOne.Id)
 	})
 
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
-		err := t.Execute([]types.Log{}, headerOne.Id)
+		err := t.Execute([]core.HeaderSyncLog{}, headerOne.Id)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ToEntitiesCalledCounter).To(Equal(0))
@@ -84,7 +90,7 @@ var _ = Describe("Transformer", func() {
 	It("returns error if marking header checked returns err", func() {
 		repository.SetMarkHeaderCheckedError(fakes.FakeError)
 
-		err := t.Execute([]types.Log{}, headerOne.Id)
+		err := t.Execute([]core.HeaderSyncLog{}, headerOne.Id)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))

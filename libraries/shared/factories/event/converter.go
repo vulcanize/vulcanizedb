@@ -16,9 +16,9 @@
 
 package event
 
-import "github.com/ethereum/go-ethereum/core/types"
+import "github.com/vulcanize/vulcanizedb/pkg/core"
 
 type Converter interface {
-	ToEntities(contractAbi string, ethLog []types.Log) ([]interface{}, error)
+	ToEntities(contractAbi string, ethLog []core.HeaderSyncLog) ([]interface{}, error)
 	ToModels([]interface{}) ([]interface{}, error)
 }
