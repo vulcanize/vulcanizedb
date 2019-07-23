@@ -23,14 +23,18 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+const (
+	bitsPerByte = 8
+)
+
 func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, error) {
 	switch metadata.Type {
 	case Uint256:
-		return decodeUint256(row.StorageValue.Bytes()), nil
+		return decodeInteger(row.StorageValue.Bytes()), nil
 	case Uint48:
-		return decodeUint48(row.StorageValue.Bytes()), nil
+		return decodeInteger(row.StorageValue.Bytes()), nil
 	case Uint128:
-		return decodeUint128(row.StorageValue.Bytes()), nil
+		return decodeInteger(row.StorageValue.Bytes()), nil
 	case Address:
 		return decodeAddress(row.StorageValue.Bytes()), nil
 	case Bytes32:
@@ -42,17 +46,7 @@ func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, err
 	}
 }
 
-func decodeUint256(raw []byte) string {
-	n := big.NewInt(0).SetBytes(raw)
-	return n.String()
-}
-
-func decodeUint128(raw []byte) string {
-	n := big.NewInt(0).SetBytes(raw)
-	return n.String()
-}
-
-func decodeUint48(raw []byte) string {
+func decodeInteger(raw []byte) string {
 	n := big.NewInt(0).SetBytes(raw)
 	return n.String()
 }
@@ -90,21 +84,20 @@ func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string 
 func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
 	switch valueType {
 	case Uint48:
-		return decodeUint48(itemBytes)
+		return decodeInteger(itemBytes)
 	case Uint128:
-		return decodeUint128(itemBytes)
+		return decodeInteger(itemBytes)
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
 	}
 }
 
 func getNumberOfBytes(valueType ValueType) int {
-	// 8 bits per byte
 	switch valueType {
 	case Uint48:
-		return 48 / 8
+		return 48 / bitsPerByte
 	case Uint128:
-		return 128 / 8
+		return 128 / bitsPerByte
 	default:
 		panic(fmt.Sprintf("ValueType %d not recognized", valueType))
 	}
