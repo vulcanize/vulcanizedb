@@ -16,6 +16,8 @@
 
 package utils
 
+import "fmt"
+
 type ValueType int
 
 const (
@@ -33,8 +35,8 @@ type StorageValueMetadata struct {
 	Name        string
 	Keys        map[Key]string
 	Type        ValueType
-	PackedNames map[int]string    //position in map (zero indexed) => name of packed item
-	PackedTypes map[int]ValueType //position in map (zero indexed)=> type of packed item
+	PackedNames map[int]string    //zero indexed position in map => name of packed item
+	PackedTypes map[int]ValueType //zero indexed position in map => type of packed item
 }
 
 func GetStorageValueMetadata(name string, keys map[Key]string, valueType ValueType) StorageValueMetadata {
@@ -45,12 +47,23 @@ func GetStorageValueMetadataForPackedSlot(name string, keys map[Key]string, valu
 	return getMetadata(name, keys, valueType, packedNames, packedTypes)
 }
 
-func getMetadata(name string, keys map[Key]string, t ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
+func getMetadata(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
+	assertPackedSlotArgs(valueType, packedNames, packedTypes)
+
 	return StorageValueMetadata{
 		Name:        name,
 		Keys:        keys,
-		Type:        t,
+		Type:        valueType,
 		PackedNames: packedNames,
 		PackedTypes: packedTypes,
 	}
+}
+
+func assertPackedSlotArgs(valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) {
+	if valueType == PackedSlot && (packedTypes == nil || packedNames == nil) {
+		panic(fmt.Sprintf("ValueType is PackedSlot. Expected PackedNames and PackedTypes to not be nil, but got PackedNames = %v and PackedTypes = %v", packedNames, packedTypes))
+	} else if (packedNames != nil && packedTypes != nil) && valueType != PackedSlot {
+		panic(fmt.Sprintf("PackedNames and PackedTypes passed in. Expected ValueType to equal PackedSlot (%v), but got %v.", PackedSlot, valueType))
+	}
+
 }
