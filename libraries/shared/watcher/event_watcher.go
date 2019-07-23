@@ -21,7 +21,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
@@ -122,7 +121,12 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 			return transactionsSyncErr
 		}
 
-		transformErr := watcher.transformLogs(logs, header.Id)
+		persistedLogs, createLogsErr := repository.CreateLogs(header.Id, logs, watcher.DB)
+		if createLogsErr != nil {
+			logrus.Errorf("error persisting logs: %s", createLogsErr.Error())
+		}
+
+		transformErr := watcher.transformLogs(persistedLogs, header.Id)
 		if transformErr != nil {
 			logrus.Error("Could not transform logs: ", transformErr)
 			return transformErr
@@ -131,7 +135,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	return err
 }
 
-func (watcher *EventWatcher) transformLogs(logs []types.Log, headerID int64) error {
+func (watcher *EventWatcher) transformLogs(logs []core.HeaderSyncLog, headerID int64) error {
 	chunkedLogs := watcher.Chunker.ChunkLogs(logs)
 
 	// Can't quit early and mark as checked if there are no logs. If we are running continuousLogSync,

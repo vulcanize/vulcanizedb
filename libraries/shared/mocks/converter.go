@@ -16,9 +16,7 @@
 
 package mocks
 
-import (
-	"github.com/ethereum/go-ethereum/core/types"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/core"
 
 type MockConverter struct {
 	ToEntitiesError         error
@@ -27,7 +25,7 @@ type MockConverter struct {
 	entityConverterError    error
 	modelConverterError     error
 	ContractAbi             string
-	LogsToConvert           []types.Log
+	LogsToConvert           []core.HeaderSyncLog
 	EntitiesToConvert       []interface{}
 	EntitiesToReturn        []interface{}
 	ModelsToReturn          []interface{}
@@ -35,9 +33,9 @@ type MockConverter struct {
 	ToModelsCalledCounter   int
 }
 
-func (converter *MockConverter) ToEntities(contractAbi string, ethLogs []types.Log) ([]interface{}, error) {
+func (converter *MockConverter) ToEntities(contractAbi string, ethLogs []core.HeaderSyncLog) ([]interface{}, error) {
 	for _, log := range ethLogs {
-		converter.PassedContractAddresses = append(converter.PassedContractAddresses, log.Address.Hex())
+		converter.PassedContractAddresses = append(converter.PassedContractAddresses, log.Log.Address.Hex())
 	}
 	converter.ContractAbi = contractAbi
 	converter.LogsToConvert = ethLogs

@@ -113,6 +113,7 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM full_sync_receipts")
 	db.MustExec("DELETE FROM full_sync_transactions")
 	db.MustExec("DELETE FROM goose_db_version")
+	db.MustExec("DELETE FROM header_sync_logs")
 	db.MustExec("DELETE FROM header_sync_receipts")
 	db.MustExec("DELETE FROM header_sync_transactions")
 	db.MustExec("DELETE FROM headers")
