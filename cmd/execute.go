@@ -63,6 +63,8 @@ must have been composed by the same version of vulcanizedb or else it will not b
 Specify config location when executing the command:
 ./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		execute()
 	},
 }
@@ -74,29 +76,29 @@ func execute() {
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
-		log.Fatal(err)
+		LogWithCommand.Fatal(err)
 	}
 
 	fmt.Printf("Executing plugin %s", pluginPath)
-	log.Info("linking plugin", pluginPath)
+	LogWithCommand.Info("linking plugin ", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		log.Warn("linking plugin failed")
-		log.Fatal(err)
+		LogWithCommand.Warn("linking plugin failed")
+		LogWithCommand.Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
-	log.Info("loading transformers from plugin")
+	LogWithCommand.Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		log.Warn("loading Exporter symbol failed")
-		log.Fatal(err)
+		LogWithCommand.Warn("loading Exporter symbol failed")
+		LogWithCommand.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		log.Fatal("plugged-in symbol not of type Exporter")
+		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
@@ -147,7 +149,7 @@ type Exporter interface {
 func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the EventTransformerInitializer set using the watcher
-	log.Info("executing event transformers")
+	LogWithCommand.Info("executing event transformers")
 	var recheck constants.TransformerExecution
 	if recheckHeadersArg {
 		recheck = constants.HeaderRecheck
@@ -164,7 +166,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
-	log.Info("executing storage transformers")
+	LogWithCommand.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -177,7 +179,7 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the ContractTransformerInitializer set using the contract watcher
-	log.Info("executing contract_watcher transformers")
+	LogWithCommand.Info("executing contract_watcher transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	for range ticker.C {

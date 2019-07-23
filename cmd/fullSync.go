@@ -49,20 +49,21 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		fullSync()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(fullSyncCmd)
-
 	fullSyncCmd.Flags().Int64VarP(&startingBlockNumber, "starting-block-number", "s", 0, "Block number to start syncing from")
 }
 
 func backFillAllBlocks(blockchain core.BlockChain, blockRepository datastore.BlockRepository, missingBlocksPopulated chan int, startingBlockNumber int64) {
 	populated, err := history.PopulateMissingBlocks(blockchain, blockRepository, startingBlockNumber)
 	if err != nil {
-		log.Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
+		LogWithCommand.Error("backfillAllBlocks: error in populateMissingBlocks: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -74,13 +75,13 @@ func fullSync() {
 	blockChain := getBlockChain()
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.Error("fullSync: Error getting last block: ", err)
+		LogWithCommand.Error("fullSync: Error getting last block: ", err)
 	}
 	if lastBlock.Int64() == 0 {
-		log.Fatal("geth initial: state sync not finished")
+		LogWithCommand.Fatal("geth initial: state sync not finished")
 	}
 	if startingBlockNumber > lastBlock.Int64() {
-		log.Fatal("fullSync: starting block number > current block number")
+		LogWithCommand.Fatal("fullSync: starting block number > current block number")
 	}
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
@@ -94,9 +95,9 @@ func fullSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateBlocks()
 			if err != nil {
-				log.Error("fullSync: error in validateBlocks: ", err)
+				LogWithCommand.Error("fullSync: error in validateBlocks: ", err)
 			}
-			log.Debug(window.GetString())
+			LogWithCommand.Debug(window.GetString())
 		case <-missingBlocksPopulated:
 			go backFillAllBlocks(blockChain, blockRepository, missingBlocksPopulated, startingBlockNumber)
 		}

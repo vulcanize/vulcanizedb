@@ -50,6 +50,8 @@ Expects ethereum node to be running and requires a .toml config:
   ipcPath = "/Users/user/Library/Ethereum/geth.ipc"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		headerSync()
 	},
 }
@@ -64,7 +66,7 @@ func backFillAllHeaders(blockchain core.BlockChain, headerRepository datastore.H
 	if err != nil {
 		// TODO Lots of possible errors in the call stack above. If errors occur, we still put
 		// 0 in the channel, triggering another round
-		log.Error("backfillAllHeaders: Error populating headers: ", err)
+		LogWithCommand.Error("backfillAllHeaders: Error populating headers: ", err)
 	}
 	missingBlocksPopulated <- populated
 }
@@ -86,9 +88,9 @@ func headerSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				log.Error("headerSync: ValidateHeaders failed: ", err)
+				LogWithCommand.Error("headerSync: ValidateHeaders failed: ", err)
 			}
-			log.Debug(window.GetString())
+			LogWithCommand.Debug(window.GetString())
 		case n := <-missingBlocksPopulated:
 			if n == 0 {
 				time.Sleep(3 * time.Second)
@@ -101,12 +103,12 @@ func headerSync() {
 func validateArgs(blockChain *geth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.Error("validateArgs: Error getting last block: ", err)
+		LogWithCommand.Error("validateArgs: Error getting last block: ", err)
 	}
 	if lastBlock.Int64() == 0 {
-		log.Fatal("geth initial: state sync not finished")
+		LogWithCommand.Fatal("geth initial: state sync not finished")
 	}
 	if startingBlockNumber > lastBlock.Int64() {
-		log.Fatal("starting block number > current block number")
+		LogWithCommand.Fatal("starting block number > current block number")
 	}
 }

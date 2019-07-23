@@ -42,7 +42,7 @@ func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datasto
 	log.Debug(getBlockRangeString(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
-		log.Error("PopulateMissingHeaders: Error getting/updating headers:", err)
+		log.Error("PopulateMissingHeaders: Error getting/updating headers: ", err)
 		return 0, err
 	}
 	return len(blockNumbers), nil

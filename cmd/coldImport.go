@@ -39,6 +39,8 @@ var coldImportCmd = &cobra.Command{
 
 Geth must be synced over all of the desired blocks and must not be running in order to execute this command.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		coldImport()
 	},
 }
@@ -55,7 +57,7 @@ func coldImport() {
 	ethDBConfig := ethereum.CreateDatabaseConfig(ethereum.Level, levelDbPath)
 	ethDB, err := ethereum.CreateDatabase(ethDBConfig)
 	if err != nil {
-		log.Fatal("Error connecting to ethereum db: ", err)
+		LogWithCommand.Fatal("Error connecting to ethereum db: ", err)
 	}
 	mostRecentBlockNumberInDb := ethDB.GetHeadBlockNumber()
 	if syncAll {
@@ -63,10 +65,10 @@ func coldImport() {
 		endingBlockNumber = mostRecentBlockNumberInDb
 	}
 	if endingBlockNumber < startingBlockNumber {
-		log.Fatal("Ending block number must be greater than starting block number for cold import.")
+		LogWithCommand.Fatal("Ending block number must be greater than starting block number for cold import.")
 	}
 	if endingBlockNumber > mostRecentBlockNumberInDb {
-		log.Fatal("Ending block number is greater than most recent block in db: ", mostRecentBlockNumberInDb)
+		LogWithCommand.Fatal("Ending block number is greater than most recent block in db: ", mostRecentBlockNumberInDb)
 	}
 
 	// init pg db
@@ -76,7 +78,7 @@ func coldImport() {
 	nodeBuilder := cold_import.NewColdImportNodeBuilder(reader, parser)
 	coldNode, err := nodeBuilder.GetNode(genesisBlock, levelDbPath)
 	if err != nil {
-		log.Fatal("Error getting node: ", err)
+		LogWithCommand.Fatal("Error getting node: ", err)
 	}
 	pgDB := utils.LoadPostgres(databaseConfig, coldNode)
 
@@ -90,6 +92,6 @@ func coldImport() {
 	coldImporter := cold_import.NewColdImporter(ethDB, blockRepository, receiptRepository, blockConverter)
 	err = coldImporter.Execute(startingBlockNumber, endingBlockNumber, coldNode.ID)
 	if err != nil {
-		log.Fatal("Error executing cold import: ", err)
+		LogWithCommand.Fatal("Error executing cold import: ", err)
 	}
 }

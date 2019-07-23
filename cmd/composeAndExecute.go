@@ -105,6 +105,8 @@ single config file or in separate command instances using different config files
 Specify config location when executing the command:
 ./vulcanizedb composeAndExecute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *log.WithField("SubCommand", SubCommand)
 		composeAndExecute()
 	},
 }
@@ -114,44 +116,44 @@ func composeAndExecute() {
 	prepConfig()
 
 	// Generate code to build the plugin according to the config file
-	log.Info("generating plugin")
+	LogWithCommand.Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		log.Fatal(err)
+		LogWithCommand.Fatal(err)
 	}
 	err = generator.GenerateExporterPlugin()
 	if err != nil {
-		log.Debug("generating plugin failed")
-		log.Fatal(err)
+		LogWithCommand.Debug("generating plugin failed")
+		LogWithCommand.Fatal(err)
 	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
-		log.Fatal(err)
+		LogWithCommand.Fatal(err)
 	}
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
-	log.Info("linking plugin", pluginPath)
+	LogWithCommand.Info("linking plugin ", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		log.Debug("linking plugin failed")
-		log.Fatal(err)
+		LogWithCommand.Debug("linking plugin failed")
+		LogWithCommand.Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
-	log.Info("loading transformers from plugin")
+	LogWithCommand.Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		log.Debug("loading Exporter symbol failed")
-		log.Fatal(err)
+		LogWithCommand.Debug("loading Exporter symbol failed")
+		LogWithCommand.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		log.Debug("plugged-in symbol not of type Exporter")
+		LogWithCommand.Debug("plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 
