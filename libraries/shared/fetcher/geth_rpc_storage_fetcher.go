@@ -15,9 +15,11 @@
 package fetcher
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
@@ -36,22 +38,29 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 
 func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
-	_, err := fetcher.streamer.Stream(ethStatediffPayloadChan)
-	if err != nil {
-		errs <- err
+	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
+	if clientSubErr != nil {
+		logrus.Warn("Error creating a geth client subscription: ", clientSubErr)
+		errs <- clientSubErr
 	}
+	logrus.Info("Successfully created a geth client subscription: ", clientSubscription)
 
 	for {
 		diff := <-ethStatediffPayloadChan
+		logrus.Trace("received a statediff")
 		stateDiff := new(statediff.StateDiff)
-		err = rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
-		if err != nil {
-			errs <- err
+		decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
+		if decodeErr != nil {
+			logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
+			errs <- decodeErr
 		}
-		accounts := getAccountDiffs(*stateDiff)
 
+		accounts := getAccountDiffs(*stateDiff)
+		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
 		for _, account := range accounts {
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, storage := range account.Storage {
+				logrus.Trace("adding storage diff to out channel")
 				out <- utils.StorageDiffRow{
 					Contract:     common.BytesToAddress(account.Key),
 					BlockHash:    stateDiff.BlockHash,
