@@ -1,7 +1,7 @@
 dist: trusty
 language: go
 go:
-  - 1.11
+  - 1.12
 services:
   - postgresql
 addons:
@@ -17,8 +17,8 @@ before_script:
   - sudo -u postgres createdb vulcanize_private
   - make migrate NAME=vulcanize_private
 script:
-  - make test
-  - make integrationtest
+  - env GO111MODULE=on make test
+  - env GO111MODULE=on make integrationtest
 notifications:
   email: false
 env:
