@@ -63,15 +63,15 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 	}
 }
 
-func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, errs chan error, queueRecheckInterval time.Duration) {
+func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration) {
 	ticker := time.NewTicker(queueRecheckInterval)
-	go storageWatcher.StorageFetcher.FetchStorageDiffs(rows, errs)
+	go storageWatcher.StorageFetcher.FetchStorageDiffs(diffsChan, errsChan)
 	for {
 		select {
-		case fetchErr := <-errs:
+		case fetchErr := <-errsChan:
 			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr))
-		case row := <-rows:
-			storageWatcher.processRow(row)
+		case diff := <-diffsChan:
+			storageWatcher.processRow(diff)
 		case <-ticker.C:
 			storageWatcher.processQueue()
 		}
@@ -96,16 +96,16 @@ func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Addre
 	return nil, false
 }
 
-func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
-	storageTransformer, ok := storageWatcher.getTransformer(row.Contract)
+func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
+	storageTransformer, ok := storageWatcher.getTransformer(diff.Contract)
 	if !ok {
-		logrus.Debug("ignoring a row from an unwatched contract")
+		logrus.Debug("ignoring a diff from an unwatched contract")
 		return
 	}
-	executeErr := storageTransformer.Execute(row)
+	executeErr := storageTransformer.Execute(diff)
 	if executeErr != nil {
 		logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
-		queueErr := storageWatcher.Queue.Add(row)
+		queueErr := storageWatcher.Queue.Add(diff)
 		if queueErr != nil {
 			logrus.Warn(fmt.Sprintf("error queueing storage diff: %s", queueErr))
 		}
@@ -113,20 +113,20 @@ func (storageWatcher StorageWatcher) processRow(row utils.StorageDiffRow) {
 }
 
 func (storageWatcher StorageWatcher) processQueue() {
-	rows, fetchErr := storageWatcher.Queue.GetAll()
+	diffs, fetchErr := storageWatcher.Queue.GetAll()
 	if fetchErr != nil {
 		logrus.Warn(fmt.Sprintf("error getting queued storage: %s", fetchErr))
 	}
-	for _, row := range rows {
-		storageTransformer, ok := storageWatcher.getTransformer(row.Contract)
+	for _, diff := range diffs {
+		storageTransformer, ok := storageWatcher.getTransformer(diff.Contract)
 		if !ok {
-			// delete row from queue if address no longer watched
-			storageWatcher.deleteRow(row.Id)
+			// delete diff from queue if address no longer watched
+			storageWatcher.deleteRow(diff.Id)
 			continue
 		}
-		executeErr := storageTransformer.Execute(row)
+		executeErr := storageTransformer.Execute(diff)
 		if executeErr == nil {
-			storageWatcher.deleteRow(row.Id)
+			storageWatcher.deleteRow(diff.Id)
 		}
 	}
 }
@@ -134,7 +134,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 func (storageWatcher StorageWatcher) deleteRow(id int) {
 	deleteErr := storageWatcher.Queue.Delete(id)
 	if deleteErr != nil {
-		logrus.Warn(fmt.Sprintf("error deleting persisted row from queue: %s", deleteErr))
+		logrus.Warn(fmt.Sprintf("error deleting persisted diff from queue: %s", deleteErr))
 	}
 }
 

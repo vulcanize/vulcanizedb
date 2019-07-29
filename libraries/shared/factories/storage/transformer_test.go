@@ -52,7 +52,7 @@ var _ = Describe("Storage transformer", func() {
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(utils.StorageDiffRow{})
+		t.Execute(utils.StorageDiff{})
 
 		Expect(mappings.LookupCalled).To(BeTrue())
 	})
@@ -60,7 +60,7 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if lookup fails", func() {
 		mappings.LookupErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiffRow{})
+		err := t.Execute(utils.StorageDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -72,7 +72,7 @@ var _ = Describe("Storage transformer", func() {
 		rawValue := common.HexToAddress("0x12345")
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
-		fakeRow := utils.StorageDiffRow{
+		fakeRow := utils.StorageDiff{
 			Contract:     common.Address{},
 			BlockHash:    common.HexToHash(fakeBlockHash),
 			BlockHeight:  fakeBlockNumber,
@@ -95,7 +95,7 @@ var _ = Describe("Storage transformer", func() {
 		mappings.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiffRow{StorageValue: rawValue.Hash()})
+		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -120,7 +120,7 @@ var _ = Describe("Storage transformer", func() {
 
 		It("passes the decoded data items to the repository", func() {
 			mappings.Metadata = fakeMetadata
-			fakeRow := utils.StorageDiffRow{
+			fakeRow := utils.StorageDiff{
 				Contract:     common.Address{},
 				BlockHash:    common.HexToHash(fakeBlockHash),
 				BlockHeight:  fakeBlockNumber,
@@ -144,7 +144,7 @@ var _ = Describe("Storage transformer", func() {
 			mappings.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
 
-			err := t.Execute(utils.StorageDiffRow{StorageValue: rawValue.Hash()})
+			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

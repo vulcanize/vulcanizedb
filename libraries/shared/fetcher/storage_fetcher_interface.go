@@ -17,5 +17,5 @@ package fetcher
 import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 
 type IStorageFetcher interface {
-	FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error)
+	FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error)
 }

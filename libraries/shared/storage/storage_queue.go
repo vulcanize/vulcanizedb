@@ -22,9 +22,9 @@ import (
 )
 
 type IStorageQueue interface {
-	Add(row utils.StorageDiffRow) error
+	Add(diff utils.StorageDiff) error
 	Delete(id int) error
-	GetAll() ([]utils.StorageDiffRow, error)
+	GetAll() ([]utils.StorageDiff, error)
 }
 
 type StorageQueue struct {
@@ -35,11 +35,11 @@ func NewStorageQueue(db *postgres.DB) StorageQueue {
 	return StorageQueue{db: db}
 }
 
-func (queue StorageQueue) Add(row utils.StorageDiffRow) error {
+func (queue StorageQueue) Add(diff utils.StorageDiff) error {
 	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (contract,
 		block_hash, block_height, storage_key, storage_value) VALUES
-		($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, row.Contract.Bytes(), row.BlockHash.Bytes(),
-		row.BlockHeight, row.StorageKey.Bytes(), row.StorageValue.Bytes())
+		($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, diff.Contract.Bytes(), diff.BlockHash.Bytes(),
+		diff.BlockHeight, diff.StorageKey.Bytes(), diff.StorageValue.Bytes())
 	return err
 }
 
@@ -48,8 +48,8 @@ func (queue StorageQueue) Delete(id int) error {
 	return err
 }
 
-func (queue StorageQueue) GetAll() ([]utils.StorageDiffRow, error) {
-	var result []utils.StorageDiffRow
+func (queue StorageQueue) GetAll() ([]utils.StorageDiff, error) {
+	var result []utils.StorageDiff
 	err := queue.db.Select(&result, `SELECT * FROM public.queued_storage`)
 	return result, err
 }

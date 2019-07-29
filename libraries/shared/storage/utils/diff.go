@@ -24,7 +24,7 @@ import (
 
 const ExpectedRowLength = 5
 
-type StorageDiffRow struct {
+type StorageDiff struct {
 	Id           int
 	Contract     common.Address
 	BlockHash    common.Hash `db:"block_hash"`
@@ -33,15 +33,15 @@ type StorageDiffRow struct {
 	StorageValue common.Hash `db:"storage_value"`
 }
 
-func FromStrings(csvRow []string) (StorageDiffRow, error) {
+func FromStrings(csvRow []string) (StorageDiff, error) {
 	if len(csvRow) != ExpectedRowLength {
-		return StorageDiffRow{}, ErrRowMalformed{Length: len(csvRow)}
+		return StorageDiff{}, ErrRowMalformed{Length: len(csvRow)}
 	}
 	height, err := strconv.Atoi(csvRow[2])
 	if err != nil {
-		return StorageDiffRow{}, err
+		return StorageDiff{}, err
 	}
-	return StorageDiffRow{
+	return StorageDiff{
 		Contract:     common.HexToAddress(csvRow[0]),
 		BlockHash:    common.HexToHash(csvRow[1]),
 		BlockHeight:  height,

@@ -57,21 +57,21 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	var streamer MockStoragediffStreamer
 	var statediffPayloadChan chan statediff.Payload
 	var statediffFetcher fetcher.GethRpcStorageFetcher
-	var storagediffRowChan chan utils.StorageDiffRow
+	var storagediffChan chan utils.StorageDiff
 	var errorChan chan error
 
 	BeforeEach(func() {
 		streamer = MockStoragediffStreamer{}
 		statediffPayloadChan = make(chan statediff.Payload, 1)
 		statediffFetcher = fetcher.NewGethRpcStorageFetcher(&streamer, statediffPayloadChan)
-		storagediffRowChan = make(chan utils.StorageDiffRow)
+		storagediffChan = make(chan utils.StorageDiff)
 		errorChan = make(chan error)
 	})
 
 	It("adds errors to error channel if the RPC subscription fails ", func(done Done) {
 		streamer.SetSubscribeError(fakes.FakeError)
 
-		go statediffFetcher.FetchStorageDiffs(storagediffRowChan, errorChan)
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 		Expect(<-errorChan).To(MatchError(fakes.FakeError))
 		close(done)
@@ -80,7 +80,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	It("streams StatediffPayloads from a Geth RPC subscription", func(done Done) {
 		streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
 
-		go statediffFetcher.FetchStorageDiffs(storagediffRowChan, errorChan)
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 		streamedPayload := <-statediffPayloadChan
 		Expect(streamedPayload).To(Equal(test_data.MockStatediffPayload))
@@ -91,11 +91,11 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	It("adds parsed statediff payloads to the rows channel", func(done Done) {
 		streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
 
-		go statediffFetcher.FetchStorageDiffs(storagediffRowChan, errorChan)
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 		height := test_data.BlockNumber
 		intHeight := int(height.Int64())
-		expectedStorageDiffRow := utils.StorageDiffRow{
+		expectedStorageDiff := utils.StorageDiff{
 			//this is not the contract address, but the keccak 256 of the address
 			Contract:     common.BytesToAddress(test_data.ContractLeafKey[:]),
 			BlockHash:    common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
@@ -103,7 +103,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			StorageKey:   common.BytesToHash(test_data.StorageKey),
 			StorageValue: common.BytesToHash(test_data.StorageValue),
 		}
-		anotherExpectedStorageDiffRow := utils.StorageDiffRow{
+		anotherExpectedStorageDiff := utils.StorageDiff{
 			//this is not the contract address, but the keccak 256 of the address
 			Contract:     common.BytesToAddress(test_data.AnotherContractLeafKey[:]),
 			BlockHash:    common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
@@ -111,8 +111,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			StorageKey:   common.BytesToHash(test_data.StorageKey),
 			StorageValue: common.BytesToHash(test_data.StorageValue),
 		}
-		Expect(<-storagediffRowChan).To(Equal(expectedStorageDiffRow))
-		Expect(<-storagediffRowChan).To(Equal(anotherExpectedStorageDiffRow))
+		Expect(<-storagediffChan).To(Equal(expectedStorageDiff))
+		Expect(<-storagediffChan).To(Equal(anotherExpectedStorageDiff))
 
 		close(done)
 	})
@@ -121,7 +121,7 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		badStatediffPayload := statediff.Payload{}
 		streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
 
-		go statediffFetcher.FetchStorageDiffs(storagediffRowChan, errorChan)
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
 		Expect(<-errorChan).To(MatchError("EOF"))
 

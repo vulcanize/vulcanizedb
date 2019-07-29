@@ -33,18 +33,18 @@ func NewCsvTailStorageFetcher(tailer fs.Tailer) CsvTailStorageFetcher {
 	return CsvTailStorageFetcher{tailer: tailer}
 }
 
-func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
+func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
 	t, tailErr := storageFetcher.tailer.Tail()
 	if tailErr != nil {
 		errs <- tailErr
 	}
 	log.Debug("fetching storage diffs...")
 	for line := range t.Lines {
-		row, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
+		diff, parseErr := utils.FromStrings(strings.Split(line.Text, ","))
 		if parseErr != nil {
 			errs <- parseErr
 		} else {
-			out <- row
+			out <- diff
 		}
 	}
 }

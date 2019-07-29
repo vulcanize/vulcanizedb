@@ -41,14 +41,14 @@ func (transformer Transformer) ContractAddress() common.Address {
 	return transformer.Address
 }
 
-func (transformer Transformer) Execute(row utils.StorageDiffRow) error {
-	metadata, lookupErr := transformer.Mappings.Lookup(row.StorageKey)
+func (transformer Transformer) Execute(diff utils.StorageDiff) error {
+	metadata, lookupErr := transformer.Mappings.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr
 	}
-	value, decodeErr := utils.Decode(row, metadata)
+	value, decodeErr := utils.Decode(diff, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}
-	return transformer.Repository.Create(row.BlockHeight, row.BlockHash.Hex(), metadata, value)
+	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
 }
