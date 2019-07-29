@@ -36,7 +36,7 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 	}
 }
 
-func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffRow, errs chan<- error) {
+func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {
@@ -61,7 +61,7 @@ func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.Storage
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, storage := range account.Storage {
 				logrus.Trace("adding storage diff to out channel")
-				out <- utils.StorageDiffRow{
+				out <- utils.StorageDiff{
 					Contract:     common.BytesToAddress(account.Key),
 					BlockHash:    stateDiff.BlockHash,
 					BlockHeight:  int(stateDiff.BlockNumber.Int64()),

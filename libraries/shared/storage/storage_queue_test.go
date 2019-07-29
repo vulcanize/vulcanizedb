@@ -30,12 +30,12 @@ import (
 var _ = Describe("Storage queue", func() {
 	var (
 		db    *postgres.DB
-		row   utils.StorageDiffRow
+		diff  utils.StorageDiff
 		queue storage.IStorageQueue
 	)
 
 	BeforeEach(func() {
-		row = utils.StorageDiffRow{
+		diff = utils.StorageDiff{
 			Contract:     common.HexToAddress("0x123456"),
 			BlockHash:    common.HexToHash("0x678901"),
 			BlockHeight:  987,
@@ -45,20 +45,20 @@ var _ = Describe("Storage queue", func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		queue = storage.NewStorageQueue(db)
-		addErr := queue.Add(row)
+		addErr := queue.Add(diff)
 		Expect(addErr).NotTo(HaveOccurred())
 	})
 
 	Describe("Add", func() {
-		It("adds a storage row to the db", func() {
-			var result utils.StorageDiffRow
+		It("adds a storage diff to the db", func() {
+			var result utils.StorageDiff
 			getErr := db.Get(&result, `SELECT contract, block_hash, block_height, storage_key, storage_value FROM public.queued_storage`)
 			Expect(getErr).NotTo(HaveOccurred())
-			Expect(result).To(Equal(row))
+			Expect(result).To(Equal(diff))
 		})
 
-		It("does not duplicate storage rows", func() {
-			addErr := queue.Add(row)
+		It("does not duplicate storage diffs", func() {
+			addErr := queue.Add(diff)
 			Expect(addErr).NotTo(HaveOccurred())
 			var count int
 			getErr := db.Get(&count, `SELECT count(*) FROM public.queued_storage`)
@@ -67,12 +67,12 @@ var _ = Describe("Storage queue", func() {
 		})
 	})
 
-	It("deletes storage row from db", func() {
-		rows, getErr := queue.GetAll()
+	It("deletes storage diff from db", func() {
+		diffs, getErr := queue.GetAll()
 		Expect(getErr).NotTo(HaveOccurred())
-		Expect(len(rows)).To(Equal(1))
+		Expect(len(diffs)).To(Equal(1))
 
-		err := queue.Delete(rows[0].Id)
+		err := queue.Delete(diffs[0].Id)
 
 		Expect(err).NotTo(HaveOccurred())
 		remainingRows, secondGetErr := queue.GetAll()
@@ -80,33 +80,33 @@ var _ = Describe("Storage queue", func() {
 		Expect(len(remainingRows)).To(BeZero())
 	})
 
-	It("gets all storage rows from db", func() {
-		rowTwo := utils.StorageDiffRow{
+	It("gets all storage diffs from db", func() {
+		diffTwo := utils.StorageDiff{
 			Contract:     common.HexToAddress("0x123456"),
 			BlockHash:    common.HexToHash("0x678902"),
 			BlockHeight:  988,
 			StorageKey:   common.HexToHash("0x654322"),
 			StorageValue: common.HexToHash("0x198766"),
 		}
-		addErr := queue.Add(rowTwo)
+		addErr := queue.Add(diffTwo)
 		Expect(addErr).NotTo(HaveOccurred())
 
-		rows, err := queue.GetAll()
+		diffs, err := queue.GetAll()
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(rows)).To(Equal(2))
-		Expect(rows[0]).NotTo(Equal(rows[1]))
-		Expect(rows[0].Id).NotTo(BeZero())
-		Expect(rows[0].Contract).To(Or(Equal(row.Contract), Equal(rowTwo.Contract)))
-		Expect(rows[0].BlockHash).To(Or(Equal(row.BlockHash), Equal(rowTwo.BlockHash)))
-		Expect(rows[0].BlockHeight).To(Or(Equal(row.BlockHeight), Equal(rowTwo.BlockHeight)))
-		Expect(rows[0].StorageKey).To(Or(Equal(row.StorageKey), Equal(rowTwo.StorageKey)))
-		Expect(rows[0].StorageValue).To(Or(Equal(row.StorageValue), Equal(rowTwo.StorageValue)))
-		Expect(rows[1].Id).NotTo(BeZero())
-		Expect(rows[1].Contract).To(Or(Equal(row.Contract), Equal(rowTwo.Contract)))
-		Expect(rows[1].BlockHash).To(Or(Equal(row.BlockHash), Equal(rowTwo.BlockHash)))
-		Expect(rows[1].BlockHeight).To(Or(Equal(row.BlockHeight), Equal(rowTwo.BlockHeight)))
-		Expect(rows[1].StorageKey).To(Or(Equal(row.StorageKey), Equal(rowTwo.StorageKey)))
-		Expect(rows[1].StorageValue).To(Or(Equal(row.StorageValue), Equal(rowTwo.StorageValue)))
+		Expect(len(diffs)).To(Equal(2))
+		Expect(diffs[0]).NotTo(Equal(diffs[1]))
+		Expect(diffs[0].Id).NotTo(BeZero())
+		Expect(diffs[0].Contract).To(Or(Equal(diff.Contract), Equal(diffTwo.Contract)))
+		Expect(diffs[0].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
+		Expect(diffs[0].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))
+		Expect(diffs[0].StorageKey).To(Or(Equal(diff.StorageKey), Equal(diffTwo.StorageKey)))
+		Expect(diffs[0].StorageValue).To(Or(Equal(diff.StorageValue), Equal(diffTwo.StorageValue)))
+		Expect(diffs[1].Id).NotTo(BeZero())
+		Expect(diffs[1].Contract).To(Or(Equal(diff.Contract), Equal(diffTwo.Contract)))
+		Expect(diffs[1].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
+		Expect(diffs[1].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))
+		Expect(diffs[1].StorageKey).To(Or(Equal(diff.StorageKey), Equal(diffTwo.StorageKey)))
+		Expect(diffs[1].StorageValue).To(Or(Equal(diff.StorageValue), Equal(diffTwo.StorageValue)))
 	})
 })

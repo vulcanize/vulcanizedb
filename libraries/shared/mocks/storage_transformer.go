@@ -27,11 +27,11 @@ import (
 type MockStorageTransformer struct {
 	Address    common.Address
 	ExecuteErr error
-	PassedRow  utils.StorageDiffRow
+	PassedDiff utils.StorageDiff
 }
 
-func (transformer *MockStorageTransformer) Execute(row utils.StorageDiffRow) error {
-	transformer.PassedRow = row
+func (transformer *MockStorageTransformer) Execute(diff utils.StorageDiff) error {
+	transformer.PassedDiff = diff
 	return transformer.ExecuteErr
 }
 

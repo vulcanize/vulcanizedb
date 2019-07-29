@@ -24,7 +24,7 @@ import (
 )
 
 type StorageTransformer interface {
-	Execute(row utils.StorageDiffRow) error
+	Execute(diff utils.StorageDiff) error
 	ContractAddress() common.Address
 }
 

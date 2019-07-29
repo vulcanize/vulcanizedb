@@ -27,20 +27,20 @@ const (
 	bitsPerByte = 8
 )
 
-func Decode(row StorageDiffRow, metadata StorageValueMetadata) (interface{}, error) {
+func Decode(diff StorageDiff, metadata StorageValueMetadata) (interface{}, error) {
 	switch metadata.Type {
 	case Uint256:
-		return decodeInteger(row.StorageValue.Bytes()), nil
+		return decodeInteger(diff.StorageValue.Bytes()), nil
 	case Uint48:
-		return decodeInteger(row.StorageValue.Bytes()), nil
+		return decodeInteger(diff.StorageValue.Bytes()), nil
 	case Uint128:
-		return decodeInteger(row.StorageValue.Bytes()), nil
+		return decodeInteger(diff.StorageValue.Bytes()), nil
 	case Address:
-		return decodeAddress(row.StorageValue.Bytes()), nil
+		return decodeAddress(diff.StorageValue.Bytes()), nil
 	case Bytes32:
-		return row.StorageValue.Hex(), nil
+		return diff.StorageValue.Hex(), nil
 	case PackedSlot:
-		return decodePackedSlot(row.StorageValue.Bytes(), metadata.PackedTypes), nil
+		return decodePackedSlot(diff.StorageValue.Bytes(), metadata.PackedTypes), nil
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
 	}
