@@ -18,7 +18,6 @@ package watcher
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 	"reflect"
 	"time"
 
@@ -32,31 +31,18 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+type IStorageWatcher interface {
+	AddTransformers(initializers []transformer.StorageTransformerInitializer)
+	Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration)
+}
+
 type StorageWatcher struct {
 	db                        *postgres.DB
-	diffSource                string
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
 	Transformers              map[common.Address]transformer.StorageTransformer
 	KeccakAddressTransformers map[common.Address]transformer.StorageTransformer // keccak hash of an address => transformer
-}
-
-func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
-	queue := storage.NewStorageQueue(db)
-	transformers := make(map[common.Address]transformer.StorageTransformer)
-	keccakAddressTransformers := make(map[common.Address]transformer.StorageTransformer)
-	return StorageWatcher{
-		db:                        db,
-		diffSource:                "csv",
-		StorageFetcher:            fetcher,
-		Queue:                     queue,
-		Transformers:              transformers,
-		KeccakAddressTransformers: keccakAddressTransformers,
-	}
-}
-
-func (storageWatcher *StorageWatcher) SetStorageDiffSource(source string) {
-	storageWatcher.diffSource = source
+	transformerGetter         func(common.Address) (transformer.StorageTransformer, bool)
 }
 
 func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
@@ -82,26 +68,7 @@ func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, e
 }
 
 func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Address) (transformer.StorageTransformer, bool) {
-	if storageWatcher.diffSource == "csv" {
-		storageTransformer, ok := storageWatcher.Transformers[contractAddress]
-		return storageTransformer, ok
-	} else if storageWatcher.diffSource == "geth" {
-		storageTransformer, ok := storageWatcher.KeccakAddressTransformers[contractAddress]
-		if ok {
-			return storageTransformer, ok
-		} else {
-			for address, transformer := range storageWatcher.Transformers {
-				keccakOfTransformerAddress := common.BytesToAddress(crypto.Keccak256(address[:]))
-				if keccakOfTransformerAddress == contractAddress {
-					storageWatcher.KeccakAddressTransformers[contractAddress] = transformer
-					return transformer, true
-				}
-			}
-		}
-
-		return nil, false
-	}
-	return nil, false
+	return storageWatcher.transformerGetter(contractAddress)
 }
 
 func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
