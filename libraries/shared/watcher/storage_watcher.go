@@ -33,22 +33,25 @@ import (
 )
 
 type StorageWatcher struct {
-	db             *postgres.DB
-	diffSource     string
-	StorageFetcher fetcher.IStorageFetcher
-	Queue          storage.IStorageQueue
-	Transformers   map[common.Address]transformer.StorageTransformer
+	db                        *postgres.DB
+	diffSource                string
+	StorageFetcher            fetcher.IStorageFetcher
+	Queue                     storage.IStorageQueue
+	Transformers              map[common.Address]transformer.StorageTransformer
+	KeccakAddressTransformers map[common.Address]transformer.StorageTransformer // keccak hash of an address => transformer
 }
 
 func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
-	transformers := make(map[common.Address]transformer.StorageTransformer)
 	queue := storage.NewStorageQueue(db)
+	transformers := make(map[common.Address]transformer.StorageTransformer)
+	keccakAddressTransformers := make(map[common.Address]transformer.StorageTransformer)
 	return StorageWatcher{
-		db:             db,
-		diffSource:     "csv",
-		StorageFetcher: fetcher,
-		Queue:          queue,
-		Transformers:   transformers,
+		db:                        db,
+		diffSource:                "csv",
+		StorageFetcher:            fetcher,
+		Queue:                     queue,
+		Transformers:              transformers,
+		KeccakAddressTransformers: keccakAddressTransformers,
 	}
 }
 
@@ -83,11 +86,16 @@ func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Addre
 		storageTransformer, ok := storageWatcher.Transformers[contractAddress]
 		return storageTransformer, ok
 	} else if storageWatcher.diffSource == "geth" {
-		logrus.Debug("number of transformers", len(storageWatcher.Transformers))
-		for address, t := range storageWatcher.Transformers {
-			keccakOfTransformerAddress := common.BytesToAddress(crypto.Keccak256(address[:]))
-			if keccakOfTransformerAddress == contractAddress {
-				return t, true
+		storageTransformer, ok := storageWatcher.KeccakAddressTransformers[contractAddress]
+		if ok {
+			return storageTransformer, ok
+		} else {
+			for address, transformer := range storageWatcher.Transformers {
+				keccakOfTransformerAddress := common.BytesToAddress(crypto.Keccak256(address[:]))
+				if keccakOfTransformerAddress == contractAddress {
+					storageWatcher.KeccakAddressTransformers[contractAddress] = transformer
+					return transformer, true
+				}
 			}
 		}
 
