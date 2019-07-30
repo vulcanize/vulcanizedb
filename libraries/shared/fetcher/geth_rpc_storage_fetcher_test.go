@@ -68,10 +68,15 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		errorChan = make(chan error)
 	})
 
-	It("adds errors to error channel if the RPC subscription fails ", func(done Done) {
+	It("adds errors to error channel if the RPC subscription fails and panics", func(done Done) {
 		streamer.SetSubscribeError(fakes.FakeError)
 
-		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+		go func() {
+			failedSub := func() {
+				statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+			}
+			Expect(failedSub).To(Panic())
+		}()
 
 		Expect(<-errorChan).To(MatchError(fakes.FakeError))
 		close(done)

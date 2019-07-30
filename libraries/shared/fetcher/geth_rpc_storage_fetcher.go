@@ -40,8 +40,8 @@ func (fetcher *GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.Storage
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {
-		logrus.Warn("Error creating a geth client subscription: ", clientSubErr)
 		errs <- clientSubErr
+		panic(fmt.Sprintf("Error creating a geth client subscription: %v", clientSubErr))
 	}
 	logrus.Info("Successfully created a geth client subscription: ", clientSubscription)
 
