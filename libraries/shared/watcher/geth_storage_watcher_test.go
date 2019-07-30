@@ -100,7 +100,6 @@ var _ = Describe("Geth Storage Watcher", func() {
 			BeforeEach(func() {
 				mockFetcher.DiffsToReturn = []utils.StorageDiff{gethDiff}
 				storageWatcher = watcher.NewGethStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
-				storageWatcher.SetStorageDiffSource("geth")
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
@@ -193,7 +192,6 @@ var _ = Describe("Geth Storage Watcher", func() {
 				mockQueue.DiffsToReturn = []utils.StorageDiff{gethDiff}
 				storageWatcher = watcher.NewGethStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
-				storageWatcher.SetStorageDiffSource("geth")
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
