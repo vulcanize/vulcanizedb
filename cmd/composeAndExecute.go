@@ -188,8 +188,7 @@ func composeAndExecute() {
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 			payloadChan := make(chan statediff.Payload)
 			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewStorageWatcher(&storageFetcher, &db)
-			sw.SetStorageDiffSource("geth")
+			sw := watcher.NewGethStorageWatcher(&storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)
@@ -197,7 +196,7 @@ func composeAndExecute() {
 			log.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
 			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
+			sw := watcher.NewCsvStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)

@@ -132,8 +132,7 @@ func execute() {
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 			payloadChan := make(chan statediff.Payload)
 			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewStorageWatcher(&storageFetcher, &db)
-			sw.SetStorageDiffSource("geth")
+			sw := watcher.NewGethStorageWatcher(&storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)
@@ -141,7 +140,7 @@ func execute() {
 			log.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
 			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
+			sw := watcher.NewCsvStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)
@@ -183,7 +182,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	}
 }
 
-func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
+func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
@@ -191,8 +190,8 @@ func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
 	defer ticker.Stop()
 	for range ticker.C {
 		errs := make(chan error)
-		rows := make(chan storageUtils.StorageDiffRow)
-		w.Execute(rows, errs, queueRecheckInterval)
+		diffs := make(chan storageUtils.StorageDiff)
+		w.Execute(diffs, errs, queueRecheckInterval)
 	}
 }
 
