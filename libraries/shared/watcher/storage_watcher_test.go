@@ -56,12 +56,15 @@ var _ = Describe("Storage Watcher", func() {
 			gethDiff        utils.StorageDiff
 			diffs           chan utils.StorageDiff
 			storageWatcher  watcher.StorageWatcher
+			address         common.Address
+			keccakOfAddress common.Address
 		)
 
 		BeforeEach(func() {
 			errs = make(chan error)
 			diffs = make(chan utils.StorageDiff)
-			address := common.HexToAddress("0x0123456789abcdef")
+			address = common.HexToAddress("0x0123456789abcdef")
+			keccakOfAddress = common.BytesToAddress(crypto.Keccak256(address[:]))
 			mockFetcher = mocks.NewMockStorageFetcher()
 			mockQueue = &mocks.MockStorageQueue{}
 			mockTransformer = &mocks.MockStorageTransformer{Address: address}
@@ -75,7 +78,7 @@ var _ = Describe("Storage Watcher", func() {
 			}
 			gethDiff = utils.StorageDiff{
 				Id:           1338,
-				Contract:     common.BytesToAddress(crypto.Keccak256(address[:])),
+				Contract:     keccakOfAddress,
 				BlockHash:    common.HexToHash("0xfedcba9876543210"),
 				BlockHeight:  0,
 				StorageKey:   common.HexToHash("0xabcdef1234567890"),
@@ -206,6 +209,44 @@ var _ = Describe("Storage Watcher", func() {
 						logContent, err := ioutil.ReadFile(tempFile.Name())
 						return string(logContent), err
 					}).Should(ContainSubstring(fakes.FakeError.Error()))
+					close(done)
+				})
+
+				It("keeps track transformers by the keccak256 hash of their contract address ", func(done Done) {
+					go storageWatcher.Execute(diffs, errs, time.Hour)
+
+					m := make(map[common.Address]transformer.StorageTransformer)
+					m[keccakOfAddress] = mockTransformer
+
+					Eventually(func() map[common.Address]transformer.StorageTransformer {
+						return storageWatcher.KeccakAddressTransformers
+					}).Should(Equal(m))
+
+					close(done)
+				})
+
+				It("gets the transformer from the known keccak address map first", func(done Done) {
+					anotherAddress := common.HexToAddress("0xafakeaddress")
+					anotherTransformer := &mocks.MockStorageTransformer{Address: anotherAddress}
+					keccakOfAnotherAddress := common.BytesToAddress(crypto.Keccak256(anotherAddress[:]))
+
+					anotherGethDiff := utils.StorageDiff{
+						Id:           1338,
+						Contract:     keccakOfAnotherAddress,
+						BlockHash:    common.HexToHash("0xfedcba9876543210"),
+						BlockHeight:  0,
+						StorageKey:   common.HexToHash("0xabcdef1234567890"),
+						StorageValue: common.HexToHash("0x9876543210abcdef"),
+					}
+					mockFetcher.DiffsToReturn = []utils.StorageDiff{anotherGethDiff}
+					storageWatcher.KeccakAddressTransformers[keccakOfAnotherAddress] = anotherTransformer
+
+					go storageWatcher.Execute(diffs, errs, time.Hour)
+
+					Eventually(func() utils.StorageDiff {
+						return anotherTransformer.PassedDiff
+					}).Should(Equal(anotherGethDiff))
+
 					close(done)
 				})
 			})
