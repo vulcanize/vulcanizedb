@@ -295,9 +295,9 @@ var _ = Describe("Repository", func() {
 
 func getExpectedColumnNames() []string {
 	return []string{
-		"column_1_checked",
-		"column_2_checked",
-		"column_3_checked",
-		"column_4_checked",
+		"column_1",
+		"column_2",
+		"column_3",
+		"column_4",
 	}
 }

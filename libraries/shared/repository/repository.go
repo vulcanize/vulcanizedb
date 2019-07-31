@@ -76,7 +76,8 @@ func GetCheckedColumnNames(db *postgres.DB) ([]string, error) {
 		`SELECT column_name FROM information_schema.columns
 		WHERE table_schema = 'public'
 			AND table_name = 'checked_headers'
-			AND column_name ~ '_checked';`
+			AND column_name <> 'id'
+			AND column_name <> 'header_id';`
 
 	err := db.Select(&queryResult, columnNamesQuery)
 	if err != nil {
