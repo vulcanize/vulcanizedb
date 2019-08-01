@@ -34,7 +34,7 @@ var _ = Describe("address repository", func() {
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		repo = repositories.AddressRepository{DB: db}
+		repo = repositories.AddressRepository{}
 	})
 
 	type dbAddress struct {
@@ -43,7 +43,7 @@ var _ = Describe("address repository", func() {
 	}
 
 	It("creates an address record", func() {
-		addressId, createErr := repo.CreateOrGetAddress(address)
+		addressId, createErr := repo.CreateOrGetAddress(db, address)
 		Expect(createErr).NotTo(HaveOccurred())
 
 		var actualAddress dbAddress
@@ -54,24 +54,24 @@ var _ = Describe("address repository", func() {
 	})
 
 	It("returns the existing record id if the address already exists", func() {
-		_, createErr := repo.CreateOrGetAddress(address)
+		_, createErr := repo.CreateOrGetAddress(db, address)
 		Expect(createErr).NotTo(HaveOccurred())
 
-		_, getErr := repo.CreateOrGetAddress(address)
+		_, getErr := repo.CreateOrGetAddress(db, address)
 		Expect(getErr).NotTo(HaveOccurred())
 
 		var addressCount int
-		addressErr := repo.DB.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
+		addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
 		Expect(addressErr).NotTo(HaveOccurred())
 	})
 
 	It("gets upper-cased addresses", func() {
 		//insert it as all upper
 		upperAddress := strings.ToUpper(address)
-		upperAddressId, createErr := repo.CreateOrGetAddress(upperAddress)
+		upperAddressId, createErr := repo.CreateOrGetAddress(db, upperAddress)
 		Expect(createErr).NotTo(HaveOccurred())
 
-		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(address)
+		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(db, address)
 		Expect(getErr).NotTo(HaveOccurred())
 		Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 	})
@@ -79,10 +79,10 @@ var _ = Describe("address repository", func() {
 	It("gets lower-cased addresses", func() {
 		//insert it as all upper
 		lowerAddress := strings.ToLower(address)
-		upperAddressId, createErr := repo.CreateOrGetAddress(lowerAddress)
+		upperAddressId, createErr := repo.CreateOrGetAddress(db, lowerAddress)
 		Expect(createErr).NotTo(HaveOccurred())
 
-		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(address)
+		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(db, address)
 		Expect(getErr).NotTo(HaveOccurred())
 		Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 	})

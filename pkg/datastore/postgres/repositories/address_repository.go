@@ -20,18 +20,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type AddressRepository struct {
-	*postgres.DB
-}
+type AddressRepository struct {}
 
-func (repo AddressRepository) CreateOrGetAddress(address string) (int, error) {
+func (repo AddressRepository) CreateOrGetAddress(db *postgres.DB, address string) (int, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
 	var addressId int
-	getErr := repo.DB.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
+	getErr := db.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
 	if getErr == sql.ErrNoRows {
-		insertErr := repo.DB.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
+		insertErr := db.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
 		return addressId, insertErr
 	}
 
