@@ -21,6 +21,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
 
+type AddressRepository interface {
+	GetOrCreateAddress(address string) (int, error)
+}
+
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
