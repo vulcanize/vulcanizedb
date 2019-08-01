@@ -150,10 +150,6 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 	if POAHeader.Number == nil {
 		return header, ErrEmptyHeader
 	}
-	time := POAHeader.Time.ToInt()
-	if time == nil {
-		time = big.NewInt(0)
-	}
 	return blockChain.headerConverter.Convert(&types.Header{
 		ParentHash:  POAHeader.ParentHash,
 		UncleHash:   POAHeader.UncleHash,
