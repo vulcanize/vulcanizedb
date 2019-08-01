@@ -132,7 +132,7 @@ func execute() {
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 			payloadChan := make(chan statediff.Payload)
 			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewGethStorageWatcher(&storageFetcher, &db)
+			sw := watcher.NewGethStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)
