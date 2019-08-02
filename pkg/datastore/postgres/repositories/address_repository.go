@@ -17,12 +17,13 @@ package repositories
 import (
 	"database/sql"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jmoiron/sqlx"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type AddressRepository struct {}
+type AddressRepository struct{}
 
-func (repo AddressRepository) CreateOrGetAddress(db *postgres.DB, address string) (int, error) {
+func (repo AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
@@ -36,3 +37,16 @@ func (repo AddressRepository) CreateOrGetAddress(db *postgres.DB, address string
 	return addressId, getErr
 }
 
+func (repo AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int, error) {
+	stringAddressToCommonAddress := common.HexToAddress(address)
+	hexAddress := stringAddressToCommonAddress.Hex()
+
+	var addressId int
+	getErr := tx.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
+	if getErr == sql.ErrNoRows {
+		insertErr := tx.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
+		return addressId, insertErr
+	}
+
+	return addressId, getErr
+}
