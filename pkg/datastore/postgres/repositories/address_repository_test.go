@@ -15,20 +15,20 @@
 package repositories_test
 
 import (
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"strings"
-
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("address repository", func() {
+var _ = Describe("address lookup", func() {
 	var (
-		db *postgres.DB
-		repo repositories.AddressRepository
+		db      *postgres.DB
+		repo    repositories.AddressRepository
 		address = fakes.FakeAddress.Hex()
 	)
 	BeforeEach(func() {
@@ -38,52 +38,112 @@ var _ = Describe("address repository", func() {
 	})
 
 	type dbAddress struct {
-		Id int
+		Id      int
 		Address string
 	}
 
-	It("creates an address record", func() {
-		addressId, createErr := repo.CreateOrGetAddress(db, address)
-		Expect(createErr).NotTo(HaveOccurred())
+	Describe("GetOrCreateAddress", func() {
+		It("creates an address record", func() {
+			addressId, createErr := repo.GetOrCreateAddress(db, address)
+			Expect(createErr).NotTo(HaveOccurred())
 
-		var actualAddress dbAddress
-		getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
-		Expect(getErr).NotTo(HaveOccurred())
-		expectedAddress := dbAddress{Id: addressId, Address: address}
-		Expect(actualAddress).To(Equal(expectedAddress))
+			var actualAddress dbAddress
+			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			Expect(getErr).NotTo(HaveOccurred())
+			expectedAddress := dbAddress{Id: addressId, Address: address}
+			Expect(actualAddress).To(Equal(expectedAddress))
+		})
+
+		It("returns the existing record id if the address already exists", func() {
+			_, createErr := repo.GetOrCreateAddress(db, address)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			_, getErr := repo.GetOrCreateAddress(db, address)
+			Expect(getErr).NotTo(HaveOccurred())
+
+			var addressCount int
+			addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
+			Expect(addressErr).NotTo(HaveOccurred())
+		})
+
+		It("gets upper-cased addresses", func() {
+			upperAddress := strings.ToUpper(address)
+			upperAddressId, createErr := repo.GetOrCreateAddress(db, upperAddress)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			mixedCaseAddressId, getErr := repo.GetOrCreateAddress(db, address)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
+		})
+
+		It("gets lower-cased addresses", func() {
+			lowerAddress := strings.ToLower(address)
+			upperAddressId, createErr := repo.GetOrCreateAddress(db, lowerAddress)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			mixedCaseAddressId, getErr := repo.GetOrCreateAddress(db, address)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
+		})
 	})
 
-	It("returns the existing record id if the address already exists", func() {
-		_, createErr := repo.CreateOrGetAddress(db, address)
-		Expect(createErr).NotTo(HaveOccurred())
+	Describe("GetOrCreateAddressInTransaction", func() {
+		var (
+			tx    *sqlx.Tx
+			txErr error
+		)
+		BeforeEach(func() {
+			tx, txErr = db.Beginx()
+			Expect(txErr).NotTo(HaveOccurred())
+		})
 
-		_, getErr := repo.CreateOrGetAddress(db, address)
-		Expect(getErr).NotTo(HaveOccurred())
+		It("creates an address record", func() {
+			addressId, createErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			Expect(createErr).NotTo(HaveOccurred())
+			tx.Commit()
 
-		var addressCount int
-		addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
-		Expect(addressErr).NotTo(HaveOccurred())
-	})
+			var actualAddress dbAddress
+			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			Expect(getErr).NotTo(HaveOccurred())
+			expectedAddress := dbAddress{Id: addressId, Address: address}
+			Expect(actualAddress).To(Equal(expectedAddress))
+		})
 
-	It("gets upper-cased addresses", func() {
-		//insert it as all upper
-		upperAddress := strings.ToUpper(address)
-		upperAddressId, createErr := repo.CreateOrGetAddress(db, upperAddress)
-		Expect(createErr).NotTo(HaveOccurred())
+		It("returns the existing record id if the address already exists", func() {
+			_, createErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			Expect(createErr).NotTo(HaveOccurred())
 
-		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(db, address)
-		Expect(getErr).NotTo(HaveOccurred())
-		Expect(upperAddressId).To(Equal(mixedCaseAddressId))
-	})
+			_, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			Expect(getErr).NotTo(HaveOccurred())
+			tx.Commit()
 
-	It("gets lower-cased addresses", func() {
-		//insert it as all upper
-		lowerAddress := strings.ToLower(address)
-		upperAddressId, createErr := repo.CreateOrGetAddress(db, lowerAddress)
-		Expect(createErr).NotTo(HaveOccurred())
+			var addressCount int
+			addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
+			Expect(addressErr).NotTo(HaveOccurred())
+		})
 
-		mixedCaseAddressId, getErr := repo.CreateOrGetAddress(db, address)
-		Expect(getErr).NotTo(HaveOccurred())
-		Expect(upperAddressId).To(Equal(mixedCaseAddressId))
+		It("gets upper-cased addresses", func() {
+			upperAddress := strings.ToUpper(address)
+			upperAddressId, createErr := repo.GetOrCreateAddressInTransaction(tx, upperAddress)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			mixedCaseAddressId, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			Expect(getErr).NotTo(HaveOccurred())
+			tx.Commit()
+
+			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
+		})
+
+		It("gets lower-cased addresses", func() {
+			lowerAddress := strings.ToLower(address)
+			upperAddressId, createErr := repo.GetOrCreateAddressInTransaction(tx, lowerAddress)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			mixedCaseAddressId, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			Expect(getErr).NotTo(HaveOccurred())
+			tx.Commit()
+
+			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
+		})
 	})
 })
