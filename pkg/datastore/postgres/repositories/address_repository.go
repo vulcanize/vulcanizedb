@@ -50,3 +50,12 @@ func (repo AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, addre
 
 	return addressId, getErr
 }
+
+func (repo AddressRepository) GetAddressById(db *postgres.DB, id int) (string, error){
+	var address string
+	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
+	if getErr != nil {
+		return "", getErr
+	}
+	return address, nil
+}

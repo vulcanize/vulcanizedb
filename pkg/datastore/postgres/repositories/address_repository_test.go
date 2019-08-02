@@ -146,4 +146,22 @@ var _ = Describe("address lookup", func() {
 			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 		})
 	})
+
+	Describe("GetAddressById", func() {
+		It("gets and address by it's id", func() {
+			addressId, createErr := repo.GetOrCreateAddress(db, address)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			actualAddress, getErr := repo.GetAddressById(db, addressId)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(actualAddress).To(Equal(address))
+		})
+
+		It("returns an error if the id doesn't exist", func() {
+			_, getErr := repo.GetAddressById(db, 0)
+			Expect(getErr).To(HaveOccurred())
+			Expect(getErr).To(MatchError("sql: no rows in result set"))
+		})
+	})
 })
+
