@@ -55,7 +55,9 @@ var _ = Describe("Logs Repository", func() {
 			blockNumber := int64(12345)
 			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 			Expect(err).NotTo(HaveOccurred())
-			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			tx, _ := db.Beginx()
+			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{}, tx)
+			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
 			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
@@ -91,7 +93,9 @@ var _ = Describe("Logs Repository", func() {
 			blockNumber := int64(12345)
 			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 			Expect(err).NotTo(HaveOccurred())
-			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			tx, _ := db.Beginx()
+			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{}, tx)
+			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
 
 			err = logsRepository.CreateLogs([]core.Log{{

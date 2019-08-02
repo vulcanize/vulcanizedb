@@ -17,6 +17,7 @@
 package datastore
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
@@ -57,7 +58,7 @@ type LogRepository interface {
 
 type ReceiptRepository interface {
 	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateReceipt(blockId int64, receipt core.Receipt) (int64, error)
+	CreateReceipt(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) //TODO: change the name to CreateReceiptInTransaction
 	GetReceipt(txHash string) (core.Receipt, error)
 }
 

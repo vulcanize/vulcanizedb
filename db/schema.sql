@@ -174,7 +174,7 @@ CREATE TABLE public.eth_nodes (
 
 CREATE TABLE public.full_sync_receipts (
     id integer NOT NULL,
-    contract_address character varying(42),
+    contract_address_id integer NOT NULL,
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),
@@ -947,6 +947,14 @@ ALTER TABLE ONLY public.full_sync_receipts
 
 ALTER TABLE ONLY public.checked_headers
     ADD CONSTRAINT checked_headers_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: full_sync_receipts full_sync_receipts_contract_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_receipts
+    ADD CONSTRAINT full_sync_receipts_contract_address_id_fkey FOREIGN KEY (contract_address_id) REFERENCES public.addresses(id) ON DELETE CASCADE;
 
 
 --
