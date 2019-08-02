@@ -71,7 +71,7 @@ func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string 
 		itemValueBytes := storageSlotData[itemStartingIndex:]
 
 		//decode item's bytes and set in results map
-		decodedValue := decodeIndividualItems(itemValueBytes, itemType)
+		decodedValue := decodeIndividualItem(itemValueBytes, itemType)
 		decodedStorageSlotItems[position] = decodedValue
 
 		//pop last item off raw slot data before moving on
@@ -81,12 +81,12 @@ func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string 
 	return decodedStorageSlotItems
 }
 
-func decodeIndividualItems(itemBytes []byte, valueType ValueType) string {
+func decodeIndividualItem(itemBytes []byte, valueType ValueType) string {
 	switch valueType {
-	case Uint48:
+	case Uint48, Uint128:
 		return decodeInteger(itemBytes)
-	case Uint128:
-		return decodeInteger(itemBytes)
+	case Address:
+		return decodeAddress(itemBytes)
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
 	}
@@ -98,6 +98,8 @@ func getNumberOfBytes(valueType ValueType) int {
 		return 48 / bitsPerByte
 	case Uint128:
 		return 128 / bitsPerByte
+	case Address:
+		return 20
 	default:
 		panic(fmt.Sprintf("ValueType %d not recognized", valueType))
 	}
