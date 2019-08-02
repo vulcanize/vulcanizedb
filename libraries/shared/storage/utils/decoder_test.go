@@ -146,5 +146,29 @@ var _ = Describe("Storage decoder", func() {
 			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("AB54A98CEB1F0AD2").Bytes()).String()))
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("38D7EA4C67FF8E502B6730000").Bytes()).String()))
 		})
+
+		It("decodes address + 2 uint48s", func() {
+			//TODO: replace with real data when available
+			addressHex := "0000000000000000000000000000000000012345"
+			packedStorage := common.HexToHash("00000002a300" + "000000002a30" + addressHex)
+			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			packedTypes := map[int]utils.ValueType{}
+			packedTypes[0] = utils.Address
+			packedTypes[1] = utils.Uint48
+			packedTypes[2] = utils.Uint48
+
+			metadata := utils.StorageValueMetadata{
+				Type:        utils.PackedSlot,
+				PackedTypes: packedTypes,
+			}
+
+			result, err := utils.Decode(row, metadata)
+			decodedValues := result.(map[int]string)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(decodedValues[0]).To(Equal("0x" + addressHex))
+			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
+			Expect(decodedValues[2]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
+		})
 	})
 })
