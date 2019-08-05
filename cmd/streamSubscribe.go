@@ -33,14 +33,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // streamSubscribeCmd represents the streamSubscribe command
 var streamSubscribeCmd = &cobra.Command{
 	Use:   "streamSubscribe",
 	Short: "This command is used to subscribe to the seed node stream with the provided filters",
-	Long:  ``,
+	Long: `This command is for demo and testing purposes and is used to subscribe to the seed node with the provided subscription configuration parameters.
+It does not do anything with the data streamed from the seed node other than unpack it and print it out for demonstration purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		streamSubscribe()
 	},
@@ -52,17 +52,17 @@ func init() {
 
 func streamSubscribe() {
 	// Prep the subscription config/filters to be sent to the server
-	subscriptionConfig()
+	configureSubscription()
 
 	// Create a new rpc client and a subscription streamer with that client
 	rpcClient := getRpcClient()
-	str := streamer.NewSeedStreamer(rpcClient)
+	str := streamer.NewSeedNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan ipfs.ResponsePayload, 20000)
+	payloadChan := make(chan streamer.SeedNodePayload, 20000)
 
 	// Subscribe to the seed node service with the given config/filter parameters
-	sub, err := str.Stream(payloadChan, subConfig)
+	sub, err := str.Stream(payloadChan, subscriptionConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,9 +161,9 @@ func streamSubscribe() {
 	}
 }
 
-func subscriptionConfig() {
+func configureSubscription() {
 	log.Info("loading subscription config")
-	subConfig = config.Subscription{
+	subscriptionConfig = config.Subscription{
 		// Below default to false, which means we do not backfill by default
 		BackFill:     viper.GetBool("subscription.backfill"),
 		BackFillOnly: viper.GetBool("subscription.backfillOnly"),

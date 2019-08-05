@@ -131,8 +131,8 @@ when the geth sync was started), and `client.ipfsPath` which is the path the ipf
 
 #### syncPublishScreenAndServe
 
-`syncPublishScreenAndServe` does everythin th at `syncAndPublish` does, plut it opens up an RPC server which exposes
-an endpoint to allow transformers to subscribe to subsets of the sync-and-published data that are relevant to thier transformations
+`syncPublishScreenAndServe` does everything that `syncAndPublish` does, plus it opens up an RPC server which exposes
+an endpoint to allow transformers to subscribe to subsets of the sync-and-published data that are relevant to their transformations
 
 Usage:
 
@@ -152,11 +152,12 @@ The config file for the `syncPublishScreenAndServe` command has two additional f
 
 [server]
     ipcPath = "/Users/user/.vulcanize/vulcanize.ipc"
-    wsEndpoint = "127.0.0.1:2019"
+    wsEndpoint = "127.0.0.1:80"
 ```
 
 The additional `server.ipcPath` and `server.wsEndpoint` fields are used to set what ipc endpoint and ws url
 the `syncPublishScreenAndServe` rpc server will expose itself to subscribing transformers over, respectively.
+Any valid and available path and endpoint is acceptable, but keep in mind that this path and endpoint need to be known by transformers for them to subscribe to the seed node.
 
 #### Subscribing
 

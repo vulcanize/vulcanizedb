@@ -14,19 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs_test
+package seed_node_test
 
 import (
 	"sync"
 	"time"
+
+	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	mocks2 "github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
+	mocks3 "github.com/vulcanize/vulcanizedb/pkg/seed_node/mocks"
 )
 
 var _ = Describe("Service", func() {
@@ -36,14 +39,14 @@ var _ = Describe("Service", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan statediff.Payload, 1)
 			quitChan := make(chan bool, 1)
-			mockCidRepo := &mocks.CIDRepository{
+			mockCidRepo := &mocks3.CIDRepository{
 				ReturnErr: nil,
 			}
 			mockPublisher := &mocks.IPLDPublisher{
 				ReturnCIDPayload: &mocks.MockCIDPayload,
 				ReturnErr:        nil,
 			}
-			mockStreamer := &mocks.StateDiffStreamer{
+			mockStreamer := &mocks2.StateDiffStreamer{
 				ReturnSub: &rpc.ClientSubscription{},
 				StreamPayloads: []statediff.Payload{
 					mocks.MockStatediffPayload,
@@ -54,7 +57,7 @@ var _ = Describe("Service", func() {
 				ReturnIPLDPayload: &mocks.MockIPLDPayload,
 				ReturnErr:         nil,
 			}
-			processor := &ipfs.Service{
+			processor := &seed_node.Service{
 				Repository:  mockCidRepo,
 				Publisher:   mockPublisher,
 				Streamer:    mockStreamer,

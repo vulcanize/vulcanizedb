@@ -49,6 +49,9 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	// Unpack block rlp to access fields
 	block := new(types.Block)
 	err := rlp.DecodeBytes(payload.BlockRlp, block)
+	if err != nil {
+		return nil, err
+	}
 	header := block.Header()
 	headerRlp, err := rlp.EncodeToBytes(header)
 	if err != nil {
@@ -74,7 +77,7 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		}
 		txMeta := &TrxMetaData{
 			Dst: handleNullAddr(trx.To()),
-			Src: from.Hex(),
+			Src: handleNullAddr(&from),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
