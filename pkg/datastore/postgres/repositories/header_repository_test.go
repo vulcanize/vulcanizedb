@@ -217,25 +217,38 @@ var _ = Describe("Block header repository", func() {
 			}
 
 			_, receiptErr := repo.CreateReceiptInTx(tx, headerID, txId, receipt)
+			Expect(receiptErr).ToNot(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
-			Expect(receiptErr).ToNot(HaveOccurred())
 
 			type idModel struct {
-				TransactionId int64 `db:"transaction_id"`
-				core.Receipt
+				TransactionId     int64  `db:"transaction_id"`
+				ContractAddressId int64  `db:"contract_address_id"`
+				CumulativeGasUsed uint64 `db:"cumulative_gas_used"`
+				GasUsed           uint64 `db:"gas_used"`
+				StateRoot         string `db:"state_root"`
+				Status            int
+				TxHash            string `db:"tx_hash"`
+				Rlp               []byte `db:"rlp"`
 			}
+
+			var addressId int64
+			getAddressErr := db.Get(&addressId, `SELECT id FROM addresses WHERE address = $1`, contractAddr.Hex())
+			Expect(getAddressErr).NotTo(HaveOccurred())
+
 			var dbReceipt idModel
-			err = db.Get(&dbReceipt,
-				`SELECT transaction_id, contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
+			getReceiptErr := db.Get(&dbReceipt,
+				`SELECT transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
 				FROM public.header_sync_receipts WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(getReceiptErr).NotTo(HaveOccurred())
+
 			Expect(dbReceipt.TransactionId).To(Equal(txId))
 			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
-			Expect(dbReceipt.ContractAddress).To(Equal(contractAddr.Hex()))
+			Expect(dbReceipt.ContractAddressId).To(Equal(addressId))
 			Expect(dbReceipt.CumulativeGasUsed).To(Equal(uint64(100)))
 			Expect(dbReceipt.GasUsed).To(Equal(uint64(10)))
 			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
+			Expect(dbReceipt.Status).To(Equal(0))
 			Expect(dbReceipt.Rlp).To(Equal([]byte{1, 2, 3}))
 		})
 	})

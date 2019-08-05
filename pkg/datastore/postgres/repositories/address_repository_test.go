@@ -64,6 +64,7 @@ var _ = Describe("address lookup", func() {
 			var addressCount int
 			addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
 			Expect(addressErr).NotTo(HaveOccurred())
+			Expect(addressCount).To(Equal(1))
 		})
 
 		It("gets upper-cased addresses", func() {
