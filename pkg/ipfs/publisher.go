@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	rlp2 "github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-ipfs/plugin/loader"
 
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
@@ -30,7 +30,7 @@ import (
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_transactions"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_state_trie"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_storage_trie"
-	"github.com/vulcanize/eth-block-extractor/pkg/wrappers/rlp"
+	rlp2 "github.com/vulcanize/eth-block-extractor/pkg/wrappers/rlp"
 )
 
 // IPLDPublisher is the interface for publishing an IPLD payload
@@ -66,7 +66,7 @@ func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
 		return nil, err
 	}
 	return &Publisher{
-		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, rlp.RlpDecoder{}),
+		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, rlp2.RlpDecoder{}),
 		TransactionPutter: eth_block_transactions.NewBlockTransactionsDagPutter(node),
 		ReceiptPutter:     eth_block_receipts.NewEthBlockReceiptDagPutter(node),
 		StatePutter:       eth_state_trie.NewStateTrieDagPutter(node),
@@ -85,7 +85,7 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	// Process and publish uncles
 	uncleCids := make(map[common.Hash]string)
 	for _, uncle := range payload.BlockBody.Uncles {
-		uncleRlp, err := rlp2.EncodeToBytes(uncle)
+		uncleRlp, err := rlp.EncodeToBytes(uncle)
 		if err != nil {
 			return nil, err
 		}

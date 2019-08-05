@@ -14,18 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package seed_node
 
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// CIDRepository is an interface for indexing CIDPayloads
+// CIDRepository is an interface for indexing ipfs.CIDPayloads
 type CIDRepository interface {
-	Index(cidPayload *CIDPayload) error
+	Index(cidPayload *ipfs.CIDPayload) error
 }
 
 // Repository is the underlying struct for the CIDRepository interface
@@ -41,7 +42,7 @@ func NewCIDRepository(db *postgres.DB) *Repository {
 }
 
 // Index indexes a cidPayload in Postgres
-func (repo *Repository) Index(cidPayload *CIDPayload) error {
+func (repo *Repository) Index(cidPayload *ipfs.CIDPayload) error {
 	tx, err := repo.db.Beginx()
 	if err != nil {
 		return err
@@ -87,7 +88,7 @@ func (repo *Repository) indexUncleCID(tx *sqlx.Tx, cid, blockNumber, hash string
 	return err
 }
 
-func (repo *Repository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+func (repo *Repository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *ipfs.CIDPayload, headerID int64) error {
 	for hash, trxCidMeta := range payload.TransactionCIDs {
 		var txID int64
 		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid, dst, src) VALUES ($1, $2, $3, $4, $5) 
@@ -108,13 +109,13 @@ func (repo *Repository) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CID
 	return nil
 }
 
-func (repo *Repository) indexReceiptCID(tx *sqlx.Tx, cidMeta *ReceiptMetaData, txID int64) error {
+func (repo *Repository) indexReceiptCID(tx *sqlx.Tx, cidMeta *ipfs.ReceiptMetaData, txID int64) error {
 	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, contract, topic0s) VALUES ($1, $2, $3, $4)`,
 		txID, cidMeta.CID, cidMeta.ContractAddress, pq.Array(cidMeta.Topic0s))
 	return err
 }
 
-func (repo *Repository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
+func (repo *Repository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *ipfs.CIDPayload, headerID int64) error {
 	for accountKey, stateCID := range payload.StateNodeCIDs {
 		var stateID int64
 		err := tx.QueryRowx(`INSERT INTO public.state_cids (header_id, state_key, cid, leaf) VALUES ($1, $2, $3, $4)
@@ -134,7 +135,7 @@ func (repo *Repository) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayloa
 	return nil
 }
 
-func (repo *Repository) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeCID, stateID int64) error {
+func (repo *Repository) indexStorageCID(tx *sqlx.Tx, storageCID ipfs.StorageNodeCID, stateID int64) error {
 	_, err := tx.Exec(`INSERT INTO public.storage_cids (state_id, storage_key, cid, leaf) VALUES ($1, $2, $3, $4) 
 								   ON CONFLICT (state_id, storage_key) DO UPDATE SET (cid, leaf) = ($3, $4)`,
 		stateID, storageCID.Key, storageCID.CID, storageCID.Leaf)

@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	syn "sync"
 
+	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+
 	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
@@ -33,7 +35,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -68,7 +69,7 @@ func syncAndPublish() {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
+	processor, err := seed_node.NewProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)
 	}

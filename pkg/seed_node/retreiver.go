@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package seed_node
 
 import (
 	"math/big"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -29,7 +31,7 @@ import (
 
 // CIDRetriever is the interface for retrieving CIDs from the Postgres cache
 type CIDRetriever interface {
-	RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*CidWrapper, error)
+	RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*ipfs.CIDWrapper, error)
 	RetrieveLastBlockNumber() (int64, error)
 	RetrieveFirstBlockNumber() (int64, error)
 }
@@ -60,7 +62,7 @@ func (ecr *EthCIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 }
 
 // RetrieveCIDs is used to retrieve all of the CIDs which conform to the passed StreamFilters
-func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*CidWrapper, error) {
+func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*ipfs.CIDWrapper, error) {
 	log.Debug("retrieving cids")
 	var err error
 	tx, err := ecr.db.Beginx()
@@ -69,7 +71,7 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	}
 	// THIS IS SUPER EXPENSIVE HAVING TO CYCLE THROUGH EACH BLOCK, NEED BETTER WAY TO FETCH CIDS
 	// WHILE STILL MAINTAINING RELATION INFO ABOUT WHAT BLOCK THE CIDS BELONG TO
-	cw := new(CidWrapper)
+	cw := new(ipfs.CIDWrapper)
 	cw.BlockNumber = big.NewInt(blockNumber)
 
 	// Retrieve cached header CIDs
@@ -212,7 +214,7 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Su
 	return receiptCids, err
 }
 
-func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StateNodeCID, error) {
+func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]ipfs.StateNodeCID, error) {
 	log.Debug("retrieving state cids for block ", blockNumber)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.cid, state_cids.state_key FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
@@ -222,7 +224,7 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.
 	if addrLen > 0 {
 		keys := make([]string, 0, addrLen)
 		for _, addr := range streamFilters.StateFilter.Addresses {
-			keys = append(keys, HexToKey(addr).Hex())
+			keys = append(keys, ipfs.HexToKey(addr).Hex())
 		}
 		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
@@ -230,12 +232,12 @@ func (ecr *EthCIDRetriever) retrieveStateCIDs(tx *sqlx.Tx, streamFilters config.
 	if !streamFilters.StorageFilter.IntermediateNodes {
 		pgStr += ` AND state_cids.leaf = TRUE`
 	}
-	stateNodeCIDs := make([]StateNodeCID, 0)
+	stateNodeCIDs := make([]ipfs.StateNodeCID, 0)
 	err := tx.Select(&stateNodeCIDs, pgStr, args...)
 	return stateNodeCIDs, err
 }
 
-func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]StorageNodeCID, error) {
+func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64) ([]ipfs.StorageNodeCID, error) {
 	log.Debug("retrieving storage cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key FROM storage_cids, state_cids, header_cids
@@ -247,7 +249,7 @@ func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters confi
 	if addrLen > 0 {
 		keys := make([]string, 0, addrLen)
 		for _, addr := range streamFilters.StorageFilter.Addresses {
-			keys = append(keys, HexToKey(addr).Hex())
+			keys = append(keys, ipfs.HexToKey(addr).Hex())
 		}
 		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
@@ -259,7 +261,7 @@ func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters confi
 	if !streamFilters.StorageFilter.IntermediateNodes {
 		pgStr += ` AND storage_cids.leaf = TRUE`
 	}
-	storageNodeCIDs := make([]StorageNodeCID, 0)
+	storageNodeCIDs := make([]ipfs.StorageNodeCID, 0)
 	err := tx.Select(&storageNodeCIDs, pgStr, args...)
 	return storageNodeCIDs, err
 }

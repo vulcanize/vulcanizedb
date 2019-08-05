@@ -55,8 +55,9 @@ func HexToKey(hex string) common.Hash {
 	return crypto.Keccak256Hash(addr[:])
 }
 
-func emptyCidWrapper(cids CidWrapper) bool {
-	if len(cids.Transactions) > 0 || len(cids.Headers) > 0 || len(cids.Uncles) > 0 || len(cids.Receipts) > 0 || len(cids.StateNodes) > 0 || len(cids.StorageNodes) > 0 || cids.BlockNumber == nil {
+// EmptyCIDWrapper returns whether or not the provided CIDWrapper has any Cids we need to process
+func EmptyCIDWrapper(cids CIDWrapper) bool {
+	if len(cids.Transactions) > 0 || len(cids.Headers) > 0 || len(cids.Uncles) > 0 || len(cids.Receipts) > 0 || len(cids.StateNodes) > 0 || len(cids.StorageNodes) > 0 {
 		return false
 	}
 	return true

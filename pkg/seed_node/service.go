@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package seed_node
 
 import (
 	"sync"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -36,18 +39,18 @@ import (
 const payloadChanBufferSize = 20000 // the max eth sub buffer size
 const workerPoolSize = 1
 
-// SyncPublishScreenAndServe is the top level interface for streaming, converting to IPLDs, publishing,
+// Processor is the top level interface for streaming, converting to IPLDs, publishing,
 // and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
 // This service is compatible with the Ethereum service interface (node.Service)
-type SyncPublishScreenAndServe interface {
+type Processor interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for syncAndPublish processes
-	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- IPLDPayload, forwardQuitchan chan<- bool) error
+	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- ipfs.IPLDPayload, forwardQuitchan chan<- bool) error
 	// Main event loop for handling client pub-sub
-	ScreenAndServe(screenAndServePayload <-chan IPLDPayload, screenAndServeQuit <-chan bool)
+	ScreenAndServe(screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters config.Subscription)
+	Subscribe(id rpc.ID, sub chan<- streamer.SeedNodePayload, quitChan chan<- bool, streamFilters config.Subscription)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID)
 }
@@ -57,21 +60,21 @@ type Service struct {
 	// Used to sync access to the Subscriptions
 	sync.Mutex
 	// Interface for streaming statediff payloads over a geth rpc subscription
-	Streamer StateDiffStreamer
+	Streamer streamer.IStateDiffStreamer
 	// Interface for converting statediff payloads into ETH-IPLD object payloads
-	Converter PayloadConverter
+	Converter ipfs.PayloadConverter
 	// Interface for publishing the ETH-IPLD payloads to IPFS
-	Publisher IPLDPublisher
+	Publisher ipfs.IPLDPublisher
 	// Interface for indexing the CIDs of the published ETH-IPLDs in Postgres
 	Repository CIDRepository
 	// Interface for filtering and serving data according to subscribed clients according to their specification
-	Screener ResponseScreener
+	Filterer ResponseFilterer
 	// Interface for fetching ETH-IPLD objects from IPFS
-	Fetcher IPLDFetcher
+	Fetcher ipfs.IPLDFetcher
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever CIDRetriever
 	// Interface for resolving ipfs blocks to their data types
-	Resolver IPLDResolver
+	Resolver ipfs.IPLDResolver
 	// Chan the processor uses to subscribe to state diff payloads from the Streamer
 	PayloadChan chan statediff.Payload
 	// Used to signal shutdown of the service
@@ -82,25 +85,25 @@ type Service struct {
 	SubscriptionTypes map[common.Hash]config.Subscription
 }
 
-// NewIPFSProcessor creates a new Processor interface using an underlying Processor struct
-func NewIPFSProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (SyncPublishScreenAndServe, error) {
-	publisher, err := NewIPLDPublisher(ipfsPath)
+// NewProcessor creates a new Processor interface using an underlying Service struct
+func NewProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (Processor, error) {
+	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := NewIPLDFetcher(ipfsPath)
+	fetcher, err := ipfs.NewIPLDFetcher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
 	return &Service{
-		Streamer:          NewStateDiffStreamer(rpcClient),
+		Streamer:          streamer.NewStateDiffStreamer(rpcClient),
 		Repository:        NewCIDRepository(db),
-		Converter:         NewPayloadConverter(ethClient),
+		Converter:         ipfs.NewPayloadConverter(ethClient),
 		Publisher:         publisher,
-		Screener:          NewResponseScreener(),
+		Filterer:          NewResponseFilterer(),
 		Fetcher:           fetcher,
 		Retriever:         NewCIDRetriever(db),
-		Resolver:          NewIPLDResolver(),
+		Resolver:          ipfs.NewIPLDResolver(),
 		PayloadChan:       make(chan statediff.Payload, payloadChanBufferSize),
 		QuitChan:          qc,
 		Subscriptions:     make(map[common.Hash]map[rpc.ID]Subscription),
@@ -128,7 +131,7 @@ func (sap *Service) APIs() []rpc.API {
 // SyncAndPublish is the backend processing loop which streams data from geth, converts it to iplds, publishes them to ipfs, and indexes their cids
 // This continues on no matter if or how many subscribers there are, it then forwards the data to the ScreenAndServe() loop
 // which filters and sends relevant data to client subscriptions, if there are any
-func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- IPLDPayload, screenAndServeQuit chan<- bool) error {
+func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- ipfs.IPLDPayload, screenAndServeQuit chan<- bool) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -136,7 +139,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	wg.Add(1)
 
 	// Channels for forwarding data to the publishAndIndex workers
-	publishAndIndexPayload := make(chan IPLDPayload, payloadChanBufferSize)
+	publishAndIndexPayload := make(chan ipfs.IPLDPayload, payloadChanBufferSize)
 	publishAndIndexQuit := make(chan bool, workerPoolSize)
 	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
 	// limiting the number of Postgres connections we can possibly open so as to prevent error
@@ -192,7 +195,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	return nil
 }
 
-func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan IPLDPayload, publishAndIndexQuit <-chan bool) {
+func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan ipfs.IPLDPayload, publishAndIndexQuit <-chan bool) {
 	go func() {
 		for {
 			select {
@@ -216,7 +219,7 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan IPLDPa
 
 // ScreenAndServe is the loop used to screen data streamed from the state diffing eth node
 // and send the appropriate portions of it to a requesting client subscription, according to their subscription configuration
-func (sap *Service) ScreenAndServe(screenAndServePayload <-chan IPLDPayload, screenAndServeQuit <-chan bool) {
+func (sap *Service) ScreenAndServe(screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool) {
 	go func() {
 		for {
 			select {
@@ -233,7 +236,7 @@ func (sap *Service) ScreenAndServe(screenAndServePayload <-chan IPLDPayload, scr
 	}()
 }
 
-func (sap *Service) sendResponse(payload IPLDPayload) error {
+func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
 	sap.Lock()
 	for ty, subs := range sap.Subscriptions {
 		// Retrieve the subscription parameters for this subscription type
@@ -242,7 +245,7 @@ func (sap *Service) sendResponse(payload IPLDPayload) error {
 			log.Errorf("subscription configuration for subscription type %s not available", ty.Hex())
 			continue
 		}
-		response, err := sap.Screener.ScreenResponse(subConfig, payload)
+		response, err := sap.Filterer.FilterResponse(subConfig, payload)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -261,7 +264,7 @@ func (sap *Service) sendResponse(payload IPLDPayload) error {
 }
 
 // Subscribe is used by the API to subscribe to the service loop
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- ResponsePayload, quitChan chan<- bool, streamFilters config.Subscription) {
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- streamer.SeedNodePayload, quitChan chan<- bool, streamFilters config.Subscription) {
 	log.Info("Subscribing to the seed node service")
 	// Subscription type is defined as the hash of its content
 	// Group subscriptions by type and screen payloads once for subs of the same type
@@ -299,7 +302,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	var err error
 	startingBlock, err = sap.Retriever.RetrieveFirstBlockNumber()
 	if err != nil {
-		sub.PayloadChan <- ResponsePayload{
+		sub.PayloadChan <- streamer.SeedNodePayload{
 			ErrMsg: "unable to set block range; error: " + err.Error(),
 		}
 	}
@@ -309,7 +312,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	if con.EndingBlock.Int64() <= 0 || con.EndingBlock.Int64() <= startingBlock {
 		endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
 		if err != nil {
-			sub.PayloadChan <- ResponsePayload{
+			sub.PayloadChan <- streamer.SeedNodePayload{
 				ErrMsg: "unable to set block range; error: " + err.Error(),
 			}
 		}
@@ -323,18 +326,18 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 		for i := con.StartingBlock.Int64(); i <= endingBlock; i++ {
 			cidWrapper, err := sap.Retriever.RetrieveCIDs(con, i)
 			if err != nil {
-				sub.PayloadChan <- ResponsePayload{
+				sub.PayloadChan <- streamer.SeedNodePayload{
 					ErrMsg: "CID retrieval error: " + err.Error(),
 				}
 				continue
 			}
-			if emptyCidWrapper(*cidWrapper) {
+			if ipfs.EmptyCIDWrapper(*cidWrapper) {
 				continue
 			}
 			blocksWrapper, err := sap.Fetcher.FetchCIDs(*cidWrapper)
 			if err != nil {
 				log.Error(err)
-				sub.PayloadChan <- ResponsePayload{
+				sub.PayloadChan <- streamer.SeedNodePayload{
 					ErrMsg: "IPLD fetching error: " + err.Error(),
 				}
 				continue
@@ -342,7 +345,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
 			if err != nil {
 				log.Error(err)
-				sub.PayloadChan <- ResponsePayload{
+				sub.PayloadChan <- streamer.SeedNodePayload{
 					ErrMsg: "IPLD resolving error: " + err.Error(),
 				}
 				continue
@@ -376,7 +379,7 @@ func (sap *Service) Unsubscribe(id rpc.ID) {
 func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting seed node service")
 	wg := new(sync.WaitGroup)
-	payloadChan := make(chan IPLDPayload, payloadChanBufferSize)
+	payloadChan := make(chan ipfs.IPLDPayload, payloadChanBufferSize)
 	quitChan := make(chan bool, 1)
 	if err := sap.SyncAndPublish(wg, payloadChan, quitChan); err != nil {
 		return err

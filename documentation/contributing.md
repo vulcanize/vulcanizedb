@@ -14,7 +14,7 @@ conform to the
 [standard-readme specification](https://github.com/RichardLitt/standard-readme).
 - Once a Pull Request has received two approvals it can be merged in by a core developer.
 
-Pull requests should be opened against the `master` branch. Periodically, updates on `master` will be ported over to `staging` for tagged release.
+Pull requests should be opened against the `staging` branch. Periodically, updates on `staging` will be ported over to `master` for tagged release.
 
 ## Creating a new migration file
 1. `make new_migration NAME=add_columnA_to_table1`

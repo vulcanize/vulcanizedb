@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package seed_node
 
 import (
 	"context"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
@@ -33,13 +35,13 @@ const APIVersion = "0.0.1"
 
 // PublicSeedNodeAPI is the public api for the seed node
 type PublicSeedNodeAPI struct {
-	snp SyncPublishScreenAndServe
+	snp Processor
 }
 
 // NewPublicSeedNodeAPI creates a new PublicSeedNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSeedNodeAPI(snp SyncPublishScreenAndServe) *PublicSeedNodeAPI {
+func NewPublicSeedNodeAPI(seedNodeProcessor Processor) *PublicSeedNodeAPI {
 	return &PublicSeedNodeAPI{
-		snp: snp,
+		snp: seedNodeProcessor,
 	}
 }
 
@@ -56,7 +58,7 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan ResponsePayload, payloadChanBufferSize)
+		payloadChannel := make(chan streamer.SeedNodePayload, payloadChanBufferSize)
 		quitChan := make(chan bool, 1)
 		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
 

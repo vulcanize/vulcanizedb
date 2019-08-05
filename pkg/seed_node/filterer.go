@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package seed_node
 
 import (
 	"bytes"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,22 +29,22 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 )
 
-// ResponseScreener is the inteface used to screen eth data and package appropriate data into a response payload
-type ResponseScreener interface {
-	ScreenResponse(streamFilters config.Subscription, payload IPLDPayload) (*ResponsePayload, error)
+// ResponseFilterer is the inteface used to screen eth data and package appropriate data into a response payload
+type ResponseFilterer interface {
+	FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (*streamer.SeedNodePayload, error)
 }
 
-// Screener is the underlying struct for the ReponseScreener interface
-type Screener struct{}
+// Filterer is the underlying struct for the ReponseFilterer interface
+type Filterer struct{}
 
-// NewResponseScreener creates a new Screener satisfyign the ReponseScreener interface
-func NewResponseScreener() *Screener {
-	return &Screener{}
+// NewResponseFilterer creates a new Filterer satisfyign the ReponseFilterer interface
+func NewResponseFilterer() *Filterer {
+	return &Filterer{}
 }
 
-// ScreenResponse is used to filter through eth data to extract and package requested data into a ResponsePayload
-func (s *Screener) ScreenResponse(streamFilters config.Subscription, payload IPLDPayload) (*ResponsePayload, error) {
-	response := new(ResponsePayload)
+// FilterResponse is used to filter through eth data to extract and package requested data into a Payload
+func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (*streamer.SeedNodePayload, error) {
+	response := new(streamer.SeedNodePayload)
 	err := s.filterHeaders(streamFilters, response, payload)
 	if err != nil {
 		return nil, err
@@ -66,7 +69,7 @@ func (s *Screener) ScreenResponse(streamFilters config.Subscription, payload IPL
 	return response, nil
 }
 
-func (s *Screener) filterHeaders(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.HeaderFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
 		if !streamFilters.HeaderFilter.FinalOnly {
@@ -89,7 +92,7 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *Screener) filterTransactions(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload) ([]common.Hash, error) {
+func (s *Filterer) filterTransactions(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) ([]common.Hash, error) {
 	trxHashes := make([]common.Hash, 0, len(payload.BlockBody.Transactions))
 	if !streamFilters.TrxFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		for i, trx := range payload.BlockBody.Transactions {
@@ -125,7 +128,7 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 	return false
 }
 
-func (s *Screener) filerReceipts(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload, trxHashes []common.Hash) error {
+func (s *Filterer) filerReceipts(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload, trxHashes []common.Hash) error {
 	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		for i, receipt := range payload.Receipts {
 			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, streamFilters.ReceiptFilter.Contracts, payload.ReceiptMetaData[i].ContractAddress, trxHashes) {
@@ -181,12 +184,12 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 	return false
 }
 
-func (s *Screener) filterState(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Filterer) filterState(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.StateFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.StateNodesRlp = make(map[common.Hash][]byte)
 		keyFilters := make([]common.Hash, 0, len(streamFilters.StateFilter.Addresses))
 		for _, addr := range streamFilters.StateFilter.Addresses {
-			keyFilter := AddressToKey(common.HexToAddress(addr))
+			keyFilter := ipfs.AddressToKey(common.HexToAddress(addr))
 			keyFilters = append(keyFilters, keyFilter)
 		}
 		for key, stateNode := range payload.StateNodes {
@@ -213,17 +216,17 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *Screener) filterStorage(streamFilters config.Subscription, response *ResponsePayload, payload IPLDPayload) error {
+func (s *Filterer) filterStorage(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.StorageFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
 		stateKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.Addresses))
 		for _, addr := range streamFilters.StorageFilter.Addresses {
-			keyFilter := AddressToKey(common.HexToAddress(addr))
+			keyFilter := ipfs.AddressToKey(common.HexToAddress(addr))
 			stateKeyFilters = append(stateKeyFilters, keyFilter)
 		}
 		storageKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.StorageKeys))
 		for _, store := range streamFilters.StorageFilter.StorageKeys {
-			keyFilter := HexToKey(store)
+			keyFilter := ipfs.HexToKey(store)
 			storageKeyFilters = append(storageKeyFilters, keyFilter)
 		}
 		for stateKey, storageNodes := range payload.StorageNodes {

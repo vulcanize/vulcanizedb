@@ -17,7 +17,6 @@
 package ipfs
 
 import (
-	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -25,47 +24,8 @@ import (
 	"github.com/ipfs/go-block-format"
 )
 
-// Subscription holds the information for an individual client subscription
-type Subscription struct {
-	PayloadChan chan<- ResponsePayload
-	QuitChan    chan<- bool
-}
-
-// ResponsePayload holds the data returned from the seed node to the requesting client
-type ResponsePayload struct {
-	BlockNumber     *big.Int                               `json:"blockNumber"`
-	HeadersRlp      [][]byte                               `json:"headersRlp"`
-	UnclesRlp       [][]byte                               `json:"unclesRlp"`
-	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
-	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
-	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
-	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
-	ErrMsg          string                                 `json:"errMsg"`
-
-	encoded []byte
-	err     error
-}
-
-func (sd *ResponsePayload) ensureEncoded() {
-	if sd.encoded == nil && sd.err == nil {
-		sd.encoded, sd.err = json.Marshal(sd)
-	}
-}
-
-// Length to implement Encoder interface for StateDiff
-func (sd *ResponsePayload) Length() int {
-	sd.ensureEncoded()
-	return len(sd.encoded)
-}
-
-// Encode to implement Encoder interface for StateDiff
-func (sd *ResponsePayload) Encode() ([]byte, error) {
-	sd.ensureEncoded()
-	return sd.encoded, sd.err
-}
-
-// CidWrapper is used to package CIDs retrieved from the local Postgres cache
-type CidWrapper struct {
+// CIDWrapper is used to package CIDs retrieved from the local Postgres cache
+type CIDWrapper struct {
 	BlockNumber  *big.Int
 	Headers      []string
 	Uncles       []string
@@ -75,8 +35,8 @@ type CidWrapper struct {
 	StorageNodes []StorageNodeCID
 }
 
-// IpldWrapper is used to package raw IPLD block data for resolution
-type IpldWrapper struct {
+// IPLDWrapper is used to package raw IPLD block data for resolution
+type IPLDWrapper struct {
 	BlockNumber  *big.Int
 	Headers      []blocks.Block
 	Uncles       []blocks.Block
