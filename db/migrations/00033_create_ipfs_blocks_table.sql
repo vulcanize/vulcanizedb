@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE public.blocks (
+CREATE TABLE IF NOT EXISTS public.blocks (
   key TEXT UNIQUE NOT NULL,
   data BYTEA NOT NULL
 );

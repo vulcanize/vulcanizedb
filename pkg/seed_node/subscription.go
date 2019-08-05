@@ -14,24 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs_test
+package seed_node
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
 
-var _ = Describe("Converter", func() {
-	Describe("Convert", func() {
-		It("Converts StatediffPayloads into IPLDPayloads", func() {
-			mockConverter := mocks.PayloadConverter{}
-			mockConverter.ReturnIPLDPayload = &mocks.MockIPLDPayload
-			ipldPayload, err := mockConverter.Convert(mocks.MockStatediffPayload)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(ipldPayload).To(Equal(&mocks.MockIPLDPayload))
-			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStatediffPayload))
-		})
-	})
-})
+// Subscription holds the information for an individual client subscription to the seed node
+type Subscription struct {
+	PayloadChan chan<- streamer.SeedNodePayload
+	QuitChan    chan<- bool
+}

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ipfs
+package streamer
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
@@ -23,24 +23,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// StateDiffStreamer is the interface for streaming a statediff subscription
-type StateDiffStreamer interface {
+// IStateDiffStreamer is the interface for streaming a statediff subscription
+type IStateDiffStreamer interface {
 	Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
 }
 
-// Streamer is the underlying struct for the StateDiffStreamer interface
-type Streamer struct {
+// StateDiffStreamer is the underlying struct for the StateDiffStreamer interface
+type StateDiffStreamer struct {
 	Client core.RpcClient
 }
 
-// NewStateDiffStreamer creates a pointer to a new Streamer which satisfies the StateDiffStreamer interface
-func NewStateDiffStreamer(client core.RpcClient) *Streamer {
-	return &Streamer{
+// NewStateDiffStreamer creates a pointer to a new StateDiffStreamer which satisfies the IStateDiffStreamer interface
+func NewStateDiffStreamer(client core.RpcClient) *StateDiffStreamer {
+	return &StateDiffStreamer{
 		Client: client,
 	}
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *Streamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
 	return sds.Client.Subscribe("statediff", payloadChan, "stream")
 }

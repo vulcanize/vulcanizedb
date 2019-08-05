@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	syn "sync"
 
+	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -61,7 +63,7 @@ func syncPublishScreenAndServe() {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	processor, err := ipfs.NewIPFSProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
+	processor, err := seed_node.NewProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,7 +96,9 @@ func syncPublishScreenAndServe() {
 	if wsEndpoint == "" {
 		wsEndpoint = "127.0.0.1:80"
 	}
-	_, _, err = rpc.StartWSEndpoint(wsEndpoint, processor.APIs(), []string{"vulcanizedb"}, nil, true)
+	var exposeAll = true
+	var wsOrigins []string = nil
+	_, _, err = rpc.StartWSEndpoint(wsEndpoint, processor.APIs(), []string{"vulcanizedb"}, wsOrigins, exposeAll)
 	if err != nil {
 		log.Fatal(err)
 	}
