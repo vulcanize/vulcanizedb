@@ -62,6 +62,10 @@ type FullSyncReceiptRepository interface {
 	GetFullSyncReceipt(txHash string) (core.Receipt, error)
 }
 
+type HeaderSyncReceiptRepository interface {
+	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+}
+
 type WatchedEventRepository interface {
 	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
 }

@@ -216,7 +216,8 @@ var _ = Describe("Block header repository", func() {
 				Rlp:               []byte{1, 2, 3},
 			}
 
-			_, receiptErr := repo.CreateReceiptInTx(tx, headerID, txId, receipt)
+			receiptRepo := repositories.HeaderSyncReceiptRepository{}
+			_, receiptErr := receiptRepo.CreateHeaderSyncReceiptInTx(headerID, txId, receipt, tx)
 			Expect(receiptErr).ToNot(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
