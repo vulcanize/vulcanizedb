@@ -56,10 +56,10 @@ type LogRepository interface {
 	GetLogs(address string, blockNumber int64) ([]core.Log, error)
 }
 
-type ReceiptRepository interface {
+type FullSyncReceiptRepository interface {
 	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateReceipt(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) //TODO: change the name to CreateReceiptInTransaction
-	GetReceipt(txHash string) (core.Receipt, error)
+	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+	GetFullSyncReceipt(txHash string) (core.Receipt, error)
 }
 
 type WatchedEventRepository interface {

@@ -23,7 +23,7 @@ import (
 
 type AddressRepository struct{}
 
-func (repo AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int, error) {
+func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
@@ -37,7 +37,7 @@ func (repo AddressRepository) GetOrCreateAddress(db *postgres.DB, address string
 	return addressId, getErr
 }
 
-func (repo AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int, error) {
+func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
@@ -51,7 +51,7 @@ func (repo AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, addre
 	return addressId, getErr
 }
 
-func (repo AddressRepository) GetAddressById(db *postgres.DB, id int) (string, error) {
+func (AddressRepository) GetAddressById(db *postgres.DB, id int) (string, error) {
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
 	if getErr != nil {

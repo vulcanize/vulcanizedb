@@ -137,7 +137,7 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
 
-	receiptRepository := repositories.ReceiptRepository{DB: db}
+	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
 	logRepository := repositories.LogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 
@@ -183,7 +183,7 @@ func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
 
-	receiptRepository := repositories.ReceiptRepository{DB: db}
+	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
 	logRepository := repositories.LogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 

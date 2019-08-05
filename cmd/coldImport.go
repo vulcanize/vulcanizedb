@@ -84,7 +84,7 @@ func coldImport() {
 
 	// init cold importer deps
 	blockRepository := repositories.NewBlockRepository(&pgDB)
-	receiptRepository := repositories.ReceiptRepository{DB: &pgDB}
+	receiptRepository := repositories.FullSyncReceiptRepository{DB: &pgDB}
 	transactionConverter := cold_db.NewColdDbTransactionConverter()
 	blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
