@@ -284,7 +284,7 @@ CREATE TABLE public.header_sync_receipts (
     id integer NOT NULL,
     transaction_id integer NOT NULL,
     header_id integer NOT NULL,
-    contract_address character varying(42),
+    contract_address_id integer NOT NULL,
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),
@@ -963,6 +963,14 @@ ALTER TABLE ONLY public.full_sync_receipts
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: header_sync_receipts header_sync_receipts_contract_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_receipts
+    ADD CONSTRAINT header_sync_receipts_contract_address_id_fkey FOREIGN KEY (contract_address_id) REFERENCES public.addresses(id) ON DELETE CASCADE;
 
 
 --
