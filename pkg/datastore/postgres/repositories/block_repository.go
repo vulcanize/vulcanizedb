@@ -234,8 +234,8 @@ func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId in
 		return err
 	}
 	if hasReceipt(transaction) {
-
-		receiptId, err := receiptRepository().CreateReceipt(blockId, transaction.Receipt, tx)
+		receiptRepo := FullSyncReceiptRepository{}
+		receiptId, err := receiptRepo.CreateFullSyncReceiptInTx(blockId, transaction.Receipt, tx)
 		if err != nil {
 			return err
 		}
@@ -247,11 +247,6 @@ func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId in
 		}
 	}
 	return nil
-}
-
-func receiptRepository() datastore.ReceiptRepository {
-	//TODO: set db?
-	return ReceiptRepository{}
 }
 
 func hasLogs(transaction core.TransactionModel) bool {

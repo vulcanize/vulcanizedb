@@ -26,10 +26,10 @@ type ColdImporter struct {
 	blockRepository   datastore.BlockRepository
 	converter         common.BlockConverter
 	ethDB             ethereum.Database
-	receiptRepository datastore.ReceiptRepository
+	receiptRepository datastore.FullSyncReceiptRepository
 }
 
-func NewColdImporter(ethDB ethereum.Database, blockRepository datastore.BlockRepository, receiptRepository datastore.ReceiptRepository, converter common.BlockConverter) *ColdImporter {
+func NewColdImporter(ethDB ethereum.Database, blockRepository datastore.BlockRepository, receiptRepository datastore.FullSyncReceiptRepository, converter common.BlockConverter) *ColdImporter {
 	return &ColdImporter{
 		blockRepository:   blockRepository,
 		converter:         converter,

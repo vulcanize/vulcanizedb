@@ -32,7 +32,7 @@ var _ = Describe("Watched Events Repository", func() {
 	var blocksRepository datastore.BlockRepository
 	var filterRepository datastore.FilterRepository
 	var logRepository datastore.LogRepository
-	var receiptRepository datastore.ReceiptRepository
+	var receiptRepository datastore.FullSyncReceiptRepository
 	var watchedEventRepository datastore.WatchedEventRepository
 
 	BeforeEach(func() {
@@ -41,7 +41,7 @@ var _ = Describe("Watched Events Repository", func() {
 		blocksRepository = repositories.NewBlockRepository(db)
 		filterRepository = repositories.FilterRepository{DB: db}
 		logRepository = repositories.LogRepository{DB: db}
-		receiptRepository = repositories.ReceiptRepository{DB: db}
+		receiptRepository = repositories.FullSyncReceiptRepository{DB: db}
 		watchedEventRepository = repositories.WatchedEventRepository{DB: db}
 	})
 
@@ -80,7 +80,7 @@ var _ = Describe("Watched Events Repository", func() {
 		blockId, err := blocksRepository.CreateOrUpdateBlock(core.Block{})
 		Expect(err).NotTo(HaveOccurred())
 		tx, _ := db.Beginx()
-		receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{}, tx)
+		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
 		tx.Commit()
 		Expect(err).NotTo(HaveOccurred())
 		err = logRepository.CreateLogs(logs, receiptId)
@@ -139,7 +139,7 @@ var _ = Describe("Watched Events Repository", func() {
 		blockId, err := blocksRepository.CreateOrUpdateBlock(core.Block{Hash: "Ox123"})
 		Expect(err).NotTo(HaveOccurred())
 		tx, _ := db.Beginx()
-		receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{}, tx)
+		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
 		tx.Commit()
 		Expect(err).NotTo(HaveOccurred())
 		err = logRepository.CreateLogs(logs, receiptId)

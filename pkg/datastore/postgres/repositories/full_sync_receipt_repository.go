@@ -26,17 +26,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type ReceiptRepository struct {
+type FullSyncReceiptRepository struct {
 	*postgres.DB
 }
 
-func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
+func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
 	tx, err := receiptRepository.DB.Beginx()
 	if err != nil {
 		return err
 	}
 	for _, receipt := range receipts {
-		receiptId, err := receiptRepository.CreateReceipt(blockId, receipt, tx)
+		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, receipt, tx)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -68,8 +68,7 @@ func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
 	return nil
 }
 
-//TODO: test that creating the address should be in the transaction
-func (ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
+func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
 	addressId, getAddressErr := AddressRepository{}.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
@@ -90,7 +89,7 @@ func (ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt, tx *
 	return receiptId, nil
 }
 
-func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Receipt, error) {
+func (receiptRepository FullSyncReceiptRepository) GetFullSyncReceipt(txHash string) (core.Receipt, error) {
 	row := receiptRepository.DB.QueryRow(
 		`SELECT contract_address_id,
                        tx_hash,

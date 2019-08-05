@@ -50,11 +50,11 @@ func (mrr *MockReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts 
 	return mrr.createReceiptsAndLogsReturnErr
 }
 
-func (mrr *MockReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
+func (mrr *MockReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	panic("implement me")
 }
 
-func (mrr *MockReceiptRepository) GetReceipt(txHash string) (core.Receipt, error) {
+func (mrr *MockReceiptRepository) GetFullSyncReceipt(txHash string) (core.Receipt, error) {
 	panic("implement me")
 }
 
