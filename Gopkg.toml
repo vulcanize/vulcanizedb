@@ -52,7 +52,7 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
   source = "github.com/vulcanize/go-ethereum"
-  branch = "rpc_statediffing"
+  branch = "statediffing"
 
 [[constraint]]
   name = "github.com/vulcanize/eth-block-extractor"
@@ -64,8 +64,8 @@
   branch = "postgres_update"
 
 [[override]]
-  name = "github.com/dgraph-io/badger"
-  revision = "0ce1d2e26af1ba8b8a72ea864145a3e1e3b382cd"
+  name = "github.com/marten-seemann/qtls"
+  version = "0.2.3"
 
 [prune]
   go-tests = true
