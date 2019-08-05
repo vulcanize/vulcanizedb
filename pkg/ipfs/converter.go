@@ -78,25 +78,28 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
+	}
 
-		// Retrieve receipt for this transaction
-		gethReceipt, err := pc.client.TransactionReceipt(context.Background(), trx.Hash())
-		if err != nil {
-			return nil, err
-		}
+	// Decode receipts for this block
+	receipts := make(types.Receipts, 0)
+	err = rlp.DecodeBytes(payload.ReceiptsRlp, &receipts)
+	if err != nil {
+		return nil, err
+	}
+	for _, receipt := range receipts {
 		// Extract topic0 data from the receipt's logs for indexing
 		rctMeta := &ReceiptMetaData{
-			Topic0s:         make([]string, 0, len(gethReceipt.Logs)),
-			ContractAddress: gethReceipt.ContractAddress.Hex(),
+			Topic0s:         make([]string, 0, len(receipt.Logs)),
+			ContractAddress: receipt.ContractAddress.Hex(),
 		}
-		for _, log := range gethReceipt.Logs {
-			if len(log.Topics[0]) < 1 {
+		for _, log := range receipt.Logs {
+			if len(log.Topics) < 1 {
 				continue
 			}
 			rctMeta.Topic0s = append(rctMeta.Topic0s, log.Topics[0].Hex())
 		}
 		// receipt and rctMeta will have same indexes
-		convertedPayload.Receipts = append(convertedPayload.Receipts, gethReceipt)
+		convertedPayload.Receipts = append(convertedPayload.Receipts, receipt)
 		convertedPayload.ReceiptMetaData = append(convertedPayload.ReceiptMetaData, rctMeta)
 	}
 
