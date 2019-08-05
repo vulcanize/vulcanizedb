@@ -43,9 +43,9 @@ type TrxFilter struct {
 }
 
 type ReceiptFilter struct {
-	Off     bool
+	Off       bool
 	Contracts []string
-	Topic0s []string
+	Topic0s   []string
 }
 
 type StateFilter struct {
