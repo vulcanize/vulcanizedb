@@ -13,6 +13,7 @@ CREATE TABLE header_sync_logs
     tx_index     INTEGER,
     log_index    INTEGER,
     raw          JSONB,
+    transformed  BOOL    NOT NULL DEFAULT FALSE,
     UNIQUE (header_id, tx_index, log_index)
 );
 

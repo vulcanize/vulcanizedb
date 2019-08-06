@@ -14,14 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository
+package mocks
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+)
 
-func MarkContractWatcherHeaderCheckedInTransaction(headerID int64, tx *sqlx.Tx, checkedHeadersColumn string) error {
-	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
-		VALUES ($1, $2)
-		ON CONFLICT (header_id) DO
-		UPDATE SET `+checkedHeadersColumn+` = checked_headers.`+checkedHeadersColumn+` + 1`, headerID, 1)
-	return err
+type MockLogExtractor struct {
+	AddedConfigs      []transformer.EventTransformerConfig
+	ExtractLogsCalled bool
+	ExtractLogsError  error
+}
+
+func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) {
+	extractor.AddedConfigs = append(extractor.AddedConfigs, config)
+}
+
+func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
+	extractor.ExtractLogsCalled = true
+	return extractor.ExtractLogsError
 }

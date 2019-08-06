@@ -158,7 +158,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				expectedLog := test_helpers.TransferLog{
 					Id:             1,
-					VulvanizeLogId: vulcanizeLogId,
+					VulcanizeLogId: vulcanizeLogId,
 					TokenName:      "TrueUSD",
 					Block:          5488076,
 					Tx:             "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
@@ -180,7 +180,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				expectedLog := test_helpers.TransferLog{
 					Id:             1,
-					VulvanizeLogId: vulcanizeLogId,
+					VulcanizeLogId: vulcanizeLogId,
 					TokenName:      "TrueUSD",
 					Block:          5488076,
 					Tx:             "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",

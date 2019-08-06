@@ -17,239 +17,97 @@
 package watcher_test
 
 import (
-	"errors"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Watcher", func() {
-	It("initialises correctly", func() {
-		db := test_config.NewTestDB(core.Node{ID: "testNode"})
-		bc := fakes.NewMockBlockChain()
+var _ = Describe("Event Watcher", func() {
+	var (
+		delegator    *mocks.MockLogDelegator
+		extractor    *mocks.MockLogExtractor
+		eventWatcher watcher.EventWatcher
+	)
 
-		w := watcher.NewEventWatcher(db, bc)
-
-		Expect(w.DB).To(Equal(db))
-		Expect(w.Fetcher).NotTo(BeNil())
-		Expect(w.Chunker).NotTo(BeNil())
+	BeforeEach(func() {
+		delegator = &mocks.MockLogDelegator{}
+		extractor = &mocks.MockLogExtractor{}
+		eventWatcher = watcher.EventWatcher{
+			LogDelegator: delegator,
+			LogExtractor: extractor,
+		}
 	})
 
-	It("adds transformers", func() {
-		w := watcher.NewEventWatcher(nil, nil)
-		fakeTransformer := &mocks.MockTransformer{}
-		fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
-		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-
-		Expect(len(w.Transformers)).To(Equal(1))
-		Expect(w.Transformers).To(ConsistOf(fakeTransformer))
-		Expect(w.Topics).To(Equal([]common.Hash{common.HexToHash("FakeTopic")}))
-		Expect(w.Addresses).To(Equal([]common.Address{common.HexToAddress("FakeAddress")}))
-	})
-
-	It("adds transformers from multiple sources", func() {
-		w := watcher.NewEventWatcher(nil, nil)
-		fakeTransformer1 := &mocks.MockTransformer{}
-		fakeTransformer1.SetTransformerConfig(mocks.FakeTransformerConfig)
-
-		fakeTransformer2 := &mocks.MockTransformer{}
-		fakeTransformer2.SetTransformerConfig(mocks.FakeTransformerConfig)
-
-		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer1.FakeTransformerInitializer})
-		w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer2.FakeTransformerInitializer})
-
-		Expect(len(w.Transformers)).To(Equal(2))
-		Expect(w.Topics).To(Equal([]common.Hash{common.HexToHash("FakeTopic"),
-			common.HexToHash("FakeTopic")}))
-		Expect(w.Addresses).To(Equal([]common.Address{common.HexToAddress("FakeAddress"),
-			common.HexToAddress("FakeAddress")}))
-	})
-
-	It("calculates earliest starting block number", func() {
-		fakeTransformer1 := &mocks.MockTransformer{}
-		fakeTransformer1.SetTransformerConfig(transformer.EventTransformerConfig{StartingBlockNumber: 5})
-
-		fakeTransformer2 := &mocks.MockTransformer{}
-		fakeTransformer2.SetTransformerConfig(transformer.EventTransformerConfig{StartingBlockNumber: 3})
-
-		w := watcher.NewEventWatcher(nil, nil)
-		w.AddTransformers([]transformer.EventTransformerInitializer{
-			fakeTransformer1.FakeTransformerInitializer,
-			fakeTransformer2.FakeTransformerInitializer,
-		})
-
-		Expect(*w.StartingBlock).To(Equal(int64(3)))
-	})
-
-	It("returns an error when run without transformers", func() {
-		w := watcher.NewEventWatcher(nil, nil)
-		err := w.Execute(constants.HeaderMissing)
-		Expect(err).To(MatchError("No transformers added to watcher"))
-	})
-
-	Describe("with missing headers", func() {
+	Describe("AddTransformers", func() {
 		var (
-			db               *postgres.DB
-			w                watcher.EventWatcher
-			mockBlockChain   fakes.MockBlockChain
-			headerRepository repositories.HeaderRepository
+			fakeTransformerOne, fakeTransformerTwo *mocks.MockEventTransformer
 		)
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(test_config.NewTestNode())
-			test_config.CleanTestDB(db)
-			mockBlockChain = fakes.MockBlockChain{}
-			headerRepository = repositories.NewHeaderRepository(db)
-			_, err := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
-			Expect(err).NotTo(HaveOccurred())
+			fakeTransformerOne = &mocks.MockEventTransformer{}
+			fakeTransformerOne.SetTransformerConfig(mocks.FakeTransformerConfig)
+			fakeTransformerTwo = &mocks.MockEventTransformer{}
+			fakeTransformerTwo.SetTransformerConfig(mocks.FakeTransformerConfig)
+			initializers := []transformer.EventTransformerInitializer{
+				fakeTransformerOne.FakeTransformerInitializer,
+				fakeTransformerTwo.FakeTransformerInitializer,
+			}
 
-			w = watcher.NewEventWatcher(db, &mockBlockChain)
+			eventWatcher.AddTransformers(initializers)
 		})
 
-		It("syncs transactions for fetched logs", func() {
-			fakeTransformer := &mocks.MockTransformer{}
-			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
-			w.Syncer = mockTransactionSyncer
-
-			err := w.Execute(constants.HeaderMissing)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeTrue())
+		It("adds initialized transformer to log delegator", func() {
+			expectedTransformers := []transformer.EventTransformer{
+				fakeTransformerOne,
+				fakeTransformerTwo,
+			}
+			Expect(delegator.AddedTransformers).To(Equal(expectedTransformers))
 		})
 
-		It("returns error if syncing transactions fails", func() {
-			fakeTransformer := &mocks.MockTransformer{}
-			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
-			mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
-			w.Syncer = mockTransactionSyncer
+		It("adds transformer config to log extractor", func() {
+			expectedConfigs := []transformer.EventTransformerConfig{
+				mocks.FakeTransformerConfig,
+				mocks.FakeTransformerConfig,
+			}
+			Expect(extractor.AddedConfigs).To(Equal(expectedConfigs))
+		})
+	})
 
-			err := w.Execute(constants.HeaderMissing)
+	Describe("Execute", func() {
+		It("extracts watched logs", func() {
+			err := eventWatcher.Execute(constants.HeaderMissing)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(extractor.ExtractLogsCalled).To(BeTrue())
+		})
+
+		It("returns error if extracting logs fails", func() {
+			extractor.ExtractLogsError = fakes.FakeError
+
+			err := eventWatcher.Execute(constants.HeaderMissing)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("persists fetched logs", func() {
-			fakeTransformer := &mocks.MockTransformer{}
-			transformerConfig := transformer.EventTransformerConfig{TransformerName: "transformerA",
-				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
-				Topic:             "0xA"}
-			fakeTransformer.SetTransformerConfig(transformerConfig)
-			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-			log := types.Log{Address: common.HexToAddress("0xA"),
-				Topics: []common.Hash{common.HexToHash("0xA")},
-				Index:  0,
-			}
-			mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{log})
-
-			err := w.Execute(constants.HeaderMissing)
+		It("delegates untransformed logs", func() {
+			err := eventWatcher.Execute(constants.HeaderMissing)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(fakeTransformer.PassedLogs)).NotTo(BeZero())
-			Expect(fakeTransformer.PassedLogs[0].ID).NotTo(BeZero())
-			Expect(fakeTransformer.PassedLogs[0].Log).To(Equal(log))
+			Expect(delegator.DelegateCalled).To(BeTrue())
 		})
 
-		It("executes each transformer", func() {
-			fakeTransformer := &mocks.MockTransformer{}
-			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+		It("returns error if delegating logs fails", func() {
+			delegator.DelegateError = fakes.FakeError
 
-			err := w.Execute(constants.HeaderMissing)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeTransformer.ExecuteWasCalled).To(BeTrue())
-		})
+			err := eventWatcher.Execute(constants.HeaderMissing)
 
-		It("returns an error if transformer returns an error", func() {
-			fakeTransformer := &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
-			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-
-			err := w.Execute(constants.HeaderMissing)
 			Expect(err).To(HaveOccurred())
-			Expect(fakeTransformer.ExecuteWasCalled).To(BeFalse())
-		})
-
-		It("passes only relevant logs to each transformer", func() {
-			transformerA := &mocks.MockTransformer{}
-			transformerB := &mocks.MockTransformer{}
-
-			configA := transformer.EventTransformerConfig{TransformerName: "transformerA",
-				ContractAddresses: []string{"0x000000000000000000000000000000000000000A"},
-				Topic:             "0xA"}
-			configB := transformer.EventTransformerConfig{TransformerName: "transformerB",
-				ContractAddresses: []string{"0x000000000000000000000000000000000000000b"},
-				Topic:             "0xB"}
-
-			transformerA.SetTransformerConfig(configA)
-			transformerB.SetTransformerConfig(configB)
-
-			logA := types.Log{Address: common.HexToAddress("0xA"),
-				Topics: []common.Hash{common.HexToHash("0xA")},
-				Index:  0,
-			}
-			logB := types.Log{Address: common.HexToAddress("0xB"),
-				Topics: []common.Hash{common.HexToHash("0xB")},
-				Index:  1,
-			}
-			mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{logA, logB})
-
-			w = watcher.NewEventWatcher(db, &mockBlockChain)
-			w.AddTransformers([]transformer.EventTransformerInitializer{
-				transformerA.FakeTransformerInitializer, transformerB.FakeTransformerInitializer})
-
-			err := w.Execute(constants.HeaderMissing)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(transformerA.PassedLogs)).NotTo(BeZero())
-			Expect(transformerA.PassedLogs[0].Log).To(Equal(logA))
-			Expect(len(transformerB.PassedLogs)).NotTo(BeZero())
-			Expect(transformerB.PassedLogs[0].Log).To(Equal(logB))
-		})
-
-		Describe("uses the LogFetcher correctly:", func() {
-			var fakeTransformer mocks.MockTransformer
-			BeforeEach(func() {
-				fakeTransformer = mocks.MockTransformer{}
-			})
-
-			It("fetches logs for added transformers", func() {
-				addresses := []string{"0xA", "0xB"}
-				topic := "0x1"
-				fakeTransformer.SetTransformerConfig(transformer.EventTransformerConfig{
-					Topic: topic, ContractAddresses: addresses})
-				w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-
-				err := w.Execute(constants.HeaderMissing)
-				Expect(err).NotTo(HaveOccurred())
-
-				fakeHash := common.HexToHash(fakes.FakeHeader.Hash)
-				mockBlockChain.AssertGetEthLogsWithCustomQueryCalledWith(ethereum.FilterQuery{
-					BlockHash: &fakeHash,
-					Addresses: transformer.HexStringsToAddresses(addresses),
-					Topics:    [][]common.Hash{{common.HexToHash(topic)}},
-				})
-			})
-
-			It("propagates log fetcher errors", func() {
-				fetcherError := errors.New("FetcherError")
-				mockBlockChain.SetGetEthLogsWithCustomQueryErr(fetcherError)
-
-				w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
-				err := w.Execute(constants.HeaderMissing)
-				Expect(err).To(MatchError(fetcherError))
-			})
+			Expect(err).To(MatchError(fakes.FakeError))
 		})
 	})
 })

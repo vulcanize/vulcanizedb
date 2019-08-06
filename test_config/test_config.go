@@ -19,16 +19,14 @@ package test_config
 import (
 	"errors"
 	"fmt"
-	"os"
-
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"os"
 )
 
 var TestConfig *viper.Viper
@@ -50,7 +48,7 @@ func setTestConfig() {
 	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	ipc := TestConfig.GetString("client.ipcPath")
 	hn := TestConfig.GetString("database.hostname")
@@ -73,7 +71,7 @@ func setInfuraConfig() {
 	Infura.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 	err := Infura.ReadInConfig()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	ipc := Infura.GetString("client.ipcpath")
 
@@ -83,7 +81,7 @@ func setInfuraConfig() {
 		ipc = Infura.GetString("url")
 	}
 	if ipc == "" {
-		log.Fatal(errors.New("infura.toml IPC path or $INFURA_URL env variable need to be set"))
+		logrus.Fatal(errors.New("infura.toml IPC path or $INFURA_URL env variable need to be set"))
 	}
 
 	InfuraClient = config.Client{

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository
+package storage
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type StorageRepository interface {
+type Repository interface {
 	Create(blockNumber int, blockHash string, metadata utils.StorageValueMetadata, value interface{}) error
 	SetDB(db *postgres.DB)
 }

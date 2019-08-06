@@ -73,8 +73,8 @@ func setContractAddress(gethReceipt *types.Receipt) string {
 	return gethReceipt.ContractAddress.Hex()
 }
 
-func dereferenceLogs(gethReceipt *types.Receipt) []core.Log {
-	logs := []core.Log{}
+func dereferenceLogs(gethReceipt *types.Receipt) []core.FullSyncLog {
+	logs := []core.FullSyncLog{}
 	for _, log := range gethReceipt.Logs {
 		logs = append(logs, ToCoreLog(*log))
 	}

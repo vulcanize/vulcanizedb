@@ -38,7 +38,7 @@ var _ = Describe("Reading contracts", func() {
 
 	Describe("Getting a contract attribute", func() {
 		It("retrieves the event log for a specific block and contract", func() {
-			expectedLogZero := core.Log{
+			expectedLogZero := core.FullSyncLog{
 				BlockNumber: 4703824,
 				TxHash:      "0xf896bfd1eb539d881a1a31102b78de9f25cd591bf1fe1924b86148c0b205fd5d",
 				Address:     "0xd26114cd6ee289accf82350c8d8487fedb8a0c07",
@@ -59,7 +59,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			contract := testing.SampleContract()
 
-			logs, err := blockChain.GetLogs(contract, big.NewInt(4703824), nil)
+			logs, err := blockChain.GetFullSyncLogs(contract, big.NewInt(4703824), nil)
 
 			Expect(err).To(BeNil())
 			Expect(len(logs)).To(Equal(3))
@@ -76,7 +76,7 @@ var _ = Describe("Reading contracts", func() {
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
 			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
-			logs, err := blockChain.GetLogs(core.Contract{Hash: "0x123"}, big.NewInt(4703824), nil)
+			logs, err := blockChain.GetFullSyncLogs(core.Contract{Hash: "0x123"}, big.NewInt(4703824), nil)
 
 			Expect(err).To(BeNil())
 			Expect(len(logs)).To(Equal(0))

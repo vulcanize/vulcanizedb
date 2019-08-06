@@ -14,14 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository
+package logs_test
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
+	"testing"
 
-func MarkContractWatcherHeaderCheckedInTransaction(headerID int64, tx *sqlx.Tx, checkedHeadersColumn string) error {
-	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+checkedHeadersColumn+`)
-		VALUES ($1, $2)
-		ON CONFLICT (header_id) DO
-		UPDATE SET `+checkedHeadersColumn+` = checked_headers.`+checkedHeadersColumn+` + 1`, headerID, 1)
-	return err
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+func TestLogs(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Logs Suite")
 }
+
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})
