@@ -151,10 +151,6 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 		for {
 			select {
 			case payload := <-sap.PayloadChan:
-				if payload.Err != nil {
-					log.Error(err)
-					continue
-				}
 				ipldPayload, err := sap.Converter.Convert(payload)
 				if err != nil {
 					log.Error(err)
