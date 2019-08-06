@@ -20,7 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/davidlazar/go-crypto v0.0.0-20190522120613-62389b5e4ae0
 	github.com/deckarep/golang-set v1.7.1
-	github.com/dgraph-io/badger v2.0.0-rc.2+incompatible
+	github.com/dgraph-io/badger/v2 v2.0.0-rc.2+incompatible
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/edsrzf/mmap-go v1.0.0
@@ -222,7 +222,9 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 )
 
-replace github.com/ipfs/go-ds-badger v0.0.5 => github.com/ipfs/go-ds-badger v0.0.3
+replace github.com/dgraph-io/badger v2.0.0-rc.2+incompatible => github.com/dgraph-io/badger/v2 v2.0.0-rc.2
+
+replace github.com/dgraph-io/badger/v2 v2.0.0-rc2 => github.com/dgraph-io/badger v1.6.0-rc1
 
 replace github.com/ipfs/go-ipfs v0.4.21 => github.com/vulcanize/go-ipfs v0.4.22-alpha
 
