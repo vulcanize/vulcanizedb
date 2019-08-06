@@ -62,11 +62,11 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 			for _, storage := range account.Storage {
 				logrus.Trace("adding storage diff to out channel")
 				out <- utils.StorageDiff{
-					Contract:     common.BytesToAddress(account.Key),
-					BlockHash:    stateDiff.BlockHash,
-					BlockHeight:  int(stateDiff.BlockNumber.Int64()),
-					StorageKey:   common.BytesToHash(storage.Key),
-					StorageValue: common.BytesToHash(storage.Value),
+					KeccakOfContractAddress: common.BytesToHash(account.Key),
+					BlockHash:               stateDiff.BlockHash,
+					BlockHeight:             int(stateDiff.BlockNumber.Int64()),
+					StorageKey:              common.BytesToHash(storage.Key),
+					StorageValue:            common.BytesToHash(storage.Value),
 				}
 			}
 		}

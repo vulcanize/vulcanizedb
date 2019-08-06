@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -39,7 +40,7 @@ func NewCsvStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) CsvS
 	return CsvStorageWatcher{StorageWatcher: storageWatcher}
 }
 
-func (storageWatcher StorageWatcher) getCsvTransformer(contractAddress common.Address) (transformer.StorageTransformer, bool) {
-	storageTransformer, ok := storageWatcher.Transformers[contractAddress]
+func (storageWatcher StorageWatcher) getCsvTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+	storageTransformer, ok := storageWatcher.Transformers[diff.Contract]
 	return storageTransformer, ok
 }
