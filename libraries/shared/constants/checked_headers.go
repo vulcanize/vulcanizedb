@@ -21,5 +21,5 @@ type TransformerExecution bool
 const (
 	HeaderRecheck    TransformerExecution = true
 	HeaderMissing    TransformerExecution = false
-	RecheckHeaderCap                      = "4"
+	RecheckHeaderCap                      = int64(5)
 )

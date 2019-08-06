@@ -101,7 +101,8 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 CREATE TABLE public.checked_headers (
     id integer NOT NULL,
-    header_id integer NOT NULL
+    header_id integer NOT NULL,
+    check_count integer DEFAULT 1 NOT NULL
 );
 
 
@@ -281,7 +282,8 @@ CREATE TABLE public.header_sync_logs (
     tx_hash character varying(66),
     tx_index integer,
     log_index integer,
-    raw jsonb
+    raw jsonb,
+    transformed boolean DEFAULT false NOT NULL
 );
 
 

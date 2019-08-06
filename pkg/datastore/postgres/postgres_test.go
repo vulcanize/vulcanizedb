@@ -126,16 +126,16 @@ var _ = Describe("Postgres DB", func() {
 	It("does not commit log if log is invalid", func() {
 		//badTxHash violates db tx_hash field length
 		badTxHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		badLog := core.Log{
+		badLog := core.FullSyncLog{
 			Address:     "x123",
 			BlockNumber: 1,
 			TxHash:      badTxHash,
 		}
 		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
 		db, _ := postgres.NewDB(test_config.DBConfig, node)
-		logRepository := repositories.LogRepository{DB: db}
+		logRepository := repositories.FullSyncLogRepository{DB: db}
 
-		err := logRepository.CreateLogs([]core.Log{badLog}, 123)
+		err := logRepository.CreateLogs([]core.FullSyncLog{badLog}, 123)
 
 		Expect(err).ToNot(BeNil())
 		savedBlock, err := logRepository.GetLogs("x123", 1)

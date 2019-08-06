@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -68,7 +67,7 @@ func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, err
 	return receiptId, err
 }
 
-func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
+func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)

@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	chunk "github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -29,31 +28,32 @@ import (
 
 var _ = Describe("Log chunker", func() {
 	var (
-		configs []transformer.EventTransformerConfig
 		chunker *chunk.LogChunker
 	)
 
 	BeforeEach(func() {
+		chunker = chunk.NewLogChunker()
+
 		configA := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerA",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A1", "0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xA",
 		}
+		chunker.AddConfig(configA)
+
 		configB := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerB",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000B1"},
 			Topic:             "0xB",
 		}
+		chunker.AddConfig(configB)
 
 		configC := transformer.EventTransformerConfig{
 			TransformerName:   "TransformerC",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xC",
 		}
-
-		configs = []transformer.EventTransformerConfig{configA, configB, configC}
-		chunker = chunk.NewLogChunker()
-		chunker.AddConfigs(configs)
+		chunker.AddConfig(configC)
 	})
 
 	Describe("initialisation", func() {
@@ -72,14 +72,14 @@ var _ = Describe("Log chunker", func() {
 		})
 	})
 
-	Describe("AddConfigs", func() {
+	Describe("AddConfig", func() {
 		It("can add more configs later", func() {
 			configD := transformer.EventTransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]transformer.EventTransformerConfig{configD})
+			chunker.AddConfig(configD)
 
 			Expect(chunker.AddressToNames).To(ContainElement([]string{"TransformerD"}))
 			Expect(chunker.NameToTopic0).To(ContainElement(common.HexToHash("0xD")))
@@ -91,7 +91,7 @@ var _ = Describe("Log chunker", func() {
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
 			}
-			chunker.AddConfigs([]transformer.EventTransformerConfig{configD})
+			chunker.AddConfig(configD)
 
 			Expect(chunker.AddressToNames["0x000000000000000000000000000000000000000d"]).To(Equal([]string{"TransformerD"}))
 		})

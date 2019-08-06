@@ -107,8 +107,8 @@ func (chain *MockBlockChain) GetHeadersByNumbers(blockNumbers []int64) ([]core.H
 	return headers, nil
 }
 
-func (chain *MockBlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
-	return []core.Log{}, nil
+func (chain *MockBlockChain) GetFullSyncLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.FullSyncLog, error) {
+	return []core.FullSyncLog{}, nil
 }
 
 func (chain *MockBlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {

@@ -29,7 +29,7 @@ import (
 
 var _ = Describe("Receipt Repository", func() {
 	var blockRepository datastore.BlockRepository
-	var logRepository datastore.LogRepository
+	var logRepository datastore.FullSyncLogRepository
 	var receiptRepository datastore.ReceiptRepository
 	var db *postgres.DB
 	var node core.Node
@@ -43,7 +43,7 @@ var _ = Describe("Receipt Repository", func() {
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
 		blockRepository = repositories.NewBlockRepository(db)
-		logRepository = repositories.LogRepository{DB: db}
+		logRepository = repositories.FullSyncLogRepository{DB: db}
 		receiptRepository = repositories.ReceiptRepository{DB: db}
 	})
 
@@ -56,7 +56,7 @@ var _ = Describe("Receipt Repository", func() {
 			txHashTwo := "0xTxHashTwo"
 			addressOne := "0xAddressOne"
 			addressTwo := "0xAddressTwo"
-			logsOne := []core.Log{{
+			logsOne := []core.FullSyncLog{{
 				Address:     addressOne,
 				BlockNumber: blockNumber,
 				TxHash:      txHashOne,
@@ -65,7 +65,7 @@ var _ = Describe("Receipt Repository", func() {
 				BlockNumber: blockNumber,
 				TxHash:      txHashOne,
 			}}
-			logsTwo := []core.Log{{
+			logsTwo := []core.FullSyncLog{{
 				BlockNumber: blockNumber,
 				TxHash:      txHashTwo,
 				Address:     addressTwo,
@@ -112,7 +112,7 @@ var _ = Describe("Receipt Repository", func() {
 				ContractAddress:   "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
 				CumulativeGasUsed: 7996119,
 				GasUsed:           21000,
-				Logs:              []core.Log{},
+				Logs:              []core.FullSyncLog{},
 				StateRoot:         "0x88abf7e73128227370aa7baa3dd4e18d0af70e92ef1f9ef426942fbe2dddb733",
 				Status:            1,
 				TxHash:            "0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223",

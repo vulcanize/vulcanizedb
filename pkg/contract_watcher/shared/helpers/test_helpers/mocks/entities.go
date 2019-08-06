@@ -41,7 +41,7 @@ var TransferBlock1 = core.Block{
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 			ContractAddress: "",
-			Logs: []core.Log{{
+			Logs: []core.FullSyncLog{{
 				BlockNumber: 6194633,
 				TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654aaa",
 				Address:     constants.TusdContractAddress,
@@ -71,7 +71,7 @@ var TransferBlock2 = core.Block{
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
 			ContractAddress: "",
-			Logs: []core.Log{{
+			Logs: []core.FullSyncLog{{
 				BlockNumber: 6194634,
 				TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654eee",
 				Address:     constants.TusdContractAddress,
@@ -101,7 +101,7 @@ var NewOwnerBlock1 = core.Block{
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
 			ContractAddress: "",
-			Logs: []core.Log{{
+			Logs: []core.FullSyncLog{{
 				BlockNumber: 6194635,
 				TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654bbb",
 				Address:     constants.EnsContractAddress,
@@ -131,7 +131,7 @@ var NewOwnerBlock2 = core.Block{
 		Receipt: core.Receipt{
 			TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",
 			ContractAddress: "",
-			Logs: []core.Log{{
+			Logs: []core.FullSyncLog{{
 				BlockNumber: 6194636,
 				TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad654lll",
 				Address:     constants.EnsContractAddress,

@@ -140,7 +140,7 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 
 	// Mark header as checked for this eventId
 	eventId := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	err = repository.MarkHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
+	err = repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
 	if err != nil {
 		tx.Rollback()
 		return err

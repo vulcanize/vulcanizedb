@@ -16,12 +16,9 @@
 
 package event
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 
 type Repository interface {
-	Create(headerID int64, models []interface{}) error
-	MarkHeaderChecked(headerID int64) error
+	Create(models []interface{}) error
 	SetDB(db *postgres.DB)
 }

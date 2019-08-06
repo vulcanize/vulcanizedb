@@ -31,7 +31,7 @@ var _ = Describe("Watched Events Repository", func() {
 	var db *postgres.DB
 	var blocksRepository datastore.BlockRepository
 	var filterRepository datastore.FilterRepository
-	var logRepository datastore.LogRepository
+	var logRepository datastore.FullSyncLogRepository
 	var receiptRepository datastore.ReceiptRepository
 	var watchedEventRepository datastore.WatchedEventRepository
 
@@ -40,7 +40,7 @@ var _ = Describe("Watched Events Repository", func() {
 		test_config.CleanTestDB(db)
 		blocksRepository = repositories.NewBlockRepository(db)
 		filterRepository = repositories.FilterRepository{DB: db}
-		logRepository = repositories.LogRepository{DB: db}
+		logRepository = repositories.FullSyncLogRepository{DB: db}
 		receiptRepository = repositories.ReceiptRepository{DB: db}
 		watchedEventRepository = repositories.WatchedEventRepository{DB: db}
 	})
@@ -53,7 +53,7 @@ var _ = Describe("Watched Events Repository", func() {
 			Address:   "0x123",
 			Topics:    core.Topics{0: "event1=10", 2: "event3=hello"},
 		}
-		logs := []core.Log{
+		logs := []core.FullSyncLog{
 			{
 				BlockNumber: 0,
 				TxHash:      "0x1",
@@ -104,7 +104,7 @@ var _ = Describe("Watched Events Repository", func() {
 			Address:   "0x123",
 			Topics:    core.Topics{0: "event1=10", 2: "event3=hello"},
 		}
-		logs := []core.Log{
+		logs := []core.FullSyncLog{
 			{
 				BlockNumber: 0,
 				TxHash:      "0x1",

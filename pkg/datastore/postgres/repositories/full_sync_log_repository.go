@@ -17,20 +17,18 @@
 package repositories
 
 import (
-	"github.com/sirupsen/logrus"
-
 	"database/sql"
-
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type LogRepository struct {
+type FullSyncLogRepository struct {
 	*postgres.DB
 }
 
-func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) error {
-	tx, _ := logRepository.DB.Beginx()
+func (repository FullSyncLogRepository) CreateLogs(lgs []core.FullSyncLog, receiptId int64) error {
+	tx, _ := repository.DB.Beginx()
 	for _, tlog := range lgs {
 		_, insertLogErr := tx.Exec(
 			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -57,8 +55,8 @@ func (logRepository LogRepository) CreateLogs(lgs []core.Log, receiptId int64) e
 	return nil
 }
 
-func (logRepository LogRepository) GetLogs(address string, blockNumber int64) ([]core.Log, error) {
-	logRows, err := logRepository.DB.Query(
+func (repository FullSyncLogRepository) GetLogs(address string, blockNumber int64) ([]core.FullSyncLog, error) {
+	logRows, err := repository.DB.Query(
 		`SELECT block_number,
 					  address,
 					  tx_hash,
@@ -72,13 +70,13 @@ func (logRepository LogRepository) GetLogs(address string, blockNumber int64) ([
 				WHERE address = $1 AND block_number = $2
 				ORDER BY block_number DESC`, address, blockNumber)
 	if err != nil {
-		return []core.Log{}, err
+		return []core.FullSyncLog{}, err
 	}
-	return logRepository.loadLogs(logRows)
+	return repository.loadLogs(logRows)
 }
 
-func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) ([]core.Log, error) {
-	var lgs []core.Log
+func (repository FullSyncLogRepository) loadLogs(logsRows *sql.Rows) ([]core.FullSyncLog, error) {
+	var lgs []core.FullSyncLog
 	for logsRows.Next() {
 		var blockNumber int64
 		var address string
@@ -89,9 +87,9 @@ func (logRepository LogRepository) loadLogs(logsRows *sql.Rows) ([]core.Log, err
 		err := logsRows.Scan(&blockNumber, &address, &txHash, &index, &topics[0], &topics[1], &topics[2], &topics[3], &data)
 		if err != nil {
 			logrus.Error("loadLogs: Error scanning a row in logRows: ", err)
-			return []core.Log{}, err
+			return []core.FullSyncLog{}, err
 		}
-		lg := core.Log{
+		lg := core.FullSyncLog{
 			BlockNumber: blockNumber,
 			TxHash:      txHash,
 			Address:     address,

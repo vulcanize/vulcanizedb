@@ -19,7 +19,6 @@ package storage
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
@@ -29,7 +28,7 @@ import (
 type Transformer struct {
 	Address    common.Address
 	Mappings   storage.Mappings
-	Repository repository.StorageRepository
+	Repository Repository
 }
 
 func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {

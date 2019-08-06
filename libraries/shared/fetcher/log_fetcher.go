@@ -26,6 +26,7 @@ import (
 
 type ILogFetcher interface {
 	FetchLogs(contractAddresses []common.Address, topics []common.Hash, missingHeader core.Header) ([]types.Log, error)
+	// TODO Extend FetchLogs for doing several blocks at a time
 }
 
 type LogFetcher struct {

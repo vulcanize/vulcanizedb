@@ -17,15 +17,14 @@
 package chunker
 
 import (
-	"strings"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"strings"
 )
 
 type Chunker interface {
-	AddConfigs(transformerConfigs []transformer.EventTransformerConfig)
+	AddConfig(transformerConfig transformer.EventTransformerConfig)
 	ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog
 }
 
@@ -43,14 +42,12 @@ func NewLogChunker() *LogChunker {
 	}
 }
 
-// Configures the chunker by adding more addreses and topics to consider.
-func (chunker *LogChunker) AddConfigs(transformerConfigs []transformer.EventTransformerConfig) {
-	for _, config := range transformerConfigs {
-		for _, address := range config.ContractAddresses {
-			var lowerCaseAddress = strings.ToLower(address)
-			chunker.AddressToNames[lowerCaseAddress] = append(chunker.AddressToNames[lowerCaseAddress], config.TransformerName)
-			chunker.NameToTopic0[config.TransformerName] = common.HexToHash(config.Topic)
-		}
+// Configures the chunker by adding one config with more addresses and topics to consider.
+func (chunker *LogChunker) AddConfig(transformerConfig transformer.EventTransformerConfig) {
+	for _, address := range transformerConfig.ContractAddresses {
+		var lowerCaseAddress = strings.ToLower(address)
+		chunker.AddressToNames[lowerCaseAddress] = append(chunker.AddressToNames[lowerCaseAddress], transformerConfig.TransformerName)
+		chunker.NameToTopic0[transformerConfig.TransformerName] = common.HexToHash(transformerConfig.Topic)
 	}
 }
 

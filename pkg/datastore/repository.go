@@ -17,6 +17,7 @@
 package datastore
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
@@ -26,6 +27,11 @@ type BlockRepository interface {
 	GetBlock(blockNumber int64) (core.Block, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
 	SetBlocksStatus(chainHead int64) error
+}
+
+type CheckedHeadersRepository interface {
+	MarkHeaderChecked(headerID int64) error
+	MissingHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error)
 }
 
 type ContractRepository interface {
@@ -39,6 +45,11 @@ type FilterRepository interface {
 	GetFilter(name string) (filters.LogFilter, error)
 }
 
+type FullSyncLogRepository interface {
+	CreateLogs(logs []core.FullSyncLog, receiptId int64) error
+	GetLogs(address string, blockNumber int64) ([]core.FullSyncLog, error)
+}
+
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
@@ -46,9 +57,9 @@ type HeaderRepository interface {
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
 }
 
-type LogRepository interface {
-	CreateLogs(logs []core.Log, receiptId int64) error
-	GetLogs(address string, blockNumber int64) ([]core.Log, error)
+type HeaderSyncLogRepository interface {
+	GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error)
+	CreateHeaderSyncLogs(headerID int64, logs []types.Log) error
 }
 
 type ReceiptRepository interface {
