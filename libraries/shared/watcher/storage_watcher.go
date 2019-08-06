@@ -41,8 +41,8 @@ type StorageWatcher struct {
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
 	Transformers              map[common.Address]transformer.StorageTransformer
-	KeccakAddressTransformers map[common.Address]transformer.StorageTransformer // keccak hash of an address => transformer
-	transformerGetter         func(common.Address) (transformer.StorageTransformer, bool)
+	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
+	transformerGetter         func(diff utils.StorageDiff) (transformer.StorageTransformer, bool)
 }
 
 func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
@@ -67,12 +67,12 @@ func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, e
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(contractAddress common.Address) (transformer.StorageTransformer, bool) {
-	return storageWatcher.transformerGetter(contractAddress)
+func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+	return storageWatcher.transformerGetter(diff)
 }
 
 func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
-	storageTransformer, ok := storageWatcher.getTransformer(diff.Contract)
+	storageTransformer, ok := storageWatcher.getTransformer(diff)
 	if !ok {
 		logrus.Debug("ignoring a diff from an unwatched contract")
 		return
@@ -93,7 +93,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 		logrus.Warn(fmt.Sprintf("error getting queued storage: %s", fetchErr))
 	}
 	for _, diff := range diffs {
-		storageTransformer, ok := storageWatcher.getTransformer(diff.Contract)
+		storageTransformer, ok := storageWatcher.getTransformer(diff)
 		if !ok {
 			// delete diff from queue if address no longer watched
 			storageWatcher.deleteRow(diff.Id)

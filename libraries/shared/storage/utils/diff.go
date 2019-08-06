@@ -25,12 +25,13 @@ import (
 const ExpectedRowLength = 5
 
 type StorageDiff struct {
-	Id           int
-	Contract     common.Address
-	BlockHash    common.Hash `db:"block_hash"`
-	BlockHeight  int         `db:"block_height"`
-	StorageKey   common.Hash `db:"storage_key"`
-	StorageValue common.Hash `db:"storage_value"`
+	Id                      int
+	Contract                common.Address
+	KeccakOfContractAddress common.Hash
+	BlockHash               common.Hash `db:"block_hash"`
+	BlockHeight             int         `db:"block_height"`
+	StorageKey              common.Hash `db:"storage_key"`
+	StorageValue            common.Hash `db:"storage_value"`
 }
 
 func FromStrings(csvRow []string) (StorageDiff, error) {

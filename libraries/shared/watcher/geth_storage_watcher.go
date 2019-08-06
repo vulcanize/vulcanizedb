@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -30,7 +31,7 @@ type GethStorageWatcher struct {
 func NewGethStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) GethStorageWatcher {
 	queue := storage.NewStorageQueue(db)
 	transformers := make(map[common.Address]transformer.StorageTransformer)
-	keccakAddressTransformers := make(map[common.Address]transformer.StorageTransformer)
+	keccakAddressTransformers := make(map[common.Hash]transformer.StorageTransformer)
 	storageWatcher := StorageWatcher{
 		db:                        db,
 		StorageFetcher:            fetcher,
@@ -42,15 +43,16 @@ func NewGethStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) Get
 	return GethStorageWatcher{StorageWatcher: storageWatcher}
 }
 
-func (storageWatcher StorageWatcher) getTransformerForGethWatcher(contractAddress common.Address) (transformer.StorageTransformer, bool) {
-	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[contractAddress]
+func (storageWatcher StorageWatcher) getTransformerForGethWatcher(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+	keccakOfAddress := diff.KeccakOfContractAddress
+	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[keccakOfAddress]
 	if ok {
 		return storageTransformer, ok
 	} else {
 		for address, transformer := range storageWatcher.Transformers {
-			keccakOfTransformerAddress := common.BytesToAddress(crypto.Keccak256(address[:]))
-			if keccakOfTransformerAddress == contractAddress {
-				storageWatcher.KeccakAddressTransformers[contractAddress] = transformer
+			keccakOfTransformerAddress := common.BytesToHash(crypto.Keccak256(address[:]))
+			if keccakOfTransformerAddress == keccakOfAddress {
+				storageWatcher.KeccakAddressTransformers[keccakOfAddress] = transformer
 				return transformer, true
 			}
 		}
