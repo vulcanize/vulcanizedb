@@ -39,7 +39,7 @@ import (
 
 type TransferLog struct {
 	Id             int64  `db:"id"`
-	VulvanizeLogId int64  `db:"vulcanize_log_id"`
+	VulcanizeLogId int64  `db:"vulcanize_log_id"`
 	TokenName      string `db:"token_name"`
 	Block          int64  `db:"block"`
 	Tx             string `db:"tx"`
@@ -50,7 +50,7 @@ type TransferLog struct {
 
 type NewOwnerLog struct {
 	Id             int64  `db:"id"`
-	VulvanizeLogId int64  `db:"vulcanize_log_id"`
+	VulcanizeLogId int64  `db:"vulcanize_log_id"`
 	TokenName      string `db:"token_name"`
 	Block          int64  `db:"block"`
 	Tx             string `db:"tx"`
@@ -138,13 +138,13 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 	Expect(err).NotTo(HaveOccurred())
 
 	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
-	logRepository := repositories.LogRepository{DB: db}
+	logRepository := repositories.FullSyncLogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 
 	blockNumber := rand.Int63()
 	blockId := CreateBlock(blockNumber, blockRepository)
 
-	receipts := []core.Receipt{{Logs: []core.Log{{}}}}
+	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
 
 	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
 	Expect(err).ToNot(HaveOccurred())
@@ -184,13 +184,13 @@ func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (
 	Expect(err).NotTo(HaveOccurred())
 
 	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
-	logRepository := repositories.LogRepository{DB: db}
+	logRepository := repositories.FullSyncLogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 
 	blockNumber := rand.Int63()
 	blockId := CreateBlock(blockNumber, blockRepository)
 
-	receipts := []core.Receipt{{Logs: []core.Log{{}}}}
+	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
 
 	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
 	Expect(err).ToNot(HaveOccurred())
@@ -221,6 +221,7 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	}.Init()
 }
 
+// TODO: tear down/setup DB from migrations so this doesn't alter the schema between tests
 func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
@@ -255,7 +256,10 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DROP TABLE checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`CREATE TABLE checked_headers (id SERIAL PRIMARY KEY, header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE);`)
+	_, err = tx.Exec(`CREATE TABLE checked_headers (
+    	id SERIAL PRIMARY KEY,
+    	header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
+    	check_count INTEGER NOT NULL DEFAULT 1);`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)

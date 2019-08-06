@@ -21,7 +21,7 @@ type Receipt struct {
 	ContractAddress   string `db:"contract_address"`
 	CumulativeGasUsed uint64 `db:"cumulative_gas_used"`
 	GasUsed           uint64 `db:"gas_used"`
-	Logs              []Log
+	Logs              []FullSyncLog
 	StateRoot         string `db:"state_root"`
 	Status            int
 	TxHash            string `db:"tx_hash"`

@@ -19,10 +19,8 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-
 	"github.com/jmoiron/sqlx"
-	log "github.com/sirupsen/logrus"
-
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -81,7 +79,7 @@ func (blockRepository BlockRepository) MissingBlockNumbers(startingBlockNumber i
 		startingBlockNumber,
 		highestBlockNumber, nodeId)
 	if err != nil {
-		log.Error("MissingBlockNumbers: error getting blocks: ", err)
+		logrus.Error("MissingBlockNumbers: error getting blocks: ", err)
 	}
 	return numbers
 }
@@ -112,7 +110,7 @@ func (blockRepository BlockRepository) GetBlock(blockNumber int64) (core.Block, 
 		case sql.ErrNoRows:
 			return core.Block{}, datastore.ErrBlockDoesNotExist(blockNumber)
 		default:
-			log.Error("GetBlock: error loading blocks: ", err)
+			logrus.Error("GetBlock: error loading blocks: ", err)
 			return savedBlock, err
 		}
 	}
@@ -151,7 +149,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	if insertBlockErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Error("failed to rollback transaction: ", rollbackErr)
+			logrus.Error("failed to rollback transaction: ", rollbackErr)
 		}
 		return 0, postgres.ErrDBInsertFailed(insertBlockErr)
 	}
@@ -167,7 +165,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 		if insertTxErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				log.Warn("failed to rollback transaction: ", rollbackErr)
+				logrus.Warn("failed to rollback transaction: ", rollbackErr)
 			}
 			return 0, postgres.ErrDBInsertFailed(insertTxErr)
 		}
@@ -176,7 +174,7 @@ func (blockRepository BlockRepository) insertBlock(block core.Block) (int64, err
 	if commitErr != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr != nil {
-			log.Warn("failed to rollback transaction: ", rollbackErr)
+			logrus.Warn("failed to rollback transaction: ", rollbackErr)
 		}
 		return 0, commitErr
 	}
@@ -268,7 +266,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
 
-func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.Log, receiptId int64) error {
+func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.FullSyncLog, receiptId int64) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
@@ -305,7 +303,7 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
 	var block b
 	err := blockRows.StructScan(&block)
 	if err != nil {
-		log.Error("loadBlock: error loading block: ", err)
+		logrus.Error("loadBlock: error loading block: ", err)
 		return core.Block{}, err
 	}
 	transactionRows, err := blockRepository.database.Queryx(`
@@ -323,7 +321,7 @@ func (blockRepository BlockRepository) loadBlock(blockRows *sqlx.Row) (core.Bloc
 		WHERE block_id = $1
 		ORDER BY hash`, block.ID)
 	if err != nil {
-		log.Error("loadBlock: error fetting transactions: ", err)
+		logrus.Error("loadBlock: error fetting transactions: ", err)
 		return core.Block{}, err
 	}
 	block.Transactions = blockRepository.LoadTransactions(transactionRows)
@@ -336,7 +334,7 @@ func (blockRepository BlockRepository) LoadTransactions(transactionRows *sqlx.Ro
 		var transaction core.TransactionModel
 		err := transactionRows.StructScan(&transaction)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		transactions = append(transactions, transaction)
 	}

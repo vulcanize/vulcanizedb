@@ -86,7 +86,7 @@ func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header 
 	return blockChain.getPOWHeaders(blockNumbers)
 }
 
-func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.Log, error) {
+func (blockChain *BlockChain) GetFullSyncLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.FullSyncLog, error) {
 	if endingBlockNumber == nil {
 		endingBlockNumber = startingBlockNumber
 	}
@@ -99,9 +99,9 @@ func (blockChain *BlockChain) GetLogs(contract core.Contract, startingBlockNumbe
 	}
 	gethLogs, err := blockChain.GetEthLogsWithCustomQuery(fc)
 	if err != nil {
-		return []core.Log{}, err
+		return []core.FullSyncLog{}, err
 	}
-	logs := vulcCommon.ToCoreLogs(gethLogs)
+	logs := vulcCommon.ToFullSyncLogs(gethLogs)
 	return logs, nil
 }
 

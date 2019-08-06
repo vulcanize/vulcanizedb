@@ -29,11 +29,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
-var _ = Describe("Logs Repository", func() {
+var _ = Describe("Full sync log Repository", func() {
 	Describe("Saving logs", func() {
 		var db *postgres.DB
 		var blockRepository datastore.BlockRepository
-		var logsRepository datastore.LogRepository
+		var logsRepository datastore.FullSyncLogRepository
 		var receiptRepository datastore.FullSyncReceiptRepository
 		var node core.Node
 
@@ -47,7 +47,7 @@ var _ = Describe("Logs Repository", func() {
 			db = test_config.NewTestDB(node)
 			test_config.CleanTestDB(db)
 			blockRepository = repositories.NewBlockRepository(db)
-			logsRepository = repositories.LogRepository{DB: db}
+			logsRepository = repositories.FullSyncLogRepository{DB: db}
 			receiptRepository = repositories.FullSyncReceiptRepository{DB: db}
 		})
 
@@ -59,7 +59,7 @@ var _ = Describe("Logs Repository", func() {
 			receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
 			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
-			err = logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.FullSyncLog{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -98,7 +98,7 @@ var _ = Describe("Logs Repository", func() {
 			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
 
-			err = logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.FullSyncLog{{
 				BlockNumber: blockNumber,
 				Index:       0,
 				Address:     "x123",
@@ -108,7 +108,7 @@ var _ = Describe("Logs Repository", func() {
 			}}, receiptId)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.FullSyncLog{{
 				BlockNumber: blockNumber,
 				Index:       1,
 				Address:     "x123",
@@ -118,7 +118,7 @@ var _ = Describe("Logs Repository", func() {
 			}}, receiptId)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = logsRepository.CreateLogs([]core.Log{{
+			err = logsRepository.CreateLogs([]core.FullSyncLog{{
 				BlockNumber: 2,
 				Index:       0,
 				Address:     "x123",
@@ -162,7 +162,7 @@ var _ = Describe("Logs Repository", func() {
 
 		It("saves the logs attached to a receipt", func() {
 
-			logs := []core.Log{{
+			logs := []core.FullSyncLog{{
 				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
 				BlockNumber: 4745407,
 				Data:        "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000645a68669900000000000000000000000000000000000000000000003397684ab5869b0000000000000000000000000000000000000000000000000000000000005a36053200000000000000000000000099041f808d598b782d5a3e498681c2452a31da08",

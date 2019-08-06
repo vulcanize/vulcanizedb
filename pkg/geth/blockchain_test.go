@@ -154,7 +154,7 @@ var _ = Describe("Geth blockchain", func() {
 			startingBlockNumber := big.NewInt(1)
 			endingBlockNumber := big.NewInt(2)
 
-			_, err := blockChain.GetLogs(contract, startingBlockNumber, endingBlockNumber)
+			_, err := blockChain.GetFullSyncLogs(contract, startingBlockNumber, endingBlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			expectedQuery := ethereum.FilterQuery{
@@ -171,7 +171,7 @@ var _ = Describe("Geth blockchain", func() {
 			startingBlockNumber := big.NewInt(1)
 			endingBlockNumber := big.NewInt(2)
 
-			_, err := blockChain.GetLogs(contract, startingBlockNumber, endingBlockNumber)
+			_, err := blockChain.GetFullSyncLogs(contract, startingBlockNumber, endingBlockNumber)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

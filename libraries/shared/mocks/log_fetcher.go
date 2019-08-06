@@ -17,26 +17,24 @@
 package mocks
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-type MockLogNoteConverter struct {
-	err                   error
-	returnModels          []interface{}
-	PassedLogs            []types.Log
-	ToModelsCalledCounter int
+type MockLogFetcher struct {
+	ContractAddresses []common.Address
+	FetchCalled       bool
+	MissingHeader     core.Header
+	ReturnError       error
+	ReturnLogs        []types.Log
+	Topics            []common.Hash
 }
 
-func (converter *MockLogNoteConverter) ToModels(ethLogs []types.Log) ([]interface{}, error) {
-	converter.PassedLogs = ethLogs
-	converter.ToModelsCalledCounter++
-	return converter.returnModels, converter.err
-}
-
-func (converter *MockLogNoteConverter) SetConverterError(e error) {
-	converter.err = e
-}
-
-func (converter *MockLogNoteConverter) SetReturnModels(models []interface{}) {
-	converter.returnModels = models
+func (fetcher *MockLogFetcher) FetchLogs(contractAddresses []common.Address, topics []common.Hash, missingHeader core.Header) ([]types.Log, error) {
+	fetcher.FetchCalled = true
+	fetcher.ContractAddresses = contractAddresses
+	fetcher.Topics = topics
+	fetcher.MissingHeader = missingHeader
+	return fetcher.ReturnLogs, fetcher.ReturnError
 }
