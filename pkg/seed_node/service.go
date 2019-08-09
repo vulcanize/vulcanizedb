@@ -19,6 +19,8 @@ package seed_node
 import (
 	"sync"
 
+	"github.com/ethereum/go-ethereum/params"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
@@ -98,7 +100,7 @@ func NewProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rp
 	return &Service{
 		Streamer:          streamer.NewStateDiffStreamer(rpcClient),
 		Repository:        NewCIDRepository(db),
-		Converter:         ipfs.NewPayloadConverter(ethClient),
+		Converter:         ipfs.NewPayloadConverter(params.MainnetChainConfig),
 		Publisher:         publisher,
 		Filterer:          NewResponseFilterer(),
 		Fetcher:           fetcher,
