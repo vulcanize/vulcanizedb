@@ -27,7 +27,7 @@ import (
 )
 
 type Mappings interface {
-	Lookup(key common.Hash) (utils.StorageValueMetadata, error)
+	Lookup(diff utils.StorageDiff) (utils.StorageValueMetadata, error)
 	SetDB(db *postgres.DB)
 }
 
