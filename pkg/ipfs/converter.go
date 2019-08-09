@@ -17,14 +17,11 @@
 package ipfs
 
 import (
-	"context"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 // PayloadConverter interface is used to convert a geth statediff.Payload to our IPLDPayload type
@@ -34,13 +31,13 @@ type PayloadConverter interface {
 
 // Converter is the underlying struct for the PayloadConverter interface
 type Converter struct {
-	client core.EthClient
+	chainConfig *params.ChainConfig
 }
 
 // NewPayloadConverter creates a pointer to a new Converter which satisfies the PayloadConverter interface
-func NewPayloadConverter(client core.EthClient) *Converter {
+func NewPayloadConverter(chainConfig *params.ChainConfig) *Converter {
 	return &Converter{
-		client: client,
+		chainConfig: chainConfig,
 	}
 }
 
@@ -69,9 +66,10 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		StateNodes:      make(map[common.Hash]StateNode),
 		StorageNodes:    make(map[common.Hash][]StorageNode),
 	}
-	for gethTransactionIndex, trx := range block.Transactions() {
+	signer := types.MakeSigner(pc.chainConfig, block.Number())
+	for _, trx := range block.Transactions() {
 		// Extract to and from data from the the transactions for indexing
-		from, err := pc.client.TransactionSender(context.Background(), trx, block.Hash(), uint(gethTransactionIndex))
+		from, err := types.Sender(signer, trx)
 		if err != nil {
 			return nil, err
 		}
