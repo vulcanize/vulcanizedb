@@ -42,7 +42,7 @@ func (transformer Transformer) ContractAddress() common.Address {
 }
 
 func (transformer Transformer) Execute(diff utils.StorageDiff) error {
-	metadata, lookupErr := transformer.Mappings.Lookup(diff.StorageKey)
+	metadata, lookupErr := transformer.Mappings.Lookup(diff)
 	if lookupErr != nil {
 		return lookupErr
 	}
