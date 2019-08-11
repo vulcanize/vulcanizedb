@@ -16,15 +16,15 @@
 
 package fakes
 
-import "github.com/vulcanize/vulcanizedb/pkg/filters"
-
-type MockFilterRepository struct {
+type MockHeaderSyncBlockRetriever struct {
+	FirstBlock    int64
+	FirstBlockErr error
 }
 
-func (*MockFilterRepository) CreateFilter(filter filters.LogFilter) error {
-	return nil
+func (retriever *MockHeaderSyncBlockRetriever) RetrieveFirstBlock() (int64, error) {
+	return retriever.FirstBlock, retriever.FirstBlockErr
 }
 
-func (*MockFilterRepository) GetFilter(name string) (filters.LogFilter, error) {
-	panic("implement me")
+func (retriever *MockHeaderSyncBlockRetriever) RetrieveMostRecentBlock() (int64, error) {
+	return 0, nil
 }

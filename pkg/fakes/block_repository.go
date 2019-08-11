@@ -18,7 +18,6 @@ package fakes
 
 import (
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -39,21 +38,7 @@ type MockBlockRepository struct {
 }
 
 func NewMockBlockRepository() *MockBlockRepository {
-	return &MockBlockRepository{
-		createOrUpdateBlockCallCount:                 0,
-		createOrUpdateBlockCalled:                    false,
-		createOrUpdateBlockPassedBlock:               core.Block{},
-		createOrUpdateBlockPassedBlockNumbers:        nil,
-		createOrUpdateBlockReturnErr:                 nil,
-		createOrUpdateBlockReturnInt:                 0,
-		missingBlockNumbersCalled:                    false,
-		missingBlockNumbersPassedEndingBlockNumber:   0,
-		missingBlockNumbersPassedNodeId:              "",
-		missingBlockNumbersPassedStartingBlockNumber: 0,
-		missingBlockNumbersReturnArray:               nil,
-		setBlockStatusCalled:                         false,
-		setBlockStatusPassedChainHead:                0,
-	}
+	return &MockBlockRepository{}
 }
 
 func (repository *MockBlockRepository) SetCreateOrUpdateBlockReturnVals(i int64, err error) {

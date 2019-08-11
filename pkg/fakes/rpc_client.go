@@ -18,14 +18,12 @@ package fakes
 
 import (
 	"context"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	"math/big"
 )
 
 type MockRpcClient struct {

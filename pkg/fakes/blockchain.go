@@ -17,14 +17,12 @@
 package fakes
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"math/big"
 )
 
 type MockBlockChain struct {

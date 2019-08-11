@@ -17,9 +17,8 @@
 package fakes
 
 import (
-	. "github.com/onsi/gomega"
-
 	"github.com/ethereum/go-ethereum/core/types"
+	. "github.com/onsi/gomega"
 )
 
 type MockEthereumDatabase struct {
@@ -39,21 +38,7 @@ type MockEthereumDatabase struct {
 }
 
 func NewMockEthereumDatabase() *MockEthereumDatabase {
-	return &MockEthereumDatabase{
-		getBlockCalled:                 false,
-		getBlockPassedHash:             nil,
-		getBlockPassedNumber:           0,
-		getBlockReturnBlock:            nil,
-		getBlockHashCalled:             false,
-		getBlockHashPassedNumber:       0,
-		getBlockHashReturnHash:         nil,
-		getBlockReceiptsCalled:         false,
-		getBlockReceiptsPassedHash:     nil,
-		getBlockReceiptsPassedNumber:   0,
-		getBlockReceiptsReturnReceipts: nil,
-		getHeadBlockNumberCalled:       false,
-		getHeadBlockNumberReturnVal:    0,
-	}
+	return &MockEthereumDatabase{}
 }
 
 func (med *MockEthereumDatabase) SetReturnBlock(block *types.Block) {

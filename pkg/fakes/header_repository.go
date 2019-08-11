@@ -18,7 +18,6 @@ package fakes
 
 import (
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 

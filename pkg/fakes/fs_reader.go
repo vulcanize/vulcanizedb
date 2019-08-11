@@ -26,12 +26,7 @@ type MockFsReader struct {
 }
 
 func NewMockFsReader() *MockFsReader {
-	return &MockFsReader{
-		readCalled:      false,
-		readPassedPath:  "",
-		readReturnBytes: nil,
-		readReturnErr:   nil,
-	}
+	return &MockFsReader{}
 }
 
 func (mfr *MockFsReader) SetReturnBytes(returnBytes []byte) {

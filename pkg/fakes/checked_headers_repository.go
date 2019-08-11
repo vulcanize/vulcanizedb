@@ -16,9 +16,7 @@
 
 package fakes
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/core"
 
 type MockCheckedHeadersRepository struct {
 	CheckCount                   int64

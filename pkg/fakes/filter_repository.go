@@ -16,25 +16,14 @@
 
 package fakes
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-)
+import "github.com/vulcanize/vulcanizedb/pkg/filters"
 
-type MockPoller struct {
-	ContractName string
-}
+type MockFilterRepository struct{}
 
-func (*MockPoller) PollContract(con contract.Contract, lastBlock int64) error {
-	panic("implement me")
-}
-
-func (*MockPoller) PollContractAt(con contract.Contract, blockNumber int64) error {
-	panic("implement me")
-}
-
-func (poller *MockPoller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
-	if p, ok := result.(*string); ok {
-		*p = poller.ContractName
-	}
+func (*MockFilterRepository) CreateFilter(filter filters.LogFilter) error {
 	return nil
+}
+
+func (*MockFilterRepository) GetFilter(name string) (filters.LogFilter, error) {
+	panic("implement me")
 }

@@ -43,25 +43,7 @@ type MockLevelDatabaseReader struct {
 }
 
 func NewMockLevelDatabaseReader() *MockLevelDatabaseReader {
-	return &MockLevelDatabaseReader{
-		getBlockCalled:               false,
-		getBlockNumberCalled:         false,
-		getBlockNumberPassedHash:     common.Hash{},
-		getBlockPassedHash:           common.Hash{},
-		getBlockPassedNumber:         0,
-		getBlockReceiptsCalled:       false,
-		getBlockReceiptsPassedHash:   common.Hash{},
-		getBlockReceiptsPassedNumber: 0,
-		getCanonicalHashCalled:       false,
-		getCanonicalHashPassedNumber: 0,
-		getCanonicalHashReturnHash:   common.Hash{},
-		getHeadBlockHashCalled:       false,
-		getHeadBlockHashReturnHash:   common.Hash{},
-		passedHash:                   common.Hash{},
-		returnBlock:                  nil,
-		returnBlockNumber:            0,
-		returnReceipts:               nil,
-	}
+	return &MockLevelDatabaseReader{}
 }
 
 func (mldr *MockLevelDatabaseReader) SetReturnBlock(block *types.Block) {

@@ -18,7 +18,6 @@ package fakes
 
 import (
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -30,12 +29,7 @@ type MockReceiptRepository struct {
 }
 
 func NewMockReceiptRepository() *MockReceiptRepository {
-	return &MockReceiptRepository{
-		createReceiptsAndLogsCalled:         false,
-		createReceiptsAndLogsPassedBlockId:  0,
-		createReceiptsAndLogsPassedReceipts: nil,
-		createReceiptsAndLogsReturnErr:      nil,
-	}
+	return &MockReceiptRepository{}
 }
 
 func (mrr *MockReceiptRepository) SetCreateReceiptsAndLogsReturnErr(err error) {

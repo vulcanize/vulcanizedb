@@ -28,11 +28,7 @@ type MockTransactionConverter struct {
 }
 
 func NewMockTransactionConverter() *MockTransactionConverter {
-	return &MockTransactionConverter{
-		ConvertHeaderTransactionIndexToIntCalled:  false,
-		ConvertBlockTransactionsToCoreCalled:      false,
-		ConvertBlockTransactionsToCorePassedBlock: nil,
-	}
+	return &MockTransactionConverter{}
 }
 
 func (converter *MockTransactionConverter) ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error) {

@@ -18,72 +18,50 @@ package fakes
 
 import (
 	"context"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	"math/big"
 )
 
 type MockEthClient struct {
+	balanceAtErr                error
+	blockByNumberErr            error
+	blockByNumberPassedContext  context.Context
+	blockByNumberPassedNumber   *big.Int
+	blockByNumberReturnBlock    *types.Block
 	callContractErr             error
 	callContractPassedContext   context.Context
 	callContractPassedMsg       ethereum.CallMsg
 	callContractPassedNumber    *big.Int
 	callContractReturnBytes     []byte
-	blockByNumberErr            error
-	blockByNumberPassedContext  context.Context
-	blockByNumberPassedNumber   *big.Int
-	blockByNumberReturnBlock    *types.Block
-	headerByNumberErr           error
-	headerByNumberPassedContext context.Context
-	headerByNumberPassedNumber  *big.Int
-	headerByNumberReturnHeader  *types.Header
-	headerByNumbersReturnHeader []*types.Header
-	headerByNumbersPassedNumber []*big.Int
+	err                         error
 	filterLogsErr               error
 	filterLogsPassedContext     context.Context
 	filterLogsPassedQuery       ethereum.FilterQuery
 	filterLogsReturnLogs        []types.Log
-	transactionReceipts         map[string]*types.Receipt
-	err                         error
-	passedBatch                 []client.BatchElem
-	passedMethod                string
-	transactionSenderErr        error
-	transactionReceiptErr       error
+	headerByNumberErr           error
+	headerByNumberPassedContext context.Context
+	headerByNumberPassedNumber  *big.Int
+	headerByNumberReturnHeader  *types.Header
+	headerByNumbersPassedNumber []*big.Int
+	headerByNumbersReturnHeader []*types.Header
 	passedAddress               common.Address
-	passedBlockNumber           *big.Int
 	passedBalance               *big.Int
-	balanceAtErr                error
+	passedBatch                 []client.BatchElem
+	passedBlockNumber           *big.Int
+	passedMethod                string
 	passedbalanceAtContext      context.Context
+	transactionReceiptErr       error
+	transactionReceipts         map[string]*types.Receipt
+	transactionSenderErr        error
 }
 
 func NewMockEthClient() *MockEthClient {
 	return &MockEthClient{
-		callContractErr:             nil,
-		callContractPassedContext:   nil,
-		callContractPassedMsg:       ethereum.CallMsg{},
-		callContractPassedNumber:    nil,
-		callContractReturnBytes:     nil,
-		blockByNumberErr:            nil,
-		blockByNumberPassedContext:  nil,
-		blockByNumberPassedNumber:   nil,
-		blockByNumberReturnBlock:    nil,
-		headerByNumberErr:           nil,
-		headerByNumberPassedContext: nil,
-		headerByNumberPassedNumber:  nil,
-		headerByNumberReturnHeader:  nil,
-		filterLogsErr:               nil,
-		filterLogsPassedContext:     nil,
-		filterLogsPassedQuery:       ethereum.FilterQuery{},
-		filterLogsReturnLogs:        nil,
-		transactionReceipts:         make(map[string]*types.Receipt),
-		err:                         nil,
-		passedBatch:                 nil,
-		passedMethod:                "123",
+		transactionReceipts: map[string]*types.Receipt{},
 	}
 }
 
