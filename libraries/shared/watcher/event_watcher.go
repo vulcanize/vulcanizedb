@@ -27,7 +27,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"time"
 )
+
+const NoNewDataPause = time.Second * 7
 
 type EventWatcher struct {
 	blockChain   core.BlockChain
@@ -66,18 +69,62 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 }
 
 // Extracts and delegates watched log events.
-func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
-	extractErr := watcher.LogExtractor.ExtractLogs(recheckHeaders)
-	if extractErr != nil {
-		logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
-		return extractErr
+func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution, errsChan chan error) {
+	extractErrsChan := make(chan error)
+	delegateErrsChan := make(chan error)
+
+	go watcher.extractLogs(recheckHeaders, extractErrsChan)
+	go watcher.delegateLogs(delegateErrsChan)
+
+	for {
+		select {
+		case extractErr := <-extractErrsChan:
+			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			errsChan <- extractErr
+		case delegateErr := <-delegateErrsChan:
+			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
+			errsChan <- delegateErr
+		}
+	}
+}
+
+func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
+	extractLogsErr := make(chan error)
+	missingHeadersFound := make(chan bool)
+	go watcher.LogExtractor.ExtractLogs(recheckHeaders, extractLogsErr, missingHeadersFound)
+
+	for {
+		select {
+		case err := <-extractLogsErr:
+			errs <- err
+		case missingHeaders := <-missingHeadersFound:
+			if missingHeaders {
+				go watcher.extractLogs(recheckHeaders, errs)
+			} else {
+				time.Sleep(NoNewDataPause)
+				go watcher.extractLogs(recheckHeaders, errs)
+			}
+		}
+	}
+}
+
+func (watcher *EventWatcher) delegateLogs(errs chan error) {
+	delegateLogsErr := make(chan error)
+	logsFound := make(chan bool)
+	go watcher.LogDelegator.DelegateLogs(delegateLogsErr, logsFound)
+
+	for {
+		select {
+		case err := <-delegateLogsErr:
+			errs <- err
+		case logs := <-logsFound:
+			if logs {
+				go watcher.delegateLogs(errs)
+			} else {
+				time.Sleep(NoNewDataPause)
+				go watcher.delegateLogs(errs)
+			}
+		}
 	}
 
-	delegateErr := watcher.LogDelegator.DelegateLogs()
-	if delegateErr != nil {
-		logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
-		return delegateErr
-	}
-
-	return nil
 }

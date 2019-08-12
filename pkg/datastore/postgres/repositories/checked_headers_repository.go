@@ -52,8 +52,7 @@ func (repo CheckedHeadersRepository) MissingHeaders(startingBlockNumber, endingB
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR check_count < $2)
 				AND headers.block_number >= $1
-				AND headers.eth_node_fingerprint = $3
-				LIMIT 100`
+				AND headers.eth_node_fingerprint = $3`
 		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.Node.ID)
 	} else {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
@@ -61,8 +60,7 @@ func (repo CheckedHeadersRepository) MissingHeaders(startingBlockNumber, endingB
 				WHERE (header_id ISNULL OR check_count < $3)
 				AND headers.block_number >= $1
 				AND headers.block_number <= $2
-				AND headers.eth_node_fingerprint = $4
-				LIMIT 100`
+				AND headers.eth_node_fingerprint = $4`
 		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.Node.ID)
 	}
 
