@@ -22,15 +22,23 @@ import (
 
 type MockLogDelegator struct {
 	AddedTransformers []transformer.EventTransformer
-	DelegateCalled    bool
-	DelegateError     error
+	DelegateCallCount int
+	DelegateErrors    []error
+	LogsFound         []bool
 }
 
 func (delegator *MockLogDelegator) AddTransformer(t transformer.EventTransformer) {
 	delegator.AddedTransformers = append(delegator.AddedTransformers, t)
 }
 
-func (delegator *MockLogDelegator) DelegateLogs() error {
-	delegator.DelegateCalled = true
-	return delegator.DelegateError
+func (delegator *MockLogDelegator) DelegateLogs(errs chan error, logsFound chan bool) {
+	delegator.DelegateCallCount++
+	var delegateErrorThisRun error
+	delegateErrorThisRun, delegator.DelegateErrors = delegator.DelegateErrors[0], delegator.DelegateErrors[1:]
+	if delegateErrorThisRun != nil {
+		errs <- delegateErrorThisRun
+	}
+	var logsFoundThisRun bool
+	logsFoundThisRun, delegator.LogsFound = delegator.LogsFound[0], delegator.LogsFound[1:]
+	logsFound <- logsFoundThisRun
 }

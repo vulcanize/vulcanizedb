@@ -157,10 +157,13 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	} else {
 		recheck = constants.HeaderMissing
 	}
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute(recheck)
+	errs := make(chan error)
+	go w.Execute(recheck, errs)
+	for {
+		select {
+		case err := <-errs:
+			LogWithCommand.Fatalf("error executing event watcher: %s", err.Error())
+		}
 	}
 }
 

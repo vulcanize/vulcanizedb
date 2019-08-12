@@ -81,201 +81,270 @@ var _ = Describe("Log extractor", func() {
 	})
 
 	Describe("ExtractLogs", func() {
-		It("returns error if no watched addresses configured", func() {
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+		var (
+			errsChan            chan error
+			missingHeadersFound chan bool
+		)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(logs.ErrNoWatchedAddresses))
+		BeforeEach(func() {
+			errsChan = make(chan error)
+			missingHeadersFound = make(chan bool)
+		})
+
+		It("returns error if no watched addresses configured", func(done Done) {
+			go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
+
+			Expect(<-errsChan).To(MatchError(logs.ErrNoWatchedAddresses))
+			close(done)
 		})
 
 		Describe("when checking missing headers", func() {
-			It("gets missing headers since configured starting block with check count < 1", func() {
+			It("gets missing headers since configured starting block with check_count < 1", func(done Done) {
 				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
 				mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{}}
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 				startingBlockNumber := rand.Int63()
 				extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber))
 
-				err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(mockCheckedHeadersRepository.StartingBlockNumber).To(Equal(startingBlockNumber))
-				Expect(mockCheckedHeadersRepository.EndingBlockNumber).To(Equal(int64(-1)))
-				Expect(mockCheckedHeadersRepository.CheckCount).To(Equal(int64(1)))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.StartingBlockNumber
+				}).Should(Equal(startingBlockNumber))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.EndingBlockNumber
+				}).Should(Equal(int64(-1)))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.CheckCount
+				}).Should(Equal(int64(1)))
+				close(done)
 			})
 		})
 
 		Describe("when rechecking headers", func() {
-			It("gets missing headers since configured starting block with check count < 1", func() {
+			It("gets missing headers since configured starting block with check_count < RecheckHeaderCap", func(done Done) {
 				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
 				mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{}}
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 				startingBlockNumber := rand.Int63()
 				extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber))
 
-				err := extractor.ExtractLogs(constants.HeaderRecheck)
+				go extractor.ExtractLogs(constants.HeaderRecheck, errsChan, missingHeadersFound)
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(mockCheckedHeadersRepository.StartingBlockNumber).To(Equal(startingBlockNumber))
-				Expect(mockCheckedHeadersRepository.EndingBlockNumber).To(Equal(int64(-1)))
-				Expect(mockCheckedHeadersRepository.CheckCount).To(Equal(constants.RecheckHeaderCap))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.StartingBlockNumber
+				}).Should(Equal(startingBlockNumber))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.EndingBlockNumber
+				}).Should(Equal(int64(-1)))
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.CheckCount
+				}).Should(Equal(constants.RecheckHeaderCap))
+				close(done)
 			})
 		})
 
-		It("returns error if getting missing headers fails", func() {
+		It("emits error if getting missing headers fails", func(done Done) {
 			addTransformerConfig(extractor)
 			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
 			mockCheckedHeadersRepository.MissingHeadersReturnError = fakes.FakeError
 			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+			go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
+			Expect(<-errsChan).To(MatchError(fakes.FakeError))
+			close(done)
 		})
 
-		It("does not fetch logs if no missing headers", func() {
-			addTransformerConfig(extractor)
-			mockLogFetcher := &mocks.MockLogFetcher{}
-			extractor.Fetcher = mockLogFetcher
+		Describe("when no missing headers", func() {
+			It("does not fetch logs", func(done Done) {
+				addTransformerConfig(extractor)
+				mockLogFetcher := &mocks.MockLogFetcher{}
+				extractor.Fetcher = mockLogFetcher
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockLogFetcher.FetchCalled).To(BeFalse())
+				Consistently(func() bool {
+					return mockLogFetcher.FetchCalled
+				}).Should(BeFalse())
+				close(done)
+			})
+
+			It("emits that no missing headers were found", func(done Done) {
+				addTransformerConfig(extractor)
+				mockLogFetcher := &mocks.MockLogFetcher{}
+				extractor.Fetcher = mockLogFetcher
+
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
+
+				Expect(<-missingHeadersFound).To(BeFalse())
+				close(done)
+			})
 		})
 
-		It("fetches logs for missing headers", func() {
-			addMissingHeader(extractor)
-			config := transformer.EventTransformerConfig{
-				ContractAddresses:   []string{fakes.FakeAddress.Hex()},
-				Topic:               fakes.FakeHash.Hex(),
-				StartingBlockNumber: rand.Int63(),
-			}
-			extractor.AddTransformerConfig(config)
-			mockLogFetcher := &mocks.MockLogFetcher{}
-			extractor.Fetcher = mockLogFetcher
+		Describe("when there are missing headers", func() {
+			It("fetches logs for missing headers", func(done Done) {
+				addMissingHeader(extractor)
+				config := transformer.EventTransformerConfig{
+					ContractAddresses:   []string{fakes.FakeAddress.Hex()},
+					Topic:               fakes.FakeHash.Hex(),
+					StartingBlockNumber: rand.Int63(),
+				}
+				extractor.AddTransformerConfig(config)
+				mockLogFetcher := &mocks.MockLogFetcher{}
+				extractor.Fetcher = mockLogFetcher
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockLogFetcher.FetchCalled).To(BeTrue())
-			Expect(mockLogFetcher.Topics).To(Equal([]common.Hash{common.HexToHash(config.Topic)}))
-			Expect(mockLogFetcher.ContractAddresses).To(Equal(transformer.HexStringsToAddresses(config.ContractAddresses)))
-		})
+				Eventually(func() bool {
+					return mockLogFetcher.FetchCalled
+				}).Should(BeTrue())
+				expectedTopics := []common.Hash{common.HexToHash(config.Topic)}
+				Eventually(func() []common.Hash {
+					return mockLogFetcher.Topics
+				}).Should(Equal(expectedTopics))
+				expectedAddresses := transformer.HexStringsToAddresses(config.ContractAddresses)
+				Eventually(func() []common.Address {
+					return mockLogFetcher.ContractAddresses
+				}).Should(Equal(expectedAddresses))
+				close(done)
+			})
 
-		It("returns error if fetching logs fails", func() {
-			addMissingHeader(extractor)
-			addTransformerConfig(extractor)
-			mockLogFetcher := &mocks.MockLogFetcher{}
-			mockLogFetcher.ReturnError = fakes.FakeError
-			extractor.Fetcher = mockLogFetcher
+			It("returns error if fetching logs fails", func(done Done) {
+				addMissingHeader(extractor)
+				addTransformerConfig(extractor)
+				mockLogFetcher := &mocks.MockLogFetcher{}
+				mockLogFetcher.ReturnError = fakes.FakeError
+				extractor.Fetcher = mockLogFetcher
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
-		})
+				Expect(<-errsChan).To(MatchError(fakes.FakeError))
+				close(done)
+			})
 
-		It("does not sync transactions if no fetched logs", func() {
-			addMissingHeader(extractor)
-			addTransformerConfig(extractor)
-			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
-			extractor.Syncer = mockTransactionSyncer
+			Describe("when no fetched logs", func() {
+				It("does not sync transactions", func(done Done) {
+					addMissingHeader(extractor)
+					addTransformerConfig(extractor)
+					mockTransactionSyncer := &fakes.MockTransactionSyncer{}
+					extractor.Syncer = mockTransactionSyncer
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+					go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeFalse())
-		})
+					Consistently(func() bool {
+						return mockTransactionSyncer.SyncTransactionsCalled
+					}).Should(BeFalse())
+					close(done)
+				})
+			})
 
-		It("syncs transactions for fetched logs", func() {
-			addMissingHeader(extractor)
-			addFetchedLog(extractor)
-			addTransformerConfig(extractor)
-			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
-			extractor.Syncer = mockTransactionSyncer
+			Describe("when there are fetched logs", func() {
+				It("syncs transactions", func(done Done) {
+					addMissingHeader(extractor)
+					addFetchedLog(extractor)
+					addTransformerConfig(extractor)
+					mockTransactionSyncer := &fakes.MockTransactionSyncer{}
+					extractor.Syncer = mockTransactionSyncer
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+					go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeTrue())
-		})
+					Eventually(func() bool {
+						return mockTransactionSyncer.SyncTransactionsCalled
+					}).Should(BeTrue())
+					close(done)
+				})
 
-		It("returns error if syncing transactions fails", func() {
-			addMissingHeader(extractor)
-			addFetchedLog(extractor)
-			addTransformerConfig(extractor)
-			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
-			mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
-			extractor.Syncer = mockTransactionSyncer
+				It("returns error if syncing transactions fails", func(done Done) {
+					addMissingHeader(extractor)
+					addFetchedLog(extractor)
+					addTransformerConfig(extractor)
+					mockTransactionSyncer := &fakes.MockTransactionSyncer{}
+					mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
+					extractor.Syncer = mockTransactionSyncer
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+					go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
-		})
+					Expect(<-errsChan).To(MatchError(fakes.FakeError))
+					close(done)
+				})
 
-		It("persists fetched logs", func() {
-			addMissingHeader(extractor)
-			addTransformerConfig(extractor)
-			fakeLogs := []types.Log{{
-				Address: common.HexToAddress("0xA"),
-				Topics:  []common.Hash{common.HexToHash("0xA")},
-				Data:    []byte{},
-				Index:   0,
-			}}
-			mockLogFetcher := &mocks.MockLogFetcher{ReturnLogs: fakeLogs}
-			extractor.Fetcher = mockLogFetcher
-			mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
-			extractor.LogRepository = mockLogRepository
+				It("persists fetched logs", func(done Done) {
+					addMissingHeader(extractor)
+					addTransformerConfig(extractor)
+					fakeLogs := []types.Log{{
+						Address: common.HexToAddress("0xA"),
+						Topics:  []common.Hash{common.HexToHash("0xA")},
+						Data:    []byte{},
+						Index:   0,
+					}}
+					mockLogFetcher := &mocks.MockLogFetcher{ReturnLogs: fakeLogs}
+					extractor.Fetcher = mockLogFetcher
+					mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
+					extractor.LogRepository = mockLogRepository
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+					go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockLogRepository.PassedLogs).To(Equal(fakeLogs))
-		})
+					Eventually(func() []types.Log {
+						return mockLogRepository.PassedLogs
+					}).Should(Equal(fakeLogs))
+					close(done)
+				})
 
-		It("returns error if persisting logs fails", func() {
-			addMissingHeader(extractor)
-			addFetchedLog(extractor)
-			addTransformerConfig(extractor)
-			mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
-			mockLogRepository.CreateError = fakes.FakeError
-			extractor.LogRepository = mockLogRepository
+				It("returns error if persisting logs fails", func(done Done) {
+					addMissingHeader(extractor)
+					addFetchedLog(extractor)
+					addTransformerConfig(extractor)
+					mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
+					mockLogRepository.CreateError = fakes.FakeError
+					extractor.LogRepository = mockLogRepository
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+					go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
-		})
+					Expect(<-errsChan).To(MatchError(fakes.FakeError))
+					close(done)
+				})
+			})
 
-		It("marks header checked", func() {
-			addFetchedLog(extractor)
-			addTransformerConfig(extractor)
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			headerID := rand.Int63()
-			mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{Id: headerID}}
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
+			It("marks header checked", func(done Done) {
+				addFetchedLog(extractor)
+				addTransformerConfig(extractor)
+				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
+				headerID := rand.Int63()
+				mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{Id: headerID}}
+				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockCheckedHeadersRepository.HeaderID).To(Equal(headerID))
-		})
+				Eventually(func() int64 {
+					return mockCheckedHeadersRepository.HeaderID
+				}).Should(Equal(headerID))
+				close(done)
+			})
 
-		It("returns error if marking header checked fails", func() {
-			addFetchedLog(extractor)
-			addTransformerConfig(extractor)
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{Id: rand.Int63()}}
-			mockCheckedHeadersRepository.MarkHeaderCheckedReturnError = fakes.FakeError
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
+			It("returns error if marking header checked fails", func(done Done) {
+				addFetchedLog(extractor)
+				addTransformerConfig(extractor)
+				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
+				mockCheckedHeadersRepository.ReturnHeaders = []core.Header{{Id: rand.Int63()}}
+				mockCheckedHeadersRepository.MarkHeaderCheckedReturnError = fakes.FakeError
+				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-			err := extractor.ExtractLogs(constants.HeaderMissing)
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
+				Expect(<-errsChan).To(MatchError(fakes.FakeError))
+				close(done)
+			})
+
+			It("emits that missing headers were found", func(done Done) {
+				addMissingHeader(extractor)
+				addTransformerConfig(extractor)
+
+				go extractor.ExtractLogs(constants.HeaderMissing, errsChan, missingHeadersFound)
+
+				Expect(<-missingHeadersFound).To(BeTrue())
+				close(done)
+			})
 		})
 	})
 })
