@@ -170,18 +170,6 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(nodeTwoMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10)))
 				Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10)))
 			})
-
-			It("only returns 100 results to prevent blocking log delegation", func() {
-				for n := outOfRangeBlockNumber + 1; n < outOfRangeBlockNumber+100; n++ {
-					_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-					Expect(err).NotTo(HaveOccurred())
-				}
-
-				missingHeaders, err := repo.MissingHeaders(startingBlockNumber, endingBlockNumber+200, uncheckedCheckCount)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(missingHeaders)).To(Equal(100))
-			})
 		})
 
 		Describe("when ending block is -1", func() {
@@ -252,19 +240,6 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
 				Expect(nodeTwoMissingHeaders[3].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
 			})
-
-			It("only returns 100 results to prevent blocking log delegation", func() {
-				for n := outOfRangeBlockNumber + 1; n < outOfRangeBlockNumber+100; n++ {
-					_, err := headerRepository.CreateOrUpdateHeader(fakes.GetFakeHeader(n))
-					Expect(err).NotTo(HaveOccurred())
-				}
-
-				missingHeaders, err := repo.MissingHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(missingHeaders)).To(Equal(100))
-			})
 		})
-
 	})
 })

@@ -29,7 +29,7 @@ var ErrNoTransformers = errors.New("no event transformers configured in the log 
 
 type ILogDelegator interface {
 	AddTransformer(t transformer.EventTransformer)
-	DelegateLogs() error
+	DelegateLogs(errs chan error, logsFound chan bool)
 }
 
 type LogDelegator struct {
@@ -43,24 +43,31 @@ func (delegator *LogDelegator) AddTransformer(t transformer.EventTransformer) {
 	delegator.Chunker.AddConfig(t.GetConfig())
 }
 
-func (delegator LogDelegator) DelegateLogs() error {
+func (delegator *LogDelegator) DelegateLogs(errs chan error, logsFound chan bool) {
 	if len(delegator.Transformers) < 1 {
-		return ErrNoTransformers
+		errs <- ErrNoTransformers
+		return
 	}
 
 	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedHeaderSyncLogs()
 	if fetchErr != nil {
 		logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
-		return fetchErr
+		errs <- fetchErr
+		return
+	}
+
+	if len(persistedLogs) < 1 {
+		logsFound <- false
 	}
 
 	transformErr := delegator.delegateLogs(persistedLogs)
 	if transformErr != nil {
 		logrus.Errorf("error transforming logs: %s", transformErr)
-		return transformErr
+		errs <- transformErr
+		return
 	}
 
-	return nil
+	logsFound <- true
 }
 
 func (delegator *LogDelegator) delegateLogs(logs []core.HeaderSyncLog) error {

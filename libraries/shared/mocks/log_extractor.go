@@ -22,16 +22,24 @@ import (
 )
 
 type MockLogExtractor struct {
-	AddedConfigs      []transformer.EventTransformerConfig
-	ExtractLogsCalled bool
-	ExtractLogsError  error
+	AddedConfigs        []transformer.EventTransformerConfig
+	ExtractLogsCount    int
+	ExtractLogsErrors   []error
+	MissingHeadersExist []bool
 }
 
 func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) {
 	extractor.AddedConfigs = append(extractor.AddedConfigs, config)
 }
 
-func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
-	extractor.ExtractLogsCalled = true
-	return extractor.ExtractLogsError
+func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution, errs chan error, missingHeadersFound chan bool) {
+	extractor.ExtractLogsCount++
+	var errorThisRun error
+	errorThisRun, extractor.ExtractLogsErrors = extractor.ExtractLogsErrors[0], extractor.ExtractLogsErrors[1:]
+	if errorThisRun != nil {
+		errs <- errorThisRun
+	}
+	var missingHeadersExist bool
+	missingHeadersExist, extractor.MissingHeadersExist = extractor.MissingHeadersExist[0], extractor.MissingHeadersExist[1:]
+	missingHeadersFound <- missingHeadersExist
 }
