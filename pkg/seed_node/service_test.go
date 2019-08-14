@@ -20,13 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
 	mocks2 "github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	mocks3 "github.com/vulcanize/vulcanizedb/pkg/seed_node/mocks"
@@ -35,7 +34,7 @@ import (
 var _ = Describe("Service", func() {
 
 	Describe("Loop", func() {
-		It("Streams StatediffPayloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
+		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan statediff.Payload, 1)
 			quitChan := make(chan bool, 1)
