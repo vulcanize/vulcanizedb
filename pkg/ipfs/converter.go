@@ -67,7 +67,8 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 		StorageNodes:    make(map[common.Hash][]StorageNode),
 	}
 	signer := types.MakeSigner(pc.chainConfig, block.Number())
-	for _, trx := range block.Transactions() {
+	transactions := block.Transactions()
+	for _, trx := range transactions {
 		// Extract to and from data from the the transactions for indexing
 		from, err := types.Sender(signer, trx)
 		if err != nil {
@@ -87,7 +88,18 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, receipt := range receipts {
+	// Derive any missing fields
+	err = receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions())
+	if err != nil {
+		return nil, err
+	}
+	for i, receipt := range receipts {
+		// If the transaction for this receipt has a "to" address, the above DeriveFields() fails to assign it to the receipt's ContractAddress
+		// If it doesn't have a "to" address, it correctly derives it and assigns it to to the receipt's ContractAddress
+		// Weird, right?
+		if transactions[i].To() != nil {
+			receipt.ContractAddress = *transactions[i].To()
+		}
 		// Extract topic0 data from the receipt's logs for indexing
 		rctMeta := &ReceiptMetaData{
 			Topic0s:         make([]string, 0, len(receipt.Logs)),
@@ -116,7 +128,6 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 			Value: createdAccount.Value,
 			Leaf:  createdAccount.Leaf,
 		}
-		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range createdAccount.Storage {
 			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
 				Key:   common.BytesToHash(storageDiff.Key),
@@ -131,7 +142,6 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 			Value: deletedAccount.Value,
 			Leaf:  deletedAccount.Leaf,
 		}
-		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range deletedAccount.Storage {
 			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
 				Key:   common.BytesToHash(storageDiff.Key),
@@ -146,7 +156,6 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 			Value: updatedAccount.Value,
 			Leaf:  updatedAccount.Leaf,
 		}
-		convertedPayload.StorageNodes[hashKey] = make([]StorageNode, 0)
 		for _, storageDiff := range updatedAccount.Storage {
 			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], StorageNode{
 				Key:   common.BytesToHash(storageDiff.Key),

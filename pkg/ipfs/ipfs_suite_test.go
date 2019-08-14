@@ -14,20 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node_test
+package ipfs_test
 
 import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
-func TestSeedNode(t *testing.T) {
+func TestIPFS(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Seed Node Suite Test")
+	RunSpecs(t, "IPFS Suite Test")
 }
 
 var _ = BeforeSuite(func() {

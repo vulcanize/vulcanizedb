@@ -20,10 +20,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/params"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
@@ -33,6 +29,8 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"

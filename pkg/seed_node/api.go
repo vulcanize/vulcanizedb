@@ -19,11 +19,10 @@ package seed_node
 import (
 	"context"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 )
 
