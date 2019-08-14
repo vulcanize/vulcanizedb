@@ -19,12 +19,11 @@ package seed_node
 import (
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )

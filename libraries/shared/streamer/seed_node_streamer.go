@@ -28,7 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// ISeedNodeStreamer is the interface for streaming data from a vulcanizeDB seed node
+// ISeedNodeStreamer is the interface for streaming SeedNodePayloads from a vulcanizeDB seed node
 type ISeedNodeStreamer interface {
 	Stream(payloadChan chan SeedNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error)
 }

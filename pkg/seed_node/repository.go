@@ -19,8 +19,8 @@ package seed_node
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 

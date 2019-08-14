@@ -17,35 +17,84 @@
 package mocks
 
 import (
-	"errors"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"math/big"
-	"math/rand"
-
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	rand2 "math/rand"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // Test variables
 var (
-	BlockNumber     = big.NewInt(rand.Int63())
-	BlockHash       = "0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"
-	CodeHash        = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-	NewNonceValue   = rand.Uint64()
-	NewBalanceValue = rand.Int63()
-	ContractRoot    = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-	StoragePath     = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").Bytes()
-	StorageKey      = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
-	StorageValue    = common.Hex2Bytes("0x03")
-	storage         = []statediff.StorageDiff{{
+	// block data
+	BlockNumber = big.NewInt(rand2.Int63())
+	MockHeader  = types.Header{
+		Time:        0,
+		Number:      BlockNumber,
+		Root:        common.HexToHash("0x0"),
+		TxHash:      common.HexToHash("0x0"),
+		ReceiptHash: common.HexToHash("0x0"),
+	}
+	MockTransactions, MockReceipts, senderAddr = createTransactionsAndReceipts()
+	ReceiptsRlp, _                             = rlp.EncodeToBytes(MockReceipts)
+	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
+	MockBlockRlp, _                            = rlp.EncodeToBytes(MockBlock)
+	MockHeaderRlp, err                         = rlp.EncodeToBytes(MockBlock.Header())
+	MockTrxMeta                                = []*ipfs.TrxMetaData{
+		{
+			CID: "", // This is empty until we go to publish to ipfs
+			Src: senderAddr.Hex(),
+			Dst: "0x0000000000000000000000000000000000000000",
+		},
+		{
+			CID: "",
+			Src: senderAddr.Hex(),
+			Dst: "0x0000000000000000000000000000000000000001",
+		},
+	}
+	MockRctMeta = []*ipfs.ReceiptMetaData{
+		{
+			CID: "",
+			Topic0s: []string{
+				"0x0000000000000000000000000000000000000000000000000000000000000004",
+			},
+			ContractAddress: "0x0000000000000000000000000000000000000000",
+		},
+		{
+			CID: "",
+			Topic0s: []string{
+				"0x0000000000000000000000000000000000000000000000000000000000000005",
+			},
+			ContractAddress: "0x0000000000000000000000000000000000000001",
+		},
+	}
+
+	// statediff data
+	CodeHash            = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+	NonceValue          = rand2.Uint64()
+	anotherNonceValue   = rand2.Uint64()
+	BalanceValue        = rand2.Int63()
+	anotherBalanceValue = rand2.Int63()
+	ContractRoot        = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	StoragePath         = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").Bytes()
+	StorageKey          = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
+	StorageValue        = common.Hex2Bytes("0x03")
+	storage             = []statediff.StorageDiff{{
 		Key:   StorageKey,
 		Value: StorageValue,
 		Path:  StoragePath,
 		Proof: [][]byte{},
+		Leaf:  true,
 	}}
 	emptyStorage           = make([]statediff.StorageDiff, 0)
 	address                = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
@@ -53,22 +102,31 @@ var (
 	anotherAddress         = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
 	AnotherContractLeafKey = ipfs.AddressToKey(anotherAddress)
 	testAccount            = state.Account{
-		Nonce:    NewNonceValue,
-		Balance:  big.NewInt(NewBalanceValue),
+		Nonce:    NonceValue,
+		Balance:  big.NewInt(BalanceValue),
 		Root:     ContractRoot,
 		CodeHash: CodeHash,
 	}
-	valueBytes, _       = rlp.EncodeToBytes(testAccount)
-	CreatedAccountDiffs = []statediff.AccountDiff{
+	anotherTestAccount = state.Account{
+		Nonce:    anotherNonceValue,
+		Balance:  big.NewInt(anotherBalanceValue),
+		Root:     common.HexToHash("0x"),
+		CodeHash: nil,
+	}
+	valueBytes, _        = rlp.EncodeToBytes(testAccount)
+	anotherValueBytes, _ = rlp.EncodeToBytes(anotherTestAccount)
+	CreatedAccountDiffs  = []statediff.AccountDiff{
 		{
 			Key:     ContractLeafKey.Bytes(),
 			Value:   valueBytes,
 			Storage: storage,
+			Leaf:    true,
 		},
 		{
 			Key:     AnotherContractLeafKey.Bytes(),
-			Value:   valueBytes,
+			Value:   anotherValueBytes,
 			Storage: emptyStorage,
+			Leaf:    true,
 		},
 	}
 
@@ -76,60 +134,66 @@ var (
 		Key:     ContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storage,
+		Leaf:    true,
 	}}
 
 	DeletedAccountDiffs = []statediff.AccountDiff{{
 		Key:     ContractLeafKey.Bytes(),
 		Value:   valueBytes,
 		Storage: storage,
+		Leaf:    true,
 	}}
 
 	MockStateDiff = statediff.StateDiff{
 		BlockNumber:     BlockNumber,
-		BlockHash:       common.HexToHash(BlockHash),
+		BlockHash:       MockBlock.Hash(),
 		CreatedAccounts: CreatedAccountDiffs,
-		DeletedAccounts: DeletedAccountDiffs,
-		UpdatedAccounts: UpdatedAccountDiffs,
 	}
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
-
-	mockTransaction1 = types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
-	mockTransaction2 = types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
-	MockTransactions = types.Transactions{mockTransaction1, mockTransaction2}
-
-	mockReceipt1 = types.NewReceipt(common.HexToHash("0x0").Bytes(), false, 50)
-	mockReceipt2 = types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
-	MockReceipts = types.Receipts{mockReceipt1, mockReceipt2}
-
-	MockHeader = types.Header{
-		Time:        0,
-		Number:      big.NewInt(1),
-		Root:        common.HexToHash("0x0"),
-		TxHash:      common.HexToHash("0x0"),
-		ReceiptHash: common.HexToHash("0x0"),
+	MockStateNodes        = map[common.Hash]ipfs.StateNode{
+		ContractLeafKey: {
+			Value: valueBytes,
+			Leaf:  true,
+		},
+		AnotherContractLeafKey: {
+			Value: anotherValueBytes,
+			Leaf:  true,
+		},
 	}
-	MockBlock       = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
-	MockBlockRlp, _ = rlp.EncodeToBytes(MockBlock)
+	MockStorageNodes = map[common.Hash][]ipfs.StorageNode{
+		ContractLeafKey: {
+			{
+				Key:   common.BytesToHash(StorageKey),
+				Value: StorageValue,
+				Leaf:  true,
+			},
+		},
+	}
 
-	MockStatediffPayload = statediff.Payload{
+	// aggregate payloads
+	MockStateDiffPayload = statediff.Payload{
 		BlockRlp:     MockBlockRlp,
 		StateDiffRlp: MockStateDiffBytes,
-		Err:          nil,
+		ReceiptsRlp:  ReceiptsRlp,
 	}
 
-	EmptyStatediffPayload = statediff.Payload{
+	EmptyStateDiffPayload = statediff.Payload{
 		BlockRlp:     []byte{},
 		StateDiffRlp: []byte{},
-		Err:          nil,
+		ReceiptsRlp:  []byte{},
 	}
 
-	ErrStatediffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		Err:          errors.New("mock error"),
+	MockIPLDPayload = ipfs.IPLDPayload{
+		BlockNumber:     big.NewInt(1),
+		BlockHash:       MockBlock.Hash(),
+		Receipts:        MockReceipts,
+		HeaderRLP:       MockHeaderRlp,
+		BlockBody:       MockBlock.Body(),
+		TrxMetaData:     MockTrxMeta,
+		ReceiptMetaData: MockRctMeta,
+		StorageNodes:    MockStorageNodes,
+		StateNodes:      MockStateNodes,
 	}
-
-	MockIPLDPayload = ipfs.IPLDPayload{}
 
 	MockCIDPayload = ipfs.CIDPayload{
 		BlockNumber: "1",
@@ -185,3 +249,46 @@ var (
 		},
 	}
 )
+
+// createTransactionsAndReceipts is a helper function to generate signed mock transactions and mock receipts with mock logs
+func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common.Address) {
+	// make transactions
+	trx1 := types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
+	trx2 := types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
+	transactionSigner := types.MakeSigner(params.MainnetChainConfig, BlockNumber)
+	mockCurve := elliptic.P256()
+	mockPrvKey, err := ecdsa.GenerateKey(mockCurve, rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	signedTrx1, err := types.SignTx(trx1, transactionSigner, mockPrvKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	signedTrx2, err := types.SignTx(trx2, transactionSigner, mockPrvKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	senderAddr, err := types.Sender(transactionSigner, signedTrx1) // same for both trx
+	if err != nil {
+		log.Fatal(err)
+	}
+	// make receipts
+	mockTopic1 := common.HexToHash("0x04")
+	mockReceipt1 := types.NewReceipt(common.HexToHash("0x0").Bytes(), false, 50)
+	mockReceipt1.ContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
+	mockLog1 := &types.Log{
+		Topics: []common.Hash{mockTopic1},
+	}
+	mockReceipt1.Logs = []*types.Log{mockLog1}
+	mockReceipt1.TxHash = trx1.Hash()
+	mockTopic2 := common.HexToHash("0x05")
+	mockReceipt2 := types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
+	mockReceipt2.ContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
+	mockLog2 := &types.Log{
+		Topics: []common.Hash{mockTopic2},
+	}
+	mockReceipt2.Logs = []*types.Log{mockLog2}
+	mockReceipt2.TxHash = trx2.Hash()
+	return types.Transactions{signedTrx1, signedTrx2}, types.Receipts{mockReceipt1, mockReceipt2}, senderAddr
+}
