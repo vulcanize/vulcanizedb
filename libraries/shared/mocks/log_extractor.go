@@ -32,14 +32,14 @@ func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.Event
 	extractor.AddedConfigs = append(extractor.AddedConfigs, config)
 }
 
-func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution, errs chan error, missingHeadersFound chan bool) {
+func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) (error, bool) {
 	extractor.ExtractLogsCount++
 	var errorThisRun error
 	errorThisRun, extractor.ExtractLogsErrors = extractor.ExtractLogsErrors[0], extractor.ExtractLogsErrors[1:]
 	if errorThisRun != nil {
-		errs <- errorThisRun
+		return errorThisRun, false
 	}
 	var missingHeadersExist bool
 	missingHeadersExist, extractor.MissingHeadersExist = extractor.MissingHeadersExist[0], extractor.MissingHeadersExist[1:]
-	missingHeadersFound <- missingHeadersExist
+	return nil, missingHeadersExist
 }

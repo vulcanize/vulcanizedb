@@ -89,42 +89,29 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	extractLogsErr := make(chan error)
-	missingHeadersFound := make(chan bool)
-	go watcher.LogExtractor.ExtractLogs(recheckHeaders, extractLogsErr, missingHeadersFound)
+	err, missingHeadersFound := watcher.LogExtractor.ExtractLogs(recheckHeaders)
+	if err != nil {
+		errs <- err
+	}
 
-	for {
-		select {
-		case err := <-extractLogsErr:
-			errs <- err
-		case missingHeaders := <-missingHeadersFound:
-			if missingHeaders {
-				go watcher.extractLogs(recheckHeaders, errs)
-			} else {
-				time.Sleep(NoNewDataPause)
-				go watcher.extractLogs(recheckHeaders, errs)
-			}
-		}
+	if missingHeadersFound {
+		watcher.extractLogs(recheckHeaders, errs)
+	} else {
+		time.Sleep(NoNewDataPause)
+		watcher.extractLogs(recheckHeaders, errs)
 	}
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	delegateLogsErr := make(chan error)
-	logsFound := make(chan bool)
-	go watcher.LogDelegator.DelegateLogs(delegateLogsErr, logsFound)
-
-	for {
-		select {
-		case err := <-delegateLogsErr:
-			errs <- err
-		case logs := <-logsFound:
-			if logs {
-				go watcher.delegateLogs(errs)
-			} else {
-				time.Sleep(NoNewDataPause)
-				go watcher.delegateLogs(errs)
-			}
-		}
+	err, logsFound := watcher.LogDelegator.DelegateLogs()
+	if err != nil {
+		errs <- err
 	}
 
+	if logsFound {
+		watcher.delegateLogs(errs)
+	} else {
+		time.Sleep(NoNewDataPause)
+		watcher.delegateLogs(errs)
+	}
 }

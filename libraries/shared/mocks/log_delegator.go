@@ -31,14 +31,14 @@ func (delegator *MockLogDelegator) AddTransformer(t transformer.EventTransformer
 	delegator.AddedTransformers = append(delegator.AddedTransformers, t)
 }
 
-func (delegator *MockLogDelegator) DelegateLogs(errs chan error, logsFound chan bool) {
+func (delegator *MockLogDelegator) DelegateLogs() (error, bool) {
 	delegator.DelegateCallCount++
 	var delegateErrorThisRun error
 	delegateErrorThisRun, delegator.DelegateErrors = delegator.DelegateErrors[0], delegator.DelegateErrors[1:]
 	if delegateErrorThisRun != nil {
-		errs <- delegateErrorThisRun
+		return delegateErrorThisRun, false
 	}
 	var logsFoundThisRun bool
 	logsFoundThisRun, delegator.LogsFound = delegator.LogsFound[0], delegator.LogsFound[1:]
-	logsFound <- logsFoundThisRun
+	return nil, logsFoundThisRun
 }
