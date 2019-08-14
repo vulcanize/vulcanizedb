@@ -51,7 +51,7 @@ func (chunker *LogChunker) AddConfig(transformerConfig transformer.EventTransfor
 	}
 }
 
-// Goes through an array of logs, associating relevant logs (matching addresses and topic) with transformers
+// Goes through a slice of logs, associating relevant logs (matching addresses and topic) with transformers
 func (chunker *LogChunker) ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog {
 	chunks := map[string][]core.HeaderSyncLog{}
 	for _, log := range logs {
