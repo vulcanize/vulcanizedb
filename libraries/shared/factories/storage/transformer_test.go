@@ -18,9 +18,9 @@ package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
@@ -38,17 +38,17 @@ var _ = Describe("Storage transformer", func() {
 		mappings = &mocks.MockMappings{}
 		repository = &mocks.MockStorageRepository{}
 		t = storage.Transformer{
-			Address:    common.Address{},
-			Mappings:   mappings,
-			Repository: repository,
+			HashedAddress: common.Hash{},
+			Mappings:      mappings,
+			Repository:    repository,
 		}
 	})
 
 	It("returns the contract address being watched", func() {
-		fakeAddress := common.HexToAddress("0x12345")
-		t.Address = fakeAddress
+		fakeAddress := common.BytesToHash(crypto.Keccak256(common.FromHex("0x12345")))
+		t.HashedAddress = fakeAddress
 
-		Expect(t.ContractAddress()).To(Equal(fakeAddress))
+		Expect(t.KeccakContractAddress()).To(Equal(fakeAddress))
 	})
 
 	It("looks up metadata for storage key", func() {
@@ -73,11 +73,11 @@ var _ = Describe("Storage transformer", func() {
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
 		fakeRow := utils.StorageDiff{
-			Contract:     common.Address{},
-			BlockHash:    common.HexToHash(fakeBlockHash),
-			BlockHeight:  fakeBlockNumber,
-			StorageKey:   common.Hash{},
-			StorageValue: rawValue.Hash(),
+			KeccakOfContractAddress: common.Hash{},
+			BlockHash:               common.HexToHash(fakeBlockHash),
+			BlockHeight:             fakeBlockNumber,
+			StorageKey:              common.Hash{},
+			StorageValue:            rawValue.Hash(),
 		}
 
 		err := t.Execute(fakeRow)
@@ -121,11 +121,11 @@ var _ = Describe("Storage transformer", func() {
 		It("passes the decoded data items to the repository", func() {
 			mappings.Metadata = fakeMetadata
 			fakeRow := utils.StorageDiff{
-				Contract:     common.Address{},
-				BlockHash:    common.HexToHash(fakeBlockHash),
-				BlockHeight:  fakeBlockNumber,
-				StorageKey:   common.Hash{},
-				StorageValue: rawValue.Hash(),
+				KeccakOfContractAddress: common.Hash{},
+				BlockHash:               common.HexToHash(fakeBlockHash),
+				BlockHeight:             fakeBlockNumber,
+				StorageKey:              common.Hash{},
+				StorageValue:            rawValue.Hash(),
 			}
 
 			err := t.Execute(fakeRow)

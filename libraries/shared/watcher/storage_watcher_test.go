@@ -17,59 +17,57 @@
 package watcher_test
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
-	"io/ioutil"
-	"os"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"io/ioutil"
+	"os"
+	"time"
 )
 
-var _ = Describe("Geth Storage Watcher", func() {
-	It("adds transformers", func() {
-		fakeAddress := common.HexToAddress("0x12345")
-		fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
-		w := watcher.NewGethStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
+var _ = Describe("Storage Watcher", func() {
+	Describe("AddTransformer", func() {
+		It("adds transformers", func() {
+			fakeHashedAddress := common.BytesToHash(crypto.Keccak256(common.FromHex("0x12345")))
+			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
+			w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
 
-		w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
-		Expect(w.Transformers[fakeAddress]).To(Equal(fakeTransformer))
+			Expect(w.KeccakAddressTransformers[fakeHashedAddress]).To(Equal(fakeTransformer))
+		})
 	})
 
-	Describe("executing watcher", func() {
+	Describe("Execute", func() {
 		var (
 			errs            chan error
 			mockFetcher     *mocks.MockStorageFetcher
 			mockQueue       *mocks.MockStorageQueue
 			mockTransformer *mocks.MockStorageTransformer
-			gethDiff        utils.StorageDiff
+			csvDiff         utils.StorageDiff
 			diffs           chan utils.StorageDiff
-			storageWatcher  watcher.GethStorageWatcher
-			address         common.Address
-			keccakOfAddress common.Hash
+			storageWatcher  watcher.StorageWatcher
+			hashedAddress   common.Hash
 		)
 
 		BeforeEach(func() {
 			errs = make(chan error)
 			diffs = make(chan utils.StorageDiff)
-			address = common.HexToAddress("0x0123456789abcdef")
-			keccakOfAddress = common.BytesToHash(crypto.Keccak256(address[:]))
+			hashedAddress = common.BytesToHash(crypto.Keccak256(common.FromHex("0x0123456789abcdef")))
 			mockFetcher = mocks.NewMockStorageFetcher()
 			mockQueue = &mocks.MockStorageQueue{}
-			mockTransformer = &mocks.MockStorageTransformer{Address: address}
-			gethDiff = utils.StorageDiff{
-				Id:                      1338,
-				KeccakOfContractAddress: keccakOfAddress,
+			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
+			csvDiff = utils.StorageDiff{
+				Id:                      1337,
+				KeccakOfContractAddress: hashedAddress,
 				BlockHash:               common.HexToHash("0xfedcba9876543210"),
 				BlockHeight:             0,
 				StorageKey:              common.HexToHash("0xabcdef1234567890"),
@@ -79,7 +77,7 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 		It("logs error if fetching storage diffs fails", func(done Done) {
 			mockFetcher.ErrsToReturn = []error{fakes.FakeError}
-			storageWatcher = watcher.NewGethStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+			storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 			storageWatcher.Queue = mockQueue
 			storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			tempFile, fileErr := ioutil.TempFile("", "log")
@@ -96,10 +94,10 @@ var _ = Describe("Geth Storage Watcher", func() {
 			close(done)
 		})
 
-		Describe("transforming new storage diffs", func() {
+		Describe("transforming new storage diffs from csv", func() {
 			BeforeEach(func() {
-				mockFetcher.DiffsToReturn = []utils.StorageDiff{gethDiff}
-				storageWatcher = watcher.NewGethStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+				mockFetcher.DiffsToReturn = []utils.StorageDiff{csvDiff}
+				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
@@ -109,7 +107,7 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 				Eventually(func() utils.StorageDiff {
 					return mockTransformer.PassedDiff
-				}).Should(Equal(gethDiff))
+				}).Should(Equal(csvDiff))
 				close(done)
 			})
 
@@ -124,7 +122,7 @@ var _ = Describe("Geth Storage Watcher", func() {
 				}).Should(BeTrue())
 				Eventually(func() utils.StorageDiff {
 					return mockQueue.AddPassedDiff
-				}).Should(Equal(gethDiff))
+				}).Should(Equal(csvDiff))
 				close(done)
 			})
 
@@ -147,50 +145,12 @@ var _ = Describe("Geth Storage Watcher", func() {
 				}).Should(ContainSubstring(fakes.FakeError.Error()))
 				close(done)
 			})
-
-			It("keeps track transformers by the keccak256 hash of their contract address ", func(done Done) {
-				go storageWatcher.Execute(diffs, errs, time.Hour)
-
-				m := make(map[common.Hash]transformer.StorageTransformer)
-				m[keccakOfAddress] = mockTransformer
-
-				Eventually(func() map[common.Hash]transformer.StorageTransformer {
-					return storageWatcher.KeccakAddressTransformers
-				}).Should(Equal(m))
-
-				close(done)
-			})
-
-			It("gets the transformer from the known keccak address map first", func(done Done) {
-				anotherAddress := common.HexToAddress("0xafakeaddress")
-				anotherTransformer := &mocks.MockStorageTransformer{Address: anotherAddress}
-				keccakOfAnotherAddress := common.BytesToHash(crypto.Keccak256(anotherAddress[:]))
-
-				anotherGethDiff := utils.StorageDiff{
-					Id:                      1338,
-					KeccakOfContractAddress: keccakOfAnotherAddress,
-					BlockHash:               common.HexToHash("0xfedcba9876543210"),
-					BlockHeight:             0,
-					StorageKey:              common.HexToHash("0xabcdef1234567890"),
-					StorageValue:            common.HexToHash("0x9876543210abcdef"),
-				}
-				mockFetcher.DiffsToReturn = []utils.StorageDiff{anotherGethDiff}
-				storageWatcher.KeccakAddressTransformers[keccakOfAnotherAddress] = anotherTransformer
-
-				go storageWatcher.Execute(diffs, errs, time.Hour)
-
-				Eventually(func() utils.StorageDiff {
-					return anotherTransformer.PassedDiff
-				}).Should(Equal(anotherGethDiff))
-
-				close(done)
-			})
 		})
 
 		Describe("transforming queued storage diffs", func() {
 			BeforeEach(func() {
-				mockQueue.DiffsToReturn = []utils.StorageDiff{gethDiff}
-				storageWatcher = watcher.NewGethStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+				mockQueue.DiffsToReturn = []utils.StorageDiff{csvDiff}
+				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
@@ -200,7 +160,7 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 				Eventually(func() utils.StorageDiff {
 					return mockTransformer.PassedDiff
-				}).Should(Equal(gethDiff))
+				}).Should(Equal(csvDiff))
 				close(done)
 			})
 
@@ -209,7 +169,7 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 				Eventually(func() int {
 					return mockQueue.DeletePassedId
-				}).Should(Equal(gethDiff.Id))
+				}).Should(Equal(csvDiff.Id))
 				close(done)
 			})
 
@@ -231,8 +191,8 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 			It("deletes obsolete diff from queue if contract not recognized", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:       gethDiff.Id + 1,
-					Contract: common.HexToAddress("0xfedcba9876543210"),
+					Id:                      csvDiff.Id + 1,
+					KeccakOfContractAddress: common.BytesToHash(crypto.Keccak256(common.FromHex("0xfedcba9876543210"))),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 
@@ -246,8 +206,8 @@ var _ = Describe("Geth Storage Watcher", func() {
 
 			It("logs error if deleting obsolete diff fails", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:       gethDiff.Id + 1,
-					Contract: common.HexToAddress("0xfedcba9876543210"),
+					Id:                      csvDiff.Id + 1,
+					KeccakOfContractAddress: common.BytesToHash(crypto.Keccak256(common.FromHex("0xfedcba9876543210"))),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 				mockQueue.DeleteErr = fakes.FakeError
