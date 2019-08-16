@@ -107,5 +107,5 @@ func (m Method) Sig() common.Hash {
 		i++
 	}
 
-	return common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ",")))))
+	return crypto.Keccak256Hash([]byte(fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ","))))
 }

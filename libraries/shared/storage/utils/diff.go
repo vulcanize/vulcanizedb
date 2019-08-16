@@ -42,9 +42,8 @@ func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
 	if err != nil {
 		return StorageDiff{}, err
 	}
-	hashedAddr := crypto.Keccak256(common.FromHex(csvRow[0]))
 	return StorageDiff{
-		KeccakOfContractAddress: common.BytesToHash(hashedAddr),
+		KeccakOfContractAddress: HexToKeccak256Hash(csvRow[0]),
 		BlockHash:               common.HexToHash(csvRow[1]),
 		BlockHeight:             height,
 		StorageKey:              common.HexToHash(csvRow[3]),
@@ -60,4 +59,8 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 		StorageKey:              common.BytesToHash(storage.Key),
 		StorageValue:            common.BytesToHash(storage.Value),
 	}
+}
+
+func HexToKeccak256Hash(addr string) common.Hash {
+	return crypto.Keccak256Hash(common.FromHex(addr))
 }

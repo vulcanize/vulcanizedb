@@ -58,19 +58,17 @@ func AddHashedKeys(currentMappings map[common.Hash]utils.StorageValueMetadata) m
 }
 
 func hashKey(key common.Hash) common.Hash {
-	return common.BytesToHash(crypto.Keccak256(key.Bytes()))
+	return crypto.Keccak256Hash(key.Bytes())
 }
 
 func GetMapping(indexOnContract, key string) common.Hash {
 	keyBytes := common.FromHex(key + indexOnContract)
-	encoded := crypto.Keccak256(keyBytes)
-	return common.BytesToHash(encoded)
+	return crypto.Keccak256Hash(keyBytes)
 }
 
 func GetNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
 	primaryMappingIndex := crypto.Keccak256(common.FromHex(primaryKey + indexOnContract))
-	secondaryMappingIndex := crypto.Keccak256(common.FromHex(secondaryKey), primaryMappingIndex)
-	return common.BytesToHash(secondaryMappingIndex)
+	return crypto.Keccak256Hash(common.FromHex(secondaryKey), primaryMappingIndex)
 }
 
 func GetIncrementedKey(original common.Hash, incrementBy int64) common.Hash {

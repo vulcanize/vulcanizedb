@@ -18,7 +18,6 @@ package utils_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,7 +40,7 @@ var _ = Describe("Storage row parsing", func() {
 			result, err := utils.FromParityCsvRow(data)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedKeccakOfContractAddress := common.BytesToHash(crypto.Keccak256(common.FromHex(contract)))
+			expectedKeccakOfContractAddress := utils.HexToKeccak256Hash(contract)
 			Expect(result.KeccakOfContractAddress).To(Equal(expectedKeccakOfContractAddress))
 			Expect(result.BlockHash).To(Equal(common.HexToHash(blockHash)))
 			Expect(result.BlockHeight).To(Equal(789))
