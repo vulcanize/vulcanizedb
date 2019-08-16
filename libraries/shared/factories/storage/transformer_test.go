@@ -18,7 +18,6 @@ package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/storage"
@@ -45,7 +44,7 @@ var _ = Describe("Storage transformer", func() {
 	})
 
 	It("returns the contract address being watched", func() {
-		fakeAddress := common.BytesToHash(crypto.Keccak256(common.FromHex("0x12345")))
+		fakeAddress := utils.HexToKeccak256Hash("0x12345")
 		t.HashedAddress = fakeAddress
 
 		Expect(t.KeccakContractAddress()).To(Equal(fakeAddress))

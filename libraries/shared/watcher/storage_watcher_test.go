@@ -18,7 +18,6 @@ package watcher_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
@@ -36,7 +35,7 @@ import (
 var _ = Describe("Storage Watcher", func() {
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
-			fakeHashedAddress := common.BytesToHash(crypto.Keccak256(common.FromHex("0x12345")))
+			fakeHashedAddress := utils.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
 			w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
 
@@ -61,7 +60,7 @@ var _ = Describe("Storage Watcher", func() {
 		BeforeEach(func() {
 			errs = make(chan error)
 			diffs = make(chan utils.StorageDiff)
-			hashedAddress = common.BytesToHash(crypto.Keccak256(common.FromHex("0x0123456789abcdef")))
+			hashedAddress = utils.HexToKeccak256Hash("0x0123456789abcdef")
 			mockFetcher = mocks.NewMockStorageFetcher()
 			mockQueue = &mocks.MockStorageQueue{}
 			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
@@ -192,7 +191,7 @@ var _ = Describe("Storage Watcher", func() {
 			It("deletes obsolete diff from queue if contract not recognized", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
 					Id:                      csvDiff.Id + 1,
-					KeccakOfContractAddress: common.BytesToHash(crypto.Keccak256(common.FromHex("0xfedcba9876543210"))),
+					KeccakOfContractAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 
@@ -207,7 +206,7 @@ var _ = Describe("Storage Watcher", func() {
 			It("logs error if deleting obsolete diff fails", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
 					Id:                      csvDiff.Id + 1,
-					KeccakOfContractAddress: common.BytesToHash(crypto.Keccak256(common.FromHex("0xfedcba9876543210"))),
+					KeccakOfContractAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 				mockQueue.DeleteErr = fakes.FakeError

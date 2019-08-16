@@ -18,7 +18,6 @@ package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
@@ -35,10 +34,9 @@ var _ = Describe("Storage queue", func() {
 	)
 
 	BeforeEach(func() {
-		fakeAddr := common.FromHex("0x123456")
-		hashedFakeAddr := crypto.Keccak256(fakeAddr)
+		fakeAddr := "0x123456"
 		diff = utils.StorageDiff{
-			KeccakOfContractAddress: common.BytesToHash(hashedFakeAddr),
+			KeccakOfContractAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:               common.HexToHash("0x678901"),
 			BlockHeight:             987,
 			StorageKey:              common.HexToHash("0x654321"),
@@ -83,10 +81,9 @@ var _ = Describe("Storage queue", func() {
 	})
 
 	It("gets all storage diffs from db", func() {
-		fakeAddr := common.FromHex("0x234567")
-		hashedFakeAddr := crypto.Keccak256(fakeAddr)
+		fakeAddr := "0x234567"
 		diffTwo := utils.StorageDiff{
-			KeccakOfContractAddress: common.BytesToHash(hashedFakeAddr),
+			KeccakOfContractAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:               common.HexToHash("0x678902"),
 			BlockHeight:             988,
 			StorageKey:              common.HexToHash("0x654322"),
