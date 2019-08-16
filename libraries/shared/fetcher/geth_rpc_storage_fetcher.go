@@ -16,7 +16,6 @@ package fetcher
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
@@ -61,13 +60,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, storage := range account.Storage {
 				logrus.Trace("adding storage diff to out channel")
-				out <- utils.StorageDiff{
-					KeccakOfContractAddress: common.BytesToHash(account.Key),
-					BlockHash:               stateDiff.BlockHash,
-					BlockHeight:             int(stateDiff.BlockNumber.Int64()),
-					StorageKey:              common.BytesToHash(storage.Key),
-					StorageValue:            common.BytesToHash(storage.Value),
-				}
+				out <- utils.FromGethStateDiff(account, stateDiff, storage)
 			}
 		}
 	}

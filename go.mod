@@ -14,7 +14,6 @@ require (
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
-	github.com/google/uuid v1.0.0 // indirect
 	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/huin/goupnp v1.0.0 // indirect

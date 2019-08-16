@@ -18,17 +18,14 @@ package watcher
 
 import (
 	"fmt"
-	"reflect"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"time"
 )
 
 type IStorageWatcher interface {
@@ -40,15 +37,24 @@ type StorageWatcher struct {
 	db                        *postgres.DB
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
-	Transformers              map[common.Address]transformer.StorageTransformer
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
-	transformerGetter         func(diff utils.StorageDiff) (transformer.StorageTransformer, bool)
+}
+
+func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
+	queue := storage.NewStorageQueue(db)
+	transformers := make(map[common.Hash]transformer.StorageTransformer)
+	return StorageWatcher{
+		db:                        db,
+		StorageFetcher:            fetcher,
+		Queue:                     queue,
+		KeccakAddressTransformers: transformers,
+	}
 }
 
 func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
 	for _, initializer := range initializers {
 		storageTransformer := initializer(storageWatcher.db)
-		storageWatcher.Transformers[storageTransformer.ContractAddress()] = storageTransformer
+		storageWatcher.KeccakAddressTransformers[storageTransformer.KeccakContractAddress()] = storageTransformer
 	}
 }
 
@@ -68,7 +74,8 @@ func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, e
 }
 
 func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
-	return storageWatcher.transformerGetter(diff)
+	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.KeccakOfContractAddress]
+	return storageTransformer, ok
 }
 
 func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
@@ -111,8 +118,4 @@ func (storageWatcher StorageWatcher) deleteRow(id int) {
 	if deleteErr != nil {
 		logrus.Warn(fmt.Sprintf("error deleting persisted diff from queue: %s", deleteErr))
 	}
-}
-
-func isKeyNotFound(executeErr error) bool {
-	return reflect.TypeOf(executeErr) == reflect.TypeOf(utils.ErrStorageKeyNotFound{})
 }

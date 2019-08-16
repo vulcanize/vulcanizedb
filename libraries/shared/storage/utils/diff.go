@@ -17,24 +17,24 @@
 package utils
 
 import (
-	"strconv"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/statediff"
+	"strconv"
 )
 
 const ExpectedRowLength = 5
 
 type StorageDiff struct {
 	Id                      int
-	Contract                common.Address
-	KeccakOfContractAddress common.Hash
+	KeccakOfContractAddress common.Hash `db:"contract"`
 	BlockHash               common.Hash `db:"block_hash"`
 	BlockHeight             int         `db:"block_height"`
 	StorageKey              common.Hash `db:"storage_key"`
 	StorageValue            common.Hash `db:"storage_value"`
 }
 
-func FromStrings(csvRow []string) (StorageDiff, error) {
+func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
 	if len(csvRow) != ExpectedRowLength {
 		return StorageDiff{}, ErrRowMalformed{Length: len(csvRow)}
 	}
@@ -42,11 +42,22 @@ func FromStrings(csvRow []string) (StorageDiff, error) {
 	if err != nil {
 		return StorageDiff{}, err
 	}
+	hashedAddr := crypto.Keccak256(common.FromHex(csvRow[0]))
 	return StorageDiff{
-		Contract:     common.HexToAddress(csvRow[0]),
-		BlockHash:    common.HexToHash(csvRow[1]),
-		BlockHeight:  height,
-		StorageKey:   common.HexToHash(csvRow[3]),
-		StorageValue: common.HexToHash(csvRow[4]),
+		KeccakOfContractAddress: common.BytesToHash(hashedAddr),
+		BlockHash:               common.HexToHash(csvRow[1]),
+		BlockHeight:             height,
+		StorageKey:              common.HexToHash(csvRow[3]),
+		StorageValue:            common.HexToHash(csvRow[4]),
 	}, nil
+}
+
+func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) StorageDiff {
+	return StorageDiff{
+		KeccakOfContractAddress: common.BytesToHash(account.Key),
+		BlockHash:               stateDiff.BlockHash,
+		BlockHeight:             int(stateDiff.BlockNumber.Int64()),
+		StorageKey:              common.BytesToHash(storage.Key),
+		StorageValue:            common.BytesToHash(storage.Value),
+	}
 }

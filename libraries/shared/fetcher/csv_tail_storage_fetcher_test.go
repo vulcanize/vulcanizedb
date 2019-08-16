@@ -18,17 +18,15 @@ package fetcher_test
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hpcloud/tail"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"strings"
+	"time"
 )
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {
@@ -61,7 +59,7 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
-		expectedRow, err := utils.FromStrings(strings.Split(line.Text, ","))
+		expectedRow, err := utils.FromParityCsvRow(strings.Split(line.Text, ","))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(<-diffsChannel).To(Equal(expectedRow))
 		close(done)
