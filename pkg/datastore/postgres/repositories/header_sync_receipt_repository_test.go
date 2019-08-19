@@ -18,26 +18,28 @@ package repositories_test
 
 import (
 	"encoding/json"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/big"
 )
 
 var _ = Describe("Header Sync Receipt Repo", func() {
 	var (
-		rawHeader []byte
-		err       error
-		timestamp string
-		db        *postgres.DB
+		rawHeader   []byte
+		err         error
+		timestamp   string
+		db          *postgres.DB
 		receiptRepo repositories.HeaderSyncReceiptRepository
-		headerRepo repositories.HeaderRepository
-		header    core.Header
+		headerRepo  repositories.HeaderRepository
+		header      core.Header
 	)
 
 	BeforeEach(func() {
