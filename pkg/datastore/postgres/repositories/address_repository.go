@@ -27,11 +27,11 @@ import (
 
 type AddressRepository struct{}
 
-func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int, error) {
+func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
-	var addressId int
+	var addressId int64
 	getErr := db.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
 	if getErr == sql.ErrNoRows {
 		insertErr := db.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
@@ -41,11 +41,11 @@ func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (in
 	return addressId, getErr
 }
 
-func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int, error) {
+func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
-	var addressId int
+	var addressId int64
 	getErr := tx.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
 	if getErr == sql.ErrNoRows {
 		insertErr := tx.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
@@ -55,7 +55,7 @@ func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address st
 	return addressId, getErr
 }
 
-func (AddressRepository) GetAddressById(db *postgres.DB, id int) (string, error) {
+func (AddressRepository) GetAddressById(db *postgres.DB, id int64) (string, error) {
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
 	return address, getErr

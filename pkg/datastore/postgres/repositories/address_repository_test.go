@@ -41,8 +41,12 @@ var _ = Describe("address lookup", func() {
 		repo = repositories.AddressRepository{}
 	})
 
+	AfterEach(func() {
+		test_config.CleanTestDB(db)
+	})
+
 	type dbAddress struct {
-		Id      int
+		Id      int64
 		Address string
 	}
 
@@ -59,16 +63,17 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("returns the existing record id if the address already exists", func() {
-			_, createErr := repo.GetOrCreateAddress(db, address)
+			createId, createErr := repo.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			_, getErr := repo.GetOrCreateAddress(db, address)
+			getId, getErr := repo.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 
 			var addressCount int
 			addressErr := db.Get(&addressCount, `SELECT count(*) FROM public.addresses`)
 			Expect(addressErr).NotTo(HaveOccurred())
 			Expect(addressCount).To(Equal(1))
+			Expect(createId).To(Equal(getId))
 		})
 
 		It("gets upper-cased addresses", func() {
@@ -102,10 +107,15 @@ var _ = Describe("address lookup", func() {
 			Expect(txErr).NotTo(HaveOccurred())
 		})
 
+		AfterEach(func() {
+			tx.Rollback()
+		})
+
 		It("creates an address record", func() {
 			addressId, createErr := repo.GetOrCreateAddressInTransaction(tx, address)
 			Expect(createErr).NotTo(HaveOccurred())
-			tx.Commit()
+			commitErr := tx.Commit()
+			Expect(commitErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
 			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
