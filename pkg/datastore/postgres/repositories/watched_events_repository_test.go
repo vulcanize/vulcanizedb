@@ -19,6 +19,7 @@ package repositories_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -79,7 +80,8 @@ var _ = Describe("Watched Events Repository", func() {
 		Expect(err).ToNot(HaveOccurred())
 		blockId, err := blocksRepository.CreateOrUpdateBlock(core.Block{})
 		Expect(err).NotTo(HaveOccurred())
-		tx, _ := db.Beginx()
+		tx, txBeginErr := db.Beginx()
+		Expect(txBeginErr).NotTo(HaveOccurred())
 		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
 		tx.Commit()
 		Expect(err).NotTo(HaveOccurred())

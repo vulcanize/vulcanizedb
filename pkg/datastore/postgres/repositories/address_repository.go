@@ -18,8 +18,10 @@ package repositories
 
 import (
 	"database/sql"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -56,8 +58,5 @@ func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address st
 func (AddressRepository) GetAddressById(db *postgres.DB, id int) (string, error) {
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
-	if getErr != nil {
-		return "", getErr
-	}
-	return address, nil
+	return address, getErr
 }
