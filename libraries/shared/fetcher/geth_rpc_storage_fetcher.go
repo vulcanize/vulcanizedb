@@ -54,7 +54,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 			errs <- decodeErr
 		}
 
-		accounts := getAccountDiffs(*stateDiff)
+		accounts := getAccountsFromDiff(*stateDiff)
 		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
 		for _, account := range accounts {
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
@@ -66,7 +66,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 	}
 }
 
-func getAccountDiffs(stateDiff statediff.StateDiff) []statediff.AccountDiff {
+func getAccountsFromDiff(stateDiff statediff.StateDiff) []statediff.AccountDiff {
 	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
 	return append(accounts, stateDiff.DeletedAccounts...)
 }

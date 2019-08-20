@@ -61,6 +61,6 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 	}
 }
 
-func HexToKeccak256Hash(addr string) common.Hash {
-	return crypto.Keccak256Hash(common.FromHex(addr))
+func HexToKeccak256Hash(hex string) common.Hash {
+	return crypto.Keccak256Hash(common.FromHex(hex))
 }
