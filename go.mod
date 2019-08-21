@@ -48,4 +48,4 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 )
 
-replace github.com/ethereum/go-ethereum v1.9.0 => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
+replace github.com/ethereum/go-ethereum => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
