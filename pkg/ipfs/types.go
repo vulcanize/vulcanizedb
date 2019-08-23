@@ -24,7 +24,7 @@ import (
 	"github.com/ipfs/go-block-format"
 )
 
-// CIDWrapper is used to package CIDs retrieved from the local Postgres cache
+// CIDWrapper is used to package CIDs retrieved from the local Postgres cache and direct fetching of IPLDs
 type CIDWrapper struct {
 	BlockNumber  *big.Int
 	Headers      []string
@@ -35,7 +35,7 @@ type CIDWrapper struct {
 	StorageNodes []StorageNodeCID
 }
 
-// IPLDWrapper is used to package raw IPLD block data for resolution
+// IPLDWrapper is used to package raw IPLD block data fetched from IPFS
 type IPLDWrapper struct {
 	BlockNumber  *big.Int
 	Headers      []blocks.Block
@@ -46,7 +46,7 @@ type IPLDWrapper struct {
 	StorageNodes map[common.Hash]map[common.Hash]blocks.Block
 }
 
-// IPLDPayload is a custom type which packages ETH data for the IPFS publisher
+// IPLDPayload is a custom type which packages raw ETH data for the IPFS publisher
 type IPLDPayload struct {
 	HeaderRLP       []byte
 	BlockNumber     *big.Int
