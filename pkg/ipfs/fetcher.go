@@ -63,26 +63,32 @@ func (f *EthIPLDFetcher) FetchCIDs(cids CIDWrapper) (*IPLDWrapper, error) {
 
 	err := f.fetchHeaders(cids, blocks)
 	if err != nil {
+		println(1)
 		return nil, err
 	}
 	err = f.fetchUncles(cids, blocks)
 	if err != nil {
+		println(2)
 		return nil, err
 	}
 	err = f.fetchTrxs(cids, blocks)
 	if err != nil {
+		println(3)
 		return nil, err
 	}
 	err = f.fetchRcts(cids, blocks)
 	if err != nil {
+		println(4)
 		return nil, err
 	}
 	err = f.fetchStorage(cids, blocks)
 	if err != nil {
+		println(5)
 		return nil, err
 	}
 	err = f.fetchState(cids, blocks)
 	if err != nil {
+		println(6)
 		return nil, err
 	}
 
@@ -190,7 +196,7 @@ func (f *EthIPLDFetcher) fetchState(cids CIDWrapper, blocks *IPLDWrapper) error 
 // fetchStorage fetches storage nodes
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state and storage keys
-func (f *EthIPLDFetcher) fetchStorage(cids CIDWrapper, blocks *IPLDWrapper) error {
+func (f *EthIPLDFetcher) fetchStorage(cids CIDWrapper, blks *IPLDWrapper) error {
 	log.Debug("fetching storage iplds")
 	for _, storageNode := range cids.StorageNodes {
 		if storageNode.CID == "" || storageNode.Key == "" || storageNode.StateKey == "" {
@@ -200,11 +206,14 @@ func (f *EthIPLDFetcher) fetchStorage(cids CIDWrapper, blocks *IPLDWrapper) erro
 		if err != nil {
 			return err
 		}
-		block, err := f.fetch(dc)
+		blk, err := f.fetch(dc)
 		if err != nil {
 			return err
 		}
-		blocks.StorageNodes[common.HexToHash(storageNode.StateKey)][common.HexToHash(storageNode.Key)] = block
+		if blks.StorageNodes[common.HexToHash(storageNode.StateKey)] == nil {
+			blks.StorageNodes[common.HexToHash(storageNode.StateKey)] = make(map[common.Hash]blocks.Block)
+		}
+		blks.StorageNodes[common.HexToHash(storageNode.StateKey)][common.HexToHash(storageNode.Key)] = blk
 	}
 	return nil
 }
