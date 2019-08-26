@@ -23,9 +23,9 @@ import (
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // CIDRetriever is the interface for retrieving CIDs from the Postgres cache

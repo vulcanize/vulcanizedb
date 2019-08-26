@@ -29,7 +29,6 @@ import (
 )
 
 var (
-	// these need to be actual typed objects so that the cid.Decode works
 	mockHeaderData    = []byte{0, 1, 2, 3, 4}
 	mockUncleData     = []byte{1, 2, 3, 4, 5}
 	mockTrxData       = []byte{2, 3, 4, 5, 6}
