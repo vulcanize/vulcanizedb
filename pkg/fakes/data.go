@@ -20,16 +20,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"strconv"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"math/rand"
+	"strconv"
+	"time"
 )
 
 var (
-	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
+	FakeAddress   = common.HexToAddress("0x" + RandomString(40))
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
 	fakeTimestamp = int64(111111111)
@@ -102,4 +102,16 @@ func GetFakeUncle(hash, reward string) core.Uncle {
 		Raw:       rawFakeHeader,
 		Timestamp: strconv.FormatInt(fakeTimestamp, 10),
 	}
+}
+
+func RandomString(length int) string {
+	var seededRand = rand.New(
+		rand.NewSource(time.Now().UnixNano()))
+	charset := "abcdef1234567890"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return string(b)
 }

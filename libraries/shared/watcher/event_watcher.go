@@ -41,8 +41,9 @@ type EventWatcher struct {
 
 func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 	extractor := &logs.LogExtractor{
-		Fetcher:                  fetcher.NewLogFetcher(bc),
 		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
+		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
+		Fetcher:                  fetcher.NewLogFetcher(bc),
 		LogRepository:            repositories.NewHeaderSyncLogRepository(db),
 		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
 	}
@@ -59,13 +60,17 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 }
 
 // Adds transformers to the watcher so that their logs will be extracted and delegated.
-func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTransformerInitializer) {
+func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTransformerInitializer) error {
 	for _, initializer := range initializers {
 		t := initializer(watcher.db)
 
 		watcher.LogDelegator.AddTransformer(t)
-		watcher.LogExtractor.AddTransformerConfig(t.GetConfig())
+		err := watcher.LogExtractor.AddTransformerConfig(t.GetConfig())
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Extracts and delegates watched log events.
