@@ -63,32 +63,26 @@ func (f *EthIPLDFetcher) FetchCIDs(cids CIDWrapper) (*IPLDWrapper, error) {
 
 	err := f.fetchHeaders(cids, blocks)
 	if err != nil {
-		println(1)
 		return nil, err
 	}
 	err = f.fetchUncles(cids, blocks)
 	if err != nil {
-		println(2)
 		return nil, err
 	}
 	err = f.fetchTrxs(cids, blocks)
 	if err != nil {
-		println(3)
 		return nil, err
 	}
 	err = f.fetchRcts(cids, blocks)
 	if err != nil {
-		println(4)
 		return nil, err
 	}
 	err = f.fetchStorage(cids, blocks)
 	if err != nil {
-		println(5)
 		return nil, err
 	}
 	err = f.fetchState(cids, blocks)
 	if err != nil {
-		println(6)
 		return nil, err
 	}
 

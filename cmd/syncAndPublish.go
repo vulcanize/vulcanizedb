@@ -56,7 +56,7 @@ func init() {
 }
 
 func syncAndPublish() {
-	blockChain, ethClient, rpcClient := getBlockChainAndClients()
+	blockChain, rpcClient := getBlockChainAndClient()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool)
@@ -69,7 +69,7 @@ func syncAndPublish() {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	processor, err := seed_node.NewProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
+	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func syncAndPublish() {
 	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
 }
 
-func getBlockChainAndClients() (*geth.BlockChain, core.EthClient, core.RpcClient) {
+func getBlockChainAndClient() (*geth.BlockChain, core.RpcClient) {
 	rawRpcClient, err := rpc.Dial(ipc)
 
 	if err != nil {
@@ -94,5 +94,5 @@ func getBlockChainAndClients() (*geth.BlockChain, core.EthClient, core.RpcClient
 	vdbNode := node.MakeNode(rpcClient)
 	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
 	blockChain := geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
-	return blockChain, ethClient, rpcClient
+	return blockChain, rpcClient
 }

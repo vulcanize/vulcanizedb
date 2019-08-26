@@ -19,30 +19,29 @@ package seed_node
 import (
 	"sync"
 
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 const payloadChanBufferSize = 20000 // the max eth sub buffer size
-const workerPoolSize = 1
 
-// Processor is the top level interface for streaming, converting to IPLDs, publishing,
+// NodeInterface is the top level interface for streaming, converting to IPLDs, publishing,
 // and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
 // This service is compatible with the Ethereum service interface (node.Service)
-type Processor interface {
+type NodeInterface interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for syncAndPublish processes
@@ -83,10 +82,12 @@ type Service struct {
 	Subscriptions map[common.Hash]map[rpc.ID]Subscription
 	// A mapping of subscription hash type to the corresponding StreamFilters
 	SubscriptionTypes map[common.Hash]config.Subscription
+	// Number of workers
+	WorkerPoolSize int
 }
 
-// NewProcessor creates a new Processor interface using an underlying Service struct
-func NewProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rpcClient core.RpcClient, qc chan bool) (Processor, error) {
+// NewSeedNode creates a new seed_node.Interface using an underlying seed_node.Service struct
+func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int) (NodeInterface, error) {
 	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -108,6 +109,7 @@ func NewProcessor(ipfsPath string, db *postgres.DB, ethClient core.EthClient, rp
 		QuitChan:          qc,
 		Subscriptions:     make(map[common.Hash]map[rpc.ID]Subscription),
 		SubscriptionTypes: make(map[common.Hash]config.Subscription),
+		WorkerPoolSize:    workers,
 	}, nil
 }
 
@@ -140,10 +142,10 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 
 	// Channels for forwarding data to the publishAndIndex workers
 	publishAndIndexPayload := make(chan ipfs.IPLDPayload, payloadChanBufferSize)
-	publishAndIndexQuit := make(chan bool, workerPoolSize)
+	publishAndIndexQuit := make(chan bool, sap.WorkerPoolSize)
 	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
 	// limiting the number of Postgres connections we can possibly open so as to prevent error
-	for i := 0; i < workerPoolSize; i++ {
+	for i := 0; i < sap.WorkerPoolSize; i++ {
 		sap.publishAndIndex(i, publishAndIndexPayload, publishAndIndexQuit)
 	}
 
@@ -175,7 +177,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 				default:
 				}
 				// Also forward a quit signal for each of the workers
-				for i := 0; i < workerPoolSize; i++ {
+				for i := 0; i < sap.WorkerPoolSize; i++ {
 					select {
 					case publishAndIndexQuit <- true:
 					default:

@@ -1,14 +1,15 @@
 FROM golang:alpine as builder
 
-RUN apk --update --no-cache add dep make git g++ linux-headers
+ENV GO111MODULE=on
+
+RUN apk --update --no-cache add make git g++ linux-headers
 # DEBUG
 RUN apk add busybox-extras
 
-# Get and build vulcanizedb syncAndPublish fork
+# Get and build vulcanizedb ipfs_concurreny fork
 RUN go get -u -d github.com/vulcanize/vulcanizedb
 WORKDIR /go/src/github.com/vulcanize/vulcanizedb
 RUN git checkout ipfs_concurrency
-RUN dep ensure
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o vulcanizedb .
 
 # Get and build vulcanize's go-ipfs fork
@@ -17,7 +18,6 @@ WORKDIR /go/src/github.com/ipfs/go-ipfs
 RUN git remote add vulcanize https://github.com/vulcanize/go-ipfs.git
 RUN git fetch vulcanize
 RUN git checkout -b pg_ipfs vulcanize/postgres_update
-RUN dep ensure
 RUN GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o ipfs ./cmd/ipfs
 
 # Get and build vulcanize's geth fork

@@ -34,13 +34,13 @@ const APIVersion = "0.0.1"
 
 // PublicSeedNodeAPI is the public api for the seed node
 type PublicSeedNodeAPI struct {
-	snp Processor
+	sni NodeInterface
 }
 
 // NewPublicSeedNodeAPI creates a new PublicSeedNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSeedNodeAPI(seedNodeProcessor Processor) *PublicSeedNodeAPI {
+func NewPublicSeedNodeAPI(seedNodeInterface NodeInterface) *PublicSeedNodeAPI {
 	return &PublicSeedNodeAPI{
-		snp: seedNodeProcessor,
+		sni: seedNodeInterface,
 	}
 }
 
@@ -59,7 +59,7 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 		// subscribe to events from the SyncPublishScreenAndServe service
 		payloadChannel := make(chan streamer.SeedNodePayload, payloadChanBufferSize)
 		quitChan := make(chan bool, 1)
-		go api.snp.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
+		go api.sni.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
 
 		// loop and await state diff payloads and relay them to the subscriber with then notifier
 		for {
@@ -67,11 +67,11 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 			case packet := <-payloadChannel:
 				if notifyErr := notifier.Notify(rpcSub.ID, packet); notifyErr != nil {
 					log.Error("Failed to send state diff packet", "err", notifyErr)
-					api.snp.Unsubscribe(rpcSub.ID)
+					api.sni.Unsubscribe(rpcSub.ID)
 					return
 				}
 			case <-rpcSub.Err():
-				api.snp.Unsubscribe(rpcSub.ID)
+				api.sni.Unsubscribe(rpcSub.ID)
 				return
 			case <-quitChan:
 				// don't need to unsubscribe, SyncPublishScreenAndServe service does so before sending the quit signal
