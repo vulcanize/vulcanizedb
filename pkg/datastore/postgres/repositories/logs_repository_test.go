@@ -34,7 +34,7 @@ var _ = Describe("Logs Repository", func() {
 		var db *postgres.DB
 		var blockRepository datastore.BlockRepository
 		var logsRepository datastore.LogRepository
-		var receiptRepository datastore.ReceiptRepository
+		var receiptRepository datastore.FullSyncReceiptRepository
 		var node core.Node
 
 		BeforeEach(func() {
@@ -48,14 +48,16 @@ var _ = Describe("Logs Repository", func() {
 			test_config.CleanTestDB(db)
 			blockRepository = repositories.NewBlockRepository(db)
 			logsRepository = repositories.LogRepository{DB: db}
-			receiptRepository = repositories.ReceiptRepository{DB: db}
+			receiptRepository = repositories.FullSyncReceiptRepository{DB: db}
 		})
 
 		It("returns the log when it exists", func() {
 			blockNumber := int64(12345)
 			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 			Expect(err).NotTo(HaveOccurred())
-			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			tx, _ := db.Beginx()
+			receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
+			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
 			err = logsRepository.CreateLogs([]core.Log{{
 				BlockNumber: blockNumber,
@@ -91,7 +93,9 @@ var _ = Describe("Logs Repository", func() {
 			blockNumber := int64(12345)
 			blockId, err := blockRepository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 			Expect(err).NotTo(HaveOccurred())
-			receiptId, err := receiptRepository.CreateReceipt(blockId, core.Receipt{})
+			tx, _ := db.Beginx()
+			receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, core.Receipt{}, tx)
+			tx.Commit()
 			Expect(err).NotTo(HaveOccurred())
 
 			err = logsRepository.CreateLogs([]core.Log{{

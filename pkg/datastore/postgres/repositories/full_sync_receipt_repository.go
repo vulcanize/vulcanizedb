@@ -26,17 +26,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type ReceiptRepository struct {
+type FullSyncReceiptRepository struct {
 	*postgres.DB
 }
 
-func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
+func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
 	tx, err := receiptRepository.DB.Beginx()
 	if err != nil {
 		return err
 	}
 	for _, receipt := range receipts {
-		receiptId, err := createReceipt(receipt, blockId, tx)
+		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, receipt, tx)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -51,21 +51,6 @@ func (receiptRepository ReceiptRepository) CreateReceiptsAndLogs(blockId int64, 
 	}
 	tx.Commit()
 	return nil
-}
-
-func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
-	var receiptId int64
-	err := tx.QueryRow(
-		`INSERT INTO full_sync_receipts
-		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
-		               VALUES ($1, $2, $3, $4, $5, $6, $7)
-		               RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
-	).Scan(&receiptId)
-	if err != nil {
-		logrus.Error("createReceipt: Error inserting: ", err)
-	}
-	return receiptId, err
 }
 
 func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
@@ -83,27 +68,30 @@ func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
 	return nil
 }
 
-func (receiptRepository ReceiptRepository) CreateReceipt(blockId int64, receipt core.Receipt) (int64, error) {
-	tx, _ := receiptRepository.DB.Beginx()
+func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
+	addressId, getAddressErr := AddressRepository{}.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+	if getAddressErr != nil {
+		logrus.Error("createReceipt: Error getting address id: ", getAddressErr)
+		return receiptId, getAddressErr
+	}
 	err := tx.QueryRow(
 		`INSERT INTO full_sync_receipts
-               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
+               (contract_address_id, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7)
                RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
+		addressId, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
 	if err != nil {
 		tx.Rollback()
 		logrus.Warning("CreateReceipt: error inserting receipt: ", err)
 		return receiptId, err
 	}
-	tx.Commit()
 	return receiptId, nil
 }
 
-func (receiptRepository ReceiptRepository) GetReceipt(txHash string) (core.Receipt, error) {
+func (receiptRepository FullSyncReceiptRepository) GetFullSyncReceipt(txHash string) (core.Receipt, error) {
 	row := receiptRepository.DB.QueryRow(
-		`SELECT contract_address,
+		`SELECT contract_address_id,
                        tx_hash,
                        cumulative_gas_used,
                        gas_used,

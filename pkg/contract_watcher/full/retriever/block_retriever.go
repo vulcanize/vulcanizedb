@@ -17,7 +17,9 @@
 package retriever
 
 import (
+	"database/sql"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
 // Block retriever is used to retrieve the first block for a given contract and the most recent block
@@ -41,7 +43,10 @@ func NewBlockRetriever(db *postgres.DB) (r *blockRetriever) {
 func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) {
 	i, err := r.retrieveFirstBlockFromReceipts(contractAddr)
 	if err != nil {
-		i, err = r.retrieveFirstBlockFromLogs(contractAddr)
+		if err == sql.ErrNoRows {
+			i, err = r.retrieveFirstBlockFromLogs(contractAddr)
+		}
+		return i, err
 	}
 
 	return i, err
@@ -49,18 +54,26 @@ func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) 
 
 // For some contracts the contract creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
 func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
-	var firstBlock int
+	var firstBlock int64
+	addressId, getAddressErr := addressRepository().GetOrCreateAddress(r.db, contractAddr)
+	if getAddressErr != nil {
+		return firstBlock, getAddressErr
+	}
 	err := r.db.Get(
 		&firstBlock,
 		`SELECT number FROM blocks
 		       WHERE id = (SELECT block_id FROM full_sync_receipts
-               	           WHERE lower(contract_address) = $1
+                           WHERE contract_address_id = $1
 		                   ORDER BY block_id ASC
 					       LIMIT 1)`,
-		contractAddr,
+		addressId,
 	)
 
-	return int64(firstBlock), err
+	return firstBlock, err
+}
+
+func addressRepository() repositories.AddressRepository {
+	return repositories.AddressRepository{}
 }
 
 // In which case this servers as a heuristic to find the first block by finding the first contract event log

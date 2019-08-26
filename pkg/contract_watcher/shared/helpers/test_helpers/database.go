@@ -137,7 +137,7 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
 
-	receiptRepository := repositories.ReceiptRepository{DB: db}
+	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
 	logRepository := repositories.LogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 
@@ -183,7 +183,7 @@ func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
 
-	receiptRepository := repositories.ReceiptRepository{DB: db}
+	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
 	logRepository := repositories.LogRepository{DB: db}
 	blockRepository := *repositories.NewBlockRepository(db)
 
@@ -223,6 +223,9 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 
 func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = tx.Exec(`DELETE FROM addresses`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM blocks`)

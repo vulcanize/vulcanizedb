@@ -30,7 +30,7 @@ import (
 var _ = Describe("Receipt Repository", func() {
 	var blockRepository datastore.BlockRepository
 	var logRepository datastore.LogRepository
-	var receiptRepository datastore.ReceiptRepository
+	var receiptRepository datastore.FullSyncReceiptRepository
 	var db *postgres.DB
 	var node core.Node
 	BeforeEach(func() {
@@ -44,7 +44,7 @@ var _ = Describe("Receipt Repository", func() {
 		test_config.CleanTestDB(db)
 		blockRepository = repositories.NewBlockRepository(db)
 		logRepository = repositories.LogRepository{DB: db}
-		receiptRepository = repositories.ReceiptRepository{DB: db}
+		receiptRepository = repositories.FullSyncReceiptRepository{DB: db}
 	})
 
 	Describe("Saving multiple receipts", func() {
@@ -84,12 +84,12 @@ var _ = Describe("Receipt Repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			persistedReceiptOne, err := receiptRepository.GetReceipt(txHashOne)
+			persistedReceiptOne, err := receiptRepository.GetFullSyncReceipt(txHashOne)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedReceiptOne).NotTo(BeNil())
 			Expect(persistedReceiptOne.TxHash).To(Equal(txHashOne))
 
-			persistedReceiptTwo, err := receiptRepository.GetReceipt(txHashTwo)
+			persistedReceiptTwo, err := receiptRepository.GetFullSyncReceipt(txHashTwo)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(persistedReceiptTwo).NotTo(BeNil())
 			Expect(persistedReceiptTwo.TxHash).To(Equal(txHashTwo))
@@ -124,7 +124,7 @@ var _ = Describe("Receipt Repository", func() {
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 
 			Expect(err).NotTo(HaveOccurred())
-			receipt, err := receiptRepository.GetReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
+			receipt, err := receiptRepository.GetFullSyncReceipt("0xe340558980f89d5f86045ac11e5cc34e4bcec20f9f1e2a427aa39d87114e8223")
 			Expect(err).ToNot(HaveOccurred())
 			//Not currently serializing bloom logs
 			Expect(receipt.Bloom).To(Equal(core.Receipt{}.Bloom))
@@ -136,7 +136,7 @@ var _ = Describe("Receipt Repository", func() {
 		})
 
 		It("returns ErrReceiptDoesNotExist when receipt does not exist", func() {
-			receipt, err := receiptRepository.GetReceipt("DOES NOT EXIST")
+			receipt, err := receiptRepository.GetFullSyncReceipt("DOES NOT EXIST")
 			Expect(err).To(HaveOccurred())
 			Expect(receipt).To(BeZero())
 		})
@@ -154,7 +154,7 @@ var _ = Describe("Receipt Repository", func() {
 			_, err := blockRepository.CreateOrUpdateBlock(block)
 
 			Expect(err).NotTo(HaveOccurred())
-			_, err = receiptRepository.GetReceipt(receipt.TxHash)
+			_, err = receiptRepository.GetFullSyncReceipt(receipt.TxHash)
 			Expect(err).To(Not(HaveOccurred()))
 		})
 	})

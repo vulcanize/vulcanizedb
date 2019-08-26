@@ -234,7 +234,8 @@ func (blockRepository BlockRepository) createTransaction(tx *sqlx.Tx, blockId in
 		return err
 	}
 	if hasReceipt(transaction) {
-		receiptId, err := blockRepository.createReceipt(tx, blockId, transaction.Receipt)
+		receiptRepo := FullSyncReceiptRepository{}
+		receiptId, err := receiptRepo.CreateFullSyncReceiptInTx(blockId, transaction.Receipt, tx)
 		if err != nil {
 			return err
 		}
@@ -256,22 +257,6 @@ func hasReceipt(transaction core.TransactionModel) bool {
 	return transaction.Receipt.TxHash != ""
 }
 
-func (blockRepository BlockRepository) createReceipt(tx *sqlx.Tx, blockId int64, receipt core.Receipt) (int, error) {
-	//Not currently persisting log bloom filters
-	var receiptId int
-	err := tx.QueryRow(
-		`INSERT INTO full_sync_receipts
-               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
-               VALUES ($1, $2, $3, $4, $5, $6, $7) 
-               RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
-	if err != nil {
-		log.Error("createReceipt: error inserting receipt: ", err)
-		return receiptId, err
-	}
-	return receiptId, nil
-}
-
 func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, bool) {
 	var retrievedBlockHash string
 	// TODO: handle possible error
@@ -283,7 +268,7 @@ func (blockRepository BlockRepository) getBlockHash(block core.Block) (string, b
 	return retrievedBlockHash, blockExists(retrievedBlockHash)
 }
 
-func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.Log, receiptId int) error {
+func (blockRepository BlockRepository) createLogs(tx *sqlx.Tx, logs []core.Log, receiptId int64) error {
 	for _, tlog := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)

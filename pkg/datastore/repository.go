@@ -17,9 +17,14 @@
 package datastore
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/filters"
 )
+
+type AddressRepository interface {
+	GetOrCreateAddress(address string) (int, error)
+}
 
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
@@ -51,10 +56,14 @@ type LogRepository interface {
 	GetLogs(address string, blockNumber int64) ([]core.Log, error)
 }
 
-type ReceiptRepository interface {
+type FullSyncReceiptRepository interface {
 	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateReceipt(blockId int64, receipt core.Receipt) (int64, error)
-	GetReceipt(txHash string) (core.Receipt, error)
+	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+	GetFullSyncReceipt(txHash string) (core.Receipt, error)
+}
+
+type HeaderSyncReceiptRepository interface {
+	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
 }
 
 type WatchedEventRepository interface {

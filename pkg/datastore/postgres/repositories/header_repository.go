@@ -85,22 +85,6 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 	return txId, err
 }
 
-func (repository HeaderRepository) CreateReceiptInTx(tx *sqlx.Tx, headerID, transactionID int64, receipt core.Receipt) (int64, error) {
-	var receiptId int64
-	err := tx.QueryRowx(`INSERT INTO public.header_sync_receipts
-               (header_id, transaction_id, contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			   ON CONFLICT (header_id, transaction_id) DO UPDATE
-			   SET (contract_address, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp) = ($3, $4::NUMERIC, $5::NUMERIC, $6, $7, $8, $9)
-               RETURNING id`,
-		headerID, transactionID, receipt.ContractAddress, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, receipt.TxHash, receipt.Rlp).Scan(&receiptId)
-	if err != nil {
-		log.Error("header_repository: error inserting receipt: ", err)
-		return receiptId, err
-	}
-	return receiptId, err
-}
-
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
 	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,

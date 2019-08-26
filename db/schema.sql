@@ -21,6 +21,36 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.addresses (
+    id integer NOT NULL,
+    address character varying(42)
+);
+
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.addresses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
+
+
+--
 -- Name: logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -144,7 +174,7 @@ CREATE TABLE public.eth_nodes (
 
 CREATE TABLE public.full_sync_receipts (
     id integer NOT NULL,
-    contract_address character varying(42),
+    contract_address_id integer NOT NULL,
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),
@@ -254,7 +284,7 @@ CREATE TABLE public.header_sync_receipts (
     id integer NOT NULL,
     transaction_id integer NOT NULL,
     header_id integer NOT NULL,
-    contract_address character varying(42),
+    contract_address_id integer NOT NULL,
     cumulative_gas_used numeric,
     gas_used numeric,
     state_root character varying(66),
@@ -565,6 +595,13 @@ CREATE VIEW public.watched_event_logs AS
 
 
 --
+-- Name: addresses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.addresses ALTER COLUMN id SET DEFAULT nextval('public.addresses_id_seq'::regclass);
+
+
+--
 -- Name: blocks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -660,6 +697,22 @@ ALTER TABLE ONLY public.uncles ALTER COLUMN id SET DEFAULT nextval('public.uncle
 --
 
 ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT nextval('public.watched_contracts_contract_id_seq'::regclass);
+
+
+--
+-- Name: addresses addresses_address_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_address_key UNIQUE (address);
+
+
+--
+-- Name: addresses addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_pkey PRIMARY KEY (id);
 
 
 --
@@ -897,11 +950,27 @@ ALTER TABLE ONLY public.checked_headers
 
 
 --
+-- Name: full_sync_receipts full_sync_receipts_contract_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.full_sync_receipts
+    ADD CONSTRAINT full_sync_receipts_contract_address_id_fkey FOREIGN KEY (contract_address_id) REFERENCES public.addresses(id) ON DELETE CASCADE;
+
+
+--
 -- Name: full_sync_transactions full_sync_transactions_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: header_sync_receipts header_sync_receipts_contract_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_receipts
+    ADD CONSTRAINT header_sync_receipts_contract_address_id_fkey FOREIGN KEY (contract_address_id) REFERENCES public.addresses(id) ON DELETE CASCADE;
 
 
 --
