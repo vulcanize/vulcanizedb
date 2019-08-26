@@ -157,6 +157,37 @@ ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
 
 
 --
+-- Name: checked_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.checked_logs (
+    id integer NOT NULL,
+    contract_address character varying(42),
+    topic_zero character varying(66)
+);
+
+
+--
+-- Name: checked_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.checked_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: checked_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.checked_logs_id_seq OWNED BY public.checked_logs.id;
+
+
+--
 -- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -657,6 +688,13 @@ ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: checked_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_logs ALTER COLUMN id SET DEFAULT nextval('public.checked_logs_id_seq'::regclass);
+
+
+--
 -- Name: eth_nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -785,6 +823,14 @@ ALTER TABLE ONLY public.checked_headers
 
 ALTER TABLE ONLY public.checked_headers
     ADD CONSTRAINT checked_headers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: checked_logs checked_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.checked_logs
+    ADD CONSTRAINT checked_logs_pkey PRIMARY KEY (id);
 
 
 --

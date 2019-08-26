@@ -73,6 +73,47 @@ var _ = Describe("Checked Headers repository", func() {
 		})
 	})
 
+	Describe("MarkHeadersUnchecked", func() {
+		It("removes rows for headers <= starting block number", func() {
+			blockNumberOne := rand.Int63()
+			blockNumberTwo := blockNumberOne + 1
+			blockNumberThree := blockNumberOne + 2
+			fakeHeaderOne := fakes.GetFakeHeader(blockNumberOne)
+			fakeHeaderTwo := fakes.GetFakeHeader(blockNumberTwo)
+			fakeHeaderThree := fakes.GetFakeHeader(blockNumberThree)
+			headerRepository := repositories.NewHeaderRepository(db)
+			// insert three headers with incrementing block number
+			headerIdOne, insertHeaderOneErr := headerRepository.CreateOrUpdateHeader(fakeHeaderOne)
+			Expect(insertHeaderOneErr).NotTo(HaveOccurred())
+			headerIdTwo, insertHeaderTwoErr := headerRepository.CreateOrUpdateHeader(fakeHeaderTwo)
+			Expect(insertHeaderTwoErr).NotTo(HaveOccurred())
+			headerIdThree, insertHeaderThreeErr := headerRepository.CreateOrUpdateHeader(fakeHeaderThree)
+			Expect(insertHeaderThreeErr).NotTo(HaveOccurred())
+			// mark all headers checked
+			markHeaderOneCheckedErr := repo.MarkHeaderChecked(headerIdOne)
+			Expect(markHeaderOneCheckedErr).NotTo(HaveOccurred())
+			markHeaderTwoCheckedErr := repo.MarkHeaderChecked(headerIdTwo)
+			Expect(markHeaderTwoCheckedErr).NotTo(HaveOccurred())
+			markHeaderThreeCheckedErr := repo.MarkHeaderChecked(headerIdThree)
+			Expect(markHeaderThreeCheckedErr).NotTo(HaveOccurred())
+
+			// mark headers unchecked since blockNumberTwo
+			err := repo.MarkHeadersUnchecked(blockNumberTwo)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerOneChecked, headerTwoChecked, headerThreeChecked bool
+			getHeaderOneErr := db.Get(&headerOneChecked, `SELECT EXISTS(SELECT 1 FROM public.checked_headers WHERE header_id = $1)`, headerIdOne)
+			Expect(getHeaderOneErr).NotTo(HaveOccurred())
+			Expect(headerOneChecked).To(BeTrue())
+			getHeaderTwoErr := db.Get(&headerTwoChecked, `SELECT EXISTS(SELECT 1 FROM public.checked_headers WHERE header_id = $1)`, headerIdTwo)
+			Expect(getHeaderTwoErr).NotTo(HaveOccurred())
+			Expect(headerTwoChecked).To(BeFalse())
+			getHeaderThreeErr := db.Get(&headerThreeChecked, `SELECT EXISTS(SELECT 1 FROM public.checked_headers WHERE header_id = $1)`, headerIdThree)
+			Expect(getHeaderThreeErr).NotTo(HaveOccurred())
+			Expect(headerThreeChecked).To(BeFalse())
+		})
+	})
+
 	Describe("MissingHeaders", func() {
 		var (
 			headerRepository      datastore.HeaderRepository

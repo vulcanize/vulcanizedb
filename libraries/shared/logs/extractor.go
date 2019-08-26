@@ -36,13 +36,14 @@ const (
 )
 
 type ILogExtractor interface {
-	AddTransformerConfig(config transformer.EventTransformerConfig)
+	AddTransformerConfig(config transformer.EventTransformerConfig) error
 	ExtractLogs(recheckHeaders constants.TransformerExecution) (error, bool)
 }
 
 type LogExtractor struct {
 	Addresses                []common.Address
 	CheckedHeadersRepository datastore.CheckedHeadersRepository
+	CheckedLogsRepository    datastore.CheckedLogsRepository
 	Fetcher                  fetcher.ILogFetcher
 	LogRepository            datastore.HeaderSyncLogRepository
 	StartingBlock            *int64
@@ -51,7 +52,12 @@ type LogExtractor struct {
 }
 
 // Add additional logs to extract
-func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) {
+func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) error {
+	checkedHeadersErr := extractor.updateCheckedHeaders(config)
+	if checkedHeadersErr != nil {
+		return checkedHeadersErr
+	}
+
 	if extractor.StartingBlock == nil {
 		extractor.StartingBlock = &config.StartingBlockNumber
 	} else if earlierStartingBlockNumber(config.StartingBlockNumber, *extractor.StartingBlock) {
@@ -61,6 +67,7 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 	addresses := transformer.HexStringsToAddresses(config.ContractAddresses)
 	extractor.Addresses = append(extractor.Addresses, addresses...)
 	extractor.Topics = append(extractor.Topics, common.HexToHash(config.Topic))
+	return nil
 }
 
 // Fetch and persist watched logs
@@ -128,4 +135,22 @@ func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	} else {
 		return constants.RecheckHeaderCap
 	}
+}
+
+func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTransformerConfig) error {
+	hasBeenChecked, hasBeenCheckedErr := extractor.CheckedLogsRepository.HaveLogsBeenChecked(config.ContractAddresses, config.Topic)
+	if hasBeenCheckedErr != nil {
+		return hasBeenCheckedErr
+	}
+	if !hasBeenChecked {
+		err := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
+		if err != nil {
+			return err
+		}
+		nextErr := extractor.CheckedLogsRepository.MarkLogsChecked(config.ContractAddresses, config.Topic)
+		if nextErr != nil {
+			return nextErr
+		}
+	}
+	return nil
 }

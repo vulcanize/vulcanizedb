@@ -41,6 +41,12 @@ func (repo CheckedHeadersRepository) MarkHeaderChecked(headerID int64) error {
 	return err
 }
 
+// Remove checked_headers rows with block number >= starting block number
+func (repo CheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
+	_, err := repo.db.Exec(`DELETE FROM public.checked_headers WHERE header_id IN (SELECT id FROM public.headers WHERE block_number >= $1)`, startingBlockNumber)
+	return err
+}
+
 // Return header_id if not present in checked_headers or its check_count is < passed checkCount
 func (repo CheckedHeadersRepository) MissingHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	var result []core.Header
