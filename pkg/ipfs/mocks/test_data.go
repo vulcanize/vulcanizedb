@@ -183,67 +183,92 @@ var (
 		ReceiptsRlp:  []byte{},
 	}
 
-	MockIPLDPayload = ipfs.IPLDPayload{
-		BlockNumber:     big.NewInt(1),
-		BlockHash:       MockBlock.Hash(),
-		Receipts:        MockReceipts,
-		HeaderRLP:       MockHeaderRlp,
-		BlockBody:       MockBlock.Body(),
-		TrxMetaData:     MockTrxMeta,
-		ReceiptMetaData: MockRctMeta,
-		StorageNodes:    MockStorageNodes,
-		StateNodes:      MockStateNodes,
+	MockIPLDPayload = &ipfs.IPLDPayload{
+		BlockNumber: big.NewInt(1),
+		BlockHash:   MockBlock.Hash(),
+		Receipts:    MockReceipts,
+		HeaderRLP:   MockHeaderRlp,
+		BlockBody:   MockBlock.Body(),
+		TrxMetaData: []*ipfs.TrxMetaData{
+			{
+				CID: "",
+				Src: senderAddr.Hex(),
+				Dst: "0x0000000000000000000000000000000000000000",
+			},
+			{
+				CID: "",
+				Src: senderAddr.Hex(),
+				Dst: "0x0000000000000000000000000000000000000001",
+			},
+		},
+		ReceiptMetaData: []*ipfs.ReceiptMetaData{
+			{
+				CID: "",
+				Topic0s: []string{
+					"0x0000000000000000000000000000000000000000000000000000000000000004",
+				},
+				ContractAddress: "0x0000000000000000000000000000000000000000",
+			},
+			{
+				CID: "",
+				Topic0s: []string{
+					"0x0000000000000000000000000000000000000000000000000000000000000005",
+				},
+				ContractAddress: "0x0000000000000000000000000000000000000001",
+			},
+		},
+		StorageNodes: MockStorageNodes,
+		StateNodes:   MockStateNodes,
 	}
 
-	MockCIDPayload = ipfs.CIDPayload{
+	MockCIDPayload = &ipfs.CIDPayload{
 		BlockNumber: "1",
-		BlockHash:   common.HexToHash("0x0"),
+		BlockHash:   MockBlock.Hash(),
 		HeaderCID:   "mockHeaderCID",
+		UncleCIDS:   make(map[common.Hash]string),
 		TransactionCIDs: map[common.Hash]*ipfs.TrxMetaData{
-			common.HexToHash("0x0"): {
+			MockTransactions[0].Hash(): {
 				CID: "mockTrxCID1",
-				Dst: "mockTo1",
-				Src: "mockFrom1",
+				Dst: "0x0000000000000000000000000000000000000000",
+				Src: senderAddr.Hex(),
 			},
-			common.HexToHash("0x1"): {
+			MockTransactions[1].Hash(): {
 				CID: "mockTrxCID2",
-				Dst: "mockTo2",
-				Src: "mockFrom2",
+				Dst: "0x0000000000000000000000000000000000000001",
+				Src: senderAddr.Hex(),
 			},
 		},
 		ReceiptCIDs: map[common.Hash]*ipfs.ReceiptMetaData{
-			common.HexToHash("0x0"): {
-				CID:     "mockReceiptCID1",
-				Topic0s: []string{"mockTopic1"},
+			MockTransactions[0].Hash(): {
+				CID:             "mockRctCID1",
+				Topic0s:         []string{"0x0000000000000000000000000000000000000000000000000000000000000004"},
+				ContractAddress: "0x0000000000000000000000000000000000000000",
 			},
-			common.HexToHash("0x1"): {
-				CID:     "mockReceiptCID2",
-				Topic0s: []string{"mockTopic1", "mockTopic2"},
+			MockTransactions[1].Hash(): {
+				CID:             "mockRctCID2",
+				Topic0s:         []string{"0x0000000000000000000000000000000000000000000000000000000000000005"},
+				ContractAddress: "0x0000000000000000000000000000000000000001",
 			},
 		},
 		StateNodeCIDs: map[common.Hash]ipfs.StateNodeCID{
-			common.HexToHash("0x0"): {
+			ContractLeafKey: {
 				CID:  "mockStateCID1",
 				Leaf: true,
+				Key:  "",
 			},
-			common.HexToHash("0x1"): {
+			AnotherContractLeafKey: {
 				CID:  "mockStateCID2",
 				Leaf: true,
+				Key:  "",
 			},
 		},
 		StorageNodeCIDs: map[common.Hash][]ipfs.StorageNodeCID{
-			common.HexToHash("0x0"): {
+			ContractLeafKey: {
 				{
-					CID:  "mockStorageCID1",
-					Key:  "0x0",
-					Leaf: true,
-				},
-			},
-			common.HexToHash("0x1"): {
-				{
-					CID:  "mockStorageCID2",
-					Key:  "0x1",
-					Leaf: true,
+					CID:      "mockStorageCID",
+					Key:      "0x0000000000000000000000000000000000000000000000000000000000000001",
+					Leaf:     true,
+					StateKey: "",
 				},
 			},
 		},
@@ -281,7 +306,7 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 		Topics: []common.Hash{mockTopic1},
 	}
 	mockReceipt1.Logs = []*types.Log{mockLog1}
-	mockReceipt1.TxHash = trx1.Hash()
+	mockReceipt1.TxHash = signedTrx1.Hash()
 	mockTopic2 := common.HexToHash("0x05")
 	mockReceipt2 := types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
 	mockReceipt2.ContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
@@ -289,6 +314,6 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 		Topics: []common.Hash{mockTopic2},
 	}
 	mockReceipt2.Logs = []*types.Log{mockLog2}
-	mockReceipt2.TxHash = trx2.Hash()
+	mockReceipt2.TxHash = signedTrx2.Hash()
 	return types.Transactions{signedTrx1, signedTrx2}, types.Receipts{mockReceipt1, mockReceipt2}, senderAddr
 }

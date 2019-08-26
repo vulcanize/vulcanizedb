@@ -24,8 +24,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // ResponseFilterer is the inteface used to screen eth data and package appropriate data into a response payload

@@ -50,7 +50,7 @@ func init() {
 }
 
 func syncPublishScreenAndServe() {
-	blockChain, ethClient, rpcClient := getBlockChainAndClients()
+	blockChain, rpcClient := getBlockChainAndClient()
 
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool, 1)
@@ -63,7 +63,7 @@ func syncPublishScreenAndServe() {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	processor, err := seed_node.NewProcessor(ipfsPath, &db, ethClient, rpcClient, quitChan)
+	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, 1)
 	if err != nil {
 		log.Fatal(err)
 	}

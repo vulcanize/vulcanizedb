@@ -40,11 +40,11 @@ type IPLDPublisher interface {
 
 // Publisher is the underlying struct for the IPLDPublisher interface
 type Publisher struct {
-	HeaderPutter      *eth_block_header.BlockHeaderDagPutter
-	TransactionPutter *eth_block_transactions.BlockTransactionsDagPutter
-	ReceiptPutter     *eth_block_receipts.EthBlockReceiptDagPutter
-	StatePutter       *eth_state_trie.StateTrieDagPutter
-	StoragePutter     *eth_storage_trie.StorageTrieDagPutter
+	HeaderPutter      ipfs.DagPutter
+	TransactionPutter ipfs.DagPutter
+	ReceiptPutter     ipfs.DagPutter
+	StatePutter       ipfs.DagPutter
+	StoragePutter     ipfs.DagPutter
 }
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
