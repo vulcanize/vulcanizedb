@@ -22,9 +22,7 @@ import (
 )
 
 const (
-	insertCheckedHeaderQuery = `INSERT INTO public.checked_headers (header_id) VALUES ($1)
-		ON CONFLICT (header_id) DO UPDATE
-		SET check_count = (SELECT check_count FROM public.checked_headers WHERE header_id = $1) + 1`
+	insertCheckedHeaderQuery = `UPDATE public.headers SET check_count = (SELECT check_count WHERE id = $1) + 1 WHERE id = $1`
 )
 
 type CheckedHeadersRepository struct {
@@ -43,30 +41,30 @@ func (repo CheckedHeadersRepository) MarkHeaderChecked(headerID int64) error {
 
 // Remove checked_headers rows with block number >= starting block number
 func (repo CheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
-	_, err := repo.db.Exec(`DELETE FROM public.checked_headers WHERE header_id IN (SELECT id FROM public.headers WHERE block_number >= $1)`, startingBlockNumber)
+	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number >= $1`, startingBlockNumber)
 	return err
 }
 
 // Return header_id if not present in checked_headers or its check_count is < passed checkCount
-func (repo CheckedHeadersRepository) MissingHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
+func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	var result []core.Header
 	var query string
 	var err error
 
 	if endingBlockNumber == -1 {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE (header_id ISNULL OR check_count < $2)
-				AND headers.block_number >= $1
-				AND headers.eth_node_fingerprint = $3`
+		query = `SELECT id, block_number, hash
+				FROM headers
+				WHERE check_count < $2
+				AND block_number >= $1
+				AND eth_node_fingerprint = $3`
 		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.Node.ID)
 	} else {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
-				LEFT JOIN checked_headers on headers.id = header_id
-				WHERE (header_id ISNULL OR check_count < $3)
-				AND headers.block_number >= $1
-				AND headers.block_number <= $2
-				AND headers.eth_node_fingerprint = $4`
+		query = `SELECT id, block_number, hash
+				FROM headers
+				WHERE check_count < $3
+				AND block_number >= $1
+				AND block_number <= $2
+				AND eth_node_fingerprint = $4`
 		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.Node.ID)
 	}
 

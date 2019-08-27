@@ -77,17 +77,17 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 		return ErrNoWatchedAddresses, noMissingHeadersFound
 	}
 
-	missingHeaders, missingHeadersErr := extractor.CheckedHeadersRepository.MissingHeaders(*extractor.StartingBlock, -1, getCheckCount(recheckHeaders))
-	if missingHeadersErr != nil {
-		logrus.Errorf("error fetching missing headers: %s", missingHeadersErr)
-		return missingHeadersErr, noMissingHeadersFound
+	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, -1, getCheckCount(recheckHeaders))
+	if uncheckedHeadersErr != nil {
+		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
+		return uncheckedHeadersErr, noMissingHeadersFound
 	}
 
-	if len(missingHeaders) < 1 {
+	if len(uncheckedHeaders) < 1 {
 		return nil, noMissingHeadersFound
 	}
 
-	for _, header := range missingHeaders {
+	for _, header := range uncheckedHeaders {
 		logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
 		if fetchLogsErr != nil {
 			logError("error fetching logs for header: %s", fetchLogsErr, header)
@@ -143,13 +143,13 @@ func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTran
 		return hasBeenCheckedErr
 	}
 	if !hasBeenChecked {
-		err := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
-		if err != nil {
-			return err
+		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
+		if uncheckHeadersErr != nil {
+			return uncheckHeadersErr
 		}
-		nextErr := extractor.CheckedLogsRepository.MarkLogsChecked(config.ContractAddresses, config.Topic)
-		if nextErr != nil {
-			return nextErr
+		markLogsCheckedErr := extractor.CheckedLogsRepository.MarkLogsChecked(config.ContractAddresses, config.Topic)
+		if markLogsCheckedErr != nil {
+			return markLogsCheckedErr
 		}
 	}
 	return nil
