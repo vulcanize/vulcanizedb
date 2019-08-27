@@ -19,6 +19,7 @@ package seed_node
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
@@ -49,24 +50,24 @@ func (repo *Repository) Index(cidPayload *ipfs.CIDPayload) error {
 	}
 	headerID, err := repo.indexHeaderCID(tx, cidPayload.HeaderCID, cidPayload.BlockNumber, cidPayload.BlockHash.Hex())
 	if err != nil {
-		tx.Rollback()
+		log.Error(tx.Rollback())
 		return err
 	}
 	for uncleHash, cid := range cidPayload.UncleCIDS {
 		err = repo.indexUncleCID(tx, cid, cidPayload.BlockNumber, uncleHash.Hex())
 		if err != nil {
-			tx.Rollback()
+			log.Error(tx.Rollback())
 			return err
 		}
 	}
 	err = repo.indexTransactionAndReceiptCIDs(tx, cidPayload, headerID)
 	if err != nil {
-		tx.Rollback()
+		log.Error(tx.Rollback())
 		return err
 	}
 	err = repo.indexStateAndStorageCIDs(tx, cidPayload, headerID)
 	if err != nil {
-		tx.Rollback()
+		log.Error(tx.Rollback())
 		return err
 	}
 	return tx.Commit()
