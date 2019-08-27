@@ -131,8 +131,7 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 CREATE TABLE public.checked_headers (
     id integer NOT NULL,
-    header_id integer NOT NULL,
-    check_count integer DEFAULT 1 NOT NULL
+    header_id integer NOT NULL
 );
 
 
@@ -456,6 +455,7 @@ CREATE TABLE public.headers (
     block_number bigint,
     raw jsonb,
     block_timestamp numeric,
+    check_count integer DEFAULT 0 NOT NULL,
     eth_node_id integer NOT NULL,
     eth_node_fingerprint character varying(128)
 );

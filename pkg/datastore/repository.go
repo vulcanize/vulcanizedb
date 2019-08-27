@@ -37,7 +37,7 @@ type BlockRepository interface {
 type CheckedHeadersRepository interface {
 	MarkHeaderChecked(headerID int64) error
 	MarkHeadersUnchecked(startingBlockNumber int64) error
-	MissingHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error)
+	UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error)
 }
 
 type CheckedLogsRepository interface {

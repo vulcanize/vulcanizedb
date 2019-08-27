@@ -44,7 +44,7 @@ func (repository *MockCheckedHeadersRepository) MarkHeaderChecked(headerID int64
 	return repository.MarkHeaderCheckedReturnError
 }
 
-func (repository *MockCheckedHeadersRepository) MissingHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
+func (repository *MockCheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	repository.MissingHeadersStartingBlockNumber = startingBlockNumber
 	repository.MissingHeadersEndingBlockNumber = endingBlockNumber
 	repository.MissingHeadersCheckCount = checkCount
