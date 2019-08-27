@@ -175,34 +175,6 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	}.Init()
 }
 
-func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
-	db, err := postgres.NewDB(config.Database{
-		Hostname: "localhost",
-		Name:     "vulcanize_private",
-		Port:     5432,
-	}, core.Node{})
-	Expect(err).NotTo(HaveOccurred())
-
-	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
-	logRepository := repositories.LogRepository{DB: db}
-	blockRepository := *repositories.NewBlockRepository(db)
-
-	blockNumber := rand.Int63()
-	blockId := CreateBlock(blockNumber, blockRepository)
-
-	receipts := []core.Receipt{{Logs: []core.Log{{}}}}
-
-	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM logs`)
-	Expect(err).ToNot(HaveOccurred())
-
-	info := SetupENSContract(wantedEvents, wantedMethods)
-
-	return db, info
-}
-
 func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.ENSAbiString)
 	err := p.Parse()
