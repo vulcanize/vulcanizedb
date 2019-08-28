@@ -29,7 +29,151 @@ import (
 )
 
 var (
-	retriever seed_node.CIDRetriever
+	retriever  seed_node.CIDRetriever
+	openFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter:  config.HeaderFilter{},
+		TrxFilter:     config.TrxFilter{},
+		ReceiptFilter: config.ReceiptFilter{},
+		StateFilter:   config.StateFilter{},
+		StorageFilter: config.StorageFilter{},
+	}
+	rctContractFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Contracts: []string{"0x0000000000000000000000000000000000000001"},
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctTopicsFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Topic0s: []string{"0x0000000000000000000000000000000000000000000000000000000000000004"},
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctTopicsAndContractFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000004", "0x0000000000000000000000000000000000000000000000000000000000000005"},
+			Contracts: []string{"0x0000000000000000000000000000000000000000"},
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctContractsAndTopicFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000005"},
+			Contracts: []string{"0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000001"},
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctsForAllCollectedTrxs = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
+		ReceiptFilter: config.ReceiptFilter{
+			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
+			Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctsForSelectCollectedTrxs = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Dst: []string{"0x0000000000000000000000000000000000000001"}, // We only filter for one of the trxs so we will only get the one corresponding receipt
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
+			Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	stateFilter = config.Subscription{
+		StartingBlock: big.NewInt(0),
+		EndingBlock:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TrxFilter: config.TrxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Off: true,
+		},
+		StateFilter: config.StateFilter{
+			Addresses: []string{mocks.Address.Hex()},
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
 )
 
 var _ = Describe("Retriever", func() {
@@ -44,16 +188,9 @@ var _ = Describe("Retriever", func() {
 	AfterEach(func() {
 		seed_node.TearDownDB(db)
 	})
+
 	Describe("RetrieveCIDs", func() {
-		It("Retrieves the CIDs specified by the provided filtering metadata", func() {
-			openFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter:  config.HeaderFilter{},
-				TrxFilter:     config.TrxFilter{},
-				ReceiptFilter: config.ReceiptFilter{},
-				StateFilter:   config.StateFilter{},
-				StorageFilter: config.StorageFilter{},
-			}
+		It("Retrieves all CIDs for the given blocknumber when provided an open filter", func() {
 			cidWrapper, err := retriever.RetrieveCIDs(openFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -83,24 +220,6 @@ var _ = Describe("Retriever", func() {
 
 	Describe("RetrieveCIDs", func() {
 		It("Applies filters from the provided config.Subscription", func() {
-			rctContractFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Off: true,
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Contracts: []string{"0x0000000000000000000000000000000000000001"},
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper1, err := retriever.RetrieveCIDs(rctContractFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper1.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -111,24 +230,6 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper1.Receipts)).To(Equal(1))
 			Expect(cidWrapper1.Receipts[0]).To(Equal("mockRctCID2"))
 
-			rctTopicsFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Off: true,
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Topic0s: []string{"0x0000000000000000000000000000000000000000000000000000000000000004"},
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper2, err := retriever.RetrieveCIDs(rctTopicsFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper2.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -139,25 +240,6 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper2.Receipts)).To(Equal(1))
 			Expect(cidWrapper2.Receipts[0]).To(Equal("mockRctCID1"))
 
-			rctTopicsAndContractFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Off: true,
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000004", "0x0000000000000000000000000000000000000000000000000000000000000005"},
-					Contracts: []string{"0x0000000000000000000000000000000000000000"},
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper3, err := retriever.RetrieveCIDs(rctTopicsAndContractFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper3.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -168,25 +250,6 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper3.Receipts)).To(Equal(1))
 			Expect(cidWrapper3.Receipts[0]).To(Equal("mockRctCID1"))
 
-			rctContractsAndTopicFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Off: true,
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000005"},
-					Contracts: []string{"0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000001"},
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper4, err := retriever.RetrieveCIDs(rctContractsAndTopicFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper4.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -197,81 +260,30 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper4.Receipts)).To(Equal(1))
 			Expect(cidWrapper4.Receipts[0]).To(Equal("mockRctCID2"))
 
-			rctsForAllCollectedTrxs := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
-				ReceiptFilter: config.ReceiptFilter{
-					Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
-					Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper5, err := retriever.RetrieveCIDs(rctsForAllCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper5.Headers)).To(Equal(0))
 			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
+			Expect(seed_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID1")).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID2")).To(BeTrue())
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
 			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
 			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
 
-			rctsForSelectCollectedTrxs := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Dst: []string{"0x0000000000000000000000000000000000000001"}, // We only filter for one of the trxs so we will only get the one corresponding receipt
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
-					Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
-				},
-				StateFilter: config.StateFilter{
-					Off: true,
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper6, err := retriever.RetrieveCIDs(rctsForSelectCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper6.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper6.Headers)).To(Equal(0))
 			Expect(len(cidWrapper6.Transactions)).To(Equal(1))
+			Expect(cidWrapper6.Transactions[0]).To(Equal("mockTrxCID2"))
 			Expect(len(cidWrapper6.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper6.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper6.Receipts)).To(Equal(1))
 			Expect(cidWrapper6.Receipts[0]).To(Equal("mockRctCID2"))
 
-			stateFilter := config.Subscription{
-				StartingBlock: big.NewInt(0),
-				HeaderFilter: config.HeaderFilter{
-					Off: true,
-				},
-				TrxFilter: config.TrxFilter{
-					Off: true,
-				},
-				ReceiptFilter: config.ReceiptFilter{
-					Off: true,
-				},
-				StateFilter: config.StateFilter{
-					Addresses: []string{mocks.Address.Hex()},
-				},
-				StorageFilter: config.StorageFilter{
-					Off: true,
-				},
-			}
 			cidWrapper7, err := retriever.RetrieveCIDs(stateFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cidWrapper7.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
@@ -295,6 +307,7 @@ var _ = Describe("Retriever", func() {
 			Expect(num).To(Equal(int64(1)))
 		})
 	})
+
 	Describe("RetrieveLastBlockNumber", func() {
 		It("Gets the number of the latest block that has data in the database", func() {
 			num, err := retriever.RetrieveLastBlockNumber()
