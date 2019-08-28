@@ -334,7 +334,7 @@ ALTER SEQUENCE public.goose_db_version_id_seq OWNED BY public.goose_db_version.i
 CREATE TABLE public.header_sync_logs (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    address character varying(66),
+    address integer NOT NULL,
     topics bytea[],
     data bytea,
     block_number bigint,
@@ -1073,6 +1073,14 @@ ALTER TABLE ONLY public.full_sync_receipts
 
 ALTER TABLE ONLY public.full_sync_transactions
     ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.blocks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: header_sync_logs header_sync_logs_address_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs
+    ADD CONSTRAINT header_sync_logs_address_fkey FOREIGN KEY (address) REFERENCES public.addresses(id) ON DELETE CASCADE;
 
 
 --

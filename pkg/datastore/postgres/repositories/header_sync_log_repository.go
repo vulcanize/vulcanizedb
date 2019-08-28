@@ -31,17 +31,21 @@ const insertHeaderSyncLogQuery = `INSERT INTO header_sync_logs
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING`
 
 type HeaderSyncLogRepository struct {
-	db *postgres.DB
+	db                *postgres.DB
+	addressRepository AddressRepository
 }
 
 func NewHeaderSyncLogRepository(db *postgres.DB) HeaderSyncLogRepository {
-	return HeaderSyncLogRepository{db: db}
+	return HeaderSyncLogRepository{
+		db:                db,
+		addressRepository: AddressRepository{},
+	}
 }
 
 type headerSyncLog struct {
 	ID          int64
 	HeaderID    int64 `db:"header_id"`
-	Address     string
+	Address     int64
 	Topics      pq.ByteaArray
 	Data        []byte
 	BlockNumber uint64 `db:"block_number"`
@@ -70,8 +74,12 @@ func (repository HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]co
 		for _, topic := range rawLog.Topics {
 			logTopics = append(logTopics, common.BytesToHash(topic))
 		}
+		address, addrErr := repository.addressRepository.GetAddressById(repository.db, rawLog.Address)
+		if addrErr != nil {
+			return nil, addrErr
+		}
 		reconstructedLog := types.Log{
-			Address:     common.HexToAddress(rawLog.Address),
+			Address:     common.HexToAddress(address),
 			Topics:      logTopics,
 			Data:        rawLog.Data,
 			BlockNumber: rawLog.BlockNumber,
@@ -102,7 +110,7 @@ func (repository HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, l
 		return txErr
 	}
 	for _, log := range logs {
-		err := insertLog(headerID, log, tx)
+		err := repository.insertLog(headerID, log, tx)
 		if err != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
@@ -114,13 +122,17 @@ func (repository HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, l
 	return tx.Commit()
 }
 
-func insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
+func (repository HeaderSyncLogRepository) insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
 	topics := buildTopics(log)
 	raw, jsonErr := log.MarshalJSON()
 	if jsonErr != nil {
 		return jsonErr
 	}
-	_, insertErr := tx.Exec(insertHeaderSyncLogQuery, headerID, log.Address.Hex(), topics, log.Data, log.BlockNumber,
+	addressID, addrErr := repository.addressRepository.GetOrCreateAddressInTransaction(tx, log.Address.Hex())
+	if addrErr != nil {
+		return addrErr
+	}
+	_, insertErr := tx.Exec(insertHeaderSyncLogQuery, headerID, addressID, topics, log.Data, log.BlockNumber,
 		log.BlockHash.Hex(), log.TxIndex, log.TxHash.Hex(), log.Index, raw)
 	return insertErr
 }

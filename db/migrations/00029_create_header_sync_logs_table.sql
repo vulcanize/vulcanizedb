@@ -4,7 +4,7 @@ CREATE TABLE header_sync_logs
 (
     id           SERIAL PRIMARY KEY,
     header_id    INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-    address      VARCHAR(66),
+    address      INTEGER NOT NULL REFERENCES addresses (id) ON DELETE CASCADE,
     topics       BYTEA[],
     data         BYTEA,
     block_number BIGINT,

@@ -34,13 +34,18 @@ var _ = Describe("Checked Headers repository", func() {
 		repo datastore.CheckedHeadersRepository
 	)
 
-	Describe("MarkHeaderChecked", func() {
-		BeforeEach(func() {
-			db = test_config.NewTestDB(test_config.NewTestNode())
-			test_config.CleanTestDB(db)
-			repo = repositories.NewCheckedHeadersRepository(db)
-		})
+	BeforeEach(func() {
+		db = test_config.NewTestDB(test_config.NewTestNode())
+		test_config.CleanTestDB(db)
+		repo = repositories.NewCheckedHeadersRepository(db)
+	})
 
+	AfterEach(func() {
+		closeErr := db.Close()
+		Expect(closeErr).NotTo(HaveOccurred())
+	})
+
+	Describe("MarkHeaderChecked", func() {
 		It("marks passed header as checked on insert", func() {
 			headerRepository := repositories.NewHeaderRepository(db)
 			headerID, headerErr := headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
@@ -129,10 +134,7 @@ var _ = Describe("Checked Headers repository", func() {
 		)
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(test_config.NewTestNode())
-			test_config.CleanTestDB(db)
 			headerRepository = repositories.NewHeaderRepository(db)
-			repo = repositories.NewCheckedHeadersRepository(db)
 
 			startingBlockNumber = rand.Int63()
 			middleBlockNumber = startingBlockNumber + 1

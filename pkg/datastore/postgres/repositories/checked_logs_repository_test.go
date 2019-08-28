@@ -42,6 +42,11 @@ var _ = Describe("Checked logs repository", func() {
 		repository = repositories.NewCheckedLogsRepository(db)
 	})
 
+	AfterEach(func() {
+		closeErr := db.Close()
+		Expect(closeErr).NotTo(HaveOccurred())
+	})
+
 	Describe("HaveLogsBeenChecked", func() {
 		It("returns true if all addresses and the topic0 are already present in the db", func() {
 			_, insertErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, fakeTopicZero)

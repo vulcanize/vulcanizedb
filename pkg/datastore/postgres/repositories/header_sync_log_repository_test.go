@@ -47,11 +47,16 @@ var _ = Describe("Header sync log repository", func() {
 		repository = repositories.NewHeaderSyncLogRepository(db)
 	})
 
+	AfterEach(func() {
+		closeErr := db.Close()
+		Expect(closeErr).NotTo(HaveOccurred())
+	})
+
 	Describe("CreateHeaderSyncLogs", func() {
-		type HeaderSyncLog struct {
+		type headerSyncLog struct {
 			ID          int64
 			HeaderID    int64 `db:"header_id"`
-			Address     string
+			Address     int64
 			Topics      pq.ByteaArray
 			Data        []byte
 			BlockNumber uint64 `db:"block_number"`
@@ -69,12 +74,15 @@ var _ = Describe("Header sync log repository", func() {
 			err := repository.CreateHeaderSyncLogs(headerID, []types.Log{log})
 
 			Expect(err).NotTo(HaveOccurred())
-			var dbLog HeaderSyncLog
+			var dbLog headerSyncLog
 			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(dbLog.ID).NotTo(BeZero())
 			Expect(dbLog.HeaderID).To(Equal(headerID))
-			Expect(dbLog.Address).To(Equal(log.Address.Hex()))
+			addressRepository := repositories.AddressRepository{}
+			actualAddress, addressErr := addressRepository.GetAddressById(db, dbLog.Address)
+			Expect(addressErr).NotTo(HaveOccurred())
+			Expect(actualAddress).To(Equal(log.Address.Hex()))
 			Expect(dbLog.Topics[0]).To(Equal(log.Topics[0].Bytes()))
 			Expect(dbLog.Topics[1]).To(Equal(log.Topics[1].Bytes()))
 			Expect(dbLog.Data).To(Equal(log.Data))
@@ -111,7 +119,7 @@ var _ = Describe("Header sync log repository", func() {
 			err := repository.CreateHeaderSyncLogs(headerID, []types.Log{log})
 
 			Expect(err).NotTo(HaveOccurred())
-			var dbLog HeaderSyncLog
+			var dbLog headerSyncLog
 			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 
@@ -120,8 +128,11 @@ var _ = Describe("Header sync log repository", func() {
 				logTopics = append(logTopics, common.BytesToHash(topic))
 			}
 
+			addressRepository := repositories.AddressRepository{}
+			actualAddress, addressErr := addressRepository.GetAddressById(db, dbLog.Address)
+			Expect(addressErr).NotTo(HaveOccurred())
 			reconstructedLog := types.Log{
-				Address:     common.HexToAddress(dbLog.Address),
+				Address:     common.HexToAddress(actualAddress),
 				Topics:      logTopics,
 				Data:        dbLog.Data,
 				BlockNumber: dbLog.BlockNumber,
@@ -147,7 +158,7 @@ var _ = Describe("Header sync log repository", func() {
 		})
 	})
 
-	Describe("GetFullSyncLogs", func() {
+	Describe("GetUntransformedHeaderSyncLogs", func() {
 		Describe("when there are no logs", func() {
 			It("returns empty collection", func() {
 				result, err := repository.GetUntransformedHeaderSyncLogs()
