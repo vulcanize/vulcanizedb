@@ -30,42 +30,42 @@ import (
 
 // ResponseFilterer is the inteface used to screen eth data and package appropriate data into a response payload
 type ResponseFilterer interface {
-	FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (*streamer.SeedNodePayload, error)
+	FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SeedNodePayload, error)
 }
 
-// Filterer is the underlying struct for the ReponseFilterer interface
+// Filterer is the underlying struct for the ResponseFilterer interface
 type Filterer struct{}
 
-// NewResponseFilterer creates a new Filterer satisfyign the ReponseFilterer interface
+// NewResponseFilterer creates a new Filterer satisfying the ResponseFilterer interface
 func NewResponseFilterer() *Filterer {
 	return &Filterer{}
 }
 
 // FilterResponse is used to filter through eth data to extract and package requested data into a Payload
-func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (*streamer.SeedNodePayload, error) {
+func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SeedNodePayload, error) {
 	response := new(streamer.SeedNodePayload)
 	err := s.filterHeaders(streamFilters, response, payload)
 	if err != nil {
-		return nil, err
+		return streamer.SeedNodePayload{}, err
 	}
 	txHashes, err := s.filterTransactions(streamFilters, response, payload)
 	if err != nil {
-		return nil, err
+		return streamer.SeedNodePayload{}, err
 	}
 	err = s.filerReceipts(streamFilters, response, payload, txHashes)
 	if err != nil {
-		return nil, err
+		return streamer.SeedNodePayload{}, err
 	}
 	err = s.filterState(streamFilters, response, payload)
 	if err != nil {
-		return nil, err
+		return streamer.SeedNodePayload{}, err
 	}
 	err = s.filterStorage(streamFilters, response, payload)
 	if err != nil {
-		return nil, err
+		return streamer.SeedNodePayload{}, err
 	}
 	response.BlockNumber = payload.BlockNumber
-	return response, nil
+	return *response, nil
 }
 
 func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {

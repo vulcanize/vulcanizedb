@@ -23,6 +23,9 @@ import (
 	"math/big"
 	rand2 "math/rand"
 
+	"github.com/ipfs/go-block-format"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -49,7 +52,7 @@ var (
 	ReceiptsRlp, _                             = rlp.EncodeToBytes(MockReceipts)
 	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
 	MockBlockRlp, _                            = rlp.EncodeToBytes(MockBlock)
-	MockHeaderRlp, err                         = rlp.EncodeToBytes(MockBlock.Header())
+	MockHeaderRlp, _                           = rlp.EncodeToBytes(MockBlock.Header())
 	MockTrxMeta                                = []*ipfs.TrxMetaData{
 		{
 			CID: "", // This is empty until we go to publish to ipfs
@@ -113,36 +116,22 @@ var (
 		Root:     common.HexToHash("0x"),
 		CodeHash: nil,
 	}
-	valueBytes, _        = rlp.EncodeToBytes(testAccount)
-	anotherValueBytes, _ = rlp.EncodeToBytes(anotherTestAccount)
+	ValueBytes, _        = rlp.EncodeToBytes(testAccount)
+	AnotherValueBytes, _ = rlp.EncodeToBytes(anotherTestAccount)
 	CreatedAccountDiffs  = []statediff.AccountDiff{
 		{
 			Key:     ContractLeafKey.Bytes(),
-			Value:   valueBytes,
+			Value:   ValueBytes,
 			Storage: storage,
 			Leaf:    true,
 		},
 		{
 			Key:     AnotherContractLeafKey.Bytes(),
-			Value:   anotherValueBytes,
+			Value:   AnotherValueBytes,
 			Storage: emptyStorage,
 			Leaf:    true,
 		},
 	}
-
-	UpdatedAccountDiffs = []statediff.AccountDiff{{
-		Key:     ContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storage,
-		Leaf:    true,
-	}}
-
-	DeletedAccountDiffs = []statediff.AccountDiff{{
-		Key:     ContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storage,
-		Leaf:    true,
-	}}
 
 	MockStateDiff = statediff.StateDiff{
 		BlockNumber:     BlockNumber,
@@ -152,11 +141,11 @@ var (
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 	MockStateNodes        = map[common.Hash]ipfs.StateNode{
 		ContractLeafKey: {
-			Value: valueBytes,
+			Value: ValueBytes,
 			Leaf:  true,
 		},
 		AnotherContractLeafKey: {
-			Value: anotherValueBytes,
+			Value: AnotherValueBytes,
 			Leaf:  true,
 		},
 	}
@@ -175,12 +164,6 @@ var (
 		BlockRlp:     MockBlockRlp,
 		StateDiffRlp: MockStateDiffBytes,
 		ReceiptsRlp:  ReceiptsRlp,
-	}
-
-	EmptyStateDiffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		ReceiptsRlp:  []byte{},
 	}
 
 	MockIPLDPayload = &ipfs.IPLDPayload{
@@ -298,6 +281,46 @@ var (
 				Leaf:     true,
 				StateKey: ContractLeafKey.Hex(),
 				Key:      "0x0000000000000000000000000000000000000000000000000000000000000001",
+			},
+		},
+	}
+
+	MockIPLDWrapper = ipfs.IPLDWrapper{
+		BlockNumber: big.NewInt(1),
+		Headers: []blocks.Block{
+			blocks.NewBlock(MockHeaderRlp),
+		},
+		Transactions: []blocks.Block{
+			blocks.NewBlock(MockTransactions.GetRlp(0)),
+			blocks.NewBlock(MockTransactions.GetRlp(1)),
+		},
+		Receipts: []blocks.Block{
+			blocks.NewBlock(MockReceipts.GetRlp(0)),
+			blocks.NewBlock(MockReceipts.GetRlp(1)),
+		},
+		StateNodes: map[common.Hash]blocks.Block{
+			ContractLeafKey:        blocks.NewBlock(ValueBytes),
+			AnotherContractLeafKey: blocks.NewBlock(AnotherValueBytes),
+		},
+		StorageNodes: map[common.Hash]map[common.Hash]blocks.Block{
+			ContractLeafKey: {
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): blocks.NewBlock(StorageValue),
+			},
+		},
+	}
+
+	MockSeeNodePayload = streamer.SeedNodePayload{
+		BlockNumber:     big.NewInt(1),
+		HeadersRlp:      [][]byte{MockHeaderRlp},
+		TransactionsRlp: [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
+		ReceiptsRlp:     [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
+		StateNodesRlp: map[common.Hash][]byte{
+			ContractLeafKey:        ValueBytes,
+			AnotherContractLeafKey: AnotherValueBytes,
+		},
+		StorageNodesRlp: map[common.Hash]map[common.Hash][]byte{
+			ContractLeafKey: {
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): StorageValue,
 			},
 		},
 	}

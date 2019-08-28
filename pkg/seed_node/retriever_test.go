@@ -60,11 +60,11 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.Headers)).To(Equal(1))
 			Expect(cidWrapper.Headers).To(Equal(mocks.MockCIDWrapper.Headers))
 			Expect(len(cidWrapper.Transactions)).To(Equal(2))
-			Expect(seed_node.ListContains(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0])).To(BeTrue())
-			Expect(seed_node.ListContains(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1])).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0])).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1])).To(BeTrue())
 			Expect(len(cidWrapper.Receipts)).To(Equal(2))
-			Expect(seed_node.ListContains(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[0])).To(BeTrue())
-			Expect(seed_node.ListContains(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1])).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[0])).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1])).To(BeTrue())
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
 				if stateNode.CID == "mockStateCID1" {
@@ -222,8 +222,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
-			Expect(seed_node.ListContains(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
-			Expect(seed_node.ListContains(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
+			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
 
 			rctsForSelectCollectedTrxs := config.Subscription{
 				StartingBlock: big.NewInt(0),

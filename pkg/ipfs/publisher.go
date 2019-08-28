@@ -179,7 +179,7 @@ func (pub *Publisher) publishReceipts(receipts types.Receipts, receiptMeta []*Re
 
 func (pub *Publisher) publishStateNodes(stateNodes map[common.Hash]StateNode) (map[common.Hash]StateNodeCID, error) {
 	stateNodeCids := make(map[common.Hash]StateNodeCID)
-	for addr, node := range stateNodes {
+	for addrKey, node := range stateNodes {
 		stateNodeCid, err := pub.StatePutter.DagPut(node.Value)
 		if err != nil {
 			return nil, err
@@ -187,7 +187,7 @@ func (pub *Publisher) publishStateNodes(stateNodes map[common.Hash]StateNode) (m
 		if len(stateNodeCid) != 1 {
 			return nil, errors.New("single CID expected to be returned for state leaf")
 		}
-		stateNodeCids[addr] = StateNodeCID{
+		stateNodeCids[addrKey] = StateNodeCID{
 			CID:  stateNodeCid[0],
 			Leaf: node.Leaf,
 		}
@@ -197,8 +197,8 @@ func (pub *Publisher) publishStateNodes(stateNodes map[common.Hash]StateNode) (m
 
 func (pub *Publisher) publishStorageNodes(storageNodes map[common.Hash][]StorageNode) (map[common.Hash][]StorageNodeCID, error) {
 	storageLeafCids := make(map[common.Hash][]StorageNodeCID)
-	for addr, storageTrie := range storageNodes {
-		storageLeafCids[addr] = make([]StorageNodeCID, 0, len(storageTrie))
+	for addrKey, storageTrie := range storageNodes {
+		storageLeafCids[addrKey] = make([]StorageNodeCID, 0, len(storageTrie))
 		for _, node := range storageTrie {
 			storageNodeCid, err := pub.StoragePutter.DagPut(node.Value)
 			if err != nil {
@@ -207,7 +207,7 @@ func (pub *Publisher) publishStorageNodes(storageNodes map[common.Hash][]Storage
 			if len(storageNodeCid) != 1 {
 				return nil, errors.New("single CID expected to be returned for storage leaf")
 			}
-			storageLeafCids[addr] = append(storageLeafCids[addr], StorageNodeCID{
+			storageLeafCids[addrKey] = append(storageLeafCids[addrKey], StorageNodeCID{
 				Key:  node.Key.Hex(),
 				CID:  storageNodeCid[0],
 				Leaf: node.Leaf,

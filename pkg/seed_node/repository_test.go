@@ -60,8 +60,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(trxs)).To(Equal(2))
-			Expect(seed_node.ListContains(trxs, "mockTrxCID1")).To(BeTrue())
-			Expect(seed_node.ListContains(trxs, "mockTrxCID2")).To(BeTrue())
+			Expect(seed_node.ListContainsString(trxs, "mockTrxCID1")).To(BeTrue())
+			Expect(seed_node.ListContainsString(trxs, "mockTrxCID2")).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
 			pgStr = `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
@@ -71,8 +71,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&rcts, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(rcts)).To(Equal(2))
-			Expect(seed_node.ListContains(rcts, "mockRctCID1")).To(BeTrue())
-			Expect(seed_node.ListContains(rcts, "mockRctCID2")).To(BeTrue())
+			Expect(seed_node.ListContainsString(rcts, "mockRctCID1")).To(BeTrue())
+			Expect(seed_node.ListContainsString(rcts, "mockRctCID2")).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]ipfs.StateNodeCID, 0)
 			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
