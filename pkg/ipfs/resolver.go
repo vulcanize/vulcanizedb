@@ -24,7 +24,7 @@ import (
 
 // IPLDResolver is the interface to resolving IPLDs
 type IPLDResolver interface {
-	ResolveIPLDs(ipfsBlocks IPLDWrapper) (*streamer.SeedNodePayload, error)
+	ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SeedNodePayload, error)
 }
 
 // EthIPLDResolver is the underlying struct to support the IPLDResolver interface
@@ -36,16 +36,19 @@ func NewIPLDResolver() *EthIPLDResolver {
 }
 
 // ResolveIPLDs is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
-func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (*streamer.SeedNodePayload, error) {
-	response := new(streamer.SeedNodePayload)
-	response.BlockNumber = ipfsBlocks.BlockNumber
+func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SeedNodePayload, error) {
+	response := &streamer.SeedNodePayload{
+		BlockNumber:     ipfsBlocks.BlockNumber,
+		StateNodesRlp:   make(map[common.Hash][]byte),
+		StorageNodesRlp: make(map[common.Hash]map[common.Hash][]byte),
+	}
 	eir.resolveHeaders(ipfsBlocks.Headers, response)
 	eir.resolveUncles(ipfsBlocks.Uncles, response)
 	eir.resolveTransactions(ipfsBlocks.Transactions, response)
 	eir.resolveReceipts(ipfsBlocks.Receipts, response)
 	eir.resolveState(ipfsBlocks.StateNodes, response)
 	eir.resolveStorage(ipfsBlocks.StorageNodes, response)
-	return response, nil
+	return *response, nil
 }
 
 func (eir *EthIPLDResolver) resolveHeaders(blocks []blocks.Block, response *streamer.SeedNodePayload) {
@@ -77,9 +80,6 @@ func (eir *EthIPLDResolver) resolveReceipts(blocks []blocks.Block, response *str
 }
 
 func (eir *EthIPLDResolver) resolveState(blocks map[common.Hash]blocks.Block, response *streamer.SeedNodePayload) {
-	if response.StateNodesRlp == nil {
-		response.StateNodesRlp = make(map[common.Hash][]byte)
-	}
 	for key, block := range blocks {
 		raw := block.RawData()
 		response.StateNodesRlp[key] = raw
@@ -87,10 +87,8 @@ func (eir *EthIPLDResolver) resolveState(blocks map[common.Hash]blocks.Block, re
 }
 
 func (eir *EthIPLDResolver) resolveStorage(blocks map[common.Hash]map[common.Hash]blocks.Block, response *streamer.SeedNodePayload) {
-	if response.StateNodesRlp == nil {
-		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
-	}
 	for stateKey, storageBlocks := range blocks {
+		response.StorageNodesRlp[stateKey] = make(map[common.Hash][]byte)
 		for storageKey, storageVal := range storageBlocks {
 			raw := storageVal.RawData()
 			response.StorageNodesRlp[stateKey][storageKey] = raw

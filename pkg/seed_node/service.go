@@ -250,7 +250,7 @@ func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
 		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- *response:
+			case sub.PayloadChan <- response:
 				log.Infof("sending seed node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
@@ -349,7 +349,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 				continue
 			}
 			select {
-			case sub.PayloadChan <- *backFillIplds:
+			case sub.PayloadChan <- backFillIplds:
 				log.Infof("sending seed node back-fill payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
