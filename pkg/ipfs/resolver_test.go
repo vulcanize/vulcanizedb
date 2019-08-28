@@ -19,10 +19,10 @@ package ipfs_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
 )
 
 var (
@@ -31,11 +31,13 @@ var (
 
 var _ = Describe("Resolver", func() {
 	Describe("ResolveIPLDs", func() {
-		It("Resolves IPLD data to their correct geth data types and packages them to send to requesting transformers", func() {
+		BeforeEach(func() {
 			resolver = ipfs.NewIPLDResolver()
+		})
+		It("Resolves IPLD data to their correct geth data types and packages them to send to requesting transformers", func() {
 			seedNodePayload, err := resolver.ResolveIPLDs(mocks.MockIPLDWrapper)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(seedNodePayload.BlockNumber.Int64()).To(Equal(int64(1)))
+			Expect(seedNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeeNodePayload.BlockNumber.Int64()))
 			Expect(seedNodePayload.HeadersRlp).To(Equal(mocks.MockSeeNodePayload.HeadersRlp))
 			Expect(seedNodePayload.UnclesRlp).To(Equal(mocks.MockSeeNodePayload.UnclesRlp))
 			Expect(len(seedNodePayload.TransactionsRlp)).To(Equal(2))

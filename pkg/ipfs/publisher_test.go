@@ -40,6 +40,7 @@ var _ = Describe("Publisher", func() {
 		mockStateDagPutter = new(mocks.IncrementingDagPutter)
 		mockStorageDagPutter = new(mocks.IncrementingDagPutter)
 	})
+
 	Describe("Publish", func() {
 		It("Publishes the passed IPLDPayload objects to IPFS and returns a CIDPayload for indexing", func() {
 			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
