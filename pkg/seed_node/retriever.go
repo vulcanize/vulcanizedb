@@ -77,15 +77,21 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	if !streamFilters.HeaderFilter.Off {
 		cw.Headers, err = ecr.retrieveHeaderCIDs(tx, streamFilters, blockNumber)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			log.Error("header cid retrieval error")
 			return nil, err
 		}
 		if !streamFilters.HeaderFilter.FinalOnly {
 			cw.Uncles, err = ecr.retrieveUncleCIDs(tx, streamFilters, blockNumber)
 			if err != nil {
-				tx.Rollback()
-				log.Error("header cid retrieval error")
+				rollbackErr := tx.Rollback()
+				if rollbackErr != nil {
+					log.Error(rollbackErr)
+				}
+				log.Error("uncle cid retrieval error")
 				return nil, err
 			}
 		}
@@ -96,7 +102,10 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	if !streamFilters.TrxFilter.Off {
 		cw.Transactions, trxIds, err = ecr.retrieveTrxCIDs(tx, streamFilters, blockNumber)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			log.Error("transaction cid retrieval error")
 			return nil, err
 		}
@@ -106,7 +115,10 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	if !streamFilters.ReceiptFilter.Off {
 		cw.Receipts, err = ecr.retrieveRctCIDs(tx, streamFilters, blockNumber, trxIds)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			log.Error("receipt cid retrieval error")
 			return nil, err
 		}
@@ -116,7 +128,10 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	if !streamFilters.StateFilter.Off {
 		cw.StateNodes, err = ecr.retrieveStateCIDs(tx, streamFilters, blockNumber)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			log.Error("state cid retrieval error")
 			return nil, err
 		}
@@ -126,7 +141,10 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 	if !streamFilters.StorageFilter.Off {
 		cw.StorageNodes, err = ecr.retrieveStorageCIDs(tx, streamFilters, blockNumber)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			log.Error("storage cid retrieval error")
 			return nil, err
 		}
@@ -187,7 +205,7 @@ func (ecr *EthCIDRetriever) retrieveTrxCIDs(tx *sqlx.Tx, streamFilters config.Su
 
 func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Subscription, blockNumber int64, trxIds []int64) ([]string, error) {
 	log.Debug("retrieving receipt cids for block ", blockNumber)
-	args := make([]interface{}, 0, 2)
+	args := make([]interface{}, 0, 4)
 	pgStr := `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
 			AND transaction_cids.header_id = header_cids.id
@@ -196,17 +214,38 @@ func (ecr *EthCIDRetriever) retrieveRctCIDs(tx *sqlx.Tx, streamFilters config.Su
 	if len(streamFilters.ReceiptFilter.Topic0s) > 0 {
 		pgStr += ` AND ((receipt_cids.topic0s && $2::VARCHAR(66)[]`
 		args = append(args, pq.Array(streamFilters.ReceiptFilter.Topic0s))
-	}
-	if len(streamFilters.ReceiptFilter.Contracts) > 0 {
-		pgStr += ` AND receipt_cids.contract = ANY($3::VARCHAR(66)[])`
+		if len(streamFilters.ReceiptFilter.Contracts) > 0 {
+			pgStr += ` AND receipt_cids.contract = ANY($3::VARCHAR(66)[]))`
+			args = append(args, pq.Array(streamFilters.ReceiptFilter.Contracts))
+			if len(trxIds) > 0 {
+				pgStr += ` OR receipt_cids.tx_id = ANY($4::INTEGER[]))`
+				args = append(args, pq.Array(trxIds))
+			} else {
+				pgStr += `)`
+			}
+		} else {
+			pgStr += `)`
+			if len(trxIds) > 0 {
+				pgStr += ` OR receipt_cids.tx_id = ANY($3::INTEGER[]))`
+				args = append(args, pq.Array(trxIds))
+			} else {
+				pgStr += `)`
+			}
+		}
 	} else {
-		pgStr += `)`
-	}
-	if len(trxIds) > 0 {
-		pgStr += ` OR receipt_cids.tx_id = ANY($4::INTEGER[]))`
-		args = append(args, pq.Array(trxIds))
-	} else {
-		pgStr += `)`
+		if len(streamFilters.ReceiptFilter.Contracts) > 0 {
+			pgStr += ` AND (receipt_cids.contract = ANY($2::VARCHAR(66)[])`
+			args = append(args, pq.Array(streamFilters.ReceiptFilter.Contracts))
+			if len(trxIds) > 0 {
+				pgStr += ` OR receipt_cids.tx_id = ANY($3::INTEGER[]))`
+				args = append(args, pq.Array(trxIds))
+			} else {
+				pgStr += `)`
+			}
+		} else if len(trxIds) > 0 {
+			pgStr += ` AND receipt_cids.tx_id = ANY($2::INTEGER[])`
+			args = append(args, pq.Array(trxIds))
+		}
 	}
 	receiptCids := make([]string, 0)
 	err := tx.Select(&receiptCids, pgStr, args...)

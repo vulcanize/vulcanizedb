@@ -97,10 +97,10 @@ var (
 		Leaf:  true,
 	}}
 	emptyStorage           = make([]statediff.StorageDiff, 0)
-	address                = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
-	ContractLeafKey        = ipfs.AddressToKey(address)
-	anotherAddress         = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
-	AnotherContractLeafKey = ipfs.AddressToKey(anotherAddress)
+	Address                = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
+	ContractLeafKey        = ipfs.AddressToKey(Address)
+	AnotherAddress         = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
+	AnotherContractLeafKey = ipfs.AddressToKey(AnotherAddress)
 	testAccount            = state.Account{
 		Nonce:    NonceValue,
 		Balance:  big.NewInt(BalanceValue),
@@ -270,6 +270,34 @@ var (
 					Leaf:     true,
 					StateKey: "",
 				},
+			},
+		},
+	}
+
+	MockCIDWrapper = &ipfs.CIDWrapper{
+		BlockNumber:  big.NewInt(1),
+		Headers:      []string{"mockHeaderCID"},
+		Transactions: []string{"mockTrxCID1", "mockTrxCID2"},
+		Receipts:     []string{"mockRctCID1", "mockRctCID2"},
+		Uncles:       []string{},
+		StateNodes: []ipfs.StateNodeCID{
+			{
+				CID:  "mockStateCID1",
+				Leaf: true,
+				Key:  ContractLeafKey.Hex(),
+			},
+			{
+				CID:  "mockStateCID2",
+				Leaf: true,
+				Key:  AnotherContractLeafKey.Hex(),
+			},
+		},
+		StorageNodes: []ipfs.StorageNodeCID{
+			{
+				CID:      "mockStorageCID",
+				Leaf:     true,
+				StateKey: ContractLeafKey.Hex(),
+				Key:      "0x0000000000000000000000000000000000000000000000000000000000000001",
 			},
 		},
 	}

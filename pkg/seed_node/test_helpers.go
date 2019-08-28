@@ -52,3 +52,12 @@ func TearDownDB(db *postgres.DB) {
 	err = tx.Commit()
 	Expect(err).NotTo(HaveOccurred())
 }
+
+func ListContains(sss []string, s string) bool {
+	for _, str := range sss {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
