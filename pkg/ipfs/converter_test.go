@@ -45,6 +45,7 @@ var _ = Describe("Converter", func() {
 			Expect(converterPayload.TrxMetaData).To(Equal(mocks.MockTrxMeta))
 			Expect(converterPayload.ReceiptMetaData).To(Equal(mocks.MockRctMeta))
 		})
+
 		It(" Throws an error if the wrong chain config is used", func() {
 			converter := ipfs.NewPayloadConverter(params.TestnetChainConfig)
 			_, err := converter.Convert(mocks.MockStateDiffPayload)

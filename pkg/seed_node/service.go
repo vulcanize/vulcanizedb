@@ -301,19 +301,20 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	startingBlock, err = sap.Retriever.RetrieveFirstBlockNumber()
 	if err != nil {
 		sub.PayloadChan <- streamer.SeedNodePayload{
-			ErrMsg: "unable to set block range; error: " + err.Error(),
+			ErrMsg: "unable to set block range start; error: " + err.Error(),
 		}
 	}
 	if startingBlock < con.StartingBlock.Int64() {
 		startingBlock = con.StartingBlock.Int64()
 	}
-	if con.EndingBlock.Int64() <= 0 || con.EndingBlock.Int64() <= startingBlock {
-		endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
-		if err != nil {
-			sub.PayloadChan <- streamer.SeedNodePayload{
-				ErrMsg: "unable to set block range; error: " + err.Error(),
-			}
+	endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
+	if err != nil {
+		sub.PayloadChan <- streamer.SeedNodePayload{
+			ErrMsg: "unable to set block range end; error: " + err.Error(),
 		}
+	}
+	if endingBlock > con.EndingBlock.Int64() && con.EndingBlock.Int64() > 0 && con.EndingBlock.Int64() > startingBlock {
+		endingBlock = con.EndingBlock.Int64()
 	}
 	log.Debug("backfill starting block:", con.StartingBlock)
 	log.Debug("backfill ending block:", endingBlock)

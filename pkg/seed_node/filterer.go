@@ -165,14 +165,17 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 				}
 			}
 		}
-	} else {
-		// We only keep receipts with logs of interest if we are interested in that contract
-		for _, wantedTopic := range wantedTopics {
-			for _, actualTopic := range actualTopics {
-				if wantedTopic == actualTopic {
-					for _, wantedContract := range wantedContracts {
-						if wantedContract == actualContract {
-							return true
+	} else { // We keep receipts that belong to one of the specified contracts and have logs with topics if we aren't filtering on topics
+		for _, wantedContract := range wantedContracts {
+			if wantedContract == actualContract {
+				if len(wantedTopics) == 0 {
+					return true
+				} else { // Or if we have contracts and topics to filter on we only keep receipts that satisfy both conditions
+					for _, wantedTopic := range wantedTopics {
+						for _, actualTopic := range actualTopics {
+							if wantedTopic == actualTopic {
+								return true
+							}
 						}
 					}
 				}

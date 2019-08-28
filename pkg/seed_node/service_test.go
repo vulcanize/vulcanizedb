@@ -32,7 +32,6 @@ import (
 )
 
 var _ = Describe("Service", func() {
-
 	Describe("SyncAndPublish", func() {
 		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)

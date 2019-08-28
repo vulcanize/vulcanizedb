@@ -41,6 +41,7 @@ var _ = Describe("Repository", func() {
 	AfterEach(func() {
 		seed_node.TearDownDB(db)
 	})
+
 	Describe("Index", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
 			err = repo.Index(mocks.MockCIDPayload)
