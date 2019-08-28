@@ -17,6 +17,8 @@
 package seed_node
 
 import (
+	"bytes"
+
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
@@ -53,9 +55,18 @@ func TearDownDB(db *postgres.DB) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func ListContains(sss []string, s string) bool {
+func ListContainsString(sss []string, s string) bool {
 	for _, str := range sss {
 		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
+func ListContainsBytes(bbb [][]byte, b []byte) bool {
+	for _, by := range bbb {
+		if bytes.Equal(by, b) {
 			return true
 		}
 	}
