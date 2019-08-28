@@ -50,24 +50,36 @@ func (repo *Repository) Index(cidPayload *ipfs.CIDPayload) error {
 	}
 	headerID, err := repo.indexHeaderCID(tx, cidPayload.HeaderCID, cidPayload.BlockNumber, cidPayload.BlockHash.Hex())
 	if err != nil {
-		log.Error(tx.Rollback())
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error(rollbackErr)
+		}
 		return err
 	}
 	for uncleHash, cid := range cidPayload.UncleCIDS {
 		err = repo.indexUncleCID(tx, cid, cidPayload.BlockNumber, uncleHash.Hex())
 		if err != nil {
-			log.Error(tx.Rollback())
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error(rollbackErr)
+			}
 			return err
 		}
 	}
 	err = repo.indexTransactionAndReceiptCIDs(tx, cidPayload, headerID)
 	if err != nil {
-		log.Error(tx.Rollback())
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error(rollbackErr)
+		}
 		return err
 	}
 	err = repo.indexStateAndStorageCIDs(tx, cidPayload, headerID)
 	if err != nil {
-		log.Error(tx.Rollback())
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Error(rollbackErr)
+		}
 		return err
 	}
 	return tx.Commit()

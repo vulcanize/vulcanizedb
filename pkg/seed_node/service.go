@@ -208,7 +208,7 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan ipfs.I
 					log.Errorf("worker %d error: %v", id, err)
 				}
 			case <-publishAndIndexQuit:
-				log.Infof("quiting publishAndIndex worked %d", id)
+				log.Infof("quiting publishAndIndex worker %d", id)
 				return
 			}
 		}

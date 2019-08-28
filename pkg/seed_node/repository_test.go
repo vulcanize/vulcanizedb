@@ -60,8 +60,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(trxs)).To(Equal(2))
-			Expect(trxs[0]).To(Equal("mockTrxCID1"))
-			Expect(trxs[1]).To(Equal("mockTrxCID2"))
+			Expect(seed_node.ListContains(trxs, "mockTrxCID1")).To(BeTrue())
+			Expect(seed_node.ListContains(trxs, "mockTrxCID2")).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
 			pgStr = `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
@@ -71,8 +71,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&rcts, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(rcts)).To(Equal(2))
-			Expect(rcts[0]).To(Equal("mockRctCID1"))
-			Expect(rcts[1]).To(Equal("mockRctCID2"))
+			Expect(seed_node.ListContains(rcts, "mockRctCID1")).To(BeTrue())
+			Expect(seed_node.ListContains(rcts, "mockRctCID2")).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]ipfs.StateNodeCID, 0)
 			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
@@ -80,16 +80,16 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&stateNodes, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(stateNodes)).To(Equal(2))
-			Expect(stateNodes[0]).To(Equal(ipfs.StateNodeCID{
-				CID:  "mockStateCID1",
-				Leaf: true,
-				Key:  mocks.ContractLeafKey.Hex(),
-			}))
-			Expect(stateNodes[1]).To(Equal(ipfs.StateNodeCID{
-				CID:  "mockStateCID2",
-				Leaf: true,
-				Key:  mocks.AnotherContractLeafKey.Hex(),
-			}))
+			for _, stateNode := range stateNodes {
+				if stateNode.CID == "mockStateCID1" {
+					Expect(stateNode.Leaf).To(Equal(true))
+					Expect(stateNode.Key).To(Equal(mocks.ContractLeafKey.Hex()))
+				}
+				if stateNode.CID == "mockStateCID2" {
+					Expect(stateNode.Leaf).To(Equal(true))
+					Expect(stateNode.Key).To(Equal(mocks.AnotherContractLeafKey.Hex()))
+				}
+			}
 			// check that storage nodes were properly indexed
 			storageNodes := make([]ipfs.StorageNodeCID, 0)
 			pgStr = `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key, storage_cids.leaf FROM storage_cids, state_cids, header_cids
