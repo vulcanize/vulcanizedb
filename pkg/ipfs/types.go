@@ -77,7 +77,7 @@ type CIDPayload struct {
 	BlockNumber     string
 	BlockHash       common.Hash
 	HeaderCID       string
-	UncleCIDS       map[common.Hash]string
+	UncleCIDs       map[common.Hash]string
 	TransactionCIDs map[common.Hash]*TrxMetaData
 	ReceiptCIDs     map[common.Hash]*ReceiptMetaData
 	StateNodeCIDs   map[common.Hash]StateNodeCID
