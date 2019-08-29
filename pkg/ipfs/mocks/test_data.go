@@ -208,7 +208,7 @@ var (
 		BlockNumber: "1",
 		BlockHash:   MockBlock.Hash(),
 		HeaderCID:   "mockHeaderCID",
-		UncleCIDS:   make(map[common.Hash]string),
+		UncleCIDs:   make(map[common.Hash]string),
 		TransactionCIDs: map[common.Hash]*ipfs.TrxMetaData{
 			MockTransactions[0].Hash(): {
 				CID: "mockTrxCID1",

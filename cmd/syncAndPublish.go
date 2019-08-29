@@ -69,7 +69,11 @@ func syncAndPublish() {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, 1)
+	workers := viper.GetInt("client.workers")
+	if workers < 1 {
+		workers = 1
+	}
+	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, workers)
 	if err != nil {
 		log.Fatal(err)
 	}

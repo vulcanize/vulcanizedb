@@ -56,7 +56,7 @@ func (repo *Repository) Index(cidPayload *ipfs.CIDPayload) error {
 		}
 		return err
 	}
-	for uncleHash, cid := range cidPayload.UncleCIDS {
+	for uncleHash, cid := range cidPayload.UncleCIDs {
 		err = repo.indexUncleCID(tx, cid, cidPayload.BlockNumber, uncleHash.Hex())
 		if err != nil {
 			rollbackErr := tx.Rollback()

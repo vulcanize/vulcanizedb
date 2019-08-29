@@ -125,7 +125,7 @@ func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 		BlockHash:       payload.BlockHash,
 		BlockNumber:     payload.BlockNumber.String(),
 		HeaderCID:       headerCid,
-		UncleCIDS:       uncleCids,
+		UncleCIDs:       uncleCids,
 		TransactionCIDs: transactionCids,
 		ReceiptCIDs:     receiptsCids,
 		StateNodeCIDs:   stateNodeCids,
