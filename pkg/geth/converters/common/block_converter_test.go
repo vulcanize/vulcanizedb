@@ -76,7 +76,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		Expect(coreBlock.ParentHash).To(Equal(block.ParentHash().Hex()))
 		Expect(coreBlock.ExtraData).To(Equal(hexutil.Encode(block.Extra())))
 		Expect(coreBlock.Size).To(Equal(block.Size().String()))
-		Expect(coreBlock.Time).To(Equal(int64(time)))
+		Expect(coreBlock.Time).To(Equal(time))
 		Expect(coreBlock.UncleHash).To(Equal(block.UncleHash().Hex()))
 		Expect(coreBlock.IsFinal).To(BeFalse())
 	})
