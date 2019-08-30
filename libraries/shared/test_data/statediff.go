@@ -29,20 +29,29 @@ import (
 var (
 	BlockNumber     = big.NewInt(rand.Int63())
 	BlockHash       = "0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"
-	CodeHash        = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-	NewNonceValue   = rand.Uint64()
-	NewBalanceValue = rand.Int63()
-	ContractRoot    = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-	StoragePath     = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").Bytes()
-	StorageKey      = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
-	StorageValue    = common.Hex2Bytes("0x03")
-	storage         = []statediff.StorageDiff{{
+	CodeHash          = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+	NewNonceValue     = rand.Uint64()
+	NewBalanceValue   = rand.Int63()
+	ContractRoot      = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	StoragePath       = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").Bytes()
+	StorageKey        = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
+	SmallStorageValue = common.Hex2Bytes("03")
+	SmallStorageValueRlp, _ = rlp.EncodeToBytes(SmallStorageValue)
+	storageWithSmallValue = []statediff.StorageDiff{{
 		Key:   StorageKey,
-		Value: StorageValue,
+		Value: SmallStorageValueRlp,
 		Path:  StoragePath,
 		Proof: [][]byte{},
 	}}
-	emptyStorage           = make([]statediff.StorageDiff, 0)
+	LargeStorageValue = common.Hex2Bytes("00191b53778c567b14b50ba0000")
+	LargeStorageValueRlp, rlpErr = rlp.EncodeToBytes(LargeStorageValue)
+	storageWithLargeValue = []statediff.StorageDiff{{
+		Key:   StorageKey,
+		Value: LargeStorageValueRlp,
+		Path:  StoragePath,
+		Proof: [][]byte{},
+	}}
+	EmptyStorage           = make([]statediff.StorageDiff, 0)
 	contractAddress        = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
 	ContractLeafKey        = crypto.Keccak256Hash(contractAddress[:])
 	anotherContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
@@ -59,25 +68,20 @@ var (
 		{
 			Key:     ContractLeafKey.Bytes(),
 			Value:   valueBytes,
-			Storage: storage,
-		},
-		{
-			Key:     AnotherContractLeafKey.Bytes(),
-			Value:   valueBytes,
-			Storage: emptyStorage,
+			Storage: storageWithSmallValue,
 		},
 	}
 
 	UpdatedAccountDiffs = []statediff.AccountDiff{{
 		Key:     AnotherContractLeafKey.Bytes(),
 		Value:   valueBytes,
-		Storage: storage,
+		Storage: storageWithLargeValue,
 	}}
 
 	DeletedAccountDiffs = []statediff.AccountDiff{{
-		Key:     ContractLeafKey.Bytes(),
+		Key:     AnotherContractLeafKey.Bytes(),
 		Value:   valueBytes,
-		Storage: storage,
+		Storage: storageWithSmallValue,
 	}}
 
 	MockStateDiff = statediff.StateDiff{

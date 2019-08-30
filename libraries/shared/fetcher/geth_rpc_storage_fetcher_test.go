@@ -16,6 +16,7 @@ package fetcher_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
@@ -93,6 +94,17 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 		close(done)
 	})
 
+	It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
+		badStatediffPayload := statediff.Payload{}
+		streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+		Expect(<-errorChan).To(MatchError("EOF"))
+
+		close(done)
+	})
+
 	It("adds parsed statediff payloads to the rows channel", func(done Done) {
 		streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
 
@@ -100,33 +112,69 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 		height := test_data.BlockNumber
 		intHeight := int(height.Int64())
-		expectedStorageDiff := utils.StorageDiff{
+		createdExpectedStorageDiff := utils.StorageDiff{
 			KeccakOfContractAddress: common.BytesToHash(test_data.ContractLeafKey[:]),
 			BlockHash:               common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 			BlockHeight:             intHeight,
 			StorageKey:              common.BytesToHash(test_data.StorageKey),
-			StorageValue:            common.BytesToHash(test_data.StorageValue),
+			StorageValue:            common.BytesToHash(test_data.SmallStorageValue),
 		}
-		anotherExpectedStorageDiff := utils.StorageDiff{
+		updatedExpectedStorageDiff := utils.StorageDiff{
 			KeccakOfContractAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
 			BlockHash:               common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 			BlockHeight:             intHeight,
 			StorageKey:              common.BytesToHash(test_data.StorageKey),
-			StorageValue:            common.BytesToHash(test_data.StorageValue),
+			StorageValue:            common.BytesToHash(test_data.LargeStorageValue),
 		}
-		Expect(<-storagediffChan).To(Equal(expectedStorageDiff))
-		Expect(<-storagediffChan).To(Equal(anotherExpectedStorageDiff))
+		deletedExpectedStorageDiff := utils.StorageDiff{
+			KeccakOfContractAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
+			BlockHash:               common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+			BlockHeight:             intHeight,
+			StorageKey:              common.BytesToHash(test_data.StorageKey),
+			StorageValue:            common.BytesToHash(test_data.SmallStorageValue),
+		}
+
+		createdStateDiff := <-storagediffChan
+		updatedStateDiff := <-storagediffChan
+		deletedStateDiff := <-storagediffChan
+
+		Expect(createdStateDiff).To(Equal(createdExpectedStorageDiff))
+		Expect(updatedStateDiff).To(Equal(updatedExpectedStorageDiff))
+		Expect(deletedStateDiff).To(Equal(deletedExpectedStorageDiff))
 
 		close(done)
 	})
 
-	It("adds errors to error channel if parsing the diff fails", func(done Done) {
-		badStatediffPayload := statediff.Payload{}
+	It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
+		badStorageDiffs := []statediff.StorageDiff{{
+			Key:   test_data.StorageKey,
+			Value: []byte{1, 2, 3},
+			// this storage value will fail to be decoded as an RLP with the following error message:
+			// "input contains more than one value"
+			Path:  test_data.StoragePath,
+			Proof: [][]byte{},
+		}}
+
+		accountDiffs := test_data.CreatedAccountDiffs
+		accountDiffs[0].Storage = badStorageDiffs
+
+		stateDiff := statediff.StateDiff{
+			BlockNumber:     test_data.BlockNumber,
+			BlockHash:       common.HexToHash(test_data.BlockHash),
+			CreatedAccounts: accountDiffs,
+		}
+
+		stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
+		Expect(err).NotTo(HaveOccurred())
+
+		badStatediffPayload := statediff.Payload{
+			StateDiffRlp: stateDiffRlp,
+		}
 		streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
 
 		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-		Expect(<-errorChan).To(MatchError("EOF"))
+		Expect(<-errorChan).To(MatchError("rlp: input contains more than one value"))
 
 		close(done)
 	})

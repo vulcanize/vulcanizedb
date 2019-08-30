@@ -18,10 +18,12 @@ package utils_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"math/big"
 	"math/rand"
@@ -63,18 +65,26 @@ var _ = Describe("Storage row parsing", func() {
 	})
 
 	Describe("FromGethStateDiff", func() {
-		It("adds relevant fields to diff", func() {
-			accountDiff := statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff := &statediff.StateDiff{
+		var (
+			accountDiff = statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
+			stateDiff = &statediff.StateDiff{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
 			}
+		)
+
+		It("adds relevant fields to diff", func() {
+			storageValueBytes := []byte{3}
+			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
+			Expect(encodeErr).NotTo(HaveOccurred())
+
 			storageDiff := statediff.StorageDiff{
 				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: []byte{1, 2, 3, 4, 5, 0, 9, 8, 7, 6},
+				Value: storageValueRlp,
 			}
 
-			result := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			result, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			Expect(err).NotTo(HaveOccurred())
 
 			expectedAddress := common.BytesToHash(accountDiff.Key)
 			Expect(result.KeccakOfContractAddress).To(Equal(expectedAddress))
@@ -83,8 +93,34 @@ var _ = Describe("Storage row parsing", func() {
 			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))
 			expectedStorageKey := common.BytesToHash(storageDiff.Key)
 			Expect(result.StorageKey).To(Equal(expectedStorageKey))
-			expectedStorageValue := common.BytesToHash(storageDiff.Value)
+			expectedStorageValue := common.BytesToHash(storageValueBytes)
 			Expect(result.StorageValue).To(Equal(expectedStorageValue))
+		})
+
+		It("handles decoding large storage values from their RLP", func() {
+			storageValueBytes := []byte{1, 2, 3, 4, 5, 0, 9, 8, 7, 6}
+			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
+			Expect(encodeErr).NotTo(HaveOccurred())
+
+			storageDiff := statediff.StorageDiff{
+				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				Value: storageValueRlp,
+			}
+
+			result, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.StorageValue).To(Equal(common.BytesToHash(storageValueBytes)))
+		})
+
+		It("returns an err if decoding the storage value Rlp fails", func() {
+			storageDiff := statediff.StorageDiff{
+				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				Value: test_data.StorageKey,
+			}
+
+			_, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("rlp: input contains more than one value"))
 		})
 	})
 })
