@@ -19,6 +19,7 @@ package utils
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"strconv"
 )
@@ -51,14 +52,20 @@ func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) StorageDiff {
+func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiff, error) {
+	var decodedValue []byte
+	err := rlp.DecodeBytes(storage.Value, &decodedValue)
+	if err != nil {
+		return StorageDiff{}, err
+	}
+
 	return StorageDiff{
 		KeccakOfContractAddress: common.BytesToHash(account.Key),
 		BlockHash:               stateDiff.BlockHash,
 		BlockHeight:             int(stateDiff.BlockNumber.Int64()),
 		StorageKey:              common.BytesToHash(storage.Key),
-		StorageValue:            common.BytesToHash(storage.Value),
-	}
+		StorageValue:            common.BytesToHash(decodedValue),
+	}, nil
 }
 
 func HexToKeccak256Hash(hex string) common.Hash {
