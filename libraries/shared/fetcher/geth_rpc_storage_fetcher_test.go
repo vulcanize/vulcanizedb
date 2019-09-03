@@ -146,17 +146,8 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	})
 
 	It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
-		badStorageDiffs := []statediff.StorageDiff{{
-			Key:   test_data.StorageKey,
-			Value: []byte{1, 2, 3},
-			// this storage value will fail to be decoded as an RLP with the following error message:
-			// "input contains more than one value"
-			Path:  test_data.StoragePath,
-			Proof: [][]byte{},
-		}}
-
 		accountDiffs := test_data.CreatedAccountDiffs
-		accountDiffs[0].Storage = badStorageDiffs
+		accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
 
 		stateDiff := statediff.StateDiff{
 			BlockNumber:     test_data.BlockNumber,

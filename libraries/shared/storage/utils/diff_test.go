@@ -67,7 +67,7 @@ var _ = Describe("Storage row parsing", func() {
 	Describe("FromGethStateDiff", func() {
 		var (
 			accountDiff = statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff = &statediff.StateDiff{
+			stateDiff   = &statediff.StateDiff{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
 			}
@@ -113,12 +113,7 @@ var _ = Describe("Storage row parsing", func() {
 		})
 
 		It("returns an err if decoding the storage value Rlp fails", func() {
-			storageDiff := statediff.StorageDiff{
-				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: test_data.StorageKey,
-			}
-
-			_, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			_, err := utils.FromGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("rlp: input contains more than one value"))
 		})
