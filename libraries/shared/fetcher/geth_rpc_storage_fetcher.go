@@ -59,8 +59,12 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 		for _, account := range accounts {
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, storage := range account.Storage {
-				logrus.Trace("adding storage diff to out channel")
 				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
+				logrus.Trace("adding storage diff to out channel",
+					"keccak of address: ", diff.KeccakOfContractAddress.Hex(),
+					"block height: ", diff.BlockHeight,
+					"storage key: ", diff.StorageKey.Hex(),
+					"storage value: ", diff.StorageValue.Hex())
 				if formatErr != nil {
 					errs <- formatErr
 				}
