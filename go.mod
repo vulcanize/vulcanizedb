@@ -56,7 +56,7 @@ require (
 	github.com/ipfs/go-ds-leveldb v0.0.2
 	github.com/ipfs/go-ds-measure v0.0.1
 	github.com/ipfs/go-fs-lock v0.0.1
-	github.com/ipfs/go-ipfs v0.4.21
+	github.com/ipfs/go-ipfs v0.4.22
 	github.com/ipfs/go-ipfs-blockstore v0.0.1
 	github.com/ipfs/go-ipfs-chunker v0.0.1
 	github.com/ipfs/go-ipfs-config v0.0.3
@@ -226,7 +226,7 @@ replace github.com/dgraph-io/badger v2.0.0-rc.2+incompatible => github.com/dgrap
 
 replace github.com/dgraph-io/badger/v2 v2.0.0-rc2 => github.com/dgraph-io/badger v1.6.0-rc1
 
-replace github.com/ipfs/go-ipfs v0.4.21 => github.com/vulcanize/go-ipfs v0.4.22-alpha
+replace github.com/ipfs/go-ipfs v0.4.22 => github.com/vulcanize/go-ipfs v0.4.22-alpha
 
 replace github.com/ipfs/go-ipfs-config v0.0.3 => github.com/vulcanize/go-ipfs-config v0.0.8-alpha
 

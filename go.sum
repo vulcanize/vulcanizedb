@@ -208,6 +208,7 @@ github.com/ipfs/bbloom v0.0.1/go.mod h1:oqo8CVWsJFMOZqTglBG4wydCE4IQA/G2/SEofB0r
 github.com/ipfs/dir-index-html v1.0.3/go.mod h1:TG9zbaH/+4MnkGel0xF4SLNhk+YZvBNo6jjBkO/LaWc=
 github.com/ipfs/go-bitswap v0.0.3/go.mod h1:jadAZYsP/tcRMl47ZhFxhaNuDQoXawT8iHMg+iFoQbg=
 github.com/ipfs/go-bitswap v0.0.7/go.mod h1:++LZRc+e1/ZxYsZq7QLKIPQvybh+70TMgeGuX+WB0pY=
+github.com/ipfs/go-bitswap v0.0.8-0.20190704155249-cbb485998356/go.mod h1:kYh8QssUH3mAuCwV3WmfcSqwJLhQC4WynKpd1hxt85A=
 github.com/ipfs/go-bitswap v0.0.9/go.mod h1:kAPf5qgn2W2DrgAcscZ3HrM9qh4pH+X8Fkk3UPrwvis=
 github.com/ipfs/go-bitswap v0.1.0/go.mod h1:FFJEf18E9izuCqUtHxbWEvq+reg7o4CW5wSAE1wsxj0=
 github.com/ipfs/go-bitswap v0.1.2/go.mod h1:qxSWS4NXGs7jQ6zQvoPY3+NmOfHHG47mhkiLzBpJQIs=
@@ -250,6 +251,8 @@ github.com/ipfs/go-fs-lock v0.0.1 h1:XHX8uW4jQBYWHj59XXcjg7BHlHxV9ZOYs6Y43yb7/l0
 github.com/ipfs/go-fs-lock v0.0.1/go.mod h1:DNBekbboPKcxs1aukPSaOtFA3QfSdi5C855v0i9XJ8Y=
 github.com/ipfs/go-ipfs v0.4.21 h1:KB4k3U90cesx60MwHEOqUoSCquZ+JXXHNdw0HIKBusc=
 github.com/ipfs/go-ipfs v0.4.21/go.mod h1:T9zAmGO+rzbvLjDUm0DHtYXtdT4GhWOZeCPztgmt2V8=
+github.com/ipfs/go-ipfs v0.4.22 h1:dDUSkIj0kSrMJW55wOm9P+mYewxCDSATy+PGZrShdfI=
+github.com/ipfs/go-ipfs v0.4.22/go.mod h1:vgIn+MMrMEN2Yd6AWxAZVP/+YGI8dSGSgwiTEU6R2kw=
 github.com/ipfs/go-ipfs-addr v0.0.1 h1:DpDFybnho9v3/a1dzJ5KnWdThWD1HrFLpQ+tWIyBaFI=
 github.com/ipfs/go-ipfs-addr v0.0.1/go.mod h1:uKTDljHT3Q3SUWzDLp3aYUi8MrY32fgNgogsIa0npjg=
 github.com/ipfs/go-ipfs-blockstore v0.0.1 h1:O9n3PbmTYZoNhkgkEyrXTznbmktIXif62xLX+8dPHzc=
@@ -312,6 +315,7 @@ github.com/ipfs/go-path v0.0.4/go.mod h1:zIRQUez3LuQIU25zFjC2hpBTHimWx7VK5bjZgRL
 github.com/ipfs/go-path v0.0.7 h1:H06hKMquQ0aYtHiHryOMLpQC1qC3QwXwkahcEVD51Ho=
 github.com/ipfs/go-path v0.0.7/go.mod h1:6KTKmeRnBXgqrTvzFrPV3CamxcgvXX/4z79tfAd2Sno=
 github.com/ipfs/go-peertaskqueue v0.0.4/go.mod h1:03H8fhyeMfKNFWqzYEVyMbcPUeYrqP1MX6Kd+aN+rMQ=
+github.com/ipfs/go-peertaskqueue v0.0.5-0.20190704154349-f09820a0a5b6/go.mod h1:03H8fhyeMfKNFWqzYEVyMbcPUeYrqP1MX6Kd+aN+rMQ=
 github.com/ipfs/go-peertaskqueue v0.1.0/go.mod h1:Jmk3IyCcfl1W3jTW3YpghSwSEC6IJ3Vzz/jUmWw8Z0U=
 github.com/ipfs/go-peertaskqueue v0.1.1 h1:+gPjbI+V3NktXZOqJA1kzbms2pYmhjgQQal0MzZrOAY=
 github.com/ipfs/go-peertaskqueue v0.1.1/go.mod h1:Jmk3IyCcfl1W3jTW3YpghSwSEC6IJ3Vzz/jUmWw8Z0U=

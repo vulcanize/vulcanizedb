@@ -31,5 +31,9 @@ func DbConnectionString(dbConfig Database) string {
 		return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
 			dbConfig.User, dbConfig.Password, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
 	}
+	if len(dbConfig.User) > 0 && len(dbConfig.Password) == 0 {
+		return fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable",
+			dbConfig.User, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+	}
 	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
 }
