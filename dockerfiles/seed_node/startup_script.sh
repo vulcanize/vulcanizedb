@@ -56,7 +56,7 @@ if [ $? -eq 0 ]; then
     echo "Beginning the syncPublishScreenAndServe vulcanizedb process"
     ./vulcanizedb syncPublishScreenAndServe --config=config.toml 2>&1 | tee -a log.txt &
 else
-    echo "Could not initialize Postgres backed IPFS profile. Are the database details correct?"
+    echo "Could not initialize state-diffing Geth."
     exit
 fi
 

@@ -2,6 +2,7 @@
     name     = "vulcanize_public"
     hostname = "localhost"
     port     = 5432
+    user     = "ec2-user"
 
 [client]
     ipcPath  = "ws://127.0.0.1:8546"
@@ -9,4 +10,4 @@
 
 [server]
     ipcPath = "/root/.vulcanize/vulcanize.ipc"
-    wsEndpoint = "127.0.0.1:80"
+    wsEndpoint = "127.0.0.1:8080"

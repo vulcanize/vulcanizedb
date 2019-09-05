@@ -1,11 +1,11 @@
-# Seed node commands
+# Seed Node
 
 Vulcanizedb can act as an index for Ethereum data stored on IPFS through the use of the `syncAndPublish` and
 `syncPublishScreenAndServe` commands. 
 
-## Setup
+## Manual Setup
 
-These commands work in conjunction with a [state-diffing full Geth node](https://github.com/vulcanize/go-ethereum/tree/rpc_statediffing)
+These commands work in conjunction with a [state-diffing full Geth node](https://github.com/vulcanize/go-ethereum/tree/statediffing)
 and IPFS.
 
 ### IPFS
@@ -17,9 +17,7 @@ To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs)
 
 `make install`
 
-If we want to use Postgres as our backing datastore, we need to use the vulcanize fork of go-ipfs. This fork supports
-the Postgres datastore plugin and has been adjusted to use `dep` instead of Go modules since Go modules cannot work with
-un-versioned forks and we need to use an un-versioned fork of go-ipfs-config.
+If we want to use Postgres as our backing datastore, we need to use the vulcanize fork of go-ipfs.
 
 Start by adding the fork and switching over to it:
 
@@ -29,11 +27,9 @@ Start by adding the fork and switching over to it:
 
 `git checkout -b postgres_update vulcanize/postgres_update`
 
-Now install this fork of ipfs, first be sure to remove any previous installation. It is important to use the below command
-instead of using `make install`, as `make install` will default to using Go modules and this will wreck our dependencies
-since Go modules cannot work with un-versioned forks.
+Now install this fork of ipfs, first be sure to remove any previous installation.
 
-`go install ./cmd/ipfs`
+`make install`
 
 Check that is installed properly by running
 
@@ -65,7 +61,7 @@ which has usage:
 
 and will ask us to enter the password, avoiding storing it to an ENV variable.
 
-Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes.
+Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes (in fact, we can't).
 
 ### Geth 
 For Geth, we currently *require* a special fork, and we can set this up as follows:
@@ -80,7 +76,7 @@ Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch
 
 `git fetch vulcanize`
 
-`git checkout -b rpc_statediffing vulcanize/rpc_statediffing`
+`git checkout -b statediffing vulcanize/statediffing`
 
 Now, install this fork of geth (make sure any old versions have been uninstalled/binaries removed first)
 
@@ -159,7 +155,88 @@ The additional `server.ipcPath` and `server.wsEndpoint` fields are used to set w
 the `syncPublishScreenAndServe` rpc server will expose itself to subscribing transformers over, respectively.
 Any valid and available path and endpoint is acceptable, but keep in mind that this path and endpoint need to be known by transformers for them to subscribe to the seed node.
 
-#### Subscribing
+
+## Dockerfile Setup
+
+The below provides step-by-step directions for how to setup the seed node using the provided Dockerfile on an AWS Linux AMI instance.
+Note that the instance will need sufficient memory and storage for this to work.
+
+1. Install basic dependencies 
+```
+sudo yum update
+sudo yum install -y curl gpg gcc gcc-c++ make git
+```
+
+2. Install Go 1.12
+```
+wget https://dl.google.com/go/go1.12.6.linux-amd64.tar.gz
+tar -xzf go1.12.6.linux-amd64.tar.gz
+sudo mv go /usr/local
+```
+
+3. Edit .bash_profile to export GOPATH
+```
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+```
+
+4. Install and setup Postgres
+```
+sudo yum install postgresql postgresql96-server
+sudo service postgresql96 initdb
+sudo service postgresql96 start
+sudo -u postgres createuser -s ec2-user
+sudo -u postgres createdb ec2-user
+sudo su postgres
+psql
+ALTER USER "ec2-user" WITH SUPERUSER;
+/q
+exit
+```
+
+4b. Edit hba_file to trust connections
+```
+psql
+SHOW hba_file;
+/q
+sudo vim {PATH_TO_FILE}
+```
+
+4c. Stop and restart Postgres server to affect changes
+```
+sudo service postgresql96 stop
+sudo service postgresql96 start
+```
+
+5. Install and start Docker (exit and re-enter ec2 instance afterwards to affect changes)
+```
+sudo yum install -y docker
+sudo service  docker start
+sudo usermod -aG docker ec2-user
+```
+
+6. Fetch the repository and switch to this working branch
+```
+go get github.com/vulcanize/vulcanizedb
+cd $GOPATH/src/github.com/vulcanize/vulcanizedb
+git checkout ipfs_concurrency
+```
+
+7. Create the db
+```
+createdb vulcanize_public
+```
+
+8. Build and run the Docker image
+```
+cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/seed_node
+docker build .
+docker run --network host -e VDB_PG_CONNECT=postgres://localhost:5432/vulcanize_public?sslmode=disable {IMAGE_ID}
+```
+
+
+## Subscribing
 
 A transformer can subscribe to the `syncPublishScreenAndServe` service over its ipc or ws endpoints, when subscribing the transformer
 specifies which subsets of the synced data it is interested in and the server will forward only these data.
@@ -176,7 +253,7 @@ The config for `streamSubscribe` has the `subscribe` set of parameters, for exam
 
 ```toml
 [subscription]
-    path = "ws://127.0.0.1:2019"
+    path = "ws://127.0.0.1:8080"
     backfill = true
     backfillOnly = false
     startingBlock = 0
@@ -253,4 +330,3 @@ if it has any addresses then the seed-node will only send storage nodes from the
 array that can be filled with storage keys we want to filter storage data for. It is important to note that the storageKeys are the actual keccak256 hashes, whereas
 the addresses in the `addresses` fields are the ETH addresses and not their keccak256 hashes that serve as the actual state keys. By default the seed-node
 only sends along storage leafs, if we want to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
-
