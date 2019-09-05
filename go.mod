@@ -94,7 +94,7 @@ replace github.com/dgraph-io/badger v2.0.0-rc.2+incompatible => github.com/dgrap
 
 replace github.com/dgraph-io/badger/v2 v2.0.0-rc2 => github.com/dgraph-io/badger v1.6.0-rc1
 
-replace github.com/ipfs/go-ipfs v0.4.21 => github.com/vulcanize/go-ipfs v0.4.22-alpha
+replace github.com/ipfs/go-ipfs v0.4.22 => github.com/vulcanize/go-ipfs v0.4.22-alpha
 
 replace github.com/ipfs/go-ipfs-config v0.0.3 => github.com/vulcanize/go-ipfs-config v0.0.8-alpha
 
