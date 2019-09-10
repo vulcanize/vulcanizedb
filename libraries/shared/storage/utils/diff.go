@@ -27,12 +27,12 @@ import (
 const ExpectedRowLength = 5
 
 type StorageDiff struct {
-	Id                      int
-	KeccakOfContractAddress common.Hash `db:"contract"`
-	BlockHash               common.Hash `db:"block_hash"`
-	BlockHeight             int         `db:"block_height"`
-	StorageKey              common.Hash `db:"storage_key"`
-	StorageValue            common.Hash `db:"storage_value"`
+	Id            int
+	HashedAddress common.Hash `db:"contract"`
+	BlockHash     common.Hash `db:"block_hash"`
+	BlockHeight   int         `db:"block_height"`
+	StorageKey    common.Hash `db:"storage_key"`
+	StorageValue  common.Hash `db:"storage_value"`
 }
 
 func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
@@ -44,11 +44,11 @@ func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
 		return StorageDiff{}, err
 	}
 	return StorageDiff{
-		KeccakOfContractAddress: HexToKeccak256Hash(csvRow[0]),
-		BlockHash:               common.HexToHash(csvRow[1]),
-		BlockHeight:             height,
-		StorageKey:              common.HexToHash(csvRow[3]),
-		StorageValue:            common.HexToHash(csvRow[4]),
+		HashedAddress: HexToKeccak256Hash(csvRow[0]),
+		BlockHash:     common.HexToHash(csvRow[1]),
+		BlockHeight:   height,
+		StorageKey:    common.HexToHash(csvRow[3]),
+		StorageValue:  common.HexToHash(csvRow[4]),
 	}, nil
 }
 
@@ -60,11 +60,11 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 	}
 
 	return StorageDiff{
-		KeccakOfContractAddress: common.BytesToHash(account.Key),
-		BlockHash:               stateDiff.BlockHash,
-		BlockHeight:             int(stateDiff.BlockNumber.Int64()),
-		StorageKey:              common.BytesToHash(storage.Key),
-		StorageValue:            common.BytesToHash(decodedValue),
+		HashedAddress: common.BytesToHash(account.Key),
+		BlockHash:     stateDiff.BlockHash,
+		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
+		StorageKey:    common.BytesToHash(storage.Key),
+		StorageValue:  common.BytesToHash(decodedValue),
 	}, nil
 }
 
