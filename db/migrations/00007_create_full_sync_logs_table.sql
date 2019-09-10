@@ -10,8 +10,7 @@ CREATE TABLE full_sync_logs
     topic1       VARCHAR(66),
     topic2       VARCHAR(66),
     topic3       VARCHAR(66),
-    data         TEXT,
-    CONSTRAINT full_sync_log_uc UNIQUE (block_number, index)
+    data         TEXT
 );
 
 
