@@ -161,7 +161,6 @@ var _ = Describe("Full sync log Repository", func() {
 		})
 
 		It("saves the logs attached to a receipt", func() {
-
 			logs := []core.FullSyncLog{{
 				Address:     "0x8a4774fe82c63484afef97ca8d89a6ea5e21f973",
 				BlockNumber: 4745407,
@@ -215,7 +214,7 @@ var _ = Describe("Full sync log Repository", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			expected := logs[1:]
-			Expect(retrievedLogs).To(Equal(expected))
+			Expect(retrievedLogs).To(ConsistOf(expected))
 		})
 	})
 })
