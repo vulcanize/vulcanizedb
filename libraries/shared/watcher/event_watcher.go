@@ -94,12 +94,12 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	err, missingHeadersFound := watcher.LogExtractor.ExtractLogs(recheckHeaders)
+	err, uncheckedHeadersFound := watcher.LogExtractor.ExtractLogs(recheckHeaders)
 	if err != nil {
 		errs <- err
 	}
 
-	if missingHeadersFound {
+	if uncheckedHeadersFound {
 		watcher.extractLogs(recheckHeaders, errs)
 	} else {
 		time.Sleep(NoNewDataPause)

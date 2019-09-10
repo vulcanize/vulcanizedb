@@ -26,11 +26,11 @@ type MockCheckedHeadersRepository struct {
 	MarkHeadersUncheckedCalled              bool
 	MarkHeadersUncheckedReturnError         error
 	MarkHeadersUncheckedStartingBlockNumber int64
-	MissingHeadersCheckCount                int64
-	MissingHeadersEndingBlockNumber         int64
-	MissingHeadersReturnError               error
-	MissingHeadersReturnHeaders             []core.Header
-	MissingHeadersStartingBlockNumber       int64
+	UncheckedHeadersCheckCount              int64
+	UncheckedHeadersEndingBlockNumber       int64
+	UncheckedHeadersReturnError             error
+	UncheckedHeadersReturnHeaders           []core.Header
+	UncheckedHeadersStartingBlockNumber     int64
 }
 
 func (repository *MockCheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
@@ -45,8 +45,8 @@ func (repository *MockCheckedHeadersRepository) MarkHeaderChecked(headerID int64
 }
 
 func (repository *MockCheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
-	repository.MissingHeadersStartingBlockNumber = startingBlockNumber
-	repository.MissingHeadersEndingBlockNumber = endingBlockNumber
-	repository.MissingHeadersCheckCount = checkCount
-	return repository.MissingHeadersReturnHeaders, repository.MissingHeadersReturnError
+	repository.UncheckedHeadersStartingBlockNumber = startingBlockNumber
+	repository.UncheckedHeadersEndingBlockNumber = endingBlockNumber
+	repository.UncheckedHeadersCheckCount = checkCount
+	return repository.UncheckedHeadersReturnHeaders, repository.UncheckedHeadersReturnError
 }
