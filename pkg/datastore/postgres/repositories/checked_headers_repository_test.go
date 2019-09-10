@@ -154,13 +154,11 @@ var _ = Describe("Checked Headers repository", func() {
 		Describe("when ending block is specified", func() {
 			It("excludes headers that are out of range", func() {
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				// doesn't include outOfRangeBlockNumber
-				Expect(len(headers)).To(Equal(3))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber)))
-				Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
+				Expect(headerBlockNumbers).NotTo(ContainElement(outOfRangeBlockNumber))
 			})
 
 			It("excludes headers that have been checked more than the check count", func() {
@@ -168,12 +166,11 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				// doesn't include middleBlockNumber
-				Expect(len(headers)).To(Equal(2))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, endingBlockNumber))
+				Expect(headerBlockNumbers).NotTo(ContainElement(middleBlockNumber))
 			})
 
 			It("does not exclude headers that have been checked less than the check count", func() {
@@ -181,12 +178,10 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, recheckCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(headers)).To(Equal(3))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
-				Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
 			})
 
 			It("only returns headers associated with the current node", func() {
@@ -198,20 +193,15 @@ var _ = Describe("Checked Headers repository", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				Expect(err).NotTo(HaveOccurred())
 				nodeOneMissingHeaders, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(nodeOneMissingHeaders)).To(Equal(3))
-				Expect(nodeOneMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
-				Expect(nodeOneMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
-				Expect(nodeOneMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber)))
+				nodeOneHeaderBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
+				Expect(nodeOneHeaderBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
 
 				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(startingBlockNumber, endingBlockNumber+10, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(nodeTwoMissingHeaders)).To(Equal(3))
-				Expect(nodeTwoMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10)))
-				Expect(nodeTwoMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10)))
-				Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10)))
+				nodeTwoHeaderBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
+				Expect(nodeTwoHeaderBlockNumbers).To(ConsistOf(startingBlockNumber+10, middleBlockNumber+10, endingBlockNumber+10))
 			})
 		})
 
@@ -220,13 +210,10 @@ var _ = Describe("Checked Headers repository", func() {
 
 			It("includes all non-checked headers when ending block is -1 ", func() {
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(headers)).To(Equal(4))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[3].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(middleBlockNumber), Equal(outOfRangeBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
 			})
 
 			It("excludes headers that have been checked more than the check count", func() {
@@ -234,13 +221,11 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				// doesn't include middleBlockNumber
-				Expect(len(headers)).To(Equal(3))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
+				Expect(headerBlockNumbers).NotTo(ContainElement(middleBlockNumber))
 			})
 
 			It("does not exclude headers that have been checked less than the check count", func() {
@@ -248,13 +233,10 @@ var _ = Describe("Checked Headers repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, recheckCheckCount)
-
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(headers)).To(Equal(4))
-				Expect(headers[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(headers[3].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
+
+				headerBlockNumbers := getBlockNumbers(headers)
+				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
 			})
 
 			It("only returns headers associated with the current node", func() {
@@ -266,23 +248,24 @@ var _ = Describe("Checked Headers repository", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				Expect(err).NotTo(HaveOccurred())
 				nodeOneMissingHeaders, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(nodeOneMissingHeaders)).To(Equal(4))
-				Expect(nodeOneMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(nodeOneMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(nodeOneMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
-				Expect(nodeOneMissingHeaders[3].BlockNumber).To(Or(Equal(startingBlockNumber), Equal(middleBlockNumber), Equal(endingBlockNumber), Equal(outOfRangeBlockNumber)))
+				nodeOneBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
+				Expect(nodeOneBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
 
 				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(nodeTwoMissingHeaders)).To(Equal(4))
-				Expect(nodeTwoMissingHeaders[0].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
-				Expect(nodeTwoMissingHeaders[1].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
-				Expect(nodeTwoMissingHeaders[2].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
-				Expect(nodeTwoMissingHeaders[3].BlockNumber).To(Or(Equal(startingBlockNumber+10), Equal(middleBlockNumber+10), Equal(endingBlockNumber+10), Equal(outOfRangeBlockNumber+10)))
+				nodeTwoBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
+				Expect(nodeTwoBlockNumbers).To(ConsistOf(startingBlockNumber+10, middleBlockNumber+10, endingBlockNumber+10, outOfRangeBlockNumber+10))
 			})
 		})
 	})
 })
+
+func getBlockNumbers(headers []core.Header) []int64 {
+	var headerBlockNumbers []int64
+	for _, header := range headers {
+		headerBlockNumbers = append(headerBlockNumbers, header.BlockNumber)
+	}
+	return headerBlockNumbers
+}
