@@ -74,7 +74,7 @@ func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, e
 }
 
 func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
-	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.KeccakOfContractAddress]
+	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 

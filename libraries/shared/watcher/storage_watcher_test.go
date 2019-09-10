@@ -65,12 +65,12 @@ var _ = Describe("Storage Watcher", func() {
 			mockQueue = &mocks.MockStorageQueue{}
 			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
 			csvDiff = utils.StorageDiff{
-				Id:                      1337,
-				KeccakOfContractAddress: hashedAddress,
-				BlockHash:               common.HexToHash("0xfedcba9876543210"),
-				BlockHeight:             0,
-				StorageKey:              common.HexToHash("0xabcdef1234567890"),
-				StorageValue:            common.HexToHash("0x9876543210abcdef"),
+				Id:            1337,
+				HashedAddress: hashedAddress,
+				BlockHash:     common.HexToHash("0xfedcba9876543210"),
+				BlockHeight:   0,
+				StorageKey:    common.HexToHash("0xabcdef1234567890"),
+				StorageValue:  common.HexToHash("0x9876543210abcdef"),
 			}
 		})
 
@@ -190,8 +190,8 @@ var _ = Describe("Storage Watcher", func() {
 
 			It("deletes obsolete diff from queue if contract not recognized", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:                      csvDiff.Id + 1,
-					KeccakOfContractAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
+					Id:            csvDiff.Id + 1,
+					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 
@@ -205,8 +205,8 @@ var _ = Describe("Storage Watcher", func() {
 
 			It("logs error if deleting obsolete diff fails", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:                      csvDiff.Id + 1,
-					KeccakOfContractAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
+					Id:            csvDiff.Id + 1,
+					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 				mockQueue.DeleteErr = fakes.FakeError

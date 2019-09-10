@@ -36,11 +36,11 @@ var _ = Describe("Storage queue", func() {
 	BeforeEach(func() {
 		fakeAddr := "0x123456"
 		diff = utils.StorageDiff{
-			KeccakOfContractAddress: utils.HexToKeccak256Hash(fakeAddr),
-			BlockHash:               common.HexToHash("0x678901"),
-			BlockHeight:             987,
-			StorageKey:              common.HexToHash("0x654321"),
-			StorageValue:            common.HexToHash("0x198765"),
+			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
+			BlockHash:     common.HexToHash("0x678901"),
+			BlockHeight:   987,
+			StorageKey:    common.HexToHash("0x654321"),
+			StorageValue:  common.HexToHash("0x198765"),
 		}
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
@@ -83,11 +83,11 @@ var _ = Describe("Storage queue", func() {
 	It("gets all storage diffs from db", func() {
 		fakeAddr := "0x234567"
 		diffTwo := utils.StorageDiff{
-			KeccakOfContractAddress: utils.HexToKeccak256Hash(fakeAddr),
-			BlockHash:               common.HexToHash("0x678902"),
-			BlockHeight:             988,
-			StorageKey:              common.HexToHash("0x654322"),
-			StorageValue:            common.HexToHash("0x198766"),
+			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
+			BlockHash:     common.HexToHash("0x678902"),
+			BlockHeight:   988,
+			StorageKey:    common.HexToHash("0x654322"),
+			StorageValue:  common.HexToHash("0x198766"),
 		}
 		addErr := queue.Add(diffTwo)
 		Expect(addErr).NotTo(HaveOccurred())
@@ -98,13 +98,13 @@ var _ = Describe("Storage queue", func() {
 		Expect(len(diffs)).To(Equal(2))
 		Expect(diffs[0]).NotTo(Equal(diffs[1]))
 		Expect(diffs[0].Id).NotTo(BeZero())
-		Expect(diffs[0].KeccakOfContractAddress).To(Or(Equal(diff.KeccakOfContractAddress), Equal(diffTwo.KeccakOfContractAddress)))
+		Expect(diffs[0].HashedAddress).To(Or(Equal(diff.HashedAddress), Equal(diffTwo.HashedAddress)))
 		Expect(diffs[0].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
 		Expect(diffs[0].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))
 		Expect(diffs[0].StorageKey).To(Or(Equal(diff.StorageKey), Equal(diffTwo.StorageKey)))
 		Expect(diffs[0].StorageValue).To(Or(Equal(diff.StorageValue), Equal(diffTwo.StorageValue)))
 		Expect(diffs[1].Id).NotTo(BeZero())
-		Expect(diffs[1].KeccakOfContractAddress).To(Or(Equal(diff.KeccakOfContractAddress), Equal(diffTwo.KeccakOfContractAddress)))
+		Expect(diffs[1].HashedAddress).To(Or(Equal(diff.HashedAddress), Equal(diffTwo.HashedAddress)))
 		Expect(diffs[1].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
 		Expect(diffs[1].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))
 		Expect(diffs[1].StorageKey).To(Or(Equal(diff.StorageKey), Equal(diffTwo.StorageKey)))

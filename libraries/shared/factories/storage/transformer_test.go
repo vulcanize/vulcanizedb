@@ -72,11 +72,11 @@ var _ = Describe("Storage transformer", func() {
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
 		fakeRow := utils.StorageDiff{
-			KeccakOfContractAddress: common.Hash{},
-			BlockHash:               common.HexToHash(fakeBlockHash),
-			BlockHeight:             fakeBlockNumber,
-			StorageKey:              common.Hash{},
-			StorageValue:            rawValue.Hash(),
+			HashedAddress: common.Hash{},
+			BlockHash:     common.HexToHash(fakeBlockHash),
+			BlockHeight:   fakeBlockNumber,
+			StorageKey:    common.Hash{},
+			StorageValue:  rawValue.Hash(),
 		}
 
 		err := t.Execute(fakeRow)
@@ -120,11 +120,11 @@ var _ = Describe("Storage transformer", func() {
 		It("passes the decoded data items to the repository", func() {
 			mappings.Metadata = fakeMetadata
 			fakeRow := utils.StorageDiff{
-				KeccakOfContractAddress: common.Hash{},
-				BlockHash:               common.HexToHash(fakeBlockHash),
-				BlockHeight:             fakeBlockNumber,
-				StorageKey:              common.Hash{},
-				StorageValue:            rawValue.Hash(),
+				HashedAddress: common.Hash{},
+				BlockHash:     common.HexToHash(fakeBlockHash),
+				BlockHeight:   fakeBlockNumber,
+				StorageKey:    common.Hash{},
+				StorageValue:  rawValue.Hash(),
 			}
 
 			err := t.Execute(fakeRow)
