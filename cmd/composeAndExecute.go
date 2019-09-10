@@ -17,20 +17,12 @@
 package cmd
 
 import (
-	"os"
-	"plugin"
-	syn "sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
-	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // composeAndExecuteCmd represents the composeAndExecute command
@@ -116,18 +108,7 @@ func composeAndExecute() {
 	// Build plugin generator config
 	prepConfig()
 
-	// Generate code to build the plugin according to the config file
-	LogWithCommand.Info("generating plugin")
-	generator, err := p2.NewGenerator(genConfig, databaseConfig)
-	if err != nil {
-		LogWithCommand.Fatal(err)
-	}
-	err = generator.GenerateExporterPlugin()
-	if err != nil {
-		LogWithCommand.Debug("generating plugin failed")
-		LogWithCommand.Fatal(err)
-	}
-
+	generateCodeToBuildPlugin()
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
@@ -136,61 +117,8 @@ func composeAndExecute() {
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
-	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Debug("linking plugin failed")
-		LogWithCommand.Fatal(err)
-	}
 
-	// Load the `Exporter` symbol from the plugin
-	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := plug.Lookup("Exporter")
-	if err != nil {
-		LogWithCommand.Debug("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
-	}
-
-	// Assert that the symbol is of type Exporter
-	exporter, ok := symExporter.(Exporter)
-	if !ok {
-		LogWithCommand.Debug("plugged-in symbol not of type Exporter")
-		os.Exit(1)
-	}
-
-	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
-
-	// Setup bc and db objects
-	blockChain := getBlockChain()
-	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-
-	// Execute over transformer sets returned by the exporter
-	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
-	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain)
-		ew.AddTransformers(ethEventInitializers)
-		wg.Add(1)
-		go watchEthEvents(&ew, &wg)
-	}
-
-	if len(ethStorageInitializers) > 0 {
-		tailer := fs.FileTailer{Path: storageDiffsPath}
-		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-		sw := watcher.NewStorageWatcher(storageFetcher, &db)
-		sw.AddTransformers(ethStorageInitializers)
-		wg.Add(1)
-		go watchEthStorage(&sw, &wg)
-	}
-
-	if len(ethContractInitializers) > 0 {
-		gw := watcher.NewContractWatcher(&db, blockChain)
-		gw.AddTransformers(ethContractInitializers)
-		wg.Add(1)
-		go watchEthContract(&gw, &wg)
-	}
-	wg.Wait()
+	executePlugin(pluginPath)
 }
 
 func init() {

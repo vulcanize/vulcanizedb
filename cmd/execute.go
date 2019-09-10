@@ -80,6 +80,10 @@ func execute() {
 		LogWithCommand.Fatal(err)
 	}
 
+	executePlugin(pluginPath)
+}
+
+func executePlugin(pluginPath string) {
 	fmt.Printf("Executing plugin %s", pluginPath)
 	LogWithCommand.Info("linking plugin ", pluginPath)
 	plug, err := plugin.Open(pluginPath)

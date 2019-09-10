@@ -112,18 +112,8 @@ func compose() {
 	// Build plugin generator config
 	prepConfig()
 
-	// Generate code to build the plugin according to the config file
-	LogWithCommand.Info("generating plugin")
-	generator, err := p2.NewGenerator(genConfig, databaseConfig)
-	if err != nil {
-		LogWithCommand.Debug("initializing plugin generator failed")
-		LogWithCommand.Fatal(err)
-	}
-	err = generator.GenerateExporterPlugin()
-	if err != nil {
-		LogWithCommand.Debug("generating plugin failed")
-		LogWithCommand.Fatal(err)
-	}
+	generateCodeToBuildPlugin()
+
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
@@ -136,6 +126,20 @@ func compose() {
 
 func init() {
 	rootCmd.AddCommand(composeCmd)
+}
+
+func generateCodeToBuildPlugin() {
+	LogWithCommand.Info("generating plugin")
+	generator, err := p2.NewGenerator(genConfig, databaseConfig)
+	if err != nil {
+		LogWithCommand.Debug("initializing plugin generator failed")
+		LogWithCommand.Fatal(err)
+	}
+	err = generator.GenerateExporterPlugin()
+	if err != nil {
+		LogWithCommand.Debug("generating plugin failed")
+		LogWithCommand.Fatal(err)
+	}
 }
 
 func prepConfig() {
