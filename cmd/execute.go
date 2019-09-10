@@ -158,7 +158,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	if recheckHeadersArg {
 		recheck = constants.HeaderRecheck
 	} else {
-		recheck = constants.HeaderMissing
+		recheck = constants.HeaderUnchecked
 	}
 	errs := make(chan error)
 	go w.Execute(recheck, errs)

@@ -20,6 +20,6 @@ type TransformerExecution bool
 
 const (
 	HeaderRecheck    TransformerExecution = true
-	HeaderMissing    TransformerExecution = false
+	HeaderUnchecked  TransformerExecution = false
 	RecheckHeaderCap                      = int64(5)
 )

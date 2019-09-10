@@ -88,9 +88,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil}
 			delegator.LogsFound = []bool{false}
 			extractor.ExtractLogsErrors = []error{nil}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Eventually(func() int {
 				return extractor.ExtractLogsCount
@@ -102,9 +102,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil}
 			delegator.LogsFound = []bool{false}
 			extractor.ExtractLogsErrors = []error{fakes.FakeError}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Expect(<-errsChan).To(MatchError(fakes.FakeError))
 			close(done)
@@ -114,9 +114,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil}
 			delegator.LogsFound = []bool{false}
 			extractor.ExtractLogsErrors = []error{nil, nil}
-			extractor.MissingHeadersExist = []bool{true, false}
+			extractor.UncheckedHeadersExist = []bool{true, false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Eventually(func() int {
 				return extractor.ExtractLogsCount
@@ -128,9 +128,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil}
 			delegator.LogsFound = []bool{false}
 			extractor.ExtractLogsErrors = []error{nil, fakes.FakeError}
-			extractor.MissingHeadersExist = []bool{true, false}
+			extractor.UncheckedHeadersExist = []bool{true, false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Expect(<-errsChan).To(MatchError(fakes.FakeError))
 			close(done)
@@ -141,9 +141,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil}
 			delegator.LogsFound = []bool{false}
 			extractor.ExtractLogsErrors = []error{nil}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Eventually(func() int {
 				return delegator.DelegateCallCount
@@ -155,9 +155,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.LogsFound = []bool{false}
 			delegator.DelegateErrors = []error{fakes.FakeError}
 			extractor.ExtractLogsErrors = []error{nil}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Expect(<-errsChan).To(MatchError(fakes.FakeError))
 			close(done)
@@ -167,9 +167,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil, nil}
 			delegator.LogsFound = []bool{true, false}
 			extractor.ExtractLogsErrors = []error{nil}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Eventually(func() int {
 				return delegator.DelegateCallCount
@@ -181,9 +181,9 @@ var _ = Describe("Event Watcher", func() {
 			delegator.DelegateErrors = []error{nil, fakes.FakeError}
 			delegator.LogsFound = []bool{true, false}
 			extractor.ExtractLogsErrors = []error{nil}
-			extractor.MissingHeadersExist = []bool{false}
+			extractor.UncheckedHeadersExist = []bool{false}
 
-			go eventWatcher.Execute(constants.HeaderMissing, errsChan)
+			go eventWatcher.Execute(constants.HeaderUnchecked, errsChan)
 
 			Expect(<-errsChan).To(MatchError(fakes.FakeError))
 			close(done)
