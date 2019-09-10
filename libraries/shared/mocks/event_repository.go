@@ -17,24 +17,14 @@
 package mocks
 
 import (
-	. "github.com/onsi/gomega"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockEventRepository struct {
-	createError                      error
-	markHeaderCheckedError           error
-	MarkHeaderCheckedPassedHeaderIDs []int64
-	missingHeaders                   []core.Header
-	allHeaders                       []core.Header
-	missingHeadersError              error
-	PassedStartingBlockNumber        int64
-	PassedEndingBlockNumber          int64
-	PassedModels                     []interface{}
-	SetDbCalled                      bool
-	CreateCalledCounter              int
+	createError         error
+	PassedModels        []interface{}
+	SetDbCalled         bool
+	CreateCalledCounter int
 }
 
 func (repository *MockEventRepository) Create(models []interface{}) error {
@@ -44,47 +34,10 @@ func (repository *MockEventRepository) Create(models []interface{}) error {
 	return repository.createError
 }
 
-func (repository *MockEventRepository) MarkHeaderChecked(headerID int64) error {
-	repository.MarkHeaderCheckedPassedHeaderIDs = append(repository.MarkHeaderCheckedPassedHeaderIDs, headerID)
-	return repository.markHeaderCheckedError
-}
-
-func (repository *MockEventRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	repository.PassedStartingBlockNumber = startingBlockNumber
-	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.missingHeaders, repository.missingHeadersError
-}
-
-func (repository *MockEventRepository) RecheckHeaders(startingBlockNumber, endingBlockNumber int64) ([]core.Header, error) {
-	repository.PassedStartingBlockNumber = startingBlockNumber
-	repository.PassedEndingBlockNumber = endingBlockNumber
-	return repository.allHeaders, nil
-}
-
 func (repository *MockEventRepository) SetDB(db *postgres.DB) {
 	repository.SetDbCalled = true
 }
 
-func (repository *MockEventRepository) SetMissingHeadersError(e error) {
-	repository.missingHeadersError = e
-}
-
-func (repository *MockEventRepository) SetAllHeaders(headers []core.Header) {
-	repository.allHeaders = headers
-}
-
-func (repository *MockEventRepository) SetMissingHeaders(headers []core.Header) {
-	repository.missingHeaders = headers
-}
-
-func (repository *MockEventRepository) SetMarkHeaderCheckedError(e error) {
-	repository.markHeaderCheckedError = e
-}
-
 func (repository *MockEventRepository) SetCreateError(e error) {
 	repository.createError = e
-}
-
-func (repository *MockEventRepository) AssertMarkHeaderCheckedCalledWith(i int64) {
-	Expect(repository.MarkHeaderCheckedPassedHeaderIDs).To(ContainElement(i))
 }
