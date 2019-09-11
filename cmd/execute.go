@@ -17,22 +17,13 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"plugin"
-	syn "sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	. "github.com/vulcanize/vulcanizedb/libraries/shared/executor"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -76,145 +67,41 @@ func execute() {
 	// Build plugin generator config
 	prepConfig()
 
-	// Get the plugin path and load the plugin
+	// Get the plugin path
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
 		LogWithCommand.Fatal(err)
 	}
 
-	executor := NewExecutor(pluginPath)
-	executor.LoadTransformerSets()
-	executor.ExecuteTransformerSets()
+	executePlugin(pluginPath)
 }
 
-type Executor struct {
-	BlockChain              core.BlockChain
-	DB                      *postgres.DB
-	Plugin                  *plugin.Plugin
-	EthEventInitializers    []transformer.EventTransformerInitializer
-	EthStorageInitializers  []transformer.StorageTransformerInitializer
-	EthContractInitializers []transformer.ContractTransformerInitializer
-}
-
-func NewExecutor(pluginPath string) Executor {
-	plug := LinkPlugin(pluginPath)
+func executePlugin(pluginPath string) {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
-	return Executor{
-		BlockChain: blockChain,
-		DB:         &db,
-		Plugin:     plug,
-	}
-}
-
-// adds transformers to the executor
-func (executor *Executor) LoadTransformerSets() {
-	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := executor.Plugin.Lookup("Exporter")
-	if err != nil {
-		LogWithCommand.Warn("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
-	}
-
-	// Assert that the symbol is of type Exporter
-	exporter, ok := symExporter.(Exporter)
-	if !ok {
-		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
-	}
-
-	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
-	executor.EthEventInitializers = ethEventInitializers
-	executor.EthStorageInitializers = ethStorageInitializers
-	executor.EthContractInitializers = ethContractInitializers
-}
-
-func (executor *Executor) ExecuteTransformerSets() {
-	// Execute over transformer sets returned by the exporter
-	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
-	if len(executor.EthEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(executor.DB, executor.BlockChain)
-		ew.AddTransformers(executor.EthEventInitializers)
-		wg.Add(1)
-		go watchEthEvents(&ew, &wg)
-	}
-
-	if len(executor.EthStorageInitializers) > 0 {
-		tailer := fs.FileTailer{Path: storageDiffsPath}
-		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-		sw := watcher.NewStorageWatcher(storageFetcher, executor.DB)
-		sw.AddTransformers(executor.EthStorageInitializers)
-		wg.Add(1)
-		go watchEthStorage(&sw, &wg)
-	}
-
-	if len(executor.EthContractInitializers) > 0 {
-		gw := watcher.NewContractWatcher(executor.DB, executor.BlockChain)
-		gw.AddTransformers(executor.EthContractInitializers)
-		wg.Add(1)
-		go watchEthContract(&gw, &wg)
-	}
-	wg.Wait()
-}
-
-func LinkPlugin(pluginPath string) *plugin.Plugin {
 	LogWithCommand.Info("linking plugin", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Warn("linking plugin failed")
-		LogWithCommand.Fatal(err)
+
+	plug, linkErr := plugin.Open(pluginPath)
+	if linkErr != nil {
+		LogWithCommand.Info("linking plugin failed")
+		LogWithCommand.Fatal(linkErr)
 	}
-	return plug
+
+	executor := NewExecutor(&db, blockChain, plug, storageDiffsPath, recheckHeadersArg, pollingInterval, queueRecheckInterval)
+
+	LogWithCommand.Info("loading transformers from plugin")
+	loadErr := executor.LoadTransformerSets()
+	if loadErr != nil {
+		LogWithCommand.Fatal(loadErr)
+	}
+
+	LogWithCommand.Info("executing transformers")
+	executor.ExecuteTransformerSets()
 }
 
 func init() {
 	rootCmd.AddCommand(executeCmd)
 	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
 	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
-}
-
-type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
-}
-
-func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
-	defer wg.Done()
-	// Execute over the EventTransformerInitializer set using the watcher
-	LogWithCommand.Info("executing event transformers")
-	var recheck constants.TransformerExecution
-	if recheckHeadersArg {
-		recheck = constants.HeaderRecheck
-	} else {
-		recheck = constants.HeaderMissing
-	}
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute(recheck)
-	}
-}
-
-func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup) {
-	defer wg.Done()
-	// Execute over the StorageTransformerInitializer set using the storage watcher
-	LogWithCommand.Info("executing storage transformers")
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		rows := make(chan storageUtils.StorageDiffRow)
-		w.Execute(rows, errs, queueRecheckInterval)
-	}
-}
-
-func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
-	defer wg.Done()
-	// Execute over the ContractTransformerInitializer set using the contract watcher
-	LogWithCommand.Info("executing contract_watcher transformers")
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute()
-	}
 }

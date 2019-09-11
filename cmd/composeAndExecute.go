@@ -114,13 +114,12 @@ func composeAndExecute() {
 	if err != nil {
 		LogWithCommand.Fatal(err)
 	}
+
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
 
-	executor := NewExecutor(pluginPath)
-	executor.LoadTransformerSets()
-	executor.ExecuteTransformerSets()
+	executePlugin(pluginPath)
 }
 
 func init() {
