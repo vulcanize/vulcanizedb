@@ -18,6 +18,7 @@ package eth
 
 import (
 	"errors"
+
 	"math/big"
 	"strconv"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -58,6 +60,7 @@ func NewBlockChain(ethClient core.EthClient, rpcClient core.RPCClient, node core
 
 func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Block, err error) {
 	gethBlock, err := blockChain.ethClient.BlockByNumber(context.Background(), big.NewInt(blockNumber))
+	logrus.Debug("GetBlockByNumber called with block " + strconv.Itoa(int(blockNumber)))
 	if err != nil {
 		return block, err
 	}
@@ -66,6 +69,7 @@ func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Bl
 
 func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
 	gethLogs, err := blockChain.ethClient.FilterLogs(context.Background(), query)
+	logrus.Debug("GetEthLogsWithCustomQuery called")
 	if err != nil {
 		return []types.Log{}, err
 	}
@@ -73,6 +77,7 @@ func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQue
 }
 
 func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.Header, err error) {
+	logrus.Debug("GetHeaderByNumber called with block " + strconv.Itoa(int(blockNumber)))
 	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
 		return blockChain.getPOAHeader(blockNumber)
 	}
@@ -80,6 +85,7 @@ func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.
 }
 
 func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header []core.Header, err error) {
+	logrus.Debug("GetHeadersByNumbers called")
 	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
 		return blockChain.getPOAHeaders(blockNumbers)
 	}
@@ -268,5 +274,6 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 }
 
 func (blockChain *BlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
+	logrus.Debug("GetAccountBalance called")
 	return blockChain.ethClient.BalanceAt(context.Background(), address, blockNumber)
 }
