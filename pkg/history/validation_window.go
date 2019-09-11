@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
