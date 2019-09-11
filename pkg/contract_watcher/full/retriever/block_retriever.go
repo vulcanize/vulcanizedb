@@ -55,7 +55,7 @@ func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) 
 // For some contracts the contract creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
 func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
 	var firstBlock int64
-	addressId, getAddressErr := addressRepository().GetOrCreateAddress(r.db, contractAddr)
+	addressId, getAddressErr := repositories.GetOrCreateAddress(r.db, contractAddr)
 	if getAddressErr != nil {
 		return firstBlock, getAddressErr
 	}
@@ -70,10 +70,6 @@ func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (in
 	)
 
 	return firstBlock, err
-}
-
-func addressRepository() repositories.AddressRepository {
-	return repositories.AddressRepository{}
 }
 
 // In which case this servers as a heuristic to find the first block by finding the first contract event log

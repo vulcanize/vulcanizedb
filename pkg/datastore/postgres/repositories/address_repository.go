@@ -23,8 +23,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type AddressRepository struct{}
-
 const getOrCreateAddressQuery = `WITH addressId AS (
 			INSERT INTO addresses (address) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id
 		)
@@ -32,7 +30,7 @@ const getOrCreateAddressQuery = `WITH addressId AS (
 		UNION
 		SELECT id FROM addressId`
 
-func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
+func GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
 
 	var addressId int64
@@ -41,7 +39,7 @@ func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (in
 	return addressId, getOrCreateErr
 }
 
-func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
+func GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
 
 	var addressId int64
@@ -50,7 +48,7 @@ func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address st
 	return addressId, getOrCreateErr
 }
 
-func (AddressRepository) GetAddressById(db *postgres.DB, id int64) (string, error) {
+func GetAddressById(db *postgres.DB, id int64) (string, error) {
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
 	return address, getErr

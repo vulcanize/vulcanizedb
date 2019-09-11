@@ -26,7 +26,7 @@ type HeaderSyncReceiptRepository struct{}
 
 func (HeaderSyncReceiptRepository) CreateHeaderSyncReceiptInTx(headerID, transactionID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
-	addressId, getAddressErr := AddressRepository{}.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+	addressId, getAddressErr := GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		log.Error("createReceipt: Error getting address id: ", getAddressErr)
 		return receiptId, getAddressErr

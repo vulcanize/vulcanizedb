@@ -84,7 +84,7 @@ func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
 
 func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
-	addressId, getAddressErr := AddressRepository{}.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+	addressId, getAddressErr := GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		logrus.Error("createReceipt: Error getting address id: ", getAddressErr)
 		return receiptId, getAddressErr

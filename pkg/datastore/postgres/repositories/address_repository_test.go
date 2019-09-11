@@ -32,13 +32,11 @@ import (
 var _ = Describe("address lookup", func() {
 	var (
 		db      *postgres.DB
-		repo    repositories.AddressRepository
 		address = fakes.FakeAddress.Hex()
 	)
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		repo = repositories.AddressRepository{}
 	})
 
 	AfterEach(func() {
@@ -52,7 +50,7 @@ var _ = Describe("address lookup", func() {
 
 	Describe("GetOrCreateAddress", func() {
 		It("creates an address record", func() {
-			addressId, createErr := repo.GetOrCreateAddress(db, address)
+			addressId, createErr := repositories.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
@@ -63,10 +61,10 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("returns the existing record id if the address already exists", func() {
-			createId, createErr := repo.GetOrCreateAddress(db, address)
+			createId, createErr := repositories.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			getId, getErr := repo.GetOrCreateAddress(db, address)
+			getId, getErr := repositories.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 
 			var addressCount int
@@ -78,20 +76,20 @@ var _ = Describe("address lookup", func() {
 
 		It("gets upper-cased addresses", func() {
 			upperAddress := strings.ToUpper(address)
-			upperAddressId, createErr := repo.GetOrCreateAddress(db, upperAddress)
+			upperAddressId, createErr := repositories.GetOrCreateAddress(db, upperAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repo.GetOrCreateAddress(db, address)
+			mixedCaseAddressId, getErr := repositories.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 		})
 
 		It("gets lower-cased addresses", func() {
 			lowerAddress := strings.ToLower(address)
-			upperAddressId, createErr := repo.GetOrCreateAddress(db, lowerAddress)
+			upperAddressId, createErr := repositories.GetOrCreateAddress(db, lowerAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repo.GetOrCreateAddress(db, address)
+			mixedCaseAddressId, getErr := repositories.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 		})
@@ -112,7 +110,7 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("creates an address record", func() {
-			addressId, createErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			addressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, address)
 			Expect(createErr).NotTo(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).NotTo(HaveOccurred())
@@ -125,10 +123,10 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("returns the existing record id if the address already exists", func() {
-			_, createErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			_, createErr := repositories.GetOrCreateAddressInTransaction(tx, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			_, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			_, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -139,10 +137,10 @@ var _ = Describe("address lookup", func() {
 
 		It("gets upper-cased addresses", func() {
 			upperAddress := strings.ToUpper(address)
-			upperAddressId, createErr := repo.GetOrCreateAddressInTransaction(tx, upperAddress)
+			upperAddressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, upperAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			mixedCaseAddressId, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -151,10 +149,10 @@ var _ = Describe("address lookup", func() {
 
 		It("gets lower-cased addresses", func() {
 			lowerAddress := strings.ToLower(address)
-			upperAddressId, createErr := repo.GetOrCreateAddressInTransaction(tx, lowerAddress)
+			upperAddressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, lowerAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repo.GetOrCreateAddressInTransaction(tx, address)
+			mixedCaseAddressId, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -164,16 +162,16 @@ var _ = Describe("address lookup", func() {
 
 	Describe("GetAddressById", func() {
 		It("gets and address by it's id", func() {
-			addressId, createErr := repo.GetOrCreateAddress(db, address)
+			addressId, createErr := repositories.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			actualAddress, getErr := repo.GetAddressById(db, addressId)
+			actualAddress, getErr := repositories.GetAddressById(db, addressId)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(actualAddress).To(Equal(address))
 		})
 
 		It("returns an error if the id doesn't exist", func() {
-			_, getErr := repo.GetAddressById(db, 0)
+			_, getErr := repositories.GetAddressById(db, 0)
 			Expect(getErr).To(HaveOccurred())
 			Expect(getErr).To(MatchError("sql: no rows in result set"))
 		})
