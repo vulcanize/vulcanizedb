@@ -18,6 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"plugin"
 	syn "sync"
 	"time"
@@ -80,21 +82,36 @@ func execute() {
 		LogWithCommand.Fatal(err)
 	}
 
-	executePlugin(pluginPath)
+	executor := NewExecutor(pluginPath)
+	executor.LoadTransformerSets()
+	executor.ExecuteTransformerSets()
 }
 
-func executePlugin(pluginPath string) {
-	fmt.Printf("Executing plugin %s", pluginPath)
-	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Warn("linking plugin failed")
-		LogWithCommand.Fatal(err)
-	}
+type Executor struct {
+	BlockChain              core.BlockChain
+	DB                      *postgres.DB
+	Plugin                  *plugin.Plugin
+	EthEventInitializers    []transformer.EventTransformerInitializer
+	EthStorageInitializers  []transformer.StorageTransformerInitializer
+	EthContractInitializers []transformer.ContractTransformerInitializer
+}
 
-	// Load the `Exporter` symbol from the plugin
+func NewExecutor(pluginPath string) Executor {
+	plug := LinkPlugin(pluginPath)
+	blockChain := getBlockChain()
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+
+	return Executor{
+		BlockChain: blockChain,
+		DB:         &db,
+		Plugin:     plug,
+	}
+}
+
+// adds transformers to the executor
+func (executor *Executor) LoadTransformerSets() {
 	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := plug.Lookup("Exporter")
+	symExporter, err := executor.Plugin.Lookup("Exporter")
 	if err != nil {
 		LogWithCommand.Warn("loading Exporter symbol failed")
 		LogWithCommand.Fatal(err)
@@ -106,39 +123,49 @@ func executePlugin(pluginPath string) {
 		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
 	}
 
-	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
 	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
+	executor.EthEventInitializers = ethEventInitializers
+	executor.EthStorageInitializers = ethStorageInitializers
+	executor.EthContractInitializers = ethContractInitializers
+}
 
-	// Setup bc and db objects
-	blockChain := getBlockChain()
-	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-
+func (executor *Executor) ExecuteTransformerSets() {
 	// Execute over transformer sets returned by the exporter
 	// Use WaitGroup to wait on both goroutines
 	var wg syn.WaitGroup
-	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain)
-		ew.AddTransformers(ethEventInitializers)
+	if len(executor.EthEventInitializers) > 0 {
+		ew := watcher.NewEventWatcher(executor.DB, executor.BlockChain)
+		ew.AddTransformers(executor.EthEventInitializers)
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)
 	}
 
-	if len(ethStorageInitializers) > 0 {
+	if len(executor.EthStorageInitializers) > 0 {
 		tailer := fs.FileTailer{Path: storageDiffsPath}
 		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-		sw := watcher.NewStorageWatcher(storageFetcher, &db)
-		sw.AddTransformers(ethStorageInitializers)
+		sw := watcher.NewStorageWatcher(storageFetcher, executor.DB)
+		sw.AddTransformers(executor.EthStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)
 	}
 
-	if len(ethContractInitializers) > 0 {
-		gw := watcher.NewContractWatcher(&db, blockChain)
-		gw.AddTransformers(ethContractInitializers)
+	if len(executor.EthContractInitializers) > 0 {
+		gw := watcher.NewContractWatcher(executor.DB, executor.BlockChain)
+		gw.AddTransformers(executor.EthContractInitializers)
 		wg.Add(1)
 		go watchEthContract(&gw, &wg)
 	}
 	wg.Wait()
+}
+
+func LinkPlugin(pluginPath string) *plugin.Plugin {
+	LogWithCommand.Info("linking plugin", pluginPath)
+	plug, err := plugin.Open(pluginPath)
+	if err != nil {
+		LogWithCommand.Warn("linking plugin failed")
+		LogWithCommand.Fatal(err)
+	}
+	return plug
 }
 
 func init() {

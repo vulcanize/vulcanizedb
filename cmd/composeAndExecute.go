@@ -118,7 +118,9 @@ func composeAndExecute() {
 		defer helpers.ClearFiles(pluginPath)
 	}
 
-	executePlugin(pluginPath)
+	executor := NewExecutor(pluginPath)
+	executor.LoadTransformerSets()
+	executor.ExecuteTransformerSets()
 }
 
 func init() {
