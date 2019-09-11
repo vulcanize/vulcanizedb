@@ -121,7 +121,9 @@ func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
 		if queueErr != nil {
 			logrus.Warn(fmt.Sprintf("error queueing storage diff: %s", queueErr))
 		}
+		return
 	}
+	logrus.Debug("Storage diff persisted at block height: " + strconv.Itoa(row.BlockHeight))
 }
 
 func (storageWatcher StorageWatcher) processQueue() {
