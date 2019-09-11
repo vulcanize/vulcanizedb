@@ -138,18 +138,18 @@ func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 }
 
 func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTransformerConfig) error {
-	hasBeenChecked, hasBeenCheckedErr := extractor.CheckedLogsRepository.HaveLogsBeenChecked(config.ContractAddresses, config.Topic)
-	if hasBeenCheckedErr != nil {
-		return hasBeenCheckedErr
+	alreadyWatchingLog, watchingLogErr := extractor.CheckedLogsRepository.AlreadyWatchingLog(config.ContractAddresses, config.Topic)
+	if watchingLogErr != nil {
+		return watchingLogErr
 	}
-	if !hasBeenChecked {
+	if !alreadyWatchingLog {
 		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
 		if uncheckHeadersErr != nil {
 			return uncheckHeadersErr
 		}
-		markLogsCheckedErr := extractor.CheckedLogsRepository.MarkLogsChecked(config.ContractAddresses, config.Topic)
-		if markLogsCheckedErr != nil {
-			return markLogsCheckedErr
+		markLogWatchedErr := extractor.CheckedLogsRepository.MarkLogWatched(config.ContractAddresses, config.Topic)
+		if markLogWatchedErr != nil {
+			return markLogWatchedErr
 		}
 	}
 	return nil

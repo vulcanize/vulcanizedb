@@ -156,37 +156,6 @@ ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
 
 
 --
--- Name: checked_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.checked_logs (
-    id integer NOT NULL,
-    contract_address character varying(42),
-    topic_zero character varying(66)
-);
-
-
---
--- Name: checked_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.checked_logs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: checked_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.checked_logs_id_seq OWNED BY public.checked_logs.id;
-
-
---
 -- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -667,6 +636,37 @@ CREATE VIEW public.watched_event_logs AS
 
 
 --
+-- Name: watched_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.watched_logs (
+    id integer NOT NULL,
+    contract_address character varying(42),
+    topic_zero character varying(66)
+);
+
+
+--
+-- Name: watched_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.watched_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: watched_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.watched_logs_id_seq OWNED BY public.watched_logs.id;
+
+
+--
 -- Name: addresses id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -685,13 +685,6 @@ ALTER TABLE ONLY public.blocks ALTER COLUMN id SET DEFAULT nextval('public.block
 --
 
 ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('public.checked_headers_id_seq'::regclass);
-
-
---
--- Name: checked_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.checked_logs ALTER COLUMN id SET DEFAULT nextval('public.checked_logs_id_seq'::regclass);
 
 
 --
@@ -786,6 +779,13 @@ ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT n
 
 
 --
+-- Name: watched_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watched_logs ALTER COLUMN id SET DEFAULT nextval('public.watched_logs_id_seq'::regclass);
+
+
+--
 -- Name: addresses addresses_address_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -823,14 +823,6 @@ ALTER TABLE ONLY public.checked_headers
 
 ALTER TABLE ONLY public.checked_headers
     ADD CONSTRAINT checked_headers_pkey PRIMARY KEY (id);
-
-
---
--- Name: checked_logs checked_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.checked_logs
-    ADD CONSTRAINT checked_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -999,6 +991,14 @@ ALTER TABLE ONLY public.watched_contracts
 
 ALTER TABLE ONLY public.watched_contracts
     ADD CONSTRAINT watched_contracts_pkey PRIMARY KEY (contract_id);
+
+
+--
+-- Name: watched_logs watched_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.watched_logs
+    ADD CONSTRAINT watched_logs_pkey PRIMARY KEY (id);
 
 
 --

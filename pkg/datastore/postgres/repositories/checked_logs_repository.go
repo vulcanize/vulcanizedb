@@ -30,10 +30,10 @@ func NewCheckedLogsRepository(db *postgres.DB) CheckedLogsRepository {
 }
 
 // Return whether a given address + topic0 has been fetched on a previous run of vDB
-func (repository CheckedLogsRepository) HaveLogsBeenChecked(addresses []string, topic0 string) (bool, error) {
+func (repository CheckedLogsRepository) AlreadyWatchingLog(addresses []string, topic0 string) (bool, error) {
 	for _, address := range addresses {
 		var addressExists bool
-		getAddressExistsErr := repository.db.Get(&addressExists, `SELECT EXISTS(SELECT 1 FROM public.checked_logs WHERE contract_address = $1)`, address)
+		getAddressExistsErr := repository.db.Get(&addressExists, `SELECT EXISTS(SELECT 1 FROM public.watched_logs WHERE contract_address = $1)`, address)
 		if getAddressExistsErr != nil {
 			return false, getAddressExistsErr
 		}
@@ -42,7 +42,7 @@ func (repository CheckedLogsRepository) HaveLogsBeenChecked(addresses []string, 
 		}
 	}
 	var topicZeroExists bool
-	getTopicZeroExistsErr := repository.db.Get(&topicZeroExists, `SELECT EXISTS(SELECT 1 FROM public.checked_logs WHERE topic_zero = $1)`, topic0)
+	getTopicZeroExistsErr := repository.db.Get(&topicZeroExists, `SELECT EXISTS(SELECT 1 FROM public.watched_logs WHERE topic_zero = $1)`, topic0)
 	if getTopicZeroExistsErr != nil {
 		return false, getTopicZeroExistsErr
 	}
@@ -50,13 +50,13 @@ func (repository CheckedLogsRepository) HaveLogsBeenChecked(addresses []string, 
 }
 
 // Persist that a given address + topic0 has is being fetched on this run of vDB
-func (repository CheckedLogsRepository) MarkLogsChecked(addresses []string, topic0 string) error {
+func (repository CheckedLogsRepository) MarkLogWatched(addresses []string, topic0 string) error {
 	tx, txErr := repository.db.Beginx()
 	if txErr != nil {
 		return txErr
 	}
 	for _, address := range addresses {
-		_, insertErr := tx.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, address, topic0)
+		_, insertErr := tx.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, address, topic0)
 		if insertErr != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
