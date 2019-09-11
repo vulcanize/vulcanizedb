@@ -41,8 +41,8 @@ type CheckedHeadersRepository interface {
 }
 
 type CheckedLogsRepository interface {
-	HaveLogsBeenChecked(addresses []string, topic0 string) (bool, error)
-	MarkLogsChecked(addresses []string, topic0 string) error
+	AlreadyWatchingLog(addresses []string, topic0 string) (bool, error)
+	MarkLogWatched(addresses []string, topic0 string) error
 }
 
 type ContractRepository interface {

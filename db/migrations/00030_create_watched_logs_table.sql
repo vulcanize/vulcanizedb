@@ -1,6 +1,6 @@
 -- +goose Up
 -- SQL in this section is executed when the migration is applied.
-CREATE TABLE public.checked_logs
+CREATE TABLE public.watched_logs
 (
     id               SERIAL PRIMARY KEY,
     contract_address VARCHAR(42),
@@ -9,4 +9,4 @@ CREATE TABLE public.checked_logs
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
-DROP TABLE public.checked_logs;
+DROP TABLE public.watched_logs;

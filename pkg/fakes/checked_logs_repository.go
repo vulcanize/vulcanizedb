@@ -17,23 +17,23 @@
 package fakes
 
 type MockCheckedLogsRepository struct {
-	HasLogBeenCheckedAddresses []string
-	HasLogBeenCheckedError     error
-	HasLogBeenCheckedReturn    bool
-	HasLogBeenCheckedTopicZero string
-	MarkLogCheckedAddresses    []string
-	MarkLogCheckedError        error
-	MarkLogCheckedTopicZero    string
+	AlreadyWatchingLogAddresses []string
+	AlreadyWatchingLogError     error
+	AlreadyWatchingLogReturn    bool
+	AlreadyWatchingLogTopicZero string
+	MarkLogWatchedAddresses     []string
+	MarkLogWatchedError         error
+	MarkLogWatchedTopicZero     string
 }
 
-func (repository *MockCheckedLogsRepository) HaveLogsBeenChecked(addresses []string, topic0 string) (bool, error) {
-	repository.HasLogBeenCheckedAddresses = addresses
-	repository.HasLogBeenCheckedTopicZero = topic0
-	return repository.HasLogBeenCheckedReturn, repository.HasLogBeenCheckedError
+func (repository *MockCheckedLogsRepository) AlreadyWatchingLog(addresses []string, topic0 string) (bool, error) {
+	repository.AlreadyWatchingLogAddresses = addresses
+	repository.AlreadyWatchingLogTopicZero = topic0
+	return repository.AlreadyWatchingLogReturn, repository.AlreadyWatchingLogError
 }
 
-func (repository *MockCheckedLogsRepository) MarkLogsChecked(addresses []string, topic0 string) error {
-	repository.MarkLogCheckedAddresses = addresses
-	repository.MarkLogCheckedTopicZero = topic0
-	return repository.MarkLogCheckedError
+func (repository *MockCheckedLogsRepository) MarkLogWatched(addresses []string, topic0 string) error {
+	repository.MarkLogWatchedAddresses = addresses
+	repository.MarkLogWatchedTopicZero = topic0
+	return repository.MarkLogWatchedError
 }

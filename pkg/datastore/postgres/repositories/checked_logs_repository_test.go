@@ -47,12 +47,12 @@ var _ = Describe("Checked logs repository", func() {
 		Expect(closeErr).NotTo(HaveOccurred())
 	})
 
-	Describe("HaveLogsBeenChecked", func() {
+	Describe("AlreadyWatchingLog", func() {
 		It("returns true if all addresses and the topic0 are already present in the db", func() {
-			_, insertErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, fakeTopicZero)
+			_, insertErr := db.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, fakeTopicZero)
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			hasBeenChecked, err := repository.HaveLogsBeenChecked(fakeAddresses, fakeTopicZero)
+			hasBeenChecked, err := repository.AlreadyWatchingLog(fakeAddresses, fakeTopicZero)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasBeenChecked).To(BeTrue())
@@ -62,13 +62,13 @@ var _ = Describe("Checked logs repository", func() {
 			anotherFakeAddress := common.HexToAddress("0x" + fakes.RandomString(40)).Hex()
 			anotherFakeTopicZero := common.HexToHash("0x" + fakes.RandomString(64)).Hex()
 			// insert row with matching address but different topic0
-			_, insertOneErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, anotherFakeTopicZero)
+			_, insertOneErr := db.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, anotherFakeTopicZero)
 			Expect(insertOneErr).NotTo(HaveOccurred())
 			// insert row with matching topic0 but different address
-			_, insertTwoErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, anotherFakeAddress, fakeTopicZero)
+			_, insertTwoErr := db.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, anotherFakeAddress, fakeTopicZero)
 			Expect(insertTwoErr).NotTo(HaveOccurred())
 
-			hasBeenChecked, err := repository.HaveLogsBeenChecked(fakeAddresses, fakeTopicZero)
+			hasBeenChecked, err := repository.AlreadyWatchingLog(fakeAddresses, fakeTopicZero)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasBeenChecked).To(BeTrue())
@@ -76,10 +76,10 @@ var _ = Describe("Checked logs repository", func() {
 
 		It("returns false if any address has not been checked", func() {
 			anotherFakeAddress := common.HexToAddress("0x" + fakes.RandomString(40)).Hex()
-			_, insertErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, fakeTopicZero)
+			_, insertErr := db.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, fakeTopicZero)
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			hasBeenChecked, err := repository.HaveLogsBeenChecked(append(fakeAddresses, anotherFakeAddress), fakeTopicZero)
+			hasBeenChecked, err := repository.AlreadyWatchingLog(append(fakeAddresses, anotherFakeAddress), fakeTopicZero)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasBeenChecked).To(BeFalse())
@@ -87,27 +87,27 @@ var _ = Describe("Checked logs repository", func() {
 
 		It("returns false if topic0 has not been checked", func() {
 			anotherFakeTopicZero := common.HexToHash("0x" + fakes.RandomString(64)).Hex()
-			_, insertErr := db.Exec(`INSERT INTO public.checked_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, anotherFakeTopicZero)
+			_, insertErr := db.Exec(`INSERT INTO public.watched_logs (contract_address, topic_zero) VALUES ($1, $2)`, fakeAddress, anotherFakeTopicZero)
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			hasBeenChecked, err := repository.HaveLogsBeenChecked(fakeAddresses, fakeTopicZero)
+			hasBeenChecked, err := repository.AlreadyWatchingLog(fakeAddresses, fakeTopicZero)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hasBeenChecked).To(BeFalse())
 		})
 	})
 
-	Describe("MarkLogsChecked", func() {
+	Describe("MarkLogWatched", func() {
 		It("adds a row for all of transformer's addresses + topic0", func() {
 			anotherFakeAddress := common.HexToAddress("0x" + fakes.RandomString(40)).Hex()
-			err := repository.MarkLogsChecked(append(fakeAddresses, anotherFakeAddress), fakeTopicZero)
+			err := repository.MarkLogWatched(append(fakeAddresses, anotherFakeAddress), fakeTopicZero)
 
 			Expect(err).NotTo(HaveOccurred())
 			var comboOneExists, comboTwoExists bool
-			getComboOneErr := db.Get(&comboOneExists, `SELECT EXISTS(SELECT 1 FROM public.checked_logs WHERE contract_address = $1 AND topic_zero = $2)`, fakeAddress, fakeTopicZero)
+			getComboOneErr := db.Get(&comboOneExists, `SELECT EXISTS(SELECT 1 FROM public.watched_logs WHERE contract_address = $1 AND topic_zero = $2)`, fakeAddress, fakeTopicZero)
 			Expect(getComboOneErr).NotTo(HaveOccurred())
 			Expect(comboOneExists).To(BeTrue())
-			getComboTwoErr := db.Get(&comboTwoExists, `SELECT EXISTS(SELECT 1 FROM public.checked_logs WHERE contract_address = $1 AND topic_zero = $2)`, anotherFakeAddress, fakeTopicZero)
+			getComboTwoErr := db.Get(&comboTwoExists, `SELECT EXISTS(SELECT 1 FROM public.watched_logs WHERE contract_address = $1 AND topic_zero = $2)`, anotherFakeAddress, fakeTopicZero)
 			Expect(getComboTwoErr).NotTo(HaveOccurred())
 			Expect(comboTwoExists).To(BeTrue())
 		})

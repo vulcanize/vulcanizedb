@@ -91,7 +91,7 @@ var _ = Describe("Log extractor", func() {
 		})
 
 		It("returns error if checking whether log has been checked returns error", func() {
-			checkedLogsRepository.HasLogBeenCheckedError = fakes.FakeError
+			checkedLogsRepository.AlreadyWatchingLogError = fakes.FakeError
 
 			err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63()))
 
@@ -101,7 +101,7 @@ var _ = Describe("Log extractor", func() {
 
 		Describe("when log has previously been checked", func() {
 			It("does not mark any headers unchecked", func() {
-				checkedLogsRepository.HasLogBeenCheckedReturn = true
+				checkedLogsRepository.AlreadyWatchingLogReturn = true
 
 				err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63()))
 
@@ -112,7 +112,7 @@ var _ = Describe("Log extractor", func() {
 
 		Describe("when log has not previously been checked", func() {
 			BeforeEach(func() {
-				checkedLogsRepository.HasLogBeenCheckedReturn = false
+				checkedLogsRepository.AlreadyWatchingLogReturn = false
 			})
 
 			It("marks headers since transformer's starting block number as unchecked", func() {
@@ -140,12 +140,12 @@ var _ = Describe("Log extractor", func() {
 				err := extractor.AddTransformerConfig(config)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(checkedLogsRepository.MarkLogCheckedAddresses).To(Equal(config.ContractAddresses))
-				Expect(checkedLogsRepository.MarkLogCheckedTopicZero).To(Equal(config.Topic))
+				Expect(checkedLogsRepository.MarkLogWatchedAddresses).To(Equal(config.ContractAddresses))
+				Expect(checkedLogsRepository.MarkLogWatchedTopicZero).To(Equal(config.Topic))
 			})
 
 			It("returns error if marking logs checked returns error", func() {
-				checkedLogsRepository.MarkLogCheckedError = fakes.FakeError
+				checkedLogsRepository.MarkLogWatchedError = fakes.FakeError
 
 				err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63()))
 
