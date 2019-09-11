@@ -17,8 +17,6 @@
 package repositories
 
 import (
-	"database/sql"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 
@@ -27,18 +25,21 @@ import (
 
 type AddressRepository struct{}
 
+const getOrCreateAddressQuery = `WITH addressId AS (
+			INSERT INTO addresses (address) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id
+		)
+		SELECT id FROM addresses WHERE address = $1
+		UNION
+		SELECT id FROM addressId`
+
 func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	stringAddressToCommonAddress := common.HexToAddress(address)
 	hexAddress := stringAddressToCommonAddress.Hex()
 
 	var addressId int64
-	getErr := db.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
-	if getErr == sql.ErrNoRows {
-		insertErr := db.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
-		return addressId, insertErr
-	}
+	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
 
-	return addressId, getErr
+	return addressId, getOrCreateErr
 }
 
 func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
@@ -46,13 +47,9 @@ func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address st
 	hexAddress := stringAddressToCommonAddress.Hex()
 
 	var addressId int64
-	getErr := tx.Get(&addressId, `SELECT id FROM public.addresses WHERE address = $1`, hexAddress)
-	if getErr == sql.ErrNoRows {
-		insertErr := tx.QueryRow(`INSERT INTO public.addresses (address) VALUES($1) RETURNING id`, hexAddress).Scan(&addressId)
-		return addressId, insertErr
-	}
+	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
 
-	return addressId, getErr
+	return addressId, getOrCreateErr
 }
 
 func (AddressRepository) GetAddressById(db *postgres.DB, id int64) (string, error) {
