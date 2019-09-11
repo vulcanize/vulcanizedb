@@ -33,8 +33,7 @@ const getOrCreateAddressQuery = `WITH addressId AS (
 		SELECT id FROM addressId`
 
 func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
-	stringAddressToCommonAddress := common.HexToAddress(address)
-	hexAddress := stringAddressToCommonAddress.Hex()
+	checksumAddress := getChecksumAddress(address)
 
 	var addressId int64
 	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
@@ -43,8 +42,7 @@ func (AddressRepository) GetOrCreateAddress(db *postgres.DB, address string) (in
 }
 
 func (AddressRepository) GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
-	stringAddressToCommonAddress := common.HexToAddress(address)
-	hexAddress := stringAddressToCommonAddress.Hex()
+	checksumAddress := getChecksumAddress(address)
 
 	var addressId int64
 	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
@@ -56,4 +54,9 @@ func (AddressRepository) GetAddressById(db *postgres.DB, id int64) (string, erro
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
 	return address, getErr
+}
+
+func getChecksumAddress(address string) string {
+	stringAddressToCommonAddress := common.HexToAddress(address)
+	return stringAddressToCommonAddress.Hex()
 }
