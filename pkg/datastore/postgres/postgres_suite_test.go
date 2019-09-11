@@ -17,9 +17,8 @@
 package postgres_test
 
 import (
-	"testing"
-
 	"io/ioutil"
+	"testing"
 
 	log "github.com/sirupsen/logrus"
 
