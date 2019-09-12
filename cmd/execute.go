@@ -17,13 +17,14 @@
 package cmd
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"plugin"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	. "github.com/vulcanize/vulcanizedb/libraries/shared/executor"
+	e "github.com/vulcanize/vulcanizedb/libraries/shared/executor"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -88,7 +89,8 @@ func executePlugin(pluginPath string) {
 		LogWithCommand.Fatal(linkErr)
 	}
 
-	executor := NewExecutor(&db, blockChain, plug, storageDiffsPath, recheckHeadersArg, pollingInterval, queueRecheckInterval)
+	tailer := fs.FileTailer{Path: storageDiffsPath}
+	executor := e.NewExecutor(&db, blockChain, plug, recheckHeadersArg, pollingInterval, queueRecheckInterval, tailer)
 
 	LogWithCommand.Info("loading transformers from plugin")
 	loadErr := executor.LoadTransformerSets()

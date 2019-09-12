@@ -105,15 +105,7 @@ Specify config location when executing the command:
 }
 
 func composeAndExecute() {
-	// Build plugin generator config
-	prepConfig()
-
-	generateCodeToBuildPlugin()
-	// Get the plugin path and load the plugin
-	_, pluginPath, err := genConfig.GetPluginPaths()
-	if err != nil {
-		LogWithCommand.Fatal(err)
-	}
+	pluginPath := compose()
 
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)

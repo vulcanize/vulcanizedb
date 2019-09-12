@@ -108,10 +108,11 @@ Specify config location when executing the command:
 	},
 }
 
-func compose() {
+func compose() string {
 	// Build plugin generator config
 	prepConfig()
 
+	// was it silly to make this a function?
 	generateCodeToBuildPlugin()
 
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
@@ -122,6 +123,8 @@ func compose() {
 	}
 	fmt.Printf("Composed plugin %s", pluginPath)
 	LogWithCommand.Info("plugin .so file output to ", pluginPath)
+
+	return pluginPath
 }
 
 func init() {

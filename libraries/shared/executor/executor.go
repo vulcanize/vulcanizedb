@@ -35,25 +35,25 @@ import (
 type Executor struct {
 	BlockChain              core.BlockChain
 	DB                      *postgres.DB
-	Plugin                  *plugin.Plugin
-	StorageDiffsPath        string
+	Plugin                  PluginLookUpper
 	RecheckHeadersArg       bool
 	QueueRecheckInterval    time.Duration
 	PollingInterval         time.Duration
 	EthEventInitializers    []transformer.EventTransformerInitializer
 	EthStorageInitializers  []transformer.StorageTransformerInitializer
 	EthContractInitializers []transformer.ContractTransformerInitializer
+	FileTailer              fs.Tailer
 }
 
-func NewExecutor(db *postgres.DB, blockChain core.BlockChain, plug *plugin.Plugin, storageDiffsPath string, recheckHeadersArg bool, pollingInterval time.Duration, queueRecheckInterval time.Duration) Executor {
+func NewExecutor(db *postgres.DB, blockChain core.BlockChain, plug PluginLookUpper, recheckHeadersArg bool, pollingInterval time.Duration, queueRecheckInterval time.Duration, fileTailer fs.Tailer) Executor {
 	return Executor{
 		BlockChain:           blockChain,
 		DB:                   db,
 		Plugin:               plug,
-		StorageDiffsPath:     storageDiffsPath,
 		RecheckHeadersArg:    recheckHeadersArg,
 		PollingInterval:      pollingInterval,
 		QueueRecheckInterval: queueRecheckInterval,
+		FileTailer:           fileTailer,
 	}
 }
 
@@ -89,8 +89,7 @@ func (executor *Executor) ExecuteTransformerSets() {
 	}
 
 	if len(executor.EthStorageInitializers) > 0 {
-		tailer := fs.FileTailer{Path: executor.StorageDiffsPath}
-		storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+		storageFetcher := fetcher.NewCsvTailStorageFetcher(executor.FileTailer)
 		sw := watcher.NewStorageWatcher(storageFetcher, executor.DB)
 		sw.AddTransformers(executor.EthStorageInitializers)
 		wg.Add(1)
@@ -148,4 +147,8 @@ func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup, pollingInte
 	for range ticker.C {
 		w.Execute()
 	}
+}
+
+type PluginLookUpper interface {
+	Lookup(symName string) (plugin.Symbol, error)
 }
