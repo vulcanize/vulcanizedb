@@ -67,7 +67,7 @@ func syncPublishScreenAndServe() {
 	if workers < 1 {
 		workers = 1
 	}
-	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, workers)
+	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
 	if err != nil {
 		log.Fatal(err)
 	}

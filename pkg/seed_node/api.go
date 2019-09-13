@@ -24,6 +24,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 // APIName is the namespace used for the state diffing service API
@@ -81,4 +82,9 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 	}()
 
 	return rpcSub, nil
+}
+
+// Node is a public rpc method to allow transformers to fetch the Geth node info for the seed node
+func (api *PublicSeedNodeAPI) Node() core.Node {
+	return api.sni.Node()
 }
