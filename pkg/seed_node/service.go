@@ -52,6 +52,8 @@ type NodeInterface interface {
 	Subscribe(id rpc.ID, sub chan<- streamer.SeedNodePayload, quitChan chan<- bool, streamFilters config.Subscription)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID)
+	// Method to access the Geth node info for this service
+	Node() core.Node
 }
 
 // Service is the underlying struct for the SyncAndPublish interface
@@ -84,10 +86,12 @@ type Service struct {
 	SubscriptionTypes map[common.Hash]config.Subscription
 	// Number of workers
 	WorkerPoolSize int
+	// Info for the Geth node that this seed node is working with
+	gethNode core.Node
 }
 
 // NewSeedNode creates a new seed_node.Interface using an underlying seed_node.Service struct
-func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int) (NodeInterface, error) {
+func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
 	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -110,6 +114,7 @@ func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc 
 		Subscriptions:     make(map[common.Hash]map[rpc.ID]Subscription),
 		SubscriptionTypes: make(map[common.Hash]config.Subscription),
 		WorkerPoolSize:    workers,
+		gethNode:          node,
 	}, nil
 }
 
@@ -392,6 +397,11 @@ func (sap *Service) Stop() error {
 	log.Info("Stopping seed node service")
 	close(sap.QuitChan)
 	return nil
+}
+
+// Node returns the Geth node info for this service
+func (sap *Service) Node() core.Node {
+	return sap.gethNode
 }
 
 // close is used to close all listening subscriptions
