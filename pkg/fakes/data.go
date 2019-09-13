@@ -32,7 +32,7 @@ var (
 	FakeAddress   = common.HexToAddress("0x" + RandomString(40))
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
-	fakeTimestamp = rand.Int63()
+	fakeTimestamp = rand.Int63n(1500000000)
 )
 
 var rawFakeHeader, _ = json.Marshal(types.Header{})
