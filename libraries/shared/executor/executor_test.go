@@ -4,6 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/executor"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
@@ -16,23 +18,19 @@ var _ = Describe("Executor", func() {
 		db         *postgres.DB
 		blockChain *fakes.MockBlockChain
 		mockPlugin fakes.MockPlugin
-		mockTailer *fakes.MockTailer
 	)
 	BeforeEach(func() {
 		db = test_config.NewTestDB(core.Node{ID: "testNode"})
 		blockChain = fakes.NewMockBlockChain()
 		mockPlugin = fakes.NewMockPlugin()
-		mockTailer = fakes.NewMockTailer()
-	})
-
-	It("initializes", func() {
-		ex := executor.NewExecutor(db, blockChain, &mockPlugin, false, time.Second, time.Second, mockTailer)
-		Expect(ex.DB).To(Equal(db))
-		Expect(ex.BlockChain).To(Equal(blockChain))
 	})
 
 	It("adds transformer sets to the executor", func() {
-		ex := executor.NewExecutor(db, blockChain, &mockPlugin, false, time.Second, time.Second, mockTailer)
+		ew := watcher.NewEventWatcher(db, blockChain, false, time.Second)
+		sw := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), db, time.Second, time.Second)
+		cw := watcher.NewContractWatcher(db, blockChain, time.Second)
+		ex := executor.NewExecutor(&mockPlugin, &ew, sw, &cw)
+
 		loadErr := ex.LoadTransformerSets()
 		Expect(loadErr).NotTo(HaveOccurred())
 
@@ -46,10 +44,29 @@ var _ = Describe("Executor", func() {
 	})
 
 	It("Calls the correct watchers when there are relevant transformers", func() {
-		ex := executor.NewExecutor(db, blockChain, &mockPlugin, false, time.Second, time.Second, mockTailer)
+		eventWatcher := mocks.NewMockEventWatcher()
+		storageWatcher := mocks.NewMockStorageWatcher()
+		contractWatcher := mocks.NewMockContractWatcher()
+		ex := executor.NewExecutor(&mockPlugin, &eventWatcher, &storageWatcher, &contractWatcher)
+
 		loadErr := ex.LoadTransformerSets()
 		Expect(loadErr).NotTo(HaveOccurred())
 
-		//ex.ExecuteTransformerSets()
+		ex.ExecuteTransformerSets()
+
+		Expect(eventWatcher.AddTransformersWasCalled).To(BeTrue())
+		Eventually(func() bool {
+			return eventWatcher.WatchEthEventsWasCalled
+		}).Should(BeTrue())
+
+		Expect(storageWatcher.AddTransformersWasCalled).To(BeTrue())
+		Eventually(func() bool {
+			return storageWatcher.WatchEthStorageWasCalled
+		}).Should(BeTrue())
+
+		Expect(contractWatcher.AddTransformersWasCalled).To(BeTrue())
+		Eventually(func() bool {
+			return contractWatcher.WatchEthContractWasCalled
+		}).Should(BeTrue())
 	})
 })

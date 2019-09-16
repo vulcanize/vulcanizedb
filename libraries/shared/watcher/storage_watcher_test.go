@@ -38,7 +38,7 @@ var _ = Describe("Storage Watcher", func() {
 	It("adds transformers", func() {
 		fakeAddress := common.HexToAddress("0x12345")
 		fakeTransformer := &mocks.MockStorageTransformer{Address: fakeAddress}
-		w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
+		w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()), time.Hour, time.Hour)
 
 		w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -75,7 +75,7 @@ var _ = Describe("Storage Watcher", func() {
 
 		It("logs error if fetching storage diffs fails", func(done Done) {
 			mockFetcher.ErrsToReturn = []error{fakes.FakeError}
-			storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+			storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()), time.Hour, time.Hour)
 			storageWatcher.Queue = mockQueue
 			storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			tempFile, fileErr := ioutil.TempFile("", "log")
@@ -83,7 +83,7 @@ var _ = Describe("Storage Watcher", func() {
 			defer os.Remove(tempFile.Name())
 			logrus.SetOutput(tempFile)
 
-			go storageWatcher.Execute(rows, errs, time.Hour)
+			go storageWatcher.Execute(rows, errs)
 
 			Eventually(func() (string, error) {
 				logContent, err := ioutil.ReadFile(tempFile.Name())
@@ -95,13 +95,13 @@ var _ = Describe("Storage Watcher", func() {
 		Describe("transforming new storage diffs", func() {
 			BeforeEach(func() {
 				mockFetcher.RowsToReturn = []utils.StorageDiffRow{row}
-				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()), time.Hour, time.Hour)
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
 			It("executes transformer for recognized storage row", func(done Done) {
-				go storageWatcher.Execute(rows, errs, time.Hour)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() utils.StorageDiffRow {
 					return mockTransformer.PassedRow
@@ -112,7 +112,7 @@ var _ = Describe("Storage Watcher", func() {
 			It("queues row for later processing if transformer execution fails", func(done Done) {
 				mockTransformer.ExecuteErr = fakes.FakeError
 
-				go storageWatcher.Execute(rows, errs, time.Hour)
+				go storageWatcher.Execute(rows, errs)
 
 				Expect(<-errs).To(BeNil())
 				Eventually(func() bool {
@@ -132,7 +132,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(rows, errs, time.Hour)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() bool {
 					return mockQueue.AddCalled
@@ -148,7 +148,7 @@ var _ = Describe("Storage Watcher", func() {
 		Describe("transforming queued storage diffs", func() {
 			BeforeEach(func() {
 				mockQueue.RowsToReturn = []utils.StorageDiffRow{row}
-				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()), time.Second, time.Nanosecond)
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
@@ -160,7 +160,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())
@@ -170,7 +170,7 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("executes transformer for storage row", func(done Done) {
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() utils.StorageDiffRow {
 					return mockTransformer.PassedRow
@@ -179,7 +179,7 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("deletes row from queue if transformer execution successful", func(done Done) {
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() int {
 					return mockQueue.DeletePassedId
@@ -194,7 +194,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())
@@ -210,7 +210,7 @@ var _ = Describe("Storage Watcher", func() {
 				}
 				mockQueue.RowsToReturn = []utils.StorageDiffRow{obsoleteRow}
 
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() int {
 					return mockQueue.DeletePassedId
@@ -230,7 +230,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(rows, errs, time.Nanosecond)
+				go storageWatcher.Execute(rows, errs)
 
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())

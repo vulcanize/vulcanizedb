@@ -17,6 +17,8 @@
 package cmd
 
 import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"plugin"
 	"time"
@@ -90,7 +92,11 @@ func executePlugin(pluginPath string) {
 	}
 
 	tailer := fs.FileTailer{Path: storageDiffsPath}
-	executor := e.NewExecutor(&db, blockChain, plug, recheckHeadersArg, pollingInterval, queueRecheckInterval, tailer)
+	storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
+	sw := watcher.NewStorageWatcher(storageFetcher, &db, pollingInterval, queueRecheckInterval)
+	ew := watcher.NewEventWatcher(&db, blockChain, recheckHeadersArg, pollingInterval)
+	cw := watcher.NewContractWatcher(&db, blockChain, pollingInterval)
+	executor := e.NewExecutor(plug, &ew, sw, &cw)
 
 	LogWithCommand.Info("loading transformers from plugin")
 	loadErr := executor.LoadTransformerSets()

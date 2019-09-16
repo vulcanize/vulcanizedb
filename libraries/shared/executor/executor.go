@@ -18,42 +18,29 @@ package executor
 
 import (
 	"fmt"
-	"plugin"
-	syn "sync"
-	"time"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"plugin"
+	syn "sync"
 )
 
 type Executor struct {
-	BlockChain              core.BlockChain
-	DB                      *postgres.DB
 	Plugin                  PluginLookUpper
-	RecheckHeadersArg       bool
-	QueueRecheckInterval    time.Duration
-	PollingInterval         time.Duration
 	EthEventInitializers    []transformer.EventTransformerInitializer
 	EthStorageInitializers  []transformer.StorageTransformerInitializer
 	EthContractInitializers []transformer.ContractTransformerInitializer
-	FileTailer              fs.Tailer
+	EventWatcher            watcher.EventWatcherInterface
+	StorageWatcher          watcher.StorageWatcherInterface
+	ContractWatcher         watcher.ContractWatcherInterface
 }
 
-func NewExecutor(db *postgres.DB, blockChain core.BlockChain, plug PluginLookUpper, recheckHeadersArg bool, pollingInterval time.Duration, queueRecheckInterval time.Duration, fileTailer fs.Tailer) Executor {
+func NewExecutor(plug PluginLookUpper, eventWatcher watcher.EventWatcherInterface,
+	storageWatcher watcher.StorageWatcherInterface, contractWatcher watcher.ContractWatcherInterface) Executor {
 	return Executor{
-		BlockChain:           blockChain,
-		DB:                   db,
-		Plugin:               plug,
-		RecheckHeadersArg:    recheckHeadersArg,
-		PollingInterval:      pollingInterval,
-		QueueRecheckInterval: queueRecheckInterval,
-		FileTailer:           fileTailer,
+		Plugin:          plug,
+		EventWatcher:    eventWatcher,
+		StorageWatcher:  storageWatcher,
+		ContractWatcher: contractWatcher,
 	}
 }
 
@@ -82,71 +69,34 @@ func (executor *Executor) ExecuteTransformerSets() {
 	// Use WaitGroup to wait on both goroutines
 	var wg syn.WaitGroup
 	if len(executor.EthEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(executor.DB, executor.BlockChain)
-		ew.AddTransformers(executor.EthEventInitializers)
+		executor.EventWatcher.AddTransformers(executor.EthEventInitializers)
+		fmt.Println("added event transformers")
 		wg.Add(1)
-		go watchEthEvents(&ew, &wg, executor.RecheckHeadersArg, executor.PollingInterval)
+		fmt.Println("calling goroutine for watch events")
+		go executor.EventWatcher.WatchEthEvents(&wg)
 	}
 
 	if len(executor.EthStorageInitializers) > 0 {
-		storageFetcher := fetcher.NewCsvTailStorageFetcher(executor.FileTailer)
-		sw := watcher.NewStorageWatcher(storageFetcher, executor.DB)
-		sw.AddTransformers(executor.EthStorageInitializers)
+		executor.StorageWatcher.AddTransformers(executor.EthStorageInitializers)
+		fmt.Println("added storage transformers")
 		wg.Add(1)
-		go watchEthStorage(&sw, &wg, executor.PollingInterval, executor.QueueRecheckInterval)
+		fmt.Println("calling goroutine for watch storage")
+		go executor.StorageWatcher.WatchEthStorage(&wg)
 	}
 
 	if len(executor.EthContractInitializers) > 0 {
-		gw := watcher.NewContractWatcher(executor.DB, executor.BlockChain)
-		gw.AddTransformers(executor.EthContractInitializers)
+		fmt.Println("contract initializer > 0")
+		executor.ContractWatcher.AddTransformers(executor.EthContractInitializers)
+		fmt.Println("added contract transformers")
 		wg.Add(1)
-		go watchEthContract(&gw, &wg, executor.PollingInterval)
+		fmt.Println("calling go routine for watch contract")
+		go executor.ContractWatcher.WatchEthContract(&wg)
 	}
 	wg.Wait()
 }
 
 type Exporter interface {
 	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
-}
-
-// what if intervals were part of the watcher structs?
-// what if each of these watch functions was defined in the relevant watcher file?
-func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup, recheckHeadersArg bool, pollingInterval time.Duration) {
-	defer wg.Done()
-	// Execute over the EventTransformerInitializer set using the watcher
-	var recheck constants.TransformerExecution
-	if recheckHeadersArg {
-		recheck = constants.HeaderRecheck
-	} else {
-		recheck = constants.HeaderMissing
-	}
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute(recheck)
-	}
-}
-
-func watchEthStorage(w *watcher.StorageWatcher, wg *syn.WaitGroup, pollingInterval time.Duration, queueRecheckInterval time.Duration) {
-	defer wg.Done()
-	// Execute over the StorageTransformerInitializer set using the storage watcher
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		rows := make(chan storageUtils.StorageDiffRow)
-		w.Execute(rows, errs, queueRecheckInterval)
-	}
-}
-
-func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup, pollingInterval time.Duration) {
-	defer wg.Done()
-	// Execute over the ContractTransformerInitializer set using the contract watcher
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute()
-	}
 }
 
 type PluginLookUpper interface {

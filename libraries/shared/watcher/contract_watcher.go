@@ -22,6 +22,8 @@ package watcher
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -30,16 +32,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type ContractWatcher struct {
-	Transformers []transformer.ContractTransformer
-	DB           *postgres.DB
-	BlockChain   core.BlockChain
+type ContractWatcherInterface interface {
+	AddTransformers(inits interface{}) error
+	Execute() error
+	WatchEthContract(wg *sync.WaitGroup)
 }
 
-func NewContractWatcher(db *postgres.DB, bc core.BlockChain) ContractWatcher {
+type ContractWatcher struct {
+	Transformers    []transformer.ContractTransformer
+	DB              *postgres.DB
+	BlockChain      core.BlockChain
+	PollingInterval time.Duration
+}
+
+func NewContractWatcher(db *postgres.DB, bc core.BlockChain, pollingInterval time.Duration) ContractWatcher {
 	return ContractWatcher{
-		DB:         db,
-		BlockChain: bc,
+		DB:              db,
+		BlockChain:      bc,
+		PollingInterval: pollingInterval,
 	}
 }
 
@@ -73,4 +83,14 @@ func (watcher *ContractWatcher) Execute() error {
 		}
 	}
 	return nil
+}
+
+func (watcher *ContractWatcher) WatchEthContract(wg *sync.WaitGroup) {
+	defer wg.Done()
+	// Execute over the ContractTransformerInitializer set using the contract watcher
+	ticker := time.NewTicker(watcher.PollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		watcher.Execute()
+	}
 }

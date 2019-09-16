@@ -19,6 +19,8 @@ package watcher
 import (
 	"fmt"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
+	syn "sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -33,28 +35,46 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type EventWatcher struct {
-	Transformers  []transformer.EventTransformer
-	BlockChain    core.BlockChain
-	DB            *postgres.DB
-	Fetcher       fetcher.ILogFetcher
-	Chunker       chunker.Chunker
-	Addresses     []common.Address
-	Topics        []common.Hash
-	StartingBlock *int64
-	Syncer        transactions.ITransactionsSyncer
+type EventWatcherInterface interface {
+	AddTransformers(initializers []transformer.EventTransformerInitializer)
+	Execute() error
+	WatchEthEvents(wg *syn.WaitGroup)
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
+type EventWatcher struct {
+	Transformers    []transformer.EventTransformer
+	BlockChain      core.BlockChain
+	DB              *postgres.DB
+	Fetcher         fetcher.ILogFetcher
+	Chunker         chunker.Chunker
+	Addresses       []common.Address
+	Topics          []common.Hash
+	StartingBlock   *int64
+	Syncer          transactions.ITransactionsSyncer
+	RecheckHeaders  constants.TransformerExecution
+	PollingInterval time.Duration
+}
+
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, recheckHeadersArg bool, pollingInterval time.Duration) EventWatcher {
 	logChunker := chunker.NewLogChunker()
 	logFetcher := fetcher.NewLogFetcher(bc)
 	transactionSyncer := transactions.NewTransactionsSyncer(db, bc)
+
+	var recheck constants.TransformerExecution
+	if recheckHeadersArg {
+		recheck = constants.HeaderRecheck
+	} else {
+		recheck = constants.HeaderMissing
+	}
+
 	return EventWatcher{
-		BlockChain: bc,
-		DB:         db,
-		Fetcher:    logFetcher,
-		Chunker:    logChunker,
-		Syncer:     transactionSyncer,
+		BlockChain:      bc,
+		DB:              db,
+		Fetcher:         logFetcher,
+		Chunker:         logChunker,
+		Syncer:          transactionSyncer,
+		RecheckHeaders:  recheck,
+		PollingInterval: pollingInterval,
 	}
 }
 
@@ -87,7 +107,7 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 	watcher.Chunker.AddConfigs(configs)
 }
 
-func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+func (watcher *EventWatcher) Execute() error {
 	if watcher.Transformers == nil {
 		return fmt.Errorf("No transformers added to watcher")
 	}
@@ -96,7 +116,7 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	if err != nil {
 		return err
 	}
-	notCheckedSQL := repository.CreateHeaderCheckedPredicateSQL(checkedColumnNames, recheckHeaders)
+	notCheckedSQL := repository.CreateHeaderCheckedPredicateSQL(checkedColumnNames, watcher.RecheckHeaders)
 
 	missingHeaders, err := repository.MissingHeaders(*watcher.StartingBlock, -1, watcher.DB, notCheckedSQL)
 	if err != nil {
@@ -129,6 +149,16 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 		}
 	}
 	return err
+}
+
+func (watcher *EventWatcher) WatchEthEvents(wg *syn.WaitGroup) {
+	defer wg.Done()
+	//Execute over the EventTransformerInitializer set
+	ticker := time.NewTicker(watcher.PollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		watcher.Execute()
+	}
 }
 
 func (watcher *EventWatcher) transformLogs(logs []types.Log, header core.Header) error {

@@ -35,9 +35,11 @@ var Exporter exporter
 func (e exporter) Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer) {
 	fakeEventTransformer := &mocks.MockTransformer{}
 	fakeStorageTransformer := &mocks.MockStorageTransformer{}
+	fakeContractTransformer := &mocks.MockContractTransformer{}
 	eventTransformerInitializers := []transformer.EventTransformerInitializer{fakeEventTransformer.FakeTransformerInitializer}
 	storageTransformerInitializers := []transformer.StorageTransformerInitializer{fakeStorageTransformer.FakeTransformerInitializer}
-	return eventTransformerInitializers, storageTransformerInitializers, []transformer.ContractTransformerInitializer{}
+	contractTransformerInitializers := []transformer.ContractTransformerInitializer{fakeContractTransformer.FakeTransformerInitializer}
+	return eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers
 }
 
 func NewMockPlugin() MockPlugin {

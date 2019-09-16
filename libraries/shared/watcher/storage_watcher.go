@@ -19,6 +19,7 @@ package watcher
 import (
 	"fmt"
 	"reflect"
+	syn "sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,25 +28,36 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type StorageWatcher struct {
-	db             *postgres.DB
-	StorageFetcher fetcher.IStorageFetcher
-	Queue          storage.IStorageQueue
-	Transformers   map[common.Address]transformer.StorageTransformer
+type StorageWatcherInterface interface {
+	AddTransformers(initializers []transformer.StorageTransformerInitializer)
+	Execute(rows chan utils.StorageDiffRow, errs chan error)
+	WatchEthStorage(wg *syn.WaitGroup)
 }
 
-func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
+type StorageWatcher struct {
+	db                   *postgres.DB
+	StorageFetcher       fetcher.IStorageFetcher
+	Queue                storage.IStorageQueue
+	Transformers         map[common.Address]transformer.StorageTransformer
+	PollingInterval      time.Duration
+	QueueRecheckInterval time.Duration
+}
+
+func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB, pollingInterval time.Duration, queueRecheckInterval time.Duration) StorageWatcher {
 	transformers := make(map[common.Address]transformer.StorageTransformer)
 	queue := storage.NewStorageQueue(db)
 	return StorageWatcher{
-		db:             db,
-		StorageFetcher: fetcher,
-		Queue:          queue,
-		Transformers:   transformers,
+		db:                   db,
+		StorageFetcher:       fetcher,
+		Queue:                queue,
+		Transformers:         transformers,
+		PollingInterval:      pollingInterval,
+		QueueRecheckInterval: queueRecheckInterval,
 	}
 }
 
@@ -56,8 +68,8 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 	}
 }
 
-func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, errs chan error, queueRecheckInterval time.Duration) {
-	ticker := time.NewTicker(queueRecheckInterval)
+func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, errs chan error) {
+	ticker := time.NewTicker(storageWatcher.QueueRecheckInterval)
 	go storageWatcher.StorageFetcher.FetchStorageDiffs(rows, errs)
 	for {
 		select {
@@ -68,6 +80,18 @@ func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, err
 		case <-ticker.C:
 			storageWatcher.processQueue()
 		}
+	}
+}
+
+func (storageWatcher StorageWatcher) WatchEthStorage(wg *syn.WaitGroup) {
+	defer wg.Done()
+	// Execute over the StorageTransformerInitializer set using the storage watcher
+	ticker := time.NewTicker(storageWatcher.PollingInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		errs := make(chan error)
+		rows := make(chan storageUtils.StorageDiffRow)
+		storageWatcher.Execute(rows, errs)
 	}
 }
 
