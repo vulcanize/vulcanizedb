@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"fmt"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"sync"
 )
@@ -35,6 +34,5 @@ func (ew *MockEventWatcher) AddTransformers(initializers []transformer.EventTran
 
 func (ew *MockEventWatcher) WatchEthEvents(wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("fake watch eth events")
 	ew.WatchEthEventsWasCalled = true
 }

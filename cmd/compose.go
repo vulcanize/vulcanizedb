@@ -112,9 +112,10 @@ func compose() string {
 	// Build plugin generator config
 	prepConfig()
 
-	// was it silly to make this a function?
-	generateCodeToBuildPlugin()
-
+	generateErr := generateCodeToBuildPlugin()
+	if generateErr != nil {
+		LogWithCommand.Fatal(generateErr)
+	}
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
@@ -131,18 +132,18 @@ func init() {
 	rootCmd.AddCommand(composeCmd)
 }
 
-func generateCodeToBuildPlugin() {
+func generateCodeToBuildPlugin() error {
 	LogWithCommand.Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		LogWithCommand.Debug("initializing plugin generator failed")
-		LogWithCommand.Fatal(err)
+		return fmt.Errorf("initializing plugin generator failed %s", err.Error())
 	}
-	err = generator.GenerateExporterPlugin()
-	if err != nil {
-		LogWithCommand.Debug("generating plugin failed")
-		LogWithCommand.Fatal(err)
+
+	pluginErr := generator.GenerateExporterPlugin()
+	if pluginErr != nil {
+		return fmt.Errorf("generating plugin failed %s", pluginErr.Error())
 	}
+	return nil
 }
 
 func prepConfig() {

@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -31,6 +30,5 @@ func (cw *MockContractWatcher) Execute() error {
 
 func (cw *MockContractWatcher) WatchEthContract(wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("fake watch eth contract")
 	cw.WatchEthContractWasCalled = true
 }

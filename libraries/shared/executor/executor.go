@@ -21,7 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"plugin"
-	syn "sync"
+	"sync"
 )
 
 type Executor struct {
@@ -67,29 +67,22 @@ func (executor *Executor) LoadTransformerSets() error {
 func (executor *Executor) ExecuteTransformerSets() {
 	// Execute over transformer sets returned by the exporter
 	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
+	var wg sync.WaitGroup
 	if len(executor.EthEventInitializers) > 0 {
 		executor.EventWatcher.AddTransformers(executor.EthEventInitializers)
-		fmt.Println("added event transformers")
 		wg.Add(1)
-		fmt.Println("calling goroutine for watch events")
 		go executor.EventWatcher.WatchEthEvents(&wg)
 	}
 
 	if len(executor.EthStorageInitializers) > 0 {
 		executor.StorageWatcher.AddTransformers(executor.EthStorageInitializers)
-		fmt.Println("added storage transformers")
 		wg.Add(1)
-		fmt.Println("calling goroutine for watch storage")
 		go executor.StorageWatcher.WatchEthStorage(&wg)
 	}
 
 	if len(executor.EthContractInitializers) > 0 {
-		fmt.Println("contract initializer > 0")
 		executor.ContractWatcher.AddTransformers(executor.EthContractInitializers)
-		fmt.Println("added contract transformers")
 		wg.Add(1)
-		fmt.Println("calling go routine for watch contract")
 		go executor.ContractWatcher.WatchEthContract(&wg)
 	}
 	wg.Wait()
