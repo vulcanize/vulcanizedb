@@ -29,6 +29,7 @@ import (
 )
 
 var (
+	fakeBloom     = "0x0000" // not sure what this should be // types.BytesToBloom(hexutil.MustDecode("0x00000000000")) ?
 	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
@@ -37,6 +38,7 @@ var (
 
 var rawFakeHeader, _ = json.Marshal(types.Header{})
 var FakeHeader = core.Header{
+	Bloom:     fakeBloom,
 	Hash:      FakeHash.String(),
 	Raw:       rawFakeHeader,
 	Timestamp: strconv.FormatInt(fakeTimestamp, 10),
@@ -48,6 +50,7 @@ func GetFakeHeader(blockNumber int64) core.Header {
 
 func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	return core.Header{
+		Bloom:       fakeBloom,
 		Hash:        FakeHash.String(),
 		BlockNumber: blockNumber,
 		Raw:         rawFakeHeader,

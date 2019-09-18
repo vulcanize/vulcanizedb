@@ -1,6 +1,7 @@
 -- +goose Up
 CREATE TABLE public.headers (
   id                    SERIAL PRIMARY KEY,
+  bloom                 TEXT,
   hash                  VARCHAR(66),
   block_number          BIGINT,
   raw                   JSONB,

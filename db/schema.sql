@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.3
--- Dumped by pg_dump version 11.3
+-- Dumped from database version 11.4
+-- Dumped by pg_dump version 11.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -360,6 +360,7 @@ ALTER SEQUENCE public.header_sync_transactions_id_seq OWNED BY public.header_syn
 
 CREATE TABLE public.headers (
     id integer NOT NULL,
+    bloom text,
     hash character varying(66),
     block_number bigint,
     raw jsonb,

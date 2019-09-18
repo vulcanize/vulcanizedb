@@ -4,4 +4,4 @@
     port     = 5432
 
 [client]
-    ipcPath  = ""
+    ipcPath  = "https://mainnet.infura.io/v3/91bb8728c7e04914a5a26908bbe2c5c4"

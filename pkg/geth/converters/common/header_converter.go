@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
@@ -31,9 +32,11 @@ func (converter HeaderConverter) Convert(gethHeader *types.Header, blockHash str
 	if err != nil {
 		panic(err)
 	}
+	bloom := hexutil.Encode(gethHeader.Bloom.Bytes())
 	coreHeader := core.Header{
 		Hash:        blockHash,
 		BlockNumber: gethHeader.Number.Int64(),
+		Bloom:       bloom,
 		Raw:         rawHeader,
 		Timestamp:   strconv.FormatUint(gethHeader.Time, 10),
 	}
