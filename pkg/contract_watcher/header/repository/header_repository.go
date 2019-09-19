@@ -162,7 +162,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 	var query string
 	var err error
 	if endingBlockNumber == -1 {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
+		query = `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
@@ -170,7 +170,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 				ORDER BY headers.block_number`
 		err = r.db.Select(&result, query, startingBlockNumber, r.db.Node.ID)
 	} else {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
+		query = `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
@@ -187,7 +187,7 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 	var result []core.Header
 	var query string
 	var err error
-	baseQuery := `SELECT headers.id, headers.block_number, headers.hash FROM headers
+	baseQuery := `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				  LEFT JOIN checked_headers on headers.id = header_id
 				  WHERE (header_id ISNULL`
 	for _, id := range ids {
@@ -234,7 +234,7 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 	var result []core.Header
 	var query string
 	var err error
-	baseQuery := `SELECT headers.id, headers.block_number, headers.hash FROM headers
+	baseQuery := `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				  LEFT JOIN checked_headers on headers.id = header_id
 				  WHERE (header_id IS NOT NULL`
 	for _, id := range eventIds {

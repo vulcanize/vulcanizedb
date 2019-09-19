@@ -50,14 +50,14 @@ func MissingHeaders(startingBlockNumber, endingBlockNumber int64, db *postgres.D
 	var err error
 
 	if endingBlockNumber == -1 {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
+		query = `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR ` + notCheckedSQL + `)
 				AND headers.block_number >= $1
 				AND headers.eth_node_fingerprint = $2`
 		err = db.Select(&result, query, startingBlockNumber, db.Node.ID)
 	} else {
-		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
+		query = `SELECT headers.id, headers.block_number, headers.bloom, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR ` + notCheckedSQL + `)
 				AND headers.block_number >= $1

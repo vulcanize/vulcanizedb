@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"math/big"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -29,7 +30,7 @@ import (
 )
 
 var (
-	fakeBloom     = []byte{0, 0, 0, 0} // not sure what this should be // maybe it should be something that contains FakeAddress
+	fakeBloom     = GetFakeBloom([]string{"FakeTopic"})
 	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
@@ -105,4 +106,12 @@ func GetFakeUncle(hash, reward string) core.Uncle {
 		Raw:       rawFakeHeader,
 		Timestamp: strconv.FormatInt(fakeTimestamp, 10),
 	}
+}
+
+func GetFakeBloom(positive []string) []byte {
+	var bloom types.Bloom
+	for _, data := range positive {
+		bloom.Add(new(big.Int).SetBytes([]byte(data)))
+	}
+	return bloom.Bytes()
 }
