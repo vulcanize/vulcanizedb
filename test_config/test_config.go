@@ -44,7 +44,7 @@ func init() {
 
 func setTestConfig() {
 	TestConfig = viper.New()
-	TestConfig.SetConfigName("private")
+	TestConfig.SetConfigName("testing")
 	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {

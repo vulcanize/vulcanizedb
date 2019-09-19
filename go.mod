@@ -30,6 +30,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.1 // indirect
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
+	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pressly/goose v2.6.0+incompatible
 	github.com/prometheus/tsdb v0.10.0 // indirect
