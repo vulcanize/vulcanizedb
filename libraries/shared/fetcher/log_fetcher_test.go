@@ -19,12 +19,13 @@ package fetcher_test
 import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"math/big"
 )
 
 var _ = Describe("LogFetcher", func() {
@@ -65,6 +66,31 @@ var _ = Describe("LogFetcher", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
+		})
+	})
+
+	Describe("MightContainLogs", func() {
+		It("returns false when the bloom filter does not contain any of the topic0s", func() {
+			var emptyBloom types.Bloom
+			header := fakes.FakeHeader
+			header.Bloom = emptyBloom.Bytes()
+
+			negative := []common.Hash{common.BytesToHash([]byte{4, 5})}
+			Expect(fetcher.MightContainLogs(negative, header)).To(BeFalse())
+		})
+
+		It("returns true when the bloom filter might contain the topic0s", func() {
+			var bloom types.Bloom
+			positive := []byte{1, 2, 3}
+			topicZeros := []common.Hash{common.BytesToHash([]byte{1, 2, 3, 4, 5})}
+
+			for _, i := range positive {
+				bloom.Add(new(big.Int).SetBytes([]byte{i}))
+			}
+
+			header := fakes.FakeHeader
+			header.Bloom = bloom.Bytes()
+			Expect(fetcher.MightContainLogs(topicZeros, header)).To(BeTrue())
 		})
 	})
 })

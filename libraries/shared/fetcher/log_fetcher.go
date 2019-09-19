@@ -38,6 +38,20 @@ func NewLogFetcher(blockchain core.BlockChain) *LogFetcher {
 	}
 }
 
+func MightContainLogs(topic0s []common.Hash, header core.Header) bool {
+	bloom := types.BytesToBloom(header.Bloom)
+
+	for _, topic0 := range topic0s {
+		// if any of the topic 0s might be in the log, return true
+		for _, data := range topic0.Bytes() {
+			if bloom.TestBytes([]byte{data}) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Checks all topic0s, on all addresses, fetching matching logs for the given header
 func (logFetcher LogFetcher) FetchLogs(addresses []common.Address, topic0s []common.Hash, header core.Header) ([]types.Log, error) {
 	blockHash := common.HexToHash(header.Hash)
