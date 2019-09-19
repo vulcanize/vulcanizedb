@@ -19,7 +19,7 @@ package watcher
 import (
 	"fmt"
 	"reflect"
-	syn "sync"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,7 +36,7 @@ import (
 type StorageWatcherInterface interface {
 	AddTransformers(initializers []transformer.StorageTransformerInitializer)
 	Execute(rows chan utils.StorageDiffRow, errs chan error)
-	WatchEthStorage(wg *syn.WaitGroup)
+	WatchEthStorage(wg *sync.WaitGroup)
 }
 
 type StorageWatcher struct {
@@ -83,7 +83,7 @@ func (storageWatcher StorageWatcher) Execute(rows chan utils.StorageDiffRow, err
 	}
 }
 
-func (storageWatcher StorageWatcher) WatchEthStorage(wg *syn.WaitGroup) {
+func (storageWatcher StorageWatcher) WatchEthStorage(wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	ticker := time.NewTicker(storageWatcher.PollingInterval)

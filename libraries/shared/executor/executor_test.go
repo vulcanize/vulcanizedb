@@ -7,25 +7,17 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
 	"time"
 )
 
 var _ = Describe("Executor", func() {
-	var (
-		db         *postgres.DB
-		blockChain *fakes.MockBlockChain
-		mockPlugin fakes.MockPlugin
-	)
-	BeforeEach(func() {
-		db = test_config.NewTestDB(core.Node{ID: "testNode"})
-		blockChain = fakes.NewMockBlockChain()
-		mockPlugin = fakes.NewMockPlugin()
-	})
-
 	It("adds transformer sets to the executor", func() {
+		db := test_config.NewTestDB(core.Node{ID: "testNode"})
+		blockChain := fakes.NewMockBlockChain()
+		mockPlugin := fakes.NewMockPlugin()
+
 		ew := watcher.NewEventWatcher(db, blockChain, false, time.Second)
 		sw := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), db, time.Second, time.Second)
 		cw := watcher.NewContractWatcher(db, blockChain, time.Second)
@@ -37,13 +29,11 @@ var _ = Describe("Executor", func() {
 		Expect(ex.EthEventInitializers).To(HaveLen(len(mockPlugin.FakeEventInitializers)))
 		Expect(ex.EthStorageInitializers).To(HaveLen(len(mockPlugin.FakeStorageInitializers)))
 		Expect(ex.EthContractInitializers).To(HaveLen(len(mockPlugin.FakeContractInitializers)))
-		// the failure shows that expected equals received so not sure why the following doesn't work
-		//Expect(ex.EthEventInitializers).To(Equal(mockPlugin.FakeEventInitializers))
-		//Expect(ex.EthStorageInitializers).To(Equal(mockPlugin.FakeStorageInitializers))
-		//Expect(ex.EthContractInitializers).To(Equal(mockPlugin.FakeContractInitializers))
 	})
 
 	It("Calls the correct watchers when there are relevant transformers", func() {
+		mockPlugin := fakes.NewMockPlugin()
+
 		eventWatcher := mocks.NewMockEventWatcher()
 		storageWatcher := mocks.NewMockStorageWatcher()
 		contractWatcher := mocks.NewMockContractWatcher()
@@ -68,5 +58,33 @@ var _ = Describe("Executor", func() {
 		Eventually(func() bool {
 			return contractWatcher.WatchEthContractWasCalled
 		}).Should(BeTrue())
+	})
+
+	It("Does not call the watchers when the relevant transformers do not exist", func() {
+		mockPlugin := fakes.MockPlugin{}
+
+		eventWatcher := mocks.NewMockEventWatcher()
+		storageWatcher := mocks.NewMockStorageWatcher()
+		contractWatcher := mocks.NewMockContractWatcher()
+		ex := executor.NewExecutor(&mockPlugin, &eventWatcher, &storageWatcher, &contractWatcher)
+
+		// not calling ex.LoadTransformerSets() sets because that would load initializers and transformers,
+		// and we want to test what happens when the executor does not have any transformers
+		ex.ExecuteTransformerSets()
+
+		Expect(eventWatcher.AddTransformersWasCalled).To(BeFalse())
+		Eventually(func() bool {
+			return eventWatcher.WatchEthEventsWasCalled
+		}).Should(BeFalse())
+
+		Expect(storageWatcher.AddTransformersWasCalled).To(BeFalse())
+		Eventually(func() bool {
+			return storageWatcher.WatchEthStorageWasCalled
+		}).Should(BeFalse())
+
+		Expect(contractWatcher.AddTransformersWasCalled).To(BeFalse())
+		Eventually(func() bool {
+			return contractWatcher.WatchEthContractWasCalled
+		}).Should(BeFalse())
 	})
 })
