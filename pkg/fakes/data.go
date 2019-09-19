@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	fakeBloom     = "0x0000" // not sure what this should be // types.BytesToBloom(hexutil.MustDecode("0x00000000000")) ?
+	fakeBloom     = []byte{0, 0, 0, 0} // not sure what this should be // maybe it should be something that contains FakeAddress
 	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
 	FakeError     = errors.New("failed")
 	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})

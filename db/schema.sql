@@ -360,7 +360,7 @@ ALTER SEQUENCE public.header_sync_transactions_id_seq OWNED BY public.header_syn
 
 CREATE TABLE public.headers (
     id integer NOT NULL,
-    bloom text,
+    bloom bytea,
     hash character varying(66),
     block_number bigint,
     raw jsonb,

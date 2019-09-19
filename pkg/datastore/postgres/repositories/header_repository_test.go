@@ -52,7 +52,7 @@ var _ = Describe("Block header repository", func() {
 		repo = repositories.NewHeaderRepository(db)
 		header = core.Header{
 			BlockNumber: 100,
-			Bloom:       "0x0000",
+			Bloom:       []byte{0, 0, 0, 0},
 			Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
 			Raw:         rawHeader,
 			Timestamp:   timestamp,
@@ -106,7 +106,7 @@ var _ = Describe("Block header repository", func() {
 
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
-				Bloom:       "0x0001",
+				Bloom:       []byte{0, 0, 0, 1},
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
@@ -133,7 +133,7 @@ var _ = Describe("Block header repository", func() {
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
@@ -442,7 +442,7 @@ var _ = Describe("Block header repository", func() {
 		It("returns block numbers for headers not in the database", func() {
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
@@ -450,7 +450,7 @@ var _ = Describe("Block header repository", func() {
 
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
@@ -458,7 +458,7 @@ var _ = Describe("Block header repository", func() {
 
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
@@ -473,7 +473,7 @@ var _ = Describe("Block header repository", func() {
 		It("does not count headers created by a different node fingerprint", func() {
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
@@ -481,7 +481,7 @@ var _ = Describe("Block header repository", func() {
 
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
@@ -489,7 +489,7 @@ var _ = Describe("Block header repository", func() {
 
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
-				Bloom:       "0x0000",
+				Bloom:       []byte{0, 0, 0, 0},
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
