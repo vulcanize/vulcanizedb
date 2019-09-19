@@ -26,7 +26,6 @@ type MockLogExtractor struct {
 	AddTransformerConfigError error
 	ExtractLogsCount          int
 	ExtractLogsErrors         []error
-	UncheckedHeadersExist     []bool
 }
 
 func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) error {
@@ -34,14 +33,16 @@ func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.Event
 	return extractor.AddTransformerConfigError
 }
 
-func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) (error, bool) {
+func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
 	extractor.ExtractLogsCount++
-	var errorThisRun error
-	errorThisRun, extractor.ExtractLogsErrors = extractor.ExtractLogsErrors[0], extractor.ExtractLogsErrors[1:]
-	if errorThisRun != nil {
-		return errorThisRun, false
+	if len(extractor.ExtractLogsErrors) > 1 {
+		var errorThisRun error
+		errorThisRun, extractor.ExtractLogsErrors = extractor.ExtractLogsErrors[0], extractor.ExtractLogsErrors[1:]
+		return errorThisRun
+	} else if len(extractor.ExtractLogsErrors) == 1 {
+		thisErr := extractor.ExtractLogsErrors[0]
+		extractor.ExtractLogsErrors = []error{}
+		return thisErr
 	}
-	var missingHeadersExist bool
-	missingHeadersExist, extractor.UncheckedHeadersExist = extractor.UncheckedHeadersExist[0], extractor.UncheckedHeadersExist[1:]
-	return nil, missingHeadersExist
+	return nil
 }

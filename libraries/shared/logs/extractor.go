@@ -28,16 +28,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
-var ErrNoWatchedAddresses = errors.New("no watched addresses configured in the log extractor")
-
-const (
-	uncheckedHeadersFound   = true
-	noUncheckedHeadersFound = false
+var (
+	ErrNoUncheckedHeaders = errors.New("no unchecked headers available for log fetching")
+	ErrNoWatchedAddresses = errors.New("no watched addresses configured in the log extractor")
 )
 
 type ILogExtractor interface {
 	AddTransformerConfig(config transformer.EventTransformerConfig) error
-	ExtractLogs(recheckHeaders constants.TransformerExecution) (error, bool)
+	ExtractLogs(recheckHeaders constants.TransformerExecution) error
 }
 
 type LogExtractor struct {
@@ -71,50 +69,50 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 }
 
 // Fetch and persist watched logs
-func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) (error, bool) {
+func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
 	if len(extractor.Addresses) < 1 {
 		logrus.Errorf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
-		return ErrNoWatchedAddresses, noUncheckedHeadersFound
+		return ErrNoWatchedAddresses
 	}
 
 	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, -1, getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
-		return uncheckedHeadersErr, noUncheckedHeadersFound
+		return uncheckedHeadersErr
 	}
 
 	if len(uncheckedHeaders) < 1 {
-		return nil, noUncheckedHeadersFound
+		return ErrNoUncheckedHeaders
 	}
 
 	for _, header := range uncheckedHeaders {
 		logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
 		if fetchLogsErr != nil {
 			logError("error fetching logs for header: %s", fetchLogsErr, header)
-			return fetchLogsErr, uncheckedHeadersFound
+			return fetchLogsErr
 		}
 
 		if len(logs) > 0 {
 			transactionsSyncErr := extractor.Syncer.SyncTransactions(header.Id, logs)
 			if transactionsSyncErr != nil {
 				logError("error syncing transactions: %s", transactionsSyncErr, header)
-				return transactionsSyncErr, uncheckedHeadersFound
+				return transactionsSyncErr
 			}
 
 			createLogsErr := extractor.LogRepository.CreateHeaderSyncLogs(header.Id, logs)
 			if createLogsErr != nil {
 				logError("error persisting logs: %s", createLogsErr, header)
-				return createLogsErr, uncheckedHeadersFound
+				return createLogsErr
 			}
 		}
 
 		markHeaderCheckedErr := extractor.CheckedHeadersRepository.MarkHeaderChecked(header.Id)
 		if markHeaderCheckedErr != nil {
 			logError("error marking header checked: %s", markHeaderCheckedErr, header)
-			return markHeaderCheckedErr, uncheckedHeadersFound
+			return markHeaderCheckedErr
 		}
 	}
-	return nil, uncheckedHeadersFound
+	return nil
 }
 
 func earlierStartingBlockNumber(transformerBlock, watcherBlock int64) bool {

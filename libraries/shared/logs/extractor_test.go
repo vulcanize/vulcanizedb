@@ -157,7 +157,7 @@ var _ = Describe("Log extractor", func() {
 
 	Describe("ExtractLogs", func() {
 		It("returns error if no watched addresses configured", func() {
-			err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+			err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(logs.ErrNoWatchedAddresses))
@@ -171,7 +171,7 @@ var _ = Describe("Log extractor", func() {
 				startingBlockNumber := rand.Int63()
 				extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber))
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(startingBlockNumber))
@@ -188,7 +188,7 @@ var _ = Describe("Log extractor", func() {
 				startingBlockNumber := rand.Int63()
 				extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber))
 
-				err, _ := extractor.ExtractLogs(constants.HeaderRecheck)
+				err := extractor.ExtractLogs(constants.HeaderRecheck)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(startingBlockNumber))
@@ -197,13 +197,13 @@ var _ = Describe("Log extractor", func() {
 			})
 		})
 
-		It("emits error if getting unchecked headers fails", func() {
+		It("returns error if getting unchecked headers fails", func() {
 			addTransformerConfig(extractor)
 			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
 			mockCheckedHeadersRepository.UncheckedHeadersReturnError = fakes.FakeError
 			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-			err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+			err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
@@ -215,20 +215,19 @@ var _ = Describe("Log extractor", func() {
 				mockLogFetcher := &mocks.MockLogFetcher{}
 				extractor.Fetcher = mockLogFetcher
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				_ = extractor.ExtractLogs(constants.HeaderUnchecked)
 
-				Expect(err).NotTo(HaveOccurred())
 				Expect(mockLogFetcher.FetchCalled).To(BeFalse())
 			})
 
-			It("emits that no unchecked headers were found", func() {
+			It("returns error that no unchecked headers were found", func() {
 				addTransformerConfig(extractor)
 				mockLogFetcher := &mocks.MockLogFetcher{}
 				extractor.Fetcher = mockLogFetcher
 
-				_, uncheckedHeadersFound := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
-				Expect(uncheckedHeadersFound).To(BeFalse())
+				Expect(err).To(MatchError(logs.ErrNoUncheckedHeaders))
 			})
 		})
 
@@ -245,7 +244,7 @@ var _ = Describe("Log extractor", func() {
 				mockLogFetcher := &mocks.MockLogFetcher{}
 				extractor.Fetcher = mockLogFetcher
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockLogFetcher.FetchCalled).To(BeTrue())
@@ -262,7 +261,7 @@ var _ = Describe("Log extractor", func() {
 				mockLogFetcher.ReturnError = fakes.FakeError
 				extractor.Fetcher = mockLogFetcher
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
@@ -275,7 +274,7 @@ var _ = Describe("Log extractor", func() {
 					mockTransactionSyncer := &fakes.MockTransactionSyncer{}
 					extractor.Syncer = mockTransactionSyncer
 
-					err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+					err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeFalse())
@@ -290,7 +289,7 @@ var _ = Describe("Log extractor", func() {
 					mockTransactionSyncer := &fakes.MockTransactionSyncer{}
 					extractor.Syncer = mockTransactionSyncer
 
-					err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+					err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeTrue())
@@ -304,7 +303,7 @@ var _ = Describe("Log extractor", func() {
 					mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
 					extractor.Syncer = mockTransactionSyncer
 
-					err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+					err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError(fakes.FakeError))
@@ -324,7 +323,7 @@ var _ = Describe("Log extractor", func() {
 					mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
 					extractor.LogRepository = mockLogRepository
 
-					err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+					err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(mockLogRepository.PassedLogs).To(Equal(fakeLogs))
@@ -338,7 +337,7 @@ var _ = Describe("Log extractor", func() {
 					mockLogRepository.CreateError = fakes.FakeError
 					extractor.LogRepository = mockLogRepository
 
-					err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+					err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError(fakes.FakeError))
@@ -353,7 +352,7 @@ var _ = Describe("Log extractor", func() {
 				mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{Id: headerID}}
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockCheckedHeadersRepository.MarkHeaderCheckedHeaderID).To(Equal(headerID))
@@ -367,20 +366,19 @@ var _ = Describe("Log extractor", func() {
 				mockCheckedHeadersRepository.MarkHeaderCheckedReturnError = fakes.FakeError
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
-				err, _ := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
 			})
 
-			It("emits that missing headers were found", func() {
+			It("returns nil for error if everything succeeds", func() {
 				addUncheckedHeader(extractor)
 				addTransformerConfig(extractor)
 
-				err, missingHeadersFound := extractor.ExtractLogs(constants.HeaderUnchecked)
+				err := extractor.ExtractLogs(constants.HeaderUnchecked)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(missingHeadersFound).To(BeTrue())
 			})
 		})
 	})

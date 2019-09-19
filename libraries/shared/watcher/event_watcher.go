@@ -74,49 +74,53 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 }
 
 // Extracts and delegates watched log events.
-func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution, errsChan chan error) {
-	extractErrsChan := make(chan error)
+func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
 	delegateErrsChan := make(chan error)
+	extractErrsChan := make(chan error)
+	defer close(delegateErrsChan)
+	defer close(extractErrsChan)
 
 	go watcher.extractLogs(recheckHeaders, extractErrsChan)
 	go watcher.delegateLogs(delegateErrsChan)
 
 	for {
 		select {
-		case extractErr := <-extractErrsChan:
-			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
-			errsChan <- extractErr
 		case delegateErr := <-delegateErrsChan:
 			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
-			errsChan <- delegateErr
+			return delegateErr
+		case extractErr := <-extractErrsChan:
+			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			return extractErr
 		}
 	}
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	err, uncheckedHeadersFound := watcher.LogExtractor.ExtractLogs(recheckHeaders)
-	if err != nil {
+	err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
+	if err != nil && err != logs.ErrNoUncheckedHeaders {
 		errs <- err
+		return
 	}
 
-	if uncheckedHeadersFound {
+	if err == logs.ErrNoUncheckedHeaders {
+		time.Sleep(NoNewDataPause)
 		watcher.extractLogs(recheckHeaders, errs)
 	} else {
-		time.Sleep(NoNewDataPause)
 		watcher.extractLogs(recheckHeaders, errs)
 	}
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	err, logsFound := watcher.LogDelegator.DelegateLogs()
-	if err != nil {
+	err := watcher.LogDelegator.DelegateLogs()
+	if err != nil && err != logs.ErrNoLogs {
 		errs <- err
+		return
 	}
 
-	if logsFound {
+	if err == logs.ErrNoLogs {
+		time.Sleep(NoNewDataPause)
 		watcher.delegateLogs(errs)
 	} else {
-		time.Sleep(NoNewDataPause)
 		watcher.delegateLogs(errs)
 	}
 }
