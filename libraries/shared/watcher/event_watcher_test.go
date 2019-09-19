@@ -18,7 +18,6 @@ package watcher_test
 
 import (
 	"errors"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -123,6 +122,7 @@ var _ = Describe("Watcher", func() {
 
 		It("syncs transactions for fetched logs", func() {
 			fakeTransformer := &mocks.MockTransformer{}
+			fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
@@ -136,6 +136,7 @@ var _ = Describe("Watcher", func() {
 
 		It("returns error if syncing transactions fails", func() {
 			fakeTransformer := &mocks.MockTransformer{}
+			fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
@@ -150,6 +151,7 @@ var _ = Describe("Watcher", func() {
 
 		It("executes each transformer", func() {
 			fakeTransformer := &mocks.MockTransformer{}
+			fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
@@ -160,6 +162,7 @@ var _ = Describe("Watcher", func() {
 
 		It("returns an error if transformer returns an error", func() {
 			fakeTransformer := &mocks.MockTransformer{ExecuteError: errors.New("Something bad happened")}
+			fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 
