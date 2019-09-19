@@ -33,19 +33,19 @@ func NewCheckedHeadersRepository(db *postgres.DB) CheckedHeadersRepository {
 	return CheckedHeadersRepository{db: db}
 }
 
-// Adds header_id to the checked_headers table, or increment check_count if header_id already present
+// Increment check_count for header
 func (repo CheckedHeadersRepository) MarkHeaderChecked(headerID int64) error {
 	_, err := repo.db.Exec(insertCheckedHeaderQuery, headerID)
 	return err
 }
 
-// Remove checked_headers rows with block number >= starting block number
+// Zero out check count for headers with block number >= startingBlockNumber
 func (repo CheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
 	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number >= $1`, startingBlockNumber)
 	return err
 }
 
-// Return header_id if not present in checked_headers or its check_count is < passed checkCount
+// Return header if check_count  < passed checkCount
 func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	var result []core.Header
 	var query string
