@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/logs"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
@@ -84,6 +85,7 @@ var _ = Describe("Event Watcher", func() {
 	Describe("Execute", func() {
 
 		It("extracts watched logs", func(done Done) {
+			delegator.DelegateErrors = []error{logs.ErrNoLogs}
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
@@ -96,6 +98,7 @@ var _ = Describe("Event Watcher", func() {
 		})
 
 		It("returns error if extracting logs fails", func(done Done) {
+			delegator.DelegateErrors = []error{logs.ErrNoLogs}
 			extractor.ExtractLogsErrors = []error{fakes.FakeError}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
@@ -105,6 +108,7 @@ var _ = Describe("Event Watcher", func() {
 		})
 
 		It("extracts watched logs again if missing headers found", func(done Done) {
+			delegator.DelegateErrors = []error{logs.ErrNoLogs}
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
@@ -117,6 +121,7 @@ var _ = Describe("Event Watcher", func() {
 		})
 
 		It("returns error if extracting logs fails on subsequent run", func(done Done) {
+			delegator.DelegateErrors = []error{logs.ErrNoLogs}
 			extractor.ExtractLogsErrors = []error{nil, fakes.FakeError}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
@@ -127,6 +132,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("delegates untransformed logs", func() {
 			delegator.DelegateErrors = []error{nil, errExecuteClosed}
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
@@ -138,6 +144,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("returns error if delegating logs fails", func(done Done) {
 			delegator.DelegateErrors = []error{fakes.FakeError}
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
@@ -147,6 +154,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("delegates logs again if untransformed logs found", func(done Done) {
 			delegator.DelegateErrors = []error{nil, nil, nil, errExecuteClosed}
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
@@ -159,6 +167,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("returns error if delegating logs fails on subsequent run", func(done Done) {
 			delegator.DelegateErrors = []error{nil, fakes.FakeError}
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
