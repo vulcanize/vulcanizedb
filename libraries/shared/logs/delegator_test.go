@@ -59,10 +59,10 @@ var _ = Describe("Log delegator", func() {
 	})
 
 	Describe("DelegateLogs", func() {
-		It("returns an error if no transformers configured", func() {
+		It("returns error if no transformers configured", func() {
 			delegator := newDelegator(&fakes.MockHeaderSyncLogRepository{})
 
-			err, _ := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(logs.ErrNoTransformers))
@@ -70,35 +70,36 @@ var _ = Describe("Log delegator", func() {
 
 		It("gets untransformed logs", func() {
 			mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
+			mockLogRepository.ReturnLogs = []core.HeaderSyncLog{{}}
 			delegator := newDelegator(mockLogRepository)
 			delegator.AddTransformer(&mocks.MockEventTransformer{})
 
-			err, _ := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(mockLogRepository.GetCalled).To(BeTrue())
 		})
 
-		It("emits error if getting untransformed logs fails", func() {
+		It("returns error if getting untransformed logs fails", func() {
 			mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
 			mockLogRepository.GetError = fakes.FakeError
 			delegator := newDelegator(mockLogRepository)
 			delegator.AddTransformer(&mocks.MockEventTransformer{})
 
-			err, _ := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("emits that no logs were found if no logs returned", func() {
+		It("returns error that no logs were found if no logs returned", func() {
 			delegator := newDelegator(&fakes.MockHeaderSyncLogRepository{})
 			delegator.AddTransformer(&mocks.MockEventTransformer{})
 
-			err, logsFound := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(logsFound).To(BeFalse())
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(logs.ErrNoLogs))
 		})
 
 		It("delegates chunked logs to transformers", func() {
@@ -115,27 +116,27 @@ var _ = Describe("Log delegator", func() {
 			delegator := newDelegator(mockLogRepository)
 			delegator.AddTransformer(fakeTransformer)
 
-			err, _ := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeTransformer.ExecuteWasCalled).To(BeTrue())
 			Expect(fakeTransformer.PassedLogs).To(Equal(fakeHeaderSyncLogs))
 		})
 
-		It("emits error if transformer returns an error", func() {
+		It("returns error if transformer returns an error", func() {
 			mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
 			mockLogRepository.ReturnLogs = []core.HeaderSyncLog{{}}
 			delegator := newDelegator(mockLogRepository)
 			fakeTransformer := &mocks.MockEventTransformer{ExecuteError: fakes.FakeError}
 			delegator.AddTransformer(fakeTransformer)
 
-			err, _ := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("emits logs found when logs returned and delegated", func() {
+		It("returns nil for error when logs returned and delegated", func() {
 			fakeTransformer := &mocks.MockEventTransformer{}
 			config := mocks.FakeTransformerConfig
 			fakeTransformer.SetTransformerConfig(config)
@@ -149,10 +150,9 @@ var _ = Describe("Log delegator", func() {
 			delegator := newDelegator(mockLogRepository)
 			delegator.AddTransformer(fakeTransformer)
 
-			err, logsFound := delegator.DelegateLogs()
+			err := delegator.DelegateLogs()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(logsFound).To(BeTrue())
 		})
 	})
 })

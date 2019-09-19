@@ -160,13 +160,9 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	} else {
 		recheck = constants.HeaderUnchecked
 	}
-	errs := make(chan error)
-	go w.Execute(recheck, errs)
-	for {
-		select {
-		case err := <-errs:
-			LogWithCommand.Fatalf("error executing event watcher: %s", err.Error())
-		}
+	err := w.Execute(recheck)
+	if err != nil {
+		LogWithCommand.Fatalf("error executing event watcher: %s", err.Error())
 	}
 }
 

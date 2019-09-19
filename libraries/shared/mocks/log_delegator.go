@@ -24,21 +24,22 @@ type MockLogDelegator struct {
 	AddedTransformers []transformer.EventTransformer
 	DelegateCallCount int
 	DelegateErrors    []error
-	LogsFound         []bool
 }
 
 func (delegator *MockLogDelegator) AddTransformer(t transformer.EventTransformer) {
 	delegator.AddedTransformers = append(delegator.AddedTransformers, t)
 }
 
-func (delegator *MockLogDelegator) DelegateLogs() (error, bool) {
+func (delegator *MockLogDelegator) DelegateLogs() error {
 	delegator.DelegateCallCount++
-	var delegateErrorThisRun error
-	delegateErrorThisRun, delegator.DelegateErrors = delegator.DelegateErrors[0], delegator.DelegateErrors[1:]
-	if delegateErrorThisRun != nil {
-		return delegateErrorThisRun, false
+	if len(delegator.DelegateErrors) > 1 {
+		var delegateErrorThisRun error
+		delegateErrorThisRun, delegator.DelegateErrors = delegator.DelegateErrors[0], delegator.DelegateErrors[1:]
+		return delegateErrorThisRun
+	} else if len(delegator.DelegateErrors) == 1 {
+		thisErr := delegator.DelegateErrors[0]
+		delegator.DelegateErrors = []error{}
+		return thisErr
 	}
-	var logsFoundThisRun bool
-	logsFoundThisRun, delegator.LogsFound = delegator.LogsFound[0], delegator.LogsFound[1:]
-	return nil, logsFoundThisRun
+	return nil
 }

@@ -25,16 +25,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
-var ErrNoTransformers = errors.New("no event transformers configured in the log delegator")
-
-const (
-	logsFound   = true
-	noLogsFound = false
+var (
+	ErrNoLogs         = errors.New("no logs available for transforming")
+	ErrNoTransformers = errors.New("no event transformers configured in the log delegator")
 )
 
 type ILogDelegator interface {
 	AddTransformer(t transformer.EventTransformer)
-	DelegateLogs() (error, bool)
+	DelegateLogs() error
 }
 
 type LogDelegator struct {
@@ -48,28 +46,28 @@ func (delegator *LogDelegator) AddTransformer(t transformer.EventTransformer) {
 	delegator.Chunker.AddConfig(t.GetConfig())
 }
 
-func (delegator *LogDelegator) DelegateLogs() (error, bool) {
+func (delegator *LogDelegator) DelegateLogs() error {
 	if len(delegator.Transformers) < 1 {
-		return ErrNoTransformers, noLogsFound
+		return ErrNoTransformers
 	}
 
 	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedHeaderSyncLogs()
 	if fetchErr != nil {
 		logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
-		return fetchErr, noLogsFound
+		return fetchErr
 	}
 
 	if len(persistedLogs) < 1 {
-		return nil, noLogsFound
+		return ErrNoLogs
 	}
 
 	transformErr := delegator.delegateLogs(persistedLogs)
 	if transformErr != nil {
 		logrus.Errorf("error transforming logs: %s", transformErr)
-		return transformErr, logsFound
+		return transformErr
 	}
 
-	return nil, logsFound
+	return nil
 }
 
 func (delegator *LogDelegator) delegateLogs(logs []core.HeaderSyncLog) error {
