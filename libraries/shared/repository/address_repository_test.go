@@ -1,5 +1,18 @@
 // VulcanizeDB
 // Copyright © 2019 Vulcanize
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -14,9 +27,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repositories_test
+package repository_test
 
 import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -24,7 +38,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -50,7 +63,7 @@ var _ = Describe("address lookup", func() {
 
 	Describe("GetOrCreateAddress", func() {
 		It("creates an address record", func() {
-			addressId, createErr := repositories.GetOrCreateAddress(db, address)
+			addressId, createErr := repository.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
@@ -61,10 +74,10 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("returns the existing record id if the address already exists", func() {
-			createId, createErr := repositories.GetOrCreateAddress(db, address)
+			createId, createErr := repository.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			getId, getErr := repositories.GetOrCreateAddress(db, address)
+			getId, getErr := repository.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 
 			var addressCount int
@@ -76,20 +89,20 @@ var _ = Describe("address lookup", func() {
 
 		It("gets upper-cased addresses", func() {
 			upperAddress := strings.ToUpper(address)
-			upperAddressId, createErr := repositories.GetOrCreateAddress(db, upperAddress)
+			upperAddressId, createErr := repository.GetOrCreateAddress(db, upperAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repositories.GetOrCreateAddress(db, address)
+			mixedCaseAddressId, getErr := repository.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 		})
 
 		It("gets lower-cased addresses", func() {
 			lowerAddress := strings.ToLower(address)
-			upperAddressId, createErr := repositories.GetOrCreateAddress(db, lowerAddress)
+			upperAddressId, createErr := repository.GetOrCreateAddress(db, lowerAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repositories.GetOrCreateAddress(db, address)
+			mixedCaseAddressId, getErr := repository.GetOrCreateAddress(db, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(upperAddressId).To(Equal(mixedCaseAddressId))
 		})
@@ -110,7 +123,7 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("creates an address record", func() {
-			addressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, address)
+			addressId, createErr := repository.GetOrCreateAddressInTransaction(tx, address)
 			Expect(createErr).NotTo(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).NotTo(HaveOccurred())
@@ -123,10 +136,10 @@ var _ = Describe("address lookup", func() {
 		})
 
 		It("returns the existing record id if the address already exists", func() {
-			_, createErr := repositories.GetOrCreateAddressInTransaction(tx, address)
+			_, createErr := repository.GetOrCreateAddressInTransaction(tx, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			_, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
+			_, getErr := repository.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -137,10 +150,10 @@ var _ = Describe("address lookup", func() {
 
 		It("gets upper-cased addresses", func() {
 			upperAddress := strings.ToUpper(address)
-			upperAddressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, upperAddress)
+			upperAddressId, createErr := repository.GetOrCreateAddressInTransaction(tx, upperAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
+			mixedCaseAddressId, getErr := repository.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -149,10 +162,10 @@ var _ = Describe("address lookup", func() {
 
 		It("gets lower-cased addresses", func() {
 			lowerAddress := strings.ToLower(address)
-			upperAddressId, createErr := repositories.GetOrCreateAddressInTransaction(tx, lowerAddress)
+			upperAddressId, createErr := repository.GetOrCreateAddressInTransaction(tx, lowerAddress)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			mixedCaseAddressId, getErr := repositories.GetOrCreateAddressInTransaction(tx, address)
+			mixedCaseAddressId, getErr := repository.GetOrCreateAddressInTransaction(tx, address)
 			Expect(getErr).NotTo(HaveOccurred())
 			tx.Commit()
 
@@ -162,16 +175,16 @@ var _ = Describe("address lookup", func() {
 
 	Describe("GetAddressById", func() {
 		It("gets and address by it's id", func() {
-			addressId, createErr := repositories.GetOrCreateAddress(db, address)
+			addressId, createErr := repository.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			actualAddress, getErr := repositories.GetAddressById(db, addressId)
+			actualAddress, getErr := repository.GetAddressById(db, addressId)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(actualAddress).To(Equal(address))
 		})
 
 		It("returns an error if the id doesn't exist", func() {
-			_, getErr := repositories.GetAddressById(db, 0)
+			_, getErr := repository.GetAddressById(db, 0)
 			Expect(getErr).To(HaveOccurred())
 			Expect(getErr).To(MatchError("sql: no rows in result set"))
 		})

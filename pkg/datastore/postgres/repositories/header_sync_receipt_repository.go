@@ -19,6 +19,7 @@ package repositories
 import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/jmoiron/sqlx"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -26,7 +27,7 @@ type HeaderSyncReceiptRepository struct{}
 
 func (HeaderSyncReceiptRepository) CreateHeaderSyncReceiptInTx(headerID, transactionID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
-	addressId, getAddressErr := GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+	addressId, getAddressErr := repository.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		log.Error("createReceipt: Error getting address id: ", getAddressErr)
 		return receiptId, getAddressErr
