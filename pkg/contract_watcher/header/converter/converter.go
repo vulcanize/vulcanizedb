@@ -92,6 +92,11 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 			case byte:
 				b := input.(byte)
 				strValues[fieldName] = string(b)
+			case [32]uint8:
+				raw := input.([32]uint8)
+				converted := convertUintSliceToHash(raw)
+				strValues[fieldName] = converted.String()
+				seenHashes = append(seenHashes, converted)
 			default:
 				return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
 			}
@@ -171,6 +176,11 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 					case byte:
 						b := input.(byte)
 						strValues[fieldName] = string(b)
+					case [32]uint8:
+						raw := input.([32]uint8)
+						converted := convertUintSliceToHash(raw)
+						strValues[fieldName] = converted.String()
+						seenHashes = append(seenHashes, converted)
 					default:
 						return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
 					}
@@ -204,4 +214,12 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 	}
 
 	return eventsToLogs, nil
+}
+
+func convertUintSliceToHash(raw [32]uint8) common.Hash {
+	var asBytes []byte
+	for _, u := range raw {
+		asBytes = append(asBytes, u)
+	}
+	return common.BytesToHash(asBytes)
 }
