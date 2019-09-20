@@ -38,6 +38,7 @@ func NewLogFetcher(blockchain core.BlockChain) *LogFetcher {
 	}
 }
 
+// I put this here temporarily and haven't found a better place to define it yet
 func MightContainLogs(topic0s []common.Hash, header core.Header) bool {
 	bloom := types.BytesToBloom(header.Bloom)
 

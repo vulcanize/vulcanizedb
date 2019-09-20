@@ -105,27 +105,32 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 	}
 
 	for _, header := range missingHeaders {
-		// TODO Extend FetchLogs for doing several blocks at a time
-		logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"headerId":    header.Id,
-				"headerHash":  header.Hash,
-				"blockNumber": header.BlockNumber,
-			}).Errorf("Couldn't fetch logs for header: %v", err)
-			return err
-		}
+		// Only want to fetch logs if the bloom filter says that the topic0s might exist
+		// There might be a better place to do this check
+		if fetcher.MightContainLogs(watcher.Topics, header) {
+			// TODO Extend FetchLogs for doing several blocks at a time
+			logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 
-		transactionsSyncErr := watcher.Syncer.SyncTransactions(header.Id, logs)
-		if transactionsSyncErr != nil {
-			logrus.Errorf("error syncing transactions: %s", transactionsSyncErr.Error())
-			return transactionsSyncErr
-		}
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"headerId":    header.Id,
+					"headerHash":  header.Hash,
+					"blockNumber": header.BlockNumber,
+				}).Errorf("Couldn't fetch logs for header: %v", err)
+				return err
+			}
 
-		transformErr := watcher.transformLogs(logs, header)
-		if transformErr != nil {
-			logrus.Error("Could not transform logs: ", transformErr)
-			return transformErr
+			transactionsSyncErr := watcher.Syncer.SyncTransactions(header.Id, logs)
+			if transactionsSyncErr != nil {
+				logrus.Errorf("error syncing transactions: %s", transactionsSyncErr.Error())
+				return transactionsSyncErr
+			}
+
+			transformErr := watcher.transformLogs(logs, header)
+			if transformErr != nil {
+				logrus.Error("Could not transform logs: ", transformErr)
+				return transformErr
+			}
 		}
 	}
 	return err

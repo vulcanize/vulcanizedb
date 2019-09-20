@@ -18,6 +18,7 @@ package watcher_test
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -122,8 +123,10 @@ var _ = Describe("Watcher", func() {
 
 		It("syncs transactions for fetched logs", func() {
 			fakeTransformer := &mocks.MockTransformer{}
+			// the transformer config needs to be set so a topic0 exists
 			fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 			w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			// the fake header has a bloom filter that returns a positive result when testing with the watcher's topic0
 			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
 			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
 			w.Syncer = mockTransactionSyncer
@@ -171,6 +174,9 @@ var _ = Describe("Watcher", func() {
 			Expect(fakeTransformer.ExecuteWasCalled).To(BeFalse())
 		})
 
+		// the following tests are failing. I think it has something to do with the topics being used
+		// instead of using "FakeTopic" they use something else. But it appears the bloom filter should return
+		// true for these other topics because of the way I'm setting it up
 		It("passes only relevant logs to each transformer", func() {
 			transformerA := &mocks.MockTransformer{}
 			transformerB := &mocks.MockTransformer{}
@@ -191,7 +197,12 @@ var _ = Describe("Watcher", func() {
 				Topics: []common.Hash{common.HexToHash("0xB")}}
 			mockBlockChain.SetGetEthLogsWithCustomQueryReturnLogs([]types.Log{logA, logB})
 
-			repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+			fmt.Println("!!!! LOOK HERE")
+			header := fakes.GetFakeHeaderWithPositiveBloom([]string{"0xA", "0xB"})
+			fmt.Println("bloom with 0xA, 0xB: ", fakes.GetFakeBloom([]string{"0xA", "0xB"}))
+			fmt.Println("bloom with FakeTopic", fakes.GetFakeBloom([]string{"FakeTopic"}))
+			fmt.Println("FakeHeader bloom (want it to be the same as bloom with 0xA and 0xB\n", header.Bloom)
+			repository.SetMissingHeaders([]core.Header{header})
 			w = watcher.NewEventWatcher(db, &mockBlockChain)
 			w.AddTransformers([]transformer.EventTransformerInitializer{
 				transformerA.FakeTransformerInitializer, transformerB.FakeTransformerInitializer})
@@ -205,10 +216,12 @@ var _ = Describe("Watcher", func() {
 		Describe("uses the LogFetcher correctly:", func() {
 			var fakeTransformer mocks.MockTransformer
 			BeforeEach(func() {
-				repository.SetMissingHeaders([]core.Header{fakes.FakeHeader})
+				fakeHeader := fakes.GetFakeHeaderWithPositiveBloom([]string{"0x1"})
+				repository.SetMissingHeaders([]core.Header{fakeHeader})
 				fakeTransformer = mocks.MockTransformer{}
 			})
 
+			// this fails
 			It("fetches logs for added transformers", func() {
 				addresses := []string{"0xA", "0xB"}
 				topic := "0x1"
@@ -227,10 +240,12 @@ var _ = Describe("Watcher", func() {
 				})
 			})
 
+			// this passes
 			It("propagates log fetcher errors", func() {
 				fetcherError := errors.New("FetcherError")
 				mockBlockChain.SetGetEthLogsWithCustomQueryErr(fetcherError)
 
+				fakeTransformer.SetTransformerConfig(mocks.FakeTransformerConfig)
 				w.AddTransformers([]transformer.EventTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 				err := w.Execute(constants.HeaderMissing)
 				Expect(err).To(MatchError(fetcherError))

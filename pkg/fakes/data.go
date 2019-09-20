@@ -30,6 +30,9 @@ import (
 )
 
 var (
+	// fakeBloom var should mean that the bloom tells us that the log might contain "FakeTopic"
+	// A bunch of tests (like event_watcher_test) use a transformer config that sets "FakeTopic" as the topic0
+	// We want to make sure those tests still pass (fetch logs needs to get called, so the bloom filter has to have bits set for this string)
 	fakeBloom     = GetFakeBloom([]string{"FakeTopic"})
 	FakeAddress   = common.HexToAddress("0x1234567890abcdef")
 	FakeError     = errors.New("failed")
@@ -108,10 +111,23 @@ func GetFakeUncle(hash, reward string) core.Uncle {
 	}
 }
 
+// this takes a string array and convert it to the correct type for a topic0
+// then adds it to the blooom filter, so we can make sure that bloom.Test will return a positive result for the given strings
 func GetFakeBloom(positive []string) []byte {
 	var bloom types.Bloom
+
 	for _, data := range positive {
-		bloom.Add(new(big.Int).SetBytes([]byte(data)))
+		topicHash := common.HexToHash(data)
+		bloom.Add(new(big.Int).SetBytes(topicHash.Bytes()))
 	}
 	return bloom.Bytes()
+}
+
+func GetFakeHeaderWithPositiveBloom(positive []string) core.Header {
+	return core.Header{
+		Bloom: GetFakeBloom(positive),
+		Hash:      FakeHeader.Hash,
+		Raw:       FakeHeader.Raw,
+		Timestamp: FakeHeader.Timestamp,
+	}
 }

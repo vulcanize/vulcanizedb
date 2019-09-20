@@ -69,6 +69,7 @@ var _ = Describe("LogFetcher", func() {
 		})
 	})
 
+	// Reference for these tests: https://github.com/ethereum/go-ethereum/blob/master/core/types/bloom9_test.go#L24
 	Describe("MightContainLogs", func() {
 		It("returns false when the bloom filter does not contain any of the topic0s", func() {
 			var emptyBloom types.Bloom
@@ -90,6 +91,16 @@ var _ = Describe("LogFetcher", func() {
 
 			header := fakes.FakeHeader
 			header.Bloom = bloom.Bytes()
+			Expect(fetcher.MightContainLogs(topicZeros, header)).To(BeTrue())
+		})
+
+		// This isn't a useful test - I added it for debugging purposes
+		// I thought maybe the event watcher tests with 0xA and 0xB topics were failing because they are hex vals
+		It("works with hex strings", func() {
+			// should probably use this function in above tests to create the headers instead of what I'm currently doing
+			header := fakes.GetFakeHeaderWithPositiveBloom([]string{"0xA"})
+			topicZeros := []common.Hash{common.HexToHash("0xA")}
+
 			Expect(fetcher.MightContainLogs(topicZeros, header)).To(BeTrue())
 		})
 	})
