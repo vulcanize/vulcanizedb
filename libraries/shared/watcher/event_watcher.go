@@ -108,6 +108,8 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 		// Only want to fetch logs if the bloom filter says that the topic0s might exist
 		// There might be a better place to do this check
 		if fetcher.MightContainLogs(watcher.Topics, header) {
+			fmt.Println("Might contain logs")
+			fmt.Println(header.Bloom)
 			// TODO Extend FetchLogs for doing several blocks at a time
 			logs, err := watcher.Fetcher.FetchLogs(watcher.Addresses, watcher.Topics, header)
 
@@ -131,6 +133,9 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 				logrus.Error("Could not transform logs: ", transformErr)
 				return transformErr
 			}
+		} else {
+			fmt.Println("Definitely does not contain logs")
+			fmt.Println(header.Bloom)
 		}
 	}
 	return err
