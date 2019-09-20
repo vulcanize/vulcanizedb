@@ -33,6 +33,7 @@ var _ = Describe("Converter", func() {
 	var con *contract.Contract
 	var tusdWantedEvents = []string{"Transfer", "Mint"}
 	var ensWantedEvents = []string{"NewOwner"}
+	var marketPlaceWantedEvents = []string{"OrderCreated"}
 	var err error
 
 	Describe("Update", func() {
@@ -143,6 +144,20 @@ var _ = Describe("Converter", func() {
 			// Does not keep track of emitted addresses if the methods provided will not use them
 			_, ok = con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
 			Expect(ok).To(Equal(false))
+		})
+
+		It("keeps track of hashes derived from bytes32", func() {
+			con = test_helpers.SetupMarketPlaceContract(marketPlaceWantedEvents, []string{})
+			event, ok := con.Events["OrderCreated"]
+			Expect(ok).To(BeTrue())
+
+			c := converter.Converter{}
+			c.Update(con)
+			result, err := c.Convert([]types.Log{mocks.MockOrderCreatedLog}, event, 232)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(result)).To(Equal(1))
+			Expect(result[0].Values["id"]).To(Equal("0x633f94affdcabe07c000231f85c752c97b9cc43966b432ec4d18641e6d178233"))
 		})
 
 		It("Fails with an empty contract", func() {

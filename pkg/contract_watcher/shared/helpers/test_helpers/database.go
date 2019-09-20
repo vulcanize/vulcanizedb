@@ -221,6 +221,24 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	}.Init()
 }
 
+func SetupMarketPlaceContract(wantedEvents, wantedMethods []string) *contract.Contract {
+	p := mocks.NewParser(constants.MarketPlaceAbiString)
+	err := p.Parse()
+	Expect(err).NotTo(HaveOccurred())
+
+	return contract.Contract{
+		Name:          "Marketplace",
+		Address:       constants.MarketPlaceContractAddress,
+		StartingBlock: 6496012,
+		Abi:           p.Abi(),
+		ParsedAbi:     p.ParsedAbi(),
+		Events:        p.GetEvents(wantedEvents),
+		Methods:       p.GetSelectMethods(wantedMethods),
+		FilterArgs:    map[string]bool{},
+		MethodArgs:    map[string]bool{},
+	}.Init()
+}
+
 // TODO: tear down/setup DB from migrations so this doesn't alter the schema between tests
 func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
