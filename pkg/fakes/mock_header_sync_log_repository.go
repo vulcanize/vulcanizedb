@@ -14,44 +14,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package common
+package fakes
 
 import (
-	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-func ToCoreLogs(gethLogs []types.Log) []core.Log {
-	var logs []core.Log
-	for _, log := range gethLogs {
-		log := ToCoreLog(log)
-		logs = append(logs, log)
-	}
-	return logs
+type MockHeaderSyncLogRepository struct {
+	CreateError    error
+	GetCalled      bool
+	GetError       error
+	PassedHeaderID int64
+	PassedLogs     []types.Log
+	ReturnLogs     []core.HeaderSyncLog
 }
 
-func makeTopics(topics []common.Hash) core.Topics {
-	var hexTopics core.Topics
-	for i, topic := range topics {
-		hexTopics[i] = topic.Hex()
-	}
-	return hexTopics
+func (repository *MockHeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error) {
+	repository.GetCalled = true
+	return repository.ReturnLogs, repository.GetError
 }
 
-func ToCoreLog(gethLog types.Log) core.Log {
-	topics := gethLog.Topics
-	hexTopics := makeTopics(topics)
-	return core.Log{
-		Address:     strings.ToLower(gethLog.Address.Hex()),
-		BlockNumber: int64(gethLog.BlockNumber),
-		Topics:      hexTopics,
-		TxHash:      gethLog.TxHash.Hex(),
-		Index:       int64(gethLog.Index),
-		Data:        hexutil.Encode(gethLog.Data),
-	}
+func (repository *MockHeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []types.Log) error {
+	repository.PassedHeaderID = headerID
+	repository.PassedLogs = logs
+	return repository.CreateError
 }

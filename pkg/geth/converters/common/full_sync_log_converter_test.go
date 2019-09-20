@@ -29,7 +29,7 @@ import (
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 )
 
-var _ = Describe("Conversion of GethLog to core.Log", func() {
+var _ = Describe("Conversion of GethLog to core.FullSyncLog", func() {
 
 	It("converts geth log to internal log format", func() {
 		gethLog := types.Log{
@@ -46,7 +46,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 			},
 		}
 
-		expected := core.Log{
+		expected := core.FullSyncLog{
 			Address:     strings.ToLower(gethLog.Address.Hex()),
 			BlockNumber: int64(gethLog.BlockNumber),
 			Data:        hexutil.Encode(gethLog.Data),
@@ -101,7 +101,7 @@ var _ = Describe("Conversion of GethLog to core.Log", func() {
 		expectedOne := vulcCommon.ToCoreLog(gethLogOne)
 		expectedTwo := vulcCommon.ToCoreLog(gethLogTwo)
 
-		coreLogs := vulcCommon.ToCoreLogs([]types.Log{gethLogOne, gethLogTwo})
+		coreLogs := vulcCommon.ToFullSyncLogs([]types.Log{gethLogOne, gethLogTwo})
 
 		Expect(len(coreLogs)).To(Equal(2))
 		Expect(coreLogs[0]).To(Equal(expectedOne))

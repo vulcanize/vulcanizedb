@@ -140,7 +140,7 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 
 	// Mark header as checked for this eventId
 	eventId := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	err = repository.MarkHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
+	err = repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -231,7 +231,7 @@ func (r *eventRepository) newEventTable(tableID string, event types.Event) error
 		for _, field := range event.Fields {
 			pgStr = pgStr + fmt.Sprintf(" %s_ %s NOT NULL,", strings.ToLower(field.Name), field.PgType)
 		}
-		pgStr = pgStr + " CONSTRAINT log_index_fk FOREIGN KEY (vulcanize_log_id) REFERENCES logs (id) ON DELETE CASCADE)"
+		pgStr = pgStr + " CONSTRAINT log_index_fk FOREIGN KEY (vulcanize_log_id) REFERENCES full_sync_logs (id) ON DELETE CASCADE)"
 	case types.HeaderSync:
 		pgStr = pgStr + "(id SERIAL, header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE, token_name CHARACTER VARYING(66) NOT NULL, raw_log JSONB, log_idx INTEGER NOT NULL, tx_idx INTEGER NOT NULL,"
 

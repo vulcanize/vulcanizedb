@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -53,10 +52,25 @@ func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId
 	return nil
 }
 
-func createLogs(logs []core.Log, receiptId int64, tx *sqlx.Tx) error {
+func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
+	var receiptId int64
+	err := tx.QueryRow(
+		`INSERT INTO full_sync_receipts
+		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
+		               VALUES ($1, $2, $3, $4, $5, $6, $7)
+		               RETURNING id`,
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
+	).Scan(&receiptId)
+	if err != nil {
+		logrus.Error("createReceipt: Error inserting: ", err)
+	}
+	return receiptId, err
+}
+
+func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
-			`INSERT INTO logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
+			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
 			log.BlockNumber, log.Address, log.TxHash, log.Index, log.Topics[0], log.Topics[1], log.Topics[2], log.Topics[3], log.Data, receiptId,

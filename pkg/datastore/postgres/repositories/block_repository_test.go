@@ -159,11 +159,12 @@ var _ = Describe("Saving blocks", func() {
 	})
 
 	It("saves one uncle associated to the block", func() {
+		fakeUncle := fakes.GetFakeUncle(common.BytesToHash([]byte{1, 2, 3}).String(), "100000")
 		block := core.Block{
 			Hash:         fakes.FakeHash.String(),
 			Number:       123,
 			Transactions: []core.TransactionModel{fakes.FakeTransaction},
-			Uncles:       []core.Uncle{fakes.GetFakeUncle(common.BytesToHash([]byte{1, 2, 3}).String(), "100000")},
+			Uncles:       []core.Uncle{fakeUncle},
 			UnclesReward: "156250000000000000",
 		}
 
@@ -179,20 +180,20 @@ var _ = Describe("Saving blocks", func() {
 		err := db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{1, 2, 3}).Hex())
 		Expect(err).ToNot(HaveOccurred())
-		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{1, 2, 3}).Hex()))
-		Expect(uncleModel.Reward).To(Equal("100000"))
-		Expect(uncleModel.Miner).To(Equal(fakes.FakeAddress.Hex()))
-		Expect(uncleModel.Timestamp).To(Equal("111111111"))
+		Expect(uncleModel.Hash).To(Equal(fakeUncle.Hash))
+		Expect(uncleModel.Reward).To(Equal(fakeUncle.Reward))
+		Expect(uncleModel.Miner).To(Equal(fakeUncle.Miner))
+		Expect(uncleModel.Timestamp).To(Equal(fakeUncle.Timestamp))
 	})
 
 	It("saves two uncles associated to the block", func() {
+		fakeUncleOne := fakes.GetFakeUncle(common.BytesToHash([]byte{1, 2, 3}).String(), "100000")
+		fakeUncleTwo := fakes.GetFakeUncle(common.BytesToHash([]byte{3, 2, 1}).String(), "90000")
 		block := core.Block{
 			Hash:         fakes.FakeHash.String(),
 			Number:       123,
 			Transactions: []core.TransactionModel{fakes.FakeTransaction},
-			Uncles: []core.Uncle{
-				fakes.GetFakeUncle(common.BytesToHash([]byte{1, 2, 3}).String(), "100000"),
-				fakes.GetFakeUncle(common.BytesToHash([]byte{3, 2, 1}).String(), "90000")},
+			Uncles:       []core.Uncle{fakeUncleOne, fakeUncleTwo},
 			UnclesReward: "312500000000000000",
 		}
 
@@ -210,18 +211,18 @@ var _ = Describe("Saving blocks", func() {
 		err := db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{1, 2, 3}).Hex())
 		Expect(err).ToNot(HaveOccurred())
-		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{1, 2, 3}).Hex()))
-		Expect(uncleModel.Reward).To(Equal("100000"))
-		Expect(uncleModel.Miner).To(Equal(fakes.FakeAddress.Hex()))
-		Expect(uncleModel.Timestamp).To(Equal("111111111"))
+		Expect(uncleModel.Hash).To(Equal(fakeUncleOne.Hash))
+		Expect(uncleModel.Reward).To(Equal(fakeUncleOne.Reward))
+		Expect(uncleModel.Miner).To(Equal(fakeUncleOne.Miner))
+		Expect(uncleModel.Timestamp).To(Equal(fakeUncleOne.Timestamp))
 
 		err = db.Get(&uncleModel, `SELECT hash, reward, miner, raw, block_timestamp FROM uncles 
 								WHERE block_id = $1 AND hash = $2`, id, common.BytesToHash([]byte{3, 2, 1}).Hex())
 		Expect(err).ToNot(HaveOccurred())
-		Expect(uncleModel.Hash).To(Equal(common.BytesToHash([]byte{3, 2, 1}).Hex()))
-		Expect(uncleModel.Reward).To(Equal("90000"))
-		Expect(uncleModel.Miner).To(Equal(fakes.FakeAddress.Hex()))
-		Expect(uncleModel.Timestamp).To(Equal("111111111"))
+		Expect(uncleModel.Hash).To(Equal(fakeUncleTwo.Hash))
+		Expect(uncleModel.Reward).To(Equal(fakeUncleTwo.Reward))
+		Expect(uncleModel.Miner).To(Equal(fakeUncleTwo.Miner))
+		Expect(uncleModel.Timestamp).To(Equal(fakeUncleTwo.Timestamp))
 	})
 
 	It(`replaces blocks and transactions associated to the block

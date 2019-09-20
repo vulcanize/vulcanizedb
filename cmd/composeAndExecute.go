@@ -170,7 +170,10 @@ func composeAndExecute() {
 	var wg syn.WaitGroup
 	if len(ethEventInitializers) > 0 {
 		ew := watcher.NewEventWatcher(&db, blockChain)
-		ew.AddTransformers(ethEventInitializers)
+		err := ew.AddTransformers(ethEventInitializers)
+		if err != nil {
+			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
+		}
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)
 	}

@@ -114,7 +114,10 @@ func execute() {
 	var wg syn.WaitGroup
 	if len(ethEventInitializers) > 0 {
 		ew := watcher.NewEventWatcher(&db, blockChain)
-		ew.AddTransformers(ethEventInitializers)
+		err = ew.AddTransformers(ethEventInitializers)
+		if err != nil {
+			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
+		}
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)
 	}
@@ -155,12 +158,11 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	if recheckHeadersArg {
 		recheck = constants.HeaderRecheck
 	} else {
-		recheck = constants.HeaderMissing
+		recheck = constants.HeaderUnchecked
 	}
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		w.Execute(recheck)
+	err := w.Execute(recheck)
+	if err != nil {
+		LogWithCommand.Fatalf("error executing event watcher: %s", err.Error())
 	}
 }
 

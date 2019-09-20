@@ -17,45 +17,42 @@
 package mocks
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
-
-	shared_t "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
-type MockTransformer struct {
+type MockEventTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
-	PassedLogs       []types.Log
-	PassedHeader     core.Header
-	config           shared_t.EventTransformerConfig
+	PassedLogs       []core.HeaderSyncLog
+	config           transformer.EventTransformerConfig
 }
 
-func (mh *MockTransformer) Execute(logs []types.Log, header core.Header) error {
-	if mh.ExecuteError != nil {
-		return mh.ExecuteError
+func (t *MockEventTransformer) Execute(logs []core.HeaderSyncLog) error {
+	if t.ExecuteError != nil {
+		return t.ExecuteError
 	}
-	mh.ExecuteWasCalled = true
-	mh.PassedLogs = logs
-	mh.PassedHeader = header
+	t.ExecuteWasCalled = true
+	t.PassedLogs = logs
 	return nil
 }
 
-func (mh *MockTransformer) GetConfig() shared_t.EventTransformerConfig {
-	return mh.config
+func (t *MockEventTransformer) GetConfig() transformer.EventTransformerConfig {
+	return t.config
 }
 
-func (mh *MockTransformer) SetTransformerConfig(config shared_t.EventTransformerConfig) {
-	mh.config = config
+func (t *MockEventTransformer) SetTransformerConfig(config transformer.EventTransformerConfig) {
+	t.config = config
 }
 
-func (mh *MockTransformer) FakeTransformerInitializer(db *postgres.DB) shared_t.EventTransformer {
-	return mh
+func (t *MockEventTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.EventTransformer {
+	return t
 }
 
-var FakeTransformerConfig = shared_t.EventTransformerConfig{
+var FakeTransformerConfig = transformer.EventTransformerConfig{
 	TransformerName:   "FakeTransformer",
-	ContractAddresses: []string{"FakeAddress"},
-	Topic:             "FakeTopic",
+	ContractAddresses: []string{fakes.FakeAddress.Hex()},
+	Topic:             fakes.FakeHash.Hex(),
 }

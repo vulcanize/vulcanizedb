@@ -18,14 +18,12 @@ package transformer
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type EventTransformer interface {
-	Execute(logs []types.Log, header core.Header) error
+	Execute(logs []core.HeaderSyncLog) error
 	GetConfig() EventTransformerConfig
 }
 

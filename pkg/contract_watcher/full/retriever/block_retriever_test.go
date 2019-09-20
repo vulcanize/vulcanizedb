@@ -72,7 +72,7 @@ var _ = Describe("Block Retriever", func() {
 					Receipt: core.Receipt{
 						TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 						ContractAddress: constants.TusdContractAddress,
-						Logs:            []core.Log{},
+						Logs:            []core.FullSyncLog{},
 					},
 					TxIndex: 0,
 					Value:   "0",
@@ -92,7 +92,7 @@ var _ = Describe("Block Retriever", func() {
 					Receipt: core.Receipt{
 						TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 						ContractAddress: constants.TusdContractAddress,
-						Logs: []core.Log{{
+						Logs: []core.FullSyncLog{{
 							BlockNumber: 3,
 							TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 							Address:     constants.TusdContractAddress,
@@ -136,7 +136,7 @@ var _ = Describe("Block Retriever", func() {
 					Receipt: core.Receipt{
 						TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 						ContractAddress: "",
-						Logs: []core.Log{{
+						Logs: []core.FullSyncLog{{
 							BlockNumber: 2,
 							TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad6546ae",
 							Address:     constants.DaiContractAddress,
@@ -167,7 +167,7 @@ var _ = Describe("Block Retriever", func() {
 					Receipt: core.Receipt{
 						TxHash:          "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 						ContractAddress: "",
-						Logs: []core.Log{{
+						Logs: []core.FullSyncLog{{
 							BlockNumber: 3,
 							TxHash:      "0x135391a0962a63944e5908e6fedfff90fb4be3e3290a21017861099bad234hfs",
 							Address:     constants.DaiContractAddress,

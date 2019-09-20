@@ -16,11 +16,20 @@
 
 package core
 
-type Log struct {
+import "github.com/ethereum/go-ethereum/core/types"
+
+type FullSyncLog struct {
 	BlockNumber int64
 	TxHash      string
 	Address     string
 	Topics
 	Index int64
 	Data  string
+}
+
+type HeaderSyncLog struct {
+	ID          int64
+	HeaderID    int64 `db:"header_id"`
+	Log         types.Log
+	Transformed bool
 }
