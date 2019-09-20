@@ -279,6 +279,22 @@ var MockNewOwnerLog2 = types.Log{
 	Data: hexutil.MustDecode("0x000000000000000000000000000000000000000000000000000000000000af21"),
 }
 
+var MockOrderCreatedLog = types.Log{
+	Address: common.HexToAddress(constants.MarketPlaceContractAddress),
+	Topics: []common.Hash{
+		common.HexToHash("0x84c66c3f7ba4b390e20e8e8233e2a516f3ce34a72749e4f12bd010dfba238039"),
+		common.HexToHash("0xffffffffffffffffffffffffffffff72ffffffffffffffffffffffffffffffd0"),
+		common.HexToHash("0x00000000000000000000000083b7b6f360a9895d163ea797d9b939b9173b292a"),
+	},
+	Data:        hexutil.MustDecode("0x633f94affdcabe07c000231f85c752c97b9cc43966b432ec4d18641e6d178233000000000000000000000000f87e31492faf9a91b02ee0deaad50d51d56d5d4d0000000000000000000000000000000000000000000003da9fbcf4446d6000000000000000000000000000000000000000000000000000000000016db2524880"),
+	BlockNumber: 8587618,
+	TxHash:      common.HexToHash("0x7ad9e2f88416738f3c7ad0a6d260f71794532206a0e838299f5014b4fe81e66e"),
+	TxIndex:     93,
+	BlockHash:   common.HexToHash("0x06a1762b7f2e070793fc24cd785de0fa485e728832c4f3469790153ae51a56a2"),
+	Index:       59,
+	Removed:     false,
+}
+
 var ens = strings.ToLower(constants.EnsContractAddress)
 var tusd = strings.ToLower(constants.TusdContractAddress)
 
