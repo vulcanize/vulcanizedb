@@ -34,6 +34,7 @@ var _ = Describe("Converter", func() {
 	var tusdWantedEvents = []string{"Transfer", "Mint"}
 	var ensWantedEvents = []string{"NewOwner"}
 	var marketPlaceWantedEvents = []string{"OrderCreated"}
+	var molochWantedEvents = []string{"SubmitVote"}
 	var err error
 
 	Describe("Update", func() {
@@ -146,7 +147,7 @@ var _ = Describe("Converter", func() {
 			Expect(ok).To(Equal(false))
 		})
 
-		It("keeps track of hashes derived from bytes32", func() {
+		It("correctly parses bytes32", func() {
 			con = test_helpers.SetupMarketPlaceContract(marketPlaceWantedEvents, []string{})
 			event, ok := con.Events["OrderCreated"]
 			Expect(ok).To(BeTrue())
@@ -158,6 +159,20 @@ var _ = Describe("Converter", func() {
 
 			Expect(len(result)).To(Equal(1))
 			Expect(result[0].Values["id"]).To(Equal("0x633f94affdcabe07c000231f85c752c97b9cc43966b432ec4d18641e6d178233"))
+		})
+
+		It("correctly parses uint8", func() {
+			con = test_helpers.SetupMolochContract(molochWantedEvents, []string{})
+			event, ok := con.Events["SubmitVote"]
+			Expect(ok).To(BeTrue())
+
+			c := converter.Converter{}
+			c.Update(con)
+			result, err := c.Convert([]types.Log{mocks.MockSubmitVoteLog}, event, 232)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(result)).To(Equal(1))
+			Expect(result[0].Values["uintVote"]).To(Equal("1"))
 		})
 
 		It("Fails with an empty contract", func() {
