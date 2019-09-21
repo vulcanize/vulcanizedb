@@ -320,19 +320,35 @@ var _ = Describe("Repository", func() {
 				err = hr.AddCheckColumn(event.Name + "_" + con.Address)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Try and fail to persist the same log twice in a single call
-				err = dataStore.PersistLogs([]types.Log{logs[0], logs[0]}, event, con.Address, con.Name)
-				Expect(err).To(HaveOccurred())
-
-				// Successfuly persist the two unique logs
+				// Successfully persist the two unique logs
 				err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Try and fail to persist the same logs again in separate call
-				err = dataStore.PersistLogs([]types.Log{*log}, event, con.Address, con.Name)
-				Expect(err).To(HaveOccurred())
+				// Try to insert the same logs again
+				err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+				Expect(err).ToNot(HaveOccurred())
 
 				// Show that no new logs were entered
+				var count int
+				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM header_%s.transfer_event", constants.TusdContractAddress))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(2))
+			})
+
+			It("inserts additional log if only some are duplicate", func() {
+				hr := lr.NewHeaderRepository(db)
+				err = hr.AddCheckColumn(event.Name + "_" + con.Address)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Successfully persist first log
+				err = dataStore.PersistLogs([]types.Log{logs[0]}, event, con.Address, con.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Successfully persist second log even though first already persisted
+				err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Show that both logs were entered
 				var count int
 				err = db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM header_%s.transfer_event", constants.TusdContractAddress))
 				Expect(err).ToNot(HaveOccurred())
