@@ -295,6 +295,23 @@ var MockOrderCreatedLog = types.Log{
 	Removed:     false,
 }
 
+var MockSubmitVoteLog = types.Log{
+	Address: common.HexToAddress(constants.MolochContractAddress),
+	Topics: []common.Hash{
+		common.HexToHash("0x29bf0061f2faa9daa482f061b116195432d435536d8af4ae6b3c5dd78223679b"),
+		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000061"),
+		common.HexToHash("0x0000000000000000000000006ddf1b8e6d71b5b33912607098be123ffe62ae53"),
+		common.HexToHash("0x00000000000000000000000037385081870ef47e055410fefd582e2a95d2960b"),
+	},
+	Data:        hexutil.MustDecode("0x0000000000000000000000000000000000000000000000000000000000000001"),
+	BlockNumber: 8517621,
+	TxHash:      common.HexToHash("0xcc7390a2099812d0dfc9baef201afbc7a44bfae145050c9dc700b77cbd3cd752"),
+	TxIndex:     103,
+	BlockHash:   common.HexToHash("0x3e82681d8036b1225fcaa8bcd4cdbe757b39f13468286b303cde22146385525e"),
+	Index:       132,
+	Removed:     false,
+}
+
 var ens = strings.ToLower(constants.EnsContractAddress)
 var tusd = strings.ToLower(constants.TusdContractAddress)
 
