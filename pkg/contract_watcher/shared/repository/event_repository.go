@@ -128,7 +128,7 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 		for i := 0; i < el; i++ {
 			pgStr = pgStr + fmt.Sprintf(", $%d", i+6)
 		}
-		pgStr = pgStr + ")"
+		pgStr = pgStr + ") ON CONFLICT DO NOTHING"
 
 		// Add this query to the transaction
 		_, err = tx.Exec(pgStr, data...)
