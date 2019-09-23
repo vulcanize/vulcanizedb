@@ -179,7 +179,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 				ORDER BY headers.block_number`
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
-	return contiguousHeaders(result, startingBlockNumber), err
+	return continuousHeaders(result), err
 }
 
 // Returns missing headers for all of the provided checked_headers column ids
@@ -207,26 +207,7 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 		query = baseQuery + endStr
 		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.Node.ID)
 	}
-	return contiguousHeaders(result, startingBlockNumber), err
-}
-
-// Returns a continuous set of headers that is contiguous with the provided startingBlockNumber
-func contiguousHeaders(headers []core.Header, startingBlockNumber int64) []core.Header {
-	if len(headers) < 1 {
-		return headers
-	}
-	previousHeader := headers[0].BlockNumber
-	if previousHeader != startingBlockNumber {
-		return []core.Header{}
-	}
-	for i := 1; i < len(headers); i++ {
-		previousHeader++
-		if headers[i].BlockNumber != previousHeader {
-			return headers[:i]
-		}
-	}
-
-	return headers
+	return continuousHeaders(result), err
 }
 
 // Returns headers that have been checked for all of the provided event ids but not for the provided method ids

@@ -203,6 +203,18 @@ var _ = Describe("Repository", func() {
 			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
 		})
 
+		It("returns headers after starting header if starting header not missing", func() {
+			addLaterHeaders(coreHeaderRepo)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
+			Expect(err).NotTo(HaveOccurred())
+
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, -1, eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(missingHeaders)).To(Equal(2))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(mocks.MockHeader3.BlockNumber))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(mocks.MockHeader4.BlockNumber))
+		})
+
 		It("Fails if one of the eventIDs does not yet exist in check_headers table", func() {
 			addHeaders(coreHeaderRepo)
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
@@ -329,19 +341,31 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(intersectionHeaders)).To(Equal(1))
 			Expect(intersectionHeaders[0].Id).To(Equal(headerID2))
-
 		})
 	})
 })
 
 func addHeaders(coreHeaderRepo repositories.HeaderRepository) {
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func addLaterHeaders(coreHeaderRepo repositories.HeaderRepository) {
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	Expect(err).NotTo(HaveOccurred())
 }
