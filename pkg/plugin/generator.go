@@ -18,10 +18,8 @@ package plugin
 
 import (
 	"errors"
-
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/builder"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/composer"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/manager"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/writer"
 )
@@ -42,16 +40,11 @@ func NewGenerator(gc config.Plugin, dbc config.Database) (*generator, error) {
 	if len(gc.Transformers) < 1 {
 		return nil, errors.New("plugin generator is not configured with any transformers")
 	}
-	gen := &generator{
+	return &generator{
 		PluginWriter:     writer.NewPluginWriter(gc),
+		PluginBuilder:    builder.NewPluginBuilder(gc),
 		MigrationManager: manager.NewMigrationManager(gc, dbc),
-	}
-	if gc.WriteOnly {
-		gen.PluginBuilder = composer.NewPluginComposer(gc)
-	} else {
-		gen.PluginBuilder = builder.NewPluginBuilder(gc)
-	}
-	return gen, nil
+	}, nil
 }
 
 // Generates plugin for the transformer initializers specified in the generator config

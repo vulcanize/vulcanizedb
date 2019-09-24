@@ -31,7 +31,6 @@ type Plugin struct {
 	FileName     string
 	Save         bool
 	Home         string
-	WriteOnly    bool
 }
 
 type Transformer struct {

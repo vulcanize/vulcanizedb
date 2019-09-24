@@ -188,6 +188,5 @@ func prepConfig() {
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
 		Home:         viper.GetString("exporter.home"),
-		WriteOnly:    viper.GetBool("exporter.writeOnly"),
 	}
 }
