@@ -190,7 +190,7 @@ var _ = Describe("Repository", func() {
 				}
 				Expect(scanLog).To(Equal(expectedLog))
 
-				// Attempt to persist the same log again in seperate call
+				// Attempt to persist the same log again in separate call
 				err = dataStore.PersistLogs([]types.Log{*log}, event, con.Address, con.Name)
 				Expect(err).ToNot(HaveOccurred())
 

@@ -19,6 +19,8 @@ package transformer
 import (
 	"errors"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/converter"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/retriever"
@@ -106,7 +108,11 @@ func (tr *Transformer) Init() error {
 
 		// Get contract name if it has one
 		var name = new(string)
-		tr.Poller.FetchContractData(tr.Parser.Abi(), contractAddr, "name", nil, name, tr.LastBlock)
+		pollingErr := tr.Poller.FetchContractData(tr.Parser.Abi(), contractAddr, "name", nil, name, tr.LastBlock)
+		if pollingErr != nil {
+			// can't return this error because "name" might not exist on the contract
+			logrus.Warnf("error fetching contract data: %s", pollingErr.Error())
+		}
 
 		// Remove any potential accidental duplicate inputs in arg filter values
 		eventArgs := map[string]bool{}
