@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/golang-lru"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
@@ -31,7 +32,7 @@ import (
 const (
 	// Number of contract address and method ids to keep in cache
 	contractCacheSize = 100
-	eventChacheSize   = 1000
+	eventCacheSize    = 1000
 )
 
 // Event repository is used to persist event data into custom tables
@@ -52,7 +53,7 @@ type eventRepository struct {
 
 func NewEventRepository(db *postgres.DB, mode types.Mode) *eventRepository {
 	ccs, _ := lru.New(contractCacheSize)
-	ecs, _ := lru.New(eventChacheSize)
+	ecs, _ := lru.New(eventCacheSize)
 	return &eventRepository{
 		db:      db,
 		mode:    mode,
@@ -68,14 +69,14 @@ func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, c
 	if len(logs) == 0 {
 		return errors.New("event repository error: passed empty logs slice")
 	}
-	_, err := r.CreateContractSchema(contractAddr)
-	if err != nil {
-		return err
+	_, schemaErr := r.CreateContractSchema(contractAddr)
+	if schemaErr != nil {
+		return fmt.Errorf("error creating schema for contract %s: %s", contractAddr, schemaErr.Error())
 	}
 
-	_, err = r.CreateEventTable(contractAddr, eventInfo)
-	if err != nil {
-		return err
+	_, tableErr := r.CreateEventTable(contractAddr, eventInfo)
+	if tableErr != nil {
+		return fmt.Errorf("error creating table for event %s on contract %s: %s", eventInfo.Name, contractAddr, tableErr.Error())
 	}
 
 	return r.persistLogs(logs, eventInfo, contractAddr, contractName)
@@ -97,9 +98,9 @@ func (r *eventRepository) persistLogs(logs []types.Log, eventInfo types.Event, c
 
 // Creates a custom postgres command to persist logs for the given event (compatible with header synced vDB)
 func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	tx, err := r.db.Beginx()
-	if err != nil {
-		return err
+	tx, txErr := r.db.Beginx()
+	if txErr != nil {
+		return fmt.Errorf("error beginning db transaction: %s", txErr.Error())
 	}
 
 	for _, event := range logs {
@@ -130,20 +131,27 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 		}
 		pgStr = pgStr + ") ON CONFLICT DO NOTHING"
 
+		logrus.Tracef("query for inserting log: %s", pgStr)
 		// Add this query to the transaction
-		_, err = tx.Exec(pgStr, data...)
-		if err != nil {
-			tx.Rollback()
-			return err
+		_, execErr := tx.Exec(pgStr, data...)
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Warnf("error rolling back transactions while persisting logs: %s", rollbackErr.Error())
+			}
+			return fmt.Errorf("error executing query: %s", execErr.Error())
 		}
 	}
 
 	// Mark header as checked for this eventId
 	eventId := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	err = repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
-	if err != nil {
-		tx.Rollback()
-		return err
+	markCheckedErr := repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
+	if markCheckedErr != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			logrus.Warnf("error rolling back transaction while marking header checked: %s", rollbackErr.Error())
+		}
+		return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 	}
 
 	return tx.Commit()
@@ -151,9 +159,9 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 
 // Creates a custom postgres command to persist logs for the given event (compatible with fully synced vDB)
 func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	tx, err := r.db.Beginx()
-	if err != nil {
-		return err
+	tx, txErr := r.db.Beginx()
+	if txErr != nil {
+		return fmt.Errorf("error beginning db transaction: %s", txErr.Error())
 	}
 
 	for _, event := range logs {
@@ -179,10 +187,14 @@ func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.
 		}
 		pgStr = pgStr + ") ON CONFLICT (vulcanize_log_id) DO NOTHING"
 
-		_, err = tx.Exec(pgStr, data...)
-		if err != nil {
-			tx.Rollback()
-			return err
+		logrus.Tracef("query for inserting log: %s", pgStr)
+		_, execErr := tx.Exec(pgStr, data...)
+		if execErr != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Warnf("error rolling back transactions while persisting logs: %s", rollbackErr.Error())
+			}
+			return fmt.Errorf("error executing query: %s", execErr.Error())
 		}
 	}
 
@@ -198,15 +210,15 @@ func (r *eventRepository) CreateEventTable(contractAddr string, event types.Even
 	if ok {
 		return false, nil
 	}
-	tableExists, err := r.checkForTable(contractAddr, event.Name)
-	if err != nil {
-		return false, err
+	tableExists, checkTableErr := r.checkForTable(contractAddr, event.Name)
+	if checkTableErr != nil {
+		return false, fmt.Errorf("error checking for table: %s", checkTableErr)
 	}
 
 	if !tableExists {
-		err = r.newEventTable(tableID, event)
-		if err != nil {
-			return false, err
+		createTableErr := r.newEventTable(tableID, event)
+		if createTableErr != nil {
+			return false, fmt.Errorf("error creating table: %s", createTableErr.Error())
 		}
 	}
 
@@ -270,14 +282,14 @@ func (r *eventRepository) CreateContractSchema(contractAddr string) (bool, error
 	if ok {
 		return false, nil
 	}
-	schemaExists, err := r.checkForSchema(contractAddr)
-	if err != nil {
-		return false, err
+	schemaExists, checkSchemaErr := r.checkForSchema(contractAddr)
+	if checkSchemaErr != nil {
+		return false, fmt.Errorf("error checking for schema: %s", checkSchemaErr.Error())
 	}
 	if !schemaExists {
-		err = r.newContractSchema(contractAddr)
-		if err != nil {
-			return false, err
+		createSchemaErr := r.newContractSchema(contractAddr)
+		if createSchemaErr != nil {
+			return false, fmt.Errorf("error creating schema: %s", createSchemaErr.Error())
 		}
 	}
 

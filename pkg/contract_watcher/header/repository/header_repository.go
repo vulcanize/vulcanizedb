@@ -21,6 +21,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -148,7 +149,10 @@ func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids [
 		pgStr = pgStr[:len(pgStr)-2]
 		_, err = tx.Exec(pgStr, header.Id)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Warnf("error rolling back transaction: %s", rollbackErr.Error())
+			}
 			return err
 		}
 	}
@@ -246,6 +250,7 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 // Returns a continuous set of headers
 func continuousHeaders(headers []core.Header) []core.Header {
 	if len(headers) < 1 {
+		logrus.Trace("no headers to arrange continuously")
 		return headers
 	}
 	previousHeader := headers[0].BlockNumber

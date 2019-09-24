@@ -35,7 +35,7 @@ var TusdConfig = config.ContractConfig{
 		tusd: "",
 	},
 	Events: map[string][]string{
-		tusd: []string{"Transfer"},
+		tusd: {"Transfer"},
 	},
 	Methods: map[string][]string{
 		tusd: nil,
@@ -60,7 +60,7 @@ var ENSConfig = config.ContractConfig{
 		ens: "",
 	},
 	Events: map[string][]string{
-		ens: []string{"NewOwner"},
+		ens: {"NewOwner"},
 	},
 	Methods: map[string][]string{
 		ens: nil,
@@ -87,8 +87,8 @@ var ENSandTusdConfig = config.ContractConfig{
 		tusd: "",
 	},
 	Events: map[string][]string{
-		ens:  []string{"NewOwner"},
-		tusd: []string{"Transfer"},
+		ens:  {"NewOwner"},
+		tusd: {"Transfer"},
 	},
 	Methods: map[string][]string{
 		ens:  nil,

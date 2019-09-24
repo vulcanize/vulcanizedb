@@ -18,10 +18,12 @@ package transformer
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/converter"
@@ -107,22 +109,22 @@ func (tr *Transformer) Init() error {
 		// Configure Abi
 		if tr.Config.Abis[contractAddr] == "" {
 			// If no abi is given in the config, this method will try fetching from internal look-up table and etherscan
-			err := tr.Parser.Parse(contractAddr)
-			if err != nil {
-				return err
+			parseErr := tr.Parser.Parse(contractAddr)
+			if parseErr != nil {
+				return fmt.Errorf("error parsing contract by address: %s", parseErr.Error())
 			}
 		} else {
 			// If we have an abi from the config, load that into the parser
-			err := tr.Parser.ParseAbiStr(tr.Config.Abis[contractAddr])
-			if err != nil {
-				return err
+			parseErr := tr.Parser.ParseAbiStr(tr.Config.Abis[contractAddr])
+			if parseErr != nil {
+				return fmt.Errorf("error parsing contract abi: %s", parseErr.Error())
 			}
 		}
 
 		// Get first block and most recent block number in the header repo
-		firstBlock, err := tr.Retriever.RetrieveFirstBlock()
-		if err != nil {
-			return err
+		firstBlock, retrieveErr := tr.Retriever.RetrieveFirstBlock()
+		if retrieveErr != nil {
+			return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
 		}
 
 		// Set to specified range if it falls within the bounds
@@ -132,7 +134,11 @@ func (tr *Transformer) Init() error {
 
 		// Get contract name if it has one
 		var name = new(string)
-		tr.Poller.FetchContractData(tr.Parser.Abi(), contractAddr, "name", nil, name, -1)
+		pollingErr := tr.Poller.FetchContractData(tr.Parser.Abi(), contractAddr, "name", nil, name, -1)
+		if pollingErr != nil {
+			// can't return this error because "name" might not exist on the contract
+			logrus.Warnf("error fetching contract data: %s", pollingErr.Error())
+		}
 
 		// Remove any potential accidental duplicate inputs
 		eventArgs := map[string]bool{}
@@ -165,9 +171,9 @@ func (tr *Transformer) Init() error {
 		tr.sortedEventIds[con.Address] = make([]string, 0, len(con.Events))
 		for _, event := range con.Events {
 			eventId := strings.ToLower(event.Name + "_" + con.Address)
-			err := tr.HeaderRepository.AddCheckColumn(eventId)
-			if err != nil {
-				return err
+			addColumnErr := tr.HeaderRepository.AddCheckColumn(eventId)
+			if addColumnErr != nil {
+				return fmt.Errorf("error adding check column: %s", addColumnErr.Error())
 			}
 			// Keep track of this event id; sorted and unsorted
 			tr.sortedEventIds[con.Address] = append(tr.sortedEventIds[con.Address], eventId)
@@ -180,9 +186,9 @@ func (tr *Transformer) Init() error {
 		tr.sortedMethodIds[con.Address] = make([]string, 0, len(con.Methods))
 		for _, m := range con.Methods {
 			methodId := strings.ToLower(m.Name + "_" + con.Address)
-			err := tr.HeaderRepository.AddCheckColumn(methodId)
-			if err != nil {
-				return err
+			addColumnErr := tr.HeaderRepository.AddCheckColumn(methodId)
+			if addColumnErr != nil {
+				return fmt.Errorf("error adding check column: %s", addColumnErr.Error())
 			}
 			tr.sortedMethodIds[con.Address] = append(tr.sortedMethodIds[con.Address], methodId)
 		}
@@ -202,9 +208,9 @@ func (tr *Transformer) Execute() error {
 	}
 
 	// Find unchecked headers for all events across all contracts; these are returned in asc order
-	missingHeaders, err := tr.HeaderRepository.MissingHeadersForAll(tr.Start, -1, tr.eventIds)
-	if err != nil {
-		return err
+	missingHeaders, missingHeadersErr := tr.HeaderRepository.MissingHeadersForAll(tr.Start, -1, tr.eventIds)
+	if missingHeadersErr != nil {
+		return fmt.Errorf("error getting missing headers: %s", missingHeadersErr.Error())
 	}
 
 	// Iterate over headers
@@ -216,23 +222,24 @@ func (tr *Transformer) Execute() error {
 		// Map to sort batch fetched logs by which contract they belong to, for post fetch processing
 		sortedLogs := make(map[string][]gethTypes.Log)
 		// And fetch all event logs across contracts at this header
-		allLogs, err := tr.Fetcher.FetchLogs(tr.contractAddresses, tr.eventFilters, header)
-		if err != nil {
-			return err
+		allLogs, fetchErr := tr.Fetcher.FetchLogs(tr.contractAddresses, tr.eventFilters, header)
+		if fetchErr != nil {
+			return fmt.Errorf("error fetching logs: %s", fetchErr.Error())
 		}
 
 		// If no logs are found mark the header checked for all of these eventIDs
 		// and continue to method polling and onto the next iteration
 		if len(allLogs) < 1 {
-			err = tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
-			if err != nil {
-				return err
+			markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
+			if markCheckedErr != nil {
+				return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 			}
-			err = tr.methodPolling(header, tr.sortedMethodIds)
-			if err != nil {
-				return err
+			pollingErr := tr.methodPolling(header, tr.sortedMethodIds)
+			if pollingErr != nil {
+				return fmt.Errorf("error polling methods: %s", pollingErr.Error())
 			}
 			tr.Start = header.BlockNumber + 1 // Empty header; setup to start at the next header
+			logrus.Tracef("no logs found for block %d, continuing", header.BlockNumber)
 			continue
 		}
 
@@ -245,6 +252,7 @@ func (tr *Transformer) Execute() error {
 		// Process logs for each contract
 		for conAddr, logs := range sortedLogs {
 			if logs == nil {
+				logrus.Tracef("no logs found for contract %s at block %d, continuing", conAddr, header.BlockNumber)
 				continue
 			}
 			// Configure converter with this contract
@@ -252,34 +260,35 @@ func (tr *Transformer) Execute() error {
 			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
-			convertedLogs, err := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
-			if err != nil {
-				return err
+			convertedLogs, convertErr := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
+			if convertErr != nil {
+				return fmt.Errorf("error converting logs: %s", convertErr.Error())
 			}
 			// Cycle through each type of event log and persist them
 			for eventName, logs := range convertedLogs {
 				// If logs for this event are empty, mark them checked at this header and continue
 				if len(logs) < 1 {
 					eventId := strings.ToLower(eventName + "_" + con.Address)
-					err = tr.HeaderRepository.MarkHeaderChecked(header.Id, eventId)
-					if err != nil {
-						return err
+					markCheckedErr := tr.HeaderRepository.MarkHeaderChecked(header.Id, eventId)
+					if markCheckedErr != nil {
+						return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 					}
+					logrus.Tracef("no logs found for event %s on contract %s at block %d, continuing", eventName, conAddr, header.BlockNumber)
 					continue
 				}
 				// If logs aren't empty, persist them
 				// Header is marked checked in the transactions
-				err = tr.EventRepository.PersistLogs(logs, con.Events[eventName], con.Address, con.Name)
-				if err != nil {
-					return err
+				persistErr := tr.EventRepository.PersistLogs(logs, con.Events[eventName], con.Address, con.Name)
+				if persistErr != nil {
+					return fmt.Errorf("error persisting logs: %s", persistErr.Error())
 				}
 			}
 		}
 
 		// Poll contracts at this block height
-		err = tr.methodPolling(header, tr.sortedMethodIds)
-		if err != nil {
-			return err
+		pollingErr := tr.methodPolling(header, tr.sortedMethodIds)
+		if pollingErr != nil {
+			return fmt.Errorf("error polling methods: %s", pollingErr.Error())
 		}
 		// Success; setup to start at the next header
 		tr.Start = header.BlockNumber + 1
@@ -294,19 +303,20 @@ func (tr *Transformer) methodPolling(header core.Header, sortedMethodIds map[str
 		// Skip method polling processes if no methods are specified
 		// Also don't try to poll methods below this contract's specified starting block
 		if len(con.Methods) == 0 || header.BlockNumber < con.StartingBlock {
+			logrus.Tracef("not polling contract: %s", con.Address)
 			continue
 		}
 
 		// Poll all methods for this contract at this header
-		err := tr.Poller.PollContractAt(*con, header.BlockNumber)
-		if err != nil {
-			return err
+		pollingErr := tr.Poller.PollContractAt(*con, header.BlockNumber)
+		if pollingErr != nil {
+			return fmt.Errorf("error polling contract %s: %s", con.Address, pollingErr.Error())
 		}
 
 		// Mark this header checked for the methods
-		err = tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, sortedMethodIds[con.Address])
-		if err != nil {
-			return err
+		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, sortedMethodIds[con.Address])
+		if markCheckedErr != nil {
+			return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 		}
 	}
 
