@@ -20,13 +20,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/lib/pq"
 	"github.com/pressly/goose"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 // Interface for managing the db migrations for plugin transformers
