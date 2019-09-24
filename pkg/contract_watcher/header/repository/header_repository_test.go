@@ -120,7 +120,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
@@ -130,16 +130,16 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			h1 := missingHeaders[0]
 			h2 := missingHeaders[1]
 			h3 := missingHeaders[2]
-			Expect(h1.BlockNumber).To(Equal(int64(6194632)))
-			Expect(h2.BlockNumber).To(Equal(int64(6194633)))
-			Expect(h3.BlockNumber).To(Equal(int64(6194634)))
+			Expect(h1.BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
+			Expect(h2.BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
+			Expect(h3.BlockNumber).To(Equal(int64(mocks.MockHeader3.BlockNumber)))
 		})
 
 		It("Returns only contiguous chunks of headers", func() {
@@ -147,11 +147,11 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
 		})
 
 		It("Fails if eventID does not yet exist in check_headers table", func() {
@@ -159,7 +159,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, "notEventId")
+			_, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, "notEventId")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -170,14 +170,14 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
 			err = contractHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -186,7 +186,7 @@ var _ = Describe("Repository", func() {
 			err = contractHeaderRepo.MarkHeaderChecked(missingHeaders[0].Id, eventIDs[2])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(6194633, 6194635, eventIDs)
+			missingHeaders, err = contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader2.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -196,11 +196,23 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(6194632)))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(6194633)))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
+		})
+
+		It("returns headers after starting header if starting header not missing", func() {
+			addLaterHeaders(coreHeaderRepo)
+			err := contractHeaderRepo.AddCheckColumns(eventIDs)
+			Expect(err).NotTo(HaveOccurred())
+
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, -1, eventIDs)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(missingHeaders)).To(Equal(2))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(mocks.MockHeader3.BlockNumber))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(mocks.MockHeader4.BlockNumber))
 		})
 
 		It("Fails if one of the eventIDs does not yet exist in check_headers table", func() {
@@ -209,7 +221,7 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			badEventIDs := append(eventIDs, "notEventId")
 
-			_, err = contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, badEventIDs)
+			_, err = contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, badEventIDs)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -220,7 +232,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -228,7 +240,7 @@ var _ = Describe("Repository", func() {
 			err = contractHeaderRepo.MarkHeaderChecked(headerID, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader2.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -238,7 +250,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumn(eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -246,7 +258,7 @@ var _ = Describe("Repository", func() {
 			err = contractHeaderRepo.MarkHeaderChecked(headerID, "notEventId")
 			Expect(err).To(HaveOccurred())
 
-			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 		})
@@ -258,7 +270,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.AddCheckColumns(eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(6194632, 6194635, eventIDs)
+			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -266,7 +278,7 @@ var _ = Describe("Repository", func() {
 			err = contractHeaderRepo.MarkHeaderCheckedForAll(headerID, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 
-			missingHeaders, err = contractHeaderRepo.MissingHeaders(6194633, 6194635, eventIDs[0])
+			missingHeaders, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader2.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
 		})
@@ -285,7 +297,7 @@ var _ = Describe("Repository", func() {
 			for _, id := range methodIDs {
 				err := contractHeaderRepo.AddCheckColumn(id)
 				Expect(err).ToNot(HaveOccurred())
-				missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, id)
+				missingHeaders, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(3))
 			}
@@ -293,7 +305,7 @@ var _ = Describe("Repository", func() {
 			err := contractHeaderRepo.MarkHeadersCheckedForAll(missingHeaders, methodIDs)
 			Expect(err).ToNot(HaveOccurred())
 			for _, id := range methodIDs {
-				missingHeaders, err = contractHeaderRepo.MissingHeaders(6194632, 6194635, id)
+				missingHeaders, err = contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, id)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(missingHeaders)).To(Equal(0))
 			}
@@ -310,7 +322,7 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			missingHeaders, err := contractHeaderRepo.MissingHeaders(6194632, 6194635, eventIDs[0])
+			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(3))
 
@@ -325,23 +337,35 @@ var _ = Describe("Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			intersectionHeaders, err := contractHeaderRepo.MissingMethodsCheckedEventsIntersection(6194632, 6194635, methodIDs, eventIDs)
+			intersectionHeaders, err := contractHeaderRepo.MissingMethodsCheckedEventsIntersection(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, methodIDs, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(intersectionHeaders)).To(Equal(1))
 			Expect(intersectionHeaders[0].Id).To(Equal(headerID2))
-
 		})
 	})
 })
 
 func addHeaders(coreHeaderRepo repositories.HeaderRepository) {
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
-	coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func addLaterHeaders(coreHeaderRepo repositories.HeaderRepository) {
+	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)
+	Expect(err).NotTo(HaveOccurred())
 }
