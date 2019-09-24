@@ -22,6 +22,7 @@ import (
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	repository2 "github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -79,8 +80,7 @@ var _ = Describe("Header sync log repository", func() {
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(dbLog.ID).NotTo(BeZero())
 			Expect(dbLog.HeaderID).To(Equal(headerID))
-			addressRepository := repositories.AddressRepository{}
-			actualAddress, addressErr := addressRepository.GetAddressById(db, dbLog.Address)
+			actualAddress, addressErr := repository2.GetAddressById(db, dbLog.Address)
 			Expect(addressErr).NotTo(HaveOccurred())
 			Expect(actualAddress).To(Equal(log.Address.Hex()))
 			Expect(dbLog.Topics[0]).To(Equal(log.Topics[0].Bytes()))
@@ -128,8 +128,7 @@ var _ = Describe("Header sync log repository", func() {
 				logTopics = append(logTopics, common.BytesToHash(topic))
 			}
 
-			addressRepository := repositories.AddressRepository{}
-			actualAddress, addressErr := addressRepository.GetAddressById(db, dbLog.Address)
+			actualAddress, addressErr := repository2.GetAddressById(db, dbLog.Address)
 			Expect(addressErr).NotTo(HaveOccurred())
 			reconstructedLog := types.Log{
 				Address:     common.HexToAddress(actualAddress),

@@ -22,6 +22,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
+	repository2 "github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -31,14 +32,12 @@ const insertHeaderSyncLogQuery = `INSERT INTO header_sync_logs
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING`
 
 type HeaderSyncLogRepository struct {
-	db                *postgres.DB
-	addressRepository AddressRepository
+	db *postgres.DB
 }
 
 func NewHeaderSyncLogRepository(db *postgres.DB) HeaderSyncLogRepository {
 	return HeaderSyncLogRepository{
-		db:                db,
-		addressRepository: AddressRepository{},
+		db: db,
 	}
 }
 
@@ -74,7 +73,7 @@ func (repository HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]co
 		for _, topic := range rawLog.Topics {
 			logTopics = append(logTopics, common.BytesToHash(topic))
 		}
-		address, addrErr := repository.addressRepository.GetAddressById(repository.db, rawLog.Address)
+		address, addrErr := repository2.GetAddressById(repository.db, rawLog.Address)
 		if addrErr != nil {
 			return nil, addrErr
 		}
@@ -128,7 +127,7 @@ func (repository HeaderSyncLogRepository) insertLog(headerID int64, log types.Lo
 	if jsonErr != nil {
 		return jsonErr
 	}
-	addressID, addrErr := repository.addressRepository.GetOrCreateAddressInTransaction(tx, log.Address.Hex())
+	addressID, addrErr := repository2.GetOrCreateAddressInTransaction(tx, log.Address.Hex())
 	if addrErr != nil {
 		return addrErr
 	}
