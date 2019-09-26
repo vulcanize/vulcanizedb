@@ -98,6 +98,20 @@ var _ = Describe("Block header repository", func() {
 			Expect(len(dbHeaders)).To(Equal(1))
 		})
 
+		It("does not duplicate headers in concurrent insert", func() {
+			_, err = repo.InternalInsertHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.InternalInsertHeader(header)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+
+			var dbHeaders []core.Header
+			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbHeaders)).To(Equal(1))
+		})
+
 		It("replaces header if hash is different", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
