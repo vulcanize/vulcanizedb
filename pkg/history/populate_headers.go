@@ -21,7 +21,6 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
 func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
@@ -49,14 +48,14 @@ func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datasto
 }
 
 func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, blockNumbers []int64) (int, error) {
-	headers, err := blockChain.GetHeadersByNumbers(blockNumbers)
+	headers, getErr := blockChain.GetHeadersByNumbers(blockNumbers)
+	if getErr != nil {
+		return 0, getErr
+	}
 	for _, header := range headers {
-		_, err = headerRepository.CreateOrUpdateHeader(header)
-		if err != nil {
-			if err == repositories.ErrValidHeaderExists {
-				continue
-			}
-			return 0, err
+		_, insertErr := headerRepository.CreateOrUpdateHeader(header)
+		if insertErr != nil {
+			return 0, insertErr
 		}
 	}
 	return len(blockNumbers), nil

@@ -84,13 +84,12 @@ var _ = Describe("Block header repository", func() {
 			Expect(ethNodeFingerprint).To(Equal(db.Node.ID))
 		})
 
-		It("returns valid header exists error if attempting duplicate headers", func() {
+		It("does not duplicate headers", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+			Expect(err).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
 			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
