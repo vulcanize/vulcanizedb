@@ -44,6 +44,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
+	golang.org/x/crypto v0.0.0-20190926114937-fa1a29108794 // indirect
 	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190709231704-1e4459ed25ff // indirect
