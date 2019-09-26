@@ -41,7 +41,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	hash, err := repository.getHeaderHash(header)
 	if err != nil {
 		if headerDoesNotExist(err) {
-			return repository.insertHeader(header)
+			return repository.InternalInsertHeader(header)
 		}
 		log.Error("CreateOrUpdateHeader: error getting header hash: ", err)
 		return 0, err
@@ -128,13 +128,21 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 	return hash, err
 }
 
-func (repository HeaderRepository) insertHeader(header core.Header) (int64, error) {
+// Function is public so we can test insert being called for the same header
+// Can happen when concurrent processes are inserting headers
+// Otherwise should not occur since only called in CreateOrUpdateHeader
+func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
 	var headerId int64
-	err := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint) VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) RETURNING id`,
-		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID).Scan(&headerId)
+	row := repository.database.QueryRowx(
+		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint)
+		VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING id`,
+		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID)
+	err := row.Scan(&headerId)
 	if err != nil {
-		log.Error("insertHeader: error inserting header: ", err)
+		if err == sql.ErrNoRows {
+			return 0, ErrValidHeaderExists
+		}
+		log.Error("InternalInsertHeader: error inserting header: ", err)
 	}
 	return headerId, err
 }
@@ -146,5 +154,5 @@ func (repository HeaderRepository) replaceHeader(header core.Header) (int64, err
 		log.Error("replaceHeader: error deleting headers: ", err)
 		return 0, err
 	}
-	return repository.insertHeader(header)
+	return repository.InternalInsertHeader(header)
 }
