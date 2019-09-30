@@ -15,20 +15,23 @@
 package test_data
 
 import (
-	"errors"
+	"math/big"
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"math/big"
-	"math/rand"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
 
 var (
 	BlockNumber             = big.NewInt(rand.Int63())
+	BlockNumber2            = big.NewInt(0).Add(BlockNumber, big.NewInt(1))
 	BlockHash               = "0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"
+	BlockHash2              = "0xaa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f72"
 	CodeHash                = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
 	NewNonceValue           = rand.Uint64()
 	NewBalanceValue         = rand.Int63()
@@ -43,15 +46,14 @@ var (
 		Path:  StoragePath,
 		Proof: [][]byte{},
 	}}
-	LargeStorageValue            = common.Hex2Bytes("00191b53778c567b14b50ba0000")
-	LargeStorageValueRlp, rlpErr = rlp.EncodeToBytes(LargeStorageValue)
-	storageWithLargeValue        = []statediff.StorageDiff{{
+	LargeStorageValue       = common.Hex2Bytes("00191b53778c567b14b50ba0000")
+	LargeStorageValueRlp, _ = rlp.EncodeToBytes(LargeStorageValue)
+	storageWithLargeValue   = []statediff.StorageDiff{{
 		Key:   StorageKey,
 		Value: LargeStorageValueRlp,
 		Path:  StoragePath,
 		Proof: [][]byte{},
 	}}
-	EmptyStorage        = make([]statediff.StorageDiff, 0)
 	StorageWithBadValue = statediff.StorageDiff{
 		Key:   StorageKey,
 		Value: []byte{0, 1, 2},
@@ -83,6 +85,11 @@ var (
 		Value:   valueBytes,
 		Storage: storageWithLargeValue,
 	}}
+	UpdatedAccountDiffs2 = []statediff.AccountDiff{{
+		Key:     AnotherContractLeafKey.Bytes(),
+		Value:   valueBytes,
+		Storage: storageWithSmallValue,
+	}}
 
 	DeletedAccountDiffs = []statediff.AccountDiff{{
 		Key:     AnotherContractLeafKey.Bytes(),
@@ -97,7 +104,15 @@ var (
 		DeletedAccounts: DeletedAccountDiffs,
 		UpdatedAccounts: UpdatedAccountDiffs,
 	}
-	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
+	MockStateDiff2 = statediff.StateDiff{
+		BlockNumber:     BlockNumber2,
+		BlockHash:       common.HexToHash(BlockHash2),
+		CreatedAccounts: nil,
+		DeletedAccounts: nil,
+		UpdatedAccounts: UpdatedAccountDiffs2,
+	}
+	MockStateDiffBytes, _  = rlp.EncodeToBytes(MockStateDiff)
+	MockStateDiff2Bytes, _ = rlp.EncodeToBytes(MockStateDiff2)
 
 	mockTransaction1 = types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
 	mockTransaction2 = types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
@@ -114,24 +129,53 @@ var (
 		TxHash:      common.HexToHash("0x0"),
 		ReceiptHash: common.HexToHash("0x0"),
 	}
-	MockBlock       = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
-	MockBlockRlp, _ = rlp.EncodeToBytes(MockBlock)
+	MockHeader2 = types.Header{
+		Time:        0,
+		Number:      BlockNumber2,
+		Root:        common.HexToHash("0x1"),
+		TxHash:      common.HexToHash("0x1"),
+		ReceiptHash: common.HexToHash("0x1"),
+	}
+	MockBlock        = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
+	MockBlock2       = types.NewBlock(&MockHeader2, MockTransactions, nil, MockReceipts)
+	MockBlockRlp, _  = rlp.EncodeToBytes(MockBlock)
+	MockBlockRlp2, _ = rlp.EncodeToBytes(MockBlock2)
 
 	MockStatediffPayload = statediff.Payload{
 		BlockRlp:     MockBlockRlp,
 		StateDiffRlp: MockStateDiffBytes,
-		Err:          nil,
+	}
+	MockStatediffPayload2 = statediff.Payload{
+		BlockRlp:     MockBlockRlp2,
+		StateDiffRlp: MockStateDiff2Bytes,
 	}
 
-	EmptyStatediffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		Err:          nil,
+	CreatedExpectedStorageDiff = utils.StorageDiff{
+		HashedAddress: common.BytesToHash(ContractLeafKey[:]),
+		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHeight:   int(BlockNumber.Int64()),
+		StorageKey:    common.BytesToHash(StorageKey),
+		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
-
-	ErrStatediffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		Err:          errors.New("mock error"),
+	UpdatedExpectedStorageDiff = utils.StorageDiff{
+		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
+		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHeight:   int(BlockNumber.Int64()),
+		StorageKey:    common.BytesToHash(StorageKey),
+		StorageValue:  common.BytesToHash(LargeStorageValue),
+	}
+	UpdatedExpectedStorageDiff2 = utils.StorageDiff{
+		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
+		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHeight:   int(BlockNumber2.Int64()),
+		StorageKey:    common.BytesToHash(StorageKey),
+		StorageValue:  common.BytesToHash(SmallStorageValue),
+	}
+	DeletedExpectedStorageDiff = utils.StorageDiff{
+		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
+		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHeight:   int(BlockNumber.Int64()),
+		StorageKey:    common.BytesToHash(StorageKey),
+		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
 )
