@@ -33,7 +33,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 

@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 

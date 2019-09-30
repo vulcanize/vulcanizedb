@@ -187,7 +187,3 @@ func (client *MockRPCClient) AssertBatchCalledWith(method string, lengthOfBatch 
 	}
 	Expect(client.passedMethod).To(Equal(method))
 }
-
-func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
-	panic("implement me")
-}
