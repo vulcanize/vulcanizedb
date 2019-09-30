@@ -18,6 +18,7 @@ package logs
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"

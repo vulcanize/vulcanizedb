@@ -17,12 +17,13 @@
 package test_data
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"math/rand"
-	"time"
 )
 
 type GenericModel struct{}

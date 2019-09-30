@@ -17,10 +17,11 @@
 package chunker
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"strings"
 )
 
 type Chunker interface {

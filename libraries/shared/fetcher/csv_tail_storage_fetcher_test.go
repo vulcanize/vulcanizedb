@@ -18,6 +18,9 @@ package fetcher_test
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hpcloud/tail"
 	. "github.com/onsi/ginkgo"
@@ -25,8 +28,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"strings"
-	"time"
 )
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {

@@ -17,6 +17,10 @@
 package watcher_test
 
 import (
+	"io/ioutil"
+	"os"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,9 +31,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"io/ioutil"
-	"os"
-	"time"
 )
 
 var _ = Describe("Storage Watcher", func() {

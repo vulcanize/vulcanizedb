@@ -18,6 +18,7 @@ package logs
 
 import (
 	"errors"
+
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"

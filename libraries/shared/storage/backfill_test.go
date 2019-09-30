@@ -33,12 +33,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
-type MockClient struct {
+type mockClient struct {
 	MappedStateDiffAt map[uint64][]byte
-	MappedErrors      map[uint64]error
 }
 
-func (mc *MockClient) SetReturnDiffAt(height uint64, diffPayload statediff.Payload) error {
+// SetReturnDiffAt method to set what statediffs the mock client returns
+func (mc *mockClient) SetReturnDiffAt(height uint64, diffPayload statediff.Payload) error {
 	if mc.MappedStateDiffAt == nil {
 		mc.MappedStateDiffAt = make(map[uint64][]byte)
 	}
@@ -50,15 +50,9 @@ func (mc *MockClient) SetReturnDiffAt(height uint64, diffPayload statediff.Paylo
 	return nil
 }
 
-func (mc *MockClient) SetReturnErrorAt(height uint64, err error) {
-	if mc.MappedErrors == nil {
-		mc.MappedErrors = make(map[uint64]error)
-	}
-	mc.MappedErrors[height] = err
-}
-
-func (mc *MockClient) BatchCall(batch []client.BatchElem) error {
-	if mc.MappedStateDiffAt == nil || mc.MappedErrors == nil {
+// BatchCall mockClient method to simulate batch call to geth
+func (mc *mockClient) BatchCall(batch []client.BatchElem) error {
+	if mc.MappedStateDiffAt == nil {
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}
 	for _, batchElem := range batch {
@@ -73,22 +67,25 @@ func (mc *MockClient) BatchCall(batch []client.BatchElem) error {
 		if err != nil {
 			return err
 		}
-		batchElem.Error = mc.MappedErrors[blockHeight]
 	}
 	return nil
 }
 
 var _ = Describe("BackFiller", func() {
 	Describe("BackFill", func() {
-		It("Batch calls statediff_stateDiffAt", func() {
-			mc := new(MockClient)
+		var (
+			mc         *mockClient
+			backFiller storage.IBackFiller
+		)
+		BeforeEach(func() {
+			mc = new(mockClient)
 			setDiffAtErr1 := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
 			Expect(setDiffAtErr1).ToNot(HaveOccurred())
 			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
 			Expect(setDiffAtErr2).ToNot(HaveOccurred())
-			mc.SetReturnErrorAt(test_data.BlockNumber.Uint64(), nil)
-			mc.SetReturnErrorAt(test_data.BlockNumber2.Uint64(), nil)
-			backFiller := storage.NewStorageBackFiller(mc)
+			backFiller = storage.NewStorageBackFiller(mc)
+		})
+		It("Batch calls statediff_stateDiffAt", func() {
 			backFillArgs := storage.BackFillerArgs{
 				WantedStorage: map[common.Hash][]common.Hash{
 					test_data.ContractLeafKey:        {common.BytesToHash(test_data.StorageKey)},
@@ -127,14 +124,6 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Only returns storage for provided addresses (address hashes)", func() {
-			mc := new(MockClient)
-			setDiffAtErr1 := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
-			Expect(setDiffAtErr1).ToNot(HaveOccurred())
-			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
-			Expect(setDiffAtErr2).ToNot(HaveOccurred())
-			mc.SetReturnErrorAt(test_data.BlockNumber.Uint64(), nil)
-			mc.SetReturnErrorAt(test_data.BlockNumber2.Uint64(), nil)
-			backFiller := storage.NewStorageBackFiller(mc)
 			backFillArgs := storage.BackFillerArgs{
 				WantedStorage: map[common.Hash][]common.Hash{
 					test_data.ContractLeafKey: {common.BytesToHash(test_data.StorageKey)},
@@ -151,14 +140,6 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Only returns storage for provided storage keys", func() {
-			mc := new(MockClient)
-			setDiffAtErr1 := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
-			Expect(setDiffAtErr1).ToNot(HaveOccurred())
-			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
-			Expect(setDiffAtErr2).ToNot(HaveOccurred())
-			mc.SetReturnErrorAt(test_data.BlockNumber.Uint64(), nil)
-			mc.SetReturnErrorAt(test_data.BlockNumber2.Uint64(), nil)
-			backFiller := storage.NewStorageBackFiller(mc)
 			backFillArgs := storage.BackFillerArgs{
 				WantedStorage: map[common.Hash][]common.Hash{
 					test_data.ContractLeafKey: nil,

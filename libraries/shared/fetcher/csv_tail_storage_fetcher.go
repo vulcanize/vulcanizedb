@@ -17,10 +17,11 @@
 package fetcher
 
 import (
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"strings"
 )
 
 type CsvTailStorageFetcher struct {
