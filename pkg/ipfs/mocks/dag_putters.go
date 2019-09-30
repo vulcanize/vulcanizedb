@@ -16,7 +16,11 @@
 
 package mocks
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/ethereum/go-ethereum/common"
+)
 
 // DagPutter is a mock for testing the ipfs publisher
 type DagPutter struct {
@@ -29,19 +33,21 @@ func (dp *DagPutter) DagPut(raw interface{}) ([]string, error) {
 	return dp.CIDsToReturn, dp.ErrToReturn
 }
 
-// IncrementingDagPutter is a mock for testing the ipfs publisher
-type IncrementingDagPutter struct {
-	CIDsToReturn []string
-	iterator     int
+// MappedDagPutter is a mock for testing the ipfs publisher
+type MappedDagPutter struct {
+	CIDsToReturn map[common.Hash][]string
 	ErrToReturn  error
 }
 
 // DagPut returns the pre-loaded CIDs or error
-func (dp *IncrementingDagPutter) DagPut(raw interface{}) ([]string, error) {
-	if len(dp.CIDsToReturn) >= dp.iterator+1 {
-		cid := dp.CIDsToReturn[dp.iterator]
-		dp.iterator++
-		return []string{cid}, dp.ErrToReturn
+func (mdp *MappedDagPutter) DagPut(raw interface{}) ([]string, error) {
+	if mdp.CIDsToReturn == nil {
+		return nil, errors.New("mapped dag putter needs to be initialized with a map of cids to return")
 	}
-	return nil, errors.New("dag putter iterator is out of range")
+	by, ok := raw.([]byte)
+	if !ok {
+		return nil, errors.New("mapped dag putters can only dag put []byte values")
+	}
+	hash := common.BytesToHash(by)
+	return mdp.CIDsToReturn[hash], nil
 }

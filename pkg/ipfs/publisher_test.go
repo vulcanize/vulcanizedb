@@ -17,6 +17,7 @@
 package ipfs_test
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -28,8 +29,8 @@ var (
 	mockHeaderDagPutter  *mocks.DagPutter
 	mockTrxDagPutter     *mocks.DagPutter
 	mockRctDagPutter     *mocks.DagPutter
-	mockStateDagPutter   *mocks.IncrementingDagPutter
-	mockStorageDagPutter *mocks.IncrementingDagPutter
+	mockStateDagPutter   *mocks.MappedDagPutter
+	mockStorageDagPutter *mocks.DagPutter
 )
 
 var _ = Describe("Publisher", func() {
@@ -37,8 +38,8 @@ var _ = Describe("Publisher", func() {
 		mockHeaderDagPutter = new(mocks.DagPutter)
 		mockTrxDagPutter = new(mocks.DagPutter)
 		mockRctDagPutter = new(mocks.DagPutter)
-		mockStateDagPutter = new(mocks.IncrementingDagPutter)
-		mockStorageDagPutter = new(mocks.IncrementingDagPutter)
+		mockStateDagPutter = new(mocks.MappedDagPutter)
+		mockStorageDagPutter = new(mocks.DagPutter)
 	})
 
 	Describe("Publish", func() {
@@ -46,7 +47,12 @@ var _ = Describe("Publisher", func() {
 			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
 			mockTrxDagPutter.CIDsToReturn = []string{"mockTrxCID1", "mockTrxCID2"}
 			mockRctDagPutter.CIDsToReturn = []string{"mockRctCID1", "mockRctCID2"}
-			mockStateDagPutter.CIDsToReturn = []string{"mockStateCID1", "mockStateCID2"}
+			val1 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[mocks.ContractLeafKey].Value)
+			val2 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[mocks.AnotherContractLeafKey].Value)
+			mockStateDagPutter.CIDsToReturn = map[common.Hash][]string{
+				val1: {"mockStateCID1"},
+				val2: {"mockStateCID2"},
+			}
 			mockStorageDagPutter.CIDsToReturn = []string{"mockStorageCID"}
 			publisher := ipfs.Publisher{
 				HeaderPutter:      mockHeaderDagPutter,
