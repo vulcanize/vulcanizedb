@@ -17,19 +17,19 @@
 package cmd
 
 import (
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"os"
 	"plugin"
 	syn "sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
 	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
 	"github.com/vulcanize/vulcanizedb/utils"

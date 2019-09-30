@@ -18,6 +18,8 @@ package watcher
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
@@ -25,7 +27,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"time"
 )
 
 type IStorageWatcher interface {

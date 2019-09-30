@@ -17,6 +17,8 @@
 package logs_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
@@ -27,7 +29,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"math/rand"
 )
 
 var _ = Describe("Log extractor", func() {

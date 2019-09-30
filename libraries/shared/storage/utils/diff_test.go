@@ -17,6 +17,9 @@
 package utils_test
 
 import (
+	"math/big"
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
@@ -25,8 +28,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"math/big"
-	"math/rand"
 )
 
 var _ = Describe("Storage row parsing", func() {
