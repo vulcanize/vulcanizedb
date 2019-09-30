@@ -16,9 +16,11 @@ package fetcher
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
@@ -54,7 +56,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 			errs <- decodeErr
 		}
 
-		accounts := getAccountsFromDiff(*stateDiff)
+		accounts := utils.GetAccountsFromDiff(*stateDiff)
 		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
 		for _, account := range accounts {
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
@@ -73,9 +75,4 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 			}
 		}
 	}
-}
-
-func getAccountsFromDiff(stateDiff statediff.StateDiff) []statediff.AccountDiff {
-	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
-	return append(accounts, stateDiff.DeletedAccounts...)
 }
