@@ -31,18 +31,22 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
+// IBackFiller is the backfilling interface
 type IBackFiller interface {
 	BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.StorageDiff, error)
 }
 
+// BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
 type BatchClient interface {
 	BatchCall(batch []client.BatchElem) error
 }
 
+// BackFiller is the backfilling struct
 type BackFiller struct {
 	client BatchClient
 }
 
+// BackFillerArgs are used to pass configuration params to the backfiller
 type BackFillerArgs struct {
 	// mapping of hashed addresses to a list of the storage key hashes we want to collect at that address
 	WantedStorage map[common.Hash][]common.Hash
@@ -52,6 +56,7 @@ type BackFillerArgs struct {
 
 const method = "statediff_stateDiffAt"
 
+// NewStorageBackFiller returns a IBackFiller
 func NewStorageBackFiller(bc BatchClient) IBackFiller {
 	return &BackFiller{
 		client: bc,
