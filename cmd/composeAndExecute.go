@@ -181,7 +181,7 @@ func composeAndExecute() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		switch stateDiffSource {
+		switch storageDiffsSource {
 		case "geth":
 			log.Debug("fetching storage diffs from geth pub sub")
 			rpcClient, _ := getClients()
