@@ -48,7 +48,7 @@ var (
 	recheckHeadersArg    bool
 	SubCommand           string
 	LogWithCommand       log.Entry
-	stateDiffSource      string
+	storageDiffsSource   string
 )
 
 const (
@@ -81,6 +81,7 @@ func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
 	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
+	storageDiffsSource = viper.GetString("storageDiffs.source")
 	databaseConfig = config.Database{
 		Name:     viper.GetString("database.name"),
 		Hostname: viper.GetString("database.hostname"),
@@ -119,9 +120,9 @@ func init() {
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
 	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
+	rootCmd.PersistentFlags().String("storageDiffs-source", "csv", "where to get the state diffs: csv or geth")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
-	rootCmd.PersistentFlags().StringVar(&stateDiffSource, "state-diff-source", "csv", "where to get the state diffs: csv or geth")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -131,6 +132,7 @@ func init() {
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
 	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
+	viper.BindPFlag("storageDiffs.source", rootCmd.PersistentFlags().Lookup("storageDiffs-source"))
 	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 }
