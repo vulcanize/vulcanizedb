@@ -20,13 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/event"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"math/rand"
 	"time"
 )
-
-type GenericModel struct{}
-type GenericEntity struct{}
 
 var startingBlockNumber = rand.Int63()
 var topic0 = "0x" + randomString(64)
@@ -43,6 +41,8 @@ var GenericTestLog = func() types.Log {
 		Index:       uint(rand.Int31()),
 	}
 }
+
+var GenericModel = event.InsertionModel{}
 
 var GenericTestConfig = transformer.EventTransformerConfig{
 	TransformerName:     "generic-test-transformer",

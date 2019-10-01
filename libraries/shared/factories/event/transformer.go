@@ -42,13 +42,7 @@ func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
 		return nil
 	}
 
-	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
-	if err != nil {
-		logrus.Errorf("error converting logs to entities in %v: %v", transformerName, err)
-		return err
-	}
-
-	models, err := transformer.Converter.ToModels(entities)
+	models, err := transformer.Converter.ToModels(config.ContractAbi, logs)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err
