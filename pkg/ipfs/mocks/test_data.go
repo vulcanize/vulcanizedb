@@ -309,7 +309,7 @@ var (
 		},
 	}
 
-	MockSeeNodePayload = streamer.SeedNodePayload{
+	MockSeeNodePayload = streamer.SuperNodePayload{
 		BlockNumber:     big.NewInt(1),
 		HeadersRlp:      [][]byte{MockHeaderRlp},
 		TransactionsRlp: [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},

@@ -22,7 +22,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 )
 
 var (
@@ -35,19 +35,19 @@ var _ = Describe("Resolver", func() {
 			resolver = ipfs.NewIPLDResolver()
 		})
 		It("Resolves IPLD data to their correct geth data types and packages them to send to requesting transformers", func() {
-			seedNodePayload, err := resolver.ResolveIPLDs(mocks.MockIPLDWrapper)
+			superNodePayload, err := resolver.ResolveIPLDs(mocks.MockIPLDWrapper)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(seedNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeeNodePayload.BlockNumber.Int64()))
-			Expect(seedNodePayload.HeadersRlp).To(Equal(mocks.MockSeeNodePayload.HeadersRlp))
-			Expect(seedNodePayload.UnclesRlp).To(Equal(mocks.MockSeeNodePayload.UnclesRlp))
-			Expect(len(seedNodePayload.TransactionsRlp)).To(Equal(2))
-			Expect(seed_node.ListContainsBytes(seedNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
-			Expect(seed_node.ListContainsBytes(seedNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
-			Expect(len(seedNodePayload.ReceiptsRlp)).To(Equal(2))
-			Expect(seed_node.ListContainsBytes(seedNodePayload.ReceiptsRlp, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
-			Expect(seed_node.ListContainsBytes(seedNodePayload.ReceiptsRlp, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
-			Expect(len(seedNodePayload.StateNodesRlp)).To(Equal(2))
-			Expect(seedNodePayload.StorageNodesRlp).To(Equal(mocks.MockSeeNodePayload.StorageNodesRlp))
+			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeeNodePayload.BlockNumber.Int64()))
+			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeeNodePayload.HeadersRlp))
+			Expect(superNodePayload.UnclesRlp).To(Equal(mocks.MockSeeNodePayload.UnclesRlp))
+			Expect(len(superNodePayload.TransactionsRlp)).To(Equal(2))
+			Expect(super_node.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
+			Expect(super_node.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(len(superNodePayload.ReceiptsRlp)).To(Equal(2))
+			Expect(super_node.ListContainsBytes(superNodePayload.ReceiptsRlp, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
+			Expect(super_node.ListContainsBytes(superNodePayload.ReceiptsRlp, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
+			Expect(len(superNodePayload.StateNodesRlp)).To(Equal(2))
+			Expect(superNodePayload.StorageNodesRlp).To(Equal(mocks.MockSeeNodePayload.StorageNodesRlp))
 		})
 	})
 })

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node_test
+package super_node_test
 
 import (
 	"math/big"
@@ -25,11 +25,11 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 )
 
 var (
-	retriever  seed_node.CIDRetriever
+	retriever  super_node.CIDRetriever
 	openFilter = config.Subscription{
 		StartingBlock: big.NewInt(0),
 		EndingBlock:   big.NewInt(1),
@@ -178,15 +178,15 @@ var (
 
 var _ = Describe("Retriever", func() {
 	BeforeEach(func() {
-		db, err = seed_node.SetupDB()
+		db, err = super_node.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = seed_node.NewCIDRepository(db)
+		repo = super_node.NewCIDRepository(db)
 		err = repo.Index(mocks.MockCIDPayload)
 		Expect(err).ToNot(HaveOccurred())
-		retriever = seed_node.NewCIDRetriever(db)
+		retriever = super_node.NewCIDRetriever(db)
 	})
 	AfterEach(func() {
-		seed_node.TearDownDB(db)
+		super_node.TearDownDB(db)
 	})
 
 	Describe("RetrieveCIDs", func() {
@@ -197,11 +197,11 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.Headers)).To(Equal(1))
 			Expect(cidWrapper.Headers).To(Equal(mocks.MockCIDWrapper.Headers))
 			Expect(len(cidWrapper.Transactions)).To(Equal(2))
-			Expect(seed_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0])).To(BeTrue())
-			Expect(seed_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1])).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0])).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1])).To(BeTrue())
 			Expect(len(cidWrapper.Receipts)).To(Equal(2))
-			Expect(seed_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[0])).To(BeTrue())
-			Expect(seed_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1])).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[0])).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1])).To(BeTrue())
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
 				if stateNode.CID == "mockStateCID1" {
@@ -265,13 +265,13 @@ var _ = Describe("Retriever", func() {
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper5.Headers)).To(Equal(0))
 			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
-			Expect(seed_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID1")).To(BeTrue())
-			Expect(seed_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID2")).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID1")).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper5.Transactions, "mockTrxCID2")).To(BeTrue())
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
-			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
-			Expect(seed_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
+			Expect(super_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
 
 			cidWrapper6, err := retriever.RetrieveCIDs(rctsForSelectCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())

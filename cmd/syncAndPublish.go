@@ -16,11 +16,13 @@
 package cmd
 
 import (
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"os"
 	"path/filepath"
 	syn "sync"
+	"time"
 
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 
 	"github.com/spf13/viper"
 
@@ -51,17 +53,51 @@ it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 	},
 }
 
+var ipfsPath string
+
 func init() {
 	rootCmd.AddCommand(syncAndPublishCmd)
 }
 
 func syncAndPublish() {
-	blockChain, rpcClient := getBlockChainAndClient()
+	superNode, err := newSuperNode()
+	if err != nil {
+		log.Fatal(err)
+	}
+	wg := &syn.WaitGroup{}
+	err = superNode.SyncAndPublish(wg, nil, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if viper.GetBool("backfill.on") && viper.GetString("backfill.ipcPath") != "" {
+		backfiller := newBackFiller(superNode.GetPublisher())
+		if err != nil {
+			log.Fatal(err)
+		}
+		backfiller.FillGaps(wg, nil)
+	}
+	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
+}
 
+func getBlockChainAndClient(path string) (*geth.BlockChain, core.RpcClient) {
+	rawRpcClient, err := rpc.Dial(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
+	ethClient := ethclient.NewClient(rawRpcClient)
+	vdbEthClient := client.NewEthClient(ethClient)
+	vdbNode := node.MakeNode(rpcClient)
+	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	blockChain := geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
+	return blockChain, rpcClient
+}
+
+func newSuperNode() (super_node.NodeInterface, error) {
+	blockChain, rpcClient := getBlockChainAndClient(ipc)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	quitChan := make(chan bool)
-
-	ipfsPath := viper.GetString("client.ipfsPath")
+	ipfsPath = viper.GetString("client.ipfsPath")
 	if ipfsPath == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -73,30 +109,18 @@ func syncAndPublish() {
 	if workers < 1 {
 		workers = 1
 	}
-	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	wg := &syn.WaitGroup{}
-	err = processor.SyncAndPublish(wg, nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
+	return super_node.NewSuperNode(ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
 }
 
-func getBlockChainAndClient() (*geth.BlockChain, core.RpcClient) {
-	rawRpcClient, err := rpc.Dial(ipc)
-
-	if err != nil {
-		log.Fatal(err)
+func newBackFiller(ipfsPublisher ipfs.IPLDPublisher) super_node.BackFillInterface {
+	blockChain, archivalRpcClient := getBlockChainAndClient(viper.GetString("backfill.ipcPath"))
+	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
+	freq := viper.GetInt("backfill.frequency")
+	var frequency time.Duration
+	if freq <= 0 {
+		frequency = time.Minute * 5
+	} else {
+		frequency = time.Duration(freq)
 	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
-	vdbEthClient := client.NewEthClient(ethClient)
-	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
-	return blockChain, rpcClient
+	return super_node.NewBackFillService(ipfsPublisher, &db, archivalRpcClient, time.Minute*frequency)
 }

@@ -18,7 +18,7 @@ package config
 
 import "math/big"
 
-// Subscription config is used by a subscribing transformer to specifiy which data to receive from the seed node
+// Subscription config is used by a subscribing transformer to specifiy which data to receive from the super node
 type Subscription struct {
 	BackFill      bool
 	BackFillOnly  bool

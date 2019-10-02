@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node
+package super_node
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ import (
 
 // ResponseFilterer is the inteface used to screen eth data and package appropriate data into a response payload
 type ResponseFilterer interface {
-	FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SeedNodePayload, error)
+	FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SuperNodePayload, error)
 }
 
 // Filterer is the underlying struct for the ResponseFilterer interface
@@ -42,33 +42,33 @@ func NewResponseFilterer() *Filterer {
 }
 
 // FilterResponse is used to filter through eth data to extract and package requested data into a Payload
-func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SeedNodePayload, error) {
-	response := new(streamer.SeedNodePayload)
+func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SuperNodePayload, error) {
+	response := new(streamer.SuperNodePayload)
 	err := s.filterHeaders(streamFilters, response, payload)
 	if err != nil {
-		return streamer.SeedNodePayload{}, err
+		return streamer.SuperNodePayload{}, err
 	}
 	txHashes, err := s.filterTransactions(streamFilters, response, payload)
 	if err != nil {
-		return streamer.SeedNodePayload{}, err
+		return streamer.SuperNodePayload{}, err
 	}
 	err = s.filerReceipts(streamFilters, response, payload, txHashes)
 	if err != nil {
-		return streamer.SeedNodePayload{}, err
+		return streamer.SuperNodePayload{}, err
 	}
 	err = s.filterState(streamFilters, response, payload)
 	if err != nil {
-		return streamer.SeedNodePayload{}, err
+		return streamer.SuperNodePayload{}, err
 	}
 	err = s.filterStorage(streamFilters, response, payload)
 	if err != nil {
-		return streamer.SeedNodePayload{}, err
+		return streamer.SuperNodePayload{}, err
 	}
 	response.BlockNumber = payload.BlockNumber
 	return *response, nil
 }
 
-func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
+func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.HeaderFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
 		if !streamFilters.HeaderFilter.FinalOnly {
@@ -91,7 +91,7 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *Filterer) filterTransactions(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) ([]common.Hash, error) {
+func (s *Filterer) filterTransactions(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) ([]common.Hash, error) {
 	trxHashes := make([]common.Hash, 0, len(payload.BlockBody.Transactions))
 	if !streamFilters.TrxFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		for i, trx := range payload.BlockBody.Transactions {
@@ -127,7 +127,7 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 	return false
 }
 
-func (s *Filterer) filerReceipts(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload, trxHashes []common.Hash) error {
+func (s *Filterer) filerReceipts(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload, trxHashes []common.Hash) error {
 	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		for i, receipt := range payload.Receipts {
 			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, streamFilters.ReceiptFilter.Contracts, payload.ReceiptMetaData[i].ContractAddress, trxHashes) {
@@ -186,7 +186,7 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 	return false
 }
 
-func (s *Filterer) filterState(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
+func (s *Filterer) filterState(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.StateFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.StateNodesRlp = make(map[common.Hash][]byte)
 		keyFilters := make([]common.Hash, 0, len(streamFilters.StateFilter.Addresses))
@@ -218,7 +218,7 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *Filterer) filterStorage(streamFilters config.Subscription, response *streamer.SeedNodePayload, payload ipfs.IPLDPayload) error {
+func (s *Filterer) filterStorage(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.StorageFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
 		stateKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.Addresses))

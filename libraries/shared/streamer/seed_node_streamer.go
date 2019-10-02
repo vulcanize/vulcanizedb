@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Streamer is used by watchers to stream eth data from a vulcanizedb seed node
+// Streamer is used by watchers to stream eth data from a vulcanizedb super node
 package streamer
 
 import (
@@ -28,30 +28,30 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// ISeedNodeStreamer is the interface for streaming SeedNodePayloads from a vulcanizeDB seed node
-type ISeedNodeStreamer interface {
-	Stream(payloadChan chan SeedNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error)
+// ISuperNodeStreamer is the interface for streaming SuperNodePayloads from a vulcanizeDB super node
+type ISuperNodeStreamer interface {
+	Stream(payloadChan chan SuperNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error)
 }
 
-// SeedNodeStreamer is the underlying struct for the ISeedNodeStreamer interface
-type SeedNodeStreamer struct {
+// SuperNodeStreamer is the underlying struct for the ISuperNodeStreamer interface
+type SuperNodeStreamer struct {
 	Client core.RpcClient
 }
 
-// NewSeedNodeStreamer creates a pointer to a new SeedNodeStreamer which satisfies the ISeedNodeStreamer interface
-func NewSeedNodeStreamer(client core.RpcClient) *SeedNodeStreamer {
-	return &SeedNodeStreamer{
+// NewSuperNodeStreamer creates a pointer to a new SuperNodeStreamer which satisfies the ISuperNodeStreamer interface
+func NewSuperNodeStreamer(client core.RpcClient) *SuperNodeStreamer {
+	return &SuperNodeStreamer{
 		Client: client,
 	}
 }
 
-// Stream is the main loop for subscribing to data from a vulcanizedb seed node
-func (sds *SeedNodeStreamer) Stream(payloadChan chan SeedNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("vulcanizedb", payloadChan, "stream", streamFilters)
+// Stream is the main loop for subscribing to data from a vulcanizedb super node
+func (sds *SuperNodeStreamer) Stream(payloadChan chan SuperNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error) {
+	return sds.Client.Subscribe("vdb", payloadChan, "stream", streamFilters)
 }
 
-// Payload holds the data returned from the seed node to the requesting client
-type SeedNodePayload struct {
+// Payload holds the data returned from the super node to the requesting client
+type SuperNodePayload struct {
 	BlockNumber     *big.Int                               `json:"blockNumber"`
 	HeadersRlp      [][]byte                               `json:"headersRlp"`
 	UnclesRlp       [][]byte                               `json:"unclesRlp"`
@@ -65,20 +65,20 @@ type SeedNodePayload struct {
 	err     error
 }
 
-func (sd *SeedNodePayload) ensureEncoded() {
+func (sd *SuperNodePayload) ensureEncoded() {
 	if sd.encoded == nil && sd.err == nil {
 		sd.encoded, sd.err = json.Marshal(sd)
 	}
 }
 
 // Length to implement Encoder interface for StateDiff
-func (sd *SeedNodePayload) Length() int {
+func (sd *SuperNodePayload) Length() int {
 	sd.ensureEncoded()
 	return len(sd.encoded)
 }
 
 // Encode to implement Encoder interface for StateDiff
-func (sd *SeedNodePayload) Encode() ([]byte, error) {
+func (sd *SuperNodePayload) Encode() ([]byte, error) {
 	sd.ensureEncoded()
 	return sd.encoded, sd.err
 }

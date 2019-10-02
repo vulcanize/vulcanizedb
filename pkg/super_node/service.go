@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node
+package super_node
 
 import (
 	"sync"
@@ -36,7 +36,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
-const payloadChanBufferSize = 20000 // the max eth sub buffer size
+const (
+	payloadChanBufferSize = 20000 // the max eth sub buffer size
+)
 
 // NodeInterface is the top level interface for streaming, converting to IPLDs, publishing,
 // and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
@@ -49,14 +51,17 @@ type NodeInterface interface {
 	// Main event loop for handling client pub-sub
 	ScreenAndServe(screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- streamer.SeedNodePayload, quitChan chan<- bool, streamFilters config.Subscription)
+	Subscribe(id rpc.ID, sub chan<- streamer.SuperNodePayload, quitChan chan<- bool, streamFilters config.Subscription)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID)
 	// Method to access the Geth node info for this service
 	Node() core.Node
+	// Method used to retrieve the underlying IPFS publisher for this service, so that is can be used for backfilling
+	// This is needed because it's not possible to initialize two ipfs nodes at the same path
+	GetPublisher() ipfs.IPLDPublisher
 }
 
-// Service is the underlying struct for the SyncAndPublish interface
+// Service is the underlying struct for the super node
 type Service struct {
 	// Used to sync access to the Subscriptions
 	sync.Mutex
@@ -71,7 +76,7 @@ type Service struct {
 	// Interface for filtering and serving data according to subscribed clients according to their specification
 	Filterer ResponseFilterer
 	// Interface for fetching ETH-IPLD objects from IPFS
-	Fetcher ipfs.IPLDFetcher
+	IPLDFetcher ipfs.IPLDFetcher
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever CIDRetriever
 	// Interface for resolving ipfs blocks to their data types
@@ -86,17 +91,17 @@ type Service struct {
 	SubscriptionTypes map[common.Hash]config.Subscription
 	// Number of workers
 	WorkerPoolSize int
-	// Info for the Geth node that this seed node is working with
+	// Info for the Geth node that this super node is working with
 	gethNode core.Node
 }
 
-// NewSeedNode creates a new seed_node.Interface using an underlying seed_node.Service struct
-func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
+// NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
+func NewSuperNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
 	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := ipfs.NewIPLDFetcher(ipfsPath)
+	ipldFetcher, err := ipfs.NewIPLDFetcher(ipfsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +111,7 @@ func NewSeedNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc 
 		Converter:         ipfs.NewPayloadConverter(params.MainnetChainConfig),
 		Publisher:         publisher,
 		Filterer:          NewResponseFilterer(),
-		Fetcher:           fetcher,
+		IPLDFetcher:       ipldFetcher,
 		Retriever:         NewCIDRetriever(db),
 		Resolver:          ipfs.NewIPLDResolver(),
 		PayloadChan:       make(chan statediff.Payload, payloadChanBufferSize),
@@ -123,13 +128,13 @@ func (sap *Service) Protocols() []p2p.Protocol {
 	return []p2p.Protocol{}
 }
 
-// APIs returns the RPC descriptors the StateDiffingService offers
+// APIs returns the RPC descriptors the super node service offers
 func (sap *Service) APIs() []rpc.API {
 	return []rpc.API{
 		{
 			Namespace: APIName,
 			Version:   APIVersion,
-			Service:   NewPublicSeedNodeAPI(sap),
+			Service:   NewPublicSuperNodeAPI(sap),
 			Public:    true,
 		},
 	}
@@ -256,7 +261,7 @@ func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
 		for id, sub := range subs {
 			select {
 			case sub.PayloadChan <- response:
-				log.Infof("sending seed node payload to subscription %s", id)
+				log.Infof("sending super node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
 			}
@@ -267,8 +272,8 @@ func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
 }
 
 // Subscribe is used by the API to subscribe to the service loop
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- streamer.SeedNodePayload, quitChan chan<- bool, streamFilters config.Subscription) {
-	log.Info("Subscribing to the seed node service")
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- streamer.SuperNodePayload, quitChan chan<- bool, streamFilters config.Subscription) {
+	log.Info("Subscribing to the super node service")
 	// Subscription type is defined as the hash of its content
 	// Group subscriptions by type and screen payloads once for subs of the same type
 	by, err := rlp.EncodeToBytes(streamFilters)
@@ -305,7 +310,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	var err error
 	startingBlock, err = sap.Retriever.RetrieveFirstBlockNumber()
 	if err != nil {
-		sub.PayloadChan <- streamer.SeedNodePayload{
+		sub.PayloadChan <- streamer.SuperNodePayload{
 			ErrMsg: "unable to set block range start; error: " + err.Error(),
 		}
 	}
@@ -314,7 +319,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	}
 	endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
 	if err != nil {
-		sub.PayloadChan <- streamer.SeedNodePayload{
+		sub.PayloadChan <- streamer.SuperNodePayload{
 			ErrMsg: "unable to set block range end; error: " + err.Error(),
 		}
 	}
@@ -327,10 +332,10 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	// the blocknumbers in the payloads they receive to keep things in order
 	// TODO: separate backfill into a different rpc subscription method altogether?
 	go func() {
-		for i := con.StartingBlock.Int64(); i <= endingBlock; i++ {
+		for i := startingBlock; i <= endingBlock; i++ {
 			cidWrapper, err := sap.Retriever.RetrieveCIDs(con, i)
 			if err != nil {
-				sub.PayloadChan <- streamer.SeedNodePayload{
+				sub.PayloadChan <- streamer.SuperNodePayload{
 					ErrMsg: "CID retrieval error: " + err.Error(),
 				}
 				continue
@@ -338,10 +343,10 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 			if ipfs.EmptyCIDWrapper(*cidWrapper) {
 				continue
 			}
-			blocksWrapper, err := sap.Fetcher.FetchCIDs(*cidWrapper)
+			blocksWrapper, err := sap.IPLDFetcher.FetchCIDs(*cidWrapper)
 			if err != nil {
 				log.Error(err)
-				sub.PayloadChan <- streamer.SeedNodePayload{
+				sub.PayloadChan <- streamer.SuperNodePayload{
 					ErrMsg: "IPLD fetching error: " + err.Error(),
 				}
 				continue
@@ -349,14 +354,14 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
 			if err != nil {
 				log.Error(err)
-				sub.PayloadChan <- streamer.SeedNodePayload{
+				sub.PayloadChan <- streamer.SuperNodePayload{
 					ErrMsg: "IPLD resolving error: " + err.Error(),
 				}
 				continue
 			}
 			select {
 			case sub.PayloadChan <- backFillIplds:
-				log.Infof("sending seed node back-fill payload to subscription %s", id)
+				log.Infof("sending super node back-fill payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
 			}
@@ -366,7 +371,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 
 // Unsubscribe is used to unsubscribe to the StateDiffingService loop
 func (sap *Service) Unsubscribe(id rpc.ID) {
-	log.Info("Unsubscribing from the seed node service")
+	log.Info("Unsubscribing from the super node service")
 	sap.Lock()
 	for ty := range sap.Subscriptions {
 		delete(sap.Subscriptions[ty], id)
@@ -381,7 +386,7 @@ func (sap *Service) Unsubscribe(id rpc.ID) {
 
 // Start is used to begin the service
 func (sap *Service) Start(*p2p.Server) error {
-	log.Info("Starting seed node service")
+	log.Info("Starting super node service")
 	wg := new(sync.WaitGroup)
 	payloadChan := make(chan ipfs.IPLDPayload, payloadChanBufferSize)
 	quitChan := make(chan bool, 1)
@@ -394,7 +399,7 @@ func (sap *Service) Start(*p2p.Server) error {
 
 // Stop is used to close down the service
 func (sap *Service) Stop() error {
-	log.Info("Stopping seed node service")
+	log.Info("Stopping super node service")
 	close(sap.QuitChan)
 	return nil
 }
@@ -420,4 +425,8 @@ func (sap *Service) close() {
 		delete(sap.SubscriptionTypes, ty)
 	}
 	sap.Unlock()
+}
+
+func (sap *Service) GetPublisher() ipfs.IPLDPublisher {
+	return sap.Publisher
 }

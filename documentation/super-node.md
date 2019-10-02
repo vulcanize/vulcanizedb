@@ -103,7 +103,7 @@ There are two commands to choose from:
  
 #### syncAndPublish
  
-`syncAndPublih` performs the functions of the seed node- syncing data from Geth, converting them to IPLDs,
+`syncAndPublih` performs the functions of the super node- syncing data from Geth, converting them to IPLDs,
 publishing those IPLDs to IPFS, and creating a local Postgres index to relate their CIDS to useful metadata. 
 
 Usage:
@@ -149,16 +149,29 @@ The config file for the `syncPublishScreenAndServe` command has two additional f
 [server]
     ipcPath = "/Users/user/.vulcanize/vulcanize.ipc"
     wsEndpoint = "127.0.0.1:80"
+    
+[backfill]
+    on = false
+    ipcPath = ""
+    frequency = 5
 ```
 
 The additional `server.ipcPath` and `server.wsEndpoint` fields are used to set what ipc endpoint and ws url
 the `syncPublishScreenAndServe` rpc server will expose itself to subscribing transformers over, respectively.
-Any valid and available path and endpoint is acceptable, but keep in mind that this path and endpoint need to be known by transformers for them to subscribe to the seed node.
+Any valid and available path and endpoint is acceptable, but keep in mind that this path and endpoint need to
+be known by transformers for them to subscribe to the super node.
+
+Because the super node syncs data from a geth full node as it progresses through its block synchronization, there is potential
+for the super node to miss data both at the beginning of the sync due to lag between initialization of the two processes and
+anywhere throughout the sync if the processes are interrupted. The `backfill` config mapping is used to optionally configure
+the super node with an archival geth client that exposes a `statediff.StateDiffAt` rpc endpoint, to enable it to fill in these data gaps.
+`backfill.on` turns the backfill process on, the `backfill.ipcPath` is the rpc path for the archival geth node, and `backfill.frequency`
+sets at what frequency (in minutes) the backfill process checks for and fills in gaps.
 
 
 ## Dockerfile Setup
 
-The below provides step-by-step directions for how to setup the seed node using the provided Dockerfile on an AWS Linux AMI instance.
+The below provides step-by-step directions for how to setup the super node using the provided Dockerfile on an AWS Linux AMI instance.
 Note that the instance will need sufficient memory and storage for this to work.
 
 1. Install basic dependencies 
@@ -230,7 +243,7 @@ createdb vulcanize_public
 
 8. Build and run the Docker image
 ```
-cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/seed_node
+cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node
 docker build .
 docker run --network host -e VDB_PG_CONNECT=postgres://localhost:5432/vulcanize_public?sslmode=disable {IMAGE_ID}
 ```
@@ -241,8 +254,8 @@ docker run --network host -e VDB_PG_CONNECT=postgres://localhost:5432/vulcanize_
 A transformer can subscribe to the `syncPublishScreenAndServe` service over its ipc or ws endpoints, when subscribing the transformer
 specifies which subsets of the synced data it is interested in and the server will forward only these data.
 
-The `streamSubscribe` command serves as a simple demonstration/example of subscribing to the seed-node feed, it subscribes with a set of parameters
-defined in the loaded config file, and prints the streamed data to stdout. To build transformers that subscribe to and use seed-node data,
+The `streamSubscribe` command serves as a simple demonstration/example of subscribing to the super-node feed, it subscribes with a set of parameters
+defined in the loaded config file, and prints the streamed data to stdout. To build transformers that subscribe to and use super-node data,
 the shared/libraries/streamer can be used. 
 
 Usage: 
@@ -294,39 +307,39 @@ The config for `streamSubscribe` has the `subscribe` set of parameters, for exam
         intermediateNodes = false
 ```
 
-`subscription.path` is used to define the ws url OR ipc endpoint we will subscribe to the seed-node over
-(the `server.ipcPath` or `server.wsEndpoint` that the seed-node has defined in their config file).
+`subscription.path` is used to define the ws url OR ipc endpoint we will subscribe to the super-node over
+(the `server.ipcPath` or `server.wsEndpoint` that the super-node has defined in their config file).
 
-`subscription.backfill` specifies whether or not the seed-node should look up historical data in its cache and
-send that to the subscriber, if this is set to `false` then the seed-node only forwards newly synced/incoming data.
+`subscription.backfill` specifies whether or not the super-node should look up historical data in its cache and
+send that to the subscriber, if this is set to `false` then the super-node only forwards newly synced/incoming data.
 
-`subscription.backfillOnly` will tell the seed-node to only send historical data and not stream incoming data going forward.
+`subscription.backfillOnly` will tell the super-node to only send historical data and not stream incoming data going forward.
 
 `subscription.startingBlock` is the starting block number for the range we want to receive data in.
 
 `subscription.endingBlock` is the ending block number for the range we want to receive data in;
 setting to 0 means there is no end/we will continue indefinitely.
 
-`subscription.headerFilter` has two sub-options: `off` and `finalOnly`. Setting `off` to true tells the seed-node to
-not send any headers to the subscriber; setting `finalOnly` to true tells the seed-node to send only canonical headers.
+`subscription.headerFilter` has two sub-options: `off` and `finalOnly`. Setting `off` to true tells the super-node to
+not send any headers to the subscriber; setting `finalOnly` to true tells the super-node to send only canonical headers.
 
-`subscription.trxFilter` has three sub-options: `off`, `src`, and `dst`. Setting `off` to true tells the seed-node to
+`subscription.trxFilter` has three sub-options: `off`, `src`, and `dst`. Setting `off` to true tells the super-node to
 not send any transactions to the subscriber; `src` and `dst` are string arrays which can be filled with ETH addresses we want to filter transactions for,
-if they have any addresses then the seed-node will only send transactions that were sent or received by the addresses contained
+if they have any addresses then the super-node will only send transactions that were sent or received by the addresses contained
 in `src` and `dst`, respectively.
 
-`subscription.receiptFilter` has two sub-options: `off` and `topics`. Setting `off` to true tells the seed-node to
+`subscription.receiptFilter` has two sub-options: `off` and `topics`. Setting `off` to true tells the super-node to
 not send any receipts to the subscriber; `topic0s` is a string array which can be filled with event topics we want to filter for,
-if it has any topics then the seed-node will only send receipts that contain logs which have that topic0.
+if it has any topics then the super-node will only send receipts that contain logs which have that topic0.
 
-`subscription.stateFilter` has three sub-options: `off`, `addresses`, and `intermediateNodes`. Setting `off` to true tells the seed-node to
+`subscription.stateFilter` has three sub-options: `off`, `addresses`, and `intermediateNodes`. Setting `off` to true tells the super-node to
 not send any state data to the subscriber; `addresses` is a string array which can be filled with ETH addresses we want to filter state for,
-if it has any addresses then the seed-node will only send state leafs (accounts) corresponding to those account addresses. By default the seed-node
+if it has any addresses then the super-node will only send state leafs (accounts) corresponding to those account addresses. By default the super-node
 only sends along state leafs, if we want to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
 
-`subscription.storageFilter` has four sub-options: `off`, `addresses`, `storageKeys`, and `intermediateNodes`. Setting `off` to true tells the seed-node to
+`subscription.storageFilter` has four sub-options: `off`, `addresses`, `storageKeys`, and `intermediateNodes`. Setting `off` to true tells the super-node to
 not send any storage data to the subscriber; `addresses` is a string array which can be filled with ETH addresses we want to filter storage for,
-if it has any addresses then the seed-node will only send storage nodes from the storage tries at those state addresses. `storageKeys` is another string
+if it has any addresses then the super-node will only send storage nodes from the storage tries at those state addresses. `storageKeys` is another string
 array that can be filled with storage keys we want to filter storage data for. It is important to note that the storageKeys are the actual keccak256 hashes, whereas
-the addresses in the `addresses` fields are the ETH addresses and not their keccak256 hashes that serve as the actual state keys. By default the seed-node
+the addresses in the `addresses` fields are the ETH addresses and not their keccak256 hashes that serve as the actual state keys. By default the super-node
 only sends along storage leafs, if we want to receive branch and extension nodes as well `intermediateNodes` can be set to `true`.
