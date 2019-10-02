@@ -43,7 +43,7 @@ type InsertionModel struct {
 	TableName      TableName
 	OrderedColumns []ColumnName // Defines the fields to insert, and in which order the table expects them
 	// ColumnValues needs to be typed interface{}, since  values to insert can be of mixed types
-	ColumnValues ColumnValues // Associated values for columns, headerID. FKs populated automatically.
+	ColumnValues ColumnValues // Associated values for columns.
 }
 
 // Stores memoised insertion queries to minimise computation
