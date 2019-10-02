@@ -5,9 +5,31 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
 
 var _ = Describe("Mappings", func() {
+	Describe("AddHashedKeys", func() {
+		It("returns a copy of the map with an additional slot for the hashed version of every key", func() {
+			fakeMap := map[common.Hash]utils.StorageValueMetadata{}
+			fakeStorageKey := common.HexToHash("72c72de6b203d67cb6cd54fc93300109fcc6fd6eac88e390271a3d548794d800")
+			var fakeMappingKey utils.Key = "fakeKey"
+			fakeMetadata := utils.StorageValueMetadata{
+				Name: "fakeName",
+				Keys: map[utils.Key]string{fakeMappingKey: "fakeValue"},
+				Type: utils.Uint48,
+			}
+			fakeMap[fakeStorageKey] = fakeMetadata
+
+			result := storage.AddHashedKeys(fakeMap)
+
+			Expect(len(result)).To(Equal(2))
+			expectedHashedStorageKey := common.HexToHash("2165edb4e1c37b99b60fa510d84f939dd35d5cd1d1c8f299d6456ea09df65a76")
+			Expect(fakeMap[fakeStorageKey]).To(Equal(fakeMetadata))
+			Expect(fakeMap[expectedHashedStorageKey]).To(Equal(fakeMetadata))
+		})
+	})
+
 	Describe("GetMapping", func() {
 		It("returns the storage key for a mapping when passed the mapping's index on the contract and the desired value's key", func() {
 			// ex. solidity:

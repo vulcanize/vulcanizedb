@@ -29,10 +29,10 @@ import (
 var _ = Describe("Storage decoder", func() {
 	It("decodes uint256", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000539")
-		row := utils.StorageDiffRow{StorageValue: fakeInt}
+		diff := utils.StorageDiff{StorageValue: fakeInt}
 		metadata := utils.StorageValueMetadata{Type: utils.Uint256}
 
-		result, err := utils.Decode(row, metadata)
+		result, err := utils.Decode(diff, metadata)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
@@ -40,10 +40,10 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes uint128", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000011123")
-		row := utils.StorageDiffRow{StorageValue: fakeInt}
+		diff := utils.StorageDiff{StorageValue: fakeInt}
 		metadata := utils.StorageValueMetadata{Type: utils.Uint128}
 
-		result, err := utils.Decode(row, metadata)
+		result, err := utils.Decode(diff, metadata)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
@@ -51,10 +51,10 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes uint48", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000123")
-		row := utils.StorageDiffRow{StorageValue: fakeInt}
+		diff := utils.StorageDiff{StorageValue: fakeInt}
 		metadata := utils.StorageValueMetadata{Type: utils.Uint48}
 
-		result, err := utils.Decode(row, metadata)
+		result, err := utils.Decode(diff, metadata)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
@@ -62,10 +62,10 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes address", func() {
 		fakeAddress := common.HexToAddress("0x12345")
-		row := utils.StorageDiffRow{StorageValue: fakeAddress.Hash()}
+		diff := utils.StorageDiff{StorageValue: fakeAddress.Hash()}
 		metadata := utils.StorageValueMetadata{Type: utils.Address}
 
-		result, err := utils.Decode(row, metadata)
+		result, err := utils.Decode(diff, metadata)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(fakeAddress.Hex()))
@@ -75,7 +75,7 @@ var _ = Describe("Storage decoder", func() {
 		It("decodes uint48 items", func() {
 			//this is a real storage data example
 			packedStorage := common.HexToHash("000000000000000000000000000000000000000000000002a300000000002a30")
-			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			diff := utils.StorageDiff{StorageValue: packedStorage}
 			packedTypes := map[int]utils.ValueType{}
 			packedTypes[0] = utils.Uint48
 			packedTypes[1] = utils.Uint48
@@ -85,7 +85,7 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := utils.Decode(row, metadata)
+			result, err := utils.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -99,7 +99,7 @@ var _ = Describe("Storage decoder", func() {
 			packedStorageHex := "0000000A5D1AFFFFFFFFFFFE00000009F3C600000002A300000000002A30"
 
 			packedStorage := common.HexToHash(packedStorageHex)
-			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			diff := utils.StorageDiff{StorageValue: packedStorage}
 			packedTypes := map[int]utils.ValueType{}
 			packedTypes[0] = utils.Uint48
 			packedTypes[1] = utils.Uint48
@@ -112,7 +112,7 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := utils.Decode(row, metadata)
+			result, err := utils.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -129,7 +129,7 @@ var _ = Describe("Storage decoder", func() {
 			packedStorageHex := "000000038D7EA4C67FF8E502B6730000" +
 				"0000000000000000AB54A98CEB1F0AD2"
 			packedStorage := common.HexToHash(packedStorageHex)
-			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			diff := utils.StorageDiff{StorageValue: packedStorage}
 			packedTypes := map[int]utils.ValueType{}
 			packedTypes[0] = utils.Uint128
 			packedTypes[1] = utils.Uint128
@@ -139,7 +139,7 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := utils.Decode(row, metadata)
+			result, err := utils.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -151,7 +151,7 @@ var _ = Describe("Storage decoder", func() {
 			//TODO: replace with real data when available
 			addressHex := "0000000000000000000000000000000000012345"
 			packedStorage := common.HexToHash("00000002a300" + "000000002a30" + addressHex)
-			row := utils.StorageDiffRow{StorageValue: packedStorage}
+			row := utils.StorageDiff{StorageValue: packedStorage}
 			packedTypes := map[int]utils.ValueType{}
 			packedTypes[0] = utils.Address
 			packedTypes[1] = utils.Uint48

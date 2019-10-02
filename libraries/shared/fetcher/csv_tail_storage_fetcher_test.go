@@ -18,30 +18,28 @@ package fetcher_test
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hpcloud/tail"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"strings"
+	"time"
 )
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {
 	var (
 		errorsChannel  chan error
 		mockTailer     *fakes.MockTailer
-		rowsChannel    chan utils.StorageDiffRow
+		diffsChannel   chan utils.StorageDiff
 		storageFetcher fetcher.CsvTailStorageFetcher
 	)
 
 	BeforeEach(func() {
 		errorsChannel = make(chan error)
-		rowsChannel = make(chan utils.StorageDiffRow)
+		diffsChannel = make(chan utils.StorageDiff)
 		mockTailer = fakes.NewMockTailer()
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
 	})
@@ -49,7 +47,7 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 	It("adds error to errors channel if tailing file fails", func(done Done) {
 		mockTailer.TailErr = fakes.FakeError
 
-		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
+		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 
 		Expect(<-errorsChannel).To(MatchError(fakes.FakeError))
 		close(done)
@@ -58,24 +56,24 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 	It("adds parsed csv row to rows channel for storage diff", func(done Done) {
 		line := getFakeLine()
 
-		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
+		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
-		expectedRow, err := utils.FromStrings(strings.Split(line.Text, ","))
+		expectedRow, err := utils.FromParityCsvRow(strings.Split(line.Text, ","))
 		Expect(err).NotTo(HaveOccurred())
-		Expect(<-rowsChannel).To(Equal(expectedRow))
+		Expect(<-diffsChannel).To(Equal(expectedRow))
 		close(done)
 	})
 
 	It("adds error to errors channel if parsing csv fails", func(done Done) {
 		line := &tail.Line{Text: "invalid"}
 
-		go storageFetcher.FetchStorageDiffs(rowsChannel, errorsChannel)
+		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
 		Expect(<-errorsChannel).To(HaveOccurred())
 		select {
-		case <-rowsChannel:
+		case <-diffsChannel:
 			Fail("value passed to rows channel on error")
 		default:
 			Succeed()

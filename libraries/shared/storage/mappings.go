@@ -46,16 +46,29 @@ const (
 	IndexEleven = "000000000000000000000000000000000000000000000000000000000000000b"
 )
 
+func AddHashedKeys(currentMappings map[common.Hash]utils.StorageValueMetadata) map[common.Hash]utils.StorageValueMetadata {
+	copyOfCurrentMappings := make(map[common.Hash]utils.StorageValueMetadata)
+	for k, v := range currentMappings {
+		copyOfCurrentMappings[k] = v
+	}
+	for k, v := range copyOfCurrentMappings {
+		currentMappings[hashKey(k)] = v
+	}
+	return currentMappings
+}
+
+func hashKey(key common.Hash) common.Hash {
+	return crypto.Keccak256Hash(key.Bytes())
+}
+
 func GetMapping(indexOnContract, key string) common.Hash {
 	keyBytes := common.FromHex(key + indexOnContract)
-	encoded := crypto.Keccak256(keyBytes)
-	return common.BytesToHash(encoded)
+	return crypto.Keccak256Hash(keyBytes)
 }
 
 func GetNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
 	primaryMappingIndex := crypto.Keccak256(common.FromHex(primaryKey + indexOnContract))
-	secondaryMappingIndex := crypto.Keccak256(common.FromHex(secondaryKey), primaryMappingIndex)
-	return common.BytesToHash(secondaryMappingIndex)
+	return crypto.Keccak256Hash(common.FromHex(secondaryKey), primaryMappingIndex)
 }
 
 func GetIncrementedKey(original common.Hash, incrementBy int64) common.Hash {

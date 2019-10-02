@@ -18,10 +18,13 @@ package fakes
 
 import (
 	"context"
+	"errors"
+	"github.com/ethereum/go-ethereum/statediff"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -29,18 +32,44 @@ import (
 )
 
 type MockRpcClient struct {
-	callContextErr   error
-	ipcPath          string
-	nodeType         core.NodeType
-	passedContext    context.Context
-	passedMethod     string
-	passedResult     interface{}
-	passedBatch      []client.BatchElem
-	lengthOfBatch    int
-	returnPOAHeader  core.POAHeader
-	returnPOAHeaders []core.POAHeader
-	returnPOWHeaders []*types.Header
-	supportedModules map[string]string
+	callContextErr      error
+	ipcPath             string
+	nodeType            core.NodeType
+	passedContext       context.Context
+	passedMethod        string
+	passedResult        interface{}
+	passedBatch         []client.BatchElem
+	passedNamespace     string
+	passedPayloadChan   chan statediff.Payload
+	passedSubscribeArgs []interface{}
+	lengthOfBatch       int
+	returnPOAHeader     core.POAHeader
+	returnPOAHeaders    []core.POAHeader
+	returnPOWHeaders    []*types.Header
+	supportedModules    map[string]string
+}
+
+func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+	client.passedNamespace = namespace
+
+	passedPayloadChan, ok := payloadChan.(chan statediff.Payload)
+	if !ok {
+		return nil, errors.New("passed in channel is not of the correct type")
+	}
+	client.passedPayloadChan = passedPayloadChan
+
+	for _, arg := range args {
+		client.passedSubscribeArgs = append(client.passedSubscribeArgs, arg)
+	}
+
+	subscription := rpc.ClientSubscription{}
+	return &subscription, nil
+}
+
+func (client *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
+	Expect(client.passedNamespace).To(Equal(namespace))
+	Expect(client.passedPayloadChan).To(Equal(payloadChan))
+	Expect(client.passedSubscribeArgs).To(Equal(args))
 }
 
 func NewMockRpcClient() *MockRpcClient {

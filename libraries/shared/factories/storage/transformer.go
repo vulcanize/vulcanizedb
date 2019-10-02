@@ -18,7 +18,6 @@ package storage
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
@@ -26,9 +25,9 @@ import (
 )
 
 type Transformer struct {
-	Address    common.Address
-	Mappings   storage.Mappings
-	Repository Repository
+	HashedAddress common.Hash
+	Mappings      storage.Mappings
+	Repository    Repository
 }
 
 func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
@@ -37,18 +36,18 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.Stora
 	return transformer
 }
 
-func (transformer Transformer) ContractAddress() common.Address {
-	return transformer.Address
+func (transformer Transformer) KeccakContractAddress() common.Hash {
+	return transformer.HashedAddress
 }
 
-func (transformer Transformer) Execute(row utils.StorageDiffRow) error {
-	metadata, lookupErr := transformer.Mappings.Lookup(row.StorageKey)
+func (transformer Transformer) Execute(diff utils.StorageDiff) error {
+	metadata, lookupErr := transformer.Mappings.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr
 	}
-	value, decodeErr := utils.Decode(row, metadata)
+	value, decodeErr := utils.Decode(diff, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}
-	return transformer.Repository.Create(row.BlockHeight, row.BlockHash.Hex(), metadata, value)
+	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
 }

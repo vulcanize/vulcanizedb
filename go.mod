@@ -12,9 +12,11 @@ require (
 	github.com/ethereum/go-ethereum v1.9.5
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
+	github.com/go-sql-driver/mysql v1.4.1 // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/graph-gophers/graphql-go v0.0.0-20190724201507-010347b5f9e6 // indirect
-	github.com/hashicorp/golang-lru v0.5.1
+	github.com/hashicorp/golang-lru v0.5.3
+	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
@@ -42,8 +44,14 @@ require (
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
+	golang.org/x/crypto v0.0.0-20190926114937-fa1a29108794 // indirect
 	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190709231704-1e4459ed25ff // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+	gopkg.in/urfave/cli.v1 v1.0.0-00010101000000-000000000000 // indirect
 )
+
+replace github.com/ethereum/go-ethereum => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
+
+replace gopkg.in/urfave/cli.v1 => gopkg.in/urfave/cli.v1 v1.20.0

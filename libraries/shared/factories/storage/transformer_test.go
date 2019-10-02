@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
@@ -38,21 +37,21 @@ var _ = Describe("Storage transformer", func() {
 		mappings = &mocks.MockMappings{}
 		repository = &mocks.MockStorageRepository{}
 		t = storage.Transformer{
-			Address:    common.Address{},
-			Mappings:   mappings,
-			Repository: repository,
+			HashedAddress: common.Hash{},
+			Mappings:      mappings,
+			Repository:    repository,
 		}
 	})
 
 	It("returns the contract address being watched", func() {
-		fakeAddress := common.HexToAddress("0x12345")
-		t.Address = fakeAddress
+		fakeAddress := utils.HexToKeccak256Hash("0x12345")
+		t.HashedAddress = fakeAddress
 
-		Expect(t.ContractAddress()).To(Equal(fakeAddress))
+		Expect(t.KeccakContractAddress()).To(Equal(fakeAddress))
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(utils.StorageDiffRow{})
+		t.Execute(utils.StorageDiff{})
 
 		Expect(mappings.LookupCalled).To(BeTrue())
 	})
@@ -60,7 +59,7 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if lookup fails", func() {
 		mappings.LookupErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiffRow{})
+		err := t.Execute(utils.StorageDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -72,12 +71,12 @@ var _ = Describe("Storage transformer", func() {
 		rawValue := common.HexToAddress("0x12345")
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
-		fakeRow := utils.StorageDiffRow{
-			Contract:     common.Address{},
-			BlockHash:    common.HexToHash(fakeBlockHash),
-			BlockHeight:  fakeBlockNumber,
-			StorageKey:   common.Hash{},
-			StorageValue: rawValue.Hash(),
+		fakeRow := utils.StorageDiff{
+			HashedAddress: common.Hash{},
+			BlockHash:     common.HexToHash(fakeBlockHash),
+			BlockHeight:   fakeBlockNumber,
+			StorageKey:    common.Hash{},
+			StorageValue:  rawValue.Hash(),
 		}
 
 		err := t.Execute(fakeRow)
@@ -95,7 +94,7 @@ var _ = Describe("Storage transformer", func() {
 		mappings.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiffRow{StorageValue: rawValue.Hash()})
+		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -120,12 +119,12 @@ var _ = Describe("Storage transformer", func() {
 
 		It("passes the decoded data items to the repository", func() {
 			mappings.Metadata = fakeMetadata
-			fakeRow := utils.StorageDiffRow{
-				Contract:     common.Address{},
-				BlockHash:    common.HexToHash(fakeBlockHash),
-				BlockHeight:  fakeBlockNumber,
-				StorageKey:   common.Hash{},
-				StorageValue: rawValue.Hash(),
+			fakeRow := utils.StorageDiff{
+				HashedAddress: common.Hash{},
+				BlockHash:     common.HexToHash(fakeBlockHash),
+				BlockHeight:   fakeBlockNumber,
+				StorageKey:    common.Hash{},
+				StorageValue:  rawValue.Hash(),
 			}
 
 			err := t.Execute(fakeRow)
@@ -144,7 +143,7 @@ var _ = Describe("Storage transformer", func() {
 			mappings.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
 
-			err := t.Execute(utils.StorageDiffRow{StorageValue: rawValue.Hash()})
+			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
