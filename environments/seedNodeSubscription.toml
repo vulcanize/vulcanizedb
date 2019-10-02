@@ -1,5 +1,5 @@
 [subscription]
-    path = "ws://127.0.0.1:80"
+    path = "ws://seed0.20c.com:8080"
     backfill = true
     backfillOnly = false
     startingBlock = 0

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node_test
+package super_node_test
 
 import (
 	"sync"
@@ -27,8 +27,8 @@ import (
 
 	mocks2 "github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
-	mocks3 "github.com/vulcanize/vulcanizedb/pkg/seed_node/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	mocks3 "github.com/vulcanize/vulcanizedb/pkg/super_node/mocks"
 )
 
 var _ = Describe("Service", func() {
@@ -55,7 +55,7 @@ var _ = Describe("Service", func() {
 				ReturnIPLDPayload: mocks.MockIPLDPayload,
 				ReturnErr:         nil,
 			}
-			processor := &seed_node.Service{
+			processor := &super_node.Service{
 				Repository:     mockCidRepo,
 				Publisher:      mockPublisher,
 				Streamer:       mockStreamer,
@@ -70,7 +70,8 @@ var _ = Describe("Service", func() {
 			quitChan <- true
 			wg.Wait()
 			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
-			Expect(mockCidRepo.PassedCIDPayload).To(Equal(mocks.MockCIDPayload))
+			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
+			Expect(mockCidRepo.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
 			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockIPLDPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})

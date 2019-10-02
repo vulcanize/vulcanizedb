@@ -14,18 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package mocks
+package super_node
 
-import "github.com/vulcanize/vulcanizedb/pkg/ipfs"
+import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+)
 
-// CIDRepository is the underlying struct for the Repository interface
-type CIDRepository struct {
-	PassedCIDPayload *ipfs.CIDPayload
-	ReturnErr        error
-}
-
-// Index indexes a cidPayload in Postgres
-func (repo *CIDRepository) Index(cidPayload *ipfs.CIDPayload) error {
-	repo.PassedCIDPayload = cidPayload
-	return repo.ReturnErr
+// Subscription holds the information for an individual client subscription to the super node
+type Subscription struct {
+	PayloadChan chan<- streamer.SuperNodePayload
+	QuitChan    chan<- bool
 }

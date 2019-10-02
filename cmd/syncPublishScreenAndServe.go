@@ -20,15 +20,12 @@ import (
 	"path/filepath"
 	syn "sync"
 
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // syncPublishScreenAndServeCmd represents the syncPublishScreenAndServe command
@@ -50,24 +47,7 @@ func init() {
 }
 
 func syncPublishScreenAndServe() {
-	blockChain, rpcClient := getBlockChainAndClient()
-
-	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	quitChan := make(chan bool, 1)
-
-	ipfsPath := viper.GetString("client.ipfsPath")
-	if ipfsPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
-	}
-	workers := viper.GetInt("client.workers")
-	if workers < 1 {
-		workers = 1
-	}
-	processor, err := seed_node.NewSeedNode(ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
+	superNode, err := newSuperNode()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,11 +55,18 @@ func syncPublishScreenAndServe() {
 	wg := &syn.WaitGroup{}
 	forwardPayloadChan := make(chan ipfs.IPLDPayload, 20000)
 	forwardQuitChan := make(chan bool, 1)
-	err = processor.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
+	err = superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
 	if err != nil {
 		log.Fatal(err)
 	}
-	processor.ScreenAndServe(forwardPayloadChan, forwardQuitChan)
+	superNode.ScreenAndServe(forwardPayloadChan, forwardQuitChan)
+	if viper.GetBool("backfill.on") && viper.GetString("backfill.ipcPath") != "" {
+		backfiller := newBackFiller(superNode.GetPublisher())
+		if err != nil {
+			log.Fatal(err)
+		}
+		backfiller.FillGaps(wg, nil)
+	}
 
 	var ipcPath string
 	ipcPath = viper.GetString("server.ipcPath")
@@ -90,7 +77,7 @@ func syncPublishScreenAndServe() {
 		}
 		ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
 	}
-	_, _, err = rpc.StartIPCEndpoint(ipcPath, processor.APIs())
+	_, _, err = rpc.StartIPCEndpoint(ipcPath, superNode.APIs())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,11 +85,11 @@ func syncPublishScreenAndServe() {
 	var wsEndpoint string
 	wsEndpoint = viper.GetString("server.wsEndpoint")
 	if wsEndpoint == "" {
-		wsEndpoint = "127.0.0.1:80"
+		wsEndpoint = "127.0.0.1:8080"
 	}
 	var exposeAll = true
 	var wsOrigins []string = nil
-	_, _, err = rpc.StartWSEndpoint(wsEndpoint, processor.APIs(), []string{"vulcanizedb"}, wsOrigins, exposeAll)
+	_, _, err = rpc.StartWSEndpoint(wsEndpoint, superNode.APIs(), []string{"vulcanizedb"}, wsOrigins, exposeAll)
 	if err != nil {
 		log.Fatal(err)
 	}

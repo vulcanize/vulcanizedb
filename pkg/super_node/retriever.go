@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node
+package super_node
 
 import (
 	"math/big"
@@ -33,6 +33,7 @@ type CIDRetriever interface {
 	RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*ipfs.CIDWrapper, error)
 	RetrieveLastBlockNumber() (int64, error)
 	RetrieveFirstBlockNumber() (int64, error)
+	RetrieveGapsInData() ([][2]int64, error)
 }
 
 // EthCIDRetriever is the underlying struct supporting the CIDRetriever interface
@@ -302,4 +303,27 @@ func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters confi
 	storageNodeCIDs := make([]ipfs.StorageNodeCID, 0)
 	err := tx.Select(&storageNodeCIDs, pgStr, args...)
 	return storageNodeCIDs, err
+}
+
+type gap struct {
+	Start int64 `db:"start"`
+	Stop  int64 `db:"stop"`
+}
+
+func (ecr *EthCIDRetriever) RetrieveGapsInData() ([][2]int64, error) {
+	pgStr := `SELECT header_cids.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM header_cids
+				LEFT JOIN header_cids r on header_cids.block_number = r.block_number - 1
+				LEFT JOIN header_cids fr on header_cids.block_number < fr.block_number
+				WHERE r.block_number is NULL and fr.block_number IS NOT NULL
+				GROUP BY header_cids.block_number, r.block_number`
+	gaps := make([]gap, 0)
+	err := ecr.db.Select(&gaps, pgStr)
+	if err != nil {
+		return nil, err
+	}
+	gapRanges := make([][2]int64, 0)
+	for _, gap := range gaps {
+		gapRanges = append(gapRanges, [2]int64{gap.Start, gap.Stop})
+	}
+	return gapRanges, nil
 }

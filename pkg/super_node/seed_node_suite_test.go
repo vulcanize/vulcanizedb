@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node_test
+package super_node_test
 
 import (
 	"io/ioutil"
@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestSeedNode(t *testing.T) {
+func TestSuperNode(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Seed Node Suite Test")
 }

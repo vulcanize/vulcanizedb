@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node_test
+package super_node_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -23,23 +23,23 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/seed_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 )
 
 var (
 	db   *postgres.DB
 	err  error
-	repo seed_node.CIDRepository
+	repo super_node.CIDRepository
 )
 
 var _ = Describe("Repository", func() {
 	BeforeEach(func() {
-		db, err = seed_node.SetupDB()
+		db, err = super_node.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = seed_node.NewCIDRepository(db)
+		repo = super_node.NewCIDRepository(db)
 	})
 	AfterEach(func() {
-		seed_node.TearDownDB(db)
+		super_node.TearDownDB(db)
 	})
 
 	Describe("Index", func() {
@@ -61,8 +61,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(trxs)).To(Equal(2))
-			Expect(seed_node.ListContainsString(trxs, "mockTrxCID1")).To(BeTrue())
-			Expect(seed_node.ListContainsString(trxs, "mockTrxCID2")).To(BeTrue())
+			Expect(super_node.ListContainsString(trxs, "mockTrxCID1")).To(BeTrue())
+			Expect(super_node.ListContainsString(trxs, "mockTrxCID2")).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
 			pgStr = `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
@@ -72,8 +72,8 @@ var _ = Describe("Repository", func() {
 			err = db.Select(&rcts, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(rcts)).To(Equal(2))
-			Expect(seed_node.ListContainsString(rcts, "mockRctCID1")).To(BeTrue())
-			Expect(seed_node.ListContainsString(rcts, "mockRctCID2")).To(BeTrue())
+			Expect(super_node.ListContainsString(rcts, "mockRctCID1")).To(BeTrue())
+			Expect(super_node.ListContainsString(rcts, "mockRctCID2")).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]ipfs.StateNodeCID, 0)
 			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)

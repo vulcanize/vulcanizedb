@@ -17,6 +17,8 @@
 package mocks
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
@@ -33,4 +35,23 @@ type PayloadConverter struct {
 func (pc *PayloadConverter) Convert(payload statediff.Payload) (*ipfs.IPLDPayload, error) {
 	pc.PassedStatediffPayload = payload
 	return pc.ReturnIPLDPayload, pc.ReturnErr
+}
+
+// IterativePayloadConverter is the underlying struct for the Converter interface
+type IterativePayloadConverter struct {
+	PassedStatediffPayload []statediff.Payload
+	ReturnIPLDPayload      []*ipfs.IPLDPayload
+	ReturnErr              error
+	iteration              int
+}
+
+// Convert method is used to convert a geth statediff.Payload to a IPLDPayload
+func (pc *IterativePayloadConverter) Convert(payload statediff.Payload) (*ipfs.IPLDPayload, error) {
+	pc.PassedStatediffPayload = append(pc.PassedStatediffPayload, payload)
+	if len(pc.PassedStatediffPayload) < pc.iteration+1 {
+		return nil, fmt.Errorf("IterativePayloadConverter does not have a payload to return at iteration %d", pc.iteration)
+	}
+	returnPayload := pc.ReturnIPLDPayload[pc.iteration]
+	pc.iteration++
+	return returnPayload, pc.ReturnErr
 }

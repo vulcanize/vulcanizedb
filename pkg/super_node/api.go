@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package seed_node
+package super_node
 
 import (
 	"context"
@@ -28,25 +28,25 @@ import (
 )
 
 // APIName is the namespace used for the state diffing service API
-const APIName = "vulcanizedb"
+const APIName = "vdb"
 
 // APIVersion is the version of the state diffing service API
 const APIVersion = "0.0.1"
 
-// PublicSeedNodeAPI is the public api for the seed node
-type PublicSeedNodeAPI struct {
+// PublicSuperNodeAPI is the public api for the super node
+type PublicSuperNodeAPI struct {
 	sni NodeInterface
 }
 
-// NewPublicSeedNodeAPI creates a new PublicSeedNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSeedNodeAPI(seedNodeInterface NodeInterface) *PublicSeedNodeAPI {
-	return &PublicSeedNodeAPI{
-		sni: seedNodeInterface,
+// NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
+func NewPublicSuperNodeAPI(superNodeInterface NodeInterface) *PublicSuperNodeAPI {
+	return &PublicSuperNodeAPI{
+		sni: superNodeInterface,
 	}
 }
 
 // Stream is the public method to setup a subscription that fires off SyncPublishScreenAndServe payloads as they are created
-func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.Subscription) (*rpc.Subscription, error) {
+func (api *PublicSuperNodeAPI) Stream(ctx context.Context, streamFilters config.Subscription) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
@@ -58,7 +58,7 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan streamer.SeedNodePayload, payloadChanBufferSize)
+		payloadChannel := make(chan streamer.SuperNodePayload, payloadChanBufferSize)
 		quitChan := make(chan bool, 1)
 		go api.sni.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
 
@@ -84,7 +84,7 @@ func (api *PublicSeedNodeAPI) Stream(ctx context.Context, streamFilters config.S
 	return rpcSub, nil
 }
 
-// Node is a public rpc method to allow transformers to fetch the Geth node info for the seed node
-func (api *PublicSeedNodeAPI) Node() core.Node {
+// Node is a public rpc method to allow transformers to fetch the Geth node info for the super node
+func (api *PublicSuperNodeAPI) Node() core.Node {
 	return api.sni.Node()
 }

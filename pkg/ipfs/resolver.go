@@ -24,7 +24,7 @@ import (
 
 // IPLDResolver is the interface to resolving IPLDs
 type IPLDResolver interface {
-	ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SeedNodePayload, error)
+	ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SuperNodePayload, error)
 }
 
 // EthIPLDResolver is the underlying struct to support the IPLDResolver interface
@@ -36,8 +36,8 @@ func NewIPLDResolver() *EthIPLDResolver {
 }
 
 // ResolveIPLDs is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
-func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SeedNodePayload, error) {
-	response := &streamer.SeedNodePayload{
+func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SuperNodePayload, error) {
+	response := &streamer.SuperNodePayload{
 		BlockNumber:     ipfsBlocks.BlockNumber,
 		StateNodesRlp:   make(map[common.Hash][]byte),
 		StorageNodesRlp: make(map[common.Hash]map[common.Hash][]byte),
@@ -51,42 +51,42 @@ func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SeedN
 	return *response, nil
 }
 
-func (eir *EthIPLDResolver) resolveHeaders(blocks []blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveHeaders(blocks []blocks.Block, response *streamer.SuperNodePayload) {
 	for _, block := range blocks {
 		raw := block.RawData()
 		response.HeadersRlp = append(response.HeadersRlp, raw)
 	}
 }
 
-func (eir *EthIPLDResolver) resolveUncles(blocks []blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveUncles(blocks []blocks.Block, response *streamer.SuperNodePayload) {
 	for _, block := range blocks {
 		raw := block.RawData()
 		response.UnclesRlp = append(response.UnclesRlp, raw)
 	}
 }
 
-func (eir *EthIPLDResolver) resolveTransactions(blocks []blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveTransactions(blocks []blocks.Block, response *streamer.SuperNodePayload) {
 	for _, block := range blocks {
 		raw := block.RawData()
 		response.TransactionsRlp = append(response.TransactionsRlp, raw)
 	}
 }
 
-func (eir *EthIPLDResolver) resolveReceipts(blocks []blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveReceipts(blocks []blocks.Block, response *streamer.SuperNodePayload) {
 	for _, block := range blocks {
 		raw := block.RawData()
 		response.ReceiptsRlp = append(response.ReceiptsRlp, raw)
 	}
 }
 
-func (eir *EthIPLDResolver) resolveState(blocks map[common.Hash]blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveState(blocks map[common.Hash]blocks.Block, response *streamer.SuperNodePayload) {
 	for key, block := range blocks {
 		raw := block.RawData()
 		response.StateNodesRlp[key] = raw
 	}
 }
 
-func (eir *EthIPLDResolver) resolveStorage(blocks map[common.Hash]map[common.Hash]blocks.Block, response *streamer.SeedNodePayload) {
+func (eir *EthIPLDResolver) resolveStorage(blocks map[common.Hash]map[common.Hash]blocks.Block, response *streamer.SuperNodePayload) {
 	for stateKey, storageBlocks := range blocks {
 		response.StorageNodesRlp[stateKey] = make(map[common.Hash][]byte)
 		for storageKey, storageVal := range storageBlocks {

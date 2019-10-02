@@ -22,10 +22,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type SeedNodeTransformer interface {
+type SuperNodeTransformer interface {
 	Init() error
 	Execute() error
 	GetConfig() config.Subscription
 }
 
-type SeedNodeTransformerInitializer func(db *postgres.DB, subCon config.Subscription, client core.RpcClient) SeedNodeTransformer
+type SuperNodeTransformerInitializer func(db *postgres.DB, subCon config.Subscription, client core.RpcClient) SuperNodeTransformer

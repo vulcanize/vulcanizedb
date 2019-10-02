@@ -17,6 +17,7 @@
 package mocks
 
 import (
+	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
@@ -31,4 +32,23 @@ type IPLDPublisher struct {
 func (pub *IPLDPublisher) Publish(payload *ipfs.IPLDPayload) (*ipfs.CIDPayload, error) {
 	pub.PassedIPLDPayload = payload
 	return pub.ReturnCIDPayload, pub.ReturnErr
+}
+
+// IterativeIPLDPublisher is the underlying struct for the Publisher interface; used in testing
+type IterativeIPLDPublisher struct {
+	PassedIPLDPayload []*ipfs.IPLDPayload
+	ReturnCIDPayload  []*ipfs.CIDPayload
+	ReturnErr         error
+	iteration         int
+}
+
+// Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
+func (pub *IterativeIPLDPublisher) Publish(payload *ipfs.IPLDPayload) (*ipfs.CIDPayload, error) {
+	pub.PassedIPLDPayload = append(pub.PassedIPLDPayload, payload)
+	if len(pub.ReturnCIDPayload) < pub.iteration+1 {
+		return nil, fmt.Errorf("IterativeIPLDPublisher does not have a payload to return at iteration %d", pub.iteration)
+	}
+	returnPayload := pub.ReturnCIDPayload[pub.iteration]
+	pub.iteration++
+	return returnPayload, pub.ReturnErr
 }

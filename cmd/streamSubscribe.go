@@ -38,9 +38,9 @@ import (
 // streamSubscribeCmd represents the streamSubscribe command
 var streamSubscribeCmd = &cobra.Command{
 	Use:   "streamSubscribe",
-	Short: "This command is used to subscribe to the seed node stream with the provided filters",
-	Long: `This command is for demo and testing purposes and is used to subscribe to the seed node with the provided subscription configuration parameters.
-It does not do anything with the data streamed from the seed node other than unpack it and print it out for demonstration purposes.`,
+	Short: "This command is used to subscribe to the super node stream with the provided filters",
+	Long: `This command is for demo and testing purposes and is used to subscribe to the super node with the provided subscription configuration parameters.
+It does not do anything with the data streamed from the super node other than unpack it and print it out for demonstration purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		streamSubscribe()
 	},
@@ -56,12 +56,12 @@ func streamSubscribe() {
 
 	// Create a new rpc client and a subscription streamer with that client
 	rpcClient := getRpcClient()
-	str := streamer.NewSeedNodeStreamer(rpcClient)
+	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan streamer.SeedNodePayload, 20000)
+	payloadChan := make(chan streamer.SuperNodePayload, 20000)
 
-	// Subscribe to the seed node service with the given config/filter parameters
+	// Subscribe to the super node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, subscriptionConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -217,7 +217,7 @@ func configureSubscription() {
 func getRpcClient() core.RpcClient {
 	vulcPath := viper.GetString("subscription.path")
 	if vulcPath == "" {
-		vulcPath = "ws://127.0.0.1:80" // default to and try the default ws url if no path is provided
+		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}
 	rawRpcClient, err := rpc.Dial(vulcPath)
 	if err != nil {
