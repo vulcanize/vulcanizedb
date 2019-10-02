@@ -48,12 +48,10 @@ var mockEvent = core.WatchedEvent{
 var _ = Describe("Address Retriever Test", func() {
 	var db *postgres.DB
 	var dataStore repository.EventRepository
-	var err error
 	var info *contract.Contract
 	var vulcanizeLogId int64
 	var log *types.Log
 	var r retriever.AddressRetriever
-	var addresses map[common.Address]bool
 	var wantedEvents = []string{"Transfer"}
 
 	BeforeEach(func() {
@@ -61,17 +59,18 @@ var _ = Describe("Address Retriever Test", func() {
 		mockEvent.LogID = vulcanizeLogId
 
 		event := info.Events["Transfer"]
-		err = info.GenerateFilters()
-		Expect(err).ToNot(HaveOccurred())
+		filterErr := info.GenerateFilters()
+		Expect(filterErr).ToNot(HaveOccurred())
 
 		c := converter.Converter{}
 		c.Update(info)
-		log, err = c.Convert(mockEvent, event)
-		Expect(err).ToNot(HaveOccurred())
+		var convertErr error
+		log, convertErr = c.Convert(mockEvent, event)
+		Expect(convertErr).ToNot(HaveOccurred())
 
 		dataStore = repository.NewEventRepository(db, types.FullSync)
-		dataStore.PersistLogs([]types.Log{*log}, event, info.Address, info.Name)
-		Expect(err).ToNot(HaveOccurred())
+		persistErr := dataStore.PersistLogs([]types.Log{*log}, event, info.Address, info.Name)
+		Expect(persistErr).ToNot(HaveOccurred())
 
 		r = retriever.NewAddressRetriever(db, types.FullSync)
 	})
@@ -82,8 +81,8 @@ var _ = Describe("Address Retriever Test", func() {
 
 	Describe("RetrieveTokenHolderAddresses", func() {
 		It("Retrieves a list of token holder addresses from persisted event logs", func() {
-			addresses, err = r.RetrieveTokenHolderAddresses(*info)
-			Expect(err).ToNot(HaveOccurred())
+			addresses, retrieveErr := r.RetrieveTokenHolderAddresses(*info)
+			Expect(retrieveErr).ToNot(HaveOccurred())
 
 			_, ok := addresses[common.HexToAddress("0x000000000000000000000000000000000000000000000000000000000000af21")]
 			Expect(ok).To(Equal(true))
@@ -100,8 +99,8 @@ var _ = Describe("Address Retriever Test", func() {
 		})
 
 		It("Returns empty list when empty contract info is used", func() {
-			addresses, err = r.RetrieveTokenHolderAddresses(contract.Contract{})
-			Expect(err).ToNot(HaveOccurred())
+			addresses, retrieveErr := r.RetrieveTokenHolderAddresses(contract.Contract{})
+			Expect(retrieveErr).ToNot(HaveOccurred())
 			Expect(len(addresses)).To(Equal(0))
 		})
 	})

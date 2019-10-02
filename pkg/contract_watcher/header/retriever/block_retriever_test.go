@@ -44,9 +44,12 @@ var _ = Describe("Block Retriever", func() {
 
 	Describe("RetrieveFirstBlock", func() {
 		It("Retrieves block number of earliest header in the database", func() {
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			_, err := headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			Expect(err).ToNot(HaveOccurred())
 
 			i, err := r.RetrieveFirstBlock()
 			Expect(err).NotTo(HaveOccurred())
@@ -61,9 +64,12 @@ var _ = Describe("Block Retriever", func() {
 
 	Describe("RetrieveMostRecentBlock", func() {
 		It("Retrieves the latest header's block number", func() {
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
-			headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			_, err := headerRepository.CreateOrUpdateHeader(mocks.MockHeader1)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader2)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = headerRepository.CreateOrUpdateHeader(mocks.MockHeader3)
+			Expect(err).ToNot(HaveOccurred())
 
 			i, err := r.RetrieveMostRecentBlock()
 			Expect(err).ToNot(HaveOccurred())

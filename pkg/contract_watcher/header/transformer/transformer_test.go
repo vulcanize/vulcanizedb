@@ -68,7 +68,7 @@ var _ = Describe("Transformer", func() {
 			err := t.Init()
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		})
 	})
 
@@ -109,7 +109,7 @@ var _ = Describe("Transformer", func() {
 			err := t.Init()
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
 		})
 	})
 })

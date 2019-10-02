@@ -132,7 +132,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 
 // Convert the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
 func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
-	contract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
+	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
 	for _, event := range events {
 		eventsToLogs[event.Name] = make([]types.Log, 0, len(logs))
@@ -141,7 +141,7 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 			// If the log is of this event type, process it as such
 			if event.Sig() == log.Topics[0] {
 				values := make(map[string]interface{})
-				err := contract.UnpackLogIntoMap(values, event.Name, log)
+				err := boundContract.UnpackLogIntoMap(values, event.Name, log)
 				if err != nil {
 					return nil, err
 				}

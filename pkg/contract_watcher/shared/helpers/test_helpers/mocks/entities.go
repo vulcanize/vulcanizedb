@@ -324,7 +324,7 @@ var MockConfig = config.ContractConfig{
 		"0x1234567890abcdef": "fake_abi",
 	},
 	Events: map[string][]string{
-		"0x1234567890abcdef": []string{"Transfer"},
+		"0x1234567890abcdef": {"Transfer"},
 	},
 	Methods: map[string][]string{
 		"0x1234567890abcdef": nil,

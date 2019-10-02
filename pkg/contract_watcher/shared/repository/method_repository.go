@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/golang-lru"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -112,7 +113,10 @@ func (r *methodRepository) persistResults(results []types.Result, methodInfo typ
 		// Add this query to the transaction
 		_, err = tx.Exec(pgStr, data...)
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logrus.Warnf("error rolling back transaction: %s", rollbackErr.Error())
+			}
 			return err
 		}
 	}

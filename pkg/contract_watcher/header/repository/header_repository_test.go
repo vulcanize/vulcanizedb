@@ -137,9 +137,9 @@ var _ = Describe("Repository", func() {
 			h1 := missingHeaders[0]
 			h2 := missingHeaders[1]
 			h3 := missingHeaders[2]
-			Expect(h1.BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
-			Expect(h2.BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
-			Expect(h3.BlockNumber).To(Equal(int64(mocks.MockHeader3.BlockNumber)))
+			Expect(h1.BlockNumber).To(Equal(mocks.MockHeader1.BlockNumber))
+			Expect(h2.BlockNumber).To(Equal(mocks.MockHeader2.BlockNumber))
+			Expect(h3.BlockNumber).To(Equal(mocks.MockHeader3.BlockNumber))
 		})
 
 		It("Returns only contiguous chunks of headers", func() {
@@ -150,8 +150,8 @@ var _ = Describe("Repository", func() {
 			missingHeaders, err := contractHeaderRepo.MissingHeaders(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs[0])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(mocks.MockHeader1.BlockNumber))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(mocks.MockHeader2.BlockNumber))
 		})
 
 		It("Fails if eventID does not yet exist in check_headers table", func() {
@@ -199,8 +199,8 @@ var _ = Describe("Repository", func() {
 			missingHeaders, err := contractHeaderRepo.MissingHeadersForAll(mocks.MockHeader1.BlockNumber, mocks.MockHeader4.BlockNumber, eventIDs)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(missingHeaders)).To(Equal(2))
-			Expect(missingHeaders[0].BlockNumber).To(Equal(int64(mocks.MockHeader1.BlockNumber)))
-			Expect(missingHeaders[1].BlockNumber).To(Equal(int64(mocks.MockHeader2.BlockNumber)))
+			Expect(missingHeaders[0].BlockNumber).To(Equal(mocks.MockHeader1.BlockNumber))
+			Expect(missingHeaders[1].BlockNumber).To(Equal(mocks.MockHeader2.BlockNumber))
 		})
 
 		It("returns headers after starting header if starting header not missing", func() {

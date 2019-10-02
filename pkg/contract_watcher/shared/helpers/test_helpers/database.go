@@ -115,9 +115,9 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	blockChainClient := client.NewEthClient(ethClient)
-	node := node.MakeNode(rpcClient)
+	madeNode := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, madeNode, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",

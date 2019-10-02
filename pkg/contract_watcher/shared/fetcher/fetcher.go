@@ -47,7 +47,7 @@ func newFetcherError(err error, fetchMethod string) *fetcherError {
 
 // Fetcher struct
 type Fetcher struct {
-	BlockChain core.BlockChain // Underyling Blockchain
+	BlockChain core.BlockChain // Underlying Blockchain
 }
 
 // Fetcher error
