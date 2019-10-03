@@ -22,7 +22,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	repository2 "github.com/vulcanize/vulcanizedb/libraries/shared/repository"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -56,8 +56,8 @@ type headerSyncLog struct {
 	Raw         []byte
 }
 
-func (repository HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error) {
-	rows, queryErr := repository.db.Queryx(`SELECT * FROM public.header_sync_logs WHERE transformed = false`)
+func (repo HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error) {
+	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.header_sync_logs WHERE transformed = false`)
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -73,7 +73,7 @@ func (repository HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]co
 		for _, topic := range rawLog.Topics {
 			logTopics = append(logTopics, common.BytesToHash(topic))
 		}
-		address, addrErr := repository2.GetAddressById(repository.db, rawLog.Address)
+		address, addrErr := repository.GetAddressById(repo.db, rawLog.Address)
 		if addrErr != nil {
 			return nil, addrErr
 		}
@@ -103,13 +103,13 @@ func (repository HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]co
 	return results, nil
 }
 
-func (repository HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []types.Log) error {
-	tx, txErr := repository.db.Beginx()
+func (repo HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []types.Log) error {
+	tx, txErr := repo.db.Beginx()
 	if txErr != nil {
 		return txErr
 	}
 	for _, log := range logs {
-		err := repository.insertLog(headerID, log, tx)
+		err := repo.insertLog(headerID, log, tx)
 		if err != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
@@ -121,13 +121,13 @@ func (repository HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, l
 	return tx.Commit()
 }
 
-func (repository HeaderSyncLogRepository) insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
+func (repo HeaderSyncLogRepository) insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
 	topics := buildTopics(log)
 	raw, jsonErr := log.MarshalJSON()
 	if jsonErr != nil {
 		return jsonErr
 	}
-	addressID, addrErr := repository2.GetOrCreateAddressInTransaction(tx, log.Address.Hex())
+	addressID, addrErr := repository.GetOrCreateAddressInTransaction(tx, log.Address.Hex())
 	if addrErr != nil {
 		return addrErr
 	}
