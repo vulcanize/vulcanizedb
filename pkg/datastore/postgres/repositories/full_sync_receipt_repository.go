@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -84,7 +85,7 @@ func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
 
 func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
-	addressId, getAddressErr := AddressRepository{}.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+	addressId, getAddressErr := repository.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		logrus.Error("createReceipt: Error getting address id: ", getAddressErr)
 		return receiptId, getAddressErr
