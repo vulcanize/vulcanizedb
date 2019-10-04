@@ -17,6 +17,7 @@
 package transformer
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -124,7 +125,11 @@ func (tr *Transformer) Init() error {
 		// Get first block and most recent block number in the header repo
 		firstBlock, retrieveErr := tr.Retriever.RetrieveFirstBlock()
 		if retrieveErr != nil {
-			return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
+			if retrieveErr == sql.ErrNoRows {
+				firstBlock = 0
+			} else {
+				return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
+			}
 		}
 
 		// Set to specified range if it falls within the bounds
