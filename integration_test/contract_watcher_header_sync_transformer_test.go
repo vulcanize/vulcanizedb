@@ -78,11 +78,10 @@ var _ = Describe("contractWatcher headerSync transformer", func() {
 			Expect(c.Address).To(Equal(tusdAddr))
 		})
 
-		It("Fails to initialize if first and block cannot be fetched from vDB headers table", func() {
+		It("initializes when no headers available in db", func() {
 			t := transformer.NewTransformer(test_helpers.TusdConfig, blockChain, db)
 			err = t.Init()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("no rows in result set"))
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Does nothing if nothing if no addresses are configured", func() {
