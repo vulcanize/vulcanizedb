@@ -24,6 +24,7 @@ services:
 
 
   vulcanizedb:
+    restart: always
     build:
       context: ../..
       dockerfile: dockerfiles/moloch/Dockerfile
