@@ -49,9 +49,7 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190709231704-1e4459ed25ff // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
-	gopkg.in/urfave/cli.v1 v1.0.0-00010101000000-000000000000 // indirect
+	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
-
-replace gopkg.in/urfave/cli.v1 => gopkg.in/urfave/cli.v1 v1.20.0
