@@ -1,0 +1,41 @@
+
+version: '3'
+
+services:
+  postgres:
+    image: postgres:11
+    container_name: postgres
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_USER: "$DATABASE_USER"
+      POSTGRES_PASSWORD: "$DATABASE_PASSWORD"
+      POSTGRES_DB: "$DATABASE_NAME"
+
+
+  postgraphile:
+    image: graphile/postgraphile:latest
+    expose:
+      - 5000
+    depends_on:
+      - postgres
+
+    command: "postgraphile --connection postgres://$DATABASE_USER:$DATABASE_PASSWORD@postgres/$DATABASE_NAME --schema public,header_0x1fd169a4f5c59acf79d0fd5d91d1201ef1bce9f1,header_0x211a94468ba1e379236b45ca42dc63ee93139c7e,header_0x9feb49ac78ec80838665d7ab75e43cfbdc4f4277 --enhance-graphiql -w"
+
+
+  vulcanizedb:
+    build:
+      context: ../..
+      dockerfile: dockerfiles/moloch/Dockerfile
+      args:
+        config_file: environments/moloch.toml
+        USER: "$DATABASE_USER"
+    depends_on:
+      - postgres
+
+    environment:
+      DATABASE_USER:
+      DATABASE_PASSWORD:
+      DATABASE_HOSTNAME: postgres
+      DATABASE_NAME:
+      DATABASE_PORT: 5432
