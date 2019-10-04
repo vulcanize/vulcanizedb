@@ -17,6 +17,7 @@
 package transformer
 
 import (
+	"database/sql"
 	"errors"
 
 	"github.com/sirupsen/logrus"
@@ -99,7 +100,11 @@ func (tr *Transformer) Init() error {
 		// Get first block and most recent block number in the header repo
 		firstBlock, err := tr.Retriever.RetrieveFirstBlock(contractAddr)
 		if err != nil {
-			return err
+			if err == sql.ErrNoRows {
+				firstBlock = 0
+			} else {
+				return err
+			}
 		}
 		// Set to specified range if it falls within the bounds
 		if firstBlock < tr.Config.StartingBlocks[contractAddr] {

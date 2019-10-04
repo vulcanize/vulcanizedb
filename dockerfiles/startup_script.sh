@@ -9,20 +9,20 @@ if test -z "$VDB_PG_CONNECT"; then
   set -e
 
   # Check the database variables are set
-  test $VDB_PG_NAME
-  test $VDB_PG_HOSTNAME
-  test $VDB_PG_PORT
-  test $VDB_PG_USER
-  test $VDB_PG_PASSWORD
+  test $DATABASE_NAME
+  test $DATABASE_HOSTNAME
+  test $DATABASE_PORT
+  test $DATABASE_USER
+  test $DATABASE_PASSWORD
   set +e
 
   # Construct the connection string for postgres
-  VDB_PG_CONNECT=postgresql://$VDB_PG_USER:$VDB_PG_PASSWORD@$VDB_PG_HOSTNAME:$VDB_PG_PORT/$VDB_PG_NAME?sslmode=disable
+  VDB_PG_CONNECT=postgresql://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOSTNAME:$DATABASE_PORT/$DATABASE_NAME?sslmode=disable
 fi
 
 # Run the DB migrations
 echo "Connecting with: $VDB_PG_CONNECT"
-./goose -dir migrations/vulcanizedb postgres "$VDB_PG_CONNECT" up
+./goose -dir db/migrations postgres "$VDB_PG_CONNECT" up
 
 if [ $? -ne 0 ]; then
   echo "Could not run migrations. Are the database details correct?"
@@ -30,8 +30,11 @@ if [ $? -ne 0 ]; then
 fi
 
 # Fire up the services
-for command in $VDB_COMMAND; do
-  ./vulcanizedb $command --config config.toml &
-done
+if [ $? -eq 0 ]; then
+  # Fire up the services
+  ./vulcanizedb headerSync --config config.toml -s 7218566 &
+  ./vulcanizedb contractWatcher --config config.toml &
+fi
+
 
 wait

@@ -1,0 +1,21 @@
+[database]
+    name = "vulcanize_two"
+    hostname = "localhost"
+    port = 5432
+
+[client]
+    ipcPath = "http://arch0.vulcanize.io/"
+
+[contract]
+    addresses = [
+        "0x1fd169A4f5c59ACf79d0Fd5d91D1201EF1Bce9f1", # Moloch
+        "0x211a94468Ba1e379236B45cA42Dc63eE93139c7E", # Guild Bank
+        "0x9FEb49aC78eC80838665d7Ab75E43CFBdC4f4277", # MolochPool
+        ]
+    [contract.0x1fd169A4f5c59ACf79d0Fd5d91D1201EF1Bce9f1]
+        startingBlock = 7218566
+    [contract.0x211a94468Ba1e379236B45cA42Dc63eE93139c7E]
+        startingBlock = 7218566
+    [contract.0x9FEb49aC78eC80838665d7Ab75E43CFBdC4f4277]
+        startingBlock = 8286816
+
