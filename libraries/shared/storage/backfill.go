@@ -27,8 +27,8 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
 
 // IBackFiller is the backfilling interface
@@ -36,14 +36,9 @@ type IBackFiller interface {
 	BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.StorageDiff, error)
 }
 
-// BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
-type BatchClient interface {
-	BatchCall(batch []client.BatchElem) error
-}
-
 // BackFiller is the backfilling struct
 type BackFiller struct {
-	client BatchClient
+	sdf fetcher.IStateDiffFetcher
 }
 
 // BackFillerArgs are used to pass configuration params to the backfiller
@@ -54,12 +49,10 @@ type BackFillerArgs struct {
 	EndingBlock   uint64
 }
 
-const method = "statediff_stateDiffAt"
-
 // NewStorageBackFiller returns a IBackFiller
-func NewStorageBackFiller(bc BatchClient) IBackFiller {
+func NewStorageBackFiller(bc fetcher.BatchClient) IBackFiller {
 	return &BackFiller{
-		client: bc,
+		sdf: fetcher.NewStateDiffFetcher(bc),
 	}
 }
 
@@ -70,23 +63,15 @@ func (bf *BackFiller) BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.Stor
 	if bfa.EndingBlock < bfa.StartingBlock {
 		return nil, errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
-	batch := make([]client.BatchElem, 0)
+	blockHeights := make([]uint64, 0, bfa.EndingBlock-bfa.StartingBlock+1)
 	for i := bfa.StartingBlock; i <= bfa.EndingBlock; i++ {
-		batch = append(batch, client.BatchElem{
-			Method: method,
-			Args:   []interface{}{i},
-			Result: new(statediff.Payload),
-		})
+		blockHeights = append(blockHeights, i)
 	}
-	batchErr := bf.client.BatchCall(batch)
-	if batchErr != nil {
-		return nil, batchErr
+	payloads, err := bf.sdf.FetchStateDiffsAt(blockHeights)
+	if err != nil {
+		return nil, err
 	}
-	for _, batchElem := range batch {
-		payload := batchElem.Result.(*statediff.Payload)
-		if batchElem.Error != nil {
-			return nil, batchElem.Error
-		}
+	for _, payload := range payloads {
 		block := new(types.Block)
 		blockDecodeErr := rlp.DecodeBytes(payload.BlockRlp, block)
 		if blockDecodeErr != nil {
