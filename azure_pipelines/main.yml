@@ -1,0 +1,61 @@
+trigger:
+- staging
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  GOPATH: "$(Agent.BuildDirectory)/gopath" # Go workspace path
+  GOROOT: "$(Agent.BuildDirectory)/go" # Go installation path
+  GOBIN:  "$(GOPATH)/bin" # Go binaries path
+  goVersion: 1.12.10
+  modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)" # Path to the module"s code
+
+steps:
+- script: |
+    wget "https://storage.googleapis.com/golang/go$(goVersion).linux-amd64.tar.gz" --output-document "$(Agent.BuildDirectory)/go$(goVersion).tar.gz"
+    tar -C "$(Agent.BuildDirectory)" -xzf "$(Agent.BuildDirectory)/go$(goVersion).tar.gz"
+  displayName: "Install Go $(goVersion)"
+
+- script: |
+    mkdir -p "$(GOBIN)"
+    mkdir -p "$(GOPATH)/pkg"
+    mkdir -p "$(modulePath)"
+    shopt -s extglob
+    shopt -s dotglob
+    mv !(gopath) "$(modulePath)"
+    echo "##vso[task.prependpath]$(GOBIN)"
+    echo "##vso[task.prependpath]$(GOROOT)/bin"
+  displayName: "Set up the Go workspace"
+
+- script: |
+    sudo apt-get install wget ca-certificates
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+    sudo apt-get update
+    sudo apt-get install postgresql postgresql-contrib
+    sudo service postgresql restart 
+    sleep 3
+  displayName: Install postgresql
+
+- script: |
+    make installtools
+  workingDirectory: "$(modulePath)"
+  displayName: "Install tools"
+
+- script: |
+    sudo -u postgres createdb vulcanize_private
+    sudo -u postgres psql -c "CREATE ROLE $USER SUPERUSER LOGIN CREATEDB;"
+    sudo -u postgres psql -c "ALTER USER $USER WITH PASSWORD 'vulcanizeci';"
+    $(GOBIN)/goose postgres postgresql://$USER:vulcanizeci@localhost/vulcanize_private?sslmode=disable up
+  workingDirectory: "$(modulePath)"
+  displayName: "Initialize database"
+
+- script: |
+    go version
+    env GO111MODULE=on make test
+    env GO111MODULE=on make integrationtest
+  workingDirectory: "$(modulePath)"
+  displayName: "Build and test"
+  env:
+    INFURA_URL: "$(INFURA_URL)"
