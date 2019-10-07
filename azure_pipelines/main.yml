@@ -46,8 +46,10 @@ steps:
 - script: |
     sudo -u postgres createdb vulcanize_private
     sudo -u postgres psql -c "CREATE ROLE $USER SUPERUSER LOGIN CREATEDB;"
-    sudo -u postgres psql -c "ALTER USER $USER WITH PASSWORD 'vulcanizeci';"
-    $(GOBIN)/goose postgres postgresql://$USER:vulcanizeci@localhost/vulcanize_private?sslmode=disable up
+    cp azure_pipelines/pg_hba-trust.conf /etc/postgresql/11/main/pg_hba.conf
+    sudo systemctl restart postgresql.service
+#    sudo -u postgres psql -c "ALTER USER $USER WITH PASSWORD 'vulcanizeci';"
+    $(GOBIN)/goose postgres postgresql://$USER@localhost/vulcanize_private?sslmode=disable up
   workingDirectory: "$(modulePath)"
   displayName: "Initialize database"
 
