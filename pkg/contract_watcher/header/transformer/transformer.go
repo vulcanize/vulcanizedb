@@ -249,6 +249,11 @@ func (tr *Transformer) Execute() error {
 		}
 
 		// Sort logs by the contract they belong to
+		// Start by adding every contract addr to the map
+		// So that if we don't have any logs for it, it is caught and the header is still marked checked for its events
+		for _, addr := range tr.contractAddresses {
+			sortedLogs[addr] = nil
+		}
 		for _, log := range allLogs {
 			addr := strings.ToLower(log.Address.Hex())
 			sortedLogs[addr] = append(sortedLogs[addr], log)
@@ -256,12 +261,20 @@ func (tr *Transformer) Execute() error {
 
 		// Process logs for each contract
 		for conAddr, logs := range sortedLogs {
-			if logs == nil {
+			con := tr.Contracts[conAddr]
+			if len(logs) < 1 {
+				eventIds := make([]string, 0)
+				for eventName := range con.Events {
+					eventIds = append(eventIds, strings.ToLower(eventName+"_"+con.Address))
+				}
+				markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, eventIds)
+				if markCheckedErr != nil {
+					return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
+				}
 				logrus.Tracef("no logs found for contract %s at block %d, continuing", conAddr, header.BlockNumber)
 				continue
 			}
 			// Configure converter with this contract
-			con := tr.Contracts[conAddr]
 			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
