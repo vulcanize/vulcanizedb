@@ -175,8 +175,8 @@ func configureSubscription() {
 
 		// Below default to false, which means we get all headers by default
 		HeaderFilter: config.HeaderFilter{
-			Off:       viper.GetBool("subscription.headerFilter.off"),
-			FinalOnly: viper.GetBool("subscription.headerFilter.finalOnly"),
+			Off:    viper.GetBool("subscription.headerFilter.off"),
+			Uncles: viper.GetBool("subscription.headerFilter.uncles"),
 		},
 
 		// Below defaults to false and two slices of length 0

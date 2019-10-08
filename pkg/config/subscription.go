@@ -32,8 +32,8 @@ type Subscription struct {
 }
 
 type HeaderFilter struct {
-	Off       bool
-	FinalOnly bool
+	Off    bool
+	Uncles bool
 }
 
 type TrxFilter struct {

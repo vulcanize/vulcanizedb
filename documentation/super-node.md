@@ -273,7 +273,7 @@ The config for `streamSubscribe` has the `subscribe` set of parameters, for exam
     endingBlock = 0
     [subscription.headerFilter]
         off = false
-        finalOnly = true
+        uncles = false
     [subscription.trxFilter]
         off = false
         src = [
@@ -320,8 +320,8 @@ send that to the subscriber, if this is set to `false` then the super-node only 
 `subscription.endingBlock` is the ending block number for the range we want to receive data in;
 setting to 0 means there is no end/we will continue indefinitely.
 
-`subscription.headerFilter` has two sub-options: `off` and `finalOnly`. Setting `off` to true tells the super-node to
-not send any headers to the subscriber; setting `finalOnly` to true tells the super-node to send only canonical headers.
+`subscription.headerFilter` has two sub-options: `off` and `uncles`. Setting `off` to true tells the super-node to
+not send any headers to the subscriber; setting `uncles` to true tells the super-node to send uncles in addition to normal headers.
 
 `subscription.trxFilter` has three sub-options: `off`, `src`, and `dst`. Setting `off` to true tells the super-node to
 not send any transactions to the subscriber; `src` and `dst` are string arrays which can be filled with ETH addresses we want to filter transactions for,

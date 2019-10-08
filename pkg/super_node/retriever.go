@@ -86,7 +86,7 @@ func (ecr *EthCIDRetriever) RetrieveCIDs(streamFilters config.Subscription, bloc
 			log.Error("header cid retrieval error")
 			return nil, headersErr
 		}
-		if !streamFilters.HeaderFilter.FinalOnly {
+		if streamFilters.HeaderFilter.Uncles {
 			var unclesErr error
 			cw.Uncles, unclesErr = ecr.retrieveUncleCIDs(tx, streamFilters, blockNumber)
 			if unclesErr != nil {
@@ -164,7 +164,7 @@ func (ecr *EthCIDRetriever) retrieveHeaderCIDs(tx *sqlx.Tx, streamFilters config
 	log.Debug("retrieving header cids for block ", blockNumber)
 	headers := make([]string, 0)
 	pgStr := `SELECT cid FROM header_cids
-				WHERE block_number = $1 AND final IS TRUE`
+				WHERE block_number = $1 AND uncle IS FALSE`
 	err := tx.Select(&headers, pgStr, blockNumber)
 	return headers, err
 }
@@ -173,7 +173,7 @@ func (ecr *EthCIDRetriever) retrieveUncleCIDs(tx *sqlx.Tx, streamFilters config.
 	log.Debug("retrieving header cids for block ", blockNumber)
 	headers := make([]string, 0)
 	pgStr := `SELECT cid FROM header_cids
-				WHERE block_number = $1 AND final IS FALSE`
+				WHERE block_number = $1 AND uncle IS TRUE`
 	err := tx.Select(&headers, pgStr, blockNumber)
 	return headers, err
 }
