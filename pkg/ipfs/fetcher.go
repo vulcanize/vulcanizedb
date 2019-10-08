@@ -28,7 +28,7 @@ import (
 
 // IPLDFetcher is an interface for fetching IPLDs
 type IPLDFetcher interface {
-	FetchCIDs(cids CIDWrapper) (*IPLDWrapper, error)
+	FetchIPLDs(cids CIDWrapper) (*IPLDWrapper, error)
 }
 
 // EthIPLDFetcher is used to fetch ETH IPLD objects from IPFS
@@ -47,8 +47,8 @@ func NewIPLDFetcher(ipfsPath string) (*EthIPLDFetcher, error) {
 	}, nil
 }
 
-// FetchCIDs is the exported method for fetching and returning all the cids passed in a CIDWrapper
-func (f *EthIPLDFetcher) FetchCIDs(cids CIDWrapper) (*IPLDWrapper, error) {
+// FetchIPLDs is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
+func (f *EthIPLDFetcher) FetchIPLDs(cids CIDWrapper) (*IPLDWrapper, error) {
 
 	log.Debug("fetching iplds")
 	blocks := &IPLDWrapper{
@@ -61,29 +61,29 @@ func (f *EthIPLDFetcher) FetchCIDs(cids CIDWrapper) (*IPLDWrapper, error) {
 		StorageNodes: make(map[common.Hash]map[common.Hash]blocks.Block),
 	}
 
-	err := f.fetchHeaders(cids, blocks)
-	if err != nil {
-		return nil, err
+	headersErr := f.fetchHeaders(cids, blocks)
+	if headersErr != nil {
+		return nil, headersErr
 	}
-	err = f.fetchUncles(cids, blocks)
-	if err != nil {
-		return nil, err
+	unclesErr := f.fetchUncles(cids, blocks)
+	if unclesErr != nil {
+		return nil, unclesErr
 	}
-	err = f.fetchTrxs(cids, blocks)
-	if err != nil {
-		return nil, err
+	trxsErr := f.fetchTrxs(cids, blocks)
+	if trxsErr != nil {
+		return nil, trxsErr
 	}
-	err = f.fetchRcts(cids, blocks)
-	if err != nil {
-		return nil, err
+	rctsErr := f.fetchRcts(cids, blocks)
+	if rctsErr != nil {
+		return nil, rctsErr
 	}
-	err = f.fetchStorage(cids, blocks)
-	if err != nil {
-		return nil, err
+	storageErr := f.fetchStorage(cids, blocks)
+	if storageErr != nil {
+		return nil, storageErr
 	}
-	err = f.fetchState(cids, blocks)
-	if err != nil {
-		return nil, err
+	stateErr := f.fetchState(cids, blocks)
+	if stateErr != nil {
+		return nil, stateErr
 	}
 
 	return blocks, nil
@@ -174,13 +174,13 @@ func (f *EthIPLDFetcher) fetchState(cids CIDWrapper, blocks *IPLDWrapper) error 
 		if stateNode.CID == "" || stateNode.Key == "" {
 			continue
 		}
-		dc, err := cid.Decode(stateNode.CID)
-		if err != nil {
-			return err
+		dc, decodeErr := cid.Decode(stateNode.CID)
+		if decodeErr != nil {
+			return decodeErr
 		}
-		block, err := f.fetch(dc)
-		if err != nil {
-			return err
+		block, fetchErr := f.fetch(dc)
+		if fetchErr != nil {
+			return fetchErr
 		}
 		blocks.StateNodes[common.HexToHash(stateNode.Key)] = block
 	}
@@ -196,13 +196,13 @@ func (f *EthIPLDFetcher) fetchStorage(cids CIDWrapper, blks *IPLDWrapper) error 
 		if storageNode.CID == "" || storageNode.Key == "" || storageNode.StateKey == "" {
 			continue
 		}
-		dc, err := cid.Decode(storageNode.CID)
-		if err != nil {
-			return err
+		dc, decodeErr := cid.Decode(storageNode.CID)
+		if decodeErr != nil {
+			return decodeErr
 		}
-		blk, err := f.fetch(dc)
-		if err != nil {
-			return err
+		blk, fetchErr := f.fetch(dc)
+		if fetchErr != nil {
+			return fetchErr
 		}
 		if blks.StorageNodes[common.HexToHash(storageNode.StateKey)] == nil {
 			blks.StorageNodes[common.HexToHash(storageNode.StateKey)] = make(map[common.Hash]blocks.Block)

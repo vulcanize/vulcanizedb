@@ -23,23 +23,38 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-ipfs/core"
+	"github.com/ipfs/go-ipfs/plugin/loader"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 )
 
+// InitIPFSPlugins is used to initialized IPFS plugins before creating a new IPFS node
+// This should only be called once
+func InitIPFSPlugins() error {
+	l, err := loader.NewPluginLoader("")
+	if err != nil {
+		return err
+	}
+	err = l.Initialize()
+	if err != nil {
+		return err
+	}
+	return l.Inject()
+}
+
 // InitIPFSBlockService is used to configure and return a BlockService using an ipfs repo path (e.g. ~/.ipfs)
 func InitIPFSBlockService(ipfsPath string) (blockservice.BlockService, error) {
-	r, err := fsrepo.Open(ipfsPath)
-	if err != nil {
-		return nil, err
+	r, openErr := fsrepo.Open(ipfsPath)
+	if openErr != nil {
+		return nil, openErr
 	}
 	ctx := context.Background()
 	cfg := &core.BuildCfg{
 		Online: false,
 		Repo:   r,
 	}
-	ipfsNode, err := core.NewNode(ctx, cfg)
-	if err != nil {
-		return nil, err
+	ipfsNode, newNodeErr := core.NewNode(ctx, cfg)
+	if newNodeErr != nil {
+		return nil, newNodeErr
 	}
 	return ipfsNode.Blocks, nil
 }

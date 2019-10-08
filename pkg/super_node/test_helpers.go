@@ -26,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// SetupDB is use to setup a db for super node tests
 func SetupDB() (*postgres.DB, error) {
 	return postgres.NewDB(config.Database{
 		Hostname: "localhost",
@@ -34,6 +35,7 @@ func SetupDB() (*postgres.DB, error) {
 	}, core.Node{})
 }
 
+// TearDownDB is used to tear down the super node dbs after tests
 func TearDownDB(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
@@ -55,6 +57,7 @@ func TearDownDB(db *postgres.DB) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
+// ListContainsString used to check if a list of strings contains a particular string
 func ListContainsString(sss []string, s string) bool {
 	for _, str := range sss {
 		if s == str {
@@ -64,6 +67,7 @@ func ListContainsString(sss []string, s string) bool {
 	return false
 }
 
+// ListContainsBytes used to check if a list of byte arrays contains a particular byte array
 func ListContainsBytes(bbb [][]byte, b []byte) bool {
 	for _, by := range bbb {
 		if bytes.Equal(by, b) {

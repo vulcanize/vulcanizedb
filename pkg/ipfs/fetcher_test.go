@@ -83,7 +83,7 @@ var _ = Describe("Fetcher", func() {
 		It("Fetches and returns IPLDs for the CIDs provided in the CIDWrapper", func() {
 			fetcher := new(ipfs.EthIPLDFetcher)
 			fetcher.BlockService = mockBlockService
-			iplds, err := fetcher.FetchCIDs(mockCIDWrapper)
+			iplds, err := fetcher.FetchIPLDs(mockCIDWrapper)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
 			Expect(len(iplds.Headers)).To(Equal(1))
