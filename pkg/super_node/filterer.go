@@ -44,25 +44,25 @@ func NewResponseFilterer() *Filterer {
 // FilterResponse is used to filter through eth data to extract and package requested data into a Payload
 func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SuperNodePayload, error) {
 	response := new(streamer.SuperNodePayload)
-	err := s.filterHeaders(streamFilters, response, payload)
-	if err != nil {
-		return streamer.SuperNodePayload{}, err
+	headersErr := s.filterHeaders(streamFilters, response, payload)
+	if headersErr != nil {
+		return streamer.SuperNodePayload{}, headersErr
 	}
-	txHashes, err := s.filterTransactions(streamFilters, response, payload)
-	if err != nil {
-		return streamer.SuperNodePayload{}, err
+	txHashes, trxsErr := s.filterTransactions(streamFilters, response, payload)
+	if trxsErr != nil {
+		return streamer.SuperNodePayload{}, trxsErr
 	}
-	err = s.filerReceipts(streamFilters, response, payload, txHashes)
-	if err != nil {
-		return streamer.SuperNodePayload{}, err
+	rctsErr := s.filerReceipts(streamFilters, response, payload, txHashes)
+	if rctsErr != nil {
+		return streamer.SuperNodePayload{}, rctsErr
 	}
-	err = s.filterState(streamFilters, response, payload)
-	if err != nil {
-		return streamer.SuperNodePayload{}, err
+	stateErr := s.filterState(streamFilters, response, payload)
+	if stateErr != nil {
+		return streamer.SuperNodePayload{}, stateErr
 	}
-	err = s.filterStorage(streamFilters, response, payload)
-	if err != nil {
-		return streamer.SuperNodePayload{}, err
+	storageErr := s.filterStorage(streamFilters, response, payload)
+	if storageErr != nil {
+		return streamer.SuperNodePayload{}, storageErr
 	}
 	response.BlockNumber = payload.BlockNumber
 	return *response, nil
@@ -170,12 +170,12 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 			if wantedContract == actualContract {
 				if len(wantedTopics) == 0 {
 					return true
-				} else { // Or if we have contracts and topics to filter on we only keep receipts that satisfy both conditions
-					for _, wantedTopic := range wantedTopics {
-						for _, actualTopic := range actualTopics {
-							if wantedTopic == actualTopic {
-								return true
-							}
+				}
+				// Or if we have contracts and topics to filter on we only keep receipts that satisfy both conditions
+				for _, wantedTopic := range wantedTopics {
+					for _, actualTopic := range actualTopics {
+						if wantedTopic == actualTopic {
+							return true
 						}
 					}
 				}

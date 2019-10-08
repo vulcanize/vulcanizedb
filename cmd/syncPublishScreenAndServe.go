@@ -16,11 +16,8 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
 	syn "sync"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -47,51 +44,30 @@ func init() {
 }
 
 func syncPublishScreenAndServe() {
-	superNode, err := newSuperNode()
-	if err != nil {
-		log.Fatal(err)
+	superNode, newNodeErr := newSuperNode()
+	if newNodeErr != nil {
+		log.Fatal(newNodeErr)
 	}
 
 	wg := &syn.WaitGroup{}
 	forwardPayloadChan := make(chan ipfs.IPLDPayload, 20000)
 	forwardQuitChan := make(chan bool, 1)
-	err = superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
-	if err != nil {
-		log.Fatal(err)
+	syncAndPubErr := superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
+	if syncAndPubErr != nil {
+		log.Fatal(syncAndPubErr)
 	}
-	superNode.ScreenAndServe(forwardPayloadChan, forwardQuitChan)
+	superNode.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
 	if viper.GetBool("backfill.on") && viper.GetString("backfill.ipcPath") != "" {
-		backfiller := newBackFiller(superNode.GetPublisher())
-		if err != nil {
-			log.Fatal(err)
+		backfiller, newBackFillerErr := newBackFiller()
+		if newBackFillerErr != nil {
+			log.Fatal(newBackFillerErr)
 		}
 		backfiller.FillGaps(wg, nil)
 	}
 
-	var ipcPath string
-	ipcPath = viper.GetString("server.ipcPath")
-	if ipcPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
-	}
-	_, _, err = rpc.StartIPCEndpoint(ipcPath, superNode.APIs())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var wsEndpoint string
-	wsEndpoint = viper.GetString("server.wsEndpoint")
-	if wsEndpoint == "" {
-		wsEndpoint = "127.0.0.1:8080"
-	}
-	var exposeAll = true
-	var wsOrigins []string = nil
-	_, _, err = rpc.StartWSEndpoint(wsEndpoint, superNode.APIs(), []string{"vulcanizedb"}, wsOrigins, exposeAll)
-	if err != nil {
-		log.Fatal(err)
+	serverErr := startServers(superNode)
+	if serverErr != nil {
+		log.Fatal(serverErr)
 	}
 	wg.Wait()
 }

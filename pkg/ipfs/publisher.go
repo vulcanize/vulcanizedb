@@ -22,8 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ipfs/go-ipfs/plugin/loader"
-
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_header"
 	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_receipts"
@@ -49,18 +47,6 @@ type Publisher struct {
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
 func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
-	l, err := loader.NewPluginLoader("")
-	if err != nil {
-		return nil, err
-	}
-	err = l.Initialize()
-	if err != nil {
-		return nil, err
-	}
-	err = l.Inject()
-	if err != nil {
-		return nil, err
-	}
 	node, err := ipfs.InitIPFSNode(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -77,47 +63,47 @@ func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
 func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	// Process and publish headers
-	headerCid, err := pub.publishHeaders(payload.HeaderRLP)
-	if err != nil {
-		return nil, err
+	headerCid, headersErr := pub.publishHeaders(payload.HeaderRLP)
+	if headersErr != nil {
+		return nil, headersErr
 	}
 
 	// Process and publish uncles
 	uncleCids := make(map[common.Hash]string)
 	for _, uncle := range payload.BlockBody.Uncles {
-		uncleRlp, err := rlp.EncodeToBytes(uncle)
-		if err != nil {
-			return nil, err
+		uncleRlp, encodeErr := rlp.EncodeToBytes(uncle)
+		if encodeErr != nil {
+			return nil, encodeErr
 		}
-		cid, err := pub.publishHeaders(uncleRlp)
-		if err != nil {
-			return nil, err
+		cid, unclesErr := pub.publishHeaders(uncleRlp)
+		if unclesErr != nil {
+			return nil, unclesErr
 		}
 		uncleCids[uncle.Hash()] = cid
 	}
 
 	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(payload.BlockBody, payload.TrxMetaData)
-	if err != nil {
-		return nil, err
+	transactionCids, trxsErr := pub.publishTransactions(payload.BlockBody, payload.TrxMetaData)
+	if trxsErr != nil {
+		return nil, trxsErr
 	}
 
 	// Process and publish receipts
-	receiptsCids, err := pub.publishReceipts(payload.Receipts, payload.ReceiptMetaData)
-	if err != nil {
-		return nil, err
+	receiptsCids, rctsErr := pub.publishReceipts(payload.Receipts, payload.ReceiptMetaData)
+	if rctsErr != nil {
+		return nil, rctsErr
 	}
 
 	// Process and publish state leafs
-	stateNodeCids, err := pub.publishStateNodes(payload.StateNodes)
-	if err != nil {
-		return nil, err
+	stateNodeCids, stateErr := pub.publishStateNodes(payload.StateNodes)
+	if stateErr != nil {
+		return nil, stateErr
 	}
 
 	// Process and publish storage leafs
-	storageNodeCids, err := pub.publishStorageNodes(payload.StorageNodes)
-	if err != nil {
-		return nil, err
+	storageNodeCids, storageErr := pub.publishStorageNodes(payload.StorageNodes)
+	if storageErr != nil {
+		return nil, storageErr
 	}
 
 	// Package CIDs and their metadata into a single struct

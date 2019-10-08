@@ -52,15 +52,19 @@ type BackFillService struct {
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(ipfsPublisher ipfs.IPLDPublisher, db *postgres.DB, archivalNodeRpcClient core.RpcClient, freq time.Duration) BackFillInterface {
+func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RpcClient, freq time.Duration) (BackFillInterface, error) {
+	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
+	if err != nil {
+		return nil, err
+	}
 	return &BackFillService{
 		Repository:        NewCIDRepository(db),
 		Converter:         ipfs.NewPayloadConverter(params.MainnetChainConfig),
-		Publisher:         ipfsPublisher,
+		Publisher:         publisher,
 		Retriever:         NewCIDRetriever(db),
-		StateDiffFetcher:  fetcher.NewStateDiffFetcher(archivalNodeRpcClient),
+		StateDiffFetcher:  fetcher.NewStateDiffFetcher(archivalNodeRPCClient),
 		GapCheckFrequency: freq,
-	}
+	}, nil
 }
 
 // FillGaps periodically checks for and fills in gaps in the super node db
@@ -103,6 +107,7 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
 			}
 		}
 	}()
+	log.Info("fillGaps goroutine successfully spun up")
 }
 
 func (bfs *BackFillService) fillGaps(gap [2]int64) {

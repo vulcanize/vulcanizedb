@@ -49,16 +49,13 @@ type NodeInterface interface {
 	// Main event loop for syncAndPublish processes
 	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- ipfs.IPLDPayload, forwardQuitchan chan<- bool) error
 	// Main event loop for handling client pub-sub
-	ScreenAndServe(screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool)
+	ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool)
 	// Method to subscribe to receive state diff processing output
 	Subscribe(id rpc.ID, sub chan<- streamer.SuperNodePayload, quitChan chan<- bool, streamFilters config.Subscription)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID)
 	// Method to access the Geth node info for this service
 	Node() core.Node
-	// Method used to retrieve the underlying IPFS publisher for this service, so that is can be used for backfilling
-	// This is needed because it's not possible to initialize two ipfs nodes at the same path
-	GetPublisher() ipfs.IPLDPublisher
 }
 
 // Service is the underlying struct for the super node
@@ -92,18 +89,22 @@ type Service struct {
 	// Number of workers
 	WorkerPoolSize int
 	// Info for the Geth node that this super node is working with
-	gethNode core.Node
+	GethNode core.Node
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
 func NewSuperNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
-	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
-	if err != nil {
-		return nil, err
+	ipfsInitErr := ipfs.InitIPFSPlugins()
+	if ipfsInitErr != nil {
+		return nil, ipfsInitErr
 	}
-	ipldFetcher, err := ipfs.NewIPLDFetcher(ipfsPath)
-	if err != nil {
-		return nil, err
+	publisher, newPublisherErr := ipfs.NewIPLDPublisher(ipfsPath)
+	if newPublisherErr != nil {
+		return nil, newPublisherErr
+	}
+	ipldFetcher, newFetcherErr := ipfs.NewIPLDFetcher(ipfsPath)
+	if newFetcherErr != nil {
+		return nil, newFetcherErr
 	}
 	return &Service{
 		Streamer:          streamer.NewStateDiffStreamer(rpcClient),
@@ -119,7 +120,7 @@ func NewSuperNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc
 		Subscriptions:     make(map[common.Hash]map[rpc.ID]Subscription),
 		SubscriptionTypes: make(map[common.Hash]config.Subscription),
 		WorkerPoolSize:    workers,
-		gethNode:          node,
+		GethNode:          node,
 	}, nil
 }
 
@@ -144,9 +145,9 @@ func (sap *Service) APIs() []rpc.API {
 // This continues on no matter if or how many subscribers there are, it then forwards the data to the ScreenAndServe() loop
 // which filters and sends relevant data to client subscriptions, if there are any
 func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- ipfs.IPLDPayload, screenAndServeQuit chan<- bool) error {
-	sub, err := sap.Streamer.Stream(sap.PayloadChan)
-	if err != nil {
-		return err
+	sub, streamErr := sap.Streamer.Stream(sap.PayloadChan)
+	if streamErr != nil {
+		return streamErr
 	}
 	wg.Add(1)
 
@@ -158,14 +159,13 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	for i := 0; i < sap.WorkerPoolSize; i++ {
 		sap.publishAndIndex(i, publishAndIndexPayload, publishAndIndexQuit)
 	}
-
 	go func() {
 		for {
 			select {
 			case payload := <-sap.PayloadChan:
-				ipldPayload, err := sap.Converter.Convert(payload)
-				if err != nil {
-					log.Error(err)
+				ipldPayload, convertErr := sap.Converter.Convert(payload)
+				if convertErr != nil {
+					log.Error(convertErr)
 					continue
 				}
 				// If we have a ScreenAndServe process running, forward the payload to it
@@ -178,8 +178,8 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 				case publishAndIndexPayload <- *ipldPayload:
 				default:
 				}
-			case err = <-sub.Err():
-				log.Error(err)
+			case subErr := <-sub.Err():
+				log.Error(subErr)
 			case <-sap.QuitChan:
 				// If we have a ScreenAndServe process running, forward the quit signal to it
 				select {
@@ -199,7 +199,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 			}
 		}
 	}()
-
+	log.Info("syncAndPublish goroutine successfully spun up")
 	return nil
 }
 
@@ -208,14 +208,14 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan ipfs.I
 		for {
 			select {
 			case payload := <-publishAndIndexPayload:
-				cidPayload, err := sap.Publisher.Publish(&payload)
-				if err != nil {
-					log.Errorf("worker %d error: %v", id, err)
+				cidPayload, publishErr := sap.Publisher.Publish(&payload)
+				if publishErr != nil {
+					log.Errorf("worker %d error: %v", id, publishErr)
 					continue
 				}
-				err = sap.Repository.Index(cidPayload)
-				if err != nil {
-					log.Errorf("worker %d error: %v", id, err)
+				indexErr := sap.Repository.Index(cidPayload)
+				if indexErr != nil {
+					log.Errorf("worker %d error: %v", id, indexErr)
 				}
 			case <-publishAndIndexQuit:
 				log.Infof("quiting publishAndIndex worker %d", id)
@@ -223,25 +223,29 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan ipfs.I
 			}
 		}
 	}()
+	log.Info("publishAndIndex goroutine successfully spun up")
 }
 
 // ScreenAndServe is the loop used to screen data streamed from the state diffing eth node
 // and send the appropriate portions of it to a requesting client subscription, according to their subscription configuration
-func (sap *Service) ScreenAndServe(screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool) {
+func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan ipfs.IPLDPayload, screenAndServeQuit <-chan bool) {
+	wg.Add(1)
 	go func() {
 		for {
 			select {
 			case payload := <-screenAndServePayload:
-				err := sap.sendResponse(payload)
-				if err != nil {
-					log.Error(err)
+				sendErr := sap.sendResponse(payload)
+				if sendErr != nil {
+					log.Error(sendErr)
 				}
 			case <-screenAndServeQuit:
 				log.Info("quiting ScreenAndServe process")
+				wg.Done()
 				return
 			}
 		}
 	}()
+	log.Info("screenAndServe goroutine successfully spun up")
 }
 
 func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
@@ -253,9 +257,9 @@ func (sap *Service) sendResponse(payload ipfs.IPLDPayload) error {
 			log.Errorf("subscription configuration for subscription type %s not available", ty.Hex())
 			continue
 		}
-		response, err := sap.Filterer.FilterResponse(subConfig, payload)
-		if err != nil {
-			log.Error(err)
+		response, filterErr := sap.Filterer.FilterResponse(subConfig, payload)
+		if filterErr != nil {
+			log.Error(filterErr)
 			continue
 		}
 		for id, sub := range subs {
@@ -276,9 +280,9 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- streamer.SuperNodePayload, q
 	log.Info("Subscribing to the super node service")
 	// Subscription type is defined as the hash of its content
 	// Group subscriptions by type and screen payloads once for subs of the same type
-	by, err := rlp.EncodeToBytes(streamFilters)
-	if err != nil {
-		log.Error(err)
+	by, encodeErr := rlp.EncodeToBytes(streamFilters)
+	if encodeErr != nil {
+		log.Error(encodeErr)
 	}
 	subscriptionHash := crypto.Keccak256(by)
 	subscriptionType := common.BytesToHash(subscriptionHash)
@@ -307,20 +311,21 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	// Retrieve cached CIDs relevant to this subscriber
 	var endingBlock int64
 	var startingBlock int64
-	var err error
-	startingBlock, err = sap.Retriever.RetrieveFirstBlockNumber()
-	if err != nil {
+	var retrieveFirstBlockErr error
+	var retrieveLastBlockErr error
+	startingBlock, retrieveFirstBlockErr = sap.Retriever.RetrieveFirstBlockNumber()
+	if retrieveFirstBlockErr != nil {
 		sub.PayloadChan <- streamer.SuperNodePayload{
-			ErrMsg: "unable to set block range start; error: " + err.Error(),
+			ErrMsg: "unable to set block range start; error: " + retrieveFirstBlockErr.Error(),
 		}
 	}
 	if startingBlock < con.StartingBlock.Int64() {
 		startingBlock = con.StartingBlock.Int64()
 	}
-	endingBlock, err = sap.Retriever.RetrieveLastBlockNumber()
-	if err != nil {
+	endingBlock, retrieveLastBlockErr = sap.Retriever.RetrieveLastBlockNumber()
+	if retrieveLastBlockErr != nil {
 		sub.PayloadChan <- streamer.SuperNodePayload{
-			ErrMsg: "unable to set block range end; error: " + err.Error(),
+			ErrMsg: "unable to set block range end; error: " + retrieveLastBlockErr.Error(),
 		}
 	}
 	if endingBlock > con.EndingBlock.Int64() && con.EndingBlock.Int64() > 0 && con.EndingBlock.Int64() > startingBlock {
@@ -333,32 +338,25 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, con config.Subscriptio
 	// TODO: separate backfill into a different rpc subscription method altogether?
 	go func() {
 		for i := startingBlock; i <= endingBlock; i++ {
-			cidWrapper, err := sap.Retriever.RetrieveCIDs(con, i)
-			if err != nil {
+			cidWrapper, retrieveCIDsErr := sap.Retriever.RetrieveCIDs(con, i)
+			if retrieveCIDsErr != nil {
 				sub.PayloadChan <- streamer.SuperNodePayload{
-					ErrMsg: "CID retrieval error: " + err.Error(),
+					ErrMsg: "CID retrieval error: " + retrieveCIDsErr.Error(),
 				}
 				continue
 			}
 			if ipfs.EmptyCIDWrapper(*cidWrapper) {
 				continue
 			}
-			blocksWrapper, err := sap.IPLDFetcher.FetchCIDs(*cidWrapper)
-			if err != nil {
-				log.Error(err)
+			blocksWrapper, fetchIPLDsErr := sap.IPLDFetcher.FetchIPLDs(*cidWrapper)
+			if fetchIPLDsErr != nil {
+				log.Error(fetchIPLDsErr)
 				sub.PayloadChan <- streamer.SuperNodePayload{
-					ErrMsg: "IPLD fetching error: " + err.Error(),
+					ErrMsg: "IPLD fetching error: " + fetchIPLDsErr.Error(),
 				}
 				continue
 			}
-			backFillIplds, err := sap.Resolver.ResolveIPLDs(*blocksWrapper)
-			if err != nil {
-				log.Error(err)
-				sub.PayloadChan <- streamer.SuperNodePayload{
-					ErrMsg: "IPLD resolving error: " + err.Error(),
-				}
-				continue
-			}
+			backFillIplds := sap.Resolver.ResolveIPLDs(*blocksWrapper)
 			select {
 			case sub.PayloadChan <- backFillIplds:
 				log.Infof("sending super node back-fill payload to subscription %s", id)
@@ -393,7 +391,7 @@ func (sap *Service) Start(*p2p.Server) error {
 	if err := sap.SyncAndPublish(wg, payloadChan, quitChan); err != nil {
 		return err
 	}
-	sap.ScreenAndServe(payloadChan, quitChan)
+	sap.ScreenAndServe(wg, payloadChan, quitChan)
 	return nil
 }
 
@@ -406,7 +404,7 @@ func (sap *Service) Stop() error {
 
 // Node returns the Geth node info for this service
 func (sap *Service) Node() core.Node {
-	return sap.gethNode
+	return sap.GethNode
 }
 
 // close is used to close all listening subscriptions
@@ -425,8 +423,4 @@ func (sap *Service) close() {
 		delete(sap.SubscriptionTypes, ty)
 	}
 	sap.Unlock()
-}
-
-func (sap *Service) GetPublisher() ipfs.IPLDPublisher {
-	return sap.Publisher
 }

@@ -18,6 +18,7 @@ package mocks
 
 import (
 	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 

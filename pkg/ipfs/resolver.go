@@ -24,7 +24,7 @@ import (
 
 // IPLDResolver is the interface to resolving IPLDs
 type IPLDResolver interface {
-	ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SuperNodePayload, error)
+	ResolveIPLDs(ipfsBlocks IPLDWrapper) streamer.SuperNodePayload
 }
 
 // EthIPLDResolver is the underlying struct to support the IPLDResolver interface
@@ -36,7 +36,7 @@ func NewIPLDResolver() *EthIPLDResolver {
 }
 
 // ResolveIPLDs is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
-func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.SuperNodePayload, error) {
+func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) streamer.SuperNodePayload {
 	response := &streamer.SuperNodePayload{
 		BlockNumber:     ipfsBlocks.BlockNumber,
 		StateNodesRlp:   make(map[common.Hash][]byte),
@@ -48,7 +48,7 @@ func (eir *EthIPLDResolver) ResolveIPLDs(ipfsBlocks IPLDWrapper) (streamer.Super
 	eir.resolveReceipts(ipfsBlocks.Receipts, response)
 	eir.resolveState(ipfsBlocks.StateNodes, response)
 	eir.resolveStorage(ipfsBlocks.StorageNodes, response)
-	return *response, nil
+	return *response
 }
 
 func (eir *EthIPLDResolver) resolveHeaders(blocks []blocks.Block, response *streamer.SuperNodePayload) {
