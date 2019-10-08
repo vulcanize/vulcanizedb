@@ -35,8 +35,7 @@ var _ = Describe("Resolver", func() {
 			resolver = ipfs.NewIPLDResolver()
 		})
 		It("Resolves IPLD data to their correct geth data types and packages them to send to requesting transformers", func() {
-			superNodePayload, err := resolver.ResolveIPLDs(mocks.MockIPLDWrapper)
-			Expect(err).ToNot(HaveOccurred())
+			superNodePayload := resolver.ResolveIPLDs(mocks.MockIPLDWrapper)
 			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeeNodePayload.BlockNumber.Int64()))
 			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeeNodePayload.HeadersRlp))
 			Expect(superNodePayload.UnclesRlp).To(Equal(mocks.MockSeeNodePayload.UnclesRlp))

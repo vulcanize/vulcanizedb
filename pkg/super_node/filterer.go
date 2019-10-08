@@ -71,7 +71,7 @@ func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipf
 func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
 	if !streamFilters.HeaderFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
 		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
-		if !streamFilters.HeaderFilter.FinalOnly {
+		if streamFilters.HeaderFilter.Uncles {
 			for _, uncle := range payload.BlockBody.Uncles {
 				uncleRlp, err := rlp.EncodeToBytes(uncle)
 				if err != nil {

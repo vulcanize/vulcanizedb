@@ -87,17 +87,17 @@ func (repo *Repository) Index(cidPayload *ipfs.CIDPayload) error {
 
 func (repo *Repository) indexHeaderCID(tx *sqlx.Tx, cid, blockNumber, hash string) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid, final) VALUES ($1, $2, $3, $4)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, final) = ($3, $4)
+	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, cid, uncle) VALUES ($1, $2, $3, $4)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, uncle) = ($3, $4)
 								RETURNING id`,
-		blockNumber, hash, cid, true).Scan(&headerID)
+		blockNumber, hash, cid, false).Scan(&headerID)
 	return headerID, err
 }
 
 func (repo *Repository) indexUncleCID(tx *sqlx.Tx, cid, blockNumber, hash string) error {
-	_, err := tx.Exec(`INSERT INTO public.header_cids (block_number, block_hash, cid, final) VALUES ($1, $2, $3, $4)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, final) = ($3, $4)`,
-		blockNumber, hash, cid, false)
+	_, err := tx.Exec(`INSERT INTO public.header_cids (block_number, block_hash, cid, uncle) VALUES ($1, $2, $3, $4)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (cid, uncle) = ($3, $4)`,
+		blockNumber, hash, cid, true)
 	return err
 }
 
