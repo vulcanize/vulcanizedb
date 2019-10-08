@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -267,13 +266,4 @@ func continuousHeaders(headers []core.Header) []core.Header {
 // Check the repositories column id cache for a value
 func (r *headerRepository) CheckCache(key string) (interface{}, bool) {
 	return r.columns.Get(key)
-}
-
-// Used to mark a header checked as part of some external transaction so as to group into one commit
-func (r *headerRepository) MarkHeaderCheckedInTransaction(headerID int64, tx *sqlx.Tx, eventID string) error {
-	_, err := tx.Exec(`INSERT INTO public.checked_headers (header_id, `+eventID+`)
-		VALUES ($1, $2) 
-		ON CONFLICT (header_id) DO
-			UPDATE SET `+eventID+` = checked_headers.`+eventID+` + 1`, headerID, 1)
-	return err
 }

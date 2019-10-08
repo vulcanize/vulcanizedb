@@ -294,8 +294,7 @@ func TearDown(db *postgres.DB) {
 
 	_, err = tx.Exec(`CREATE TABLE checked_headers (
     	id SERIAL PRIMARY KEY,
-    	header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-    	check_count INTEGER NOT NULL DEFAULT 1);`)
+    	header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE);`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DROP SCHEMA IF EXISTS full_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e CASCADE`)
