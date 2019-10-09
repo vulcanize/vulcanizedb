@@ -17,6 +17,7 @@
 package transformer_test
 
 import (
+	"database/sql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -101,7 +102,17 @@ var _ = Describe("Transformer", func() {
 			Expect(c.Address).To(Equal(fakeAddress))
 		})
 
-		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
+		It("uses first block from config if vDB headers table has no rows", func() {
+			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever.FirstBlockErr = sql.ErrNoRows
+			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
+
+			err := t.Init()
+
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns error if fetching first block fails for other reason", func() {
 			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
