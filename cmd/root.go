@@ -49,8 +49,8 @@ var (
 	syncAll              bool
 	endingBlockNumber    int64
 	recheckHeadersArg    bool
-	SubCommand           string
-	LogWithCommand       log.Entry
+	subCommand           string
+	logWithCommand       log.Entry
 	storageDiffsSource   string
 )
 
@@ -170,7 +170,7 @@ func getClients() (client.RPCClient, *ethclient.Client) {
 	rawRPCClient, err := rpc.Dial(ipc)
 
 	if err != nil {
-		LogWithCommand.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
 	rpcClient := client.NewRPCClient(rawRPCClient, ipc)
 	ethClient := ethclient.NewClient(rawRPCClient)

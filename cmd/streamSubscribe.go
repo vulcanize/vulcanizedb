@@ -32,7 +32,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
 
 // streamSubscribeCmd represents the streamSubscribe command
@@ -42,6 +42,8 @@ var streamSubscribeCmd = &cobra.Command{
 	Long: `This command is for demo and testing purposes and is used to subscribe to the super node with the provided subscription configuration parameters.
 It does not do anything with the data streamed from the super node other than unpack it and print it out for demonstration purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		streamSubscribe()
 	},
 }
@@ -55,7 +57,7 @@ func streamSubscribe() {
 	configureSubscription()
 
 	// Create a new rpc client and a subscription streamer with that client
-	rpcClient := getRpcClient()
+	rpcClient := getRPCClient()
 	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
@@ -64,22 +66,22 @@ func streamSubscribe() {
 	// Subscribe to the super node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, subscriptionConfig)
 	if err != nil {
-		log.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
-	log.Info("awaiting payloads")
+	logWithCommand.Info("awaiting payloads")
 	// Receive response payloads and print out the results
 	for {
 		select {
 		case payload := <-payloadChan:
 			if payload.ErrMsg != "" {
-				log.Error(payload.ErrMsg)
+				logWithCommand.Error(payload.ErrMsg)
 				continue
 			}
 			for _, headerRlp := range payload.HeadersRlp {
 				var header types.Header
 				err = rlp.Decode(bytes.NewBuffer(headerRlp), &header)
 				if err != nil {
-					log.Error(err)
+					logWithCommand.Error(err)
 					continue
 				}
 				fmt.Printf("Header number %d, hash %s\n", header.Number.Int64(), header.Hash().Hex())
@@ -91,7 +93,7 @@ func streamSubscribe() {
 				stream := rlp.NewStream(buff, 0)
 				err := trx.DecodeRLP(stream)
 				if err != nil {
-					log.Error(err)
+					logWithCommand.Error(err)
 					continue
 				}
 				fmt.Printf("Transaction with hash %s\n", trx.Hash().Hex())
@@ -103,14 +105,14 @@ func streamSubscribe() {
 				stream := rlp.NewStream(buff, 0)
 				err = rct.DecodeRLP(stream)
 				if err != nil {
-					log.Error(err)
+					logWithCommand.Error(err)
 					continue
 				}
 				fmt.Printf("Receipt with block hash %s, trx hash %s\n", rct.BlockHash.Hex(), rct.TxHash.Hex())
 				fmt.Printf("rct: %v\n", rct)
 				for _, l := range rct.Logs {
 					if len(l.Topics) < 1 {
-						log.Error(fmt.Sprintf("log only has %d topics", len(l.Topics)))
+						logWithCommand.Error(fmt.Sprintf("log only has %d topics", len(l.Topics)))
 						continue
 					}
 					fmt.Printf("Log for block hash %s, trx hash %s, address %s, and with topic0 %s\n",
@@ -123,7 +125,7 @@ func streamSubscribe() {
 				var acct state.Account
 				err = rlp.Decode(bytes.NewBuffer(stateRlp), &acct)
 				if err != nil {
-					log.Error(err)
+					logWithCommand.Error(err)
 					continue
 				}
 				fmt.Printf("Account for key %s, and root %s, with balance %d\n",
@@ -135,9 +137,9 @@ func streamSubscribe() {
 				for storageKey, storageRlp := range mappedRlp {
 					fmt.Printf("with storage key %s\n", storageKey.Hex())
 					var i []interface{}
-					err := rlp.DecodeBytes(storageRlp, i)
+					err := rlp.DecodeBytes(storageRlp, &i)
 					if err != nil {
-						log.Error(err)
+						logWithCommand.Error(err)
 						continue
 					}
 					// if a leaf node
@@ -146,7 +148,7 @@ func streamSubscribe() {
 						if !ok {
 							continue
 						}
-						valueBytes, ok := i[0].([]byte)
+						valueBytes, ok := i[1].([]byte)
 						if !ok {
 							continue
 						}
@@ -156,13 +158,13 @@ func streamSubscribe() {
 				}
 			}
 		case err = <-sub.Err():
-			log.Fatal(err)
+			logWithCommand.Fatal(err)
 		}
 	}
 }
 
 func configureSubscription() {
-	log.Info("loading subscription config")
+	logWithCommand.Info("loading subscription config")
 	subscriptionConfig = config.Subscription{
 		// Below default to false, which means we do not backfill by default
 		BackFill:     viper.GetBool("subscription.backfill"),
@@ -214,14 +216,14 @@ func configureSubscription() {
 	}
 }
 
-func getRpcClient() core.RpcClient {
+func getRPCClient() core.RpcClient {
 	vulcPath := viper.GetString("subscription.path")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}
-	rawRpcClient, err := rpc.Dial(vulcPath)
+	rawRPCClient, err := rpc.Dial(vulcPath)
 	if err != nil {
-		log.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
-	return client.NewRpcClient(rawRpcClient, vulcPath)
+	return client.NewRpcClient(rawRPCClient, vulcPath)
 }

@@ -41,6 +41,8 @@ var screenAndServeCmd = &cobra.Command{
 relays relevant data to requesting clients. In this mode, the super-node can only relay data which it has
 already indexed it does not stream out live data.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		screenAndServe()
 	},
 }
@@ -52,7 +54,7 @@ func init() {
 func screenAndServe() {
 	superNode, newNodeErr := newSuperNodeWithoutPairedGethNode()
 	if newNodeErr != nil {
-		log.Fatal(newNodeErr)
+		logWithCommand.Fatal(newNodeErr)
 	}
 	wg := &syn.WaitGroup{}
 	quitChan := make(chan bool, 1)
@@ -61,7 +63,7 @@ func screenAndServe() {
 
 	serverErr := startServers(superNode)
 	if serverErr != nil {
-		log.Fatal(serverErr)
+		logWithCommand.Fatal(serverErr)
 	}
 	wg.Wait()
 }
@@ -87,7 +89,7 @@ func startServers(superNode super_node.NodeInterface) error {
 		wsEndpoint = "127.0.0.1:8080"
 	}
 	var exposeAll = true
-	var wsOrigins []string = nil
+	var wsOrigins []string
 	_, _, wsErr := rpc.StartWSEndpoint(wsEndpoint, superNode.APIs(), []string{"vdb"}, wsOrigins, exposeAll)
 	if wsErr != nil {
 		return wsErr

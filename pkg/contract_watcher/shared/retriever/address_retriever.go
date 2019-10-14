@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 

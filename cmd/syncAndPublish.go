@@ -28,10 +28,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -45,6 +45,8 @@ all block and state (diff) data over a websocket subscription. This process
 then converts the eth data to IPLD objects and publishes them to IPFS. Additionally,
 it maintains a local index of the IPLD objects' CIDs in Postgres.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		syncAndPublish()
 	},
 }
@@ -58,34 +60,34 @@ func init() {
 func syncAndPublish() {
 	superNode, newNodeErr := newSuperNode()
 	if newNodeErr != nil {
-		log.Fatal(newNodeErr)
+		logWithCommand.Fatal(newNodeErr)
 	}
 	wg := &syn.WaitGroup{}
 	syncAndPubErr := superNode.SyncAndPublish(wg, nil, nil)
 	if syncAndPubErr != nil {
-		log.Fatal(syncAndPubErr)
+		logWithCommand.Fatal(syncAndPubErr)
 	}
-	if viper.GetBool("backfill.on") && viper.GetString("backfill.ipcPath") != "" {
+	if viper.GetBool("superNodeBackFill.on") && viper.GetString("superNodeBackFill.rpcPath") != "" {
 		backfiller, newBackFillerErr := newBackFiller()
 		if newBackFillerErr != nil {
-			log.Fatal(newBackFillerErr)
+			logWithCommand.Fatal(newBackFillerErr)
 		}
 		backfiller.FillGaps(wg, nil)
 	}
 	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
 }
 
-func getBlockChainAndClient(path string) (*geth.BlockChain, core.RpcClient) {
-	rawRpcClient, dialErr := rpc.Dial(path)
+func getBlockChainAndClient(path string) (*eth.BlockChain, core.RpcClient) {
+	rawRPCClient, dialErr := rpc.Dial(path)
 	if dialErr != nil {
-		log.Fatal(dialErr)
+		logWithCommand.Fatal(dialErr)
 	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
+	rpcClient := client.NewRpcClient(rawRPCClient, ipc)
+	ethClient := ethclient.NewClient(rawRPCClient)
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
 	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
+	blockChain := eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 	return blockChain, rpcClient
 }
 
@@ -97,7 +99,7 @@ func newSuperNode() (super_node.NodeInterface, error) {
 	if ipfsPath == "" {
 		home, homeDirErr := os.UserHomeDir()
 		if homeDirErr != nil {
-			log.Fatal(homeDirErr)
+			logWithCommand.Fatal(homeDirErr)
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
@@ -109,14 +111,14 @@ func newSuperNode() (super_node.NodeInterface, error) {
 }
 
 func newBackFiller() (super_node.BackFillInterface, error) {
-	blockChain, archivalRpcClient := getBlockChainAndClient(viper.GetString("backfill.ipcPath"))
+	blockChain, archivalRPCClient := getBlockChainAndClient(viper.GetString("superNodeBackFill.rpcPath"))
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-	freq := viper.GetInt("backfill.frequency")
+	freq := viper.GetInt("superNodeBackFill.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
 		frequency = time.Minute * 5
 	} else {
 		frequency = time.Duration(freq)
 	}
-	return super_node.NewBackFillService(ipfsPath, &db, archivalRpcClient, time.Minute*frequency)
+	return super_node.NewBackFillService(ipfsPath, &db, archivalRPCClient, time.Minute*frequency)
 }

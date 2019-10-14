@@ -22,8 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -27,7 +27,7 @@ import (
 
 func TestSuperNode(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Seed Node Suite Test")
+	RunSpecs(t, "Super Node Suite Test")
 }
 
 var _ = BeforeSuite(func() {
