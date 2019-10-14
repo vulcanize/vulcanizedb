@@ -107,8 +107,8 @@ single config file or in separate command instances using different config files
 Specify config location when executing the command:
 ./vulcanizedb composeAndExecute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
-		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		composeAndExecute()
 	},
 }
@@ -118,44 +118,44 @@ func composeAndExecute() {
 	prepConfig()
 
 	// Generate code to build the plugin according to the config file
-	LogWithCommand.Info("generating plugin")
+	logWithCommand.Info("generating plugin")
 	generator, err := p2.NewGenerator(genConfig, databaseConfig)
 	if err != nil {
-		LogWithCommand.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
 	err = generator.GenerateExporterPlugin()
 	if err != nil {
-		LogWithCommand.Debug("generating plugin failed")
-		LogWithCommand.Fatal(err)
+		logWithCommand.Debug("generating plugin failed")
+		logWithCommand.Fatal(err)
 	}
 
 	// Get the plugin path and load the plugin
 	_, pluginPath, err := genConfig.GetPluginPaths()
 	if err != nil {
-		LogWithCommand.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
-	LogWithCommand.Info("linking plugin ", pluginPath)
+	logWithCommand.Info("linking plugin ", pluginPath)
 	plug, err := plugin.Open(pluginPath)
 	if err != nil {
-		LogWithCommand.Debug("linking plugin failed")
-		LogWithCommand.Fatal(err)
+		logWithCommand.Debug("linking plugin failed")
+		logWithCommand.Fatal(err)
 	}
 
 	// Load the `Exporter` symbol from the plugin
-	LogWithCommand.Info("loading transformers from plugin")
+	logWithCommand.Info("loading transformers from plugin")
 	symExporter, err := plug.Lookup("Exporter")
 	if err != nil {
-		LogWithCommand.Debug("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
+		logWithCommand.Debug("loading Exporter symbol failed")
+		logWithCommand.Fatal(err)
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		LogWithCommand.Debug("plugged-in symbol not of type Exporter")
+		logWithCommand.Debug("plugged-in symbol not of type Exporter")
 		os.Exit(1)
 	}
 
@@ -173,7 +173,7 @@ func composeAndExecute() {
 		ew := watcher.NewEventWatcher(&db, blockChain)
 		err := ew.AddTransformers(ethEventInitializers)
 		if err != nil {
-			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
+			logWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
 		}
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)

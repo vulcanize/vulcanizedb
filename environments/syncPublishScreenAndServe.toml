@@ -12,7 +12,7 @@
     ipcPath = "/root/.vulcanize/vulcanize.ipc"
     wsEndpoint = "127.0.0.1:8080"
 
-[backfill]
+[superNodeBackFill]
     on = false
-    ipcPath = ""
+    rpcPath = ""
     frequency = 5

@@ -35,6 +35,8 @@ then converts the eth data to IPLD objects and publishes them to IPFS. Additiona
 it maintains a local index of the IPLD objects' CIDs in Postgres. It then opens up a server which 
 relays relevant data to requesting clients.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		syncPublishScreenAndServe()
 	},
 }
@@ -46,7 +48,7 @@ func init() {
 func syncPublishScreenAndServe() {
 	superNode, newNodeErr := newSuperNode()
 	if newNodeErr != nil {
-		log.Fatal(newNodeErr)
+		logWithCommand.Fatal(newNodeErr)
 	}
 
 	wg := &syn.WaitGroup{}
@@ -54,20 +56,20 @@ func syncPublishScreenAndServe() {
 	forwardQuitChan := make(chan bool, 1)
 	syncAndPubErr := superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
 	if syncAndPubErr != nil {
-		log.Fatal(syncAndPubErr)
+		logWithCommand.Fatal(syncAndPubErr)
 	}
 	superNode.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
-	if viper.GetBool("backfill.on") && viper.GetString("backfill.ipcPath") != "" {
+	if viper.GetBool("superNodeBackFill.on") && viper.GetString("superNodeBackFill.rpcPath") != "" {
 		backfiller, newBackFillerErr := newBackFiller()
 		if newBackFillerErr != nil {
-			log.Fatal(newBackFillerErr)
+			logWithCommand.Fatal(newBackFillerErr)
 		}
 		backfiller.FillGaps(wg, nil)
 	}
 
 	serverErr := startServers(superNode)
 	if serverErr != nil {
-		log.Fatal(serverErr)
+		logWithCommand.Fatal(serverErr)
 	}
 	wg.Wait()
 }

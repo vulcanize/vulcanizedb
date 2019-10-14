@@ -30,7 +30,7 @@ import (
 func SetupDB() (*postgres.DB, error) {
 	return postgres.NewDB(config.Database{
 		Hostname: "localhost",
-		Name:     "vulcanize_private",
+		Name:     "vulcanize_testing",
 		Port:     5432,
 	}, core.Node{})
 }
