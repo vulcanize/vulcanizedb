@@ -18,11 +18,12 @@ package retriever
 
 import (
 	"database/sql"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Block retriever is used to retrieve the first block for a given contract and the most recent block
+// BlockRetriever is used to retrieve the first block for a given contract and the most recent block
 // It requires a vDB synced database with blocks, transactions, receipts, and logs
 type BlockRetriever interface {
 	RetrieveFirstBlock(contractAddr string) (int64, error)
@@ -33,13 +34,15 @@ type blockRetriever struct {
 	db *postgres.DB
 }
 
-func NewBlockRetriever(db *postgres.DB) (r *blockRetriever) {
+// NewBlockRetriever returns a new BlockRetriever
+func NewBlockRetriever(db *postgres.DB) BlockRetriever {
 	return &blockRetriever{
 		db: db,
 	}
 }
 
-// Try both methods of finding the first block, with the receipt method taking precedence
+// RetrieveFirstBlock fetches the block number for the earliest block in the db
+// Tries both methods of finding the first block, with the receipt method taking precedence
 func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) {
 	i, err := r.retrieveFirstBlockFromReceipts(contractAddr)
 	if err != nil {
@@ -55,7 +58,7 @@ func (r *blockRetriever) RetrieveFirstBlock(contractAddr string) (int64, error) 
 // For some contracts the contract creation transaction receipt doesn't have the contract address so this doesn't work (e.g. Sai)
 func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (int64, error) {
 	var firstBlock int64
-	addressId, getAddressErr := repository.GetOrCreateAddress(r.db, contractAddr)
+	addressID, getAddressErr := repository.GetOrCreateAddress(r.db, contractAddr)
 	if getAddressErr != nil {
 		return firstBlock, getAddressErr
 	}
@@ -66,7 +69,7 @@ func (r *blockRetriever) retrieveFirstBlockFromReceipts(contractAddr string) (in
                            WHERE contract_address_id = $1
 		                   ORDER BY block_id ASC
 					       LIMIT 1)`,
-		addressId,
+		addressID,
 	)
 
 	return firstBlock, err
@@ -84,7 +87,7 @@ func (r *blockRetriever) retrieveFirstBlockFromLogs(contractAddr string) (int64,
 	return int64(firstBlock), err
 }
 
-// Method to retrieve the most recent block in vDB
+// RetrieveMostRecentBlock retrieves the most recent block number in vDB
 func (r *blockRetriever) RetrieveMostRecentBlock() (int64, error) {
 	var lastBlock int64
 	err := r.db.Get(

@@ -18,17 +18,17 @@ package retriever
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Address retriever is used to retrieve the addresses associated with a contract
+// AddressRetriever is used to retrieve the addresses associated with a contract
 type AddressRetriever interface {
 	RetrieveTokenHolderAddresses(info contract.Contract) (map[common.Address]bool, error)
 }
@@ -38,14 +38,15 @@ type addressRetriever struct {
 	mode types.Mode
 }
 
-func NewAddressRetriever(db *postgres.DB, mode types.Mode) (r *addressRetriever) {
+// NewAddressRetriever returns a new AddressRetriever
+func NewAddressRetriever(db *postgres.DB, mode types.Mode) AddressRetriever {
 	return &addressRetriever{
 		db:   db,
 		mode: mode,
 	}
 }
 
-// Method to retrieve list of token-holding/contract-related addresses by iterating over available events
+// RetrieveTokenHolderAddresses is used to retrieve list of token-holding/contract-related addresses by iterating over available events
 // This generic method should work whether or not the argument/input names of the events meet the expected standard
 // This could be generalized to iterate over ALL events and pull out any address arguments
 func (r *addressRetriever) RetrieveTokenHolderAddresses(info contract.Contract) (map[common.Address]bool, error) {

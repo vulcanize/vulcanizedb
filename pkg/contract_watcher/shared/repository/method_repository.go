@@ -30,6 +30,7 @@ import (
 
 const methodCacheSize = 1000
 
+// MethodRepository is used to persist public getter method data
 type MethodRepository interface {
 	PersistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error
 	CreateMethodTable(contractAddr string, method types.Method) (bool, error)
@@ -45,7 +46,8 @@ type methodRepository struct {
 	tables  *lru.Cache // Cache names of recently used tables to minimize db connections
 }
 
-func NewMethodRepository(db *postgres.DB, mode types.Mode) *methodRepository {
+// NewMethodRepository returns a new MethodRepository
+func NewMethodRepository(db *postgres.DB, mode types.Mode) MethodRepository {
 	ccs, _ := lru.New(contractCacheSize)
 	mcs, _ := lru.New(methodCacheSize)
 	return &methodRepository{
@@ -56,7 +58,7 @@ func NewMethodRepository(db *postgres.DB, mode types.Mode) *methodRepository {
 	}
 }
 
-// Creates a schema for the contract if needed
+// PersistResults creates a schema for the contract if needed
 // Creates table for the contract method if needed
 // Persists method polling data into this custom table
 func (r *methodRepository) PersistResults(results []types.Result, methodInfo types.Method, contractAddr, contractName string) error {
@@ -124,7 +126,7 @@ func (r *methodRepository) persistResults(results []types.Result, methodInfo typ
 	return tx.Commit()
 }
 
-// Checks for event table and creates it if it does not already exist
+// CreateMethodTable checks for event table and creates it if it does not already exist
 func (r *methodRepository) CreateMethodTable(contractAddr string, method types.Method) (bool, error) {
 	tableID := fmt.Sprintf("%s_%s.%s_method", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(method.Name))
 
@@ -177,7 +179,7 @@ func (r *methodRepository) checkForTable(contractAddr string, methodName string)
 	return exists, err
 }
 
-// Checks for contract schema and creates it if it does not already exist
+// CreateContractSchema checks for contract schema and creates it if it does not already exist
 func (r *methodRepository) CreateContractSchema(contractAddr string) (bool, error) {
 	if contractAddr == "" {
 		return false, errors.New("error: no contract address specified")
@@ -222,10 +224,12 @@ func (r *methodRepository) checkForSchema(contractAddr string) (bool, error) {
 	return exists, err
 }
 
+// CheckSchemaCache is used to query the schema name cache
 func (r *methodRepository) CheckSchemaCache(key string) (interface{}, bool) {
 	return r.schemas.Get(key)
 }
 
+// CheckTableCache is used to query the table name cache
 func (r *methodRepository) CheckTableCache(key string) (interface{}, bool) {
 	return r.tables.Get(key)
 }

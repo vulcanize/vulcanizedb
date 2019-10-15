@@ -45,7 +45,8 @@ type parser struct {
 	parsedAbi abi.ABI
 }
 
-func NewParser(network string) *parser {
+// NewParser returns a new Parser
+func NewParser(network string) Parser {
 	url := eth.GenURL(network)
 
 	return &parser{
@@ -53,15 +54,17 @@ func NewParser(network string) *parser {
 	}
 }
 
+// Abi returns the parser's configured abi string
 func (p *parser) Abi() string {
 	return p.abi
 }
 
+// ParsedAbi returns the parser's parsed abi
 func (p *parser) ParsedAbi() abi.ABI {
 	return p.parsedAbi
 }
 
-// Retrieves and parses the abi string
+// Parse retrieves and parses the abi string
 // for the given contract address
 func (p *parser) Parse(contractAddr string) error {
 	// If the abi is one our locally stored abis, fetch
@@ -84,7 +87,7 @@ func (p *parser) Parse(contractAddr string) error {
 	return err
 }
 
-// Loads and parses an abi from a given abi string
+// ParseAbiStr loads and parses an abi from a given abi string
 func (p *parser) ParseAbiStr(abiStr string) error {
 	var err error
 	p.abi = abiStr
@@ -94,14 +97,14 @@ func (p *parser) ParseAbiStr(abiStr string) error {
 }
 
 func (p *parser) lookUp(contractAddr string) (string, error) {
-	if v, ok := constants.Abis[common.HexToAddress(contractAddr)]; ok {
+	if v, ok := constants.ABIs[common.HexToAddress(contractAddr)]; ok {
 		return v, nil
 	}
 
 	return "", errors.New("ABI not present in lookup table")
 }
 
-// Returns only specified methods, if they meet the criteria
+// GetSelectMethods returns only specified methods, if they meet the criteria
 // Returns as array with methods in same order they were specified
 // Nil or empty wanted array => no events are returned
 func (p *parser) GetSelectMethods(wanted []string) []types.Method {
@@ -121,7 +124,7 @@ func (p *parser) GetSelectMethods(wanted []string) []types.Method {
 	return methods
 }
 
-// Returns wanted methods
+// GetMethods returns wanted methods
 // Empty wanted array => all methods are returned
 // Nil wanted array => no methods are returned
 func (p *parser) GetMethods(wanted []string) []types.Method {
@@ -139,7 +142,7 @@ func (p *parser) GetMethods(wanted []string) []types.Method {
 	return methods
 }
 
-// Returns wanted events as map of types.Events
+// GetEvents returns wanted events as map of types.Events
 // Empty wanted array => all events are returned
 // Nil wanted array => no events are returned
 func (p *parser) GetEvents(wanted []string) map[string]types.Event {

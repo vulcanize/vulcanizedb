@@ -35,6 +35,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
+// Transformer is the top level struct for transforming watched contract data
 // Requires a fully synced vDB and a running eth node (or infura)
 type Transformer struct {
 	// Database interfaces
@@ -60,7 +61,7 @@ type Transformer struct {
 	LastBlock int64
 }
 
-// Transformer takes in config for blockchain, database, and network id
+// NewTransformer takes in contract config, blockchain, and database, and returns a new Transformer
 func NewTransformer(con config.ContractConfig, BC core.BlockChain, DB *postgres.DB) *Transformer {
 	return &Transformer{
 		Poller:                     poller.NewPoller(BC, DB, types.FullSync),
@@ -75,6 +76,7 @@ func NewTransformer(con config.ContractConfig, BC core.BlockChain, DB *postgres.
 	}
 }
 
+// Init initializes the transformer
 // Use after creating and setting transformer
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
@@ -167,6 +169,7 @@ func (tr *Transformer) Init() error {
 	return nil
 }
 
+// Execute runs the transformation processes
 // Iterates through stored, initialized contract objects
 // Iterates through contract's event filters, grabbing watched event logs
 // Uses converter to convert logs into custom log type
@@ -227,6 +230,7 @@ func (tr *Transformer) Execute() error {
 	return nil
 }
 
+// GetConfig returns the transformers config; satisfies the transformer interface
 func (tr *Transformer) GetConfig() config.ContractConfig {
 	return tr.Config
 }

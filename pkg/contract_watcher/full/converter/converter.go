@@ -17,7 +17,6 @@
 package converter
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -32,22 +31,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// Converter is used to convert watched event logs to
+// ConverterInterface is used to convert watched event logs to
 // custom logs containing event input name => value maps
 type ConverterInterface interface {
 	Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error)
 	Update(info *contract.Contract)
 }
 
+// Converter is the underlying struct for the ConverterInterface
 type Converter struct {
 	ContractInfo *contract.Contract
 }
 
+// Update configures the converter for a specific contract
 func (c *Converter) Update(info *contract.Contract) {
 	c.ContractInfo = info
 }
 
-// Convert the given watched event log into a types.Log for the given event
+// Convert converts the given watched event log into a types.Log for the given event
 func (c *Converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (*types.Log, error) {
 	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	values := make(map[string]interface{})
@@ -88,14 +89,14 @@ func (c *Converter) Convert(watchedEvent core.WatchedEvent, event types.Event) (
 			b := input.(byte)
 			strValues[fieldName] = string(b)
 		default:
-			return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
+			return nil, fmt.Errorf("error: unhandled abi type %T", input)
 		}
 	}
 
 	// Only hold onto logs that pass our address filter, if any
 	if c.ContractInfo.PassesEventFilter(strValues) {
 		eventLog := &types.Log{
-			Id:     watchedEvent.LogID,
+			ID:     watchedEvent.LogID,
 			Values: strValues,
 			Block:  watchedEvent.BlockNumber,
 			Tx:     watchedEvent.TxHash,
