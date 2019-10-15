@@ -17,10 +17,11 @@
 package retriever_test
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
 
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/retriever"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"

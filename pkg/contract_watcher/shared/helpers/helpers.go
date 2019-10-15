@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// ConvertToLog converts a watched event to a log
 func ConvertToLog(watchedEvent core.WatchedEvent) types.Log {
 	allTopics := []string{watchedEvent.Topic0, watchedEvent.Topic1, watchedEvent.Topic2, watchedEvent.Topic3}
 	var nonNilTopics []string
@@ -56,12 +57,14 @@ func createTopics(topics ...string) []common.Hash {
 	return topicsArray
 }
 
+// BigFromString creates a big.Int from a string
 func BigFromString(n string) *big.Int {
 	b := new(big.Int)
 	b.SetString(n, 10)
 	return b
 }
 
+// GenerateSignature returns the keccak256 hash hex of a string
 func GenerateSignature(s string) string {
 	eventSignature := []byte(s)
 	hash := crypto.Keccak256Hash(eventSignature)

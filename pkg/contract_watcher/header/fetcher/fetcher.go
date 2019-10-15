@@ -24,6 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// Fetcher is the fetching interface
 type Fetcher interface {
 	FetchLogs(contractAddresses []string, topics []common.Hash, missingHeader core.Header) ([]types.Log, error)
 }
@@ -32,13 +33,14 @@ type fetcher struct {
 	blockChain core.BlockChain
 }
 
-func NewFetcher(blockchain core.BlockChain) *fetcher {
+// NewFetcher returns a new Fetcher
+func NewFetcher(blockchain core.BlockChain) Fetcher {
 	return &fetcher{
 		blockChain: blockchain,
 	}
 }
 
-// Checks all topic0s, on all addresses, fetching matching logs for the given header
+// FetchLogs checks all topic0s, on all addresses, fetching matching logs for the given header
 func (fetcher *fetcher) FetchLogs(contractAddresses []string, topic0s []common.Hash, header core.Header) ([]types.Log, error) {
 	addresses := hexStringsToAddresses(contractAddresses)
 	blockHash := common.HexToHash(header.Hash)

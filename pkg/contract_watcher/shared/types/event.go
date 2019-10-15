@@ -25,20 +25,22 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// Event is our custom event type
 type Event struct {
 	Name      string
 	Anonymous bool
 	Fields    []Field
 }
 
+// Field is our custom event field type which associates a postgres type with the field
 type Field struct {
 	abi.Argument        // Name, Type, Indexed
 	PgType       string // Holds type used when committing data held in this field to postgres
 }
 
-// Struct to hold instance of an event log data
+// Log is used to hold instance of an event log data
 type Log struct {
-	Id     int64             // VulcanizeIdLog for full sync and header ID for header sync contract watcher
+	ID     int64             // VulcanizeIdLog for full sync and header ID for header sync contract watcher
 	Values map[string]string // Map of event input names to their values
 
 	// Used for full sync only
@@ -51,7 +53,7 @@ type Log struct {
 	Raw              []byte // json.Unmarshalled byte array of geth/core/types.Log{}
 }
 
-// Unpack abi.Event into our custom Event struct
+// NewEvent unpacks abi.Event into our custom Event struct
 func NewEvent(e abi.Event) Event {
 	fields := make([]Field, len(e.Inputs))
 	for i, input := range e.Inputs {
@@ -85,6 +87,7 @@ func NewEvent(e abi.Event) Event {
 	}
 }
 
+// Sig returns the hash signature for an event
 func (e Event) Sig() common.Hash {
 	types := make([]string, len(e.Fields))
 

@@ -28,6 +28,7 @@ import (
 
 const columnCacheSize = 1000
 
+// HeaderRepository interfaces with the header and checked_headers tables
 type HeaderRepository interface {
 	AddCheckColumn(id string) error
 	AddCheckColumns(ids []string) error
@@ -45,7 +46,8 @@ type headerRepository struct {
 	columns *lru.Cache // Cache created columns to minimize db connections
 }
 
-func NewHeaderRepository(db *postgres.DB) *headerRepository {
+// NewHeaderRepository returns a new HeaderRepository
+func NewHeaderRepository(db *postgres.DB) HeaderRepository {
 	ccs, _ := lru.New(columnCacheSize)
 	return &headerRepository{
 		db:      db,
@@ -53,7 +55,7 @@ func NewHeaderRepository(db *postgres.DB) *headerRepository {
 	}
 }
 
-// Adds a checked_header column for the provided column id
+// AddCheckColumn adds a checked_header column for the provided column id
 func (r *headerRepository) AddCheckColumn(id string) error {
 	// Check cache to see if column already exists before querying pg
 	_, ok := r.columns.Get(id)
@@ -74,7 +76,7 @@ func (r *headerRepository) AddCheckColumn(id string) error {
 	return nil
 }
 
-// Adds a checked_header column for all of the provided column ids
+// AddCheckColumns adds a checked_header column for all of the provided column ids
 func (r *headerRepository) AddCheckColumns(ids []string) error {
 	var err error
 	baseQuery := "ALTER TABLE public.checked_headers"
@@ -98,7 +100,7 @@ func (r *headerRepository) AddCheckColumns(ids []string) error {
 	return err
 }
 
-// Marks the header checked for the provided column id
+// MarkHeaderChecked marks the header checked for the provided column id
 func (r *headerRepository) MarkHeaderChecked(headerID int64, id string) error {
 	_, err := r.db.Exec(`INSERT INTO public.checked_headers (header_id, `+id+`)
 		VALUES ($1, $2) 
@@ -107,7 +109,7 @@ func (r *headerRepository) MarkHeaderChecked(headerID int64, id string) error {
 	return err
 }
 
-// Marks the header checked for all of the provided column ids
+// MarkHeaderCheckedForAll marks the header checked for all of the provided column ids
 func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string) error {
 	pgStr := "INSERT INTO public.checked_headers (header_id, "
 	for _, id := range ids {
@@ -126,7 +128,7 @@ func (r *headerRepository) MarkHeaderCheckedForAll(headerID int64, ids []string)
 	return err
 }
 
-// Marks all of the provided headers checked for each of the provided column ids
+// MarkHeadersCheckedForAll marks all of the provided headers checked for each of the provided column ids
 func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids []string) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -159,7 +161,7 @@ func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids [
 	return err
 }
 
-// Returns missing headers for the provided checked_headers column id
+// MissingHeaders returns missing headers for the provided checked_headers column id
 func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber int64, id string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -185,7 +187,7 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 	return continuousHeaders(result), err
 }
 
-// Returns missing headers for all of the provided checked_headers column ids
+// MissingHeadersForAll returns missing headers for all of the provided checked_headers column ids
 func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlockNumber int64, ids []string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -213,7 +215,7 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 	return continuousHeaders(result), err
 }
 
-// Returns headers that have been checked for all of the provided event ids but not for the provided method ids
+// MissingMethodsCheckedEventsIntersection returns headers that have been checked for all of the provided event ids but not for the provided method ids
 func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error) {
 	var result []core.Header
 	var query string
@@ -263,7 +265,7 @@ func continuousHeaders(headers []core.Header) []core.Header {
 	return headers
 }
 
-// Check the repositories column id cache for a value
+// CheckCache checks the repositories column id cache for a value
 func (r *headerRepository) CheckCache(key string) (interface{}, bool) {
 	return r.columns.Get(key)
 }

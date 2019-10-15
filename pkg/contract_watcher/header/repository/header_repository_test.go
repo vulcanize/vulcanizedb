@@ -18,7 +18,6 @@ package repository_test
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -26,6 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )

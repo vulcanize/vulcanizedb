@@ -18,7 +18,6 @@ package integration
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"math/rand"
 	"strings"
 	"time"
@@ -27,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"

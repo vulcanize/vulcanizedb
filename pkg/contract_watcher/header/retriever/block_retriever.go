@@ -20,7 +20,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Block retriever is used to retrieve the first block for a given contract and the most recent block
+// BlockRetriever is used to retrieve the first block for a given contract and the most recent block
 // It requires a vDB synced database with blocks, transactions, receipts, and logs
 type BlockRetriever interface {
 	RetrieveFirstBlock() (int64, error)
@@ -31,13 +31,14 @@ type blockRetriever struct {
 	db *postgres.DB
 }
 
-func NewBlockRetriever(db *postgres.DB) (r *blockRetriever) {
+// NewBlockRetriever returns a new BlockRetriever
+func NewBlockRetriever(db *postgres.DB) BlockRetriever {
 	return &blockRetriever{
 		db: db,
 	}
 }
 
-// Retrieve block number of earliest header in repo
+// RetrieveFirstBlock retrieves block number of earliest header in repo
 func (r *blockRetriever) RetrieveFirstBlock() (int64, error) {
 	var firstBlock int
 	err := r.db.Get(
@@ -48,7 +49,7 @@ func (r *blockRetriever) RetrieveFirstBlock() (int64, error) {
 	return int64(firstBlock), err
 }
 
-// Retrieve block number of latest header in repo
+// RetrieveMostRecentBlock retrieves block number of latest header in repo
 func (r *blockRetriever) RetrieveMostRecentBlock() (int64, error) {
 	var lastBlock int
 	err := r.db.Get(

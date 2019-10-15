@@ -17,12 +17,12 @@
 package repository_test
 
 import (
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
 func TestRepository(t *testing.T) {

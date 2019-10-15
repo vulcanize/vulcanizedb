@@ -17,12 +17,12 @@
 package getter
 
 import (
-	"fmt"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
+// InterfaceGetter is used to derive the interface of a contract
 type InterfaceGetter interface {
 	GetABI(resolverAddr string, blockNumber int64) string
 	GetBlockChain() core.BlockChain
@@ -32,7 +32,8 @@ type interfaceGetter struct {
 	fetcher.Fetcher
 }
 
-func NewInterfaceGetter(blockChain core.BlockChain) *interfaceGetter {
+// NewInterfaceGetter returns a new InterfaceGetter
+func NewInterfaceGetter(blockChain core.BlockChain) InterfaceGetter {
 	return &interfaceGetter{
 		Fetcher: fetcher.Fetcher{
 			BlockChain: blockChain,
@@ -40,19 +41,15 @@ func NewInterfaceGetter(blockChain core.BlockChain) *interfaceGetter {
 	}
 }
 
-// Used to construct a custom ABI based on the results from calling supportsInterface
-func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) (string, error) {
+// GetABI is used to construct a custom ABI based on the results from calling supportsInterface
+func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) string {
 	a := constants.SupportsInterfaceABI
 	args := make([]interface{}, 1)
 	args[0] = constants.MetaSig.Bytes()
 	supports, err := g.getSupportsInterface(a, resolverAddr, blockNumber, args)
-	if err != nil {
-		return "", fmt.Errorf("call to getSupportsInterface failed: %v", err)
+	if err != nil || !supports {
+		return ""
 	}
-	if !supports {
-		return "", fmt.Errorf("contract does not support interface")
-	}
-
 	abiStr := `[`
 	args[0] = constants.AddrChangeSig.Bytes()
 	supports, err = g.getSupportsInterface(a, resolverAddr, blockNumber, args)
@@ -96,7 +93,7 @@ func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) (string
 	}
 	abiStr = abiStr[:len(abiStr)-1] + `]`
 
-	return abiStr, nil
+	return abiStr
 }
 
 // Use this method to check whether or not a contract supports a given method/event interface
@@ -104,7 +101,7 @@ func (g *interfaceGetter) getSupportsInterface(contractAbi, contractAddress stri
 	return g.Fetcher.FetchBool("supportsInterface", contractAbi, contractAddress, blockNumber, methodArgs)
 }
 
-// Method to retrieve the Getter's blockchain
+// GetBlockChain is a method to retrieve the Getter's blockchain
 func (g *interfaceGetter) GetBlockChain() core.BlockChain {
 	return g.Fetcher.BlockChain
 }
