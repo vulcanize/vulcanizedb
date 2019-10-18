@@ -18,7 +18,6 @@ package manager
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/pressly/goose"
@@ -59,7 +58,7 @@ func (m *manager) setDB() error {
 	}
 	dbConnector, err := pq.NewConnector(pgStr)
 	if err != nil {
-		return errors.New(fmt.Sprintf("can't connect to db: %s", err.Error()))
+		return fmt.Errorf("can't connect to db: %s", err.Error())
 	}
 	m.db = sql.OpenDB(dbConnector)
 	return nil
@@ -99,12 +98,12 @@ func (m *manager) setupMigrationEnv() error {
 	removeErr := os.RemoveAll(m.tmpMigDir)
 	if removeErr != nil {
 		removeErrString := "unable to remove file found at %s where tmp directory needs to be written: %s"
-		return errors.New(fmt.Sprintf(removeErrString, m.tmpMigDir, removeErr.Error()))
+		return fmt.Errorf(removeErrString, m.tmpMigDir, removeErr.Error())
 	}
 	mkdirErr := os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
 	if mkdirErr != nil {
 		mkdirErrString := "unable to create temporary migration directory %s: %s"
-		return errors.New(fmt.Sprintf(mkdirErrString, m.tmpMigDir, mkdirErr.Error()))
+		return fmt.Errorf(mkdirErrString, m.tmpMigDir, mkdirErr.Error())
 	}
 
 	return nil
@@ -145,18 +144,18 @@ func (m *manager) fixAndRun(path string) error {
 	if m.db == nil {
 		setErr := m.setDB()
 		if setErr != nil {
-			return errors.New(fmt.Sprintf("could not open db: %s", setErr.Error()))
+			return fmt.Errorf("could not open db: %s", setErr.Error())
 		}
 	}
 	// Fix the migrations
 	fixErr := goose.Fix(m.tmpMigDir)
 	if fixErr != nil {
-		return errors.New(fmt.Sprintf("version fixing for plugin migrations at %s failed: %s", path, fixErr.Error()))
+		return fmt.Errorf("version fixing for plugin migrations at %s failed: %s", path, fixErr.Error())
 	}
 	// Run the copied migrations with goose
 	upErr := goose.Up(m.db, m.tmpMigDir)
 	if upErr != nil {
-		return errors.New(fmt.Sprintf("db migrations for plugin transformers at %s failed: %s", path, upErr.Error()))
+		return fmt.Errorf("db migrations for plugin transformers at %s failed: %s", path, upErr.Error())
 	}
 	return nil
 }

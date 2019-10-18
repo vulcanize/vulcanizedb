@@ -71,7 +71,7 @@ func (pluginConfig *Plugin) GetMigrationsPaths() ([]string, error) {
 		if ok {
 			conflictingPath := paths[transformer.MigrationRank]
 			if conflictingPath != cleanPath {
-				return nil, errors.New(fmt.Sprintf("transformer %s has the same migration rank (%d) as another transformer", name, transformer.MigrationRank))
+				return nil, fmt.Errorf("transformer %s has the same migration rank (%d) as another transformer", name, transformer.MigrationRank)
 			}
 		}
 		paths[transformer.MigrationRank] = cleanPath
