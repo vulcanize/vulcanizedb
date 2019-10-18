@@ -159,7 +159,7 @@ func SetupTusdRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) 
 
 func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.TusdAbiString)
-	err := p.Parse()
+	err := p.Parse(constants.TusdContractAddress)
 	Expect(err).ToNot(HaveOccurred())
 
 	return contract.Contract{
@@ -205,7 +205,7 @@ func SetupENSRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) (
 
 func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.ENSAbiString)
-	err := p.Parse()
+	err := p.Parse(constants.EnsContractAddress)
 	Expect(err).ToNot(HaveOccurred())
 
 	return contract.Contract{
@@ -223,7 +223,7 @@ func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 
 func SetupMarketPlaceContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.MarketPlaceAbiString)
-	err := p.Parse()
+	err := p.Parse(constants.MarketPlaceContractAddress)
 	Expect(err).NotTo(HaveOccurred())
 
 	return contract.Contract{
@@ -241,7 +241,7 @@ func SetupMarketPlaceContract(wantedEvents, wantedMethods []string) *contract.Co
 
 func SetupMolochContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.MolochAbiString)
-	err := p.Parse()
+	err := p.Parse(constants.MolochContractAddress)
 	Expect(err).NotTo(HaveOccurred())
 
 	return contract.Contract{

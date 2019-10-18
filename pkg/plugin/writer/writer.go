@@ -37,7 +37,7 @@ type writer struct {
 }
 
 // Requires populated plugin config
-func NewPluginWriter(gc config.Plugin) *writer {
+func NewPluginWriter(gc config.Plugin) PluginWriter {
 	return &writer{
 		GenConfig: gc,
 	}

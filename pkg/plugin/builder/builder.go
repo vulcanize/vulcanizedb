@@ -42,7 +42,7 @@ type builder struct {
 }
 
 // Requires populated plugin config
-func NewPluginBuilder(gc config.Plugin) *builder {
+func NewPluginBuilder(gc config.Plugin) PluginBuilder {
 	return &builder{
 		GenConfig:  gc,
 		tmpVenDirs: make([]string, 0),

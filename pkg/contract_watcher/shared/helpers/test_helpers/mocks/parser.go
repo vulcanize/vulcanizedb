@@ -18,7 +18,7 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-
+	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
@@ -26,29 +26,32 @@ import (
 // Mock parser
 // Is given ABI string instead of address
 // Performs all other functions of the real parser
-type parser struct {
+type mockParser struct {
 	abi       string
 	parsedAbi abi.ABI
 }
 
-func NewParser(abi string) *parser {
-
-	return &parser{
+func NewParser(abi string) parser.Parser {
+	return &mockParser{
 		abi: abi,
 	}
 }
 
-func (p *parser) Abi() string {
+func (p *mockParser) Abi() string {
 	return p.abi
 }
 
-func (p *parser) ParsedAbi() abi.ABI {
+func (p *mockParser) ParsedAbi() abi.ABI {
 	return p.parsedAbi
+}
+
+func (p *mockParser) ParseAbiStr(abiStr string) error {
+	panic("implement me")
 }
 
 // Retrieves and parses the abi string
 // for the given contract address
-func (p *parser) Parse() error {
+func (p *mockParser) Parse(contractAddr string) error {
 	var err error
 	p.parsedAbi, err = eth.ParseAbi(p.abi)
 
@@ -58,7 +61,7 @@ func (p *parser) Parse() error {
 // Returns only specified methods, if they meet the criteria
 // Returns as array with methods in same order they were specified
 // Nil wanted array => no events are returned
-func (p *parser) GetSelectMethods(wanted []string) []types.Method {
+func (p *mockParser) GetSelectMethods(wanted []string) []types.Method {
 	wLen := len(wanted)
 	if wLen == 0 {
 		return nil
@@ -78,7 +81,7 @@ func (p *parser) GetSelectMethods(wanted []string) []types.Method {
 // Returns wanted methods
 // Empty wanted array => all methods are returned
 // Nil wanted array => no methods are returned
-func (p *parser) GetMethods(wanted []string) []types.Method {
+func (p *mockParser) GetMethods(wanted []string) []types.Method {
 	if wanted == nil {
 		return nil
 	}
@@ -95,7 +98,7 @@ func (p *parser) GetMethods(wanted []string) []types.Method {
 
 // Returns wanted events as map of types.Events
 // If no events are specified, all events are returned
-func (p *parser) GetEvents(wanted []string) map[string]types.Event {
+func (p *mockParser) GetEvents(wanted []string) map[string]types.Event {
 	events := map[string]types.Event{}
 
 	for _, e := range p.parsedAbi.Events {

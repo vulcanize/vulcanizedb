@@ -40,7 +40,7 @@ var _ = Describe("Parser", func() {
 	Describe("Mock Parse", func() {
 		It("Uses parses given abi string", func() {
 			mp := mocks.NewParser(constants.DaiAbiString)
-			err = mp.Parse()
+			err = mp.Parse(constants.DaiContractAddress)
 			Expect(err).ToNot(HaveOccurred())
 
 			parsedAbi := mp.ParsedAbi()

@@ -41,7 +41,7 @@ type manager struct {
 }
 
 // Manager requires both filled in generator and database configs
-func NewMigrationManager(gc config.Plugin, dbc config.Database) *manager {
+func NewMigrationManager(gc config.Plugin, dbc config.Database) MigrationManager {
 	return &manager{
 		GenConfig: gc,
 		DBConfig:  dbc,
