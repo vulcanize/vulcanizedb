@@ -38,8 +38,8 @@ import (
 )
 
 type TransferLog struct {
-	Id             int64  `db:"id"`
-	VulcanizeLogId int64  `db:"vulcanize_log_id"`
+	ID             int64  `db:"id"`
+	VulcanizeLogID int64  `db:"vulcanize_log_id"`
 	TokenName      string `db:"token_name"`
 	Block          int64  `db:"block"`
 	Tx             string `db:"tx"`
@@ -49,8 +49,8 @@ type TransferLog struct {
 }
 
 type NewOwnerLog struct {
-	Id             int64  `db:"id"`
-	VulcanizeLogId int64  `db:"vulcanize_log_id"`
+	ID             int64  `db:"id"`
+	VulcanizeLogID int64  `db:"vulcanize_log_id"`
 	TokenName      string `db:"token_name"`
 	Block          int64  `db:"block"`
 	Tx             string `db:"tx"`
@@ -60,7 +60,7 @@ type NewOwnerLog struct {
 }
 
 type HeaderSyncTransferLog struct {
-	Id        int64  `db:"id"`
+	ID        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
 	LogIndex  int64  `db:"log_idx"`
@@ -72,7 +72,7 @@ type HeaderSyncTransferLog struct {
 }
 
 type HeaderSyncNewOwnerLog struct {
-	Id        int64  `db:"id"`
+	ID        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
 	LogIndex  int64  `db:"log_idx"`
@@ -84,7 +84,7 @@ type HeaderSyncNewOwnerLog struct {
 }
 
 type BalanceOf struct {
-	Id        int64  `db:"id"`
+	ID        int64  `db:"id"`
 	TokenName string `db:"token_name"`
 	Block     int64  `db:"block"`
 	Address   string `db:"who_"`
@@ -92,7 +92,7 @@ type BalanceOf struct {
 }
 
 type Resolver struct {
-	Id        int64  `db:"id"`
+	ID        int64  `db:"id"`
 	TokenName string `db:"token_name"`
 	Block     int64  `db:"block"`
 	Node      string `db:"node_"`
@@ -100,7 +100,7 @@ type Resolver struct {
 }
 
 type Owner struct {
-	Id        int64  `db:"id"`
+	ID        int64  `db:"id"`
 	TokenName string `db:"token_name"`
 	Block     int64  `db:"block"`
 	Node      string `db:"node_"`
@@ -110,13 +110,13 @@ type Owner struct {
 func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	con := test_config.TestClient
 	testIPC := con.IPCPath
-	rawRpcClient, err := rpc.Dial(testIPC)
+	rawRPCClient, err := rpc.Dial(testIPC)
 	Expect(err).NotTo(HaveOccurred())
-	rpcClient := client.NewRpcClient(rawRpcClient, testIPC)
-	ethClient := ethclient.NewClient(rawRpcClient)
+	rpcClient := client.NewRPCClient(rawRPCClient, testIPC)
+	ethClient := ethclient.NewClient(rawRPCClient)
 	blockChainClient := client.NewEthClient(ethClient)
 	madeNode := node.MakeNode(rpcClient)
-	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
+	transactionConverter := rpc2.NewRPCTransactionConverter(ethClient)
 	blockChain := eth.NewBlockChain(blockChainClient, rpcClient, madeNode, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
@@ -129,7 +129,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	return db, blockChain
 }
 
-func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
+func SetupTusdRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
 		Name:     "vulcanize_testing",
@@ -142,14 +142,14 @@ func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) 
 	blockRepository := *repositories.NewBlockRepository(db)
 
 	blockNumber := rand.Int63()
-	blockId := CreateBlock(blockNumber, blockRepository)
+	blockID := CreateBlock(blockNumber, blockRepository)
 
 	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
 
-	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
+	err = receiptRepository.CreateReceiptsAndLogs(blockID, receipts)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM full_sync_logs`)
+	err = logRepository.Get(vulcanizeLogID, `SELECT id FROM full_sync_logs`)
 	Expect(err).ToNot(HaveOccurred())
 
 	info := SetupTusdContract(wantedEvents, wantedMethods)
@@ -175,7 +175,7 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	}.Init()
 }
 
-func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
+func SetupENSRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
 		Name:     "vulcanize_testing",
@@ -188,14 +188,14 @@ func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (
 	blockRepository := *repositories.NewBlockRepository(db)
 
 	blockNumber := rand.Int63()
-	blockId := CreateBlock(blockNumber, blockRepository)
+	blockID := CreateBlock(blockNumber, blockRepository)
 
 	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
 
-	err = receiptRepository.CreateReceiptsAndLogs(blockId, receipts)
+	err = receiptRepository.CreateReceiptsAndLogs(blockID, receipts)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = logRepository.Get(vulcanizeLogId, `SELECT id FROM full_sync_logs`)
+	err = logRepository.Get(vulcanizeLogID, `SELECT id FROM full_sync_logs`)
 	Expect(err).ToNot(HaveOccurred())
 
 	info := SetupENSContract(wantedEvents, wantedMethods)
@@ -316,9 +316,9 @@ func TearDown(db *postgres.DB) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func CreateBlock(blockNumber int64, repository repositories.BlockRepository) (blockId int64) {
-	blockId, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
+func CreateBlock(blockNumber int64, repository repositories.BlockRepository) int64 {
+	blockID, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 	Expect(err).NotTo(HaveOccurred())
 
-	return blockId
+	return blockID
 }

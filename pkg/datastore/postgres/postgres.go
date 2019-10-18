@@ -46,7 +46,7 @@ func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 }
 
 func (db *DB) CreateNode(node *core.Node) error {
-	var nodeId int64
+	var nodeID int64
 	err := db.QueryRow(
 		`INSERT INTO eth_nodes (genesis_block, network_id, eth_node_id, client_name)
                 VALUES ($1, $2, $3, $4)
@@ -57,10 +57,10 @@ func (db *DB) CreateNode(node *core.Node) error {
                         eth_node_id = $3,
                         client_name = $4
                 RETURNING id`,
-		node.GenesisBlock, node.NetworkID, node.ID, node.ClientName).Scan(&nodeId)
+		node.GenesisBlock, node.NetworkID, node.ID, node.ClientName).Scan(&nodeID)
 	if err != nil {
 		return ErrUnableToSetNode(err)
 	}
-	db.NodeID = nodeId
+	db.NodeID = nodeID
 	return nil
 }

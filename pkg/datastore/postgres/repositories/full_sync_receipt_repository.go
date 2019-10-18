@@ -30,19 +30,19 @@ type FullSyncReceiptRepository struct {
 	*postgres.DB
 }
 
-func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error {
+func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockID int64, receipts []core.Receipt) error {
 	tx, err := receiptRepository.DB.Beginx()
 	if err != nil {
 		return err
 	}
 	for _, receipt := range receipts {
-		receiptId, err := receiptRepository.CreateFullSyncReceiptInTx(blockId, receipt, tx)
+		receiptID, err := receiptRepository.CreateFullSyncReceiptInTx(blockID, receipt, tx)
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
 		if len(receipt.Logs) > 0 {
-			err = createLogs(receipt.Logs, receiptId, tx)
+			err = createLogs(receipt.Logs, receiptID, tx)
 			if err != nil {
 				tx.Rollback()
 				return err
@@ -53,28 +53,28 @@ func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId
 	return nil
 }
 
-func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
-	var receiptId int64
+func createReceipt(receipt core.Receipt, blockID int64, tx *sqlx.Tx) (int64, error) {
+	var receiptID int64
 	err := tx.QueryRow(
 		`INSERT INTO full_sync_receipts
 		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
 		               VALUES ($1, $2, $3, $4, $5, $6, $7)
 		               RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
-	).Scan(&receiptId)
+		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockID,
+	).Scan(&receiptID)
 	if err != nil {
 		logrus.Error("createReceipt: Error inserting: ", err)
 	}
-	return receiptId, err
+	return receiptID, err
 }
 
-func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
+func createLogs(logs []core.FullSyncLog, receiptID int64, tx *sqlx.Tx) error {
 	for _, log := range logs {
 		_, err := tx.Exec(
 			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
-			log.BlockNumber, log.Address, log.TxHash, log.Index, log.Topics[0], log.Topics[1], log.Topics[2], log.Topics[3], log.Data, receiptId,
+			log.BlockNumber, log.Address, log.TxHash, log.Index, log.Topics[0], log.Topics[1], log.Topics[2], log.Topics[3], log.Data, receiptID,
 		)
 		if err != nil {
 			return err
@@ -83,25 +83,25 @@ func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {
 	return nil
 }
 
-func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
-	var receiptId int64
-	addressId, getAddressErr := repository.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
+func (FullSyncReceiptRepository) CreateFullSyncReceiptInTx(blockID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
+	var receiptID int64
+	addressID, getAddressErr := repository.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		logrus.Error("createReceipt: Error getting address id: ", getAddressErr)
-		return receiptId, getAddressErr
+		return receiptID, getAddressErr
 	}
 	err := tx.QueryRow(
 		`INSERT INTO full_sync_receipts
                (contract_address_id, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
                VALUES ($1, $2, $3, $4, $5, $6, $7)
                RETURNING id`,
-		addressId, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId).Scan(&receiptId)
+		addressID, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockID).Scan(&receiptID)
 	if err != nil {
 		tx.Rollback()
 		logrus.Warning("CreateReceipt: error inserting receipt: ", err)
-		return receiptId, err
+		return receiptID, err
 	}
-	return receiptId, nil
+	return receiptID, nil
 }
 
 func (receiptRepository FullSyncReceiptRepository) GetFullSyncReceipt(txHash string) (core.Receipt, error) {

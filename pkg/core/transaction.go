@@ -30,7 +30,7 @@ type TransactionModel struct {
 	Value   string
 }
 
-type RpcTransaction struct {
+type RPCTransaction struct {
 	Nonce            string `json:"nonce"`
 	GasPrice         string `json:"gasPrice"`
 	GasLimit         string `json:"gas"`

@@ -32,7 +32,7 @@ import (
 var (
 	ErrInvalidAbiFile   = errors.New("invalid abi")
 	ErrMissingAbiFile   = errors.New("missing abi")
-	ErrApiRequestFailed = errors.New("etherscan api request failed")
+	ErrAPIRequestFailed = errors.New("etherscan api request failed")
 )
 
 type Response struct {
@@ -72,7 +72,7 @@ func (e *EtherScanAPI) GetAbi(contractHash string) (string, error) {
 	request := fmt.Sprintf("%s/api?module=contract&action=getabi&address=%s", e.url, contractHash)
 	r, err := e.client.Get(request)
 	if err != nil {
-		return "", ErrApiRequestFailed
+		return "", ErrAPIRequestFailed
 	}
 	defer r.Body.Close()
 	err = json.NewDecoder(r.Body).Decode(&target)

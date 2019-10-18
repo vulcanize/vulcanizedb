@@ -25,7 +25,7 @@ type MockStorageQueue struct {
 	AddError       error
 	AddPassedDiff  utils.StorageDiff
 	DeleteErr      error
-	DeletePassedId int
+	DeletePassedID int
 	GetAllErr      error
 	DiffsToReturn  []utils.StorageDiff
 }
@@ -37,7 +37,7 @@ func (queue *MockStorageQueue) Add(diff utils.StorageDiff) error {
 }
 
 func (queue *MockStorageQueue) Delete(id int) error {
-	queue.DeletePassedId = id
+	queue.DeletePassedID = id
 	return queue.DeleteErr
 }
 

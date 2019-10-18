@@ -164,18 +164,18 @@ var _ = Describe("address lookup", func() {
 		})
 	})
 
-	Describe("GetAddressById", func() {
+	Describe("GetAddressByID", func() {
 		It("gets and address by it's id", func() {
 			addressId, createErr := repository.GetOrCreateAddress(db, address)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			actualAddress, getErr := repository.GetAddressById(db, addressId)
+			actualAddress, getErr := repository.GetAddressByID(db, addressId)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(actualAddress).To(Equal(address))
 		})
 
 		It("returns an error if the id doesn't exist", func() {
-			_, getErr := repository.GetAddressById(db, 0)
+			_, getErr := repository.GetAddressByID(db, 0)
 			Expect(getErr).To(HaveOccurred())
 			Expect(getErr).To(MatchError("sql: no rows in result set"))
 		})

@@ -17,7 +17,7 @@
 package core
 
 type Uncle struct {
-	Id        int64
+	ID        int64
 	Miner     string
 	Reward    string
 	Hash      string

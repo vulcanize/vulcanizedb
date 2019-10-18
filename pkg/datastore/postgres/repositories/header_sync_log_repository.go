@@ -73,7 +73,7 @@ func (repo HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.Hea
 		for _, topic := range rawLog.Topics {
 			logTopics = append(logTopics, common.BytesToHash(topic))
 		}
-		address, addrErr := repository.GetAddressById(repo.db, rawLog.Address)
+		address, addrErr := repository.GetAddressByID(repo.db, rawLog.Address)
 		if addrErr != nil {
 			return nil, addrErr
 		}

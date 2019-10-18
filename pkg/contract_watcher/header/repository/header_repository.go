@@ -148,7 +148,7 @@ func (r *headerRepository) MarkHeadersCheckedForAll(headers []core.Header, ids [
 			pgStr += fmt.Sprintf("%s = checked_headers.%s + 1, ", id, id)
 		}
 		pgStr = pgStr[:len(pgStr)-2]
-		_, err = tx.Exec(pgStr, header.Id)
+		_, err = tx.Exec(pgStr, header.ID)
 		if err != nil {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {

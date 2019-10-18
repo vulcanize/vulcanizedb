@@ -187,7 +187,7 @@ func composeAndExecute() {
 			rpcClient, _ := getClients()
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
+			storageFetcher := fetcher.NewGethRPCStorageFetcher(&stateDiffStreamer, payloadChan)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)

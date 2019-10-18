@@ -133,7 +133,7 @@ var _ = Describe("Repository", func() {
 
 				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM full_%s.balanceof_method", constants.TusdContractAddress)).StructScan(&scanStruct)
 				expectedLog := test_helpers.BalanceOf{
-					Id:        1,
+					ID:        1,
 					TokenName: "TrueUSD",
 					Block:     6707323,
 					Address:   "0xfE9e8709d3215310075d67E3ed32A380CCf451C8",
@@ -222,7 +222,7 @@ var _ = Describe("Repository", func() {
 
 				err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.balanceof_method", constants.TusdContractAddress)).StructScan(&scanStruct)
 				expectedLog := test_helpers.BalanceOf{
-					Id:        1,
+					ID:        1,
 					TokenName: "TrueUSD",
 					Block:     6707323,
 					Address:   "0xfE9e8709d3215310075d67E3ed32A380CCf451C8",

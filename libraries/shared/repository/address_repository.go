@@ -47,23 +47,23 @@ func GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
 	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
 
-	var addressId int64
-	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)
+	var addressID int64
+	getOrCreateErr := db.Get(&addressID, getOrCreateAddressQuery, checksumAddress, hashedAddress)
 
-	return addressId, getOrCreateErr
+	return addressID, getOrCreateErr
 }
 
 func GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
 	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
 
-	var addressId int64
-	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)
+	var addressID int64
+	getOrCreateErr := tx.Get(&addressID, getOrCreateAddressQuery, checksumAddress, hashedAddress)
 
-	return addressId, getOrCreateErr
+	return addressID, getOrCreateErr
 }
 
-func GetAddressById(db *postgres.DB, id int64) (string, error) {
+func GetAddressByID(db *postgres.DB, id int64) (string, error) {
 	var address string
 	getErr := db.Get(&address, `SELECT address FROM public.addresses WHERE id = $1`, id)
 	return address, getErr

@@ -239,7 +239,7 @@ func (tr *Transformer) Execute() error {
 		// If no logs are found mark the header checked for all of these eventIDs
 		// and continue to method polling and onto the next iteration
 		if len(allLogs) < 1 {
-			markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
+			markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.ID, tr.eventIds)
 			if markCheckedErr != nil {
 				return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 			}
@@ -268,7 +268,7 @@ func (tr *Transformer) Execute() error {
 			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
-			convertedLogs, convertErr := tr.Converter.ConvertBatch(logs, con.Events, header.Id)
+			convertedLogs, convertErr := tr.Converter.ConvertBatch(logs, con.Events, header.ID)
 			if convertErr != nil {
 				return fmt.Errorf("error converting logs: %s", convertErr.Error())
 			}
@@ -287,7 +287,7 @@ func (tr *Transformer) Execute() error {
 			}
 		}
 
-		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
+		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.ID, tr.eventIds)
 		if markCheckedErr != nil {
 			return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 		}
@@ -321,7 +321,7 @@ func (tr *Transformer) methodPolling(header core.Header, sortedMethodIds map[str
 		}
 
 		// Mark this header checked for the methods
-		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, sortedMethodIds[con.Address])
+		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.ID, sortedMethodIds[con.Address])
 		if markCheckedErr != nil {
 			return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 		}

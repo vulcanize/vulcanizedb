@@ -159,18 +159,18 @@ func getBlockChain() *eth.BlockChain {
 	rpcClient, ethClient := getClients()
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
 	return eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }
 
-func getClients() (client.RpcClient, *ethclient.Client) {
-	rawRpcClient, err := rpc.Dial(ipc)
+func getClients() (client.RPCClient, *ethclient.Client) {
+	rawRPCClient, err := rpc.Dial(ipc)
 
 	if err != nil {
 		LogWithCommand.Fatal(err)
 	}
-	rpcClient := client.NewRpcClient(rawRpcClient, ipc)
-	ethClient := ethclient.NewClient(rawRpcClient)
+	rpcClient := client.NewRPCClient(rawRPCClient, ipc)
+	ethClient := ethclient.NewClient(rawRPCClient)
 
 	return rpcClient, ethClient
 }

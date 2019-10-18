@@ -349,7 +349,7 @@ var _ = Describe("Log extractor", func() {
 				addTransformerConfig(extractor)
 				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
 				headerID := rand.Int63()
-				mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{Id: headerID}}
+				mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{ID: headerID}}
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 
 				err := extractor.ExtractLogs(constants.HeaderUnchecked)
@@ -362,7 +362,7 @@ var _ = Describe("Log extractor", func() {
 				addFetchedLog(extractor)
 				addTransformerConfig(extractor)
 				mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-				mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{Id: rand.Int63()}}
+				mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{ID: rand.Int63()}}
 				mockCheckedHeadersRepository.MarkHeaderCheckedReturnError = fakes.FakeError
 				extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
 

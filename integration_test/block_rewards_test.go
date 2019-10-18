@@ -32,13 +32,13 @@ import (
 var _ = Describe("Rewards calculations", func() {
 
 	It("calculates a block reward for a real block", func() {
-		rawRpcClient, err := rpc.Dial(test_config.TestClient.IPCPath)
+		rawRPCClient, err := rpc.Dial(test_config.TestClient.IPCPath)
 		Expect(err).NotTo(HaveOccurred())
-		rpcClient := client.NewRpcClient(rawRpcClient, test_config.TestClient.IPCPath)
-		ethClient := ethclient.NewClient(rawRpcClient)
+		rpcClient := client.NewRPCClient(rawRPCClient, test_config.TestClient.IPCPath)
+		ethClient := ethclient.NewClient(rawRPCClient)
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
-		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+		transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
 		blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())
@@ -46,13 +46,13 @@ var _ = Describe("Rewards calculations", func() {
 	})
 
 	It("calculates an uncle reward for a real block", func() {
-		rawRpcClient, err := rpc.Dial(test_config.TestClient.IPCPath)
+		rawRPCClient, err := rpc.Dial(test_config.TestClient.IPCPath)
 		Expect(err).NotTo(HaveOccurred())
-		rpcClient := client.NewRpcClient(rawRpcClient, test_config.TestClient.IPCPath)
-		ethClient := ethclient.NewClient(rawRpcClient)
+		rpcClient := client.NewRPCClient(rawRPCClient, test_config.TestClient.IPCPath)
+		ethClient := ethclient.NewClient(rawRPCClient)
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
-		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+		transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
 		blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())

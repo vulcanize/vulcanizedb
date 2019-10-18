@@ -65,7 +65,7 @@ var _ = Describe("Node Info", func() {
 		})
 
 		It("returns parity ID and client name for parity node", func() {
-			client := fakes.NewMockRpcClient()
+			client := fakes.NewMockRPCClient()
 
 			n := node.MakeNode(client)
 			Expect(n.ID).To(Equal("ParityNode"))
@@ -74,19 +74,19 @@ var _ = Describe("Node Info", func() {
 	})
 
 	It("returns the genesis block for any client", func() {
-		client := fakes.NewMockRpcClient()
+		client := fakes.NewMockRPCClient()
 		n := node.MakeNode(client)
 		Expect(n.GenesisBlock).To(Equal(EmpytHeaderHash))
 	})
 
 	It("returns the network id for any client", func() {
-		client := fakes.NewMockRpcClient()
+		client := fakes.NewMockRPCClient()
 		n := node.MakeNode(client)
 		Expect(n.NetworkID).To(Equal(float64(1234)))
 	})
 
 	It("returns geth ID and client name for geth node", func() {
-		client := fakes.NewMockRpcClient()
+		client := fakes.NewMockRPCClient()
 		supportedModules := make(map[string]string)
 		supportedModules["admin"] = "ok"
 		client.SetSupporedModules(supportedModules)
@@ -97,7 +97,7 @@ var _ = Describe("Node Info", func() {
 	})
 
 	It("returns infura ID and client name for infura node", func() {
-		client := fakes.NewMockRpcClient()
+		client := fakes.NewMockRPCClient()
 		client.SetIpcPath("infura/path")
 		n := node.MakeNode(client)
 		Expect(n.ID).To(Equal("infura"))
@@ -105,7 +105,7 @@ var _ = Describe("Node Info", func() {
 	})
 
 	It("returns local id and client name for Local node", func() {
-		client := fakes.NewMockRpcClient()
+		client := fakes.NewMockRPCClient()
 		client.SetIpcPath("127.0.0.1")
 		n := node.MakeNode(client)
 		Expect(n.ID).To(Equal("ganache"))

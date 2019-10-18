@@ -54,7 +54,7 @@ func (cdtc *ColdDbTransactionConverter) ConvertBlockTransactionsToCore(gethBlock
 	return coreTransactions, nil
 }
 
-func (cdtc *ColdDbTransactionConverter) ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error) {
+func (cdtc *ColdDbTransactionConverter) ConvertRPCTransactionsToModels(transactions []core.RPCTransaction) ([]core.TransactionModel, error) {
 	panic("converting transaction indexes to integer not supported for cold import")
 }
 
