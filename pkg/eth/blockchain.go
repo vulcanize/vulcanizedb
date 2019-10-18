@@ -41,11 +41,11 @@ type BlockChain struct {
 	ethClient            core.EthClient
 	headerConverter      vulcCommon.HeaderConverter
 	node                 core.Node
-	rpcClient            core.RpcClient
+	rpcClient            core.RPCClient
 	transactionConverter vulcCommon.TransactionConverter
 }
 
-func NewBlockChain(ethClient core.EthClient, rpcClient core.RpcClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
+func NewBlockChain(ethClient core.EthClient, rpcClient core.RPCClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
 	return &BlockChain{
 		blockConverter:       vulcCommon.NewBlockConverter(converter),
 		ethClient:            ethClient,
@@ -108,7 +108,7 @@ func (blockChain *BlockChain) GetFullSyncLogs(contract core.Contract, startingBl
 func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
 	numTransactions := len(transactionHashes)
 	var batch []client.BatchElem
-	transactions := make([]core.RpcTransaction, numTransactions)
+	transactions := make([]core.RPCTransaction, numTransactions)
 
 	for index, transactionHash := range transactionHashes {
 		batchElem := client.BatchElem{
@@ -124,7 +124,7 @@ func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) (
 		return []core.TransactionModel{}, rpcErr
 	}
 
-	return blockChain.transactionConverter.ConvertRpcTransactionsToModels(transactions)
+	return blockChain.transactionConverter.ConvertRPCTransactionsToModels(transactions)
 }
 
 func (blockChain *BlockChain) LastBlock() (*big.Int, error) {

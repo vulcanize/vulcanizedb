@@ -23,19 +23,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
 
-type GethRpcStorageFetcher struct {
+type GethRPCStorageFetcher struct {
 	statediffPayloadChan chan statediff.Payload
 	streamer             streamer.Streamer
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRpcStorageFetcher {
-	return GethRpcStorageFetcher{
+func NewGethRPCStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRPCStorageFetcher {
+	return GethRPCStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
 		streamer:             streamer,
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
+func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {

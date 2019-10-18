@@ -26,7 +26,7 @@ type Streamer interface {
 }
 
 type StateDiffStreamer struct {
-	client core.RpcClient
+	client core.RPCClient
 }
 
 func (streamer *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
@@ -34,7 +34,7 @@ func (streamer *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*
 	return streamer.client.Subscribe("statediff", payloadChan, "stream")
 }
 
-func NewStateDiffStreamer(client core.RpcClient) StateDiffStreamer {
+func NewStateDiffStreamer(client core.RPCClient) StateDiffStreamer {
 	return StateDiffStreamer{
 		client: client,
 	}

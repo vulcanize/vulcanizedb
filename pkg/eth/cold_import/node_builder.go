@@ -27,7 +27,7 @@ import (
 
 const (
 	ColdImportClientName         = "LevelDbColdImport"
-	ColdImportNetworkId  float64 = 1
+	ColdImportNetworkID  float64 = 1
 )
 
 var (
@@ -54,15 +54,15 @@ func (cinb ColdImportNodeBuilder) GetNode(genesisBlock []byte, levelPath string)
 	if err != nil {
 		return coldNode, err
 	}
-	nodeId, err := cinb.parser.ParsePublicKey(string(nodeKey))
+	nodeID, err := cinb.parser.ParsePublicKey(string(nodeKey))
 	if err != nil {
 		return coldNode, err
 	}
 	genesisBlockHash := common.BytesToHash(genesisBlock).String()
 	coldNode = core.Node{
 		GenesisBlock: genesisBlockHash,
-		NetworkID:    ColdImportNetworkId,
-		ID:           nodeId,
+		NetworkID:    ColdImportNetworkID,
+		ID:           nodeID,
 		ClientName:   ColdImportClientName,
 	}
 	return coldNode, nil

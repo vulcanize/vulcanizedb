@@ -41,7 +41,7 @@ func (converter *MockTransactionConverter) ConvertBlockTransactionsToCore(gethBl
 	return []core.TransactionModel{}, nil
 }
 
-func (converter *MockTransactionConverter) ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error) {
+func (converter *MockTransactionConverter) ConvertRPCTransactionsToModels(transactions []core.RPCTransaction) ([]core.TransactionModel, error) {
 	converter.ConvertHeaderTransactionIndexToIntCalled = true
 	return nil, nil
 }

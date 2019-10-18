@@ -37,14 +37,14 @@ var _ = Describe("Geth blockchain", func() {
 	var (
 		mockClient               *fakes.MockEthClient
 		blockChain               *eth.BlockChain
-		mockRpcClient            *fakes.MockRpcClient
+		mockRpcClient            *fakes.MockRPCClient
 		mockTransactionConverter *fakes.MockTransactionConverter
 		node                     vulcCore.Node
 	)
 
 	BeforeEach(func() {
 		mockClient = fakes.NewMockEthClient()
-		mockRpcClient = fakes.NewMockRpcClient()
+		mockRpcClient = fakes.NewMockRPCClient()
 		mockTransactionConverter = fakes.NewMockTransactionConverter()
 		node = vulcCore.Node{}
 		blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, mockTransactionConverter)

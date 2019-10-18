@@ -31,7 +31,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
 
-type MockRpcClient struct {
+type MockRPCClient struct {
 	callContextErr      error
 	ipcPath             string
 	nodeType            core.NodeType
@@ -49,7 +49,7 @@ type MockRpcClient struct {
 	supportedModules    map[string]string
 }
 
-func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+func (client *MockRPCClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
 	client.passedNamespace = namespace
 
 	passedPayloadChan, ok := payloadChan.(chan statediff.Payload)
@@ -66,21 +66,21 @@ func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}
 	return &subscription, nil
 }
 
-func (client *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
+func (client *MockRPCClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
 	Expect(client.passedNamespace).To(Equal(namespace))
 	Expect(client.passedPayloadChan).To(Equal(payloadChan))
 	Expect(client.passedSubscribeArgs).To(Equal(args))
 }
 
-func NewMockRpcClient() *MockRpcClient {
-	return &MockRpcClient{}
+func NewMockRPCClient() *MockRPCClient {
+	return &MockRPCClient{}
 }
 
-func (client *MockRpcClient) SetIpcPath(ipcPath string) {
+func (client *MockRPCClient) SetIpcPath(ipcPath string) {
 	client.ipcPath = ipcPath
 }
 
-func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
+func (client *MockRPCClient) BatchCall(batch []client.BatchElem) error {
 	client.passedBatch = batch
 	client.passedMethod = batch[0].Method
 	client.lengthOfBatch = len(batch)
@@ -101,7 +101,7 @@ func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
 	return nil
 }
 
-func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+func (client *MockRPCClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	client.passedContext = ctx
 	client.passedResult = result
 	client.passedMethod = method
@@ -146,41 +146,41 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 	return nil
 }
 
-func (client *MockRpcClient) IpcPath() string {
+func (client *MockRPCClient) IpcPath() string {
 	return client.ipcPath
 }
 
-func (client *MockRpcClient) SupportedModules() (map[string]string, error) {
+func (client *MockRPCClient) SupportedModules() (map[string]string, error) {
 	return client.supportedModules, nil
 }
 
-func (client *MockRpcClient) SetSupporedModules(supportedModules map[string]string) {
+func (client *MockRPCClient) SetSupporedModules(supportedModules map[string]string) {
 	client.supportedModules = supportedModules
 }
 
-func (client *MockRpcClient) SetCallContextErr(err error) {
+func (client *MockRPCClient) SetCallContextErr(err error) {
 	client.callContextErr = err
 }
 
-func (client *MockRpcClient) SetReturnPOAHeader(header core.POAHeader) {
+func (client *MockRPCClient) SetReturnPOAHeader(header core.POAHeader) {
 	client.returnPOAHeader = header
 }
 
-func (client *MockRpcClient) SetReturnPOWHeaders(headers []*types.Header) {
+func (client *MockRPCClient) SetReturnPOWHeaders(headers []*types.Header) {
 	client.returnPOWHeaders = headers
 }
 
-func (client *MockRpcClient) SetReturnPOAHeaders(headers []core.POAHeader) {
+func (client *MockRPCClient) SetReturnPOAHeaders(headers []core.POAHeader) {
 	client.returnPOAHeaders = headers
 }
 
-func (client *MockRpcClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
+func (client *MockRPCClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
 	Expect(client.passedContext).To(Equal(ctx))
 	Expect(client.passedResult).To(BeAssignableToTypeOf(result))
 	Expect(client.passedMethod).To(Equal(method))
 }
 
-func (client *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch int) {
+func (client *MockRPCClient) AssertBatchCalledWith(method string, lengthOfBatch int) {
 	Expect(client.lengthOfBatch).To(Equal(lengthOfBatch))
 	for _, batch := range client.passedBatch {
 		Expect(batch.Method).To(Equal(method))

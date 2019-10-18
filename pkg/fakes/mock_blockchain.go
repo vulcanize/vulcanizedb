@@ -75,23 +75,23 @@ func (chain *MockBlockChain) SetGetEthLogsWithCustomQueryReturnLogs(logs []types
 	chain.logQueryReturnLogs = logs
 }
 
-func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
-	blockChain.fetchContractDataPassedAbi = abiJSON
-	blockChain.fetchContractDataPassedAddress = address
-	blockChain.fetchContractDataPassedMethod = method
-	blockChain.fetchContractDataPassedMethodArgs = methodArgs
-	blockChain.fetchContractDataPassedResult = result
-	blockChain.fetchContractDataPassedBlockNumber = blockNumber
-	return blockChain.fetchContractDataErr
+func (chain *MockBlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
+	chain.fetchContractDataPassedAbi = abiJSON
+	chain.fetchContractDataPassedAddress = address
+	chain.fetchContractDataPassedMethod = method
+	chain.fetchContractDataPassedMethodArgs = methodArgs
+	chain.fetchContractDataPassedResult = result
+	chain.fetchContractDataPassedBlockNumber = blockNumber
+	return chain.fetchContractDataErr
 }
 
 func (chain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
 	return core.Block{Number: blockNumber}, chain.getBlockByNumberErr
 }
 
-func (blockChain *MockBlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
-	blockChain.logQuery = query
-	return blockChain.logQueryReturnLogs, blockChain.logQueryErr
+func (chain *MockBlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
+	chain.logQuery = query
+	return chain.logQueryReturnLogs, chain.logQueryErr
 }
 
 func (chain *MockBlockChain) GetHeaderByNumber(blockNumber int64) (core.Header, error) {
@@ -140,18 +140,18 @@ func (chain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON string, a
 	Expect(chain.fetchContractDataPassedBlockNumber).To(Equal(blockNumber))
 }
 
-func (blockChain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {
-	Expect(blockChain.logQuery).To(Equal(query))
+func (chain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {
+	Expect(chain.logQuery).To(Equal(query))
 }
 
-func (blockChain *MockBlockChain) SetGetAccountBalanceErr(err error) {
-	blockChain.getAccountBalanceErr = err
+func (chain *MockBlockChain) SetGetAccountBalanceErr(err error) {
+	chain.getAccountBalanceErr = err
 }
 
-func (blockChain *MockBlockChain) SetGetAccountBalance(balance *big.Int) {
-	blockChain.accountBalanceReturnValue = balance
+func (chain *MockBlockChain) SetGetAccountBalance(balance *big.Int) {
+	chain.accountBalanceReturnValue = balance
 }
 
-func (blockChain *MockBlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	return blockChain.accountBalanceReturnValue, blockChain.getAccountBalanceErr
+func (chain *MockBlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
+	return chain.accountBalanceReturnValue, chain.getAccountBalanceErr
 }

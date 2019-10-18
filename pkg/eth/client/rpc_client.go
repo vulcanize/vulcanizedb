@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-type RpcClient struct {
+type RPCClient struct {
 	client  *rpc.Client
 	ipcPath string
 }
@@ -36,14 +36,14 @@ type BatchElem struct {
 	Error  error
 }
 
-func NewRpcClient(client *rpc.Client, ipcPath string) RpcClient {
-	return RpcClient{
+func NewRPCClient(client *rpc.Client, ipcPath string) RPCClient {
+	return RPCClient{
 		client:  client,
 		ipcPath: ipcPath,
 	}
 }
 
-func (client RpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+func (client RPCClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	//If an empty interface (or other nil object) is passed to CallContext, when the JSONRPC message is created the params will
 	//be interpreted as [null]. This seems to work fine for most of the ethereum clients (which presumably ignore a null parameter.
 	//Ganache however does not ignore it, and throws an 'Incorrect number of arguments' error.
@@ -53,15 +53,15 @@ func (client RpcClient) CallContext(ctx context.Context, result interface{}, met
 	return client.client.CallContext(ctx, result, method, args...)
 }
 
-func (client RpcClient) IpcPath() string {
+func (client RPCClient) IpcPath() string {
 	return client.ipcPath
 }
 
-func (client RpcClient) SupportedModules() (map[string]string, error) {
+func (client RPCClient) SupportedModules() (map[string]string, error) {
 	return client.client.SupportedModules()
 }
 
-func (client RpcClient) BatchCall(batch []BatchElem) error {
+func (client RPCClient) BatchCall(batch []BatchElem) error {
 	var rpcBatch []rpc.BatchElem
 	for _, batchElem := range batch {
 		var newBatchElem = rpc.BatchElem{
@@ -78,7 +78,7 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 
 // Subscribe subscribes to an rpc "namespace_subscribe" subscription with the given channel
 // The first argument needs to be the method we wish to invoke
-func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+func (client RPCClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
 		return nil, errors.New("second argument to Subscribe must be a writable channel")

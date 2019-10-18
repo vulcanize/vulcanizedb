@@ -57,14 +57,14 @@ func (streamer *MockStoragediffStreamer) SetPayloads(payloads []statediff.Payloa
 var _ = Describe("Geth RPC Storage Fetcher", func() {
 	var streamer MockStoragediffStreamer
 	var statediffPayloadChan chan statediff.Payload
-	var statediffFetcher fetcher.GethRpcStorageFetcher
+	var statediffFetcher fetcher.GethRPCStorageFetcher
 	var storagediffChan chan utils.StorageDiff
 	var errorChan chan error
 
 	BeforeEach(func() {
 		streamer = MockStoragediffStreamer{}
 		statediffPayloadChan = make(chan statediff.Payload, 1)
-		statediffFetcher = fetcher.NewGethRpcStorageFetcher(&streamer, statediffPayloadChan)
+		statediffFetcher = fetcher.NewGethRPCStorageFetcher(&streamer, statediffPayloadChan)
 		storagediffChan = make(chan utils.StorageDiff)
 		errorChan = make(chan error)
 	})

@@ -34,7 +34,7 @@ import (
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 )
 
-type RpcTransactionConverter struct {
+type RPCTransactionConverter struct {
 	client core.EthClient
 }
 
@@ -51,11 +51,11 @@ type transactionData struct {
 	S            *big.Int
 }
 
-func NewRpcTransactionConverter(client core.EthClient) *RpcTransactionConverter {
-	return &RpcTransactionConverter{client: client}
+func NewRPCTransactionConverter(client core.EthClient) *RPCTransactionConverter {
+	return &RPCTransactionConverter{client: client}
 }
 
-func (converter *RpcTransactionConverter) ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error) {
+func (converter *RPCTransactionConverter) ConvertRPCTransactionsToModels(transactions []core.RPCTransaction) ([]core.TransactionModel, error) {
 	var results []core.TransactionModel
 	for _, transaction := range transactions {
 		txData, convertErr := getTransactionData(transaction)
@@ -88,7 +88,7 @@ func (converter *RpcTransactionConverter) ConvertRpcTransactionsToModels(transac
 	return results, nil
 }
 
-func (converter *RpcTransactionConverter) ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error) {
+func (converter *RPCTransactionConverter) ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error) {
 	var g errgroup.Group
 	coreTransactions := make([]core.TransactionModel, len(gethBlock.Transactions()))
 
@@ -122,8 +122,8 @@ func (converter *RpcTransactionConverter) ConvertBlockTransactionsToCore(gethBlo
 	return coreTransactions, nil
 }
 
-func (rtc *RpcTransactionConverter) appendReceiptToTransaction(transaction core.TransactionModel) (core.TransactionModel, error) {
-	gethReceipt, err := rtc.client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+func (converter *RPCTransactionConverter) appendReceiptToTransaction(transaction core.TransactionModel) (core.TransactionModel, error) {
+	gethReceipt, err := converter.client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
 		return transaction, err
 	}
@@ -155,7 +155,7 @@ func convertGethTransactionToModel(transaction *types.Transaction, from *common.
 	}, nil
 }
 
-func getTransactionData(transaction core.RpcTransaction) (transactionData, error) {
+func getTransactionData(transaction core.RPCTransaction) (transactionData, error) {
 	nonce, nonceErr := hexToBigInt(transaction.Nonce)
 	if nonceErr != nil {
 		return transactionData{}, nonceErr
