@@ -17,7 +17,6 @@
 package writer
 
 import (
-	"errors"
 	"fmt"
 
 	. "github.com/dave/jennifer/jen"
@@ -89,7 +88,7 @@ func (w *writer) WritePlugin() error {
 	// Write code to destination file
 	err = f.Save(goFile)
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to save generated .go file: %s\r\n%s", goFile, err.Error()))
+		return fmt.Errorf("failed to save generated .go file: %s\r\n%s", goFile, err.Error())
 	}
 	return nil
 }
@@ -107,7 +106,7 @@ func (w *writer) collectTransformers() (map[config.TransformerType][]Code, error
 		case config.EthContract:
 			code[config.EthContract] = append(code[config.EthContract], Qual(path, "ContractTransformerInitializer"))
 		default:
-			return nil, errors.New(fmt.Sprintf("invalid transformer type %s", transformer.Type))
+			return nil, fmt.Errorf("invalid transformer type %s", transformer.Type)
 		}
 	}
 
