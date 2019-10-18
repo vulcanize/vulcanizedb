@@ -130,9 +130,8 @@ func logError(description string, err error, header core.Header) {
 func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	if recheckHeaders == constants.HeaderUnchecked {
 		return 1
-	} else {
-		return constants.RecheckHeaderCap
 	}
+	return constants.RecheckHeaderCap
 }
 
 func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTransformerConfig) error {

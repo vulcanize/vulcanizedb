@@ -49,9 +49,8 @@ func (client RpcClient) CallContext(ctx context.Context, result interface{}, met
 	//Ganache however does not ignore it, and throws an 'Incorrect number of arguments' error.
 	if args == nil {
 		return client.client.CallContext(ctx, result, method)
-	} else {
-		return client.client.CallContext(ctx, result, method, args...)
 	}
+	return client.client.CallContext(ctx, result, method, args...)
 }
 
 func (client RpcClient) IpcPath() string {
