@@ -53,3 +53,5 @@ require (
 )
 
 replace github.com/ethereum/go-ethereum => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
+
+replace gopkg.in/urfave/cli.v1 => gopkg.in/urfave/cli.v1 v1.20.0
