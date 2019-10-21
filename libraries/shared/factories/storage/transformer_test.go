@@ -28,18 +28,18 @@ import (
 
 var _ = Describe("Storage transformer", func() {
 	var (
-		mappings   *mocks.MockMappings
-		repository *mocks.MockStorageRepository
-		t          storage.Transformer
+		storageKeysLookup *mocks.MockStorageKeysLookup
+		repository        *mocks.MockStorageRepository
+		t                 storage.Transformer
 	)
 
 	BeforeEach(func() {
-		mappings = &mocks.MockMappings{}
+		storageKeysLookup = &mocks.MockStorageKeysLookup{}
 		repository = &mocks.MockStorageRepository{}
 		t = storage.Transformer{
-			HashedAddress: common.Hash{},
-			Mappings:      mappings,
-			Repository:    repository,
+			HashedAddress:     common.Hash{},
+			StorageKeysLookup: storageKeysLookup,
+			Repository:        repository,
 		}
 	})
 
@@ -53,11 +53,11 @@ var _ = Describe("Storage transformer", func() {
 	It("looks up metadata for storage key", func() {
 		t.Execute(utils.StorageDiff{})
 
-		Expect(mappings.LookupCalled).To(BeTrue())
+		Expect(storageKeysLookup.LookupCalled).To(BeTrue())
 	})
 
 	It("returns error if lookup fails", func() {
-		mappings.LookupErr = fakes.FakeError
+		storageKeysLookup.LookupErr = fakes.FakeError
 
 		err := t.Execute(utils.StorageDiff{})
 
@@ -67,7 +67,7 @@ var _ = Describe("Storage transformer", func() {
 
 	It("creates storage row with decoded data", func() {
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
-		mappings.Metadata = fakeMetadata
+		storageKeysLookup.Metadata = fakeMetadata
 		rawValue := common.HexToAddress("0x12345")
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
@@ -91,7 +91,7 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if creating row fails", func() {
 		rawValue := common.HexToAddress("0x12345")
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
-		mappings.Metadata = fakeMetadata
+		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
 
 		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
@@ -118,7 +118,7 @@ var _ = Describe("Storage transformer", func() {
 		}
 
 		It("passes the decoded data items to the repository", func() {
-			mappings.Metadata = fakeMetadata
+			storageKeysLookup.Metadata = fakeMetadata
 			fakeRow := utils.StorageDiff{
 				HashedAddress: common.Hash{},
 				BlockHash:     common.HexToHash(fakeBlockHash),
@@ -140,7 +140,7 @@ var _ = Describe("Storage transformer", func() {
 		})
 
 		It("returns error if creating a row fails", func() {
-			mappings.Metadata = fakeMetadata
+			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
 
 			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})

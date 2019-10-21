@@ -19,34 +19,10 @@ package storage
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Transformer struct {
-	HashedAddress     common.Hash
-	StorageKeysLookup KeysLookup
-	Repository        Repository
-}
-
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
-	transformer.StorageKeysLookup.SetDB(db)
-	transformer.Repository.SetDB(db)
-	return transformer
-}
-
-func (transformer Transformer) KeccakContractAddress() common.Hash {
-	return transformer.HashedAddress
-}
-
-func (transformer Transformer) Execute(diff utils.StorageDiff) error {
-	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
-	if lookupErr != nil {
-		return lookupErr
-	}
-	value, decodeErr := utils.Decode(diff, metadata)
-	if decodeErr != nil {
-		return decodeErr
-	}
-	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
+type KeysLoader interface {
+	LoadMappings() (map[common.Hash]utils.StorageValueMetadata, error)
+	SetDB(db *postgres.DB)
 }
