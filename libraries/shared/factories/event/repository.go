@@ -17,6 +17,8 @@
 package event
 
 import (
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
@@ -38,12 +40,13 @@ type TableName string
 type ColumnName string
 type ColumnValues map[ColumnName]interface{}
 
+var UnsupportedValueError = errors.New("unsupported type of value supplied in model")
+
 type InsertionModel struct {
 	SchemaName     SchemaName
 	TableName      TableName
 	OrderedColumns []ColumnName // Defines the fields to insert, and in which order the table expects them
-	// ColumnValues needs to be typed interface{}, since  values to insert can be of mixed types
-	ColumnValues ColumnValues // Associated values for columns.
+	ColumnValues ColumnValues // Associated values for columns, restricted to []byte, bool, float64, int64, string, time.Time
 }
 
 // Stores memoised insertion queries to minimise computation
@@ -114,7 +117,14 @@ func Create(models []InsertionModel, db *postgres.DB) error {
 		// tx.Exec is variadically typed in the args, so if we wrap in []interface{} we can apply them all automatically
 		var args []interface{}
 		for _, col := range model.OrderedColumns {
-			args = append(args, model.ColumnValues[col])
+			value := model.ColumnValues[col]
+			// Check whether or not PG can accept the type of value in the model
+			okPgValue := driver.IsValue(value)
+			if !okPgValue {
+				logrus.WithField("model", model).Errorf("PG cannot handle value of this type: %T", value)
+				return UnsupportedValueError
+			}
+			args = append(args, value)
 		}
 
 		insertionQuery := GetMemoizedQuery(model)

@@ -26,6 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
+	"math/big"
 )
 
 var _ = Describe("Repository", func() {
@@ -141,6 +142,24 @@ var _ = Describe("Repository", func() {
 
 				// Remove incorrect query, so other tests won't get it
 				delete(event.ModelToQuery, "publictestEvent")
+			})
+
+			It("for unsupported types in ColumnValue", func() {
+				testModel = event.InsertionModel{
+					SchemaName: "public",
+					TableName:  "testEvent",
+					OrderedColumns: []event.ColumnName{
+						event.HeaderFK, event.LogFK, "variable1",
+					},
+					ColumnValues: event.ColumnValues{
+						event.HeaderFK: headerID,
+						event.LogFK:    logID,
+						"variable1":    big.NewInt(5), // Not a supported builtin type
+					},
+				}
+
+				createErr := event.Create([]event.InsertionModel{testModel}, db)
+				Expect(createErr).To(MatchError(event.UnsupportedValueError))
 			})
 		})
 
