@@ -30,6 +30,7 @@ type Transformer struct {
 }
 
 func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	transformer.Converter.SetDB(db)
 	transformer.Repository.SetDB(db)
 	return transformer
 }
