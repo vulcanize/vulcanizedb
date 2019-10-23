@@ -21,6 +21,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// Converter transforms log data into general InsertionModels the Repository can persist__
 type Converter interface {
 	ToModels(contractAbi string, ethLog []core.HeaderSyncLog) ([]InsertionModel, error)
 	SetDB(db *postgres.DB)

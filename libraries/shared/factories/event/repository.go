@@ -20,28 +20,40 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"strings"
 )
 
+// Repository persists transformed values to the DB
 type Repository interface {
 	Create(models []InsertionModel) error
 	SetDB(db *postgres.DB)
 }
 
+// LogFK is the name of log foreign key columns
 const LogFK ColumnName = "log_id"
+// AddressFK is the name of address foreign key columns
 const AddressFK ColumnName = "address_id"
+// HeaderFK is the name of header foreign key columns
 const HeaderFK ColumnName = "header_id"
 
-// Type aliases to reduce fat-finger bugs, forcing plugins to use declared variables for schema, table, and column names
+
+// SchemaName is the schema to work with
 type SchemaName string
+// TableName identifies the table for inserting the data
 type TableName string
+// ColumnName identifies columns on the given table
 type ColumnName string
+// ColumnValues maps a column to the value for insertion. This is restricted to []byte, bool, float64, int64, string, time.Time
 type ColumnValues map[ColumnName]interface{}
 
-var UnsupportedValueError = errors.New("unsupported type of value supplied in model")
+// ErrUnsupportedValue is thrown when a model supplies a type of value the postgres driver cannot handle.
+var ErrUnsupportedValue = errors.New("unsupported type of value supplied in model")
 
+// InsertionModel is the generalised data structure a converter returns, and contains everything the repository needs to
+// persist the converted data.
 type InsertionModel struct {
 	SchemaName     SchemaName
 	TableName      TableName
@@ -49,10 +61,10 @@ type InsertionModel struct {
 	ColumnValues   ColumnValues // Associated values for columns, restricted to []byte, bool, float64, int64, string, time.Time
 }
 
-// Stores memoised insertion queries to minimise computation
+// ModelToQuery stores memoised insertion queries to minimise computation
 var ModelToQuery = map[string]string{}
 
-// Get or create a DB insertion query for the model
+// GetMemoizedQuery gets/creates a DB insertion query for the model
 func GetMemoizedQuery(model InsertionModel) string {
 	// The schema and table name uniquely determines the insertion query, use that for memoization
 	queryKey := string(model.SchemaName) + string(model.TableName)
@@ -64,8 +76,8 @@ func GetMemoizedQuery(model InsertionModel) string {
 	return query
 }
 
-// Creates an insertion query from an insertion model. Should be called through GetMemoizedQuery, so the query is not
-// generated on each call to Create.
+// GenerateInsertionQuery creates an SQL insertion query from an insertion model.
+// Should be called through GetMemoizedQuery, so the query is not generated on each call to Create.
 func GenerateInsertionQuery(model InsertionModel) string {
 	var valuePlaceholders []string
 	var updateOnConflict []string
@@ -87,8 +99,9 @@ func GenerateInsertionQuery(model InsertionModel) string {
 		strings.Join(updateOnConflict, ", "))
 }
 
-/* Given an instance of InsertionModel, example below, generates an insertion query and persists to the DB.
-ColumnValues restricted to []byte, bool, float64, int64, string, time.Time.
+/*
+Create generates an insertion query and persists to the DB, given a slice of InsertionModels.
+ColumnValues are restricted to []byte, bool, float64, int64, string, time.Time.
 
 testModel = shared.InsertionModel{
 	SchemaName:     "public"
@@ -121,7 +134,7 @@ func Create(models []InsertionModel, db *postgres.DB) error {
 			okPgValue := driver.IsValue(value)
 			if !okPgValue {
 				logrus.WithField("model", model).Errorf("PG cannot handle value of this type: %T", value)
-				return UnsupportedValueError
+				return ErrUnsupportedValue
 			}
 			args = append(args, value)
 		}

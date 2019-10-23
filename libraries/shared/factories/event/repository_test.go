@@ -159,7 +159,7 @@ var _ = Describe("Repository", func() {
 				}
 
 				createErr := event.Create([]event.InsertionModel{testModel}, db)
-				Expect(createErr).To(MatchError(event.UnsupportedValueError))
+				Expect(createErr).To(MatchError(event.ErrUnsupportedValue))
 			})
 		})
 
