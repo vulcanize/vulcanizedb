@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
 
 type MockRpcClient struct {

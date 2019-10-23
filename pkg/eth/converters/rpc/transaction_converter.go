@@ -31,7 +31,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
+	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 )
 
 type RpcTransactionConverter struct {

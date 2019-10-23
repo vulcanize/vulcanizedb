@@ -28,10 +28,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 )
 
 var (
@@ -155,12 +155,12 @@ func initConfig() {
 	}
 }
 
-func getBlockChain() *geth.BlockChain {
+func getBlockChain() *eth.BlockChain {
 	rpcClient, ethClient := getClients()
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
 	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	return geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
+	return eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }
 
 func getClients() (client.RpcClient, *ethclient.Client) {

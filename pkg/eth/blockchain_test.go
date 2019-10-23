@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package geth_test
+package eth_test
 
 import (
 	"context"
@@ -29,14 +29,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	vulcCore "github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
 )
 
 var _ = Describe("Geth blockchain", func() {
 	var (
 		mockClient               *fakes.MockEthClient
-		blockChain               *geth.BlockChain
+		blockChain               *eth.BlockChain
 		mockRpcClient            *fakes.MockRpcClient
 		mockTransactionConverter *fakes.MockTransactionConverter
 		node                     vulcCore.Node
@@ -47,7 +47,7 @@ var _ = Describe("Geth blockchain", func() {
 		mockRpcClient = fakes.NewMockRpcClient()
 		mockTransactionConverter = fakes.NewMockTransactionConverter()
 		node = vulcCore.Node{}
-		blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, mockTransactionConverter)
+		blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, mockTransactionConverter)
 	})
 
 	Describe("getting a block", func() {
@@ -105,7 +105,7 @@ var _ = Describe("Geth blockchain", func() {
 				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
 				blockNumber := hexutil.Big(*big.NewInt(100))
 				mockRpcClient.SetReturnPOAHeader(vulcCore.POAHeader{Number: &blockNumber})
-				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
+				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
 
@@ -116,7 +116,7 @@ var _ = Describe("Geth blockchain", func() {
 			It("returns err if rpcClient returns err", func() {
 				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
 				mockRpcClient.SetCallContextErr(fakes.FakeError)
-				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
+				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
 
@@ -126,12 +126,12 @@ var _ = Describe("Geth blockchain", func() {
 
 			It("returns error if returned header is empty", func() {
 				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
-				blockChain = geth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
+				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
 
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(geth.ErrEmptyHeader))
+				Expect(err).To(MatchError(eth.ErrEmptyHeader))
 			})
 
 			It("returns multiple headers with multiple blocknumbers", func() {

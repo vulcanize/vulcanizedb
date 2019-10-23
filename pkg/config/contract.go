@@ -19,7 +19,7 @@ package config
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"strings"
 )
 
@@ -98,7 +98,7 @@ func (contractConfig *ContractConfig) PrepConfig() {
 			}
 		}
 		if abi != "" {
-			if _, abiErr := geth.ParseAbi(abi); abiErr != nil {
+			if _, abiErr := eth.ParseAbi(abi); abiErr != nil {
 				log.Fatal(addr, "transformer `abi` not valid JSON")
 			}
 		}

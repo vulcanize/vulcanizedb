@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package geth_test
+package eth_test
 
 import (
 	"net/http"
@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -36,7 +36,7 @@ var _ = Describe("ABI files", func() {
 		It("loads a valid ABI file", func() {
 			path := test_config.ABIFilePath + "valid_abi.json"
 
-			contractAbi, err := geth.ParseAbiFile(path)
+			contractAbi, err := eth.ParseAbiFile(path)
 
 			Expect(contractAbi).NotTo(BeNil())
 			Expect(err).To(BeNil())
@@ -45,7 +45,7 @@ var _ = Describe("ABI files", func() {
 		It("reads the contents of a valid ABI file", func() {
 			path := test_config.ABIFilePath + "valid_abi.json"
 
-			contractAbi, err := geth.ReadAbiFile(path)
+			contractAbi, err := eth.ReadAbiFile(path)
 
 			Expect(contractAbi).To(Equal("[{\"foo\": \"bar\"}]"))
 			Expect(err).To(BeNil())
@@ -54,38 +54,38 @@ var _ = Describe("ABI files", func() {
 		It("returns an error when the file does not exist", func() {
 			path := test_config.ABIFilePath + "missing_abi.json"
 
-			contractAbi, err := geth.ParseAbiFile(path)
+			contractAbi, err := eth.ParseAbiFile(path)
 
 			Expect(contractAbi).To(Equal(abi.ABI{}))
-			Expect(err).To(Equal(geth.ErrMissingAbiFile))
+			Expect(err).To(Equal(eth.ErrMissingAbiFile))
 		})
 
 		It("returns an error when the file has invalid contents", func() {
 			path := test_config.ABIFilePath + "invalid_abi.json"
 
-			contractAbi, err := geth.ParseAbiFile(path)
+			contractAbi, err := eth.ParseAbiFile(path)
 
 			Expect(contractAbi).To(Equal(abi.ABI{}))
-			Expect(err).To(Equal(geth.ErrInvalidAbiFile))
+			Expect(err).To(Equal(eth.ErrInvalidAbiFile))
 		})
 
 		Describe("Request ABI from endpoint", func() {
 
 			var (
 				server    *ghttp.Server
-				client    *geth.EtherScanAPI
+				client    *eth.EtherScanAPI
 				abiString string
 				err       error
 			)
 
 			BeforeEach(func() {
 				server = ghttp.NewServer()
-				client = geth.NewEtherScanClient(server.URL())
+				client = eth.NewEtherScanClient(server.URL())
 				path := test_config.ABIFilePath + "sample_abi.json"
-				abiString, err = geth.ReadAbiFile(path)
+				abiString, err = eth.ReadAbiFile(path)
 
 				Expect(err).NotTo(HaveOccurred())
-				_, err = geth.ParseAbi(abiString)
+				_, err = eth.ParseAbi(abiString)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -117,14 +117,14 @@ var _ = Describe("ABI files", func() {
 
 		Describe("Generating etherscan endpoints based on network", func() {
 			It("should return the main endpoint as the default", func() {
-				url := geth.GenURL("")
+				url := eth.GenURL("")
 				Expect(url).To(Equal("https://api.etherscan.io"))
 			})
 
 			It("generates various test network endpoint if test network is supplied", func() {
-				ropstenUrl := geth.GenURL("ropsten")
-				rinkebyUrl := geth.GenURL("rinkeby")
-				kovanUrl := geth.GenURL("kovan")
+				ropstenUrl := eth.GenURL("ropsten")
+				rinkebyUrl := eth.GenURL("rinkeby")
+				kovanUrl := eth.GenURL("kovan")
 
 				Expect(ropstenUrl).To(Equal("https://ropsten.etherscan.io"))
 				Expect(kovanUrl).To(Equal("https://kovan.etherscan.io"))

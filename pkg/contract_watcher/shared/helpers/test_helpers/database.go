@@ -30,10 +30,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -117,7 +117,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	blockChainClient := client.NewEthClient(ethClient)
 	madeNode := node.MakeNode(rpcClient)
 	transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-	blockChain := geth.NewBlockChain(blockChainClient, rpcClient, madeNode, transactionConverter)
+	blockChain := eth.NewBlockChain(blockChainClient, rpcClient, madeNode, transactionConverter)
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
