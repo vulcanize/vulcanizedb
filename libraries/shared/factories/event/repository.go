@@ -46,7 +46,7 @@ type InsertionModel struct {
 	SchemaName     SchemaName
 	TableName      TableName
 	OrderedColumns []ColumnName // Defines the fields to insert, and in which order the table expects them
-	ColumnValues ColumnValues // Associated values for columns, restricted to []byte, bool, float64, int64, string, time.Time
+	ColumnValues   ColumnValues // Associated values for columns, restricted to []byte, bool, float64, int64, string, time.Time
 }
 
 // Stores memoised insertion queries to minimise computation
@@ -88,17 +88,16 @@ func GenerateInsertionQuery(model InsertionModel) string {
 }
 
 /* Given an instance of InsertionModel, example below, generates an insertion query and persists to the DB.
+ColumnValues restricted to []byte, bool, float64, int64, string, time.Time.
 
 testModel = shared.InsertionModel{
-	SchemaName:     "maker"
+	SchemaName:     "public"
 	TableName:      "testEvent",
-	OrderedColumns: []string{"header_id", "log_id", constants.IlkFK, constants.UrnFK, "variable1"},
+	OrderedColumns: []string{"header_id", "log_id", "variable1"},
 	ColumnValues: ColumnValues{
 		"header_id": 303
-		"log_id":   "1",
+		"log_id":   "808",
 		"variable1": "value1",
-		constants.IlkFK: 808,
-		constants.UrnFK: 909,
 	},
 }
 */
