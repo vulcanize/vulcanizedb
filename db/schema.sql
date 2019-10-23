@@ -26,7 +26,8 @@ SET default_with_oids = false;
 
 CREATE TABLE public.addresses (
     id integer NOT NULL,
-    address character varying(42)
+    address character varying(42),
+    hashed_address character varying(66)
 );
 
 
