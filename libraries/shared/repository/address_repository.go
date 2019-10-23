@@ -32,12 +32,12 @@ package repository
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
-
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 const getOrCreateAddressQuery = `WITH addressId AS (
-			INSERT INTO addresses (address) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id
+			INSERT INTO addresses (address, hashed_address) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id
 		)
 		SELECT id FROM addresses WHERE address = $1
 		UNION
@@ -45,18 +45,20 @@ const getOrCreateAddressQuery = `WITH addressId AS (
 
 func GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
+	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
 
 	var addressId int64
-	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
+	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)
 
 	return addressId, getOrCreateErr
 }
 
 func GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
+	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
 
 	var addressId int64
-	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress)
+	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)
 
 	return addressId, getOrCreateErr
 }
