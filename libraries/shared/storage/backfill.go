@@ -17,12 +17,9 @@
 package storage
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
@@ -31,52 +28,39 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
 
-// IBackFiller is the backfilling interface
-type IBackFiller interface {
-	BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.StorageDiff, error)
+// BackFiller is the backfilling interface
+type BackFiller interface {
+	BackFill(startingBlock, endingBlock uint64) ([]utils.StorageDiff, error)
 }
 
-// BackFiller is the backfilling struct
-type BackFiller struct {
-	sdf fetcher.IStateDiffFetcher
+// backFiller is the backfilling struct
+type backFiller struct {
+	fetcher fetcher.StateDiffFetcher
 }
 
-// BackFillerArgs are used to pass configuration params to the backfiller
-type BackFillerArgs struct {
-	// mapping of hashed addresses to a list of the storage key hashes we want to collect at that address
-	WantedStorage map[common.Hash][]common.Hash
-	StartingBlock uint64
-	EndingBlock   uint64
-}
-
-// NewStorageBackFiller returns a IBackFiller
-func NewStorageBackFiller(bc fetcher.BatchClient) IBackFiller {
-	return &BackFiller{
-		sdf: fetcher.NewStateDiffFetcher(bc),
+// NewStorageBackFiller returns a BackFiller
+func NewStorageBackFiller(fetcher fetcher.StateDiffFetcher) BackFiller {
+	return &backFiller{
+		fetcher: fetcher,
 	}
 }
 
 // BackFill uses the provided config to fetch and return the state diff at the specified blocknumber
 // StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
-func (bf *BackFiller) BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.StorageDiff, error) {
-	results := make(map[common.Hash][]utils.StorageDiff, len(bfa.WantedStorage))
-	if bfa.EndingBlock < bfa.StartingBlock {
+func (bf *backFiller) BackFill(startingBlock, endingBlock uint64) ([]utils.StorageDiff, error) {
+	results := make([]utils.StorageDiff, 0)
+	if endingBlock < startingBlock {
 		return nil, errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
-	blockHeights := make([]uint64, 0, bfa.EndingBlock-bfa.StartingBlock+1)
-	for i := bfa.StartingBlock; i <= bfa.EndingBlock; i++ {
+	blockHeights := make([]uint64, 0, endingBlock-startingBlock+1)
+	for i := startingBlock; i <= endingBlock; i++ {
 		blockHeights = append(blockHeights, i)
 	}
-	payloads, err := bf.sdf.FetchStateDiffsAt(blockHeights)
+	payloads, err := bf.fetcher.FetchStateDiffsAt(blockHeights)
 	if err != nil {
 		return nil, err
 	}
 	for _, payload := range payloads {
-		block := new(types.Block)
-		blockDecodeErr := rlp.DecodeBytes(payload.BlockRlp, block)
-		if blockDecodeErr != nil {
-			return nil, blockDecodeErr
-		}
 		stateDiff := new(statediff.StateDiff)
 		stateDiffDecodeErr := rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
 		if stateDiffDecodeErr != nil {
@@ -84,42 +68,20 @@ func (bf *BackFiller) BackFill(bfa BackFillerArgs) (map[common.Hash][]utils.Stor
 		}
 		accounts := utils.GetAccountsFromDiff(*stateDiff)
 		for _, account := range accounts {
-			if wantedHashedAddress(bfa.WantedStorage, common.BytesToHash(account.Key)) {
-				logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-				for _, storage := range account.Storage {
-					if wantedHashedStorageKey(bfa.WantedStorage[common.BytesToHash(account.Key)], storage.Key) {
-						diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
-						logrus.Trace("adding storage diff to out channel",
-							"keccak of address: ", diff.HashedAddress.Hex(),
-							"block height: ", diff.BlockHeight,
-							"storage key: ", diff.StorageKey.Hex(),
-							"storage value: ", diff.StorageValue.Hex())
-						if formatErr != nil {
-							return nil, formatErr
-						}
-						results[diff.HashedAddress] = append(results[diff.HashedAddress], diff)
-					}
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+			for _, storage := range account.Storage {
+				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
+				if formatErr != nil {
+					return nil, formatErr
 				}
+				logrus.Trace("adding storage diff to results",
+					"keccak of address: ", diff.HashedAddress.Hex(),
+					"block height: ", diff.BlockHeight,
+					"storage key: ", diff.StorageKey.Hex(),
+					"storage value: ", diff.StorageValue.Hex())
+				results = append(results, diff)
 			}
 		}
 	}
 	return results, nil
-}
-
-func wantedHashedAddress(wantedStorage map[common.Hash][]common.Hash, hashedKey common.Hash) bool {
-	for addrHash := range wantedStorage {
-		if bytes.Equal(addrHash.Bytes(), hashedKey.Bytes()) {
-			return true
-		}
-	}
-	return false
-}
-
-func wantedHashedStorageKey(wantedKeys []common.Hash, keyBytes []byte) bool {
-	for _, key := range wantedKeys {
-		if bytes.Equal(key.Bytes(), keyBytes) {
-			return true
-		}
-	}
-	return false
 }

@@ -17,21 +17,25 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"plugin"
 	syn "sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -186,13 +190,29 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		diffs := make(chan storageUtils.StorageDiff)
-		w.Execute(diffs, errs, queueRecheckInterval)
+	on := viper.GetBool("storageBackFill.on")
+	if on {
+		go backFillStorage(w)
 	}
+	w.Execute(queueRecheckInterval, on)
+}
+
+func backFillStorage(w watcher.IStorageWatcher) {
+	// configure archival rpc client
+	archivalRPCPath := viper.GetString("storageBackFill.rpcPath")
+	if archivalRPCPath == "" {
+		LogWithCommand.Fatal(errors.New("storage backfill is turned on but no rpc path is provided"))
+	}
+	rawRPCClient, dialErr := rpc.Dial(archivalRPCPath)
+	if dialErr != nil {
+		LogWithCommand.Fatal(dialErr)
+	}
+	rpcClient := client.NewRpcClient(rawRPCClient, archivalRPCPath)
+	// find min deployment block
+	minDeploymentBlock := viper.GetInt("storageBackFill.startingBlock")
+	stateDiffFetcher := fetcher.NewStateDiffFetcher(rpcClient)
+	backFiller := storage.NewStorageBackFiller(stateDiffFetcher)
+	w.BackFill(backFiller, minDeploymentBlock)
 }
 
 func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {

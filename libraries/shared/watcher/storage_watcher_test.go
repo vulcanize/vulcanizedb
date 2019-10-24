@@ -22,11 +22,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
@@ -38,7 +41,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("adds transformers", func() {
 			fakeHashedAddress := utils.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
-			w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
+			w := watcher.NewStorageWatcher(mocks.NewClosingStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
 
 			w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -48,21 +51,17 @@ var _ = Describe("Storage Watcher", func() {
 
 	Describe("Execute", func() {
 		var (
-			errs            chan error
-			mockFetcher     *mocks.MockStorageFetcher
+			mockFetcher     *mocks.ClosingStorageFetcher
 			mockQueue       *mocks.MockStorageQueue
 			mockTransformer *mocks.MockStorageTransformer
 			csvDiff         utils.StorageDiff
-			diffs           chan utils.StorageDiff
 			storageWatcher  watcher.StorageWatcher
 			hashedAddress   common.Hash
 		)
 
 		BeforeEach(func() {
-			errs = make(chan error)
-			diffs = make(chan utils.StorageDiff)
 			hashedAddress = utils.HexToKeccak256Hash("0x0123456789abcdef")
-			mockFetcher = mocks.NewMockStorageFetcher()
+			mockFetcher = mocks.NewClosingStorageFetcher()
 			mockQueue = &mocks.MockStorageQueue{}
 			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
 			csvDiff = utils.StorageDiff{
@@ -85,7 +84,7 @@ var _ = Describe("Storage Watcher", func() {
 			defer os.Remove(tempFile.Name())
 			logrus.SetOutput(tempFile)
 
-			go storageWatcher.Execute(diffs, errs, time.Hour)
+			go storageWatcher.Execute(time.Hour, false)
 
 			Eventually(func() (string, error) {
 				logContent, err := ioutil.ReadFile(tempFile.Name())
@@ -103,25 +102,28 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("executes transformer for recognized storage diff", func(done Done) {
-				go storageWatcher.Execute(diffs, errs, time.Hour)
+				go storageWatcher.Execute(time.Hour, false)
 
-				Eventually(func() utils.StorageDiff {
-					return mockTransformer.PassedDiff
-				}).Should(Equal(csvDiff))
+				Eventually(func() []utils.StorageDiff {
+					return mockTransformer.PassedDiffs
+				}).Should(Equal([]utils.StorageDiff{csvDiff}))
 				close(done)
 			})
 
 			It("queues diff for later processing if transformer execution fails", func(done Done) {
 				mockTransformer.ExecuteErr = fakes.FakeError
 
-				go storageWatcher.Execute(diffs, errs, time.Hour)
+				go storageWatcher.Execute(time.Hour, false)
 
-				Expect(<-errs).To(BeNil())
+				Expect(<-storageWatcher.ErrsChan).To(BeNil())
 				Eventually(func() bool {
 					return mockQueue.AddCalled
 				}).Should(BeTrue())
 				Eventually(func() utils.StorageDiff {
-					return mockQueue.AddPassedDiff
+					if len(mockQueue.AddPassedDiffs) > 0 {
+						return mockQueue.AddPassedDiffs[0]
+					}
+					return utils.StorageDiff{}
 				}).Should(Equal(csvDiff))
 				close(done)
 			})
@@ -134,7 +136,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(diffs, errs, time.Hour)
+				go storageWatcher.Execute(time.Hour, false)
 
 				Eventually(func() bool {
 					return mockQueue.AddCalled
@@ -156,19 +158,25 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("executes transformer for storage diff", func(done Done) {
-				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
+				go storageWatcher.Execute(time.Nanosecond, false)
 
 				Eventually(func() utils.StorageDiff {
-					return mockTransformer.PassedDiff
+					if len(mockTransformer.PassedDiffs) > 0 {
+						return mockTransformer.PassedDiffs[0]
+					}
+					return utils.StorageDiff{}
 				}).Should(Equal(csvDiff))
 				close(done)
 			})
 
 			It("deletes diff from queue if transformer execution successful", func(done Done) {
-				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
+				go storageWatcher.Execute(time.Nanosecond, false)
 
 				Eventually(func() int {
-					return mockQueue.DeletePassedID
+					if len(mockQueue.DeletePassedIds) > 0 {
+						return mockQueue.DeletePassedIds[0]
+					}
+					return 0
 				}).Should(Equal(csvDiff.ID))
 				close(done)
 			})
@@ -180,7 +188,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
+				go storageWatcher.Execute(time.Nanosecond, false)
 
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())
@@ -196,10 +204,13 @@ var _ = Describe("Storage Watcher", func() {
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
 
-				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
+				go storageWatcher.Execute(time.Nanosecond, false)
 
 				Eventually(func() int {
-					return mockQueue.DeletePassedID
+					if len(mockQueue.DeletePassedIds) > 0 {
+						return mockQueue.DeletePassedIds[0]
+					}
+					return 0
 				}).Should(Equal(obsoleteDiff.ID))
 				close(done)
 			})
@@ -216,7 +227,127 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
+				go storageWatcher.Execute(time.Nanosecond, false)
+
+				Eventually(func() (string, error) {
+					logContent, err := ioutil.ReadFile(tempFile.Name())
+					return string(logContent), err
+				}).Should(ContainSubstring(fakes.FakeError.Error()))
+				close(done)
+			})
+		})
+	})
+
+	Describe("BackFill", func() {
+		var (
+			mockFetcher     *mocks.StorageFetcher
+			mockBackFiller  *mocks.BackFiller
+			mockQueue       *mocks.MockStorageQueue
+			mockTransformer *mocks.MockStorageTransformer
+			csvDiff         utils.StorageDiff
+			storageWatcher  watcher.StorageWatcher
+			hashedAddress   common.Hash
+		)
+
+		BeforeEach(func() {
+			mockBackFiller = new(mocks.BackFiller)
+			mockBackFiller.SetStorageDiffsToReturn([]utils.StorageDiff{
+				test_data.CreatedExpectedStorageDiff,
+				test_data.UpdatedExpectedStorageDiff,
+				test_data.UpdatedExpectedStorageDiff2,
+				test_data.DeletedExpectedStorageDiff})
+			hashedAddress = utils.HexToKeccak256Hash("0x0123456789abcdef")
+			mockFetcher = mocks.NewStorageFetcher()
+			mockQueue = &mocks.MockStorageQueue{}
+			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
+			csvDiff = utils.StorageDiff{
+				ID:            1337,
+				HashedAddress: hashedAddress,
+				BlockHash:     common.HexToHash("0xfedcba9876543210"),
+				BlockHeight:   int(test_data.BlockNumber2.Int64()) + 1,
+				StorageKey:    common.HexToHash("0xabcdef1234567890"),
+				StorageValue:  common.HexToHash("0x9876543210abcdef"),
+			}
+		})
+
+		Describe("transforming streamed and backfilled queued storage diffs", func() {
+			BeforeEach(func() {
+				mockFetcher.DiffsToReturn = []utils.StorageDiff{csvDiff}
+				mockQueue.DiffsToReturn = []utils.StorageDiff{csvDiff,
+					test_data.CreatedExpectedStorageDiff,
+					test_data.UpdatedExpectedStorageDiff,
+					test_data.UpdatedExpectedStorageDiff2,
+					test_data.DeletedExpectedStorageDiff}
+				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
+				storageWatcher.Queue = mockQueue
+				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
+			})
+
+			It("executes transformer for storage diffs", func(done Done) {
+				go storageWatcher.BackFill(mockBackFiller, int(test_data.BlockNumber.Uint64()))
+				go storageWatcher.Execute(time.Nanosecond, true)
+				expectedDiffsStruct := struct {
+					diffs []utils.StorageDiff
+				}{
+					[]utils.StorageDiff{
+						csvDiff,
+						test_data.CreatedExpectedStorageDiff,
+						test_data.UpdatedExpectedStorageDiff,
+						test_data.UpdatedExpectedStorageDiff2,
+						test_data.DeletedExpectedStorageDiff,
+					},
+				}
+				expectedDiffsBytes, rlpErr1 := rlp.EncodeToBytes(expectedDiffsStruct)
+				Expect(rlpErr1).ToNot(HaveOccurred())
+				Eventually(func() []byte {
+					diffsStruct := struct {
+						diffs []utils.StorageDiff
+					}{
+						mockTransformer.PassedDiffs,
+					}
+					diffsBytes, rlpErr2 := rlp.EncodeToBytes(diffsStruct)
+					Expect(rlpErr2).ToNot(HaveOccurred())
+					return diffsBytes
+				}).Should(Equal(expectedDiffsBytes))
+				close(done)
+			})
+
+			It("deletes diffs from queue if transformer execution is successful", func(done Done) {
+				go storageWatcher.Execute(time.Nanosecond, false)
+				expectedIdsStruct := struct {
+					diffs []int
+				}{
+					[]int{
+						csvDiff.ID,
+						test_data.CreatedExpectedStorageDiff.ID,
+						test_data.UpdatedExpectedStorageDiff.ID,
+						test_data.UpdatedExpectedStorageDiff2.ID,
+						test_data.DeletedExpectedStorageDiff.ID,
+					},
+				}
+				expectedIdsBytes, rlpErr1 := rlp.EncodeToBytes(expectedIdsStruct)
+				Expect(rlpErr1).ToNot(HaveOccurred())
+				Eventually(func() []byte {
+					idsStruct := struct {
+						diffs []int
+					}{
+						mockQueue.DeletePassedIds,
+					}
+					idsBytes, rlpErr2 := rlp.EncodeToBytes(idsStruct)
+					Expect(rlpErr2).ToNot(HaveOccurred())
+					return idsBytes
+				}).Should(Equal(expectedIdsBytes))
+				close(done)
+			})
+
+			It("logs error if deleting persisted diff fails", func(done Done) {
+				mockQueue.DeleteErr = fakes.FakeError
+				tempFile, fileErr := ioutil.TempFile("", "log")
+				Expect(fileErr).NotTo(HaveOccurred())
+				defer os.Remove(tempFile.Name())
+				logrus.SetOutput(tempFile)
+
+				go storageWatcher.Execute(time.Nanosecond, false)
 
 				Eventually(func() (string, error) {
 					logContent, err := ioutil.ReadFile(tempFile.Name())

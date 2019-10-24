@@ -18,66 +18,25 @@ package fetcher_test
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
 )
-
-type mockClient struct {
-	MappedStateDiffAt map[uint64][]byte
-}
-
-// SetReturnDiffAt method to set what statediffs the mock client returns
-func (mc *mockClient) SetReturnDiffAt(height uint64, diffPayload statediff.Payload) error {
-	if mc.MappedStateDiffAt == nil {
-		mc.MappedStateDiffAt = make(map[uint64][]byte)
-	}
-	by, err := json.Marshal(diffPayload)
-	if err != nil {
-		return err
-	}
-	mc.MappedStateDiffAt[height] = by
-	return nil
-}
-
-// BatchCall mockClient method to simulate batch call to geth
-func (mc *mockClient) BatchCall(batch []client.BatchElem) error {
-	if mc.MappedStateDiffAt == nil {
-		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
-	}
-	for _, batchElem := range batch {
-		if len(batchElem.Args) != 1 {
-			return errors.New("expected batch elem to contain single argument")
-		}
-		blockHeight, ok := batchElem.Args[0].(uint64)
-		if !ok {
-			return errors.New("expected batch elem argument to be a uint64")
-		}
-		err := json.Unmarshal(mc.MappedStateDiffAt[blockHeight], batchElem.Result)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 var _ = Describe("StateDiffFetcher", func() {
 	Describe("FetchStateDiffsAt", func() {
 		var (
-			mc               *mockClient
-			stateDiffFetcher fetcher.IStateDiffFetcher
+			mc               *mocks.BackFillerClient
+			stateDiffFetcher fetcher.StateDiffFetcher
 		)
 		BeforeEach(func() {
-			mc = new(mockClient)
+			mc = new(mocks.BackFillerClient)
 			setDiffAtErr1 := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
 			Expect(setDiffAtErr1).ToNot(HaveOccurred())
 			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
