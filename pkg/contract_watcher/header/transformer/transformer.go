@@ -128,6 +128,7 @@ func (tr *Transformer) Init() error {
 		firstBlock, retrieveErr := tr.Retriever.RetrieveFirstBlock()
 		if retrieveErr != nil {
 			if retrieveErr == sql.ErrNoRows {
+				logrus.Error(retrieveErr)
 				firstBlock = 0
 			} else {
 				return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
