@@ -22,6 +22,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
@@ -31,7 +32,8 @@ import (
 
 type IStorageWatcher interface {
 	AddTransformers(initializers []transformer.StorageTransformerInitializer)
-	Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration)
+	Execute(queueRecheckInterval time.Duration, backFill bool)
+	BackFill(backFiller storage.BackFiller, minDeploymentBlock int)
 }
 
 type StorageWatcher struct {
@@ -39,6 +41,9 @@ type StorageWatcher struct {
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
+	DiffsChan                 chan utils.StorageDiff
+	ErrsChan                  chan error
+	StartingSyncBlockChan     chan int
 }
 
 func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
@@ -47,6 +52,9 @@ func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) Storage
 	return StorageWatcher{
 		db:                        db,
 		StorageFetcher:            fetcher,
+		DiffsChan:                 make(chan utils.StorageDiff),
+		ErrsChan:                  make(chan error),
+		StartingSyncBlockChan:     make(chan int),
 		Queue:                     queue,
 		KeccakAddressTransformers: transformers,
 	}
@@ -59,14 +67,33 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 	}
 }
 
-func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration) {
+// BackFill configures the StorageWatcher to backfill missed storage diffs using a modified archival geth client
+func (storageWatcher StorageWatcher) BackFill(backFiller storage.BackFiller, minDeploymentBlock int) {
+	// need to learn which block to perform the backfill process up to
+	// this blocks until the Execute process sends us the first block number it sees
+	startingSyncBlock := <-storageWatcher.StartingSyncBlockChan
+	backFilledDiffs, err := backFiller.BackFill(uint64(minDeploymentBlock), uint64(startingSyncBlock))
+	if err != nil {
+		storageWatcher.ErrsChan <- err
+	}
+	for _, storageDiff := range backFilledDiffs {
+		storageWatcher.DiffsChan <- storageDiff
+	}
+}
+
+func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration, backFill bool) {
 	ticker := time.NewTicker(queueRecheckInterval)
-	go storageWatcher.StorageFetcher.FetchStorageDiffs(diffsChan, errsChan)
+	go storageWatcher.StorageFetcher.FetchStorageDiffs(storageWatcher.DiffsChan, storageWatcher.ErrsChan)
+	start := true
 	for {
 		select {
-		case fetchErr := <-errsChan:
+		case fetchErr := <-storageWatcher.ErrsChan:
 			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr))
-		case diff := <-diffsChan:
+		case diff := <-storageWatcher.DiffsChan:
+			if start && backFill {
+				storageWatcher.StartingSyncBlockChan <- diff.BlockHeight - 1
+				start = false
+			}
 			storageWatcher.processRow(diff)
 		case <-ticker.C:
 			storageWatcher.processQueue()

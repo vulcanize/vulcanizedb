@@ -194,3 +194,19 @@ func (e exporter) Export() []interface1.EventTransformerInitializer, []interface
         }
 }
 ```
+
+### Storage backfilling
+Storage transformers stream data from a geth subscription or parity csv file where the storage diffs are produced and emitted as the
+full sync progresses. If the transformers have missed consuming a range of diffs due to lag in the startup of the processes or due to misalignment of the sync,
+we can configure our storage transformers to backfill missing diffs from a [modified archival geth client](https://github.com/vulcanize/go-ethereum/tree/statediff_at).
+
+To do so, add the following fields to the config file.
+```toml
+[storageBackFill]
+    on = false
+    rpcPath = ""
+    startingBlock = 0
+```
+- `on` is set to `true` to turn the backfill process on
+- `rpcPath` is the websocket or ipc path to the modified archival geth node that exposes the `StateDiffAt` rpc endpoint we can use to backfill storage diffs
+- `startingBlock` is the block height at which we want to begin the backfill process; the height of the earliest contract deployment

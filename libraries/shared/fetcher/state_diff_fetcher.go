@@ -17,13 +17,14 @@
 package fetcher
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
 
-// IStateDiffFetcher is the state diff fetching interface
-type IStateDiffFetcher interface {
+// StateDiffFetcher is the state diff fetching interface
+type StateDiffFetcher interface {
 	FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error)
 }
 
@@ -32,23 +33,23 @@ type BatchClient interface {
 	BatchCall(batch []client.BatchElem) error
 }
 
-// StateDiffFetcher is the state diff fetching struct
-type StateDiffFetcher struct {
+// stateDiffFetcher is the state diff fetching struct
+type stateDiffFetcher struct {
 	client BatchClient
 }
 
 const method = "statediff_stateDiffAt"
 
 // NewStateDiffFetcher returns a IStateDiffFetcher
-func NewStateDiffFetcher(bc BatchClient) IStateDiffFetcher {
-	return &StateDiffFetcher{
+func NewStateDiffFetcher(bc BatchClient) StateDiffFetcher {
+	return &stateDiffFetcher{
 		client: bc,
 	}
 }
 
 // FetchStateDiffsAt fetches the statediff payloads at the given block heights
 // Calls StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
-func (sdf *StateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error) {
+func (fetcher *stateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error) {
 	batch := make([]client.BatchElem, 0)
 	for _, height := range blockHeights {
 		batch = append(batch, client.BatchElem{
@@ -57,14 +58,14 @@ func (sdf *StateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*stated
 			Result: new(statediff.Payload),
 		})
 	}
-	batchErr := sdf.client.BatchCall(batch)
+	batchErr := fetcher.client.BatchCall(batch)
 	if batchErr != nil {
-		return nil, batchErr
+		return nil, fmt.Errorf("stateDiffFetcher err: %s", batchErr.Error())
 	}
 	results := make([]*statediff.Payload, 0, len(blockHeights))
 	for _, batchElem := range batch {
 		if batchElem.Error != nil {
-			return nil, batchElem.Error
+			return nil, fmt.Errorf("stateDiffFetcher err: %s", batchElem.Error.Error())
 		}
 		results = append(results, batchElem.Result.(*statediff.Payload))
 	}
