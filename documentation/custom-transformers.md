@@ -202,7 +202,7 @@ Storage transformers stream data from a geth subscription or parity csv file whe
 full sync progresses. If the transformers have missed consuming a range of diffs due to lag in the startup of the processes or due to misalignment of the sync,
 we can configure our storage transformers to backfill missing diffs from a [modified archival geth client](https://github.com/vulcanize/go-ethereum/tree/statediff_at).
 
-To do so, add the following fields to the config file.
+To do so, add the following field to the config file.
 ```toml
 [storageBackFill]
     on = false
