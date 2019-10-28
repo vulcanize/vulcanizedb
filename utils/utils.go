@@ -17,7 +17,8 @@
 package utils
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
+	logrus "github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -31,7 +32,7 @@ import (
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 	db, err := postgres.NewDB(database, node)
 	if err != nil {
-		log.Fatal("Error loading postgres: ", err)
+		logrus.Fatal("Error loading postgres: ", err)
 	}
 	return *db
 }
@@ -40,7 +41,7 @@ func ReadAbiFile(abiFilepath string) string {
 	abiFilepath = AbsFilePath(abiFilepath)
 	abi, err := geth.ReadAbiFile(abiFilepath)
 	if err != nil {
-		log.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
+		logrus.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
 	}
 	return abi
 }
@@ -60,12 +61,12 @@ func GetAbi(abiFilepath string, contractHash string, network string) string {
 	} else {
 		url := geth.GenURL(network)
 		etherscan := geth.NewEtherScanClient(url)
-		log.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
+		logrus.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
 		contractAbiString, _ = etherscan.GetAbi(contractHash)
 	}
 	_, err := geth.ParseAbi(contractAbiString)
 	if err != nil {
-		log.Fatalln("Invalid ABI: ", err)
+		logrus.Fatalln("Invalid ABI: ", err)
 	}
 	return contractAbiString
 }
@@ -78,4 +79,12 @@ func RequestedBlockNumber(blockNumber *int64) *big.Int {
 		_blockNumber = big.NewInt(*blockNumber)
 	}
 	return _blockNumber
+}
+
+func RollbackAndLogFailure(tx *sqlx.Tx, txErr error, fieldName string) {
+	rollbackErr := tx.Rollback()
+	if rollbackErr != nil {
+		logrus.WithFields(logrus.Fields{"rollbackErr": rollbackErr, "txErr": txErr}).
+			Warnf("failed to rollback transaction after failing to insert %s", fieldName)
+	}
 }

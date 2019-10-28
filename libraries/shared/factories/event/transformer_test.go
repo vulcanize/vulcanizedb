@@ -66,12 +66,11 @@ var _ = Describe("Transformer", func() {
 		err := t.Execute([]core.HeaderSyncLog{})
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.ToEntitiesCalledCounter).To(Equal(0))
 		Expect(converter.ToModelsCalledCounter).To(Equal(0))
 		Expect(repository.CreateCalledCounter).To(Equal(0))
 	})
 
-	It("converts an eth log to an entity", func() {
+	It("converts an eth log to a model", func() {
 		err := t.Execute(logs)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -79,26 +78,7 @@ var _ = Describe("Transformer", func() {
 		Expect(converter.LogsToConvert).To(Equal(logs))
 	})
 
-	It("returns an error if converter fails", func() {
-		converter.ToEntitiesError = fakes.FakeError
-
-		err := t.Execute(logs)
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
-	It("converts an entity to a model", func() {
-		converter.EntitiesToReturn = []interface{}{test_data.GenericEntity{}}
-
-		err := t.Execute(logs)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(converter.EntitiesToConvert[0]).To(Equal(test_data.GenericEntity{}))
-	})
-
 	It("returns an error if converting to models fails", func() {
-		converter.EntitiesToReturn = []interface{}{test_data.GenericEntity{}}
 		converter.ToModelsError = fakes.FakeError
 
 		err := t.Execute(logs)
@@ -108,12 +88,12 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("persists the record", func() {
-		converter.ModelsToReturn = []interface{}{test_data.GenericModel{}}
+		converter.ModelsToReturn = []event.InsertionModel{test_data.GenericModel}
 
 		err := t.Execute(logs)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedModels[0]).To(Equal(test_data.GenericModel{}))
+		Expect(repository.PassedModels[0]).To(Equal(test_data.GenericModel))
 	})
 
 	It("returns error if persisting the record fails", func() {
