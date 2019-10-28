@@ -24,7 +24,6 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -142,17 +141,6 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 			}
 			return fmt.Errorf("error executing query: %s", execErr.Error())
 		}
-	}
-
-	// Mark header as checked for this eventId
-	eventID := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	markCheckedErr := repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].ID, tx, eventID) // This assumes all logs are from same block
-	if markCheckedErr != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			logrus.Warnf("error rolling back transaction while marking header checked: %s", rollbackErr.Error())
-		}
-		return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 	}
 
 	return tx.Commit()

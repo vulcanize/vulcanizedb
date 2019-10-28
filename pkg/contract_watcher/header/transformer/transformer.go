@@ -128,7 +128,7 @@ func (tr *Transformer) Init() error {
 		firstBlock, retrieveErr := tr.Retriever.RetrieveFirstBlock()
 		if retrieveErr != nil {
 			if retrieveErr == sql.ErrNoRows {
-				logrus.Error(retrieveErr)
+				logrus.Error(fmt.Errorf("error retrieving first block: %s", retrieveErr.Error()))
 				firstBlock = 0
 			} else {
 				return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
@@ -252,12 +252,6 @@ func (tr *Transformer) Execute() error {
 			continue
 		}
 
-		// Sort logs by the contract they belong to
-		// Start by adding every contract addr to the map
-		// So that if we don't have any logs for it, it is caught and the header is still marked checked for its events
-		for _, addr := range tr.contractAddresses {
-			sortedLogs[addr] = nil
-		}
 		for _, log := range allLogs {
 			addr := strings.ToLower(log.Address.Hex())
 			sortedLogs[addr] = append(sortedLogs[addr], log)
@@ -265,20 +259,12 @@ func (tr *Transformer) Execute() error {
 
 		// Process logs for each contract
 		for conAddr, logs := range sortedLogs {
-			con := tr.Contracts[conAddr]
-			if len(logs) < 1 {
-				eventIds := make([]string, 0)
-				for eventName := range con.Events {
-					eventIds = append(eventIds, strings.ToLower(eventName+"_"+con.Address))
-				}
-				markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, eventIds)
-				if markCheckedErr != nil {
-					return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
-				}
+			if logs == nil {
 				logrus.Tracef("no logs found for contract %s at block %d, continuing", conAddr, header.BlockNumber)
 				continue
 			}
 			// Configure converter with this contract
+			con := tr.Contracts[conAddr]
 			tr.Converter.Update(con)
 
 			// Convert logs into batches of log mappings (eventName => []types.Logs
@@ -290,21 +276,20 @@ func (tr *Transformer) Execute() error {
 			for eventName, logs := range convertedLogs {
 				// If logs for this event are empty, mark them checked at this header and continue
 				if len(logs) < 1 {
-					eventID := strings.ToLower(eventName + "_" + con.Address)
-					markCheckedErr := tr.HeaderRepository.MarkHeaderChecked(header.Id, eventID)
-					if markCheckedErr != nil {
-						return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
-					}
 					logrus.Tracef("no logs found for event %s on contract %s at block %d, continuing", eventName, conAddr, header.BlockNumber)
 					continue
 				}
 				// If logs aren't empty, persist them
-				// Header is marked checked in the transactions
 				persistErr := tr.EventRepository.PersistLogs(logs, con.Events[eventName], con.Address, con.Name)
 				if persistErr != nil {
 					return fmt.Errorf("error persisting logs: %s", persistErr.Error())
 				}
 			}
+		}
+
+		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
+		if markCheckedErr != nil {
+			return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 		}
 
 		// Poll contracts at this block height
