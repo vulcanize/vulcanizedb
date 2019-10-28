@@ -14,22 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package storage
+package utils
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"math/big"
 )
-
-type Mappings interface {
-	Lookup(key common.Hash) (utils.StorageValueMetadata, error)
-	SetDB(db *postgres.DB)
-}
 
 const (
 	IndexZero   = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -46,32 +37,17 @@ const (
 	IndexEleven = "000000000000000000000000000000000000000000000000000000000000000b"
 )
 
-func AddHashedKeys(currentMappings map[common.Hash]utils.StorageValueMetadata) map[common.Hash]utils.StorageValueMetadata {
-	copyOfCurrentMappings := make(map[common.Hash]utils.StorageValueMetadata)
-	for k, v := range currentMappings {
-		copyOfCurrentMappings[k] = v
-	}
-	for k, v := range copyOfCurrentMappings {
-		currentMappings[hashKey(k)] = v
-	}
-	return currentMappings
-}
-
-func hashKey(key common.Hash) common.Hash {
-	return crypto.Keccak256Hash(key.Bytes())
-}
-
-func GetMapping(indexOnContract, key string) common.Hash {
+func GetStorageKeyForMapping(indexOnContract, key string) common.Hash {
 	keyBytes := common.FromHex(key + indexOnContract)
 	return crypto.Keccak256Hash(keyBytes)
 }
 
-func GetNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
+func GetStorageKeyForNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
 	primaryMappingIndex := crypto.Keccak256(common.FromHex(primaryKey + indexOnContract))
 	return crypto.Keccak256Hash(common.FromHex(secondaryKey), primaryMappingIndex)
 }
 
-func GetIncrementedKey(original common.Hash, incrementBy int64) common.Hash {
+func GetIncrementedStorageKey(original common.Hash, incrementBy int64) common.Hash {
 	originalMappingAsInt := original.Big()
 	incremented := big.NewInt(0).Add(originalMappingAsInt, big.NewInt(incrementBy))
 	return common.BytesToHash(incremented.Bytes())

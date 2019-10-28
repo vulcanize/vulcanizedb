@@ -14,39 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package storage
+package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Transformer struct {
-	HashedAddress     common.Hash
-	StorageKeysLookup KeysLookup
-	Repository        Repository
+type MockStorageKeysLoader struct {
+	LoadMappingsCallCount int
+	LoadMappingsError     error
+	SetDBCalled           bool
+	StorageKeyMappings    map[common.Hash]utils.StorageValueMetadata
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
-	transformer.StorageKeysLookup.SetDB(db)
-	transformer.Repository.SetDB(db)
-	return transformer
+func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]utils.StorageValueMetadata, error) {
+	loader.LoadMappingsCallCount++
+	return loader.StorageKeyMappings, loader.LoadMappingsError
 }
 
-func (transformer Transformer) KeccakContractAddress() common.Hash {
-	return transformer.HashedAddress
-}
-
-func (transformer Transformer) Execute(diff utils.StorageDiff) error {
-	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
-	if lookupErr != nil {
-		return lookupErr
-	}
-	value, decodeErr := utils.Decode(diff, metadata)
-	if decodeErr != nil {
-		return decodeErr
-	}
-	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
+func (loader *MockStorageKeysLoader) SetDB(db *postgres.DB) {
+	loader.SetDBCalled = true
 }
