@@ -18,10 +18,7 @@ package event
 
 import (
 	"database/sql/driver"
-	"errors"
 	"fmt"
-	"github.com/jmoiron/sqlx"
-	"github.com/vulcanize/mcd_transformers/transformers/shared"
 	"github.com/vulcanize/vulcanizedb/utils"
 	"strings"
 
@@ -39,23 +36,29 @@ type Repository interface {
 
 // LogFK is the name of log foreign key columns
 const LogFK ColumnName = "log_id"
+
 // AddressFK is the name of address foreign key columns
 const AddressFK ColumnName = "address_id"
+
 // HeaderFK is the name of header foreign key columns
 const HeaderFK ColumnName = "header_id"
 
-
 // SchemaName is the schema to work with
 type SchemaName string
+
 // TableName identifies the table for inserting the data
 type TableName string
+
 // ColumnName identifies columns on the given table
 type ColumnName string
+
 // ColumnValues maps a column to the value for insertion. This is restricted to []byte, bool, float64, int64, string, time.Time
 type ColumnValues map[ColumnName]interface{}
 
 // ErrUnsupportedValue is thrown when a model supplies a type of value the postgres driver cannot handle.
-var ErrUnsupportedValue = errors.New("unsupported type of value supplied in model")
+var ErrUnsupportedValue = func(value interface{}) error {
+	return fmt.Errorf("unsupported type of value supplied in model: %v (%T)", value, value)
+}
 
 // InsertionModel is the generalised data structure a converter returns, and contains everything the repository needs to
 // persist the converted data.
@@ -139,7 +142,7 @@ func Create(models []InsertionModel, db *postgres.DB) error {
 			okPgValue := driver.IsValue(value)
 			if !okPgValue {
 				logrus.WithField("model", model).Errorf("PG cannot handle value of this type: %T", value)
-				return ErrUnsupportedValue
+				return ErrUnsupportedValue(value)
 			}
 			args = append(args, value)
 		}
@@ -165,7 +168,6 @@ func Create(models []InsertionModel, db *postgres.DB) error {
 
 	return tx.Commit()
 }
-
 
 func joinOrderedColumns(columns []ColumnName) string {
 	var stringColumns []string

@@ -45,8 +45,6 @@ var _ = Describe("Repository", func() {
 		variable1 TEXT,
 		UNIQUE (header_id, log_id)
 		);`
-		const addCheckedColumnQuery = `ALTER TABLE public.checked_headers
-		ADD COLUMN testevent INTEGER NOT NULL DEFAULT 0;`
 
 		var (
 			headerID, logID  int64
@@ -55,13 +53,8 @@ var _ = Describe("Repository", func() {
 		)
 
 		BeforeEach(func() {
-			db = test_config.NewTestDB(test_config.NewTestNode())
-			test_config.CleanTestDB(db)
-		})
-
-		BeforeEach(func() {
-			_, _ = db.Exec(createTestEventTableQuery)
-			_, _ = db.Exec(addCheckedColumnQuery)
+			_, tableErr := db.Exec(createTestEventTableQuery)
+			Expect(tableErr).NotTo(HaveOccurred())
 			headerRepository = repositories.NewHeaderRepository(db)
 			var insertHeaderErr error
 			headerID, insertHeaderErr = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
@@ -85,7 +78,6 @@ var _ = Describe("Repository", func() {
 
 		AfterEach(func() {
 			db.MustExec(`DROP TABLE public.testEvent;`)
-			db.MustExec(`ALTER TABLE public.checked_headers DROP COLUMN testevent;`)
 		})
 
 		// Needs to run before the other tests, since those insert keys in map
@@ -138,13 +130,14 @@ var _ = Describe("Repository", func() {
 				delete(event.ModelToQuery, "publictestEvent")
 
 				createErr := event.Create([]event.InsertionModel{brokenModel}, db)
-				Expect(createErr).To(HaveOccurred())
-
 				// Remove incorrect query, so other tests won't get it
 				delete(event.ModelToQuery, "publictestEvent")
+
+				Expect(createErr).To(HaveOccurred())
 			})
 
 			It("for unsupported types in ColumnValue", func() {
+				unsupportedValue := big.NewInt(5)
 				testModel = event.InsertionModel{
 					SchemaName: "public",
 					TableName:  "testEvent",
@@ -154,12 +147,12 @@ var _ = Describe("Repository", func() {
 					ColumnValues: event.ColumnValues{
 						event.HeaderFK: headerID,
 						event.LogFK:    logID,
-						"variable1":    big.NewInt(5), // Not a supported builtin type
+						"variable1":    unsupportedValue,
 					},
 				}
 
 				createErr := event.Create([]event.InsertionModel{testModel}, db)
-				Expect(createErr).To(MatchError(event.ErrUnsupportedValue))
+				Expect(createErr).To(MatchError(event.ErrUnsupportedValue(unsupportedValue)))
 			})
 		})
 

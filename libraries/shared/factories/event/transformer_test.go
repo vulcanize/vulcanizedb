@@ -78,15 +78,6 @@ var _ = Describe("Transformer", func() {
 		Expect(converter.LogsToConvert).To(Equal(logs))
 	})
 
-	It("returns an error if converter fails", func() {
-		converter.ToModelsError = fakes.FakeError
-
-		err := t.Execute(logs)
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
 	It("returns an error if converting to models fails", func() {
 		converter.ToModelsError = fakes.FakeError
 
