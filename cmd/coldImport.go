@@ -23,10 +23,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/crypto"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/cold_import"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/cold_db"
+	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/cold_import"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/converters/cold_db"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 

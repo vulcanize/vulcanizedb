@@ -18,7 +18,7 @@ package utils
 
 import (
 	"github.com/jmoiron/sqlx"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -26,7 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {
@@ -39,7 +39,7 @@ func LoadPostgres(database config.Database, node core.Node) postgres.DB {
 
 func ReadAbiFile(abiFilepath string) string {
 	abiFilepath = AbsFilePath(abiFilepath)
-	abi, err := geth.ReadAbiFile(abiFilepath)
+	abi, err := eth.ReadAbiFile(abiFilepath)
 	if err != nil {
 		logrus.Fatalf("Error reading ABI file at \"%s\"\n %v", abiFilepath, err)
 	}
@@ -59,12 +59,12 @@ func GetAbi(abiFilepath string, contractHash string, network string) string {
 	if abiFilepath != "" {
 		contractAbiString = ReadAbiFile(abiFilepath)
 	} else {
-		url := geth.GenURL(network)
-		etherscan := geth.NewEtherScanClient(url)
+		url := eth.GenURL(network)
+		etherscan := eth.NewEtherScanClient(url)
 		logrus.Printf("No ABI supplied. Retrieving ABI from Etherscan: %s", url)
 		contractAbiString, _ = etherscan.GetAbi(contractHash)
 	}
-	_, err := geth.ParseAbi(contractAbiString)
+	_, err := eth.ParseAbi(contractAbiString)
 	if err != nil {
 		logrus.Fatalln("Invalid ABI: ", err)
 	}

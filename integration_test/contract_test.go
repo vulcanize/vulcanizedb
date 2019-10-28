@@ -26,11 +26,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/testing"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/testing"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -56,7 +56,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+			blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 			contract := testing.SampleContract()
 
 			logs, err := blockChain.GetFullSyncLogs(contract, big.NewInt(4703824), nil)
@@ -74,7 +74,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+			blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 			logs, err := blockChain.GetFullSyncLogs(core.Contract{Hash: "0x123"}, big.NewInt(4703824), nil)
 
@@ -92,7 +92,7 @@ var _ = Describe("Reading contracts", func() {
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
 			transactionConverter := rpc2.NewRpcTransactionConverter(ethClient)
-			blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+			blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 
 			contract := testing.SampleContract()
 			var balance = new(big.Int)

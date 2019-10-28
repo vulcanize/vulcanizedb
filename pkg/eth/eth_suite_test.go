@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package geth_test
+package eth_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -25,5 +25,5 @@ import (
 
 func TestGeth(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Geth Suite")
+	RunSpecs(t, "eth Suite")
 }

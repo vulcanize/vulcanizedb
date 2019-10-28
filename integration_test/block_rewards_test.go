@@ -22,10 +22,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -39,7 +39,7 @@ var _ = Describe("Rewards calculations", func() {
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
 		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-		blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+		blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(block.Reward).To(Equal("5313550000000000000"))
@@ -53,7 +53,7 @@ var _ = Describe("Rewards calculations", func() {
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
 		transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-		blockChain := geth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
+		blockChain := eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 		block, err := blockChain.GetBlockByNumber(1071819)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(block.UnclesReward).To(Equal("6875000000000000000"))

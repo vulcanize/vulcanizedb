@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
 
 var _ = Describe("Parser", func() {
@@ -44,7 +44,7 @@ var _ = Describe("Parser", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			parsedAbi := mp.ParsedAbi()
-			expectedAbi, err := geth.ParseAbi(constants.DaiAbiString)
+			expectedAbi, err := eth.ParseAbi(constants.DaiAbiString)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(parsedAbi).To(Equal(expectedAbi))
 
@@ -73,7 +73,7 @@ var _ = Describe("Parser", func() {
 			expectedAbi := constants.DaiAbiString
 			Expect(p.Abi()).To(Equal(expectedAbi))
 
-			expectedParsedAbi, err := geth.ParseAbi(expectedAbi)
+			expectedParsedAbi, err := eth.ParseAbi(expectedAbi)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(p.ParsedAbi()).To(Equal(expectedParsedAbi))
 		})

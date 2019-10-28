@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
 
 // Mock parser
@@ -50,7 +50,7 @@ func (p *parser) ParsedAbi() abi.ABI {
 // for the given contract address
 func (p *parser) Parse() error {
 	var err error
-	p.parsedAbi, err = geth.ParseAbi(p.abi)
+	p.parsedAbi, err = eth.ParseAbi(p.abi)
 
 	return err
 }

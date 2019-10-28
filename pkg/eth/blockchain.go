@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package geth
+package eth
 
 import (
 	"errors"
@@ -28,8 +28,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 )
 
 var ErrEmptyHeader = errors.New("empty header returned over RPC")
