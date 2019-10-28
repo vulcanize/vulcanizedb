@@ -24,7 +24,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
 
 // Parser is used to fetch and parse contract ABIs
@@ -40,16 +40,16 @@ type Parser interface {
 }
 
 type parser struct {
-	client    *geth.EtherScanAPI
+	client    *eth.EtherScanAPI
 	abi       string
 	parsedAbi abi.ABI
 }
 
 func NewParser(network string) *parser {
-	url := geth.GenURL(network)
+	url := eth.GenURL(network)
 
 	return &parser{
-		client: geth.NewEtherScanClient(url),
+		client: eth.NewEtherScanClient(url),
 	}
 }
 
@@ -69,7 +69,7 @@ func (p *parser) Parse(contractAddr string) error {
 	knownAbi, err := p.lookUp(contractAddr)
 	if err == nil {
 		p.abi = knownAbi
-		p.parsedAbi, err = geth.ParseAbi(knownAbi)
+		p.parsedAbi, err = eth.ParseAbi(knownAbi)
 		return err
 	}
 	// Try getting abi from etherscan
@@ -79,7 +79,7 @@ func (p *parser) Parse(contractAddr string) error {
 	}
 	//TODO: Implement other ways to fetch abi
 	p.abi = abiStr
-	p.parsedAbi, err = geth.ParseAbi(abiStr)
+	p.parsedAbi, err = eth.ParseAbi(abiStr)
 
 	return err
 }
@@ -88,7 +88,7 @@ func (p *parser) Parse(contractAddr string) error {
 func (p *parser) ParseAbiStr(abiStr string) error {
 	var err error
 	p.abi = abiStr
-	p.parsedAbi, err = geth.ParseAbi(abiStr)
+	p.parsedAbi, err = eth.ParseAbi(abiStr)
 
 	return err
 }

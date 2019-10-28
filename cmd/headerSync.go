@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -100,7 +100,7 @@ func headerSync() {
 	}
 }
 
-func validateArgs(blockChain *geth.BlockChain) {
+func validateArgs(blockChain *eth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
 		LogWithCommand.Error("validateArgs: Error getting last block: ", err)

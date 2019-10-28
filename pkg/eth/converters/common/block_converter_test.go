@@ -29,9 +29,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/geth/converters/common"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
 )
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {
