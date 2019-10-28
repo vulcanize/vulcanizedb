@@ -17,17 +17,18 @@
 package mocks
 
 import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/event"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockEventRepository struct {
 	createError         error
-	PassedModels        []interface{}
+	PassedModels        []event.InsertionModel
 	SetDbCalled         bool
 	CreateCalledCounter int
 }
 
-func (repository *MockEventRepository) Create(models []interface{}) error {
+func (repository *MockEventRepository) Create(models []event.InsertionModel) error {
 	repository.PassedModels = models
 	repository.CreateCalledCounter++
 
