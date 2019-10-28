@@ -20,11 +20,16 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
+	"github.com/vulcanize/mcd_transformers/transformers/shared"
+	"github.com/vulcanize/vulcanizedb/utils"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
+
+const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`
 
 // Repository persists transformed values to the DB
 type Repository interface {
@@ -150,19 +155,17 @@ func Create(models []InsertionModel, db *postgres.DB) error {
 			return execErr
 		}
 
-		_, logErr := tx.Exec(`UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`, model.ColumnValues[LogFK])
+		_, logErr := tx.Exec(SetLogTransformedQuery, model.ColumnValues[LogFK])
 
 		if logErr != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				logrus.Error("failed to rollback ", rollbackErr)
-			}
+			utils.RollbackAndLogFailure(tx, logErr, "header_sync_logs.transformed")
 			return logErr
 		}
 	}
 
 	return tx.Commit()
 }
+
 
 func joinOrderedColumns(columns []ColumnName) string {
 	var stringColumns []string
