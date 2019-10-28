@@ -922,6 +922,14 @@ ALTER TABLE ONLY public.header_sync_transactions
 
 
 --
+-- Name: headers headers_block_number_hash_eth_node_fingerprint_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.headers
+    ADD CONSTRAINT headers_block_number_hash_eth_node_fingerprint_key UNIQUE (block_number, hash, eth_node_fingerprint);
+
+
+--
 -- Name: headers headers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
