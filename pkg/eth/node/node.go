@@ -18,17 +18,15 @@ package node
 
 import (
 	"context"
-
-	"strconv"
-
 	"regexp"
-
-	"log"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"strings"
 )
 
 type IPropertiesReader interface {
@@ -101,7 +99,7 @@ func (reader PropertiesReader) NetworkID() float64 {
 	var version string
 	err := reader.client.CallContext(context.Background(), &version, "net_version")
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	networkID, _ := strconv.ParseFloat(version, 64)
 	return networkID
@@ -111,13 +109,19 @@ func (reader PropertiesReader) GenesisBlock() string {
 	var header *types.Header
 	blockZero := "0x0"
 	includeTransactions := false
-	reader.client.CallContext(context.Background(), &header, "eth_getBlockByNumber", blockZero, includeTransactions)
+	err := reader.client.CallContext(context.Background(), &header, "eth_getBlockByNumber", blockZero, includeTransactions)
+	if err != nil {
+		log.Error(err)
+	}
 	return header.Hash().Hex()
 }
 
 func (reader PropertiesReader) NodeInfo() (string, string) {
 	var info p2p.NodeInfo
-	reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
+	err := reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
+	if err != nil {
+		log.Error(err)
+	}
 	return info.ID, info.Name
 }
 
@@ -137,14 +141,20 @@ func (client GanacheClient) NodeInfo() (string, string) {
 
 func (client ParityClient) parityNodeInfo() string {
 	var nodeInfo core.ParityNodeInfo
-	client.client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
+	err := client.client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
+	if err != nil {
+		log.Error(err)
+	}
 	return nodeInfo.String()
 }
 
 func (client ParityClient) parityID() string {
 	var enodeID = regexp.MustCompile(`^enode://(.+)@.+$`)
 	var enodeURL string
-	client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
+	err := client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
+	if err != nil {
+		log.Error(err)
+	}
 	enode := enodeID.FindStringSubmatch(enodeURL)
 	if len(enode) < 2 {
 		return ""
