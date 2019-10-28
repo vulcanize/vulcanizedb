@@ -355,11 +355,6 @@ var _ = Describe("Repository", func() {
 				Expect(count).To(Equal(2))
 			})
 
-			It("Fails if the persisted event does not have a corresponding eventID column in the checked_headers table", func() {
-				err = dataStore.PersistLogs(logs, event, con.Address, con.Name)
-				Expect(err).To(HaveOccurred())
-			})
-
 			It("Fails with empty log", func() {
 				err = dataStore.PersistLogs([]types.Log{}, event, con.Address, con.Name)
 				Expect(err).To(HaveOccurred())

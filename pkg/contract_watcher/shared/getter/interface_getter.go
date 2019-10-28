@@ -17,6 +17,8 @@
 package getter
 
 import (
+	"fmt"
+
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
@@ -24,7 +26,7 @@ import (
 
 // InterfaceGetter is used to derive the interface of a contract
 type InterfaceGetter interface {
-	GetABI(resolverAddr string, blockNumber int64) string
+	GetABI(resolverAddr string, blockNumber int64) (string, error)
 	GetBlockChain() core.BlockChain
 }
 
@@ -42,14 +44,18 @@ func NewInterfaceGetter(blockChain core.BlockChain) InterfaceGetter {
 }
 
 // GetABI is used to construct a custom ABI based on the results from calling supportsInterface
-func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) string {
+func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) (string, error) {
 	a := constants.SupportsInterfaceABI
 	args := make([]interface{}, 1)
 	args[0] = constants.MetaSig.Bytes()
 	supports, err := g.getSupportsInterface(a, resolverAddr, blockNumber, args)
-	if err != nil || !supports {
-		return ""
+	if err != nil {
+		return "", fmt.Errorf("call to getSupportsInterface failed: %v", err)
 	}
+	if !supports {
+		return "", fmt.Errorf("contract does not support interface")
+	}
+
 	abiStr := `[`
 	args[0] = constants.AddrChangeSig.Bytes()
 	supports, err = g.getSupportsInterface(a, resolverAddr, blockNumber, args)
@@ -93,7 +99,7 @@ func (g *interfaceGetter) GetABI(resolverAddr string, blockNumber int64) string 
 	}
 	abiStr = abiStr[:len(abiStr)-1] + `]`
 
-	return abiStr
+	return abiStr, nil
 }
 
 // Use this method to check whether or not a contract supports a given method/event interface
