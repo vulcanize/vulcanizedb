@@ -20,11 +20,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-// Basic abi needed to check which interfaces are adhered to
+// SupportsInterfaceABI is the basic abi needed to check which interfaces are adhered to
 var SupportsInterfaceABI = `[{"constant":true,"inputs":[{"name":"interfaceID","type":"bytes4"}],"name":"supportsInterface","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"}]`
 
 // Individual event interfaces for constructing ABI from
-var SupportsInterface = `{"constant":true,"inputs":[{"name":"interfaceID","type":"bytes4"}],"name":"supportsInterface","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"}`
 var AddrChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"a","type":"address"}],"name":"AddrChanged","type":"event"}`
 var ContentChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes32"}],"name":"ContentChanged","type":"event"}`
 var NameChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"name","type":"string"}],"name":"NameChanged","type":"event"}`
@@ -34,11 +33,10 @@ var TextChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"
 var MultihashChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes"}],"name":"MultihashChanged","type":"event"}`
 var ContenthashChangeInterface = `{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"hash","type":"bytes"}],"name":"ContenthashChanged","type":"event"}`
 
-var StartingBlock = int64(3648359)
-
 // Resolver interface signatures
 type Interface int
 
+// Interface enums
 const (
 	MetaSig Interface = iota
 	AddrChangeSig
@@ -51,6 +49,7 @@ const (
 	ContentHashChangeSig
 )
 
+// Hex returns the hex signature for an interface
 func (e Interface) Hex() string {
 	strings := [...]string{
 		"0x01ffc9a7",
@@ -71,6 +70,7 @@ func (e Interface) Hex() string {
 	return strings[e]
 }
 
+// Bytes returns the bytes signature for an interface
 func (e Interface) Bytes() [4]uint8 {
 	if e < MetaSig || e > ContentHashChangeSig {
 		return [4]byte{}
@@ -86,6 +86,7 @@ func (e Interface) Bytes() [4]uint8 {
 	return byArray
 }
 
+// EventSig returns the event signature for an interface
 func (e Interface) EventSig() string {
 	strings := [...]string{
 		"",
@@ -106,6 +107,7 @@ func (e Interface) EventSig() string {
 	return strings[e]
 }
 
+// MethodSig returns the method signature for an interface
 func (e Interface) MethodSig() string {
 	strings := [...]string{
 		"supportsInterface(bytes4)",

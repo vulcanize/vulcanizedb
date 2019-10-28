@@ -24,7 +24,6 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
@@ -35,7 +34,7 @@ const (
 	eventCacheSize    = 1000
 )
 
-// Event repository is used to persist event data into custom tables
+// EventRepository is used to persist event data into custom tables
 type EventRepository interface {
 	PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error
 	CreateEventTable(contractAddr string, event types.Event) (bool, error)
@@ -51,7 +50,8 @@ type eventRepository struct {
 	tables  *lru.Cache // Cache names of recently used tables to minimize db connections
 }
 
-func NewEventRepository(db *postgres.DB, mode types.Mode) *eventRepository {
+// NewEventRepository returns a new EventRepository
+func NewEventRepository(db *postgres.DB, mode types.Mode) EventRepository {
 	ccs, _ := lru.New(contractCacheSize)
 	ecs, _ := lru.New(eventCacheSize)
 	return &eventRepository{
@@ -62,7 +62,7 @@ func NewEventRepository(db *postgres.DB, mode types.Mode) *eventRepository {
 	}
 }
 
-// Creates a schema for the contract if needed
+// PersistLogs creates a schema for the contract if needed
 // Creates table for the watched contract event if needed
 // Persists converted event log data into this custom table
 func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
@@ -112,7 +112,7 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 		// Preallocate slice of needed capacity and proceed to pack variables into it in same order they appear in string
 		data := make([]interface{}, 0, 5+el)
 		data = append(data,
-			event.Id,
+			event.ID,
 			contractName,
 			event.Raw,
 			event.LogIndex,
@@ -143,17 +143,6 @@ func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo type
 		}
 	}
 
-	// Mark header as checked for this eventId
-	eventId := strings.ToLower(eventInfo.Name + "_" + contractAddr)
-	markCheckedErr := repository.MarkContractWatcherHeaderCheckedInTransaction(logs[0].Id, tx, eventId) // This assumes all logs are from same block
-	if markCheckedErr != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			logrus.Warnf("error rolling back transaction while marking header checked: %s", rollbackErr.Error())
-		}
-		return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
-	}
-
 	return tx.Commit()
 }
 
@@ -171,7 +160,7 @@ func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.
 
 		data := make([]interface{}, 0, 4+el)
 		data = append(data,
-			event.Id,
+			event.ID,
 			contractName,
 			event.Block,
 			event.Tx)
@@ -201,7 +190,7 @@ func (r *eventRepository) persistFullSyncLogs(logs []types.Log, eventInfo types.
 	return tx.Commit()
 }
 
-// Checks for event table and creates it if it does not already exist
+// CreateEventTable checks for event table and creates it if it does not already exist
 // Returns true if it created a new table; returns false if table already existed
 func (r *eventRepository) CreateEventTable(contractAddr string, event types.Event) (bool, error) {
 	tableID := fmt.Sprintf("%s_%s.%s_event", r.mode.String(), strings.ToLower(contractAddr), strings.ToLower(event.Name))
@@ -270,7 +259,7 @@ func (r *eventRepository) checkForTable(contractAddr string, eventName string) (
 	return exists, err
 }
 
-// Checks for contract schema and creates it if it does not already exist
+// CreateContractSchema checks for contract schema and creates it if it does not already exist
 // Returns true if it created a new schema; returns false if schema already existed
 func (r *eventRepository) CreateContractSchema(contractAddr string) (bool, error) {
 	if contractAddr == "" {
@@ -316,10 +305,12 @@ func (r *eventRepository) checkForSchema(contractAddr string) (bool, error) {
 	return exists, err
 }
 
+// CheckSchemaCache is used to query the schema name cache
 func (r *eventRepository) CheckSchemaCache(key string) (interface{}, bool) {
 	return r.schemas.Get(key)
 }
 
+// CheckTableCache is used to query the table name cache
 func (r *eventRepository) CheckTableCache(key string) (interface{}, bool) {
 	return r.tables.Get(key)
 }

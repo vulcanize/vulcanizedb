@@ -48,6 +48,7 @@ type Contract struct {
 	Piping         bool                         // Whether or not to pipe method results forward as arguments to subsequent methods
 }
 
+// Init initializes a contract object
 // If we will be calling methods that use addr, hash, or byte arrays
 // as arguments then we initialize maps to hold these types of values
 func (c Contract) Init() *Contract {
@@ -66,7 +67,7 @@ func (c Contract) Init() *Contract {
 	return &c
 }
 
-// Use contract info to generate event filters - full sync contract watcher only
+// GenerateFilters uses contract info to generate event filters - full sync contract watcher only
 func (c *Contract) GenerateFilters() error {
 	c.Filters = map[string]filters.LogFilter{}
 
@@ -87,7 +88,7 @@ func (c *Contract) GenerateFilters() error {
 	return nil
 }
 
-// Returns true if address is in list of arguments to
+// WantedEventArg returns true if address is in list of arguments to
 // filter events for or if no filtering is specified
 func (c *Contract) WantedEventArg(arg string) bool {
 	if c.FilterArgs == nil {
@@ -101,7 +102,7 @@ func (c *Contract) WantedEventArg(arg string) bool {
 	return false
 }
 
-// Returns true if address is in list of arguments to
+// WantedMethodArg returns true if address is in list of arguments to
 // poll methods with or if no filtering is specified
 func (c *Contract) WantedMethodArg(arg interface{}) bool {
 	if c.MethodArgs == nil {
@@ -121,7 +122,7 @@ func (c *Contract) WantedMethodArg(arg interface{}) bool {
 	return false
 }
 
-// Returns true if any mapping value matches filtered for address or if no filter exists
+// PassesEventFilter returns true if any mapping value matches filtered for address or if no filter exists
 // Used to check if an event log name-value mapping should be filtered or not
 func (c *Contract) PassesEventFilter(args map[string]string) bool {
 	for _, arg := range args {
@@ -133,7 +134,7 @@ func (c *Contract) PassesEventFilter(args map[string]string) bool {
 	return false
 }
 
-// Add event emitted address to our list if it passes filter and method polling is on
+// AddEmittedAddr adds event emitted addresses to our list if it passes filter and method polling is on
 func (c *Contract) AddEmittedAddr(addresses ...interface{}) {
 	for _, addr := range addresses {
 		if c.WantedMethodArg(addr) && c.Methods != nil {
@@ -142,7 +143,7 @@ func (c *Contract) AddEmittedAddr(addresses ...interface{}) {
 	}
 }
 
-// Add event emitted hash to our list if it passes filter and method polling is on
+// AddEmittedHash adds event emitted hashes to our list if it passes filter and method polling is on
 func (c *Contract) AddEmittedHash(hashes ...interface{}) {
 	for _, hash := range hashes {
 		if c.WantedMethodArg(hash) && c.Methods != nil {
@@ -151,6 +152,7 @@ func (c *Contract) AddEmittedHash(hashes ...interface{}) {
 	}
 }
 
+// StringifyArg resolves a method argument type to string type
 func StringifyArg(arg interface{}) (str string) {
 	switch arg.(type) {
 	case string:

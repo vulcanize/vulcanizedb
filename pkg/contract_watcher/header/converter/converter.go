@@ -18,7 +18,6 @@ package converter
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -32,16 +31,19 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
 )
 
+// ConverterInterface is the interface for converting geth logs to our custom log type
 type ConverterInterface interface {
 	Convert(logs []gethTypes.Log, event types.Event, headerID int64) ([]types.Log, error)
 	ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error)
 	Update(info *contract.Contract)
 }
 
+// Converter is the underlying struct for the ConverterInterface
 type Converter struct {
 	ContractInfo *contract.Contract
 }
 
+// Update is used to configure the converter with a specific contract
 func (c *Converter) Update(info *contract.Contract) {
 	c.ContractInfo = info
 }
@@ -98,7 +100,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 				strValues[fieldName] = converted.String()
 				seenHashes = append(seenHashes, converted)
 			default:
-				return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
+				return nil, fmt.Errorf("error: unhandled abi type %T", input)
 			}
 		}
 
@@ -114,7 +116,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 				Values:           strValues,
 				Raw:              raw,
 				TransactionIndex: log.TxIndex,
-				Id:               headerID,
+				ID:               headerID,
 			})
 
 			// Cache emitted values if their caching is turned on
@@ -130,7 +132,7 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 	return returnLogs, nil
 }
 
-// Convert the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
+// ConvertBatch converts the given watched event logs into types.Logs; returns a map of event names to a slice of their converted logs
 func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.Event, headerID int64) (map[string][]types.Log, error) {
 	boundContract := bind.NewBoundContract(common.HexToAddress(c.ContractInfo.Address), c.ContractInfo.ParsedAbi, nil, nil, nil)
 	eventsToLogs := make(map[string][]types.Log)
@@ -182,7 +184,7 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 						strValues[fieldName] = converted.String()
 						seenHashes = append(seenHashes, converted)
 					default:
-						return nil, errors.New(fmt.Sprintf("error: unhandled abi type %T", input))
+						return nil, fmt.Errorf("error: unhandled abi type %T", input)
 					}
 				}
 
@@ -198,7 +200,7 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 						Values:           strValues,
 						Raw:              raw,
 						TransactionIndex: log.TxIndex,
-						Id:               headerID,
+						ID:               headerID,
 					})
 
 					// Cache emitted values that pass the argument filter if their caching is turned on

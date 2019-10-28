@@ -17,12 +17,12 @@
 package transformer_test
 
 import (
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
 func TestTransformer(t *testing.T) {

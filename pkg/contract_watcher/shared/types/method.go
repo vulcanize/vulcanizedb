@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// Method is our custom method struct
 type Method struct {
 	Name   string
 	Const  bool
@@ -32,7 +33,7 @@ type Method struct {
 	Return []Field
 }
 
-// Struct to hold instance of result from method call with given inputs and block
+// Result is used to hold instance of result from method call with given inputs and block
 type Result struct {
 	Method
 	Inputs []interface{} // Will only use addresses
@@ -41,7 +42,7 @@ type Result struct {
 	Block  int64
 }
 
-// Unpack abi.Method into our custom Method struct
+// NewMethod unpacks abi.Method into our custom Method struct
 func NewMethod(m abi.Method) Method {
 	inputs := make([]Field, len(m.Inputs))
 	for i, input := range m.Inputs {
@@ -99,6 +100,7 @@ func NewMethod(m abi.Method) Method {
 	}
 }
 
+// Sig returns the hash signature for the method
 func (m Method) Sig() common.Hash {
 	types := make([]string, len(m.Args))
 	i := 0

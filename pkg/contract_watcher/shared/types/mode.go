@@ -16,19 +16,21 @@
 
 package types
 
-import "fmt"
-
+// Mode is used to explicitly represent the operating mode of the transformer
 type Mode int
 
+// Mode enums
 const (
 	HeaderSync Mode = iota
 	FullSync
 )
 
+// IsValid returns true is the Mode is valid
 func (mode Mode) IsValid() bool {
 	return mode >= HeaderSync && mode <= FullSync
 }
 
+// String returns the string representation of the mode
 func (mode Mode) String() string {
 	switch mode {
 	case HeaderSync:
@@ -38,27 +40,4 @@ func (mode Mode) String() string {
 	default:
 		return "unknown"
 	}
-}
-
-func (mode Mode) MarshalText() ([]byte, error) {
-	switch mode {
-	case HeaderSync:
-		return []byte("header"), nil
-	case FullSync:
-		return []byte("full"), nil
-	default:
-		return nil, fmt.Errorf("contract watcher: unknown mode %d, want HeaderSync or FullSync", mode)
-	}
-}
-
-func (mode *Mode) UnmarshalText(text []byte) error {
-	switch string(text) {
-	case "header":
-		*mode = HeaderSync
-	case "full":
-		*mode = FullSync
-	default:
-		return fmt.Errorf(`contract watcher: unknown mode %q, want "header" or "full"`, text)
-	}
-	return nil
 }

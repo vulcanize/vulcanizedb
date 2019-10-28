@@ -33,6 +33,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// Poller is the interface for polling public contract methods
 type Poller interface {
 	PollContract(con contract.Contract, lastBlock int64) error
 	PollContractAt(con contract.Contract, blockNumber int64) error
@@ -45,13 +46,15 @@ type poller struct {
 	contract contract.Contract
 }
 
-func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) *poller {
+// NewPoller returns a new Poller
+func NewPoller(blockChain core.BlockChain, db *postgres.DB, mode types.Mode) Poller {
 	return &poller{
 		MethodRepository: repository.NewMethodRepository(db, mode),
 		bc:               blockChain,
 	}
 }
 
+// PollContract polls a contract's public methods from the contracts starting block to specified last block
 func (p *poller) PollContract(con contract.Contract, lastBlock int64) error {
 	for i := con.StartingBlock; i <= lastBlock; i++ {
 		if err := p.PollContractAt(con, i); err != nil {
@@ -62,6 +65,7 @@ func (p *poller) PollContract(con contract.Contract, lastBlock int64) error {
 	return nil
 }
 
+// PollContractAt polls a contract's public getter methods at the specified block height
 func (p *poller) PollContractAt(con contract.Contract, blockNumber int64) error {
 	p.contract = con
 	for _, m := range con.Methods {
@@ -98,7 +102,7 @@ func (p *poller) pollNoArgAt(m types.Method, bn int64) error {
 	var out interface{}
 	err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, nil, &out, bn)
 	if err != nil {
-		return errors.New(fmt.Sprintf("poller error calling 0 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+		return fmt.Errorf("poller error calling 0 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 	}
 	strOut, err := stringify(out)
 	if err != nil {
@@ -112,7 +116,7 @@ func (p *poller) pollNoArgAt(m types.Method, bn int64) error {
 	// Persist result immediately
 	err = p.PersistResults([]types.Result{result}, m, p.contract.Address, p.contract.Name)
 	if err != nil {
-		return errors.New(fmt.Sprintf("poller error persisting 0 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+		return fmt.Errorf("poller error persisting 0 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 	}
 
 	return nil
@@ -148,7 +152,7 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 		var out interface{}
 		err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, in, &out, bn)
 		if err != nil {
-			return errors.New(fmt.Sprintf("poller error calling 1 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+			return fmt.Errorf("poller error calling 1 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 		}
 		strOut, err := stringify(out)
 		if err != nil {
@@ -164,7 +168,7 @@ func (p *poller) pollSingleArgAt(m types.Method, bn int64) error {
 	// Persist result set as batch
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
-		return errors.New(fmt.Sprintf("poller error persisting 1 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+		return fmt.Errorf("poller error persisting 1 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 	}
 
 	return nil
@@ -212,7 +216,7 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 			var out interface{}
 			err := p.bc.FetchContractData(p.contract.Abi, p.contract.Address, m.Name, in, &out, bn)
 			if err != nil {
-				return errors.New(fmt.Sprintf("poller error calling 2 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+				return fmt.Errorf("poller error calling 2 argument method\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 			}
 			strOut, err := stringify(out)
 			if err != nil {
@@ -228,13 +232,13 @@ func (p *poller) pollDoubleArgAt(m types.Method, bn int64) error {
 
 	err := p.PersistResults(results, m, p.contract.Address, p.contract.Name)
 	if err != nil {
-		return errors.New(fmt.Sprintf("poller error persisting 2 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err))
+		return fmt.Errorf("poller error persisting 2 argument method result\r\nblock: %d, method: %s, contract: %s\r\nerr: %v", bn, m.Name, p.contract.Address, err)
 	}
 
 	return nil
 }
 
-// This is just a wrapper around the poller blockchain's FetchContractData method
+// FetchContractData is just a wrapper around the poller blockchain's FetchContractData method
 func (p *poller) FetchContractData(contractAbi, contractAddress, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {
 	return p.bc.FetchContractData(contractAbi, contractAddress, method, methodArgs, result, blockNumber)
 }

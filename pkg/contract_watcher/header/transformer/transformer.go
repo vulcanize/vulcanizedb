@@ -40,6 +40,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
+// Transformer is the top level struct for transforming watched contract data
 // Requires a header synced vDB (headers) and a running eth node (or infura)
 type Transformer struct {
 	// Database interfaces
@@ -76,7 +77,7 @@ type Transformer struct {
 // 3. Init
 // 4. Execute
 
-// Transformer takes in config for blockchain, database, and network id
+// NewTransformer takes in a contract config, blockchain, and database, and returns a new Transformer
 func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.DB) *Transformer {
 
 	return &Transformer{
@@ -92,6 +93,7 @@ func NewTransformer(con config.ContractConfig, bc core.BlockChain, db *postgres.
 	}
 }
 
+// Init initialized the Transformer
 // Use after creating and setting transformer
 // Loops over all of the addr => filter sets
 // Uses parser to pull event info from abi
@@ -126,6 +128,7 @@ func (tr *Transformer) Init() error {
 		firstBlock, retrieveErr := tr.Retriever.RetrieveFirstBlock()
 		if retrieveErr != nil {
 			if retrieveErr == sql.ErrNoRows {
+				logrus.Error(fmt.Errorf("error retrieving first block: %s", retrieveErr.Error()))
 				firstBlock = 0
 			} else {
 				return fmt.Errorf("error retrieving first block: %s", retrieveErr.Error())
@@ -175,14 +178,14 @@ func (tr *Transformer) Init() error {
 		// Create checked_headers columns for each event id and append to list of all event ids
 		tr.sortedEventIds[con.Address] = make([]string, 0, len(con.Events))
 		for _, event := range con.Events {
-			eventId := strings.ToLower(event.Name + "_" + con.Address)
-			addColumnErr := tr.HeaderRepository.AddCheckColumn(eventId)
+			eventID := strings.ToLower(event.Name + "_" + con.Address)
+			addColumnErr := tr.HeaderRepository.AddCheckColumn(eventID)
 			if addColumnErr != nil {
 				return fmt.Errorf("error adding check column: %s", addColumnErr.Error())
 			}
 			// Keep track of this event id; sorted and unsorted
-			tr.sortedEventIds[con.Address] = append(tr.sortedEventIds[con.Address], eventId)
-			tr.eventIds = append(tr.eventIds, eventId)
+			tr.sortedEventIds[con.Address] = append(tr.sortedEventIds[con.Address], eventID)
+			tr.eventIds = append(tr.eventIds, eventID)
 			// Append this event sig to the filters
 			tr.eventFilters = append(tr.eventFilters, event.Sig())
 		}
@@ -190,12 +193,12 @@ func (tr *Transformer) Init() error {
 		// Create checked_headers columns for each method id and append list of all method ids
 		tr.sortedMethodIds[con.Address] = make([]string, 0, len(con.Methods))
 		for _, m := range con.Methods {
-			methodId := strings.ToLower(m.Name + "_" + con.Address)
-			addColumnErr := tr.HeaderRepository.AddCheckColumn(methodId)
+			methodID := strings.ToLower(m.Name + "_" + con.Address)
+			addColumnErr := tr.HeaderRepository.AddCheckColumn(methodID)
 			if addColumnErr != nil {
 				return fmt.Errorf("error adding check column: %s", addColumnErr.Error())
 			}
-			tr.sortedMethodIds[con.Address] = append(tr.sortedMethodIds[con.Address], methodId)
+			tr.sortedMethodIds[con.Address] = append(tr.sortedMethodIds[con.Address], methodID)
 		}
 
 		// Update start to the lowest block
@@ -207,6 +210,7 @@ func (tr *Transformer) Init() error {
 	return nil
 }
 
+// Execute runs the transformation processes
 func (tr *Transformer) Execute() error {
 	if len(tr.Contracts) == 0 {
 		return errors.New("error: transformer has no initialized contracts")
@@ -248,7 +252,6 @@ func (tr *Transformer) Execute() error {
 			continue
 		}
 
-		// Sort logs by the contract they belong to
 		for _, log := range allLogs {
 			addr := strings.ToLower(log.Address.Hex())
 			sortedLogs[addr] = append(sortedLogs[addr], log)
@@ -273,21 +276,20 @@ func (tr *Transformer) Execute() error {
 			for eventName, logs := range convertedLogs {
 				// If logs for this event are empty, mark them checked at this header and continue
 				if len(logs) < 1 {
-					eventId := strings.ToLower(eventName + "_" + con.Address)
-					markCheckedErr := tr.HeaderRepository.MarkHeaderChecked(header.Id, eventId)
-					if markCheckedErr != nil {
-						return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
-					}
 					logrus.Tracef("no logs found for event %s on contract %s at block %d, continuing", eventName, conAddr, header.BlockNumber)
 					continue
 				}
 				// If logs aren't empty, persist them
-				// Header is marked checked in the transactions
 				persistErr := tr.EventRepository.PersistLogs(logs, con.Events[eventName], con.Address, con.Name)
 				if persistErr != nil {
 					return fmt.Errorf("error persisting logs: %s", persistErr.Error())
 				}
 			}
+		}
+
+		markCheckedErr := tr.HeaderRepository.MarkHeaderCheckedForAll(header.Id, tr.eventIds)
+		if markCheckedErr != nil {
+			return fmt.Errorf("error marking header checked: %s", markCheckedErr.Error())
 		}
 
 		// Poll contracts at this block height
@@ -328,6 +330,7 @@ func (tr *Transformer) methodPolling(header core.Header, sortedMethodIds map[str
 	return nil
 }
 
+// GetConfig returns the transformers config; satisfies the transformer interface
 func (tr *Transformer) GetConfig() config.ContractConfig {
 	return tr.Config
 }

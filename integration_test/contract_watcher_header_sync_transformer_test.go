@@ -40,8 +40,8 @@ var _ = Describe("contractWatcher headerSync transformer", func() {
 	var blockChain core.BlockChain
 	var headerRepository repositories.HeaderRepository
 	var headerID int64
-	var ensAddr = strings.ToLower(constants.EnsContractAddress)
-	var tusdAddr = strings.ToLower(constants.TusdContractAddress)
+	var ensAddr = strings.ToLower(constants.EnsContractAddress)   // 0x314159265dd8dbb310642f98f50c066173c1259b
+	var tusdAddr = strings.ToLower(constants.TusdContractAddress) // 0x8dd5fbce2f6a956c3022ba3663759011dd51e73e
 
 	BeforeEach(func() {
 		db, blockChain = test_helpers.SetupDBandBC()
@@ -375,6 +375,42 @@ var _ = Describe("contractWatcher headerSync transformer", func() {
 			Expect(transferLog.From).To(Equal("0x8cA465764873E71CEa525F5EB6AE973d650c22C2"))
 			Expect(transferLog.To).To(Equal("0xc338482360651E5D30BEd77b7c85358cbBFB2E0e"))
 			Expect(transferLog.Value).To(Equal("2800000000000000000000"))
+		})
+
+		It("Marks header checked for a contract that has no logs at that header", func() {
+			t := transformer.NewTransformer(test_helpers.ENSandTusdConfig, blockChain, db)
+			err = t.Init()
+			Expect(err).ToNot(HaveOccurred())
+			err = t.Execute()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(t.Start).To(Equal(int64(6885702)))
+
+			newOwnerLog := test_helpers.HeaderSyncNewOwnerLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
+			Expect(err).ToNot(HaveOccurred())
+			transferLog := test_helpers.HeaderSyncTransferLog{}
+			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM header_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(transferLog.HeaderID).ToNot(Equal(newOwnerLog.HeaderID))
+
+			type checkedHeader struct {
+				ID       int64 `db:"id"`
+				HeaderID int64 `db:"header_id"`
+				NewOwner int64 `db:"newowner_0x314159265dd8dbb310642f98f50c066173c1259b"`
+				Transfer int64 `db:"transfer_0x8dd5fbce2f6a956c3022ba3663759011dd51e73e"`
+			}
+
+			transferCheckedHeader := new(checkedHeader)
+			err = db.QueryRowx("SELECT * FROM public.checked_headers WHERE header_id = $1", transferLog.HeaderID).StructScan(transferCheckedHeader)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(transferCheckedHeader.Transfer).To(Equal(int64(1)))
+			Expect(transferCheckedHeader.NewOwner).To(Equal(int64(1)))
+
+			newOwnerCheckedHeader := new(checkedHeader)
+			err = db.QueryRowx("SELECT * FROM public.checked_headers WHERE header_id = $1", newOwnerLog.HeaderID).StructScan(newOwnerCheckedHeader)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(newOwnerCheckedHeader.NewOwner).To(Equal(int64(1)))
+			Expect(newOwnerCheckedHeader.Transfer).To(Equal(int64(1)))
 		})
 
 		It("Keeps track of contract-related hashes and addresses while transforming event data if they need to be used for later method polling", func() {

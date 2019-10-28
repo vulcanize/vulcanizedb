@@ -72,11 +72,11 @@ var _ = Describe("Converter", func() {
 			Expect(logs[0].Values["to"]).To(Equal(sender1.String()))
 			Expect(logs[0].Values["from"]).To(Equal(sender2.String()))
 			Expect(logs[0].Values["value"]).To(Equal(value.String()))
-			Expect(logs[0].Id).To(Equal(int64(232)))
+			Expect(logs[0].ID).To(Equal(int64(232)))
 			Expect(logs[1].Values["to"]).To(Equal(sender2.String()))
 			Expect(logs[1].Values["from"]).To(Equal(sender1.String()))
 			Expect(logs[1].Values["value"]).To(Equal(value.String()))
-			Expect(logs[1].Id).To(Equal(int64(232)))
+			Expect(logs[1].ID).To(Equal(int64(232)))
 		})
 
 		It("Keeps track of addresses it sees if they will be used for method polling", func() {

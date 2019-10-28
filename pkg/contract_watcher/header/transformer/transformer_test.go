@@ -18,6 +18,7 @@ package transformer_test
 
 import (
 	"database/sql"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
