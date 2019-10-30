@@ -51,10 +51,8 @@ test: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	cd db/migrations;\
-    	$(GOOSE) postgres "$(TEST_CONNECT_STRING)" up
-	cd db/migrations/;\
-		$(GOOSE) postgres "$(TEST_CONNECT_STRING)" reset
+	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
 	$(GINKGO) -r --skipPackage=integration_tests,integration
 
@@ -64,10 +62,8 @@ integrationtest: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	cd db/migrations;\
-	    $(GOOSE) postgres "$(TEST_CONNECT_STRING)" up
-	cd db/migrations/;\
-    	$(GOOSE) postgres "$(TEST_CONNECT_STRING)" reset
+	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
 	$(GINKGO) -r integration_test/
 
@@ -105,41 +101,36 @@ checkmigname:
 ## Rollback the last migration
 .PHONY: rollback
 rollback: $(GOOSE) checkdbvars
-	cd db/migrations;\
-	  $(GOOSE) postgres "$(CONNECT_STRING)" down
+	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" down
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
 
 ## Rollbackt to a select migration (id/timestamp)
 .PHONY: rollback_to
 rollback_to: $(GOOSE) checkmigration checkdbvars
-	cd db/migrations;\
-	  $(GOOSE) postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
+	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" down-to "$(MIGRATION)"
 
 ## Apply all migrations not already run
 .PHONY: migrate
 migrate: $(GOOSE) checkdbvars
-	cd db/migrations;\
-	  $(GOOSE) postgres "$(CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" up
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
 ## Create a new migration file
 .PHONY: new_migration
 new_migration: $(GOOSE) checkmigname
-	cd db/migrations;\
-	  $(GOOSE) create $(NAME) sql
+	$(GOOSE) -dir db/migrations create $(NAME) sql
 
 ## Check which migrations are applied at the moment
 .PHONY: migration_status
 migration_status: $(GOOSE) checkdbvars
-	cd db/migrations;\
-	  $(GOOSE) postgres "$(CONNECT_STRING)" status
+	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" status
 
 # Convert timestamped migrations to versioned (to be run in CI);
 # merge timestamped files to prevent conflict
 .PHONY: version_migrations
 version_migrations:
-	cd db/migrations; $(GOOSE) fix
+	$(GOOSE) -dir db/migrations fix
 
 # Import a psql schema to the database
 .PHONY: import
