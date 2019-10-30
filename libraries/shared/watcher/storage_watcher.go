@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -123,7 +124,7 @@ func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
 		}
 		return
 	}
-	logrus.Debug("Storage diff persisted at block height: " + strconv.Itoa(row.BlockHeight))
+	logrus.Debug("Storage diff persisted at block height: " + strconv.Itoa(diff.BlockHeight))
 }
 
 func (storageWatcher StorageWatcher) processQueue() {
