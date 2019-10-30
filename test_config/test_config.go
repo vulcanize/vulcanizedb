@@ -44,13 +44,23 @@ func init() {
 
 func setTestConfig() {
 	TestConfig = viper.New()
-	TestConfig.SetConfigName("private")
+	TestConfig.SetConfigName("testing")
 	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {
 		logrus.Fatal(err)
 	}
 	ipc := TestConfig.GetString("client.ipcPath")
+
+	// If we don't have an ipc path in the config file, check the env variable
+	if ipc == "" {
+		TestConfig.BindEnv("url", "INFURA_URL")
+		ipc = TestConfig.GetString("url")
+	}
+	if ipc == "" {
+		logrus.Fatal(errors.New("testing.toml IPC path or $INFURA_URL env variable need to be set"))
+	}
+
 	hn := TestConfig.GetString("database.hostname")
 	port := TestConfig.GetInt("database.port")
 	name := TestConfig.GetString("database.name")
