@@ -143,7 +143,7 @@ func prepConfig() {
 	names := viper.GetStringSlice("exporter.transformerNames")
 	transformers := make(map[string]config.Transformer)
 	for _, name := range names {
-		LogWithCommand.Debug("Configuring " + name + " transformer")
+		logWithCommand.Debug("Configuring " + name + " transformer")
 		transformer := viper.GetStringMapString("exporter." + name)
 		p, pOK := transformer["path"]
 		if !pOK || p == "" {

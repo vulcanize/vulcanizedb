@@ -17,13 +17,9 @@
 package config
 
 import (
-<<<<<<< HEAD
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-=======
-	"github.com/sirupsen/logrus"
->>>>>>> Removes import alias for logrus
 	"github.com/spf13/viper"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 )
@@ -95,16 +91,16 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		var abi string
 		abiInterface, abiOK := transformer["abi"]
 		if !abiOK {
-			logrus.Warnf("contract %s not configured with an ABI, will attempt to fetch it from Etherscan\r\n", addr)
+			log.Warnf("contract %s not configured with an ABI, will attempt to fetch it from Etherscan\r\n", addr)
 		} else {
 			abi, abiOK = abiInterface.(string)
 			if !abiOK {
-				logrus.Fatal(addr, "transformer `abi` not of type []string")
+				log.Fatal(addr, "transformer `abi` not of type []string")
 			}
 		}
 		if abi != "" {
 			if _, abiErr := eth.ParseAbi(abi); abiErr != nil {
-				logrus.Fatal(addr, "transformer `abi` not valid JSON")
+				log.Fatal(addr, "transformer `abi` not valid JSON")
 			}
 		}
 		contractConfig.Abis[strings.ToLower(addr)] = abi
@@ -113,17 +109,17 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		events := make([]string, 0)
 		eventsInterface, eventsOK := transformer["events"]
 		if !eventsOK {
-			logrus.Warnf("contract %s not configured with a list of events to watch, will watch all events\r\n", addr)
+			log.Warnf("contract %s not configured with a list of events to watch, will watch all events\r\n", addr)
 			events = []string{}
 		} else {
 			eventsI, eventsOK := eventsInterface.([]interface{})
 			if !eventsOK {
-				logrus.Fatal(addr, "transformer `events` not of type []string\r\n")
+				log.Fatal(addr, "transformer `events` not of type []string\r\n")
 			}
 			for _, strI := range eventsI {
 				str, strOK := strI.(string)
 				if !strOK {
-					logrus.Fatal(addr, "transformer `events` not of type []string\r\n")
+					log.Fatal(addr, "transformer `events` not of type []string\r\n")
 				}
 				events = append(events, str)
 			}
@@ -134,17 +130,17 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		methods := make([]string, 0)
 		methodsInterface, methodsOK := transformer["methods"]
 		if !methodsOK {
-			logrus.Warnf("contract %s not configured with a list of methods to poll, will not poll any methods\r\n", addr)
+			log.Warnf("contract %s not configured with a list of methods to poll, will not poll any methods\r\n", addr)
 			methods = []string{}
 		} else {
 			methodsI, methodsOK := methodsInterface.([]interface{})
 			if !methodsOK {
-				logrus.Fatal(addr, "transformer `methods` not of type []string\r\n")
+				log.Fatal(addr, "transformer `methods` not of type []string\r\n")
 			}
 			for _, strI := range methodsI {
 				str, strOK := strI.(string)
 				if !strOK {
-					logrus.Fatal(addr, "transformer `methods` not of type []string\r\n")
+					log.Fatal(addr, "transformer `methods` not of type []string\r\n")
 				}
 				methods = append(methods, str)
 			}
@@ -155,17 +151,17 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		eventArgs := make([]string, 0)
 		eventArgsInterface, eventArgsOK := transformer["eventArgs"]
 		if !eventArgsOK {
-			logrus.Warnf("contract %s not configured with a list of event arguments to filter for, will not filter events for specific emitted values\r\n", addr)
+			log.Warnf("contract %s not configured with a list of event arguments to filter for, will not filter events for specific emitted values\r\n", addr)
 			eventArgs = []string{}
 		} else {
 			eventArgsI, eventArgsOK := eventArgsInterface.([]interface{})
 			if !eventArgsOK {
-				logrus.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
+				log.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
 			}
 			for _, strI := range eventArgsI {
 				str, strOK := strI.(string)
 				if !strOK {
-					logrus.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
+					log.Fatal(addr, "transformer `eventArgs` not of type []string\r\n")
 				}
 				eventArgs = append(eventArgs, str)
 			}
@@ -176,17 +172,17 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		methodArgs := make([]string, 0)
 		methodArgsInterface, methodArgsOK := transformer["methodArgs"]
 		if !methodArgsOK {
-			logrus.Warnf("contract %s not configured with a list of method argument values to poll with, will poll methods with all available arguments\r\n", addr)
+			log.Warnf("contract %s not configured with a list of method argument values to poll with, will poll methods with all available arguments\r\n", addr)
 			methodArgs = []string{}
 		} else {
 			methodArgsI, methodArgsOK := methodArgsInterface.([]interface{})
 			if !methodArgsOK {
-				logrus.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
+				log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
 			}
 			for _, strI := range methodArgsI {
 				str, strOK := strI.(string)
 				if !strOK {
-					logrus.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
+					log.Fatal(addr, "transformer `methodArgs` not of type []string\r\n")
 				}
 				methodArgs = append(methodArgs, str)
 			}
@@ -196,11 +192,11 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		// Get and check startingBlock
 		startInterface, startOK := transformer["startingblock"]
 		if !startOK {
-			logrus.Fatal(addr, "transformer config is missing `startingBlock` value\r\n")
+			log.Fatal(addr, "transformer config is missing `startingBlock` value\r\n")
 		}
 		start, startOK := startInterface.(int64)
 		if !startOK {
-			logrus.Fatal(addr, "transformer `startingBlock` not of type int\r\n")
+			log.Fatal(addr, "transformer `startingBlock` not of type int\r\n")
 		}
 		contractConfig.StartingBlocks[strings.ToLower(addr)] = start
 
@@ -208,13 +204,13 @@ func (contractConfig *ContractConfig) PrepConfig() {
 		var piping bool
 		_, pipeOK := transformer["piping"]
 		if !pipeOK {
-			logrus.Warnf("contract %s does not have its `piping` set, by default piping is turned off\r\n", addr)
+			log.Warnf("contract %s does not have its `piping` set, by default piping is turned off\r\n", addr)
 			piping = false
 		} else {
 			pipingInterface := transformer["piping"]
 			piping, pipeOK = pipingInterface.(bool)
 			if !pipeOK {
-				logrus.Fatal(addr, "transformer `piping` not of type bool\r\n")
+				log.Fatal(addr, "transformer `piping` not of type bool\r\n")
 			}
 		}
 		contractConfig.Piping[strings.ToLower(addr)] = piping
