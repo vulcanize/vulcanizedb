@@ -18,6 +18,7 @@ package repository_test
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -44,8 +45,9 @@ var _ = Describe("address lookup", func() {
 	})
 
 	type dbAddress struct {
-		Id      int64
-		Address string
+		Id            int64
+		Address       string
+		HashedAddress string `db:"hashed_address"`
 	}
 
 	Describe("GetOrCreateAddress", func() {
@@ -54,9 +56,10 @@ var _ = Describe("address lookup", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			expectedAddress := dbAddress{Id: addressId, Address: address}
+			hashedAddress := utils.HexToKeccak256Hash(address).Hex()
+			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 
@@ -116,9 +119,10 @@ var _ = Describe("address lookup", func() {
 			Expect(commitErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			expectedAddress := dbAddress{Id: addressId, Address: address}
+			hashedAddress := utils.HexToKeccak256Hash(address).Hex()
+			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 
