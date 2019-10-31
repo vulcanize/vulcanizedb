@@ -32,9 +32,9 @@ import (
 var _ = Describe("Rewards calculations", func() {
 
 	It("calculates a block reward for a real block", func() {
-		rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+		rawRpcClient, err := rpc.Dial(test_config.TestClient.IPCPath)
 		Expect(err).NotTo(HaveOccurred())
-		rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+		rpcClient := client.NewRpcClient(rawRpcClient, test_config.TestClient.IPCPath)
 		ethClient := ethclient.NewClient(rawRpcClient)
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
@@ -46,9 +46,9 @@ var _ = Describe("Rewards calculations", func() {
 	})
 
 	It("calculates an uncle reward for a real block", func() {
-		rawRpcClient, err := rpc.Dial(test_config.InfuraClient.IPCPath)
+		rawRpcClient, err := rpc.Dial(test_config.TestClient.IPCPath)
 		Expect(err).NotTo(HaveOccurred())
-		rpcClient := client.NewRpcClient(rawRpcClient, test_config.InfuraClient.IPCPath)
+		rpcClient := client.NewRpcClient(rawRpcClient, test_config.TestClient.IPCPath)
 		ethClient := ethclient.NewClient(rawRpcClient)
 		blockChainClient := client.NewEthClient(ethClient)
 		node := node.MakeNode(rpcClient)
