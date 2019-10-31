@@ -41,9 +41,16 @@ metalint: | $(METALINT)
 lint:
 	$(LINT) $$($(PKGS)) | grep -v -E "exported (function)|(var)|(method)|(type).*should have comment or be unexported"
 
+#Database
+HOST_NAME = localhost
+PORT = 5432
+NAME =
+USER = postgres
+CONNECT_STRING=postgresql://$(USER)@$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
+
 #Test
 TEST_DB = vulcanize_testing
-TEST_CONNECT_STRING = postgresql://localhost:5432/$(TEST_DB)?sslmode=disable
+TEST_CONNECT_STRING = postgresql://$(USER)@$(HOST_NAME):$(PORT)/$(TEST_DB)?sslmode=disable
 
 .PHONY: test
 test: | $(GINKGO) $(LINT)
@@ -51,8 +58,8 @@ test: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
 	$(GINKGO) -r --skipPackage=integration_tests,integration
 
@@ -70,13 +77,6 @@ integrationtest: | $(GINKGO) $(LINT)
 build:
 	go fmt ./...
 	go build
-
-#Database
-HOST_NAME = localhost
-PORT = 5432
-NAME =
-USER = postgres
-CONNECT_STRING=postgresql://$(USER)@$(HOST_NAME):$(PORT)/$(NAME)?sslmode=disable
 
 # Parameter checks
 ## Check that DB variables are provided
