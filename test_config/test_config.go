@@ -32,13 +32,10 @@ import (
 var TestConfig *viper.Viper
 var DBConfig config.Database
 var TestClient config.Client
-var Infura *viper.Viper
-var InfuraClient config.Client
 var ABIFilePath string
 
 func init() {
 	setTestConfig()
-	setInfuraConfig()
 	setABIPath()
 }
 
@@ -71,30 +68,6 @@ func setTestConfig() {
 		Port:     port,
 	}
 	TestClient = config.Client{
-		IPCPath: ipc,
-	}
-}
-
-func setInfuraConfig() {
-	Infura = viper.New()
-	Infura.SetConfigName("infura")
-	Infura.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
-	err := Infura.ReadInConfig()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	ipc := Infura.GetString("client.ipcpath")
-
-	// If we don't have an ipc path in the config file, check the env variable
-	if ipc == "" {
-		Infura.BindEnv("url", "INFURA_URL")
-		ipc = Infura.GetString("url")
-	}
-	if ipc == "" {
-		logrus.Fatal(errors.New("infura.toml IPC path or $INFURA_URL env variable need to be set"))
-	}
-
-	InfuraClient = config.Client{
 		IPCPath: ipc,
 	}
 }
