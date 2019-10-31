@@ -14,14 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package storage
+package repositories
 
 import (
+	"database/sql"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(diffID, headerID int64, metadata utils.StorageValueMetadata, value interface{}) error
-	SetDB(db *postgres.DB)
+var ErrDuplicateDiff = sql.ErrNoRows
+
+type StorageDiffRepository struct {
+	db *postgres.DB
+}
+
+func NewStorageDiffRepository(db *postgres.DB) StorageDiffRepository {
+	return StorageDiffRepository{db: db}
+}
+
+func (repository StorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+	var storageDiffID int64
+	row := repository.db.QueryRowx(`INSERT INTO public.storage_diff
+		(hashed_address, block_height, block_hash, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT DO NOTHING RETURNING id`, input.HashedAddress.Bytes(), input.BlockHeight, input.BlockHash.Bytes(),
+		input.StorageKey.Bytes(), input.StorageValue.Bytes())
+	err := row.Scan(&storageDiffID)
+	if err != nil && err == sql.ErrNoRows {
+		return 0, ErrDuplicateDiff
+	}
+	return storageDiffID, err
 }

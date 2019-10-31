@@ -14,14 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package storage
+package fakes
 
 import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Repository interface {
-	Create(diffID, headerID int64, metadata utils.StorageValueMetadata, value interface{}) error
-	SetDB(db *postgres.DB)
+type MockStorageDiffRepository struct {
+	CreatePassedInputs []utils.StorageDiffInput
+	CreateReturnID     int64
+	CreateReturnError  error
+}
+
+func (repository *MockStorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+	repository.CreatePassedInputs = append(repository.CreatePassedInputs, input)
+	return repository.CreateReturnID, repository.CreateReturnError
 }

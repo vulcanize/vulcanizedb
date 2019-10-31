@@ -18,6 +18,9 @@ package fetcher_test
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hpcloud/tail"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
@@ -25,21 +28,19 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
-	"time"
 )
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {
 	var (
 		errorsChannel  chan error
 		mockTailer     *fakes.MockTailer
-		diffsChannel   chan utils.StorageDiff
+		diffsChannel   chan utils.StorageDiffInput
 		storageFetcher fetcher.CsvTailStorageFetcher
 	)
 
 	BeforeEach(func() {
 		errorsChannel = make(chan error)
-		diffsChannel = make(chan utils.StorageDiff)
+		diffsChannel = make(chan utils.StorageDiffInput)
 		mockTailer = fakes.NewMockTailer()
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
 	})

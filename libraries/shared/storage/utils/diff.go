@@ -27,25 +27,29 @@ import (
 
 const ExpectedRowLength = 5
 
-type StorageDiff struct {
-	Id            int
-	HashedAddress common.Hash `db:"contract"`
+type StorageDiffInput struct {
+	HashedAddress common.Hash `db:"hashed_address"`
 	BlockHash     common.Hash `db:"block_hash"`
 	BlockHeight   int         `db:"block_height"`
 	StorageKey    common.Hash `db:"storage_key"`
 	StorageValue  common.Hash `db:"storage_value"`
-	HeaderID      int64       `db:"header_id"`
 }
 
-func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
+type PersistedStorageDiff struct {
+	StorageDiffInput
+	ID       int64
+	HeaderID int64 `db:"header_id"`
+}
+
+func FromParityCsvRow(csvRow []string) (StorageDiffInput, error) {
 	if len(csvRow) != ExpectedRowLength {
-		return StorageDiff{}, ErrRowMalformed{Length: len(csvRow)}
+		return StorageDiffInput{}, ErrRowMalformed{Length: len(csvRow)}
 	}
 	height, err := strconv.Atoi(csvRow[2])
 	if err != nil {
-		return StorageDiff{}, err
+		return StorageDiffInput{}, err
 	}
-	return StorageDiff{
+	return StorageDiffInput{
 		HashedAddress: HexToKeccak256Hash(csvRow[0]),
 		BlockHash:     common.HexToHash(csvRow[1]),
 		BlockHeight:   height,
@@ -54,20 +58,27 @@ func FromParityCsvRow(csvRow []string) (StorageDiff, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiff, error) {
+func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiffInput, error) {
 	var decodedValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedValue)
 	if err != nil {
-		return StorageDiff{}, err
+		return StorageDiffInput{}, err
 	}
 
-	return StorageDiff{
+	return StorageDiffInput{
 		HashedAddress: common.BytesToHash(account.Key),
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(storage.Key),
 		StorageValue:  common.BytesToHash(decodedValue),
 	}, nil
+}
+
+func ToPersistedDiff(raw StorageDiffInput, id int64) PersistedStorageDiff {
+	return PersistedStorageDiff{
+		StorageDiffInput: raw,
+		ID:               id,
+	}
 }
 
 func HexToKeccak256Hash(hex string) common.Hash {

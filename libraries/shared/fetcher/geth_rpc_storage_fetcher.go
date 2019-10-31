@@ -16,6 +16,7 @@ package fetcher
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
@@ -35,7 +36,7 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
+func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffInput, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {

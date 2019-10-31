@@ -21,6 +21,7 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,14 +29,15 @@ import (
 
 var _ = Describe("Storage queue", func() {
 	var (
-		db    *postgres.DB
-		diff  utils.StorageDiff
-		queue storage.IStorageQueue
+		db             *postgres.DB
+		diff           utils.PersistedStorageDiff
+		diffRepository repositories.StorageDiffRepository
+		queue          storage.IStorageQueue
 	)
 
 	BeforeEach(func() {
 		fakeAddr := "0x123456"
-		diff = utils.StorageDiff{
+		rawDiff := utils.StorageDiffInput{
 			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678901"),
 			BlockHeight:   987,
@@ -44,6 +46,10 @@ var _ = Describe("Storage queue", func() {
 		}
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
+		diffRepository = repositories.NewStorageDiffRepository(db)
+		diffID, insertDiffErr := diffRepository.CreateStorageDiff(rawDiff)
+		Expect(insertDiffErr).NotTo(HaveOccurred())
+		diff = utils.ToPersistedDiff(rawDiff, diffID)
 		queue = storage.NewStorageQueue(db)
 		addErr := queue.Add(diff)
 		Expect(addErr).NotTo(HaveOccurred())
@@ -51,8 +57,10 @@ var _ = Describe("Storage queue", func() {
 
 	Describe("Add", func() {
 		It("adds a storage diff to the db", func() {
-			var result utils.StorageDiff
-			getErr := db.Get(&result, `SELECT contract, block_hash, block_height, storage_key, storage_value FROM public.queued_storage`)
+			var result utils.PersistedStorageDiff
+			getErr := db.Get(&result, `SELECT storage_diff.id, hashed_address, block_hash, block_height, storage_key, storage_value
+				FROM public.queued_storage
+					LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(result).To(Equal(diff))
 		})
@@ -72,7 +80,7 @@ var _ = Describe("Storage queue", func() {
 		Expect(getErr).NotTo(HaveOccurred())
 		Expect(len(diffs)).To(Equal(1))
 
-		err := queue.Delete(diffs[0].Id)
+		err := queue.Delete(diffs[0].ID)
 
 		Expect(err).NotTo(HaveOccurred())
 		remainingRows, secondGetErr := queue.GetAll()
@@ -82,14 +90,17 @@ var _ = Describe("Storage queue", func() {
 
 	It("gets all storage diffs from db", func() {
 		fakeAddr := "0x234567"
-		diffTwo := utils.StorageDiff{
+		diffTwo := utils.StorageDiffInput{
 			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678902"),
 			BlockHeight:   988,
 			StorageKey:    common.HexToHash("0x654322"),
 			StorageValue:  common.HexToHash("0x198766"),
 		}
-		addErr := queue.Add(diffTwo)
+		persistedDiffTwoID, insertDiffErr := diffRepository.CreateStorageDiff(diffTwo)
+		Expect(insertDiffErr).NotTo(HaveOccurred())
+		persistedDiffTwo := utils.ToPersistedDiff(diffTwo, persistedDiffTwoID)
+		addErr := queue.Add(persistedDiffTwo)
 		Expect(addErr).NotTo(HaveOccurred())
 
 		diffs, err := queue.GetAll()
@@ -97,13 +108,13 @@ var _ = Describe("Storage queue", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(diffs)).To(Equal(2))
 		Expect(diffs[0]).NotTo(Equal(diffs[1]))
-		Expect(diffs[0].Id).NotTo(BeZero())
+		Expect(diffs[0].ID).NotTo(BeZero())
 		Expect(diffs[0].HashedAddress).To(Or(Equal(diff.HashedAddress), Equal(diffTwo.HashedAddress)))
 		Expect(diffs[0].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
 		Expect(diffs[0].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))
 		Expect(diffs[0].StorageKey).To(Or(Equal(diff.StorageKey), Equal(diffTwo.StorageKey)))
 		Expect(diffs[0].StorageValue).To(Or(Equal(diff.StorageValue), Equal(diffTwo.StorageValue)))
-		Expect(diffs[1].Id).NotTo(BeZero())
+		Expect(diffs[1].ID).NotTo(BeZero())
 		Expect(diffs[1].HashedAddress).To(Or(Equal(diff.HashedAddress), Equal(diffTwo.HashedAddress)))
 		Expect(diffs[1].BlockHash).To(Or(Equal(diff.BlockHash), Equal(diffTwo.BlockHash)))
 		Expect(diffs[1].BlockHeight).To(Or(Equal(diff.BlockHeight), Equal(diffTwo.BlockHeight)))

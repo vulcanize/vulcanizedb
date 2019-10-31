@@ -58,14 +58,14 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 	var streamer MockStoragediffStreamer
 	var statediffPayloadChan chan statediff.Payload
 	var statediffFetcher fetcher.GethRpcStorageFetcher
-	var storagediffChan chan utils.StorageDiff
+	var storagediffChan chan utils.StorageDiffInput
 	var errorChan chan error
 
 	BeforeEach(func() {
 		streamer = MockStoragediffStreamer{}
 		statediffPayloadChan = make(chan statediff.Payload, 1)
 		statediffFetcher = fetcher.NewGethRpcStorageFetcher(&streamer, statediffPayloadChan)
-		storagediffChan = make(chan utils.StorageDiff)
+		storagediffChan = make(chan utils.StorageDiffInput)
 		errorChan = make(chan error)
 	})
 
@@ -112,21 +112,21 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 		height := test_data.BlockNumber
 		intHeight := int(height.Int64())
-		createdExpectedStorageDiff := utils.StorageDiff{
+		createdExpectedStorageDiff := utils.StorageDiffInput{
 			HashedAddress: common.BytesToHash(test_data.ContractLeafKey[:]),
 			BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 			BlockHeight:   intHeight,
 			StorageKey:    common.BytesToHash(test_data.StorageKey),
 			StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
 		}
-		updatedExpectedStorageDiff := utils.StorageDiff{
+		updatedExpectedStorageDiff := utils.StorageDiffInput{
 			HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
 			BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 			BlockHeight:   intHeight,
 			StorageKey:    common.BytesToHash(test_data.StorageKey),
 			StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
 		}
-		deletedExpectedStorageDiff := utils.StorageDiff{
+		deletedExpectedStorageDiff := utils.StorageDiffInput{
 			HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
 			BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
 			BlockHeight:   intHeight,
