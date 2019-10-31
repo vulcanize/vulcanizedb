@@ -14,36 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package fetcher
+package fakes
 
 import (
-	"strings"
-
-	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
 )
 
-type CsvTailStorageFetcher struct {
-	tailer fs.Tailer
+type MockStorageDiffRepository struct {
+	CreatePassedInputs []utils.StorageDiffInput
+	CreateReturnID     int64
+	CreateReturnError  error
 }
 
-func NewCsvTailStorageFetcher(tailer fs.Tailer) CsvTailStorageFetcher {
-	return CsvTailStorageFetcher{tailer: tailer}
-}
-
-func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffInput, errs chan<- error) {
-	t, tailErr := storageFetcher.tailer.Tail()
-	if tailErr != nil {
-		errs <- tailErr
-	}
-	logrus.Debug("fetching storage diffs...")
-	for line := range t.Lines {
-		diff, parseErr := utils.FromParityCsvRow(strings.Split(line.Text, ","))
-		if parseErr != nil {
-			errs <- parseErr
-		} else {
-			out <- diff
-		}
-	}
+func (repository *MockStorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+	repository.CreatePassedInputs = append(repository.CreatePassedInputs, input)
+	return repository.CreateReturnID, repository.CreateReturnError
 }

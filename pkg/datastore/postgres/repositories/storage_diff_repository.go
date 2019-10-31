@@ -14,35 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package mocks
+package repositories
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"database/sql"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-// MockStorageTransformer for tests
-type MockStorageTransformer struct {
-	KeccakOfAddress common.Hash
-	ExecuteErr      error
-	PassedDiffs     []utils.PersistedStorageDiff
+var ErrDuplicateDiff = sql.ErrNoRows
+
+type StorageDiffRepository struct {
+	db *postgres.DB
 }
 
-// Execute mock method
-func (transformer *MockStorageTransformer) Execute(diff utils.PersistedStorageDiff) error {
-	transformer.PassedDiffs = append(transformer.PassedDiffs, diff)
-	return transformer.ExecuteErr
+func NewStorageDiffRepository(db *postgres.DB) StorageDiffRepository {
+	return StorageDiffRepository{db: db}
 }
 
-// KeccakContractAddress mock method
-func (transformer *MockStorageTransformer) KeccakContractAddress() common.Hash {
-	return transformer.KeccakOfAddress
-}
-
-// FakeTransformerInitializer mock method
-func (transformer *MockStorageTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.StorageTransformer {
-	return transformer
+func (repository StorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+	var storageDiffID int64
+	row := repository.db.QueryRowx(`INSERT INTO public.storage_diff
+		(hashed_address, block_height, block_hash, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT DO NOTHING RETURNING id`, input.HashedAddress.Bytes(), input.BlockHeight, input.BlockHash.Bytes(),
+		input.StorageKey.Bytes(), input.StorageValue.Bytes())
+	err := row.Scan(&storageDiffID)
+	if err != nil && err == sql.ErrNoRows {
+		return 0, ErrDuplicateDiff
+	}
+	return storageDiffID, err
 }
