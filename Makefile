@@ -43,7 +43,7 @@ lint:
 
 #Test
 TEST_DB = vulcanize_testing
-TEST_CONNECT_STRING = postgresql://localhost:5432/$(TEST_DB)?sslmode=disable
+TEST_CONNECT_STRING = postgresql://postgres@localhost:5432/$(TEST_DB)?sslmode=disable
 
 .PHONY: test
 test: | $(GINKGO) $(LINT)
@@ -51,8 +51,8 @@ test: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
 	$(GINKGO) -r --skipPackage=integration_tests,integration
 
