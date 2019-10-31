@@ -17,6 +17,8 @@
 package storage_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,7 +53,7 @@ var _ = Describe("Storage transformer", func() {
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(utils.StorageDiff{})
+		t.Execute(utils.PersistedStorageDiff{})
 
 		Expect(storageKeysLookup.LookupCalled).To(BeTrue())
 	})
@@ -59,7 +61,7 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if lookup fails", func() {
 		storageKeysLookup.LookupErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiff{})
+		err := t.Execute(utils.PersistedStorageDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -71,19 +73,21 @@ var _ = Describe("Storage transformer", func() {
 		rawValue := common.HexToAddress("0x12345")
 		fakeBlockNumber := 123
 		fakeBlockHash := "0x67890"
-		fakeRow := utils.StorageDiff{
-			HashedAddress: common.Hash{},
-			BlockHash:     common.HexToHash(fakeBlockHash),
-			BlockHeight:   fakeBlockNumber,
-			StorageKey:    common.Hash{},
-			StorageValue:  rawValue.Hash(),
+		fakeRow := utils.PersistedStorageDiff{
+			ID: rand.Int63(),
+			StorageDiffInput: utils.StorageDiffInput{
+				HashedAddress: common.Hash{},
+				BlockHash:     common.HexToHash(fakeBlockHash),
+				BlockHeight:   fakeBlockNumber,
+				StorageKey:    common.Hash{},
+				StorageValue:  rawValue.Hash(),
+			},
 		}
 
 		err := t.Execute(fakeRow)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-		Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+		Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 		Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 		Expect(repository.PassedValue.(string)).To(Equal(rawValue.Hex()))
 	})
@@ -93,8 +97,9 @@ var _ = Describe("Storage transformer", func() {
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
+		diff := utils.PersistedStorageDiff{StorageDiffInput: utils.StorageDiffInput{StorageValue: rawValue.Hash()}}
 
-		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+		err := t.Execute(diff)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -119,19 +124,21 @@ var _ = Describe("Storage transformer", func() {
 
 		It("passes the decoded data items to the repository", func() {
 			storageKeysLookup.Metadata = fakeMetadata
-			fakeRow := utils.StorageDiff{
-				HashedAddress: common.Hash{},
-				BlockHash:     common.HexToHash(fakeBlockHash),
-				BlockHeight:   fakeBlockNumber,
-				StorageKey:    common.Hash{},
-				StorageValue:  rawValue.Hash(),
+			fakeRow := utils.PersistedStorageDiff{
+				ID: rand.Int63(),
+				StorageDiffInput: utils.StorageDiffInput{
+					HashedAddress: common.Hash{},
+					BlockHash:     common.HexToHash(fakeBlockHash),
+					BlockHeight:   fakeBlockNumber,
+					StorageKey:    common.Hash{},
+					StorageValue:  rawValue.Hash(),
+				},
 			}
 
 			err := t.Execute(fakeRow)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-			Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+			Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 			expectedPassedValue := make(map[int]string)
 			expectedPassedValue[0] = "10800"
@@ -142,8 +149,9 @@ var _ = Describe("Storage transformer", func() {
 		It("returns error if creating a row fails", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
+			diff := utils.PersistedStorageDiff{StorageDiffInput: utils.StorageDiffInput{StorageValue: rawValue.Hash()}}
 
-			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+			err := t.Execute(diff)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

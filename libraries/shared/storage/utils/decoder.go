@@ -27,7 +27,7 @@ const (
 	bitsPerByte = 8
 )
 
-func Decode(diff StorageDiff, metadata StorageValueMetadata) (interface{}, error) {
+func Decode(diff PersistedStorageDiff, metadata StorageValueMetadata) (interface{}, error) {
 	switch metadata.Type {
 	case Uint256:
 		return decodeInteger(diff.StorageValue.Bytes()), nil

@@ -150,32 +150,28 @@ var (
 		StateDiffRlp: MockStateDiff2Bytes,
 	}
 
-	CreatedExpectedStorageDiff = utils.StorageDiff{
-		ID:            0,
+	CreatedExpectedStorageDiff = utils.StorageDiffInput{
 		HashedAddress: common.BytesToHash(ContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
-	UpdatedExpectedStorageDiff = utils.StorageDiff{
-		ID:            0,
+	UpdatedExpectedStorageDiff = utils.StorageDiffInput{
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(LargeStorageValue),
 	}
-	UpdatedExpectedStorageDiff2 = utils.StorageDiff{
-		ID:            0,
+	UpdatedExpectedStorageDiff2 = utils.StorageDiffInput{
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash2),
 		BlockHeight:   int(BlockNumber2.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
-	DeletedExpectedStorageDiff = utils.StorageDiff{
-		ID:            0,
+	DeletedExpectedStorageDiff = utils.StorageDiffInput{
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),

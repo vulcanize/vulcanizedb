@@ -22,7 +22,7 @@ import (
 
 // StorageFetcher is a mock fetcher for use in tests with backfilling
 type StorageFetcher struct {
-	DiffsToReturn []utils.StorageDiff
+	DiffsToReturn []utils.StorageDiffInput
 	ErrsToReturn  []error
 }
 
@@ -32,7 +32,7 @@ func NewStorageFetcher() *StorageFetcher {
 }
 
 // FetchStorageDiffs mock method
-func (fetcher *StorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
+func (fetcher *StorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffInput, errs chan<- error) {
 	for _, err := range fetcher.ErrsToReturn {
 		errs <- err
 	}

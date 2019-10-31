@@ -45,7 +45,7 @@ var _ = Describe("BackFiller", func() {
 
 		It("batch calls statediff_stateDiffAt", func() {
 			backFiller = storage.NewStorageBackFiller(mockFetcher, 100)
-			backFill := make(chan utils.StorageDiff)
+			backFill := make(chan utils.StorageDiffInput)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
@@ -55,7 +55,7 @@ var _ = Describe("BackFiller", func() {
 				errChan,
 				done)
 			Expect(backFillInitErr).ToNot(HaveOccurred())
-			var diffs []utils.StorageDiff
+			var diffs []utils.StorageDiffInput
 			for {
 				select {
 				case diff := <-backFill:
@@ -79,7 +79,7 @@ var _ = Describe("BackFiller", func() {
 
 		It("has a configurable batch size", func() {
 			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
-			backFill := make(chan utils.StorageDiff)
+			backFill := make(chan utils.StorageDiffInput)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
@@ -89,7 +89,7 @@ var _ = Describe("BackFiller", func() {
 				errChan,
 				done)
 			Expect(backFillInitErr).ToNot(HaveOccurred())
-			var diffs []utils.StorageDiff
+			var diffs []utils.StorageDiffInput
 			for {
 				select {
 				case diff := <-backFill:
@@ -119,7 +119,7 @@ var _ = Describe("BackFiller", func() {
 			mockFetcher.PayloadsToReturn = payloadsToReturn
 			// batch size of 2 with 1001 block range => 501 bins
 			backFiller = storage.NewStorageBackFiller(mockFetcher, 2)
-			backFill := make(chan utils.StorageDiff)
+			backFill := make(chan utils.StorageDiffInput)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
@@ -129,7 +129,7 @@ var _ = Describe("BackFiller", func() {
 				errChan,
 				done)
 			Expect(backFillInitErr).ToNot(HaveOccurred())
-			var diffs []utils.StorageDiff
+			var diffs []utils.StorageDiffInput
 			for {
 				select {
 				case diff := <-backFill:
@@ -155,7 +155,7 @@ var _ = Describe("BackFiller", func() {
 				test_data.BlockNumber.Uint64(): errors.New("mock fetcher error"),
 			}
 			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
-			backFill := make(chan utils.StorageDiff)
+			backFill := make(chan utils.StorageDiffInput)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
@@ -166,7 +166,7 @@ var _ = Describe("BackFiller", func() {
 				done)
 			Expect(backFillInitErr).ToNot(HaveOccurred())
 			var numOfErrs int
-			var diffs []utils.StorageDiff
+			var diffs []utils.StorageDiffInput
 			for {
 				select {
 				case diff := <-backFill:
@@ -193,7 +193,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockFetcher.CalledTimes = 0
 			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
-			backFill = make(chan utils.StorageDiff)
+			backFill = make(chan utils.StorageDiffInput)
 			done = make(chan bool)
 			errChan = make(chan error)
 			backFillInitErr = backFiller.BackFill(
@@ -204,7 +204,7 @@ var _ = Describe("BackFiller", func() {
 				done)
 			Expect(backFillInitErr).ToNot(HaveOccurred())
 			numOfErrs = 0
-			diffs = []utils.StorageDiff{}
+			diffs = []utils.StorageDiffInput{}
 			for {
 				select {
 				case diff := <-backFill:
@@ -227,7 +227,7 @@ var _ = Describe("BackFiller", func() {
 	})
 })
 
-func containsDiff(diffs []utils.StorageDiff, diff utils.StorageDiff) bool {
+func containsDiff(diffs []utils.StorageDiffInput, diff utils.StorageDiffInput) bool {
 	for _, d := range diffs {
 		if d == diff {
 			return true
