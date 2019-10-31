@@ -108,11 +108,11 @@ type Owner struct {
 }
 
 func SetupDBandBC() (*postgres.DB, core.BlockChain) {
-	con := test_config.InfuraClient
-	infuraIPC := con.IPCPath
-	rawRpcClient, err := rpc.Dial(infuraIPC)
+	con := test_config.TestClient
+	testIPC := con.IPCPath
+	rawRpcClient, err := rpc.Dial(testIPC)
 	Expect(err).NotTo(HaveOccurred())
-	rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
+	rpcClient := client.NewRpcClient(rawRpcClient, testIPC)
 	ethClient := ethclient.NewClient(rawRpcClient)
 	blockChainClient := client.NewEthClient(ethClient)
 	madeNode := node.MakeNode(rpcClient)
@@ -121,7 +121,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
-		Name:     "vulcanize_private",
+		Name:     "vulcanize_testing",
 		Port:     5432,
 	}, blockChain.Node())
 	Expect(err).NotTo(HaveOccurred())
@@ -132,7 +132,7 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 func SetupTusdRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
-		Name:     "vulcanize_private",
+		Name:     "vulcanize_testing",
 		Port:     5432,
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())
@@ -178,7 +178,7 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 func SetupENSRepo(vulcanizeLogId *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
 	db, err := postgres.NewDB(config.Database{
 		Hostname: "localhost",
-		Name:     "vulcanize_private",
+		Name:     "vulcanize_testing",
 		Port:     5432,
 	}, core.Node{})
 	Expect(err).NotTo(HaveOccurred())

@@ -135,12 +135,12 @@ build and run custom transformers as Go plugins can be found
 
 
 ### Tests
-- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+- Replace the empty `ipcPath` in the `environments/testing.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+    - Note: must be mainnet
     - Note: integration tests require configuration with an archival node
-- `createdb vulcanize_private` will create the test db
-- `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
+- `make test` and `make integrationtest` setup a clean `vulcanize_testing` db
 
 
 ## Contributing

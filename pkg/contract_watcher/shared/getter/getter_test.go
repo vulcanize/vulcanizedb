@@ -35,12 +35,12 @@ var _ = Describe("Interface Getter", func() {
 	Describe("GetAbi", func() {
 		It("Constructs and returns a custom abi based on results from supportsInterface calls", func() {
 			expectedABI := `[` + constants.AddrChangeInterface + `,` + constants.NameChangeInterface + `,` + constants.ContentChangeInterface + `,` + constants.AbiChangeInterface + `,` + constants.PubkeyChangeInterface + `]`
-			con := test_config.InfuraClient
-			infuraIPC := con.IPCPath
+			con := test_config.TestClient
+			testIPC := con.IPCPath
 			blockNumber := int64(6885696)
-			rawRpcClient, err := rpc.Dial(infuraIPC)
+			rawRpcClient, err := rpc.Dial(testIPC)
 			Expect(err).NotTo(HaveOccurred())
-			rpcClient := client.NewRpcClient(rawRpcClient, infuraIPC)
+			rpcClient := client.NewRpcClient(rawRpcClient, testIPC)
 			ethClient := ethclient.NewClient(rawRpcClient)
 			blockChainClient := client.NewEthClient(ethClient)
 			node := node.MakeNode(rpcClient)
