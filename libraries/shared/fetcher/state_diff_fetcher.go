@@ -25,7 +25,7 @@ import (
 
 // StateDiffFetcher is the state diff fetching interface
 type StateDiffFetcher interface {
-	FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error)
+	FetchStateDiffsAt(blockHeights []uint64) ([]statediff.Payload, error)
 }
 
 // BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
@@ -35,6 +35,8 @@ type BatchClient interface {
 
 // stateDiffFetcher is the state diff fetching struct
 type stateDiffFetcher struct {
+	// stateDiffFetcher is thread-safe as long as the underlying client is thread-safe, since it has/modifies no other state
+	// http.Client is thread-safe
 	client BatchClient
 }
 
@@ -49,7 +51,7 @@ func NewStateDiffFetcher(bc BatchClient) StateDiffFetcher {
 
 // FetchStateDiffsAt fetches the statediff payloads at the given block heights
 // Calls StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
-func (fetcher *stateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error) {
+func (fetcher *stateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]statediff.Payload, error) {
 	batch := make([]client.BatchElem, 0)
 	for _, height := range blockHeights {
 		batch = append(batch, client.BatchElem{
@@ -62,12 +64,15 @@ func (fetcher *stateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*st
 	if batchErr != nil {
 		return nil, fmt.Errorf("stateDiffFetcher err: %s", batchErr.Error())
 	}
-	results := make([]*statediff.Payload, 0, len(blockHeights))
+	results := make([]statediff.Payload, 0, len(blockHeights))
 	for _, batchElem := range batch {
 		if batchElem.Error != nil {
 			return nil, fmt.Errorf("stateDiffFetcher err: %s", batchElem.Error.Error())
 		}
-		results = append(results, batchElem.Result.(*statediff.Payload))
+		payload, ok := batchElem.Result.(*statediff.Payload)
+		if ok {
+			results = append(results, *payload)
+		}
 	}
 	return results, nil
 }

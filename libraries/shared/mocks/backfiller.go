@@ -16,14 +16,18 @@
 
 package mocks
 
-import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+import (
+	"errors"
+
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+)
 
 // BackFiller mock for tests
 type BackFiller struct {
 	StorageDiffsToReturn []utils.StorageDiff
-	BackFillErr          error
-	PassedStartingBlock  uint64
+	BackFillErrs         []error
 	PassedEndingBlock    uint64
+	StartingBlock        uint64
 }
 
 // SetStorageDiffsToReturn for tests
@@ -32,8 +36,24 @@ func (backFiller *BackFiller) SetStorageDiffsToReturn(diffs []utils.StorageDiff)
 }
 
 // BackFill mock method
-func (backFiller *BackFiller) BackFill(startingBlock, endingBlock uint64) ([]utils.StorageDiff, error) {
-	backFiller.PassedStartingBlock = startingBlock
+func (backFiller *BackFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
+	if endingBlock < backFiller.StartingBlock {
+		return errors.New("backfill: ending block number needs to be greater than starting block number")
+	}
 	backFiller.PassedEndingBlock = endingBlock
-	return backFiller.StorageDiffsToReturn, backFiller.BackFillErr
+	go func(backFill chan utils.StorageDiff, errChan chan error, done chan bool) {
+		errLen := len(backFiller.BackFillErrs)
+		for i, diff := range backFiller.StorageDiffsToReturn {
+			if i < errLen {
+				err := backFiller.BackFillErrs[i]
+				if err != nil {
+					errChan <- err
+					continue
+				}
+			}
+			backFill <- diff
+		}
+		done <- true
+	}(backFill, errChan, done)
+	return nil
 }

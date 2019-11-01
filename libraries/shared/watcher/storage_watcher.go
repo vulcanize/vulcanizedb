@@ -32,8 +32,8 @@ import (
 
 type IStorageWatcher interface {
 	AddTransformers(initializers []transformer.StorageTransformerInitializer)
-	Execute(queueRecheckInterval time.Duration, backFill bool)
-	BackFill(backFiller storage.BackFiller, minDeploymentBlock int)
+	Execute(queueRecheckInterval time.Duration, backFillOn bool)
+	BackFill(backFiller storage.BackFiller)
 }
 
 type StorageWatcher struct {
@@ -43,65 +43,67 @@ type StorageWatcher struct {
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
 	DiffsChan                 chan utils.StorageDiff
 	ErrsChan                  chan error
+	BackFillDoneChan          chan bool
 	StartingSyncBlockChan     chan int
 }
 
-func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
+func NewStorageWatcher(f fetcher.IStorageFetcher, db *postgres.DB) *StorageWatcher {
 	queue := storage.NewStorageQueue(db)
 	transformers := make(map[common.Hash]transformer.StorageTransformer)
-	return StorageWatcher{
+	return &StorageWatcher{
 		db:                        db,
-		StorageFetcher:            fetcher,
-		DiffsChan:                 make(chan utils.StorageDiff),
+		StorageFetcher:            f,
+		DiffsChan:                 make(chan utils.StorageDiff, fetcher.PayloadChanBufferSize),
 		ErrsChan:                  make(chan error),
 		StartingSyncBlockChan:     make(chan int),
+		BackFillDoneChan:          make(chan bool),
 		Queue:                     queue,
 		KeccakAddressTransformers: transformers,
 	}
 }
 
-func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
+func (storageWatcher *StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
 	for _, initializer := range initializers {
 		storageTransformer := initializer(storageWatcher.db)
 		storageWatcher.KeccakAddressTransformers[storageTransformer.KeccakContractAddress()] = storageTransformer
 	}
 }
 
-// BackFill configures the StorageWatcher to backfill missed storage diffs using a modified archival geth client
-func (storageWatcher StorageWatcher) BackFill(backFiller storage.BackFiller, minDeploymentBlock int) {
-	// need to learn which block to perform the backfill process up to
+// BackFill uses a backFiller to backfill missing storage diffs for the storageWatcher
+func (storageWatcher *StorageWatcher) BackFill(backFiller storage.BackFiller) {
 	// this blocks until the Execute process sends us the first block number it sees
 	startingSyncBlock := <-storageWatcher.StartingSyncBlockChan
-	backFilledDiffs, err := backFiller.BackFill(uint64(minDeploymentBlock), uint64(startingSyncBlock))
-	if err != nil {
-		storageWatcher.ErrsChan <- err
-	}
-	for _, storageDiff := range backFilledDiffs {
-		storageWatcher.DiffsChan <- storageDiff
+	backFillInitErr := backFiller.BackFill(uint64(startingSyncBlock),
+		storageWatcher.DiffsChan, storageWatcher.ErrsChan, storageWatcher.BackFillDoneChan)
+	if backFillInitErr != nil {
+		logrus.Warn(backFillInitErr)
 	}
 }
 
-func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration, backFill bool) {
+// Execute runs the StorageWatcher processes
+func (storageWatcher *StorageWatcher) Execute(queueRecheckInterval time.Duration, backFillOn bool) {
 	ticker := time.NewTicker(queueRecheckInterval)
 	go storageWatcher.StorageFetcher.FetchStorageDiffs(storageWatcher.DiffsChan, storageWatcher.ErrsChan)
 	start := true
 	for {
 		select {
 		case fetchErr := <-storageWatcher.ErrsChan:
-			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr))
+			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr.Error()))
 		case diff := <-storageWatcher.DiffsChan:
-			if start && backFill {
+			if start && backFillOn {
 				storageWatcher.StartingSyncBlockChan <- diff.BlockHeight - 1
 				start = false
 			}
 			storageWatcher.processRow(diff)
 		case <-ticker.C:
 			storageWatcher.processQueue()
+		case <-storageWatcher.BackFillDoneChan:
+			logrus.Info("storage watcher backfill process has finished")
 		}
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+func (storageWatcher *StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
 	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }

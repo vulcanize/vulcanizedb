@@ -26,20 +26,24 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 )
 
+const (
+	PayloadChanBufferSize = 20000 // the max eth sub buffer size
+)
+
 type GethRPCStorageFetcher struct {
-	statediffPayloadChan chan statediff.Payload
+	StatediffPayloadChan chan statediff.Payload
 	streamer             streamer.Streamer
 }
 
-func NewGethRPCStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRPCStorageFetcher {
+func NewGethRPCStorageFetcher(streamer streamer.Streamer) GethRPCStorageFetcher {
 	return GethRPCStorageFetcher{
-		statediffPayloadChan: statediffPayloadChan,
+		StatediffPayloadChan: make(chan statediff.Payload, PayloadChanBufferSize),
 		streamer:             streamer,
 	}
 }
 
 func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
-	ethStatediffPayloadChan := fetcher.statediffPayloadChan
+	ethStatediffPayloadChan := fetcher.StatediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {
 		errs <- clientSubErr

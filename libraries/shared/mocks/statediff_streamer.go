@@ -14,35 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package streamer
+package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/sirupsen/logrus"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
-// Streamer is the interface for streaming a statediff subscription
-type Streamer interface {
-	Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
-}
-
-// StateDiffStreamer is the underlying struct for the StateDiffStreamer interface
+// StateDiffStreamer is the underlying struct for the Streamer interface
 type StateDiffStreamer struct {
-	Client core.RPCClient
-}
-
-// NewStateDiffStreamer creates a pointer to a new StateDiffStreamer which satisfies the IStateDiffStreamer interface
-func NewStateDiffStreamer(client core.RPCClient) Streamer {
-	return &StateDiffStreamer{
-		Client: client,
-	}
+	PassedPayloadChan chan statediff.Payload
+	ReturnSub         *rpc.ClientSubscription
+	ReturnErr         error
+	StreamPayloads    []statediff.Payload
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
 func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
-	logrus.Info("streaming diffs from geth")
-	return sds.Client.Subscribe("statediff", payloadChan, "stream")
+	sds.PassedPayloadChan = payloadChan
+
+	go func() {
+		for _, payload := range sds.StreamPayloads {
+			sds.PassedPayloadChan <- payload
+		}
+	}()
+
+	return sds.ReturnSub, sds.ReturnErr
 }

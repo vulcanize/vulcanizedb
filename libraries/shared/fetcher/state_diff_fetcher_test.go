@@ -17,10 +17,6 @@
 package fetcher_test
 
 import (
-	"bytes"
-
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -51,26 +47,8 @@ var _ = Describe("StateDiffFetcher", func() {
 			stateDiffPayloads, fetchErr := stateDiffFetcher.FetchStateDiffsAt(blockHeights)
 			Expect(fetchErr).ToNot(HaveOccurred())
 			Expect(len(stateDiffPayloads)).To(Equal(2))
-			// Can only rlp encode the slice of diffs as part of a struct
-			// Rlp encoding allows us to compare content of the slices when the order in the slice may vary
-			expectedPayloadsStruct := struct {
-				payloads []*statediff.Payload
-			}{
-				[]*statediff.Payload{
-					&test_data.MockStatediffPayload,
-					&test_data.MockStatediffPayload2,
-				},
-			}
-			expectedPayloadsBytes, rlpErr1 := rlp.EncodeToBytes(expectedPayloadsStruct)
-			Expect(rlpErr1).ToNot(HaveOccurred())
-			receivedPayloadsStruct := struct {
-				payloads []*statediff.Payload
-			}{
-				stateDiffPayloads,
-			}
-			receivedPayloadsBytes, rlpErr2 := rlp.EncodeToBytes(receivedPayloadsStruct)
-			Expect(rlpErr2).ToNot(HaveOccurred())
-			Expect(bytes.Equal(expectedPayloadsBytes, receivedPayloadsBytes)).To(BeTrue())
+			Expect(stateDiffPayloads[0]).To(Equal(test_data.MockStatediffPayload))
+			Expect(stateDiffPayloads[1]).To(Equal(test_data.MockStatediffPayload2))
 		})
 	})
 })
