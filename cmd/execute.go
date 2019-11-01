@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -134,12 +133,11 @@ func execute() {
 			log.Debug("fetching storage diffs from geth pub sub")
 			rpcClient, _ := getClients()
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRPCStorageFetcher(&stateDiffStreamer, payloadChan)
+			storageFetcher := fetcher.NewGethRPCStorageFetcher(stateDiffStreamer)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		default:
 			log.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
@@ -147,7 +145,7 @@ func execute() {
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		}
 	}
 
@@ -192,13 +190,14 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	LogWithCommand.Info("executing storage transformers")
 	on := viper.GetBool("storageBackFill.on")
 	if on {
-		go backFillStorage(w)
+		backFillStorage(w)
 	}
 	w.Execute(queueRecheckInterval, on)
 }
 
 func backFillStorage(w watcher.IStorageWatcher) {
 	// configure archival rpc client
+	// move this all into the storage watcher?
 	archivalRPCPath := viper.GetString("storageBackFill.rpcPath")
 	if archivalRPCPath == "" {
 		LogWithCommand.Fatal(errors.New("storage backfill is turned on but no rpc path is provided"))
@@ -207,12 +206,12 @@ func backFillStorage(w watcher.IStorageWatcher) {
 	if dialErr != nil {
 		LogWithCommand.Fatal(dialErr)
 	}
-	rpcClient := client.NewRpcClient(rawRPCClient, archivalRPCPath)
+	rpcClient := client.NewRPCClient(rawRPCClient, archivalRPCPath)
 	// find min deployment block
-	minDeploymentBlock := viper.GetInt("storageBackFill.startingBlock")
+	minDeploymentBlock := constants.GetMinDeploymentBlock()
 	stateDiffFetcher := fetcher.NewStateDiffFetcher(rpcClient)
-	backFiller := storage.NewStorageBackFiller(stateDiffFetcher)
-	w.BackFill(backFiller, minDeploymentBlock)
+	backFiller := storage.NewStorageBackFiller(stateDiffFetcher, uint64(minDeploymentBlock), storage.DefaultMaxBatchSize)
+	go w.BackFill(backFiller)
 }
 
 func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {

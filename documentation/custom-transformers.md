@@ -205,8 +205,6 @@ To do so, add the following fields to the config file.
 [storageBackFill]
     on = false
     rpcPath = ""
-    startingBlock = 0
 ```
 - `on` is set to `true` to turn the backfill process on
 - `rpcPath` is the websocket or ipc path to the modified archival geth node that exposes the `StateDiffAt` rpc endpoint we can use to backfill storage diffs
-- `startingBlock` is the block height at which we want to begin the backfill process; the height of the earliest contract deployment

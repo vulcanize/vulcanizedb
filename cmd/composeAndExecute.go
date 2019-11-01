@@ -22,7 +22,6 @@ import (
 	syn "sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -186,12 +185,11 @@ func composeAndExecute() {
 			log.Debug("fetching storage diffs from geth pub sub")
 			rpcClient, _ := getClients()
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRPCStorageFetcher(&stateDiffStreamer, payloadChan)
+			storageFetcher := fetcher.NewGethRPCStorageFetcher(stateDiffStreamer)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		default:
 			log.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
@@ -199,7 +197,7 @@ func composeAndExecute() {
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		}
 	}
 

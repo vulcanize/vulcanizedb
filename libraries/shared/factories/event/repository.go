@@ -19,8 +19,9 @@ package event
 import (
 	"database/sql/driver"
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/utils"
 	"strings"
+
+	"github.com/vulcanize/vulcanizedb/utils"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
