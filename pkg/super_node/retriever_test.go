@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
@@ -177,12 +178,15 @@ var (
 )
 
 var _ = Describe("Retriever", func() {
+	var (
+		db   *postgres.DB
+		repo super_node.CIDRepository
+	)
 	BeforeEach(func() {
+		var err error
 		db, err = super_node.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = super_node.NewCIDRepository(db)
-		err = repo.Index(mocks.MockCIDPayload)
-		Expect(err).ToNot(HaveOccurred())
 		retriever = super_node.NewCIDRetriever(db)
 	})
 	AfterEach(func() {
@@ -190,6 +194,10 @@ var _ = Describe("Retriever", func() {
 	})
 
 	Describe("RetrieveCIDs", func() {
+		BeforeEach(func() {
+			indexErr := repo.Index(mocks.MockCIDPayload)
+			Expect(indexErr).ToNot(HaveOccurred())
+		})
 		It("Retrieves all CIDs for the given blocknumber when provided an open filter", func() {
 			cidWrapper, err := retriever.RetrieveCIDs(openFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
@@ -216,12 +224,10 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.StorageNodes)).To(Equal(1))
 			Expect(cidWrapper.StorageNodes).To(Equal(mocks.MockCIDWrapper.StorageNodes))
 		})
-	})
 
-	Describe("RetrieveCIDs", func() {
 		It("Applies filters from the provided config.Subscription", func() {
-			cidWrapper1, err := retriever.RetrieveCIDs(rctContractFilter, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper1, err1 := retriever.RetrieveCIDs(rctContractFilter, 1)
+			Expect(err1).ToNot(HaveOccurred())
 			Expect(cidWrapper1.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper1.Headers)).To(Equal(0))
 			Expect(len(cidWrapper1.Transactions)).To(Equal(0))
@@ -230,8 +236,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper1.Receipts)).To(Equal(1))
 			Expect(cidWrapper1.Receipts[0]).To(Equal("mockRctCID2"))
 
-			cidWrapper2, err := retriever.RetrieveCIDs(rctTopicsFilter, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper2, err2 := retriever.RetrieveCIDs(rctTopicsFilter, 1)
+			Expect(err2).ToNot(HaveOccurred())
 			Expect(cidWrapper2.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper2.Headers)).To(Equal(0))
 			Expect(len(cidWrapper2.Transactions)).To(Equal(0))
@@ -240,8 +246,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper2.Receipts)).To(Equal(1))
 			Expect(cidWrapper2.Receipts[0]).To(Equal("mockRctCID1"))
 
-			cidWrapper3, err := retriever.RetrieveCIDs(rctTopicsAndContractFilter, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper3, err3 := retriever.RetrieveCIDs(rctTopicsAndContractFilter, 1)
+			Expect(err3).ToNot(HaveOccurred())
 			Expect(cidWrapper3.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper3.Headers)).To(Equal(0))
 			Expect(len(cidWrapper3.Transactions)).To(Equal(0))
@@ -250,8 +256,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper3.Receipts)).To(Equal(1))
 			Expect(cidWrapper3.Receipts[0]).To(Equal("mockRctCID1"))
 
-			cidWrapper4, err := retriever.RetrieveCIDs(rctContractsAndTopicFilter, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper4, err4 := retriever.RetrieveCIDs(rctContractsAndTopicFilter, 1)
+			Expect(err4).ToNot(HaveOccurred())
 			Expect(cidWrapper4.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper4.Headers)).To(Equal(0))
 			Expect(len(cidWrapper4.Transactions)).To(Equal(0))
@@ -260,8 +266,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper4.Receipts)).To(Equal(1))
 			Expect(cidWrapper4.Receipts[0]).To(Equal("mockRctCID2"))
 
-			cidWrapper5, err := retriever.RetrieveCIDs(rctsForAllCollectedTrxs, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper5, err5 := retriever.RetrieveCIDs(rctsForAllCollectedTrxs, 1)
+			Expect(err5).ToNot(HaveOccurred())
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper5.Headers)).To(Equal(0))
 			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
@@ -273,8 +279,8 @@ var _ = Describe("Retriever", func() {
 			Expect(super_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
 			Expect(super_node.ListContainsString(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
 
-			cidWrapper6, err := retriever.RetrieveCIDs(rctsForSelectCollectedTrxs, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper6, err6 := retriever.RetrieveCIDs(rctsForSelectCollectedTrxs, 1)
+			Expect(err6).ToNot(HaveOccurred())
 			Expect(cidWrapper6.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper6.Headers)).To(Equal(0))
 			Expect(len(cidWrapper6.Transactions)).To(Equal(1))
@@ -284,8 +290,8 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper6.Receipts)).To(Equal(1))
 			Expect(cidWrapper6.Receipts[0]).To(Equal("mockRctCID2"))
 
-			cidWrapper7, err := retriever.RetrieveCIDs(stateFilter, 1)
-			Expect(err).ToNot(HaveOccurred())
+			cidWrapper7, err7 := retriever.RetrieveCIDs(stateFilter, 1)
+			Expect(err7).ToNot(HaveOccurred())
 			Expect(cidWrapper7.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper7.Headers)).To(Equal(0))
 			Expect(len(cidWrapper7.Transactions)).To(Equal(0))
@@ -302,17 +308,146 @@ var _ = Describe("Retriever", func() {
 
 	Describe("RetrieveFirstBlockNumber", func() {
 		It("Gets the number of the first block that has data in the database", func() {
-			num, err := retriever.RetrieveFirstBlockNumber()
-			Expect(err).ToNot(HaveOccurred())
+			indexErr := repo.Index(mocks.MockCIDPayload)
+			Expect(indexErr).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveFirstBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
 			Expect(num).To(Equal(int64(1)))
+		})
+
+		It("Gets the number of the first block that has data in the database", func() {
+			payload := *mocks.MockCIDPayload
+			payload.BlockNumber = "1010101"
+			indexErr := repo.Index(&payload)
+			Expect(indexErr).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveFirstBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(num).To(Equal(int64(1010101)))
+		})
+
+		It("Gets the number of the first block that has data in the database", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.BlockNumber = "1010101"
+			payload2 := payload1
+			payload2.BlockNumber = "5"
+			indexErr := repo.Index(&payload1)
+			Expect(indexErr).ToNot(HaveOccurred())
+			indexErr2 := repo.Index(&payload2)
+			Expect(indexErr2).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveFirstBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(num).To(Equal(int64(5)))
 		})
 	})
 
 	Describe("RetrieveLastBlockNumber", func() {
 		It("Gets the number of the latest block that has data in the database", func() {
-			num, err := retriever.RetrieveLastBlockNumber()
-			Expect(err).ToNot(HaveOccurred())
+			indexErr := repo.Index(mocks.MockCIDPayload)
+			Expect(indexErr).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveLastBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
 			Expect(num).To(Equal(int64(1)))
+		})
+
+		It("Gets the number of the latest block that has data in the database", func() {
+			payload := *mocks.MockCIDPayload
+			payload.BlockNumber = "1010101"
+			indexErr := repo.Index(&payload)
+			Expect(indexErr).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveLastBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(num).To(Equal(int64(1010101)))
+		})
+
+		It("Gets the number of the latest block that has data in the database", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.BlockNumber = "1010101"
+			payload2 := payload1
+			payload2.BlockNumber = "5"
+			indexErr := repo.Index(&payload1)
+			Expect(indexErr).ToNot(HaveOccurred())
+			indexErr2 := repo.Index(&payload2)
+			Expect(indexErr2).ToNot(HaveOccurred())
+			num, retrieveErr := retriever.RetrieveLastBlockNumber()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(num).To(Equal(int64(1010101)))
+		})
+	})
+
+	Describe("RetrieveGapsInData", func() {
+		It("Doesn't return gaps if there are none", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.BlockNumber = "2"
+			payload2 := payload1
+			payload2.BlockNumber = "3"
+			indexErr1 := repo.Index(mocks.MockCIDPayload)
+			Expect(indexErr1).ToNot(HaveOccurred())
+			indexErr2 := repo.Index(&payload1)
+			Expect(indexErr2).ToNot(HaveOccurred())
+			indexErr3 := repo.Index(&payload2)
+			Expect(indexErr3).ToNot(HaveOccurred())
+			gaps, retrieveErr := retriever.RetrieveGapsInData()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(0))
+		})
+
+		It("Doesn't return the gap from 0 to the earliest block", func() {
+			payload := *mocks.MockCIDPayload
+			payload.BlockNumber = "5"
+			indexErr := repo.Index(&payload)
+			Expect(indexErr).ToNot(HaveOccurred())
+			gaps, retrieveErr := retriever.RetrieveGapsInData()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(0))
+		})
+
+		It("Finds gap between two entries", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.BlockNumber = "1010101"
+			payload2 := payload1
+			payload2.BlockNumber = "5"
+			indexErr := repo.Index(&payload1)
+			Expect(indexErr).ToNot(HaveOccurred())
+			indexErr2 := repo.Index(&payload2)
+			Expect(indexErr2).ToNot(HaveOccurred())
+			gaps, retrieveErr := retriever.RetrieveGapsInData()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(1))
+			Expect(gaps[0][0]).To(Equal(uint64(6)))
+			Expect(gaps[0][1]).To(Equal(uint64(1010100)))
+		})
+
+		It("Finds gaps between multiple entries", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.BlockNumber = "1010101"
+			payload2 := payload1
+			payload2.BlockNumber = "5"
+			payload3 := payload2
+			payload3.BlockNumber = "100"
+			payload4 := payload3
+			payload4.BlockNumber = "101"
+			payload5 := payload4
+			payload5.BlockNumber = "102"
+			payload6 := payload5
+			payload6.BlockNumber = "1000"
+			indexErr := repo.Index(&payload1)
+			Expect(indexErr).ToNot(HaveOccurred())
+			indexErr2 := repo.Index(&payload2)
+			Expect(indexErr2).ToNot(HaveOccurred())
+			indexErr3 := repo.Index(&payload3)
+			Expect(indexErr3).ToNot(HaveOccurred())
+			indexErr4 := repo.Index(&payload4)
+			Expect(indexErr4).ToNot(HaveOccurred())
+			indexErr5 := repo.Index(&payload5)
+			Expect(indexErr5).ToNot(HaveOccurred())
+			indexErr6 := repo.Index(&payload6)
+			Expect(indexErr6).ToNot(HaveOccurred())
+			gaps, retrieveErr := retriever.RetrieveGapsInData()
+			Expect(retrieveErr).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(3))
+			Expect(super_node.ListContainsRange(gaps, [2]uint64{6, 99})).To(BeTrue())
+			Expect(super_node.ListContainsRange(gaps, [2]uint64{103, 999})).To(BeTrue())
+			Expect(super_node.ListContainsRange(gaps, [2]uint64{1001, 1010100})).To(BeTrue())
 		})
 	})
 })

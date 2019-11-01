@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/statediff"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
@@ -34,9 +32,10 @@ import (
 )
 
 const (
-	DefaultMaxBatchSize   uint64 = 5000
-	defaultMaxBatchNumber int64 = 100
+	DefaultMaxBatchSize   uint64 = 1000
+	defaultMaxBatchNumber int64  = 10
 )
+
 // BackFillInterface for filling in gaps in the super node
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
@@ -58,11 +57,11 @@ type BackFillService struct {
 	// Check frequency
 	GapCheckFrequency time.Duration
 	// size of batch fetches
-	batchSize uint64
+	BatchSize uint64
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RpcClient, freq time.Duration) (BackFillInterface, error) {
+func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RpcClient, freq time.Duration, batchSize uint64) (BackFillInterface, error) {
 	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -72,9 +71,9 @@ func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient 
 		Converter:         ipfs.NewPayloadConverter(params.MainnetChainConfig),
 		Publisher:         publisher,
 		Retriever:         NewCIDRetriever(db),
-		Fetcher:  fetcher.NewStateDiffFetcher(archivalNodeRPCClient),
+		Fetcher:           fetcher.NewStateDiffFetcher(archivalNodeRPCClient),
 		GapCheckFrequency: freq,
-		batchSize: DefaultMaxBatchSize,
+		BatchSize:         batchSize,
 	}, nil
 }
 
@@ -118,6 +117,7 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
 }
 
 func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
+	log.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 	errChan := make(chan error)
 	done := make(chan bool)
 	backFillInitErr := bfs.BackFill(startingBlock, endingBlock, errChan, done)
@@ -127,14 +127,14 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
 	}
 	for {
 		select {
-		case err := <- errChan:
+		case err := <-errChan:
 			log.Error(err)
-		case <- done:
+		case <-done:
+			log.Infof("finished filling in gap from %d to %d", startingBlock, endingBlock)
 			return
 		}
 	}
 }
-
 
 // BackFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
@@ -144,14 +144,14 @@ func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan 
 	}
 	// break the range up into bins of smaller ranges
 	length := endingBlock - startingBlock + 1
-	numberOfBins := length / bfs.batchSize
-	remainder := length % bfs.batchSize
+	numberOfBins := length / bfs.BatchSize
+	remainder := length % bfs.BatchSize
 	if remainder != 0 {
 		numberOfBins++
 	}
 	blockRangeBins := make([][]uint64, numberOfBins)
 	for i := range blockRangeBins {
-		nextBinStart := startingBlock + uint64(bfs.batchSize)
+		nextBinStart := startingBlock + uint64(bfs.BatchSize)
 		if nextBinStart > endingBlock {
 			nextBinStart = endingBlock + 1
 		}
@@ -166,7 +166,7 @@ func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan 
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
-	processingDone := make(chan bool)
+	processingDone := make(chan [2]uint64)
 	forwardDone := make(chan bool)
 
 	// for each block range bin spin up a goroutine to batch fetch and process state diffs for that range
@@ -184,29 +184,23 @@ func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan 
 					errChan <- fetchErr
 				}
 				for _, payload := range payloads {
-					stateDiff := new(statediff.StateDiff)
-					stateDiffDecodeErr := rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
-					if stateDiffDecodeErr != nil {
-						errChan <- stateDiffDecodeErr
-						continue
-					}
 					ipldPayload, convertErr := bfs.Converter.Convert(payload)
 					if convertErr != nil {
-						log.Error(convertErr)
+						errChan <- convertErr
 						continue
 					}
 					cidPayload, publishErr := bfs.Publisher.Publish(ipldPayload)
 					if publishErr != nil {
-						log.Error(publishErr)
+						errChan <- publishErr
 						continue
 					}
 					indexErr := bfs.Repository.Index(cidPayload)
 					if indexErr != nil {
-						log.Error(indexErr)
+						errChan <- indexErr
 					}
 				}
 				// when this goroutine is done, send out a signal
-				processingDone <- true
+				processingDone <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
 			}(blockHeights)
 		}
 	}()
@@ -218,13 +212,14 @@ func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan 
 		goroutinesFinished := 0
 		for {
 			select {
-			case <-processingDone:
+			case doneWithHeights := <-processingDone:
 				atomic.AddInt64(&activeCount, -1)
 				select {
 				// if we are waiting for a process to finish, signal that one has
 				case forwardDone <- true:
 				default:
 				}
+				log.Infof("finished filling in gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
 				goroutinesFinished++
 				if goroutinesFinished == int(numberOfBins) {
 					done <- true

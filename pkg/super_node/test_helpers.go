@@ -76,3 +76,13 @@ func ListContainsBytes(bbb [][]byte, b []byte) bool {
 	}
 	return false
 }
+
+// ListContainsRange used to check if a list of [2]uint64 contains a particula [2]uint64
+func ListContainsRange(rangeList [][2]uint64, rng [2]uint64) bool {
+	for _, rangeInList := range rangeList {
+		if rangeInList == rng {
+			return true
+		}
+	}
+	return false
+}

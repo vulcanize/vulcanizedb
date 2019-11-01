@@ -26,13 +26,12 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 )
 
-var (
-	db   *postgres.DB
-	err  error
-	repo super_node.CIDRepository
-)
-
 var _ = Describe("Repository", func() {
+	var (
+		db   *postgres.DB
+		err  error
+		repo super_node.CIDRepository
+	)
 	BeforeEach(func() {
 		db, err = super_node.SetupDB()
 		Expect(err).ToNot(HaveOccurred())

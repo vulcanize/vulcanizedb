@@ -47,7 +47,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockRetriever := &mocks3.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
-				GapsToRetrieve: [][2]int64{
+				GapsToRetrieve: [][2]uint64{
 					{
 						100, 101,
 					},
@@ -63,9 +63,10 @@ var _ = Describe("BackFiller", func() {
 				Repository:        mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
-				StateDiffFetcher:  mockFetcher,
+				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
+				BatchSize:         super_node.DefaultMaxBatchSize,
 			}
 			wg := &sync.WaitGroup{}
 			quitChan := make(chan bool, 1)
@@ -100,7 +101,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockRetriever := &mocks3.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
-				GapsToRetrieve: [][2]int64{
+				GapsToRetrieve: [][2]uint64{
 					{
 						100, 100,
 					},
@@ -115,9 +116,10 @@ var _ = Describe("BackFiller", func() {
 				Repository:        mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
-				StateDiffFetcher:  mockFetcher,
+				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
+				BatchSize:         super_node.DefaultMaxBatchSize,
 			}
 			wg := &sync.WaitGroup{}
 			quitChan := make(chan bool, 1)
@@ -149,7 +151,7 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockRetriever := &mocks3.MockCIDRetriever{
 				FirstBlockNumberToReturn: 3,
-				GapsToRetrieve:           [][2]int64{},
+				GapsToRetrieve:           [][2]uint64{},
 			}
 			mockFetcher := &mocks2.StateDiffFetcher{
 				PayloadsToReturn: map[uint64]statediff.Payload{
@@ -161,9 +163,10 @@ var _ = Describe("BackFiller", func() {
 				Repository:        mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
-				StateDiffFetcher:  mockFetcher,
+				Fetcher:           mockFetcher,
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
+				BatchSize:         super_node.DefaultMaxBatchSize,
 			}
 			wg := &sync.WaitGroup{}
 			quitChan := make(chan bool, 1)
