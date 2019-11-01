@@ -151,33 +151,33 @@ var (
 	}
 
 	CreatedExpectedStorageDiff = utils.StorageDiff{
-		Id:            1333,
+		Id:            0,
 		HashedAddress: common.BytesToHash(ContractLeafKey[:]),
-		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
 	UpdatedExpectedStorageDiff = utils.StorageDiff{
-		Id:            1334,
+		Id:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
-		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(LargeStorageValue),
 	}
 	UpdatedExpectedStorageDiff2 = utils.StorageDiff{
-		Id:            1335,
+		Id:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
-		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHash:     common.HexToHash(BlockHash2),
 		BlockHeight:   int(BlockNumber2.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
 	DeletedExpectedStorageDiff = utils.StorageDiff{
-		Id:            1336,
+		Id:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
-		BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(StorageKey),
 		StorageValue:  common.BytesToHash(SmallStorageValue),

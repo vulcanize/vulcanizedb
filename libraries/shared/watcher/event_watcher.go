@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"

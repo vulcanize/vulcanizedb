@@ -29,6 +29,7 @@ type MockStorageQueue struct {
 	DeletePassedIds []int
 	GetAllErr       error
 	DiffsToReturn   []utils.StorageDiff
+	GetAllCalled    bool
 }
 
 // Add mock method
@@ -41,10 +42,18 @@ func (queue *MockStorageQueue) Add(diff utils.StorageDiff) error {
 // Delete mock method
 func (queue *MockStorageQueue) Delete(id int) error {
 	queue.DeletePassedIds = append(queue.DeletePassedIds, id)
+	diffsToReturn := make([]utils.StorageDiff, 0)
+	for _, diff := range queue.DiffsToReturn {
+		if diff.Id != id {
+			diffsToReturn = append(diffsToReturn, diff)
+		}
+	}
+	queue.DiffsToReturn = diffsToReturn
 	return queue.DeleteErr
 }
 
 // GetAll mock method
 func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiff, error) {
+	queue.GetAllCalled = true
 	return queue.DiffsToReturn, queue.GetAllErr
 }

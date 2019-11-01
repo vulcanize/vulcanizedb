@@ -18,31 +18,33 @@ package mocks
 
 import (
 	"errors"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/statediff"
 )
 
 // StateDiffFetcher mock for tests
 type StateDiffFetcher struct {
-	PayloadsToReturn     map[uint64]*statediff.Payload
-	FetchErr             error
+	PayloadsToReturn     map[uint64]statediff.Payload
+	FetchErrs            map[uint64]error
 	CalledAtBlockHeights [][]uint64
-}
-
-// SetPayloadsToReturn for tests
-func (fetcher *StateDiffFetcher) SetPayloadsToReturn(payloads map[uint64]*statediff.Payload) {
-	fetcher.PayloadsToReturn = payloads
+	CalledTimes          int64
 }
 
 // FetchStateDiffsAt mock method
-func (fetcher *StateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]*statediff.Payload, error) {
-	fetcher.CalledAtBlockHeights = append(fetcher.CalledAtBlockHeights, blockHeights)
+func (fetcher *StateDiffFetcher) FetchStateDiffsAt(blockHeights []uint64) ([]statediff.Payload, error) {
 	if fetcher.PayloadsToReturn == nil {
-		return nil, errors.New("MockStateDiffFetcher needs to be initialized with payloads to return")
+		return nil, errors.New("mock StateDiffFetcher needs to be initialized with payloads to return")
 	}
-	results := make([]*statediff.Payload, 0, len(blockHeights))
+	atomic.AddInt64(&fetcher.CalledTimes, 1) // thread-safe increment
+	fetcher.CalledAtBlockHeights = append(fetcher.CalledAtBlockHeights, blockHeights)
+	results := make([]statediff.Payload, 0, len(blockHeights))
 	for _, height := range blockHeights {
 		results = append(results, fetcher.PayloadsToReturn[height])
+		err, ok := fetcher.FetchErrs[height]
+		if ok && err != nil {
+			return nil, err
+		}
 	}
 	return results, nil
 }
