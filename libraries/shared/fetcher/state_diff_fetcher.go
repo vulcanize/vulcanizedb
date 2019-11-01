@@ -18,6 +18,7 @@ package fetcher
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"

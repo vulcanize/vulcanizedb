@@ -18,6 +18,8 @@ package event_test
 
 import (
 	"fmt"
+	"math/big"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/event"
@@ -26,7 +28,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
-	"math/big"
 )
 
 var _ = Describe("Repository", func() {

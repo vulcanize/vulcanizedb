@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	DefaultMaxBatchSize   uint64 = 5000
-	defaultMaxBatchNumber int64  = 100
+	DefaultMaxBatchSize   uint64 = 1000
+	defaultMaxBatchNumber int64  = 10
 )
 
 // BackFiller is the backfilling interface
@@ -64,6 +64,7 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 	if endingBlock < bf.startingBlock {
 		return errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
+	logrus.Infof("going to fill in gap from %d to %d", bf.startingBlock, endingBlock)
 	// break the range up into bins of smaller ranges
 	length := endingBlock - bf.startingBlock + 1
 	numberOfBins := length / bf.batchSize
@@ -88,7 +89,8 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
-	processingDone := make(chan bool)
+	processingDone := make(chan [2]uint64)
+	forwardDone := make(chan bool)
 
 	// for each block range bin spin up a goroutine to batch fetch and process state diffs for that range
 	go func() {
@@ -97,8 +99,7 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 			// wait for one to finish before starting the next
 			if atomic.AddInt64(&activeCount, 1) > defaultMaxBatchNumber {
 				// this blocks until a process signals it has finished
-				// immediately forwards the signal to the normal listener so that it keeps the correct count
-				processingDone <- <-processingDone
+				<-forwardDone
 			}
 			go func(blockHeights []uint64) {
 				payloads, fetchErr := bf.fetcher.FetchStateDiffsAt(blockHeights)
@@ -131,7 +132,7 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 					}
 				}
 				// when this goroutine is done, send out a signal
-				processingDone <- true
+				processingDone <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
 			}(blockHeights)
 		}
 	}()
@@ -143,8 +144,14 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 		goroutinesFinished := 0
 		for {
 			select {
-			case <-processingDone:
+			case doneWithHeights := <-processingDone:
 				atomic.AddInt64(&activeCount, -1)
+				select {
+				// if we are waiting for a process to finish, signal that one has
+				case forwardDone <- true:
+				default:
+				}
+				logrus.Infof("finished fetching gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
 				goroutinesFinished++
 				if goroutinesFinished == int(numberOfBins) {
 					done <- true
