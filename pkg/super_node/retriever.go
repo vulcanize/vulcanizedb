@@ -33,7 +33,7 @@ type CIDRetriever interface {
 	RetrieveCIDs(streamFilters config.Subscription, blockNumber int64) (*ipfs.CIDWrapper, error)
 	RetrieveLastBlockNumber() (int64, error)
 	RetrieveFirstBlockNumber() (int64, error)
-	RetrieveGapsInData() ([][2]int64, error)
+	RetrieveGapsInData() ([][2]uint64, error)
 }
 
 // EthCIDRetriever is the underlying struct supporting the CIDRetriever interface
@@ -312,12 +312,12 @@ func (ecr *EthCIDRetriever) retrieveStorageCIDs(tx *sqlx.Tx, streamFilters confi
 }
 
 type gap struct {
-	Start int64 `db:"start"`
-	Stop  int64 `db:"stop"`
+	Start uint64 `db:"start"`
+	Stop  uint64 `db:"stop"`
 }
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
-func (ecr *EthCIDRetriever) RetrieveGapsInData() ([][2]int64, error) {
+func (ecr *EthCIDRetriever) RetrieveGapsInData() ([][2]uint64, error) {
 	pgStr := `SELECT header_cids.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM header_cids
 				LEFT JOIN header_cids r on header_cids.block_number = r.block_number - 1
 				LEFT JOIN header_cids fr on header_cids.block_number < fr.block_number
@@ -328,9 +328,9 @@ func (ecr *EthCIDRetriever) RetrieveGapsInData() ([][2]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	gapRanges := make([][2]int64, 0)
+	gapRanges := make([][2]uint64, 0)
 	for _, gap := range gaps {
-		gapRanges = append(gapRanges, [2]int64{gap.Start, gap.Stop})
+		gapRanges = append(gapRanges, [2]uint64{gap.Start, gap.Stop})
 	}
 	return gapRanges, nil
 }

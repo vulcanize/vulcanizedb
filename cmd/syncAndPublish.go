@@ -120,5 +120,5 @@ func newBackFiller() (super_node.BackFillInterface, error) {
 	} else {
 		frequency = time.Duration(freq)
 	}
-	return super_node.NewBackFillService(ipfsPath, &db, archivalRPCClient, time.Minute*frequency)
+	return super_node.NewBackFillService(ipfsPath, &db, archivalRPCClient, time.Minute*frequency, super_node.DefaultMaxBatchSize)
 }

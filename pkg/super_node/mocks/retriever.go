@@ -7,7 +7,7 @@ import (
 
 // MockCIDRetriever is a mock CID retriever for use in tests
 type MockCIDRetriever struct {
-	GapsToRetrieve              [][2]int64
+	GapsToRetrieve              [][2]uint64
 	GapsToRetrieveErr           error
 	CalledTimes                 int
 	FirstBlockNumberToReturn    int64
@@ -30,15 +30,15 @@ func (mcr *MockCIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
 }
 
 // RetrieveGapsInData mock method
-func (mcr *MockCIDRetriever) RetrieveGapsInData() ([][2]int64, error) {
+func (mcr *MockCIDRetriever) RetrieveGapsInData() ([][2]uint64, error) {
 	mcr.CalledTimes++
 	return mcr.GapsToRetrieve, mcr.GapsToRetrieveErr
 }
 
 // SetGapsToRetrieve mock method
-func (mcr *MockCIDRetriever) SetGapsToRetrieve(gaps [][2]int64) {
+func (mcr *MockCIDRetriever) SetGapsToRetrieve(gaps [][2]uint64) {
 	if mcr.GapsToRetrieve == nil {
-		mcr.GapsToRetrieve = make([][2]int64, 0)
+		mcr.GapsToRetrieve = make([][2]uint64, 0)
 	}
 	mcr.GapsToRetrieve = append(mcr.GapsToRetrieve, gaps...)
 }
