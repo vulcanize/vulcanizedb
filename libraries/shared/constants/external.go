@@ -47,7 +47,7 @@ func GetMinDeploymentBlock() uint64 {
 		log.Fatalf("No contracts supplied")
 	}
 	minBlock := uint64(math.MaxUint64)
-	for _, c := range contractNames {
+	for c := range contractNames {
 		deployed := getDeploymentBlock(c)
 		if deployed < minBlock {
 			minBlock = deployed
@@ -56,27 +56,17 @@ func GetMinDeploymentBlock() uint64 {
 	return minBlock
 }
 
-func getContractNames() []string {
-	initConfig()
+func getContractNames() map[string]bool {
 	transformerNames := viper.GetStringSlice("exporter.transformerNames")
-	contractNames := make([]string, 0)
+	contractNames := make(map[string]bool)
 	for _, transformerName := range transformerNames {
 		configKey := "exporter." + transformerName + ".contracts"
 		names := viper.GetStringSlice(configKey)
 		for _, name := range names {
-			contractNames = appendNoDuplicates(transformerNames, name)
+			contractNames[name] = true
 		}
 	}
 	return contractNames
-}
-
-func appendNoDuplicates(strSlice []string, str string) []string {
-	for _, strInSlice := range strSlice {
-		if strInSlice == str {
-			return strSlice
-		}
-	}
-	return append(strSlice, str)
 }
 
 func getDeploymentBlock(contractName string) uint64 {

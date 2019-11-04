@@ -27,7 +27,6 @@ type BackFiller struct {
 	StorageDiffsToReturn []utils.StorageDiff
 	BackFillErrs         []error
 	PassedEndingBlock    uint64
-	StartingBlock        uint64
 }
 
 // SetStorageDiffsToReturn for tests
@@ -36,8 +35,8 @@ func (backFiller *BackFiller) SetStorageDiffsToReturn(diffs []utils.StorageDiff)
 }
 
 // BackFill mock method
-func (backFiller *BackFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
-	if endingBlock < backFiller.StartingBlock {
+func (backFiller *BackFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
+	if endingBlock < startingBlock {
 		return errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
 	backFiller.PassedEndingBlock = endingBlock

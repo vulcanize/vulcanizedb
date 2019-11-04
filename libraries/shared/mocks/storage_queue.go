@@ -24,36 +24,37 @@ import (
 type MockStorageQueue struct {
 	AddCalled       bool
 	AddError        error
-	AddPassedDiffs  []utils.StorageDiff
+	AddPassedDiffs  map[int]utils.StorageDiff
 	DeleteErr       error
 	DeletePassedIds []int
 	GetAllErr       error
-	DiffsToReturn   []utils.StorageDiff
+	DiffsToReturn   map[int]utils.StorageDiff
 	GetAllCalled    bool
 }
 
 // Add mock method
 func (queue *MockStorageQueue) Add(diff utils.StorageDiff) error {
 	queue.AddCalled = true
-	queue.AddPassedDiffs = append(queue.AddPassedDiffs, diff)
+	if queue.AddPassedDiffs == nil {
+		queue.AddPassedDiffs = make(map[int]utils.StorageDiff)
+	}
+	queue.AddPassedDiffs[diff.Id] = diff
 	return queue.AddError
 }
 
 // Delete mock method
 func (queue *MockStorageQueue) Delete(id int) error {
 	queue.DeletePassedIds = append(queue.DeletePassedIds, id)
-	diffsToReturn := make([]utils.StorageDiff, 0)
-	for _, diff := range queue.DiffsToReturn {
-		if diff.Id != id {
-			diffsToReturn = append(diffsToReturn, diff)
-		}
-	}
-	queue.DiffsToReturn = diffsToReturn
+	delete(queue.DiffsToReturn, id)
 	return queue.DeleteErr
 }
 
 // GetAll mock method
 func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiff, error) {
 	queue.GetAllCalled = true
-	return queue.DiffsToReturn, queue.GetAllErr
+	diffs := make([]utils.StorageDiff, 0)
+	for _, diff := range queue.DiffsToReturn {
+		diffs = append(diffs, diff)
+	}
+	return diffs, queue.GetAllErr
 }

@@ -28,12 +28,15 @@ import (
 type MockStorageTransformer struct {
 	KeccakOfAddress common.Hash
 	ExecuteErr      error
-	PassedDiffs     []utils.StorageDiff
+	PassedDiffs     map[int]utils.StorageDiff
 }
 
 // Execute mock method
 func (transformer *MockStorageTransformer) Execute(diff utils.StorageDiff) error {
-	transformer.PassedDiffs = append(transformer.PassedDiffs, diff)
+	if transformer.PassedDiffs == nil {
+		transformer.PassedDiffs = make(map[int]utils.StorageDiff)
+	}
+	transformer.PassedDiffs[diff.Id] = diff
 	return transformer.ExecuteErr
 }
 

@@ -33,7 +33,7 @@ import (
 type IStorageWatcher interface {
 	AddTransformers(initializers []transformer.StorageTransformerInitializer)
 	Execute(queueRecheckInterval time.Duration, backFillOn bool)
-	BackFill(backFiller storage.BackFiller)
+	BackFill(startingBlock uint64, backFiller storage.BackFiller)
 }
 
 type StorageWatcher struct {
@@ -44,7 +44,7 @@ type StorageWatcher struct {
 	DiffsChan                 chan utils.StorageDiff
 	ErrsChan                  chan error
 	BackFillDoneChan          chan bool
-	StartingSyncBlockChan     chan int
+	StartingSyncBlockChan     chan uint64
 }
 
 func NewStorageWatcher(f fetcher.IStorageFetcher, db *postgres.DB) *StorageWatcher {
@@ -55,7 +55,7 @@ func NewStorageWatcher(f fetcher.IStorageFetcher, db *postgres.DB) *StorageWatch
 		StorageFetcher:            f,
 		DiffsChan:                 make(chan utils.StorageDiff, fetcher.PayloadChanBufferSize),
 		ErrsChan:                  make(chan error),
-		StartingSyncBlockChan:     make(chan int),
+		StartingSyncBlockChan:     make(chan uint64),
 		BackFillDoneChan:          make(chan bool),
 		Queue:                     queue,
 		KeccakAddressTransformers: transformers,
@@ -70,10 +70,10 @@ func (storageWatcher *StorageWatcher) AddTransformers(initializers []transformer
 }
 
 // BackFill uses a backFiller to backfill missing storage diffs for the storageWatcher
-func (storageWatcher *StorageWatcher) BackFill(backFiller storage.BackFiller) {
+func (storageWatcher *StorageWatcher) BackFill(startingBlock uint64, backFiller storage.BackFiller) {
 	// this blocks until the Execute process sends us the first block number it sees
-	startingSyncBlock := <-storageWatcher.StartingSyncBlockChan
-	backFillInitErr := backFiller.BackFill(uint64(startingSyncBlock),
+	endBackFillBlock := <-storageWatcher.StartingSyncBlockChan
+	backFillInitErr := backFiller.BackFill(startingBlock, endBackFillBlock,
 		storageWatcher.DiffsChan, storageWatcher.ErrsChan, storageWatcher.BackFillDoneChan)
 	if backFillInitErr != nil {
 		logrus.Warn(backFillInitErr)
@@ -91,7 +91,7 @@ func (storageWatcher *StorageWatcher) Execute(queueRecheckInterval time.Duration
 			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr.Error()))
 		case diff := <-storageWatcher.DiffsChan:
 			if start && backFillOn {
-				storageWatcher.StartingSyncBlockChan <- diff.BlockHeight - 1
+				storageWatcher.StartingSyncBlockChan <- uint64(diff.BlockHeight - 1)
 				start = false
 			}
 			storageWatcher.processRow(diff)

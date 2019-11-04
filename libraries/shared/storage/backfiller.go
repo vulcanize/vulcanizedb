@@ -17,10 +17,10 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"sync/atomic"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
@@ -30,13 +30,13 @@ import (
 )
 
 const (
-	DefaultMaxBatchSize   uint64 = 1000
+	DefaultMaxBatchSize   uint64 = 100
 	defaultMaxBatchNumber int64  = 10
 )
 
 // BackFiller is the backfilling interface
 type BackFiller interface {
-	BackFill(endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error
+	BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error
 }
 
 // backFiller is the backfilling struct
@@ -47,52 +47,33 @@ type backFiller struct {
 }
 
 // NewStorageBackFiller returns a BackFiller
-func NewStorageBackFiller(fetcher fetcher.StateDiffFetcher, startingBlock, batchSize uint64) BackFiller {
+func NewStorageBackFiller(fetcher fetcher.StateDiffFetcher, batchSize uint64) BackFiller {
 	if batchSize == 0 {
 		batchSize = DefaultMaxBatchSize
 	}
 	return &backFiller{
-		fetcher:       fetcher,
-		batchSize:     batchSize,
-		startingBlock: startingBlock,
+		fetcher:   fetcher,
+		batchSize: batchSize,
 	}
 }
 
 // BackFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
-func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
-	if endingBlock < bf.startingBlock {
-		return errors.New("backfill: ending block number needs to be greater than starting block number")
-	}
-	logrus.Infof("going to fill in gap from %d to %d", bf.startingBlock, endingBlock)
-	// break the range up into bins of smaller ranges
-	length := endingBlock - bf.startingBlock + 1
-	numberOfBins := length / bf.batchSize
-	remainder := length % bf.batchSize
-	if remainder != 0 {
-		numberOfBins++
-	}
-	blockRangeBins := make([][]uint64, numberOfBins)
-	for i := range blockRangeBins {
-		nextBinStart := bf.startingBlock + uint64(bf.batchSize)
-		if nextBinStart > endingBlock {
-			nextBinStart = endingBlock + 1
-		}
-		blockRange := make([]uint64, 0, nextBinStart-bf.startingBlock+1)
-		for j := bf.startingBlock; j < nextBinStart; j++ {
-			blockRange = append(blockRange, j)
-		}
-		bf.startingBlock = nextBinStart
-		blockRangeBins[i] = blockRange
-	}
+func (bf *backFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
+	logrus.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 
+	// break the range up into bins of smaller ranges
+	blockRangeBins, err := utils.GetBlockHeightBins(startingBlock, endingBlock, bf.batchSize)
+	if err != nil {
+		return err
+	}
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
 	processingDone := make(chan [2]uint64)
 	forwardDone := make(chan bool)
 
-	// for each block range bin spin up a goroutine to batch fetch and process state diffs for that range
+	// for each block range bin spin up a goroutine to batch fetch and process state diffs in that range
 	go func() {
 		for _, blockHeights := range blockRangeBins {
 			// if we have reached our limit of active goroutines
@@ -101,39 +82,7 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 				// this blocks until a process signals it has finished
 				<-forwardDone
 			}
-			go func(blockHeights []uint64) {
-				payloads, fetchErr := bf.fetcher.FetchStateDiffsAt(blockHeights)
-				if fetchErr != nil {
-					errChan <- fetchErr
-				}
-				for _, payload := range payloads {
-					stateDiff := new(statediff.StateDiff)
-					stateDiffDecodeErr := rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
-					if stateDiffDecodeErr != nil {
-						errChan <- stateDiffDecodeErr
-						continue
-					}
-					accounts := utils.GetAccountsFromDiff(*stateDiff)
-					for _, account := range accounts {
-						logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-						for _, storage := range account.Storage {
-							diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
-							if formatErr != nil {
-								errChan <- formatErr
-								continue
-							}
-							logrus.Trace("adding storage diff to results",
-								"keccak of address: ", diff.HashedAddress.Hex(),
-								"block height: ", diff.BlockHeight,
-								"storage key: ", diff.StorageKey.Hex(),
-								"storage value: ", diff.StorageValue.Hex())
-							backFill <- diff
-						}
-					}
-				}
-				// when this goroutine is done, send out a signal
-				processingDone <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
-			}(blockHeights)
+			go bf.backFillRange(blockHeights, backFill, errChan, processingDone)
 		}
 	}()
 
@@ -153,7 +102,7 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 				}
 				logrus.Infof("finished fetching gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
 				goroutinesFinished++
-				if goroutinesFinished == int(numberOfBins) {
+				if goroutinesFinished >= len(blockRangeBins) {
 					done <- true
 					return
 				}
@@ -162,4 +111,39 @@ func (bf *backFiller) BackFill(endingBlock uint64, backFill chan utils.StorageDi
 	}()
 
 	return nil
+}
+
+func (bf *backFiller) backFillRange(blockHeights []uint64, diffChan chan utils.StorageDiff, errChan chan error, doneChan chan [2]uint64) {
+	payloads, fetchErr := bf.fetcher.FetchStateDiffsAt(blockHeights)
+	if fetchErr != nil {
+		errChan <- fetchErr
+	}
+	for _, payload := range payloads {
+		stateDiff := new(statediff.StateDiff)
+		stateDiffDecodeErr := rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
+		if stateDiffDecodeErr != nil {
+			errChan <- stateDiffDecodeErr
+			continue
+		}
+		accounts := utils.GetAccountsFromDiff(*stateDiff)
+		for _, account := range accounts {
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.Storage), common.BytesToHash(account.Key).Hex()))
+			for _, storage := range account.Storage {
+				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
+				if formatErr != nil {
+					logrus.Error("failed to format utils.StorageDiff from storage with key: ", common.BytesToHash(storage.Key), "from account with key: ", common.BytesToHash(account.Key))
+					errChan <- formatErr
+					continue
+				}
+				logrus.Trace("adding storage diff to results",
+					"keccak of address: ", diff.HashedAddress.Hex(),
+					"block height: ", diff.BlockHeight,
+					"storage key: ", diff.StorageKey.Hex(),
+					"storage value: ", diff.StorageValue.Hex())
+				diffChan <- diff
+			}
+		}
+	}
+	// when this is done, send out a signal
+	doneChan <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
 }
