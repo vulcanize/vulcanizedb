@@ -77,16 +77,16 @@ func syncAndPublish() {
 	wg.Wait() // If an error was thrown, wg.Add was never called and this will fall through
 }
 
-func getBlockChainAndClient(path string) (*eth.BlockChain, core.RpcClient) {
+func getBlockChainAndClient(path string) (*eth.BlockChain, core.RPCClient) {
 	rawRPCClient, dialErr := rpc.Dial(path)
 	if dialErr != nil {
 		logWithCommand.Fatal(dialErr)
 	}
-	rpcClient := client.NewRpcClient(rawRPCClient, ipc)
+	rpcClient := client.NewRPCClient(rawRPCClient, ipc)
 	ethClient := ethclient.NewClient(rawRPCClient)
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
 	blockChain := eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 	return blockChain, rpcClient
 }

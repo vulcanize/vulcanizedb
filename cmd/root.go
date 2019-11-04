@@ -181,11 +181,11 @@ func getClients() (client.RPCClient, *ethclient.Client) {
 func getWSClient() core.RPCClient {
 	wsRPCpath := viper.GetString("client.wsPath")
 	if wsRPCpath == "" {
-		LogWithCommand.Fatal(errors.New("getWSClient() was called but no ws rpc path is provided"))
+		logWithCommand.Fatal(errors.New("getWSClient() was called but no ws rpc path is provided"))
 	}
 	wsRPCClient, dialErr := rpc.Dial(wsRPCpath)
 	if dialErr != nil {
-		LogWithCommand.Fatal(dialErr)
+		logWithCommand.Fatal(dialErr)
 	}
 	return client.NewRPCClient(wsRPCClient, wsRPCpath)
 }

@@ -216,7 +216,7 @@ func configureSubscription() {
 	}
 }
 
-func getRPCClient() core.RpcClient {
+func getRPCClient() core.RPCClient {
 	vulcPath := viper.GetString("subscription.path")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
@@ -225,5 +225,5 @@ func getRPCClient() core.RpcClient {
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	return client.NewRpcClient(rawRPCClient, vulcPath)
+	return client.NewRPCClient(rawRPCClient, vulcPath)
 }

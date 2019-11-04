@@ -63,7 +63,7 @@ type Service struct {
 	// Used to sync access to the Subscriptions
 	sync.Mutex
 	// Interface for streaming statediff payloads over a geth rpc subscription
-	Streamer streamer.IStateDiffStreamer
+	Streamer streamer.Streamer
 	// Interface for converting statediff payloads into ETH-IPLD object payloads
 	Converter ipfs.PayloadConverter
 	// Interface for publishing the ETH-IPLD payloads to IPFS
@@ -93,7 +93,7 @@ type Service struct {
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
-func NewSuperNode(ipfsPath string, db *postgres.DB, rpcClient core.RpcClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
+func NewSuperNode(ipfsPath string, db *postgres.DB, rpcClient core.RPCClient, qc chan bool, workers int, node core.Node) (NodeInterface, error) {
 	ipfsInitErr := ipfs.InitIPFSPlugins()
 	if ipfsInitErr != nil {
 		return nil, ipfsInitErr

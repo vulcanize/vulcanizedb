@@ -150,7 +150,7 @@ The config file for the `syncPublishScreenAndServe` command has two additional f
     ipcPath = "/Users/user/.vulcanize/vulcanize.ipc"
     wsEndpoint = "127.0.0.1:80"
     
-[backfill]
+[superNodeBackFill]
     on = false
     ipcPath = ""
     frequency = 5
@@ -163,9 +163,9 @@ be known by transformers for them to subscribe to the super node.
 
 Because the super node syncs data from a geth full node as it progresses through its block synchronization, there is potential
 for the super node to miss data both at the beginning of the sync due to lag between initialization of the two processes and
-anywhere throughout the sync if the processes are interrupted. The `backfill` config mapping is used to optionally configure
+anywhere throughout the sync if the processes are interrupted. The `superNodeBackFill` config mapping is used to optionally configure
 the super node with an archival geth client that exposes a `statediff.StateDiffAt` rpc endpoint, to enable it to fill in these data gaps.
-`backfill.on` turns the backfill process on, the `backfill.ipcPath` is the rpc path for the archival geth node, and `backfill.frequency`
+`superNodeBackFill.on` turns the backfill process on, the `superNodeBackFill.ipcPath` is the rpc path for the archival geth node, and `superNodeBackFill.frequency`
 sets at what frequency (in minutes) the backfill process checks for and fills in gaps.
 
 

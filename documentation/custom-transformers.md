@@ -100,7 +100,11 @@ The config provides information for composing a set of transformers from externa
 
 [client]
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
+<<<<<<< HEAD
     wsPath   = "ws://127.0.0.1:8546"
+=======
+    wsPath   = "http://127.0.0.1:"
+>>>>>>> review fixes
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
