@@ -26,13 +26,14 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 const (
-	DefaultMaxBatchSize   uint64 = 1000
+	DefaultMaxBatchSize   uint64 = 100
 	defaultMaxBatchNumber int64  = 10
 )
 
@@ -61,7 +62,7 @@ type BackFillService struct {
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RpcClient, freq time.Duration, batchSize uint64) (BackFillInterface, error) {
+func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RPCClient, freq time.Duration, batchSize uint64) (BackFillInterface, error) {
 	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
 	if err != nil {
 		return nil, err
@@ -120,7 +121,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
 	log.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 	errChan := make(chan error)
 	done := make(chan bool)
-	backFillInitErr := bfs.BackFill(startingBlock, endingBlock, errChan, done)
+	backFillInitErr := bfs.backFill(startingBlock, endingBlock, errChan, done)
 	if backFillInitErr != nil {
 		log.Error(backFillInitErr)
 		return
@@ -136,33 +137,18 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
 	}
 }
 
-// BackFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
+// backFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
-func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
+func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
 	if endingBlock < startingBlock {
 		return errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
+	//
 	// break the range up into bins of smaller ranges
-	length := endingBlock - startingBlock + 1
-	numberOfBins := length / bfs.BatchSize
-	remainder := length % bfs.BatchSize
-	if remainder != 0 {
-		numberOfBins++
+	blockRangeBins, err := utils.GetBlockHeightBins(startingBlock, endingBlock, bfs.BatchSize)
+	if err != nil {
+		return err
 	}
-	blockRangeBins := make([][]uint64, numberOfBins)
-	for i := range blockRangeBins {
-		nextBinStart := startingBlock + uint64(bfs.BatchSize)
-		if nextBinStart > endingBlock {
-			nextBinStart = endingBlock + 1
-		}
-		blockRange := make([]uint64, 0, nextBinStart-startingBlock+1)
-		for j := startingBlock; j < nextBinStart; j++ {
-			blockRange = append(blockRange, j)
-		}
-		startingBlock = nextBinStart
-		blockRangeBins[i] = blockRange
-	}
-
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
@@ -221,7 +207,7 @@ func (bfs *BackFillService) BackFill(startingBlock, endingBlock uint64, errChan 
 				}
 				log.Infof("finished filling in gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
 				goroutinesFinished++
-				if goroutinesFinished == int(numberOfBins) {
+				if goroutinesFinished >= len(blockRangeBins) {
 					done <- true
 					return
 				}

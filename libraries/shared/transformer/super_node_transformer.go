@@ -28,4 +28,4 @@ type SuperNodeTransformer interface {
 	GetConfig() config.Subscription
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon config.Subscription, client core.RpcClient) SuperNodeTransformer
+type SuperNodeTransformerInitializer func(db *postgres.DB, subCon config.Subscription, client core.RPCClient) SuperNodeTransformer

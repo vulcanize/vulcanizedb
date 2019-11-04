@@ -35,11 +35,11 @@ type ISuperNodeStreamer interface {
 
 // SuperNodeStreamer is the underlying struct for the ISuperNodeStreamer interface
 type SuperNodeStreamer struct {
-	Client core.RpcClient
+	Client core.RPCClient
 }
 
 // NewSuperNodeStreamer creates a pointer to a new SuperNodeStreamer which satisfies the ISuperNodeStreamer interface
-func NewSuperNodeStreamer(client core.RpcClient) *SuperNodeStreamer {
+func NewSuperNodeStreamer(client core.RPCClient) *SuperNodeStreamer {
 	return &SuperNodeStreamer{
 		Client: client,
 	}

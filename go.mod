@@ -30,7 +30,6 @@ require (
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.3.2
@@ -117,7 +116,6 @@ require (
 	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/libp2p/go-libp2p-peerstore v0.1.3
 	github.com/libp2p/go-libp2p-pnet v0.1.0
-	github.com/libp2p/go-libp2p-protocol v0.1.0 // indirect
 	github.com/libp2p/go-libp2p-pubsub v0.1.0
 	github.com/libp2p/go-libp2p-pubsub-router v0.1.0
 	github.com/libp2p/go-libp2p-quic-transport v0.1.1
@@ -135,10 +133,8 @@ require (
 	github.com/libp2p/go-nat v0.0.3
 	github.com/libp2p/go-reuseport v0.0.1
 	github.com/libp2p/go-reuseport-transport v0.0.2
-	github.com/libp2p/go-stream-muxer v0.1.0 // indirect
 	github.com/libp2p/go-stream-muxer-multistream v0.2.0
 	github.com/libp2p/go-tcp-transport v0.1.0
-	github.com/libp2p/go-testutil v0.1.0 // indirect
 	github.com/libp2p/go-ws-transport v0.1.0
 	github.com/libp2p/go-yamux v1.2.3
 	github.com/lucas-clemente/quic-go v0.11.2
@@ -214,7 +210,6 @@ require (
 	golang.org/x/text v0.3.2
 	golang.org/x/tools v0.0.0-20190802003818-e9bb7d36c060
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
-	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
