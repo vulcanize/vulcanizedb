@@ -44,11 +44,12 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("batch calls statediff_stateDiffAt", func() {
-			backFiller = storage.NewStorageBackFiller(mockFetcher, test_data.BlockNumber.Uint64(), 100)
+			backFiller = storage.NewStorageBackFiller(mockFetcher, 100)
 			backFill := make(chan utils.StorageDiff)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
+				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber2.Uint64(),
 				backFill,
 				errChan,
@@ -77,11 +78,12 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("has a configurable batch size", func() {
-			backFiller = storage.NewStorageBackFiller(mockFetcher, test_data.BlockNumber.Uint64(), 1)
+			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
 			backFill := make(chan utils.StorageDiff)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
+				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber2.Uint64(),
 				backFill,
 				errChan,
@@ -116,11 +118,12 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockFetcher.PayloadsToReturn = payloadsToReturn
 			// batch size of 2 with 1001 block range => 501 bins
-			backFiller = storage.NewStorageBackFiller(mockFetcher, test_data.BlockNumber.Uint64(), 2)
+			backFiller = storage.NewStorageBackFiller(mockFetcher, 2)
 			backFill := make(chan utils.StorageDiff)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
+				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber.Uint64()+1000,
 				backFill,
 				errChan,
@@ -151,11 +154,12 @@ var _ = Describe("BackFiller", func() {
 			mockFetcher.FetchErrs = map[uint64]error{
 				test_data.BlockNumber.Uint64(): errors.New("mock fetcher error"),
 			}
-			backFiller = storage.NewStorageBackFiller(mockFetcher, test_data.BlockNumber.Uint64(), 1)
+			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
 			backFill := make(chan utils.StorageDiff)
 			done := make(chan bool)
 			errChan := make(chan error)
 			backFillInitErr := backFiller.BackFill(
+				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber2.Uint64(),
 				backFill,
 				errChan,
@@ -188,11 +192,12 @@ var _ = Describe("BackFiller", func() {
 				test_data.BlockNumber2.Uint64(): errors.New("mock fetcher error"),
 			}
 			mockFetcher.CalledTimes = 0
-			backFiller = storage.NewStorageBackFiller(mockFetcher, test_data.BlockNumber.Uint64(), 1)
+			backFiller = storage.NewStorageBackFiller(mockFetcher, 1)
 			backFill = make(chan utils.StorageDiff)
 			done = make(chan bool)
 			errChan = make(chan error)
 			backFillInitErr = backFiller.BackFill(
+				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber2.Uint64(),
 				backFill,
 				errChan,

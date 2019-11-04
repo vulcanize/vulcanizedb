@@ -20,6 +20,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -48,7 +49,6 @@ var _ = Describe("Storage Watcher", func() {
 			Expect(w.KeccakAddressTransformers[fakeHashedAddress]).To(Equal(fakeTransformer))
 		})
 	})
-
 	Describe("Execute", func() {
 		var (
 			mockFetcher     *mocks.StorageFetcher
@@ -104,9 +104,11 @@ var _ = Describe("Storage Watcher", func() {
 			It("executes transformer for recognized storage diff", func(done Done) {
 				go storageWatcher.Execute(time.Hour, false)
 
-				Eventually(func() []utils.StorageDiff {
+				Eventually(func() map[int]utils.StorageDiff {
 					return mockTransformer.PassedDiffs
-				}).Should(Equal([]utils.StorageDiff{csvDiff}))
+				}).Should(Equal(map[int]utils.StorageDiff{
+					csvDiff.ID: csvDiff,
+				}))
 				close(done)
 			})
 
@@ -120,7 +122,7 @@ var _ = Describe("Storage Watcher", func() {
 				}).Should(BeTrue())
 				Eventually(func() utils.StorageDiff {
 					if len(mockQueue.AddPassedDiffs) > 0 {
-						return mockQueue.AddPassedDiffs[0]
+						return mockQueue.AddPassedDiffs[csvDiff.ID]
 					}
 					return utils.StorageDiff{}
 				}).Should(Equal(csvDiff))
@@ -150,7 +152,9 @@ var _ = Describe("Storage Watcher", func() {
 
 		Describe("transforming queued storage diffs", func() {
 			BeforeEach(func() {
-				mockQueue.DiffsToReturn = []utils.StorageDiff{csvDiff}
+				mockQueue.DiffsToReturn = map[int]utils.StorageDiff{
+					csvDiff.ID: csvDiff,
+				}
 				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
@@ -161,7 +165,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				Eventually(func() utils.StorageDiff {
 					if len(mockTransformer.PassedDiffs) > 0 {
-						return mockTransformer.PassedDiffs[0]
+						return mockTransformer.PassedDiffs[csvDiff.ID]
 					}
 					return utils.StorageDiff{}
 				}).Should(Equal(csvDiff))
@@ -201,7 +205,9 @@ var _ = Describe("Storage Watcher", func() {
 					ID:            csvDiff.ID + 1,
 					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
-				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
+				mockQueue.DiffsToReturn = map[int]utils.StorageDiff{
+					obsoleteDiff.ID: obsoleteDiff,
+				}
 
 				go storageWatcher.Execute(time.Nanosecond, false)
 
@@ -219,7 +225,9 @@ var _ = Describe("Storage Watcher", func() {
 					ID:            csvDiff.ID + 1,
 					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
-				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
+				mockQueue.DiffsToReturn = map[int]utils.StorageDiff{
+					obsoleteDiff.ID: obsoleteDiff,
+				}
 				mockQueue.DeleteErr = fakes.FakeError
 				tempFile, fileErr := ioutil.TempFile("", "log")
 				Expect(fileErr).NotTo(HaveOccurred())
@@ -239,20 +247,28 @@ var _ = Describe("Storage Watcher", func() {
 
 	Describe("BackFill", func() {
 		var (
-			mockFetcher      *mocks.StorageFetcher
-			mockBackFiller   *mocks.BackFiller
-			mockQueue        *mocks.MockStorageQueue
-			mockTransformer  *mocks.MockStorageTransformer
-			mockTransformer2 *mocks.MockStorageTransformer
-			mockTransformer3 *mocks.MockStorageTransformer
-			csvDiff          utils.StorageDiff
-			storageWatcher   *watcher.StorageWatcher
-			hashedAddress    common.Hash
+			mockFetcher                                          *mocks.StorageFetcher
+			mockBackFiller                                       *mocks.BackFiller
+			mockQueue                                            *mocks.MockStorageQueue
+			mockTransformer                                      *mocks.MockStorageTransformer
+			mockTransformer2                                     *mocks.MockStorageTransformer
+			mockTransformer3                                     *mocks.MockStorageTransformer
+			csvDiff                                              utils.StorageDiff
+			storageWatcher                                       *watcher.StorageWatcher
+			hashedAddress                                        common.Hash
+			createdDiff, updatedDiff1, deletedDiff, updatedDiff2 utils.StorageDiff
 		)
 
 		BeforeEach(func() {
+			createdDiff = test_data.CreatedExpectedStorageDiff
+			createdDiff.ID = 1333
+			updatedDiff1 = test_data.UpdatedExpectedStorageDiff
+			updatedDiff1.ID = 1334
+			deletedDiff = test_data.DeletedExpectedStorageDiff
+			deletedDiff.ID = 1335
+			updatedDiff2 = test_data.UpdatedExpectedStorageDiff2
+			updatedDiff2.ID = 1336
 			mockBackFiller = new(mocks.BackFiller)
-			mockBackFiller.StartingBlock = test_data.BlockNumber.Uint64()
 			hashedAddress = utils.HexToKeccak256Hash("0x0123456789abcdef")
 			mockFetcher = mocks.NewStorageFetcher()
 			mockQueue = &mocks.MockStorageQueue{}
@@ -269,16 +285,16 @@ var _ = Describe("Storage Watcher", func() {
 			}
 		})
 
-		Describe("transforming streamed and backfilled queued storage diffs", func() {
+		Describe("transforming streamed and backfilled storage diffs", func() {
 			BeforeEach(func() {
 				mockFetcher.DiffsToReturn = []utils.StorageDiff{csvDiff}
 				mockBackFiller.SetStorageDiffsToReturn([]utils.StorageDiff{
-					test_data.CreatedExpectedStorageDiff,
-					test_data.UpdatedExpectedStorageDiff,
-					test_data.DeletedExpectedStorageDiff,
-					test_data.UpdatedExpectedStorageDiff2,
+					createdDiff,
+					updatedDiff1,
+					deletedDiff,
+					updatedDiff2,
 				})
-				mockQueue.DiffsToReturn = []utils.StorageDiff{}
+				mockQueue.DiffsToReturn = map[int]utils.StorageDiff{}
 				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{
@@ -289,7 +305,7 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("executes transformer for storage diffs received from fetcher and backfiller", func(done Done) {
-				go storageWatcher.BackFill(mockBackFiller)
+				go storageWatcher.BackFill(test_data.BlockNumber.Uint64(), mockBackFiller)
 				go storageWatcher.Execute(time.Hour, true)
 
 				Eventually(func() int {
@@ -303,18 +319,18 @@ var _ = Describe("Storage Watcher", func() {
 				Eventually(func() int {
 					return len(mockTransformer3.PassedDiffs)
 				}).Should(Equal(3))
-				Expect(mockTransformer.PassedDiffs[0]).To(Equal(csvDiff))
 				Expect(mockBackFiller.PassedEndingBlock).To(Equal(uint64(test_data.BlockNumber2.Int64())))
-				Expect(mockTransformer2.PassedDiffs[0]).To(Equal(test_data.CreatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[0]).To(Equal(test_data.UpdatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[1]).To(Equal(test_data.DeletedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[2]).To(Equal(test_data.UpdatedExpectedStorageDiff2))
+				Expect(mockTransformer.PassedDiffs[csvDiff.ID]).To(Equal(csvDiff))
+				Expect(mockTransformer2.PassedDiffs[createdDiff.ID]).To(Equal(createdDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff1.ID]).To(Equal(updatedDiff1))
+				Expect(mockTransformer3.PassedDiffs[deletedDiff.ID]).To(Equal(deletedDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff2.ID]).To(Equal(updatedDiff2))
 				close(done)
 			})
 
 			It("adds diffs to the queue if transformation fails", func(done Done) {
 				mockTransformer3.ExecuteErr = fakes.FakeError
-				go storageWatcher.BackFill(mockBackFiller)
+				go storageWatcher.BackFill(test_data.BlockNumber.Uint64(), mockBackFiller)
 				go storageWatcher.Execute(time.Hour, true)
 
 				Eventually(func() int {
@@ -330,22 +346,23 @@ var _ = Describe("Storage Watcher", func() {
 				Eventually(func() bool {
 					return mockQueue.AddCalled
 				}).Should(BeTrue())
-				Eventually(func() []utils.StorageDiff {
+				Eventually(func() map[int]utils.StorageDiff {
 					if len(mockQueue.AddPassedDiffs) > 2 {
 						return mockQueue.AddPassedDiffs
 					}
-					return []utils.StorageDiff{}
-				}).Should(Equal([]utils.StorageDiff{
-					test_data.UpdatedExpectedStorageDiff,
-					test_data.DeletedExpectedStorageDiff,
-					test_data.UpdatedExpectedStorageDiff2,
+					return map[int]utils.StorageDiff{}
+				}).Should(Equal(map[int]utils.StorageDiff{
+					updatedDiff1.ID: updatedDiff1,
+					deletedDiff.ID:  deletedDiff,
+					updatedDiff2.ID: updatedDiff2,
 				}))
 
-				Expect(mockTransformer.PassedDiffs[0]).To(Equal(csvDiff))
-				Expect(mockTransformer2.PassedDiffs[0]).To(Equal(test_data.CreatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[0]).To(Equal(test_data.UpdatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[1]).To(Equal(test_data.DeletedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[2]).To(Equal(test_data.UpdatedExpectedStorageDiff2))
+				Expect(mockBackFiller.PassedEndingBlock).To(Equal(uint64(test_data.BlockNumber2.Int64())))
+				Expect(mockTransformer.PassedDiffs[csvDiff.ID]).To(Equal(csvDiff))
+				Expect(mockTransformer2.PassedDiffs[createdDiff.ID]).To(Equal(createdDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff1.ID]).To(Equal(updatedDiff1))
+				Expect(mockTransformer3.PassedDiffs[deletedDiff.ID]).To(Equal(deletedDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff2.ID]).To(Equal(updatedDiff2))
 				close(done)
 			})
 
@@ -362,7 +379,7 @@ var _ = Describe("Storage Watcher", func() {
 					errors.New("mock backfiller error"),
 				}
 
-				go storageWatcher.BackFill(mockBackFiller)
+				go storageWatcher.BackFill(test_data.BlockNumber.Uint64(), mockBackFiller)
 				go storageWatcher.Execute(time.Hour, true)
 
 				Eventually(func() int {
@@ -387,7 +404,7 @@ var _ = Describe("Storage Watcher", func() {
 				defer os.Remove(tempFile.Name())
 				logrus.SetOutput(tempFile)
 
-				go storageWatcher.BackFill(mockBackFiller)
+				go storageWatcher.BackFill(test_data.BlockNumber.Uint64(), mockBackFiller)
 				go storageWatcher.Execute(time.Hour, true)
 
 				Eventually(func() (string, error) {
@@ -398,17 +415,14 @@ var _ = Describe("Storage Watcher", func() {
 			})
 		})
 
-		Describe("transforms storage diffs", func() {
+		Describe("transforms queued storage diffs", func() {
 			BeforeEach(func() {
-				test_data.CreatedExpectedStorageDiff.ID = 1334
-				test_data.UpdatedExpectedStorageDiff.ID = 1335
-				test_data.DeletedExpectedStorageDiff.ID = 1336
-				test_data.UpdatedExpectedStorageDiff2.ID = 1337
-				mockQueue.DiffsToReturn = []utils.StorageDiff{csvDiff,
-					test_data.CreatedExpectedStorageDiff,
-					test_data.UpdatedExpectedStorageDiff,
-					test_data.DeletedExpectedStorageDiff,
-					test_data.UpdatedExpectedStorageDiff2,
+				mockQueue.DiffsToReturn = map[int]utils.StorageDiff{
+					csvDiff.ID:      csvDiff,
+					createdDiff.ID:  createdDiff,
+					updatedDiff1.ID: updatedDiff1,
+					deletedDiff.ID:  deletedDiff,
+					updatedDiff2.ID: updatedDiff2,
 				}
 				storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 				storageWatcher.Queue = mockQueue
@@ -420,7 +434,7 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			It("executes transformers on queued storage diffs", func(done Done) {
-				go storageWatcher.BackFill(mockBackFiller)
+				go storageWatcher.BackFill(test_data.BlockNumber.Uint64(), mockBackFiller)
 				go storageWatcher.Execute(time.Nanosecond, true)
 
 				Eventually(func() int {
@@ -435,26 +449,29 @@ var _ = Describe("Storage Watcher", func() {
 				Eventually(func() bool {
 					return mockQueue.GetAllCalled
 				}).Should(BeTrue())
+				sortedExpectedIDs := []int{
+					csvDiff.ID,
+					createdDiff.ID,
+					updatedDiff1.ID,
+					deletedDiff.ID,
+					updatedDiff2.ID,
+				}
+				sort.Ints(sortedExpectedIDs)
 				Eventually(func() []int {
 					if len(mockQueue.DeletePassedIds) > 4 {
+						sort.Ints(mockQueue.DeletePassedIds)
 						return mockQueue.DeletePassedIds
 					}
 					return []int{}
-				}).Should(Equal([]int{
-					csvDiff.ID,
-					test_data.CreatedExpectedStorageDiff.ID,
-					test_data.UpdatedExpectedStorageDiff.ID,
-					test_data.DeletedExpectedStorageDiff.ID,
-					test_data.UpdatedExpectedStorageDiff2.ID,
-				}))
+				}).Should(Equal(sortedExpectedIDs))
 
 				Expect(mockQueue.AddCalled).To(Not(BeTrue()))
 				Expect(len(mockQueue.DiffsToReturn)).To(Equal(0))
-				Expect(mockTransformer.PassedDiffs[0]).To(Equal(csvDiff))
-				Expect(mockTransformer2.PassedDiffs[0]).To(Equal(test_data.CreatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[0]).To(Equal(test_data.UpdatedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[1]).To(Equal(test_data.DeletedExpectedStorageDiff))
-				Expect(mockTransformer3.PassedDiffs[2]).To(Equal(test_data.UpdatedExpectedStorageDiff2))
+				Expect(mockTransformer.PassedDiffs[csvDiff.ID]).To(Equal(csvDiff))
+				Expect(mockTransformer2.PassedDiffs[createdDiff.ID]).To(Equal(createdDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff1.ID]).To(Equal(updatedDiff1))
+				Expect(mockTransformer3.PassedDiffs[deletedDiff.ID]).To(Equal(deletedDiff))
+				Expect(mockTransformer3.PassedDiffs[updatedDiff2.ID]).To(Equal(updatedDiff2))
 				close(done)
 			})
 		})

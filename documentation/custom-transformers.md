@@ -100,6 +100,7 @@ The config provides information for composing a set of transformers from externa
 
 [client]
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
+    wsPath   = "ws://127.0.0.1:8546"
 
 [exporter]
     home     = "github.com/vulcanize/vulcanizedb"
@@ -160,6 +161,7 @@ The config provides information for composing a set of transformers from externa
         - don't leave gaps
         - transformers with identical migrations/migration paths should share the same rank
 - Note: If any of the imported transformers need additional config variables those need to be included as well   
+- Note: If the storage transformers are processing storage diffs from geth, we need to configure the websocket endpoint `client.wsPath` for them
 
 This information is used to write and build a Go plugin which exports the configured transformers.
 These transformers are loaded onto their specified watchers and executed.
@@ -204,7 +206,7 @@ To do so, add the following fields to the config file.
 ```toml
 [storageBackFill]
     on = false
-    rpcPath = ""
 ```
 - `on` is set to `true` to turn the backfill process on
-- `rpcPath` is the websocket or ipc path to the modified archival geth node that exposes the `StateDiffAt` rpc endpoint we can use to backfill storage diffs
+
+This process uses the regular `client.ipcPath` rpc path, it assumes that it is either an http or ipc path that supports the `StateDiffAt` endpoint.

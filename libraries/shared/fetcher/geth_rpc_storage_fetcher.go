@@ -18,6 +18,7 @@ package fetcher
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
@@ -64,10 +65,11 @@ func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 		accounts := utils.GetAccountsFromDiff(*stateDiff)
 		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
 		for _, account := range accounts {
-			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.Storage), common.BytesToHash(account.Key).Hex()))
 			for _, storage := range account.Storage {
 				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
 				if formatErr != nil {
+					logrus.Error("failed to format utils.StorageDiff from storage with key: ", common.BytesToHash(storage.Key), "from account with key: ", common.BytesToHash(account.Key))
 					errs <- formatErr
 					continue
 				}

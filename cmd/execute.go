@@ -17,13 +17,11 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"plugin"
 	syn "sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,7 +32,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
@@ -44,28 +41,22 @@ var executeCmd = &cobra.Command{
 	Use:   "execute",
 	Short: "executes a precomposed transformer initializer plugin",
 	Long: `This command needs a config .toml file of form:
-
 [database]
     name     = "vulcanize_public"
     hostname = "localhost"
     user     = "vulcanize"
     password = "vulcanize"
     port     = 5432
-
 [client]
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
-
 [exporter]
     name     = "exampleTransformerExporter"
-
 Note: If any of the plugin transformer need additional
 configuration variables include them in the .toml file as well
-
 The exporter.name is the name (without extension) of the plugin to be loaded.
 The plugin file needs to be located in the /plugins directory and this command assumes 
 the db migrations remain from when the plugin was composed. Additionally, the plugin 
 must have been composed by the same version of vulcanizedb or else it will not be compatible.
-
 Specify config location when executing the command:
 ./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -131,8 +122,8 @@ func execute() {
 		switch storageDiffsSource {
 		case "geth":
 			log.Debug("fetching storage diffs from geth pub sub")
-			rpcClient, _ := getClients()
-			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
+			wsClient := getWSClient()
+			stateDiffStreamer := streamer.NewStateDiffStreamer(wsClient)
 			storageFetcher := fetcher.NewGethRPCStorageFetcher(stateDiffStreamer)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
@@ -196,22 +187,12 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 }
 
 func backFillStorage(w watcher.IStorageWatcher) {
-	// configure archival rpc client
-	// move this all into the storage watcher?
-	archivalRPCPath := viper.GetString("storageBackFill.rpcPath")
-	if archivalRPCPath == "" {
-		LogWithCommand.Fatal(errors.New("storage backfill is turned on but no rpc path is provided"))
-	}
-	rawRPCClient, dialErr := rpc.Dial(archivalRPCPath)
-	if dialErr != nil {
-		LogWithCommand.Fatal(dialErr)
-	}
-	rpcClient := client.NewRPCClient(rawRPCClient, archivalRPCPath)
+	rpcClient, _ := getClients()
 	// find min deployment block
 	minDeploymentBlock := constants.GetMinDeploymentBlock()
 	stateDiffFetcher := fetcher.NewStateDiffFetcher(rpcClient)
-	backFiller := storage.NewStorageBackFiller(stateDiffFetcher, uint64(minDeploymentBlock), storage.DefaultMaxBatchSize)
-	go w.BackFill(backFiller)
+	backFiller := storage.NewStorageBackFiller(stateDiffFetcher, storage.DefaultMaxBatchSize)
+	go w.BackFill(minDeploymentBlock, backFiller)
 }
 
 func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
