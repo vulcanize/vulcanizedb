@@ -69,8 +69,8 @@ integrationtest: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
 	$(GINKGO) -r integration_test/
 
