@@ -20,14 +20,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/pkg/crypto"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/cold_import"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/cold_db"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"github.com/vulcanize/vulcanizedb/utils"
+	"github.com/makerdao/vulcanizedb/pkg/crypto"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/ethereum"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/eth/cold_import"
+	"github.com/makerdao/vulcanizedb/pkg/eth/converters/cold_db"
+	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/utils"
 )
 
 var coldImportCmd = &cobra.Command{

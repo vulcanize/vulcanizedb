@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
 type MockLogDelegator struct {

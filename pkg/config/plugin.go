@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
 )
 
 type Plugin struct {

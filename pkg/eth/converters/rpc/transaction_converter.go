@@ -30,8 +30,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
 )
 
 type RpcTransactionConverter struct {

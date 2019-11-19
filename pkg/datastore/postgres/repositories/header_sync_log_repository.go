@@ -21,10 +21,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 const insertHeaderSyncLogQuery = `INSERT INTO header_sync_logs

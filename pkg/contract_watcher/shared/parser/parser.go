@@ -22,9 +22,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
 )
 
 // Parser is used to fetch and parse contract ABIs

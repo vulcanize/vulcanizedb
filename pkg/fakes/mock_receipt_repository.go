@@ -20,7 +20,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type MockReceiptRepository struct {

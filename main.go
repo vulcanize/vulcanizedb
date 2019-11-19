@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/vulcanize/vulcanizedb/cmd"
+	"github.com/makerdao/vulcanizedb/cmd"
 
 	"os"
 

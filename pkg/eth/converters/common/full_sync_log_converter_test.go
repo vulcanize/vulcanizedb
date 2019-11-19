@@ -25,8 +25,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
 )
 
 var _ = Describe("Conversion of GethLog to core.FullSyncLog", func() {

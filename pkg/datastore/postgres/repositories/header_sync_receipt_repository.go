@@ -19,8 +19,8 @@ package repositories
 import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/jmoiron/sqlx"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type HeaderSyncReceiptRepository struct{}

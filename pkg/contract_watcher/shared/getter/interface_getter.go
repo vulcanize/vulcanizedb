@@ -19,9 +19,9 @@ package getter
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/fetcher"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 // InterfaceGetter is used to derive the interface of a contract

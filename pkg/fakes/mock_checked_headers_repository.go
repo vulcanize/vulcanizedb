@@ -17,7 +17,7 @@
 package fakes
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type MockCheckedHeadersRepository struct {

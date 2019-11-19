@@ -18,9 +18,9 @@ package cmd
 
 import (
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
+	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"os"
 	"plugin"
 	syn "sync"
@@ -29,10 +29,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
-	"github.com/vulcanize/vulcanizedb/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	p2 "github.com/makerdao/vulcanizedb/pkg/plugin"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
+	"github.com/makerdao/vulcanizedb/utils"
 )
 
 // composeAndExecuteCmd represents the composeAndExecute command
@@ -52,7 +52,7 @@ var composeAndExecuteCmd = &cobra.Command{
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
-    home     = "github.com/vulcanize/vulcanizedb"
+    home     = "github.com/makerdao/vulcanizedb"
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [

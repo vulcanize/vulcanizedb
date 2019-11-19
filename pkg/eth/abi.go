@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 )
 
 var (

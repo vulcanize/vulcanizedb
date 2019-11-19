@@ -1,4 +1,4 @@
-module github.com/vulcanize/vulcanizedb
+module github.com/makerdao/vulcanizedb
 
 go 1.12
 

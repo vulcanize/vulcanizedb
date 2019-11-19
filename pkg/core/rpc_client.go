@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 )
 
 type RpcClient interface {

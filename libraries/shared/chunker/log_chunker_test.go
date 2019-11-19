@@ -19,11 +19,11 @@ package chunker_test
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	chunk "github.com/makerdao/vulcanizedb/libraries/shared/chunker"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	chunk "github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 var _ = Describe("Log chunker", func() {

@@ -19,8 +19,8 @@ package mocks
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
 )
 
 // Mock parser

@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 )
 
 type MockEthClient struct {

@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/history"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/pkg/history"
 	"math/big"
 )
 

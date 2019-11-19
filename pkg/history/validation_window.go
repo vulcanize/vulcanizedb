@@ -18,8 +18,8 @@ package history
 
 import (
 	"fmt"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	log "github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type ValidationWindow struct {

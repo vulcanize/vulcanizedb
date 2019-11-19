@@ -17,8 +17,8 @@ package streamer
 import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type Streamer interface {

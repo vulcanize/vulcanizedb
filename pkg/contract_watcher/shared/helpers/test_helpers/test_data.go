@@ -19,8 +19,8 @@ package test_helpers
 import (
 	"strings"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
 )
 
 var ens = strings.ToLower(constants.EnsContractAddress)

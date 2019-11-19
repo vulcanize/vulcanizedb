@@ -19,7 +19,7 @@ package cold_db
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	"golang.org/x/sync/errgroup"
 	"strings"
 )

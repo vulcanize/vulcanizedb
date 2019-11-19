@@ -6,7 +6,7 @@ services:
 - postgresql
 addons:
   postgresql: '11.2'
-go_import_path: github.com/vulcanize/vulcanizedb
+go_import_path: github.com/makerdao/vulcanizedb
 before_install:
 - make installtools
 - bash ./scripts/install-postgres-11.sh

@@ -23,8 +23,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
 )
 
 // Interface for compile Go code written by the
