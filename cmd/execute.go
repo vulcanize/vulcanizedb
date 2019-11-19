@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
@@ -74,28 +73,28 @@ Specify config location when executing the command:
 
 func execute() {
 	// Build plugin generator config
-	prepConfig()
-
-	// Get the plugin path and load the plugin
-	_, pluginPath, err := genConfig.GetPluginPaths()
-	if err != nil {
-		LogWithCommand.Fatal(err)
+	configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}
 
-	fmt.Printf("Executing plugin %s", pluginPath)
+	// Get the plugin path and load the plugin
+	_, pluginPath, pathErr := genConfig.GetPluginPaths()
+	if pathErr != nil {
+		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
+	}
+
 	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Warn("linking plugin failed")
-		LogWithCommand.Fatal(err)
+	plug, openErr := plugin.Open(pluginPath)
+	if openErr != nil {
+		LogWithCommand.Fatalf("linking plugin failed: %s", openErr.Error())
 	}
 
 	// Load the `Exporter` symbol from the plugin
 	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := plug.Lookup("Exporter")
-	if err != nil {
-		LogWithCommand.Warn("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
+	symExporter, lookupErr := plug.Lookup("Exporter")
+	if lookupErr != nil {
+		LogWithCommand.Fatalf("loading Exporter symbol failed: %s", lookupErr.Error())
 	}
 
 	// Assert that the symbol is of type Exporter
@@ -116,9 +115,9 @@ func execute() {
 	var wg syn.WaitGroup
 	if len(ethEventInitializers) > 0 {
 		ew := watcher.NewEventWatcher(&db, blockChain)
-		err = ew.AddTransformers(ethEventInitializers)
-		if err != nil {
-			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
+		addErr := ew.AddTransformers(ethEventInitializers)
+		if addErr != nil {
+			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())
 		}
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)

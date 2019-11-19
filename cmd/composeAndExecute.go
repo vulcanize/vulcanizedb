@@ -21,7 +21,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
-	"os"
 	"plugin"
 	syn "sync"
 	"time"
@@ -116,48 +115,47 @@ Specify config location when executing the command:
 
 func composeAndExecute() {
 	// Build plugin generator config
-	prepConfig()
+	configErr := prepConfig()
+	if configErr != nil {
+		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
+	}
 
 	// Generate code to build the plugin according to the config file
 	LogWithCommand.Info("generating plugin")
-	generator, err := p2.NewGenerator(genConfig, databaseConfig)
-	if err != nil {
-		LogWithCommand.Fatal(err)
+	generator, constructorErr := p2.NewGenerator(genConfig, databaseConfig)
+	if constructorErr != nil {
+		LogWithCommand.Fatalf("failed to initialize generator: %s", constructorErr.Error())
 	}
-	err = generator.GenerateExporterPlugin()
-	if err != nil {
-		LogWithCommand.Debug("generating plugin failed")
-		LogWithCommand.Fatal(err)
+	generateErr := generator.GenerateExporterPlugin()
+	if generateErr != nil {
+		LogWithCommand.Fatalf("generating plugin failed: %s", generateErr.Error())
 	}
 
 	// Get the plugin path and load the plugin
-	_, pluginPath, err := genConfig.GetPluginPaths()
-	if err != nil {
-		LogWithCommand.Fatal(err)
+	_, pluginPath, pathErr := genConfig.GetPluginPaths()
+	if pathErr != nil {
+		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
 	}
 	if !genConfig.Save {
 		defer helpers.ClearFiles(pluginPath)
 	}
 	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Debug("linking plugin failed")
-		LogWithCommand.Fatal(err)
+	plug, openErr := plugin.Open(pluginPath)
+	if openErr != nil {
+		LogWithCommand.Fatalf("linking plugin failed: %s", openErr.Error())
 	}
 
 	// Load the `Exporter` symbol from the plugin
 	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := plug.Lookup("Exporter")
-	if err != nil {
-		LogWithCommand.Debug("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
+	symExporter, lookupErr := plug.Lookup("Exporter")
+	if lookupErr != nil {
+		LogWithCommand.Fatalf("loading Exporter symbol failed: %s", lookupErr.Error())
 	}
 
 	// Assert that the symbol is of type Exporter
 	exporter, ok := symExporter.(Exporter)
 	if !ok {
-		LogWithCommand.Debug("plugged-in symbol not of type Exporter")
-		os.Exit(1)
+		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
 	}
 
 	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
