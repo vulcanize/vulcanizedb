@@ -96,31 +96,27 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
-	if err != nil && err != logs.ErrNoUncheckedHeaders {
-		errs <- err
-		return
-	}
-
-	if err == logs.ErrNoUncheckedHeaders {
-		time.Sleep(NoNewDataPause)
-		watcher.extractLogs(recheckHeaders, errs)
-	} else {
-		watcher.extractLogs(recheckHeaders, errs)
+	for {
+		err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
+		if err != nil && err != logs.ErrNoUncheckedHeaders {
+			errs <- err
+			return
+		}
+		if err == logs.ErrNoUncheckedHeaders {
+			time.Sleep(NoNewDataPause)
+		}
 	}
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	err := watcher.LogDelegator.DelegateLogs()
-	if err != nil && err != logs.ErrNoLogs {
-		errs <- err
-		return
-	}
-
-	if err == logs.ErrNoLogs {
-		time.Sleep(NoNewDataPause)
-		watcher.delegateLogs(errs)
-	} else {
-		watcher.delegateLogs(errs)
+	for {
+		err := watcher.LogDelegator.DelegateLogs()
+		if err != nil && err != logs.ErrNoLogs {
+			errs <- err
+			return
+		}
+		if err == logs.ErrNoLogs {
+			time.Sleep(NoNewDataPause)
+		}
 	}
 }
