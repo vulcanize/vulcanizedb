@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	p2 "github.com/vulcanize/vulcanizedb/pkg/plugin"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	p2 "github.com/makerdao/vulcanizedb/pkg/plugin"
 )
 
 // composeCmd represents the compose command
@@ -46,7 +46,7 @@ var composeCmd = &cobra.Command{
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
-    home     = "github.com/vulcanize/vulcanizedb"
+    home     = "github.com/makerdao/vulcanizedb"
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
@@ -184,7 +184,7 @@ func prepConfig() {
 
 	genConfig = config.Plugin{
 		Transformers: transformers,
-		FilePath:     "$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins",
+		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
 		Home:         viper.GetString("exporter.home"),

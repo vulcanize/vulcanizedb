@@ -18,9 +18,9 @@ package constants
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/helpers"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
 
 // Event enums

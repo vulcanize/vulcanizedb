@@ -22,9 +22,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
 
 type FilterRepository struct {

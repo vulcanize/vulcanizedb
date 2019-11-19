@@ -26,17 +26,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fc "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/converter"
-	lc "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/converter"
-	lr "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
-	sr "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	fc "github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/converter"
+	lc "github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/converter"
+	lr "github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/repository"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
+	sr "github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
 var _ = Describe("Repository", func() {

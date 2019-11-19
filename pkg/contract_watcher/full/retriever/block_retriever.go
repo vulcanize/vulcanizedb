@@ -19,8 +19,8 @@ package retriever
 import (
 	"database/sql"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 // BlockRetriever is used to retrieve the first block for a given contract and the most recent block

@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	common2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	common2 "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 )
 
 var _ = Describe("Block header converter", func() {

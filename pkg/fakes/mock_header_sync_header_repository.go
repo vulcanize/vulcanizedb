@@ -1,6 +1,6 @@
 package fakes
 
-import "github.com/vulcanize/vulcanizedb/pkg/core"
+import "github.com/makerdao/vulcanizedb/pkg/core"
 
 type MockHeaderSyncHeaderRepository struct {
 }

@@ -22,13 +22,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/retriever"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/poller"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/retriever"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/parser"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/poller"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 )
 
 var _ = Describe("Transformer", func() {

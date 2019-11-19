@@ -19,8 +19,8 @@ package postgres
 import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type DB struct {

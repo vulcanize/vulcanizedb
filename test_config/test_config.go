@@ -19,13 +19,13 @@ package test_config
 import (
 	"errors"
 	"fmt"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"os"
 )
 
@@ -42,7 +42,7 @@ func init() {
 func setTestConfig() {
 	TestConfig = viper.New()
 	TestConfig.SetConfigName("testing")
-	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	TestConfig.AddConfigPath("$GOPATH/src/github.com/makerdao/vulcanizedb/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {
 		logrus.Fatal(err)
@@ -74,7 +74,7 @@ func setTestConfig() {
 
 func setABIPath() {
 	gp := os.Getenv("GOPATH")
-	ABIFilePath = gp + "/src/github.com/vulcanize/vulcanizedb/pkg/eth/testing/"
+	ABIFilePath = gp + "/src/github.com/makerdao/vulcanizedb/pkg/eth/testing/"
 }
 
 func NewTestDB(node core.Node) *postgres.DB {

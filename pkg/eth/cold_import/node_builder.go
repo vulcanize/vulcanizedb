@@ -19,9 +19,9 @@ package cold_import
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/crypto"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/crypto"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"strings"
 )
 

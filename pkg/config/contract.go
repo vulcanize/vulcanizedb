@@ -17,9 +17,9 @@
 package config
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/eth"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"strings"
 )
 

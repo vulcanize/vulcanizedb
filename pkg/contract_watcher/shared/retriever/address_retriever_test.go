@@ -21,15 +21,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/retriever"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/converter"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/retriever"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 var mockEvent = core.WatchedEvent{

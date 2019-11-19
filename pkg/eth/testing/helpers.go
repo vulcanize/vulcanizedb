@@ -19,9 +19,9 @@ package testing
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
-	"github.com/vulcanize/vulcanizedb/test_config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/test_config"
 )
 
 func SampleContract() core.Contract {

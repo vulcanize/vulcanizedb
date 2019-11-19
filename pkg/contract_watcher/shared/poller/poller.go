@@ -26,11 +26,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 // Poller is the interface for polling public contract methods

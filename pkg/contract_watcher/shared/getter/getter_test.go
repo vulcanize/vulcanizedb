@@ -22,13 +22,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/getter"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
-	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
-	"github.com/vulcanize/vulcanizedb/test_config"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/getter"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/eth/client"
+	rpc2 "github.com/makerdao/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/makerdao/vulcanizedb/pkg/eth/node"
+	"github.com/makerdao/vulcanizedb/test_config"
 )
 
 var _ = Describe("Interface Getter", func() {

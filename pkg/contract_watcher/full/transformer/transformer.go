@@ -21,18 +21,18 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/converter"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/retriever"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/parser"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/poller"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/repository"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/converter"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/retriever"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/parser"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/poller"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/repository"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
 // Transformer is the top level struct for transforming watched contract data

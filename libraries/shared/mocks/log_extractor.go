@@ -17,8 +17,8 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
 type MockLogExtractor struct {

@@ -16,7 +16,7 @@
 
 package fakes
 
-import "github.com/vulcanize/vulcanizedb/pkg/filters"
+import "github.com/makerdao/vulcanizedb/pkg/filters"
 
 type MockFilterRepository struct {
 }

@@ -7,7 +7,7 @@
     ipcPath = ""
 
 [exporter]
-    home     = "github.com/vulcanize/vulcanizedb"
+    home     = "github.com/makerdao/vulcanizedb"
     name     = "accountTransformerExporter"
     save     = false
     transformerNames = [

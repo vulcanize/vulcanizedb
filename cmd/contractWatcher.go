@@ -18,16 +18,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/config"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
-	ht "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
-	"github.com/vulcanize/vulcanizedb/utils"
+	st "github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	ft "github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/transformer"
+	ht "github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/transformer"
+	"github.com/makerdao/vulcanizedb/utils"
 )
 
 // contractWatcherCmd represents the contractWatcher command

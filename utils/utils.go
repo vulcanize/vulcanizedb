@@ -23,10 +23,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
 )
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {

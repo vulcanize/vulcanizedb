@@ -19,8 +19,8 @@ package datastore
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
 
 type AddressRepository interface {

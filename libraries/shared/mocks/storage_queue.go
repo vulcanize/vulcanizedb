@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 )
 
 type MockStorageQueue struct {

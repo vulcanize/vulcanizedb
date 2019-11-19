@@ -16,7 +16,7 @@
 
 package mocks
 
-import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+import "github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 
 type MockStorageFetcher struct {
 	DiffsToReturn []utils.StorageDiff

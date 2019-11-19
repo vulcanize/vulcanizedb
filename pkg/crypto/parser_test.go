@@ -17,9 +17,9 @@
 package crypto_test
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/crypto"
 )
 
 var _ = Describe("Public key parser", func() {

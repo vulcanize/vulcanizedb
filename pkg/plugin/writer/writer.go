@@ -22,8 +22,8 @@ import (
 
 	. "github.com/dave/jennifer/jen"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/helpers"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
 )
 
 // Interface for writing a .go file for a simple
@@ -57,7 +57,7 @@ func (w *writer) WritePlugin() error {
 	f.HeaderComment("This is a plugin generated to export the configured transformer initializers")
 
 	// Import pkgs for generic TransformerInitializer interface and specific TransformerInitializers specified in config
-	f.ImportAlias("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "interface")
+	f.ImportAlias("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "interface")
 	for name, transformer := range w.GenConfig.Transformers {
 		f.ImportAlias(transformer.RepositoryPath+"/"+transformer.Path, name)
 	}
@@ -72,18 +72,18 @@ func (w *writer) WritePlugin() error {
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
 	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Parens(List(
-		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "EventTransformerInitializer"),
-		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
-		Index().Qual("github.com/vulcanize/vulcanizedb/libraries/shared/transformer", "ContractTransformerInitializer"),
+		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "EventTransformerInitializer"),
+		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
+		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "ContractTransformerInitializer"),
 	)).Block(Return(
 		Index().Qual(
-			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
 			"EventTransformerInitializer").Values(code[config.EthEvent]...),
 		Index().Qual(
-			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
 			"StorageTransformerInitializer").Values(code[config.EthStorage]...),
 		Index().Qual(
-			"github.com/vulcanize/vulcanizedb/libraries/shared/transformer",
+			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
 			"ContractTransformerInitializer").Values(code[config.EthContract]...))) // Exports the collected event and storage transformer initializers
 
 	// Write code to destination file
