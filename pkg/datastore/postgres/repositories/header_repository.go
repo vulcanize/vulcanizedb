@@ -21,10 +21,9 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/sirupsen/logrus"
 )
 
 var ErrValidHeaderExists = errors.New("valid header already exists")
@@ -43,7 +42,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 		if headerDoesNotExist(err) {
 			return repository.InternalInsertHeader(header)
 		}
-		log.Error("CreateOrUpdateHeader: error getting header hash: ", err)
+		logrus.Error("CreateOrUpdateHeader: error getting header hash: ", err)
 		return 0, err
 	}
 	if headerMustBeReplaced(hash, header) {
@@ -79,7 +78,7 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 		transaction.Data, transaction.Nonce, transaction.Raw, transaction.From,
 		transaction.TxIndex, transaction.To, transaction.Value).Scan(&txId)
 	if err != nil {
-		log.Error("header_repository: error inserting transaction: ", err)
+		logrus.Error("header_repository: error inserting transaction: ", err)
 		return txId, err
 	}
 	return txId, err
@@ -90,7 +89,7 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		blockNumber, repository.database.Node.ID)
 	if err != nil {
-		log.Error("GetHeader: error getting headers: ", err)
+		logrus.Error("GetHeader: error getting headers: ", err)
 	}
 	return header, err
 }
@@ -106,7 +105,7 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 			WHERE  synced.block_number IS NULL`,
 		startingBlockNumber, endingBlockNumber, nodeID)
 	if err != nil {
-		log.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
+		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
 			startingBlockNumber, endingBlockNumber, nodeID)
 		return []int64{}, err
 	}
@@ -142,7 +141,7 @@ func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int
 		if err == sql.ErrNoRows {
 			return 0, ErrValidHeaderExists
 		}
-		log.Error("InternalInsertHeader: error inserting header: ", err)
+		logrus.Error("InternalInsertHeader: error inserting header: ", err)
 	}
 	return headerId, err
 }
@@ -151,7 +150,7 @@ func (repository HeaderRepository) replaceHeader(header core.Header) (int64, err
 	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
 		header.BlockNumber, repository.database.Node.ID)
 	if err != nil {
-		log.Error("replaceHeader: error deleting headers: ", err)
+		logrus.Error("replaceHeader: error deleting headers: ", err)
 		return 0, err
 	}
 	return repository.InternalInsertHeader(header)
