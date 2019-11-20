@@ -17,22 +17,21 @@
 package cmd
 
 import (
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
-	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
-	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"plugin"
 	syn "sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	storageUtils "github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // executeCmd represents the execute command
@@ -66,7 +65,7 @@ Specify config location when executing the command:
 ./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		execute()
 	},
 }
@@ -126,7 +125,7 @@ func execute() {
 	if len(ethStorageInitializers) > 0 {
 		switch storageDiffsSource {
 		case "geth":
-			log.Debug("fetching storage diffs from geth pub sub")
+			logrus.Debug("fetching storage diffs from geth pub sub")
 			rpcClient, _ := getClients()
 			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 			payloadChan := make(chan statediff.Payload)
@@ -136,7 +135,7 @@ func execute() {
 			wg.Add(1)
 			go watchEthStorage(&sw, &wg)
 		default:
-			log.Debug("fetching storage diffs from csv")
+			logrus.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
 			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)

@@ -17,17 +17,16 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-
 	"github.com/makerdao/vulcanizedb/pkg/crypto"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/ethereum"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/eth/cold_import"
 	"github.com/makerdao/vulcanizedb/pkg/eth/converters/cold_db"
-	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var coldImportCmd = &cobra.Command{
@@ -40,7 +39,7 @@ var coldImportCmd = &cobra.Command{
 Geth must be synced over all of the desired blocks and must not be running in order to execute this command.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		coldImport()
 	},
 }
@@ -86,7 +85,7 @@ func coldImport() {
 	blockRepository := repositories.NewBlockRepository(&pgDB)
 	receiptRepository := repositories.FullSyncReceiptRepository{DB: &pgDB}
 	transactionConverter := cold_db.NewColdDbTransactionConverter()
-	blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
+	blockConverter := common.NewBlockConverter(transactionConverter)
 
 	// init and execute cold importer
 	coldImporter := cold_import.NewColdImporter(ethDB, blockRepository, receiptRepository, blockConverter)

@@ -17,16 +17,9 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
-	"strconv"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/makerdao/vulcanizedb/pkg/plugin"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	"github.com/makerdao/vulcanizedb/pkg/config"
-	p2 "github.com/makerdao/vulcanizedb/pkg/plugin"
 )
 
 // composeCmd represents the compose command
@@ -103,7 +96,7 @@ Specify config location when executing the command:
 ./vulcanizedb compose --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		compose()
 	},
 }
@@ -117,7 +110,7 @@ func compose() {
 
 	// Generate code to build the plugin according to the config file
 	LogWithCommand.Info("generating plugin")
-	generator, constructorErr := p2.NewGenerator(genConfig, databaseConfig)
+	generator, constructorErr := plugin.NewGenerator(genConfig, databaseConfig)
 	if constructorErr != nil {
 		LogWithCommand.Fatalf("initializing plugin generator failed: %s", constructorErr.Error())
 	}
@@ -135,58 +128,4 @@ func compose() {
 
 func init() {
 	rootCmd.AddCommand(composeCmd)
-}
-
-func prepConfig() error {
-	LogWithCommand.Info("configuring plugin")
-	names := viper.GetStringSlice("exporter.transformerNames")
-	transformers := make(map[string]config.Transformer)
-	for _, name := range names {
-		transformer := viper.GetStringMapString("exporter." + name)
-		p, pOK := transformer["path"]
-		if !pOK || p == "" {
-			return fmt.Errorf("transformer config is missing `path` value: %s", name)
-		}
-		r, rOK := transformer["repository"]
-		if !rOK || r == "" {
-			return fmt.Errorf("transformer config is missing `repository` value: %s", name)
-		}
-		m, mOK := transformer["migrations"]
-		if !mOK || m == "" {
-			return fmt.Errorf("transformer config is missing `migrations` value: %s", name)
-		}
-		mr, mrOK := transformer["rank"]
-		if !mrOK || mr == "" {
-			return fmt.Errorf("transformer config is missing `rank` value: %s", name)
-		}
-		rank, err := strconv.ParseUint(mr, 10, 64)
-		if err != nil {
-			return fmt.Errorf("migration `rank` can't be converted to an unsigned integer: %s", name)
-		}
-		t, tOK := transformer["type"]
-		if !tOK {
-			return fmt.Errorf("transformer config is missing `type` value: %s", name)
-		}
-		transformerType := config.GetTransformerType(t)
-		if transformerType == config.UnknownTransformerType {
-			return errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`)
-		}
-
-		transformers[name] = config.Transformer{
-			Path:           p,
-			Type:           transformerType,
-			RepositoryPath: r,
-			MigrationPath:  m,
-			MigrationRank:  rank,
-		}
-	}
-
-	genConfig = config.Plugin{
-		Transformers: transformers,
-		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
-		FileName:     viper.GetString("exporter.name"),
-		Save:         viper.GetBool("exporter.save"),
-		Home:         viper.GetString("exporter.home"),
-	}
-	return nil
 }
