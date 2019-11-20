@@ -18,16 +18,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/makerdao/vulcanizedb/pkg/config"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-
 	st "github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/config"
 	ft "github.com/makerdao/vulcanizedb/pkg/contract_watcher/full/transformer"
 	ht "github.com/makerdao/vulcanizedb/pkg/contract_watcher/header/transformer"
 	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // contractWatcherCmd represents the contractWatcher command
@@ -80,7 +79,7 @@ Requires a .toml config file:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		contractWatcher()
 	},
 }

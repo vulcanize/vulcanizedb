@@ -17,21 +17,22 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 	vRpc "github.com/makerdao/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/makerdao/vulcanizedb/pkg/eth/node"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -47,7 +48,7 @@ var (
 	endingBlockNumber    int64
 	recheckHeadersArg    bool
 	SubCommand           string
-	LogWithCommand       log.Entry
+	LogWithCommand       logrus.Entry
 	storageDiffsSource   string
 )
 
@@ -62,9 +63,9 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	log.Info("----- Starting vDB -----")
+	logrus.Info("----- Starting vDB -----")
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
 
@@ -72,7 +73,7 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	setViperConfigs()
 	logLvlErr := logLevel()
 	if logLvlErr != nil {
-		log.Fatal("Could not set log level: ", logLvlErr)
+		logrus.Fatal("Could not set log level: ", logLvlErr)
 	}
 
 }
@@ -93,15 +94,15 @@ func setViperConfigs() {
 }
 
 func logLevel() error {
-	lvl, err := log.ParseLevel(viper.GetString("log.level"))
+	lvl, err := logrus.ParseLevel(viper.GetString("log.level"))
 	if err != nil {
 		return err
 	}
-	log.SetLevel(lvl)
-	if lvl > log.InfoLevel {
-		log.SetReportCaller(true)
+	logrus.SetLevel(lvl)
+	if lvl > logrus.InfoLevel {
+		logrus.SetReportCaller(true)
 	}
-	log.Info("Log level set to ", lvl.String())
+	logrus.Info("Log level set to ", lvl.String())
 	return nil
 }
 
@@ -122,7 +123,7 @@ func init() {
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
 	rootCmd.PersistentFlags().String("storageDiffs-source", "csv", "where to get the state diffs: csv or geth")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
-	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().String("log-level", logrus.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -143,15 +144,15 @@ func initConfig() {
 	} else {
 		noConfigError := "No config file passed with --config flag"
 		fmt.Println("Error: ", noConfigError)
-		log.Fatal(noConfigError)
+		logrus.Fatal(noConfigError)
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
-		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
+		logrus.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
 	} else {
 		invalidConfigError := "Couldn't read config file"
 		formattedError := fmt.Sprintf("%s: %s", invalidConfigError, err.Error())
-		log.Fatal(formattedError)
+		logrus.Fatal(formattedError)
 	}
 }
 
@@ -173,4 +174,58 @@ func getClients() (client.RpcClient, *ethclient.Client) {
 	ethClient := ethclient.NewClient(rawRpcClient)
 
 	return rpcClient, ethClient
+}
+
+func prepConfig() error {
+	LogWithCommand.Info("configuring plugin")
+	names := viper.GetStringSlice("exporter.transformerNames")
+	transformers := make(map[string]config.Transformer)
+	for _, name := range names {
+		transformer := viper.GetStringMapString("exporter." + name)
+		p, pOK := transformer["path"]
+		if !pOK || p == "" {
+			return fmt.Errorf("transformer config is missing `path` value: %s", name)
+		}
+		r, rOK := transformer["repository"]
+		if !rOK || r == "" {
+			return fmt.Errorf("transformer config is missing `repository` value: %s", name)
+		}
+		m, mOK := transformer["migrations"]
+		if !mOK || m == "" {
+			return fmt.Errorf("transformer config is missing `migrations` value: %s", name)
+		}
+		mr, mrOK := transformer["rank"]
+		if !mrOK || mr == "" {
+			return fmt.Errorf("transformer config is missing `rank` value: %s", name)
+		}
+		rank, err := strconv.ParseUint(mr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("migration `rank` can't be converted to an unsigned integer: %s", name)
+		}
+		t, tOK := transformer["type"]
+		if !tOK {
+			return fmt.Errorf("transformer config is missing `type` value: %s", name)
+		}
+		transformerType := config.GetTransformerType(t)
+		if transformerType == config.UnknownTransformerType {
+			return errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`)
+		}
+
+		transformers[name] = config.Transformer{
+			Path:           p,
+			Type:           transformerType,
+			RepositoryPath: r,
+			MigrationPath:  m,
+			MigrationRank:  rank,
+		}
+	}
+
+	genConfig = config.Plugin{
+		Transformers: transformers,
+		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
+		FileName:     viper.GetString("exporter.name"),
+		Save:         viper.GetBool("exporter.save"),
+		Home:         viper.GetString("exporter.home"),
+	}
+	return nil
 }

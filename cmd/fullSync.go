@@ -19,14 +19,13 @@ package cmd
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/history"
 	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // fullSyncCmd represents the fullSync command
@@ -50,7 +49,7 @@ Expects ethereum node to be running and requires a .toml config:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		fullSync()
 	},
 }
