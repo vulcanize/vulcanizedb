@@ -119,6 +119,20 @@ var _ = Describe("Storage Watcher", func() {
 					close(done)
 				})
 
+				It("recognizes header match even if hash hex missing 0x prefix", func(done Done) {
+					mockHeaderRepository.GetHeaderReturnHash = fakes.FakeHash.Hex()[2:]
+
+					go func() {
+						err := storageWatcher.Execute(time.Hour)
+						Expect(err).NotTo(HaveOccurred())
+					}()
+
+					Eventually(func() utils.StorageDiff {
+						return mockTransformer.PassedDiff
+					}).Should(Equal(csvDiff))
+					close(done)
+				})
+
 				It("queues diff for later processing if transformer execution fails", func(done Done) {
 					mockTransformer.ExecuteErr = fakes.FakeError
 

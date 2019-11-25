@@ -176,7 +176,7 @@ func (storageWatcher StorageWatcher) getHeaderID(diff utils.StorageDiff) (int64,
 	if getHeaderErr != nil {
 		return 0, getHeaderErr
 	}
-	if diff.BlockHash.Hex() != header.Hash {
+	if diff.BlockHash != common.HexToHash(header.Hash) {
 		return 0, NewErrHeaderMismatch(header.Hash, diff.BlockHash.Hex())
 	}
 	return header.Id, nil
