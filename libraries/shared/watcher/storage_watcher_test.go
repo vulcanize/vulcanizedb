@@ -133,38 +133,59 @@ var _ = Describe("Storage Watcher", func() {
 					close(done)
 				})
 
-				It("queues diff for later processing if transformer execution fails", func(done Done) {
-					mockTransformer.ExecuteErr = fakes.FakeError
+				Describe("when executing transformer fails", func() {
+					It("logs error", func(done Done) {
+						mockTransformer.ExecuteErr = fakes.FakeError
+						tempFile, fileErr := ioutil.TempFile("", "log")
+						Expect(fileErr).NotTo(HaveOccurred())
+						defer os.Remove(tempFile.Name())
+						logrus.SetOutput(tempFile)
 
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+						go func() {
+							err := storageWatcher.Execute(time.Hour)
+							Expect(err).NotTo(HaveOccurred())
+						}()
 
-					Eventually(func() utils.StorageDiff {
-						return mockQueue.AddPassedDiff
-					}).Should(Equal(csvDiff))
-					close(done)
-				})
+						Eventually(func() (string, error) {
+							logContent, readErr := ioutil.ReadFile(tempFile.Name())
+							return string(logContent), readErr
+						}).Should(ContainSubstring(fakes.FakeError.Error()))
+						close(done)
+					})
 
-				It("logs error if queueing diff fails", func(done Done) {
-					mockTransformer.ExecuteErr = utils.ErrStorageKeyNotFound{}
-					mockQueue.AddError = fakes.FakeError
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
+					It("queues diff", func(done Done) {
+						mockTransformer.ExecuteErr = fakes.FakeError
 
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+						go func() {
+							err := storageWatcher.Execute(time.Hour)
+							Expect(err).NotTo(HaveOccurred())
+						}()
 
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
+						Eventually(func() utils.StorageDiff {
+							return mockQueue.AddPassedDiff
+						}).Should(Equal(csvDiff))
+						close(done)
+					})
+
+					It("logs error if queueing diff fails", func(done Done) {
+						mockTransformer.ExecuteErr = utils.ErrStorageKeyNotFound{}
+						mockQueue.AddError = fakes.FakeError
+						tempFile, fileErr := ioutil.TempFile("", "log")
+						Expect(fileErr).NotTo(HaveOccurred())
+						defer os.Remove(tempFile.Name())
+						logrus.SetOutput(tempFile)
+
+						go func() {
+							err := storageWatcher.Execute(time.Hour)
+							Expect(err).NotTo(HaveOccurred())
+						}()
+
+						Eventually(func() (string, error) {
+							logContent, readErr := ioutil.ReadFile(tempFile.Name())
+							return string(logContent), readErr
+						}).Should(ContainSubstring(fakes.FakeError.Error()))
+						close(done)
+					})
 				})
 			})
 
@@ -266,6 +287,25 @@ var _ = Describe("Storage Watcher", func() {
 					Eventually(func() utils.StorageDiff {
 						return mockTransformer.PassedDiff
 					}).Should(Equal(csvDiff))
+					close(done)
+				})
+
+				It("logs error if transformer execution fails", func(done Done) {
+					mockTransformer.ExecuteErr = fakes.FakeError
+					tempFile, fileErr := ioutil.TempFile("", "log")
+					Expect(fileErr).NotTo(HaveOccurred())
+					defer os.Remove(tempFile.Name())
+					logrus.SetOutput(tempFile)
+
+					go func() {
+						err := storageWatcher.Execute(time.Nanosecond)
+						Expect(err).NotTo(HaveOccurred())
+					}()
+
+					Eventually(func() (string, error) {
+						logContent, readErr := ioutil.ReadFile(tempFile.Name())
+						return string(logContent), readErr
+					}).Should(ContainSubstring(fakes.FakeError.Error()))
 					close(done)
 				})
 
