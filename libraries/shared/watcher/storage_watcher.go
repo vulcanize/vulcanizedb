@@ -134,18 +134,18 @@ func (storageWatcher StorageWatcher) processQueue() {
 	}
 
 	for _, diff := range diffs {
+		storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(diff)
+		if !isTransformerWatchingAddress {
+			storageWatcher.deleteRow(diff.Id)
+			continue
+		}
+
 		headerID, getHeaderErr := storageWatcher.getHeaderID(diff)
 		if getHeaderErr != nil {
 			logrus.Infof("error getting header for diff: %s", getHeaderErr.Error())
 			continue
 		}
 		diff.HeaderID = headerID
-
-		storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(diff)
-		if !isTransformerWatchingAddress {
-			storageWatcher.deleteRow(diff.Id)
-			continue
-		}
 
 		executeErr := storageTransformer.Execute(diff)
 		if executeErr != nil {

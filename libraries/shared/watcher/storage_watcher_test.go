@@ -277,69 +277,148 @@ var _ = Describe("Storage Watcher", func() {
 				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
-			Describe("when getting header succeeds", func() {
-				It("executes transformer for storage diff", func(done Done) {
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+			Describe("when contract recognized", func() {
+				Describe("when getting header succeeds", func() {
+					It("executes transformer for storage diff", func(done Done) {
+						go func() {
+							err := storageWatcher.Execute(time.Nanosecond)
+							Expect(err).NotTo(HaveOccurred())
+						}()
 
-					Eventually(func() utils.StorageDiff {
-						return mockTransformer.PassedDiff
-					}).Should(Equal(csvDiff))
-					close(done)
+						Eventually(func() utils.StorageDiff {
+							return mockTransformer.PassedDiff
+						}).Should(Equal(csvDiff))
+						close(done)
+					})
+
+					Describe("when transformer execution successful", func() {
+						It("deletes diff from queue", func(done Done) {
+							go func() {
+								err := storageWatcher.Execute(time.Nanosecond)
+								Expect(err).NotTo(HaveOccurred())
+							}()
+
+							Eventually(func() int {
+								return mockQueue.DeletePassedId
+							}).Should(Equal(csvDiff.Id))
+							close(done)
+						})
+
+						It("logs error if deleting queued diff fails", func(done Done) {
+							mockQueue.DeleteErr = fakes.FakeError
+							tempFile, fileErr := ioutil.TempFile("", "log")
+							Expect(fileErr).NotTo(HaveOccurred())
+							defer os.Remove(tempFile.Name())
+							logrus.SetOutput(tempFile)
+
+							go func() {
+								err := storageWatcher.Execute(time.Nanosecond)
+								Expect(err).NotTo(HaveOccurred())
+							}()
+
+							Eventually(func() (string, error) {
+								logContent, readErr := ioutil.ReadFile(tempFile.Name())
+								return string(logContent), readErr
+							}).Should(ContainSubstring(fakes.FakeError.Error()))
+							close(done)
+						})
+					})
+
+					Describe("when transformer execution fails", func() {
+						BeforeEach(func() {
+							mockTransformer.ExecuteErr = fakes.FakeError
+						})
+
+						It("logs error", func(done Done) {
+							tempFile, fileErr := ioutil.TempFile("", "log")
+							Expect(fileErr).NotTo(HaveOccurred())
+							defer os.Remove(tempFile.Name())
+							logrus.SetOutput(tempFile)
+
+							go func() {
+								err := storageWatcher.Execute(time.Nanosecond)
+								Expect(err).NotTo(HaveOccurred())
+							}()
+
+							Eventually(func() (string, error) {
+								logContent, readErr := ioutil.ReadFile(tempFile.Name())
+								return string(logContent), readErr
+							}).Should(ContainSubstring(fakes.FakeError.Error()))
+							close(done)
+						})
+
+						It("does not delete diff from queue", func(done Done) {
+							go func() {
+								err := storageWatcher.Execute(time.Nanosecond)
+								Expect(err).NotTo(HaveOccurred())
+							}()
+
+							Consistently(func() bool {
+								return mockQueue.DeleteCalled
+							}).Should(BeFalse())
+							close(done)
+						})
+					})
 				})
 
-				It("logs error if transformer execution fails", func(done Done) {
-					mockTransformer.ExecuteErr = fakes.FakeError
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
+				Describe("when getting header fails", func() {
+					It("logs error if repository returns error", func(done Done) {
+						mockHeaderRepository.GetHeaderError = fakes.FakeError
+						tempFile, fileErr := ioutil.TempFile("", "log")
+						Expect(fileErr).NotTo(HaveOccurred())
+						defer os.Remove(tempFile.Name())
+						logrus.SetOutput(tempFile)
 
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+						go func() {
+							err := storageWatcher.Execute(time.Nanosecond)
+							Expect(err).NotTo(HaveOccurred())
+						}()
 
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
+						Eventually(func() (string, error) {
+							logContent, readErr := ioutil.ReadFile(tempFile.Name())
+							return string(logContent), readErr
+						}).Should(ContainSubstring(fakes.FakeError.Error()))
+						close(done)
+					})
+
+					It("logs error if header hash doesn't match diff", func(done Done) {
+						wrongHash := fakes.RandomString(64)
+						mockHeaderRepository.GetHeaderReturnHash = wrongHash
+						tempFile, fileErr := ioutil.TempFile("", "log")
+						Expect(fileErr).NotTo(HaveOccurred())
+						defer os.Remove(tempFile.Name())
+						logrus.SetOutput(tempFile)
+
+						go func() {
+							err := storageWatcher.Execute(time.Nanosecond)
+							Expect(err).NotTo(HaveOccurred())
+						}()
+
+						expectedError := watcher.NewErrHeaderMismatch(wrongHash, fakes.FakeHash.Hex())
+						Eventually(func() (string, error) {
+							logContent, readErr := ioutil.ReadFile(tempFile.Name())
+							return string(logContent), readErr
+						}).Should(ContainSubstring(expectedError.Error()))
+						close(done)
+					})
+
+					It("does not delete diff from queue", func(done Done) {
+						mockHeaderRepository.GetHeaderError = fakes.FakeError
+						go func() {
+							err := storageWatcher.Execute(time.Nanosecond)
+							Expect(err).NotTo(HaveOccurred())
+						}()
+
+						Consistently(func() bool {
+							return mockQueue.DeleteCalled
+						}).Should(BeFalse())
+						close(done)
+					})
 				})
+			})
 
-				It("deletes diff from queue if transformer execution successful", func(done Done) {
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-					Eventually(func() int {
-						return mockQueue.DeletePassedId
-					}).Should(Equal(csvDiff.Id))
-					close(done)
-				})
-
-				It("logs error if deleting persisted diff fails", func(done Done) {
-					mockQueue.DeleteErr = fakes.FakeError
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
-
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
-				})
-
-				It("deletes obsolete diff from queue if contract not recognized", func(done Done) {
+			Describe("when contract not recognized", func() {
+				It("deletes obsolete diff from queue", func(done Done) {
 					obsoleteDiff := utils.StorageDiff{
 						Id:            csvDiff.Id + 1,
 						HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
@@ -380,48 +459,6 @@ var _ = Describe("Storage Watcher", func() {
 						logContent, readErr := ioutil.ReadFile(tempFile.Name())
 						return string(logContent), readErr
 					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
-				})
-			})
-
-			Describe("when getting header fails", func() {
-				It("logs error if repository returns error", func(done Done) {
-					mockHeaderRepository.GetHeaderError = fakes.FakeError
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
-
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
-				})
-
-				It("logs error if header hash doesn't match diff", func(done Done) {
-					wrongHash := fakes.RandomString(64)
-					mockHeaderRepository.GetHeaderReturnHash = wrongHash
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
-
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					expectedError := watcher.NewErrHeaderMismatch(wrongHash, fakes.FakeHash.Hex())
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(expectedError.Error()))
 					close(done)
 				})
 			})
