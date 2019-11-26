@@ -17,11 +17,12 @@
 package utils
 
 import (
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"strconv"
 )
 
 const ExpectedRowLength = 5
@@ -33,6 +34,7 @@ type StorageDiff struct {
 	BlockHeight   int         `db:"block_height"`
 	StorageKey    common.Hash `db:"storage_key"`
 	StorageValue  common.Hash `db:"storage_value"`
+	HeaderID      int64       `db:"header_id"`
 }
 
 func FromParityCsvRow(csvRow []string) (StorageDiff, error) {

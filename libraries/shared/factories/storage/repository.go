@@ -22,6 +22,6 @@ import (
 )
 
 type Repository interface {
-	Create(blockNumber int, blockHash string, metadata utils.StorageValueMetadata, value interface{}) error
+	Create(headerID int64, metadata utils.StorageValueMetadata, value interface{}) error
 	SetDB(db *postgres.DB)
 }

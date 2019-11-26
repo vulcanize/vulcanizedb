@@ -17,6 +17,8 @@
 package storage_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
@@ -69,21 +71,18 @@ var _ = Describe("Storage transformer", func() {
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		rawValue := common.HexToAddress("0x12345")
-		fakeBlockNumber := 123
-		fakeBlockHash := "0x67890"
+		fakeHeaderID := rand.Int63()
 		fakeRow := utils.StorageDiff{
 			HashedAddress: common.Hash{},
-			BlockHash:     common.HexToHash(fakeBlockHash),
-			BlockHeight:   fakeBlockNumber,
 			StorageKey:    common.Hash{},
 			StorageValue:  rawValue.Hash(),
+			HeaderID:      fakeHeaderID,
 		}
 
 		err := t.Execute(fakeRow)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-		Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+		Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
 		Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 		Expect(repository.PassedValue.(string)).To(Equal(rawValue.Hex()))
 	})
@@ -102,10 +101,9 @@ var _ = Describe("Storage transformer", func() {
 
 	Describe("when a storage row contains more than one item packed in storage", func() {
 		var (
-			rawValue        = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
-			fakeBlockNumber = 123
-			fakeBlockHash   = "0x67890"
-			packedTypes     = make(map[int]utils.ValueType)
+			rawValue     = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
+			fakeHeaderID = rand.Int63()
+			packedTypes  = make(map[int]utils.ValueType)
 		)
 		packedTypes[0] = utils.Uint48
 		packedTypes[1] = utils.Uint48
@@ -121,17 +119,15 @@ var _ = Describe("Storage transformer", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			fakeRow := utils.StorageDiff{
 				HashedAddress: common.Hash{},
-				BlockHash:     common.HexToHash(fakeBlockHash),
-				BlockHeight:   fakeBlockNumber,
 				StorageKey:    common.Hash{},
 				StorageValue:  rawValue.Hash(),
+				HeaderID:      fakeHeaderID,
 			}
 
 			err := t.Execute(fakeRow)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-			Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+			Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
 			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 			expectedPassedValue := make(map[int]string)
 			expectedPassedValue[0] = "10800"

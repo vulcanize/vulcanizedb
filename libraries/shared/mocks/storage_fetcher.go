@@ -28,12 +28,10 @@ func NewMockStorageFetcher() *MockStorageFetcher {
 }
 
 func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
-	defer close(out)
-	defer close(errs)
-	for _, err := range fetcher.ErrsToReturn {
-		errs <- err
-	}
 	for _, diff := range fetcher.DiffsToReturn {
 		out <- diff
+	}
+	for _, err := range fetcher.ErrsToReturn {
+		errs <- err
 	}
 }

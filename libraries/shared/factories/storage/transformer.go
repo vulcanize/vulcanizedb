@@ -48,5 +48,5 @@ func (transformer Transformer) Execute(diff utils.StorageDiff) error {
 	if decodeErr != nil {
 		return decodeErr
 	}
-	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
+	return transformer.Repository.Create(diff.HeaderID, metadata, value)
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
-	storageUtils "github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
@@ -186,10 +185,9 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	LogWithCommand.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		diffs := make(chan storageUtils.StorageDiff)
-		w.Execute(diffs, errs, queueRecheckInterval)
+	err := w.Execute(queueRecheckInterval)
+	if err != nil {
+		LogWithCommand.Fatalf("error executing storage watcher: %s", err.Error())
 	}
 }
 
