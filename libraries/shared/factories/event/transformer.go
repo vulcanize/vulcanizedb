@@ -32,6 +32,7 @@ type Transformer struct {
 
 // NewTransformer instantiates a new transformer by passing the DB connection to the converter
 func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	t.DB = db
 	t.Converter.SetDB(db)
 	return t
 }
