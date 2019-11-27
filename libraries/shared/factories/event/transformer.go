@@ -23,17 +23,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Transformer implements the EventTransformer interface, to be run by the Watcher
 type Transformer struct {
 	Config     transformer.EventTransformerConfig
 	Converter  Converter
 	DB         *postgres.DB
 }
 
+// NewTransformer instantiates a new transformer by passing the DB connection to the converter
 func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
 	t.Converter.SetDB(db)
 	return t
 }
 
+// Execute runs a transformer on a set of logs, converting data into models and persisting to the DB
 func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
 	transformerName := t.Config.TransformerName
 	config := t.Config
@@ -57,10 +60,7 @@ func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
 	return nil
 }
 
-func (t Transformer) GetName() string {
-	return t.Config.TransformerName
-}
-
+// GetConfig returns the config for a given transformer
 func (t Transformer) GetConfig() transformer.EventTransformerConfig {
 	return t.Config
 }

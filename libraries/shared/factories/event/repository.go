@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// SetLogTransformedQuery marks the log as transformed in the database
 const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`
 
 // LogFK is the name of log foreign key columns
