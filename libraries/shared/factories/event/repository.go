@@ -28,12 +28,6 @@ import (
 
 const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`
 
-// Repository persists transformed values to the DB
-type Repository interface {
-	Create(models []InsertionModel) error
-	SetDB(db *postgres.DB)
-}
-
 // LogFK is the name of log foreign key columns
 const LogFK ColumnName = "log_id"
 
@@ -85,7 +79,7 @@ func GetMemoizedQuery(model InsertionModel) string {
 }
 
 // GenerateInsertionQuery creates an SQL insertion query from an insertion model.
-// Should be called through GetMemoizedQuery, so the query is not generated on each call to Create.
+// Should be called through GetMemoizedQuery, so the query is not generated on each call to PersistModels.
 func GenerateInsertionQuery(model InsertionModel) string {
 	var valuePlaceholders []string
 	var updateOnConflict []string
@@ -108,7 +102,7 @@ func GenerateInsertionQuery(model InsertionModel) string {
 }
 
 /*
-Create generates an insertion query and persists to the DB, given a slice of InsertionModels.
+PersistModels generates an insertion query and persists to the DB, given a slice of InsertionModels.
 ColumnValues are restricted to []byte, bool, float64, int64, string, time.Time.
 
 testModel = shared.InsertionModel{
@@ -122,7 +116,7 @@ testModel = shared.InsertionModel{
 	},
 }
 */
-func Create(models []InsertionModel, db *postgres.DB) error {
+func PersistModels(models []InsertionModel, db *postgres.DB) error {
 	if len(models) == 0 {
 		return fmt.Errorf("repository got empty model slice")
 	}

@@ -26,30 +26,29 @@ import (
 type Transformer struct {
 	Config     transformer.EventTransformerConfig
 	Converter  Converter
-	Repository Repository
+	DB         *postgres.DB
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
-	transformer.Converter.SetDB(db)
-	transformer.Repository.SetDB(db)
-	return transformer
+func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	t.Converter.SetDB(db)
+	return t
 }
 
-func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
-	transformerName := transformer.Config.TransformerName
-	config := transformer.Config
+func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
+	transformerName := t.Config.TransformerName
+	config := t.Config
 
 	if len(logs) < 1 {
 		return nil
 	}
 
-	models, err := transformer.Converter.ToModels(config.ContractAbi, logs)
+	models, err := t.Converter.ToModels(config.ContractAbi, logs)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
-	err = transformer.Repository.Create(models)
+	err = PersistModels(models, t.DB)
 	if err != nil {
 		logrus.Errorf("error persisting %v record: %v", transformerName, err)
 		return err
@@ -58,10 +57,10 @@ func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
 	return nil
 }
 
-func (transformer Transformer) GetName() string {
-	return transformer.Config.TransformerName
+func (t Transformer) GetName() string {
+	return t.Config.TransformerName
 }
 
-func (transformer Transformer) GetConfig() transformer.EventTransformerConfig {
-	return transformer.Config
+func (t Transformer) GetConfig() transformer.EventTransformerConfig {
+	return t.Config
 }

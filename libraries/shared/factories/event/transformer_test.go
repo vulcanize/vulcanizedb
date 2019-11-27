@@ -43,7 +43,6 @@ var _ = Describe("Transformer", func() {
 		converter = mocks.MockConverter{}
 
 		t = event.Transformer{
-			Repository: &repository,
 			Converter:  &converter,
 			Config:     config,
 		}.NewTransformer(nil)
