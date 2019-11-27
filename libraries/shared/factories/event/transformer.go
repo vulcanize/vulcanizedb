@@ -33,7 +33,6 @@ type Transformer struct {
 // NewTransformer instantiates a new transformer by passing the DB connection to the converter
 func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
 	t.DB = db
-	t.Converter.SetDB(db)
 	return t
 }
 
@@ -46,7 +45,7 @@ func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
 		return nil
 	}
 
-	models, err := t.Converter.ToModels(config.ContractAbi, logs)
+	models, err := t.Converter.ToModels(config.ContractAbi, logs, t.DB)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err

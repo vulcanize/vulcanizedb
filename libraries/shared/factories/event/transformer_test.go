@@ -55,10 +55,6 @@ var _ = Describe("Transformer", func() {
 		}}
 	})
 
-	It("sets the db", func() {
-		Expect(converter.SetDBCalled).To(BeTrue())
-	})
-
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
 		err := t.Execute([]core.HeaderSyncLog{})
 

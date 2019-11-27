@@ -27,17 +27,12 @@ type MockConverter struct {
 	ContractAbi             string
 	LogsToConvert           []core.HeaderSyncLog
 	PassedContractAddresses []string
-	SetDBCalled             bool
 	ToModelsCalledCounter   int
 }
 
-func (converter *MockConverter) ToModels(abi string, logs []core.HeaderSyncLog) ([]event.InsertionModel, error) {
+func (converter *MockConverter) ToModels(abi string, logs []core.HeaderSyncLog, _ *postgres.DB) ([]event.InsertionModel, error) {
 	converter.LogsToConvert = logs
 	converter.ContractAbi = abi
 	converter.ToModelsCalledCounter = converter.ToModelsCalledCounter + 1
 	return nil, converter.ToModelsError
-}
-
-func (converter *MockConverter) SetDB(db *postgres.DB) {
-	converter.SetDBCalled = true
 }
