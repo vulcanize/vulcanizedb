@@ -25,9 +25,9 @@ import (
 
 // Transformer implements the EventTransformer interface, to be run by the Watcher
 type Transformer struct {
-	Config     transformer.EventTransformerConfig
-	Converter  Converter
-	DB         *postgres.DB
+	Config    transformer.EventTransformerConfig
+	Converter Converter
+	DB        *postgres.DB
 }
 
 // NewTransformer instantiates a new transformer by passing the DB connection to the converter

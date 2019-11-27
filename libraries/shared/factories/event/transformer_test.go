@@ -30,21 +30,19 @@ import (
 
 var _ = Describe("Transformer", func() {
 	var (
-		repository mocks.MockEventRepository
-		converter  mocks.MockConverter
-		t          transformer.EventTransformer
-		headerOne  core.Header
-		config     = test_data.GenericTestConfig
-		logs       []core.HeaderSyncLog
+		converter mocks.MockConverter
+		t         transformer.EventTransformer
+		headerOne core.Header
+		config    = test_data.GenericTestConfig
+		logs      []core.HeaderSyncLog
 	)
 
 	BeforeEach(func() {
-		repository = mocks.MockEventRepository{}
 		converter = mocks.MockConverter{}
 
 		t = event.Transformer{
-			Converter:  &converter,
-			Config:     config,
+			Converter: &converter,
+			Config:    config,
 		}.NewTransformer(nil)
 
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
@@ -58,7 +56,7 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("sets the db", func() {
-		Expect(repository.SetDbCalled).To(BeTrue())
+		Expect(converter.SetDBCalled).To(BeTrue())
 	})
 
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
@@ -66,13 +64,13 @@ var _ = Describe("Transformer", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ToModelsCalledCounter).To(Equal(0))
-		Expect(repository.CreateCalledCounter).To(Equal(0))
 	})
 
 	It("converts an eth log to a model", func() {
 		err := t.Execute(logs)
 
-		Expect(err).NotTo(HaveOccurred())
+		// TODO Mock DB in repo instead?
+		Expect(err).To(MatchError(event.ErrEmptyModelSlice))
 		Expect(converter.ContractAbi).To(Equal(config.ContractAbi))
 		Expect(converter.LogsToConvert).To(Equal(logs))
 	})
@@ -80,23 +78,6 @@ var _ = Describe("Transformer", func() {
 	It("returns an error if converting to models fails", func() {
 		converter.ToModelsError = fakes.FakeError
 
-		err := t.Execute(logs)
-
-		Expect(err).To(HaveOccurred())
-		Expect(err).To(MatchError(fakes.FakeError))
-	})
-
-	It("persists the record", func() {
-		converter.ModelsToReturn = []event.InsertionModel{test_data.GenericModel}
-
-		err := t.Execute(logs)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedModels[0]).To(Equal(test_data.GenericModel))
-	})
-
-	It("returns error if persisting the record fails", func() {
-		repository.SetCreateError(fakes.FakeError)
 		err := t.Execute(logs)
 
 		Expect(err).To(HaveOccurred())

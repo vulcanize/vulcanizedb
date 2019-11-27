@@ -26,7 +26,6 @@ type MockConverter struct {
 	ToModelsError           error
 	ContractAbi             string
 	LogsToConvert           []core.HeaderSyncLog
-	ModelsToReturn          []event.InsertionModel
 	PassedContractAddresses []string
 	SetDBCalled             bool
 	ToModelsCalledCounter   int
@@ -36,7 +35,7 @@ func (converter *MockConverter) ToModels(abi string, logs []core.HeaderSyncLog) 
 	converter.LogsToConvert = logs
 	converter.ContractAbi = abi
 	converter.ToModelsCalledCounter = converter.ToModelsCalledCounter + 1
-	return converter.ModelsToReturn, converter.ToModelsError
+	return nil, converter.ToModelsError
 }
 
 func (converter *MockConverter) SetDB(db *postgres.DB) {
