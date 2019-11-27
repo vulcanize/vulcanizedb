@@ -23,33 +23,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Transformer implements the EventTransformer interface, to be run by the Watcher
 type Transformer struct {
-	Config     transformer.EventTransformerConfig
-	Converter  Converter
-	Repository Repository
+	Config    transformer.EventTransformerConfig
+	Converter Converter
+	DB        *postgres.DB
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
-	transformer.Converter.SetDB(db)
-	transformer.Repository.SetDB(db)
-	return transformer
+// NewTransformer instantiates a new transformer by passing the DB connection to the converter
+func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	t.DB = db
+	return t
 }
 
-func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
-	transformerName := transformer.Config.TransformerName
-	config := transformer.Config
+// Execute runs a transformer on a set of logs, converting data into models and persisting to the DB
+func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
+	transformerName := t.Config.TransformerName
+	config := t.Config
 
 	if len(logs) < 1 {
 		return nil
 	}
 
-	models, err := transformer.Converter.ToModels(config.ContractAbi, logs)
+	models, err := t.Converter.ToModels(config.ContractAbi, logs, t.DB)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
-	err = transformer.Repository.Create(models)
+	err = PersistModels(models, t.DB)
 	if err != nil {
 		logrus.Errorf("error persisting %v record: %v", transformerName, err)
 		return err
@@ -58,10 +60,7 @@ func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
 	return nil
 }
 
-func (transformer Transformer) GetName() string {
-	return transformer.Config.TransformerName
-}
-
-func (transformer Transformer) GetConfig() transformer.EventTransformerConfig {
-	return transformer.Config
+// GetConfig returns the config for a given transformer
+func (t Transformer) GetConfig() transformer.EventTransformerConfig {
+	return t.Config
 }

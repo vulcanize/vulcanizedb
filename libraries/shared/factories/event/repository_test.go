@@ -37,7 +37,7 @@ var _ = Describe("Repository", func() {
 		test_config.CleanTestDB(db)
 	})
 
-	Describe("Create", func() {
+	Describe("PersistModels", func() {
 		const createTestEventTableQuery = `CREATE TABLE public.testEvent(
 		id        SERIAL PRIMARY KEY,
 		header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
@@ -90,7 +90,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("persists a model to postgres", func() {
-			createErr := event.Create([]event.InsertionModel{testModel}, db)
+			createErr := event.PersistModels([]event.InsertionModel{testModel}, db)
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var res TestEvent
@@ -103,7 +103,7 @@ var _ = Describe("Repository", func() {
 
 		Describe("returns errors", func() {
 			It("for empty model slice", func() {
-				err := event.Create([]event.InsertionModel{}, db)
+				err := event.PersistModels([]event.InsertionModel{}, db)
 				Expect(err).To(MatchError("repository got empty model slice"))
 			})
 
@@ -129,7 +129,7 @@ var _ = Describe("Repository", func() {
 				// Remove cached queries, or we won't generate a new (incorrect) one
 				delete(event.ModelToQuery, "publictestEvent")
 
-				createErr := event.Create([]event.InsertionModel{brokenModel}, db)
+				createErr := event.PersistModels([]event.InsertionModel{brokenModel}, db)
 				// Remove incorrect query, so other tests won't get it
 				delete(event.ModelToQuery, "publictestEvent")
 
@@ -151,7 +151,7 @@ var _ = Describe("Repository", func() {
 					},
 				}
 
-				createErr := event.Create([]event.InsertionModel{testModel}, db)
+				createErr := event.PersistModels([]event.InsertionModel{testModel}, db)
 				Expect(createErr).To(MatchError(event.ErrUnsupportedValue(unsupportedValue)))
 			})
 		})
@@ -170,7 +170,7 @@ var _ = Describe("Repository", func() {
 				},
 			}
 
-			createErr := event.Create([]event.InsertionModel{testModel, conflictingModel}, db)
+			createErr := event.PersistModels([]event.InsertionModel{testModel, conflictingModel}, db)
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var res TestEvent
@@ -187,7 +187,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("marks log transformed", func() {
-			createErr := event.Create([]event.InsertionModel{testModel}, db)
+			createErr := event.PersistModels([]event.InsertionModel{testModel}, db)
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var logTransformed bool

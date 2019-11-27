@@ -21,8 +21,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
-// Converter transforms log data into general InsertionModels the Repository can persist__
+// Converter transforms log data into general InsertionModels the Repository can persist
 type Converter interface {
-	ToModels(contractAbi string, ethLog []core.HeaderSyncLog) ([]InsertionModel, error)
-	SetDB(db *postgres.DB)
+	ToModels(contractAbi string, ethLog []core.HeaderSyncLog, db *postgres.DB) ([]InsertionModel, error)
 }
