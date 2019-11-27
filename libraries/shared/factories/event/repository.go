@@ -32,11 +32,6 @@ const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed =
 // ErrEmptyModelSlice is returned when PersistModel gets 0 InsertionModels
 var ErrEmptyModelSlice = fmt.Errorf("repository got empty model slice")
 
-// Repository persists transformed values to the DB
-type Repository interface {
-	PersistModels(models []InsertionModel) error
-}
-
 // LogFK is the name of log foreign key columns
 const LogFK ColumnName = "log_id"
 
