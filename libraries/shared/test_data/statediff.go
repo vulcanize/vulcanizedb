@@ -151,7 +151,7 @@ var (
 	}
 
 	CreatedExpectedStorageDiff = utils.StorageDiff{
-		Id:            0,
+		ID:            0,
 		HashedAddress: common.BytesToHash(ContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
@@ -159,7 +159,7 @@ var (
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
 	UpdatedExpectedStorageDiff = utils.StorageDiff{
-		Id:            0,
+		ID:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
@@ -167,7 +167,7 @@ var (
 		StorageValue:  common.BytesToHash(LargeStorageValue),
 	}
 	UpdatedExpectedStorageDiff2 = utils.StorageDiff{
-		Id:            0,
+		ID:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash2),
 		BlockHeight:   int(BlockNumber2.Int64()),
@@ -175,7 +175,7 @@ var (
 		StorageValue:  common.BytesToHash(SmallStorageValue),
 	}
 	DeletedExpectedStorageDiff = utils.StorageDiff{
-		Id:            0,
+		ID:            0,
 		HashedAddress: common.BytesToHash(AnotherContractLeafKey[:]),
 		BlockHash:     common.HexToHash(BlockHash),
 		BlockHeight:   int(BlockNumber.Int64()),
