@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
@@ -173,4 +175,16 @@ func getClients() (client.RPCClient, *ethclient.Client) {
 	ethClient := ethclient.NewClient(rawRPCClient)
 
 	return rpcClient, ethClient
+}
+
+func getWSClient() core.RPCClient {
+	wsRPCpath := viper.GetString("client.wsPath")
+	if wsRPCpath == "" {
+		LogWithCommand.Fatal(errors.New("getWSClient() was called but no ws rpc path is provided"))
+	}
+	wsRPCClient, dialErr := rpc.Dial(wsRPCpath)
+	if dialErr != nil {
+		LogWithCommand.Fatal(dialErr)
+	}
+	return client.NewRPCClient(wsRPCClient, wsRPCpath)
 }

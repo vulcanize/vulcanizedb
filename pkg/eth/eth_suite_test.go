@@ -25,5 +25,5 @@ import (
 
 func TestGeth(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "eth Suite")
+	RunSpecs(t, "Eth Suite")
 }

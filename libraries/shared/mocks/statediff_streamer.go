@@ -14,23 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repository_test
+package mocks
 
 import (
-	"testing"
-
-	"io/ioutil"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
 )
 
-func TestFactories(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Shared Repository Suite")
+// StateDiffStreamer is the underlying struct for the Streamer interface
+type StateDiffStreamer struct {
+	PassedPayloadChan chan statediff.Payload
+	ReturnSub         *rpc.ClientSubscription
+	ReturnErr         error
+	StreamPayloads    []statediff.Payload
 }
 
-var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
-})
+// Stream is the main loop for subscribing to data from the Geth state diff process
+func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+	sds.PassedPayloadChan = payloadChan
+
+	go func() {
+		for _, payload := range sds.StreamPayloads {
+			sds.PassedPayloadChan <- payload
+		}
+	}()
+
+	return sds.ReturnSub, sds.ReturnErr
+}

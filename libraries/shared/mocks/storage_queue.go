@@ -20,27 +20,41 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 )
 
+// MockStorageQueue for tests
 type MockStorageQueue struct {
-	AddCalled      bool
-	AddError       error
-	AddPassedDiff  utils.StorageDiff
-	DeleteErr      error
-	DeletePassedID int
-	GetAllErr      error
-	DiffsToReturn  []utils.StorageDiff
+	AddCalled       bool
+	AddError        error
+	AddPassedDiffs  map[int]utils.StorageDiff
+	DeleteErr       error
+	DeletePassedIds []int
+	GetAllErr       error
+	DiffsToReturn   map[int]utils.StorageDiff
+	GetAllCalled    bool
 }
 
+// Add mock method
 func (queue *MockStorageQueue) Add(diff utils.StorageDiff) error {
 	queue.AddCalled = true
-	queue.AddPassedDiff = diff
+	if queue.AddPassedDiffs == nil {
+		queue.AddPassedDiffs = make(map[int]utils.StorageDiff)
+	}
+	queue.AddPassedDiffs[diff.ID] = diff
 	return queue.AddError
 }
 
+// Delete mock method
 func (queue *MockStorageQueue) Delete(id int) error {
-	queue.DeletePassedID = id
+	queue.DeletePassedIds = append(queue.DeletePassedIds, id)
+	delete(queue.DiffsToReturn, id)
 	return queue.DeleteErr
 }
 
+// GetAll mock method
 func (queue *MockStorageQueue) GetAll() ([]utils.StorageDiff, error) {
-	return queue.DiffsToReturn, queue.GetAllErr
+	queue.GetAllCalled = true
+	diffs := make([]utils.StorageDiff, 0)
+	for _, diff := range queue.DiffsToReturn {
+		diffs = append(diffs, diff)
+	}
+	return diffs, queue.GetAllErr
 }

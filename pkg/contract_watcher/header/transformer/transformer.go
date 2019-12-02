@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -105,7 +106,7 @@ func (tr *Transformer) Init() error {
 	tr.sortedMethodIds = make(map[string][]string) // Map to sort method column ids by contract, for post fetch method polling
 	tr.eventIds = make([]string, 0)                // Holds event column ids across all contract, for batch fetching of headers
 	tr.eventFilters = make([]common.Hash, 0)       // Holds topic0 hashes across all contracts, for batch fetching of logs
-	tr.Start = 100000000000
+	tr.Start = math.MaxInt64
 
 	// Iterate through all internal contract addresses
 	for contractAddr := range tr.Config.Addresses {

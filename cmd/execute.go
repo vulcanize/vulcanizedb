@@ -18,21 +18,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"plugin"
 	syn "sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
+	"github.com/vulcanize/vulcanizedb/pkg/fs"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -41,28 +41,22 @@ var executeCmd = &cobra.Command{
 	Use:   "execute",
 	Short: "executes a precomposed transformer initializer plugin",
 	Long: `This command needs a config .toml file of form:
-
 [database]
     name     = "vulcanize_public"
     hostname = "localhost"
     user     = "vulcanize"
     password = "vulcanize"
     port     = 5432
-
 [client]
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
-
 [exporter]
     name     = "exampleTransformerExporter"
-
 Note: If any of the plugin transformer need additional
 configuration variables include them in the .toml file as well
-
 The exporter.name is the name (without extension) of the plugin to be loaded.
 The plugin file needs to be located in the /plugins directory and this command assumes 
 the db migrations remain from when the plugin was composed. Additionally, the plugin 
 must have been composed by the same version of vulcanizedb or else it will not be compatible.
-
 Specify config location when executing the command:
 ./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -128,14 +122,13 @@ func execute() {
 		switch storageDiffsSource {
 		case "geth":
 			log.Debug("fetching storage diffs from geth pub sub")
-			rpcClient, _ := getClients()
-			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRPCStorageFetcher(&stateDiffStreamer, payloadChan)
+			wsClient := getWSClient()
+			stateDiffStreamer := streamer.NewStateDiffStreamer(wsClient)
+			storageFetcher := fetcher.NewGethRPCStorageFetcher(stateDiffStreamer)
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		default:
 			log.Debug("fetching storage diffs from csv")
 			tailer := fs.FileTailer{Path: storageDiffsPath}
@@ -143,7 +136,7 @@ func execute() {
 			sw := watcher.NewStorageWatcher(storageFetcher, &db)
 			sw.AddTransformers(ethStorageInitializers)
 			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
+			go watchEthStorage(sw, &wg)
 		}
 	}
 
@@ -186,13 +179,20 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
-	ticker := time.NewTicker(pollingInterval)
-	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		diffs := make(chan storageUtils.StorageDiff)
-		w.Execute(diffs, errs, queueRecheckInterval)
+	on := viper.GetBool("storageBackFill.on")
+	if on {
+		backFillStorage(w)
 	}
+	w.Execute(queueRecheckInterval, on)
+}
+
+func backFillStorage(w watcher.IStorageWatcher) {
+	rpcClient, _ := getClients()
+	// find min deployment block
+	minDeploymentBlock := constants.GetMinDeploymentBlock()
+	stateDiffFetcher := fetcher.NewStateDiffFetcher(rpcClient)
+	backFiller := storage.NewStorageBackFiller(stateDiffFetcher, storage.DefaultMaxBatchSize)
+	go w.BackFill(minDeploymentBlock, backFiller)
 }
 
 func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {

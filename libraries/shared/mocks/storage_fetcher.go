@@ -16,20 +16,23 @@
 
 package mocks
 
-import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+import (
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+)
 
-type MockStorageFetcher struct {
+// StorageFetcher is a mock fetcher for use in tests with backfilling
+type StorageFetcher struct {
 	DiffsToReturn []utils.StorageDiff
 	ErrsToReturn  []error
 }
 
-func NewMockStorageFetcher() *MockStorageFetcher {
-	return &MockStorageFetcher{}
+// NewStorageFetcher returns a new StorageFetcher
+func NewStorageFetcher() *StorageFetcher {
+	return &StorageFetcher{}
 }
 
-func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
-	defer close(out)
-	defer close(errs)
+// FetchStorageDiffs mock method
+func (fetcher *StorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
 	for _, err := range fetcher.ErrsToReturn {
 		errs <- err
 	}

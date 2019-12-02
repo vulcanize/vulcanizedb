@@ -17,11 +17,12 @@
 package utils
 
 import (
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"strconv"
 )
 
 const ExpectedRowLength = 5
@@ -70,4 +71,9 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 
 func HexToKeccak256Hash(hex string) common.Hash {
 	return crypto.Keccak256Hash(common.FromHex(hex))
+}
+
+func GetAccountsFromDiff(stateDiff statediff.StateDiff) []statediff.AccountDiff {
+	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
+	return append(accounts, stateDiff.DeletedAccounts...)
 }
