@@ -71,7 +71,7 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 	err := tx.QueryRowx(`INSERT INTO public.header_sync_transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
-		ON CONFLICT (header_id, hash) DO UPDATE 
+		ON CONFLICT (hash) DO UPDATE
 		SET (gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") = ($3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		RETURNING id`,
 		headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,

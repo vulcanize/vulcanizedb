@@ -350,9 +350,9 @@ var _ = Describe("Block header repository", func() {
 			tx, err := db.Beginx()
 			Expect(err).ToNot(HaveOccurred())
 			_, insertErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			Expect(insertErr).NotTo(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
 
 			var dbTransaction core.TransactionModel
 			err = db.Get(&dbTransaction,
@@ -383,20 +383,11 @@ var _ = Describe("Block header repository", func() {
 				Value:    "0",
 			}
 
-			tx1, err := db.Beginx()
-			Expect(err).ToNot(HaveOccurred())
-			txId1, insertErr := repo.CreateTransactionInTx(tx1, headerID, transaction)
-			commit1Err := tx1.Commit()
-			Expect(commit1Err).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
+			tx1Err := repo.CreateTransactions(headerID, []core.TransactionModel{transaction})
+			Expect(tx1Err).NotTo(HaveOccurred())
 
-			tx2, err := db.Beginx()
-			Expect(err).ToNot(HaveOccurred())
-			txId2, insertErr := repo.CreateTransactionInTx(tx2, headerID, transaction)
-			commit2Err := tx2.Commit()
-			Expect(commit2Err).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
-			Expect(txId1).To(Equal(txId2))
+			tx2Err := repo.CreateTransactions(headerID, []core.TransactionModel{transaction})
+			Expect(tx2Err).NotTo(HaveOccurred())
 
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
