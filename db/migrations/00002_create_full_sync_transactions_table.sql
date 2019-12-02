@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE full_sync_transactions (
   id          SERIAL PRIMARY KEY,
-  block_id    INTEGER NOT NULL REFERENCES blocks(id) ON DELETE CASCADE,
+  block_id    INTEGER NOT NULL REFERENCES eth_blocks(id) ON DELETE CASCADE,
   gas_limit    NUMERIC,
   gas_price    NUMERIC,
   hash        VARCHAR(66),

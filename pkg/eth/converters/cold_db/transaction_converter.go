@@ -17,11 +17,12 @@
 package cold_db
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"golang.org/x/sync/errgroup"
-	"strings"
 )
 
 type ColdDbTransactionConverter struct{}

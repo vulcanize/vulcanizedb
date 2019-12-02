@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 

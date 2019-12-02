@@ -17,11 +17,12 @@
 package history_test
 
 import (
+	"math/big"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"math/big"
 )
 
 var _ = Describe("Populating blocks", func() {

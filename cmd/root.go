@@ -40,6 +40,7 @@ var (
 	cfgFile              string
 	databaseConfig       config.Database
 	genConfig            config.Plugin
+	subscriptionConfig   config.Subscription
 	ipc                  string
 	levelDbPath          string
 	queueRecheckInterval time.Duration
@@ -48,8 +49,8 @@ var (
 	syncAll              bool
 	endingBlockNumber    int64
 	recheckHeadersArg    bool
-	SubCommand           string
-	LogWithCommand       log.Entry
+	subCommand           string
+	logWithCommand       log.Entry
 	storageDiffsSource   string
 )
 
@@ -169,7 +170,7 @@ func getClients() (client.RPCClient, *ethclient.Client) {
 	rawRPCClient, err := rpc.Dial(ipc)
 
 	if err != nil {
-		LogWithCommand.Fatal(err)
+		logWithCommand.Fatal(err)
 	}
 	rpcClient := client.NewRPCClient(rawRPCClient, ipc)
 	ethClient := ethclient.NewClient(rawRPCClient)
@@ -180,11 +181,11 @@ func getClients() (client.RPCClient, *ethclient.Client) {
 func getWSClient() core.RPCClient {
 	wsRPCpath := viper.GetString("client.wsPath")
 	if wsRPCpath == "" {
-		LogWithCommand.Fatal(errors.New("getWSClient() was called but no ws rpc path is provided"))
+		logWithCommand.Fatal(errors.New("getWSClient() was called but no ws rpc path is provided"))
 	}
 	wsRPCClient, dialErr := rpc.Dial(wsRPCpath)
 	if dialErr != nil {
-		LogWithCommand.Fatal(dialErr)
+		logWithCommand.Fatal(dialErr)
 	}
 	return client.NewRPCClient(wsRPCClient, wsRPCpath)
 }

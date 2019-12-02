@@ -29,8 +29,6 @@ type DB struct {
 	NodeID int64
 }
 
-var ()
-
 func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	connectString := config.DbConnectionString(databaseConfig)
 	db, connectErr := sqlx.Connect("postgres", connectString)

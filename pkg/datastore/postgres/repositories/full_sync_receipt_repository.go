@@ -18,6 +18,7 @@ package repositories
 
 import (
 	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"

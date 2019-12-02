@@ -175,34 +175,6 @@ func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract 
 	}.Init()
 }
 
-func SetupENSRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
-	db, err := postgres.NewDB(config.Database{
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     5432,
-	}, core.Node{})
-	Expect(err).NotTo(HaveOccurred())
-
-	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
-	logRepository := repositories.FullSyncLogRepository{DB: db}
-	blockRepository := *repositories.NewBlockRepository(db)
-
-	blockNumber := rand.Int63()
-	blockID := CreateBlock(blockNumber, blockRepository)
-
-	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
-
-	err = receiptRepository.CreateReceiptsAndLogs(blockID, receipts)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = logRepository.Get(vulcanizeLogID, `SELECT id FROM full_sync_logs`)
-	Expect(err).ToNot(HaveOccurred())
-
-	info := SetupENSContract(wantedEvents, wantedMethods)
-
-	return db, info
-}
-
 func SetupENSContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.ENSAbiString)
 	err := p.Parse(constants.EnsContractAddress)
@@ -265,7 +237,7 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM addresses`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM blocks`)
+	_, err = tx.Exec(`DELETE FROM eth_blocks`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM headers`)

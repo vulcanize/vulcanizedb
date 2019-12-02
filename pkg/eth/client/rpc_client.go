@@ -24,11 +24,13 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+// RPCClient is a wrapper around the geth RPC client
 type RPCClient struct {
 	client  *rpc.Client
 	ipcPath string
 }
 
+// BatchElem is a struct to hold the elements of a BatchCall
 type BatchElem struct {
 	Method string
 	Args   []interface{}
@@ -36,6 +38,7 @@ type BatchElem struct {
 	Error  error
 }
 
+// NewRPCClient creates a new RpcClient
 func NewRPCClient(client *rpc.Client, ipcPath string) RPCClient {
 	return RPCClient{
 		client:  client,
@@ -43,6 +46,7 @@ func NewRPCClient(client *rpc.Client, ipcPath string) RPCClient {
 	}
 }
 
+// CallContext makes an rpc method call with the provided context and arguments
 func (client RPCClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	//If an empty interface (or other nil object) is passed to CallContext, when the JSONRPC message is created the params will
 	//be interpreted as [null]. This seems to work fine for most of the ethereum clients (which presumably ignore a null parameter.
@@ -70,7 +74,6 @@ func (client RPCClient) BatchCall(batch []BatchElem) error {
 			Args:   batchElem.Args,
 			Error:  batchElem.Error,
 		}
-
 		rpcBatch = append(rpcBatch, newBatchElem)
 	}
 	return client.client.BatchCall(rpcBatch)
