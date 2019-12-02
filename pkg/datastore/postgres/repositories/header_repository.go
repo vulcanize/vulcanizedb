@@ -68,7 +68,7 @@ func (repository HeaderRepository) CreateTransactions(headerID int64, transactio
 }
 
 func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
-	var txId int64
+	var txID int64
 	err := tx.QueryRowx(`INSERT INTO public.header_sync_transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
@@ -77,12 +77,12 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 		RETURNING id`,
 		headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
 		transaction.Data, transaction.Nonce, transaction.Raw, transaction.From,
-		transaction.TxIndex, transaction.To, transaction.Value).Scan(&txId)
+		transaction.TxIndex, transaction.To, transaction.Value).Scan(&txID)
 	if err != nil {
 		log.Error("header_repository: error inserting transaction: ", err)
-		return txId, err
+		return txID, err
 	}
-	return txId, err
+	return txID, err
 }
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
@@ -132,19 +132,19 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 // Can happen when concurrent processes are inserting headers
 // Otherwise should not occur since only called in CreateOrUpdateHeader
 func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
-	var headerId int64
+	var headerID int64
 	row := repository.database.QueryRowx(
 		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint)
 		VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING id`,
 		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID)
-	err := row.Scan(&headerId)
+	err := row.Scan(&headerID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, ErrValidHeaderExists
 		}
 		log.Error("InternalInsertHeader: error inserting header: ", err)
 	}
-	return headerId, err
+	return headerID, err
 }
 
 func (repository HeaderRepository) replaceHeader(header core.Header) (int64, error) {

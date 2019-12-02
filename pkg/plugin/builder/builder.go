@@ -17,7 +17,6 @@
 package builder
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -43,7 +42,7 @@ type builder struct {
 }
 
 // Requires populated plugin config
-func NewPluginBuilder(gc config.Plugin) *builder {
+func NewPluginBuilder(gc config.Plugin) PluginBuilder {
 	return &builder{
 		GenConfig:  gc,
 		tmpVenDirs: make([]string, 0),
@@ -68,7 +67,7 @@ func (b *builder) BuildPlugin() error {
 	// Build the .go file into a .so plugin
 	execErr := exec.Command("go", "build", "-buildmode=plugin", "-o", soFile, b.goFile).Run()
 	if execErr != nil {
-		return errors.New(fmt.Sprintf("unable to build .so file: %s", execErr.Error()))
+		return fmt.Errorf("unable to build .so file: %s", execErr.Error())
 	}
 	return nil
 }
@@ -94,7 +93,7 @@ func (b *builder) setupBuildEnv() error {
 
 		copyErr := helpers.CopyDir(src, dst, "vendor")
 		if copyErr != nil {
-			return errors.New(fmt.Sprintf("unable to copy transformer dependency from %s to %s: %v", src, dst, copyErr))
+			return fmt.Errorf("unable to copy transformer dependency from %s to %s: %v", src, dst, copyErr)
 		}
 
 		// Have to clear out the copied over vendor lib or plugin won't build (see issue above)

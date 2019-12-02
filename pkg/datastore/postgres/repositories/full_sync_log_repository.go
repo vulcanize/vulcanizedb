@@ -27,14 +27,14 @@ type FullSyncLogRepository struct {
 	*postgres.DB
 }
 
-func (repository FullSyncLogRepository) CreateLogs(lgs []core.FullSyncLog, receiptId int64) error {
+func (repository FullSyncLogRepository) CreateLogs(lgs []core.FullSyncLog, receiptID int64) error {
 	tx, _ := repository.DB.Beginx()
 	for _, tlog := range lgs {
 		_, insertLogErr := tx.Exec(
 			`INSERT INTO full_sync_logs (block_number, address, tx_hash, index, topic0, topic1, topic2, topic3, data, receipt_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 `,
-			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptId,
+			tlog.BlockNumber, tlog.Address, tlog.TxHash, tlog.Index, tlog.Topics[0], tlog.Topics[1], tlog.Topics[2], tlog.Topics[3], tlog.Data, receiptID,
 		)
 		if insertLogErr != nil {
 			rollbackErr := tx.Rollback()

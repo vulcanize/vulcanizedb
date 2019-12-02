@@ -120,9 +120,9 @@ func NewTestNode() core.Node {
 	}
 }
 
-func NewTestBlock(blockNumber int64, repository repositories.BlockRepository) (blockId int64) {
-	blockId, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
+func NewTestBlock(blockNumber int64, repository repositories.BlockRepository) int64 {
+	blockID, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
 	Expect(err).NotTo(HaveOccurred())
 
-	return blockId
+	return blockID
 }

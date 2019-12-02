@@ -106,7 +106,7 @@ var _ = Describe("Cold importer node builder", func() {
 			expectedGenesisBlock := common.BytesToHash(fakeGenesisBlock).String()
 			Expect(result.GenesisBlock).To(Equal(expectedGenesisBlock))
 			Expect(result.ID).To(Equal(fakePublicKeyString))
-			Expect(result.NetworkID).To(Equal(cold_import.ColdImportNetworkId))
+			Expect(result.NetworkID).To(Equal(cold_import.ColdImportNetworkID))
 		})
 	})
 

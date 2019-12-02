@@ -38,16 +38,16 @@ func NewColdImporter(ethDB ethereum.Database, blockRepository datastore.BlockRep
 	}
 }
 
-func (ci *ColdImporter) Execute(startingBlockNumber int64, endingBlockNumber int64, nodeId string) error {
-	missingBlocks := ci.blockRepository.MissingBlockNumbers(startingBlockNumber, endingBlockNumber, nodeId)
+func (ci *ColdImporter) Execute(startingBlockNumber int64, endingBlockNumber int64, nodeID string) error {
+	missingBlocks := ci.blockRepository.MissingBlockNumbers(startingBlockNumber, endingBlockNumber, nodeID)
 	for _, n := range missingBlocks {
 		hash := ci.ethDB.GetBlockHash(n)
 
-		blockId, err := ci.createBlocksAndTransactions(hash, n)
+		blockID, err := ci.createBlocksAndTransactions(hash, n)
 		if err != nil {
 			return err
 		}
-		err = ci.createReceiptsAndLogs(hash, n, blockId)
+		err = ci.createReceiptsAndLogs(hash, n, blockID)
 		if err != nil {
 			return err
 		}
@@ -65,11 +65,11 @@ func (ci *ColdImporter) createBlocksAndTransactions(hash []byte, i int64) (int64
 	return ci.blockRepository.CreateOrUpdateBlock(coreBlock)
 }
 
-func (ci *ColdImporter) createReceiptsAndLogs(hash []byte, number int64, blockId int64) error {
+func (ci *ColdImporter) createReceiptsAndLogs(hash []byte, number int64, blockID int64) error {
 	receipts := ci.ethDB.GetBlockReceipts(hash, number)
 	coreReceipts, err := common.ToCoreReceipts(receipts)
 	if err != nil {
 		return err
 	}
-	return ci.receiptRepository.CreateReceiptsAndLogs(blockId, coreReceipts)
+	return ci.receiptRepository.CreateReceiptsAndLogs(blockID, coreReceipts)
 }

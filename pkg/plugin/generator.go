@@ -36,7 +36,7 @@ type generator struct {
 }
 
 // Creates a new generator from a plugin and database config
-func NewGenerator(gc config.Plugin, dbc config.Database) (*generator, error) {
+func NewGenerator(gc config.Plugin, dbc config.Database) (Generator, error) {
 	if len(gc.Transformers) < 1 {
 		return nil, errors.New("plugin generator is not configured with any transformers")
 	}

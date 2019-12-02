@@ -60,7 +60,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		}
 		block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 		client := fakes.NewMockEthClient()
-		transactionConverter := rpc.NewRpcTransactionConverter(client)
+		transactionConverter := rpc.NewRPCTransactionConverter(client)
 		blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 		coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -110,7 +110,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			}
 			uncles := []*types.Header{{Number: big.NewInt(1071817)}, {Number: big.NewInt(1071818)}}
 			block := types.NewBlock(&header, transactions, uncles, []*types.Receipt{&receipt})
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -151,7 +151,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			client := fakes.NewMockEthClient()
 			client.SetTransactionReceipts(receipts)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -211,7 +211,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 			client := fakes.NewMockEthClient()
 			client.SetTransactionReceipts(receipts)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -229,7 +229,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 			header := types.Header{}
 			block := types.NewBlock(&header, []*types.Transaction{}, []*types.Header{}, []*types.Receipt{})
 			client := fakes.NewMockEthClient()
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -270,7 +270,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Header{},
 				[]*types.Receipt{gethReceipt},
 			)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -320,7 +320,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 				[]*types.Header{},
 				[]*types.Receipt{gethReceipt},
 			)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			coreBlock, err := blockConverter.ToCoreBlock(block)
@@ -370,7 +370,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("returns an error when transaction sender call fails", func() {
 			client := fakes.NewMockEthClient()
 			client.SetTransactionSenderErr(fakes.FakeError)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			_, err := blockConverter.ToCoreBlock(block)
@@ -381,7 +381,7 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 		It("returns an error when transaction receipt call fails", func() {
 			client := fakes.NewMockEthClient()
 			client.SetTransactionReceiptErr(fakes.FakeError)
-			transactionConverter := rpc.NewRpcTransactionConverter(client)
+			transactionConverter := rpc.NewRPCTransactionConverter(client)
 			blockConverter := vulcCommon.NewBlockConverter(transactionConverter)
 
 			_, err := blockConverter.ToCoreBlock(block)

@@ -57,7 +57,7 @@ type FilterRepository interface {
 }
 
 type FullSyncLogRepository interface {
-	CreateLogs(logs []core.FullSyncLog, receiptId int64) error
+	CreateLogs(logs []core.FullSyncLog, receiptID int64) error
 	GetLogs(address string, blockNumber int64) ([]core.FullSyncLog, error)
 }
 
@@ -74,13 +74,13 @@ type HeaderSyncLogRepository interface {
 }
 
 type FullSyncReceiptRepository interface {
-	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+	CreateReceiptsAndLogs(blockID int64, receipts []core.Receipt) error
+	CreateFullSyncReceiptInTx(blockID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
 	GetFullSyncReceipt(txHash string) (core.Receipt, error)
 }
 
 type HeaderSyncReceiptRepository interface {
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+	CreateFullSyncReceiptInTx(blockID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
 }
 
 type WatchedEventRepository interface {

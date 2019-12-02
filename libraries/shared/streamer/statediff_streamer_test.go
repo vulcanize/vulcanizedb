@@ -24,7 +24,7 @@ import (
 
 var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
-		client := &fakes.MockRpcClient{}
+		client := &fakes.MockRPCClient{}
 		streamer := streamer.NewStateDiffStreamer(client)
 		payloadChan := make(chan statediff.Payload)
 		_, err := streamer.Stream(payloadChan)

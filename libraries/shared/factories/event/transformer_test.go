@@ -48,11 +48,11 @@ var _ = Describe("Transformer", func() {
 			Config:     config,
 		}.NewTransformer(nil)
 
-		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
+		headerOne = core.Header{ID: rand.Int63(), BlockNumber: rand.Int63()}
 
 		logs = []core.HeaderSyncLog{{
 			ID:          0,
-			HeaderID:    headerOne.Id,
+			HeaderID:    headerOne.ID,
 			Log:         test_data.GenericTestLog(),
 			Transformed: false,
 		}}

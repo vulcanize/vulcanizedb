@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -34,5 +33,5 @@ func ErrUnableToSetNode(setErr error) error {
 }
 
 func formatError(msg, err string) error {
-	return errors.New(fmt.Sprintf("%s: %s", msg, err))
+	return fmt.Errorf("%s: %s", msg, err)
 }

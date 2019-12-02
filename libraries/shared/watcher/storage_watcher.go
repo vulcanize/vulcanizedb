@@ -103,12 +103,12 @@ func (storageWatcher StorageWatcher) processQueue() {
 		storageTransformer, ok := storageWatcher.getTransformer(diff)
 		if !ok {
 			// delete diff from queue if address no longer watched
-			storageWatcher.deleteRow(diff.Id)
+			storageWatcher.deleteRow(diff.ID)
 			continue
 		}
 		executeErr := storageTransformer.Execute(diff)
 		if executeErr == nil {
-			storageWatcher.deleteRow(diff.Id)
+			storageWatcher.deleteRow(diff.ID)
 		}
 	}
 }

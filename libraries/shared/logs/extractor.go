@@ -93,20 +93,20 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 		}
 
 		if len(logs) > 0 {
-			transactionsSyncErr := extractor.Syncer.SyncTransactions(header.Id, logs)
+			transactionsSyncErr := extractor.Syncer.SyncTransactions(header.ID, logs)
 			if transactionsSyncErr != nil {
 				logError("error syncing transactions: %s", transactionsSyncErr, header)
 				return transactionsSyncErr
 			}
 
-			createLogsErr := extractor.LogRepository.CreateHeaderSyncLogs(header.Id, logs)
+			createLogsErr := extractor.LogRepository.CreateHeaderSyncLogs(header.ID, logs)
 			if createLogsErr != nil {
 				logError("error persisting logs: %s", createLogsErr, header)
 				return createLogsErr
 			}
 		}
 
-		markHeaderCheckedErr := extractor.CheckedHeadersRepository.MarkHeaderChecked(header.Id)
+		markHeaderCheckedErr := extractor.CheckedHeadersRepository.MarkHeaderChecked(header.ID)
 		if markHeaderCheckedErr != nil {
 			logError("error marking header checked: %s", markHeaderCheckedErr, header)
 			return markHeaderCheckedErr
@@ -121,7 +121,7 @@ func earlierStartingBlockNumber(transformerBlock, watcherBlock int64) bool {
 
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
-		"headerId":    header.Id,
+		"headerId":    header.ID,
 		"headerHash":  header.Hash,
 		"blockNumber": header.BlockNumber,
 	}).Errorf(description, err.Error())
@@ -130,9 +130,8 @@ func logError(description string, err error, header core.Header) {
 func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	if recheckHeaders == constants.HeaderUnchecked {
 		return 1
-	} else {
-		return constants.RecheckHeaderCap
 	}
+	return constants.RecheckHeaderCap
 }
 
 func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTransformerConfig) error {

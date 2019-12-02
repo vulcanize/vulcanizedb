@@ -65,7 +65,7 @@ var _ = Describe("Storage Watcher", func() {
 			mockQueue = &mocks.MockStorageQueue{}
 			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
 			csvDiff = utils.StorageDiff{
-				Id:            1337,
+				ID:            1337,
 				HashedAddress: hashedAddress,
 				BlockHash:     common.HexToHash("0xfedcba9876543210"),
 				BlockHeight:   0,
@@ -167,8 +167,8 @@ var _ = Describe("Storage Watcher", func() {
 				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
 
 				Eventually(func() int {
-					return mockQueue.DeletePassedId
-				}).Should(Equal(csvDiff.Id))
+					return mockQueue.DeletePassedID
+				}).Should(Equal(csvDiff.ID))
 				close(done)
 			})
 
@@ -190,7 +190,7 @@ var _ = Describe("Storage Watcher", func() {
 
 			It("deletes obsolete diff from queue if contract not recognized", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:            csvDiff.Id + 1,
+					ID:            csvDiff.ID + 1,
 					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}
@@ -198,14 +198,14 @@ var _ = Describe("Storage Watcher", func() {
 				go storageWatcher.Execute(diffs, errs, time.Nanosecond)
 
 				Eventually(func() int {
-					return mockQueue.DeletePassedId
-				}).Should(Equal(obsoleteDiff.Id))
+					return mockQueue.DeletePassedID
+				}).Should(Equal(obsoleteDiff.ID))
 				close(done)
 			})
 
 			It("logs error if deleting obsolete diff fails", func(done Done) {
 				obsoleteDiff := utils.StorageDiff{
-					Id:            csvDiff.Id + 1,
+					ID:            csvDiff.ID + 1,
 					HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 				}
 				mockQueue.DiffsToReturn = []utils.StorageDiff{obsoleteDiff}

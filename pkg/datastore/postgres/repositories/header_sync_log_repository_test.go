@@ -80,7 +80,7 @@ var _ = Describe("Header sync log repository", func() {
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(dbLog.ID).NotTo(BeZero())
 			Expect(dbLog.HeaderID).To(Equal(headerID))
-			actualAddress, addressErr := repository2.GetAddressById(db, dbLog.Address)
+			actualAddress, addressErr := repository2.GetAddressByID(db, dbLog.Address)
 			Expect(addressErr).NotTo(HaveOccurred())
 			Expect(actualAddress).To(Equal(log.Address.Hex()))
 			Expect(dbLog.Topics[0]).To(Equal(log.Topics[0].Bytes()))
@@ -128,7 +128,7 @@ var _ = Describe("Header sync log repository", func() {
 				logTopics = append(logTopics, common.BytesToHash(topic))
 			}
 
-			actualAddress, addressErr := repository2.GetAddressById(db, dbLog.Address)
+			actualAddress, addressErr := repository2.GetAddressByID(db, dbLog.Address)
 			Expect(addressErr).NotTo(HaveOccurred())
 			reconstructedLog := types.Log{
 				Address:     common.HexToAddress(actualAddress),

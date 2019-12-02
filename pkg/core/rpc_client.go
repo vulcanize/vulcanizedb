@@ -23,7 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
 
-type RpcClient interface {
+type RPCClient interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
 	BatchCall(batch []client.BatchElem) error
 	IpcPath() string

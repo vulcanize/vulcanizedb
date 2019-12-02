@@ -25,16 +25,16 @@ import (
 )
 
 var _ = Describe("RPC transaction converter", func() {
-	var converter rpc.RpcTransactionConverter
+	var converter rpc.RPCTransactionConverter
 
 	BeforeEach(func() {
-		converter = rpc.RpcTransactionConverter{}
+		converter = rpc.RPCTransactionConverter{}
 	})
 
 	It("converts hex fields to integers", func() {
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
-		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
+		transactionModels, err := converter.ConvertRPCTransactionsToModels([]core.RPCTransaction{rpcTransaction})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(transactionModels)).To(Equal(1))
@@ -48,7 +48,7 @@ var _ = Describe("RPC transaction converter", func() {
 	It("returns error if invalid hex cannot be converted", func() {
 		invalidTransaction := getFakeRpcTransaction("invalid")
 
-		_, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{invalidTransaction})
+		_, err := converter.ConvertRPCTransactionsToModels([]core.RPCTransaction{invalidTransaction})
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -56,7 +56,7 @@ var _ = Describe("RPC transaction converter", func() {
 	It("copies RPC transaction hash, from, and to values to model", func() {
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
-		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
+		transactionModels, err := converter.ConvertRPCTransactionsToModels([]core.RPCTransaction{rpcTransaction})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(transactionModels)).To(Equal(1))
@@ -67,7 +67,7 @@ var _ = Describe("RPC transaction converter", func() {
 
 	It("derives transaction RLP", func() {
 		// actual transaction: https://kovan.etherscan.io/tx/0x3b29ef265425d304069c57e5145cd1c7558568b06d231775f50a693bee1aad4f
-		rpcTransaction := core.RpcTransaction{
+		rpcTransaction := core.RPCTransaction{
 			Nonce:            "0x7aa9",
 			GasPrice:         "0x3b9aca00",
 			GasLimit:         "0x7a120",
@@ -82,7 +82,7 @@ var _ = Describe("RPC transaction converter", func() {
 			TransactionIndex: "0xa",
 		}
 
-		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
+		transactionModels, err := converter.ConvertRPCTransactionsToModels([]core.RPCTransaction{rpcTransaction})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(transactionModels)).To(Equal(1))
@@ -98,7 +98,7 @@ var _ = Describe("RPC transaction converter", func() {
 	It("does not include transaction receipt", func() {
 		rpcTransaction := getFakeRpcTransaction("0x1")
 
-		transactionModels, err := converter.ConvertRpcTransactionsToModels([]core.RpcTransaction{rpcTransaction})
+		transactionModels, err := converter.ConvertRPCTransactionsToModels([]core.RPCTransaction{rpcTransaction})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(transactionModels)).To(Equal(1))
@@ -106,8 +106,8 @@ var _ = Describe("RPC transaction converter", func() {
 	})
 })
 
-func getFakeRpcTransaction(hex string) core.RpcTransaction {
-	return core.RpcTransaction{
+func getFakeRpcTransaction(hex string) core.RPCTransaction {
+	return core.RPCTransaction{
 		Hash:             "0x2",
 		Amount:           hex,
 		GasLimit:         hex,

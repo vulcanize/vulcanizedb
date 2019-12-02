@@ -33,12 +33,12 @@ import (
 
 type IPropertiesReader interface {
 	NodeInfo() (id string, name string)
-	NetworkId() float64
+	NetworkID() float64
 	GenesisBlock() string
 }
 
 type PropertiesReader struct {
-	client core.RpcClient
+	client core.RPCClient
 }
 
 type ParityClient struct {
@@ -57,18 +57,18 @@ type GanacheClient struct {
 	PropertiesReader
 }
 
-func MakeNode(rpcClient core.RpcClient) core.Node {
+func MakeNode(rpcClient core.RPCClient) core.Node {
 	pr := makePropertiesReader(rpcClient)
 	id, name := pr.NodeInfo()
 	return core.Node{
 		GenesisBlock: pr.GenesisBlock(),
-		NetworkID:    pr.NetworkId(),
+		NetworkID:    pr.NetworkID(),
 		ID:           id,
 		ClientName:   name,
 	}
 }
 
-func makePropertiesReader(client core.RpcClient) IPropertiesReader {
+func makePropertiesReader(client core.RPCClient) IPropertiesReader {
 	switch getNodeType(client) {
 	case core.GETH:
 		return GethClient{PropertiesReader: PropertiesReader{client: client}}
@@ -83,7 +83,7 @@ func makePropertiesReader(client core.RpcClient) IPropertiesReader {
 	}
 }
 
-func getNodeType(client core.RpcClient) core.NodeType {
+func getNodeType(client core.RPCClient) core.NodeType {
 	if strings.Contains(client.IpcPath(), "infura") {
 		return core.INFURA
 	}
@@ -97,14 +97,14 @@ func getNodeType(client core.RpcClient) core.NodeType {
 	return core.PARITY
 }
 
-func (reader PropertiesReader) NetworkId() float64 {
+func (reader PropertiesReader) NetworkID() float64 {
 	var version string
 	err := reader.client.CallContext(context.Background(), &version, "net_version")
 	if err != nil {
 		log.Println(err)
 	}
-	networkId, _ := strconv.ParseFloat(version, 64)
-	return networkId
+	networkID, _ := strconv.ParseFloat(version, 64)
+	return networkID
 }
 
 func (reader PropertiesReader) GenesisBlock() string {
@@ -142,10 +142,10 @@ func (client ParityClient) parityNodeInfo() string {
 }
 
 func (client ParityClient) parityID() string {
-	var enodeId = regexp.MustCompile(`^enode://(.+)@.+$`)
+	var enodeID = regexp.MustCompile(`^enode://(.+)@.+$`)
 	var enodeURL string
 	client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
-	enode := enodeId.FindStringSubmatch(enodeURL)
+	enode := enodeID.FindStringSubmatch(enodeURL)
 	if len(enode) < 2 {
 		return ""
 	}
