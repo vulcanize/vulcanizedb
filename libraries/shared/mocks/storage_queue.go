@@ -38,7 +38,7 @@ func (queue *MockStorageQueue) Add(diff utils.StorageDiff) error {
 	if queue.AddPassedDiffs == nil {
 		queue.AddPassedDiffs = make(map[int]utils.StorageDiff)
 	}
-	queue.AddPassedDiffs[diff.Id] = diff
+	queue.AddPassedDiffs[diff.ID] = diff
 	return queue.AddError
 }
 

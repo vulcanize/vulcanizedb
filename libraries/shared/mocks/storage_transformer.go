@@ -36,7 +36,7 @@ func (transformer *MockStorageTransformer) Execute(diff utils.StorageDiff) error
 	if transformer.PassedDiffs == nil {
 		transformer.PassedDiffs = make(map[int]utils.StorageDiff)
 	}
-	transformer.PassedDiffs[diff.Id] = diff
+	transformer.PassedDiffs[diff.ID] = diff
 	return transformer.ExecuteErr
 }
 
