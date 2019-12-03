@@ -78,10 +78,6 @@ var _ = Describe("Block header repository", func() {
 			err = db.Get(&ethNodeId, `SELECT eth_node_id FROM public.headers WHERE block_number = $1`, header.BlockNumber)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ethNodeId).To(Equal(db.NodeID))
-			var ethNodeFingerprint string
-			err = db.Get(&ethNodeFingerprint, `SELECT eth_node_fingerprint FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ethNodeFingerprint).To(Equal(db.Node.ID))
 		})
 
 		It("returns valid header exists error if attempting duplicate headers", func() {
@@ -133,12 +129,10 @@ var _ = Describe("Block header repository", func() {
 			Expect(dbHeader.Raw).To(MatchJSON(headerTwo.Raw))
 		})
 
-		It("does not replace header if node fingerprint is different", func() {
+		It("does not replace header if node id is different", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
@@ -157,13 +151,11 @@ var _ = Describe("Block header repository", func() {
 			Expect(len(dbHeaders)).To(Equal(2))
 		})
 
-		It("only replaces header with matching node fingerprint", func() {
+		It("only replaces header with matching node id", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
@@ -430,13 +422,11 @@ var _ = Describe("Block header repository", func() {
 			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
-		It("does not return header for a different node fingerprint", func() {
+		It("does not return header for a different node id", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
 			_, err = repoTwo.GetHeader(header.BlockNumber)
@@ -469,13 +459,13 @@ var _ = Describe("Block header repository", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5, db.Node.ID)
+			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
 		})
 
-		It("does not count headers created by a different node fingerprint", func() {
+		It("does not count headers created by a different node id", func() {
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
@@ -497,12 +487,10 @@ var _ = Describe("Block header repository", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
-			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5, nodeTwo.ID)
+			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{1, 2, 3, 4, 5}))

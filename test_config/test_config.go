@@ -23,6 +23,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -115,7 +116,7 @@ func NewTestNode() core.Node {
 	return core.Node{
 		GenesisBlock: "GENESIS",
 		NetworkID:    1,
-		ID:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
+		ID:           fakes.RandomString(128),
 		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 	}
 }

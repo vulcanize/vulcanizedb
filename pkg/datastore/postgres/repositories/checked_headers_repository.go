@@ -56,16 +56,16 @@ func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endin
 				FROM headers
 				WHERE check_count < $2
 				AND block_number >= $1
-				AND eth_node_fingerprint = $3`
-		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.Node.ID)
+				AND eth_node_id = $3`
+		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.NodeID)
 	} else {
 		query = `SELECT id, block_number, hash
 				FROM headers
 				WHERE check_count < $3
 				AND block_number >= $1
 				AND block_number <= $2
-				AND eth_node_fingerprint = $4`
-		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.Node.ID)
+				AND eth_node_id = $4`
+		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.NodeID)
 	}
 
 	return result, err

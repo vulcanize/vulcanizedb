@@ -31,7 +31,7 @@ func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datasto
 		return 0, err
 	}
 
-	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockChain.Node().ID)
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64())
 	if err != nil {
 		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
 		return 0, err

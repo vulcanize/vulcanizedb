@@ -30,7 +30,7 @@ func PopulateMissingBlocks(blockchain core.BlockChain, blockRepository datastore
 		log.Error("PopulateMissingBlocks: error getting last block: ", err)
 		return 0, err
 	}
-	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockchain.Node().ID)
+	blockRange := blockRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64())
 
 	if len(blockRange) == 0 {
 		return 0, nil

@@ -17,9 +17,8 @@
 package fakes
 
 import (
-	. "github.com/onsi/gomega"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	. "github.com/onsi/gomega"
 )
 
 type MockHeaderRepository struct {
@@ -73,7 +72,7 @@ func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Heade
 	}, repository.GetHeaderError
 }
 
-func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
+func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	return repository.missingBlockNumbers, nil
 }
 

@@ -2,14 +2,13 @@
 CREATE TABLE public.headers
 (
     id                   SERIAL PRIMARY KEY,
-    hash                 VARCHAR(66),
-    block_number         BIGINT,
+    hash                 VARCHAR(66) NOT NULL,
+    block_number         BIGINT NOT NULL,
     raw                  JSONB,
     block_timestamp      NUMERIC,
     check_count          INTEGER NOT NULL DEFAULT 0,
     eth_node_id          INTEGER NOT NULL REFERENCES eth_nodes (id) ON DELETE CASCADE,
-    eth_node_fingerprint VARCHAR(128),
-    UNIQUE (block_number, hash, eth_node_fingerprint)
+    UNIQUE (block_number, hash, eth_node_id)
 );
 
 -- Index is removed when table is
