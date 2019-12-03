@@ -17,8 +17,7 @@
 package testing
 
 import (
-	log "github.com/sirupsen/logrus"
-
+	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/test_config"
@@ -34,7 +33,7 @@ func SampleContract() core.Contract {
 func sampleAbiFileContents() string {
 	abiFileContents, err := eth.ReadAbiFile(test_config.ABIFilePath + "sample_abi.json")
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	return abiFileContents
 }

@@ -54,6 +54,7 @@ func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
 		logrus.Errorf("error persisting %v record: %v", transformerName, err)
 		return err
 	}
+	logrus.Debug("Persisted log for " + transformerName)
 
 	return nil
 }
