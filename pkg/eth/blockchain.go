@@ -60,7 +60,7 @@ func NewBlockChain(ethClient core.EthClient, rpcClient core.RPCClient, node core
 
 func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Block, err error) {
 	gethBlock, err := blockChain.ethClient.BlockByNumber(context.Background(), big.NewInt(blockNumber))
-	logrus.Debug("GetBlockByNumber called with block " + strconv.Itoa(int(blockNumber)))
+	logrus.Debugf("GetBlockByNumber called with block %d", blockNumber)
 	if err != nil {
 		return block, err
 	}
@@ -77,7 +77,7 @@ func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQue
 }
 
 func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.Header, err error) {
-	logrus.Debug("GetHeaderByNumber called with block " + strconv.Itoa(int(blockNumber)))
+	logrus.Debugf("GetHeaderByNumber called with block %d", blockNumber)
 	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
 		return blockChain.getPOAHeader(blockNumber)
 	}
