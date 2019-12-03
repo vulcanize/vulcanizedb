@@ -904,11 +904,11 @@ ALTER TABLE ONLY public.header_sync_receipts
 
 
 --
--- Name: header_sync_transactions header_sync_transactions_header_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: header_sync_transactions header_sync_transactions_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.header_sync_transactions
-    ADD CONSTRAINT header_sync_transactions_header_id_hash_key UNIQUE (header_id, hash);
+    ADD CONSTRAINT header_sync_transactions_hash_key UNIQUE (hash);
 
 
 --
@@ -1095,6 +1095,14 @@ ALTER TABLE ONLY public.header_sync_logs
 
 ALTER TABLE ONLY public.header_sync_logs
     ADD CONSTRAINT header_sync_logs_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: header_sync_logs header_sync_logs_tx_hash_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.header_sync_logs
+    ADD CONSTRAINT header_sync_logs_tx_hash_fkey FOREIGN KEY (tx_hash) REFERENCES public.header_sync_transactions(hash);
 
 
 --

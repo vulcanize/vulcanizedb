@@ -9,7 +9,7 @@ CREATE TABLE header_sync_logs
     data         BYTEA,
     block_number BIGINT,
     block_hash   VARCHAR(66),
-    tx_hash      VARCHAR(66),
+    tx_hash      VARCHAR(66) REFERENCES header_sync_transactions (hash),
     tx_index     INTEGER,
     log_index    INTEGER,
     raw          JSONB,
