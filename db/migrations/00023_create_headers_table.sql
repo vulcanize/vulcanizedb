@@ -12,9 +12,14 @@ CREATE TABLE public.headers
     UNIQUE (block_number, hash, eth_node_fingerprint)
 );
 
--- Index is removed when table is
-CREATE INDEX headers_block_number ON public.headers (block_number);
+CREATE INDEX headers_block_number
+    ON public.headers (block_number);
 
+CREATE INDEX headers_block_timestamp
+    ON public.headers (block_timestamp);
 
 -- +goose Down
+DROP INDEX public.headers_block_number;
+DROP INDEX public.headers_block_timestamp;
+
 DROP TABLE public.headers;
