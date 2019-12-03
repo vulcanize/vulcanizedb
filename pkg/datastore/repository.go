@@ -30,7 +30,7 @@ type AddressRepository interface {
 type BlockRepository interface {
 	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) []int64
 	SetBlocksStatus(chainHead int64) error
 }
 
@@ -65,7 +65,7 @@ type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
 	GetHeader(blockNumber int64) (core.Header, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error)
 }
 
 type HeaderSyncLogRepository interface {

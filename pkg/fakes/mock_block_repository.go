@@ -17,9 +17,8 @@
 package fakes
 
 import (
-	. "github.com/onsi/gomega"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	. "github.com/onsi/gomega"
 )
 
 type MockBlockRepository struct {
@@ -31,7 +30,6 @@ type MockBlockRepository struct {
 	createOrUpdateBlockReturnInt                 int64
 	missingBlockNumbersCalled                    bool
 	missingBlockNumbersPassedEndingBlockNumber   int64
-	missingBlockNumbersPassedNodeId              string
 	missingBlockNumbersPassedStartingBlockNumber int64
 	missingBlockNumbersReturnArray               []int64
 	setBlockStatusCalled                         bool
@@ -48,7 +46,6 @@ func NewMockBlockRepository() *MockBlockRepository {
 		createOrUpdateBlockReturnInt:                 0,
 		missingBlockNumbersCalled:                    false,
 		missingBlockNumbersPassedEndingBlockNumber:   0,
-		missingBlockNumbersPassedNodeId:              "",
 		missingBlockNumbersPassedStartingBlockNumber: 0,
 		missingBlockNumbersReturnArray:               nil,
 		setBlockStatusCalled:                         false,
@@ -77,11 +74,10 @@ func (repository *MockBlockRepository) GetBlock(blockNumber int64) (core.Block, 
 	return core.Block{Number: blockNumber}, nil
 }
 
-func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber int64, endingBlockNumber int64, nodeId string) []int64 {
+func (repository *MockBlockRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) []int64 {
 	repository.missingBlockNumbersCalled = true
 	repository.missingBlockNumbersPassedStartingBlockNumber = startingBlockNumber
 	repository.missingBlockNumbersPassedEndingBlockNumber = endingBlockNumber
-	repository.missingBlockNumbersPassedNodeId = nodeId
 	return repository.missingBlockNumbersReturnArray
 }
 
@@ -105,11 +101,10 @@ func (repository *MockBlockRepository) AssertCreateOrUpdateBlockCalledWith(block
 	Expect(repository.createOrUpdateBlockPassedBlock).To(Equal(block))
 }
 
-func (repository *MockBlockRepository) AssertMissingBlockNumbersCalledWith(startingBlockNumber int64, endingBlockNumber int64, nodeId string) {
+func (repository *MockBlockRepository) AssertMissingBlockNumbersCalledWith(startingBlockNumber, endingBlockNumber int64) {
 	Expect(repository.missingBlockNumbersCalled).To(BeTrue())
 	Expect(repository.missingBlockNumbersPassedStartingBlockNumber).To(Equal(startingBlockNumber))
 	Expect(repository.missingBlockNumbersPassedEndingBlockNumber).To(Equal(endingBlockNumber))
-	Expect(repository.missingBlockNumbersPassedNodeId).To(Equal(nodeId))
 }
 
 func (repository *MockBlockRepository) AssertSetBlockStatusCalledWith(chainHead int64) {

@@ -18,16 +18,16 @@ package repositories_test
 
 import (
 	"bytes"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -48,7 +48,6 @@ var _ = Describe("Saving blocks", func() {
 		db = test_config.NewTestDB(node)
 		test_config.CleanTestDB(db)
 		blockRepository = repositories.NewBlockRepository(db)
-
 	})
 
 	It("associates blocks to a node", func() {
@@ -57,12 +56,7 @@ var _ = Describe("Saving blocks", func() {
 		}
 		_, insertErr := blockRepository.CreateOrUpdateBlock(block)
 		Expect(insertErr).NotTo(HaveOccurred())
-		nodeTwo := core.Node{
-			GenesisBlock: "0x456",
-			NetworkID:    1,
-			ID:           "x123456",
-			ClientName:   "Geth",
-		}
+		nodeTwo := test_config.NewTestNode()
 		dbTwo := test_config.NewTestDB(nodeTwo)
 		test_config.CleanTestDB(dbTwo)
 		repositoryTwo := repositories.NewBlockRepository(dbTwo)
@@ -82,7 +76,7 @@ var _ = Describe("Saving blocks", func() {
 		extraData := "xextraData"
 		blockTime := uint64(1508981640)
 		uncleHash := "x789"
-		blockSize := string("1000")
+		blockSize := "1000"
 		difficulty := int64(10)
 		blockReward := "5132000000000000000"
 		unclesReward := "3580000000000000000"
@@ -98,7 +92,7 @@ var _ = Describe("Saving blocks", func() {
 			Number:       blockNumber,
 			ParentHash:   blockParentHash,
 			Size:         blockSize,
-			Time:         uint64(blockTime),
+			Time:         blockTime,
 			UncleHash:    uncleHash,
 			UnclesReward: unclesReward,
 		}
@@ -273,11 +267,7 @@ var _ = Describe("Saving blocks", func() {
 		}
 		_, insertErrOne := blockRepository.CreateOrUpdateBlock(blockOne)
 		Expect(insertErrOne).NotTo(HaveOccurred())
-		nodeTwo := core.Node{
-			GenesisBlock: "0x456",
-			NetworkID:    1,
-		}
-		dbTwo := test_config.NewTestDB(nodeTwo)
+		dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(dbTwo)
 		repositoryTwo := repositories.NewBlockRepository(dbTwo)
 
@@ -356,7 +346,7 @@ var _ = Describe("Saving blocks", func() {
 			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
 
 			Expect(insertErr).NotTo(HaveOccurred())
-			Expect(len(blockRepository.MissingBlockNumbers(1, 1, node.ID))).To(Equal(0))
+			Expect(len(blockRepository.MissingBlockNumbers(1, 1))).To(Equal(0))
 		})
 
 		It("is empty if copies of block exist from both current node and another", func() {
@@ -364,17 +354,12 @@ var _ = Describe("Saving blocks", func() {
 			Expect(insertErrOne).NotTo(HaveOccurred())
 			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 1})
 			Expect(insertErrTwo).NotTo(HaveOccurred())
-			nodeTwo := core.Node{
-				GenesisBlock: "0x456",
-				NetworkID:    1,
-			}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repositoryTwo := repositories.NewBlockRepository(dbTwo)
 			_, insertErrThree := repositoryTwo.CreateOrUpdateBlock(core.Block{Number: 0})
 			Expect(insertErrThree).NotTo(HaveOccurred())
 
-			missing := blockRepository.MissingBlockNumbers(0, 1, node.ID)
+			missing := blockRepository.MissingBlockNumbers(0, 1)
 
 			Expect(len(missing)).To(BeZero())
 		})
@@ -383,21 +368,21 @@ var _ = Describe("Saving blocks", func() {
 			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 2})
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(1, 2, node.ID)).To(Equal([]int64{1}))
+			Expect(blockRepository.MissingBlockNumbers(1, 2)).To(Equal([]int64{1}))
 		})
 
 		It("is both missing block numbers", func() {
 			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 3})
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(1, 3, node.ID)).To(Equal([]int64{1, 2}))
+			Expect(blockRepository.MissingBlockNumbers(1, 3)).To(Equal([]int64{1, 2}))
 		})
 
 		It("goes back to the starting block number", func() {
 			_, insertErr := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5}))
 		})
 
 		It("only includes missing block numbers", func() {
@@ -406,7 +391,7 @@ var _ = Describe("Saving blocks", func() {
 			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 			Expect(insertErrTwo).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(4, 6, node.ID)).To(Equal([]int64{5}))
+			Expect(blockRepository.MissingBlockNumbers(4, 6)).To(Equal([]int64{5}))
 		})
 
 		It("includes blocks created by a different node", func() {
@@ -414,8 +399,10 @@ var _ = Describe("Saving blocks", func() {
 			Expect(insertErrOne).NotTo(HaveOccurred())
 			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 6})
 			Expect(insertErrTwo).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
+			blockRepositoryTwo := repositories.NewBlockRepository(dbTwo)
 
-			Expect(blockRepository.MissingBlockNumbers(4, 6, "Different node id")).To(Equal([]int64{4, 5, 6}))
+			Expect(blockRepositoryTwo.MissingBlockNumbers(4, 6)).To(Equal([]int64{4, 5, 6}))
 		})
 
 		It("is a list with multiple gaps", func() {
@@ -428,11 +415,11 @@ var _ = Describe("Saving blocks", func() {
 			_, insertErrFour := blockRepository.CreateOrUpdateBlock(core.Block{Number: 10})
 			Expect(insertErrFour).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(3, 10, node.ID)).To(Equal([]int64{3, 6, 7, 9}))
+			Expect(blockRepository.MissingBlockNumbers(3, 10)).To(Equal([]int64{3, 6, 7, 9}))
 		})
 
 		It("returns empty array when lower bound exceeds upper bound", func() {
-			Expect(blockRepository.MissingBlockNumbers(10000, 1, node.ID)).To(Equal([]int64{}))
+			Expect(blockRepository.MissingBlockNumbers(10000, 1)).To(Equal([]int64{}))
 		})
 
 		It("only returns requested range even when other gaps exist", func() {
@@ -441,7 +428,7 @@ var _ = Describe("Saving blocks", func() {
 			_, insertErrTwo := blockRepository.CreateOrUpdateBlock(core.Block{Number: 8})
 			Expect(insertErrTwo).NotTo(HaveOccurred())
 
-			Expect(blockRepository.MissingBlockNumbers(1, 5, node.ID)).To(Equal([]int64{1, 2, 4, 5}))
+			Expect(blockRepository.MissingBlockNumbers(1, 5)).To(Equal([]int64{1, 2, 4, 5}))
 		})
 	})
 

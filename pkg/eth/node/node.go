@@ -18,17 +18,14 @@ package node
 
 import (
 	"context"
-
-	"strconv"
-
 	"regexp"
-
-	"log"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/makerdao/vulcanizedb/pkg/core"
-	"strings"
+	"github.com/sirupsen/logrus"
 )
 
 type IPropertiesReader interface {
@@ -101,7 +98,7 @@ func (reader PropertiesReader) NetworkId() float64 {
 	var version string
 	err := reader.client.CallContext(context.Background(), &version, "net_version")
 	if err != nil {
-		log.Println(err)
+		logrus.Println(err)
 	}
 	networkId, _ := strconv.ParseFloat(version, 64)
 	return networkId

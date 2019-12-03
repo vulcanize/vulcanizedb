@@ -86,27 +86,27 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		blockNumber, repository.database.Node.ID)
+	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		blockNumber, repository.database.NodeID)
 	if err != nil {
 		logrus.Error("GetHeader: error getting headers: ", err)
 	}
 	return header, err
 }
 
-func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
+func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	numbers := make([]int64, 0)
 	err := repository.database.Select(&numbers,
 		`SELECT series.block_number
 			FROM (SELECT generate_series($1::INT, $2::INT) AS block_number) AS series
 			LEFT OUTER JOIN (SELECT block_number FROM headers
-				WHERE eth_node_fingerprint = $3) AS synced
+				WHERE eth_node_id = $3) AS synced
 			USING (block_number)
 			WHERE  synced.block_number IS NULL`,
-		startingBlockNumber, endingBlockNumber, nodeID)
+		startingBlockNumber, endingBlockNumber, repository.database.NodeID)
 	if err != nil {
 		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
-			startingBlockNumber, endingBlockNumber, nodeID)
+			startingBlockNumber, endingBlockNumber, repository.database.NodeID)
 		return []int64{}, err
 	}
 	return numbers, nil
@@ -122,8 +122,8 @@ func headerDoesNotExist(err error) bool {
 
 func (repository HeaderRepository) getHeaderHash(header core.Header) (string, error) {
 	var hash string
-	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		header.BlockNumber, repository.database.Node.ID)
+	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		header.BlockNumber, repository.database.NodeID)
 	return hash, err
 }
 
@@ -133,9 +133,9 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
 	var headerId int64
 	row := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint)
-		VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING id`,
-		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID)
+		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id)
+		VALUES ($1, $2, $3::NUMERIC, $4, $5) ON CONFLICT DO NOTHING RETURNING id`,
+		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID)
 	err := row.Scan(&headerId)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -147,8 +147,8 @@ func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int
 }
 
 func (repository HeaderRepository) replaceHeader(header core.Header) (int64, error) {
-	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		header.BlockNumber, repository.database.Node.ID)
+	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		header.BlockNumber, repository.database.NodeID)
 	if err != nil {
 		logrus.Error("replaceHeader: error deleting headers: ", err)
 		return 0, err

@@ -101,8 +101,7 @@ CREATE TABLE public.blocks (
     "time" bigint,
     is_final boolean,
     uncle_hash character varying(66),
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128) NOT NULL
+    eth_node_id integer NOT NULL
 );
 
 
@@ -426,8 +425,7 @@ CREATE TABLE public.headers (
     raw jsonb,
     block_timestamp numeric,
     check_count integer DEFAULT 0 NOT NULL,
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128)
+    eth_node_id integer NOT NULL
 );
 
 
@@ -557,8 +555,7 @@ CREATE TABLE public.uncles (
     miner character varying(42) NOT NULL,
     raw jsonb,
     block_timestamp numeric,
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128)
+    eth_node_id integer NOT NULL
 );
 
 
@@ -923,11 +920,11 @@ ALTER TABLE ONLY public.header_sync_transactions
 
 
 --
--- Name: headers headers_block_number_hash_eth_node_fingerprint_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: headers headers_block_number_hash_eth_node_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers
-    ADD CONSTRAINT headers_block_number_hash_eth_node_fingerprint_key UNIQUE (block_number, hash, eth_node_fingerprint);
+    ADD CONSTRAINT headers_block_number_hash_eth_node_id_key UNIQUE (block_number, hash, eth_node_id);
 
 
 --

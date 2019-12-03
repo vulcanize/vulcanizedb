@@ -8,7 +8,6 @@ CREATE TABLE public.uncles (
   raw                   JSONB,
   block_timestamp       NUMERIC,
   eth_node_id           INTEGER NOT NULL REFERENCES eth_nodes (id) ON DELETE CASCADE,
-  eth_node_fingerprint  VARCHAR(128),
   UNIQUE (block_id, hash)
 );
 
