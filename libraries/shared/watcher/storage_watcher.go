@@ -27,7 +27,9 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 )
 
 type IStorageWatcher interface {
@@ -40,8 +42,9 @@ type StorageWatcher struct {
 	db                        *postgres.DB
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
+	StorageDiffRepository     datastore.StorageDiffRepository
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
-	DiffsChan                 chan utils.StorageDiff
+	DiffsChan                 chan utils.StorageDiffInput
 	ErrsChan                  chan error
 	BackFillDoneChan          chan bool
 	StartingSyncBlockChan     chan uint64
@@ -49,15 +52,17 @@ type StorageWatcher struct {
 
 func NewStorageWatcher(f fetcher.IStorageFetcher, db *postgres.DB) *StorageWatcher {
 	queue := storage.NewStorageQueue(db)
+	storageDiffRepository := repositories.NewStorageDiffRepository(db)
 	transformers := make(map[common.Hash]transformer.StorageTransformer)
 	return &StorageWatcher{
 		db:                        db,
 		StorageFetcher:            f,
-		DiffsChan:                 make(chan utils.StorageDiff, fetcher.PayloadChanBufferSize),
+		DiffsChan:                 make(chan utils.StorageDiffInput, fetcher.PayloadChanBufferSize),
 		ErrsChan:                  make(chan error),
 		StartingSyncBlockChan:     make(chan uint64),
 		BackFillDoneChan:          make(chan bool),
 		Queue:                     queue,
+		StorageDiffRepository:     storageDiffRepository,
 		KeccakAddressTransformers: transformers,
 	}
 }
@@ -87,8 +92,8 @@ func (storageWatcher *StorageWatcher) Execute(queueRecheckInterval time.Duration
 	start := true
 	for {
 		select {
-		case fetchErr := <-storageWatcher.ErrsChan:
-			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr.Error()))
+		case err := <-storageWatcher.ErrsChan:
+			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", err.Error()))
 		case diff := <-storageWatcher.DiffsChan:
 			if start && backFillOn {
 				storageWatcher.StartingSyncBlockChan <- uint64(diff.BlockHeight - 1)
@@ -103,27 +108,37 @@ func (storageWatcher *StorageWatcher) Execute(queueRecheckInterval time.Duration
 	}
 }
 
-func (storageWatcher *StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+func (storageWatcher *StorageWatcher) getTransformer(diff utils.PersistedStorageDiff) (transformer.StorageTransformer, bool) {
 	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
-	storageTransformer, ok := storageWatcher.getTransformer(diff)
+func (storageWatcher StorageWatcher) processRow(diffInput utils.StorageDiffInput) {
+	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(diffInput)
+	if err != nil {
+		if err == repositories.ErrDuplicateDiff {
+			logrus.Warn("ignoring duplicate diff")
+			return
+		}
+		logrus.Warnf("failed to persist storage diff: %s", err.Error())
+		// TODO: bail? Should we continue attempting to transform a diff we didn't persist
+	}
+	persistedDiff := utils.ToPersistedDiff(diffInput, diffID)
+	storageTransformer, ok := storageWatcher.getTransformer(persistedDiff)
 	if !ok {
-		logrus.Debug("ignoring a diff from an unwatched contract")
+		logrus.Debug("ignoring diff from unwatched contract")
 		return
 	}
-	executeErr := storageTransformer.Execute(diff)
+	executeErr := storageTransformer.Execute(persistedDiff)
 	if executeErr != nil {
 		logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
-		queueErr := storageWatcher.Queue.Add(diff)
+		queueErr := storageWatcher.Queue.Add(persistedDiff)
 		if queueErr != nil {
 			logrus.Warn(fmt.Sprintf("error queueing storage diff: %s", queueErr))
 		}
 		return
 	}
-	logrus.Debugf("Storage diff persisted at block height: %d", diff.BlockHeight)
+	logrus.Debugf("Storage diff persisted at block height: %d", diffInput.BlockHeight)
 }
 
 func (storageWatcher StorageWatcher) processQueue() {
@@ -145,8 +160,8 @@ func (storageWatcher StorageWatcher) processQueue() {
 	}
 }
 
-func (storageWatcher StorageWatcher) deleteRow(id int) {
-	deleteErr := storageWatcher.Queue.Delete(id)
+func (storageWatcher StorageWatcher) deleteRow(diffID int64) {
+	deleteErr := storageWatcher.Queue.Delete(diffID)
 	if deleteErr != nil {
 		logrus.Warn(fmt.Sprintf("error deleting persisted diff from queue: %s", deleteErr))
 	}

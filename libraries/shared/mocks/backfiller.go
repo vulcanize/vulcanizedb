@@ -24,23 +24,23 @@ import (
 
 // BackFiller mock for tests
 type BackFiller struct {
-	StorageDiffsToReturn []utils.StorageDiff
+	StorageDiffsToReturn []utils.StorageDiffInput
 	BackFillErrs         []error
 	PassedEndingBlock    uint64
 }
 
 // SetStorageDiffsToReturn for tests
-func (backFiller *BackFiller) SetStorageDiffsToReturn(diffs []utils.StorageDiff) {
+func (backFiller *BackFiller) SetStorageDiffsToReturn(diffs []utils.StorageDiffInput) {
 	backFiller.StorageDiffsToReturn = diffs
 }
 
 // BackFill mock method
-func (backFiller *BackFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
+func (backFiller *BackFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiffInput, errChan chan error, done chan bool) error {
 	if endingBlock < startingBlock {
 		return errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
 	backFiller.PassedEndingBlock = endingBlock
-	go func(backFill chan utils.StorageDiff, errChan chan error, done chan bool) {
+	go func(backFill chan utils.StorageDiffInput, errChan chan error, done chan bool) {
 		errLen := len(backFiller.BackFillErrs)
 		for i, diff := range backFiller.StorageDiffsToReturn {
 			if i < errLen {

@@ -36,7 +36,7 @@ const (
 
 // BackFiller is the backfilling interface
 type BackFiller interface {
-	BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error
+	BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiffInput, errChan chan error, done chan bool) error
 }
 
 // backFiller is the backfilling struct
@@ -59,7 +59,7 @@ func NewStorageBackFiller(fetcher fetcher.StateDiffFetcher, batchSize uint64) Ba
 
 // BackFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
-func (bf *backFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiff, errChan chan error, done chan bool) error {
+func (bf *backFiller) BackFill(startingBlock, endingBlock uint64, backFill chan utils.StorageDiffInput, errChan chan error, done chan bool) error {
 	logrus.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 
 	// break the range up into bins of smaller ranges
@@ -113,7 +113,7 @@ func (bf *backFiller) BackFill(startingBlock, endingBlock uint64, backFill chan 
 	return nil
 }
 
-func (bf *backFiller) backFillRange(blockHeights []uint64, diffChan chan utils.StorageDiff, errChan chan error, doneChan chan [2]uint64) {
+func (bf *backFiller) backFillRange(blockHeights []uint64, diffChan chan utils.StorageDiffInput, errChan chan error, doneChan chan [2]uint64) {
 	payloads, fetchErr := bf.fetcher.FetchStateDiffsAt(blockHeights)
 	if fetchErr != nil {
 		errChan <- fetchErr
