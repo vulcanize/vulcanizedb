@@ -2,8 +2,8 @@
 CREATE TABLE public.headers
 (
     id                   SERIAL PRIMARY KEY,
-    hash                 VARCHAR(66),
-    block_number         BIGINT,
+    hash                 VARCHAR(66) NOT NULL,
+    block_number         BIGINT NOT NULL,
     raw                  JSONB,
     block_timestamp      NUMERIC,
     check_count          INTEGER NOT NULL DEFAULT 0,

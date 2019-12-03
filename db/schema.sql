@@ -420,8 +420,8 @@ ALTER SEQUENCE public.header_sync_transactions_id_seq OWNED BY public.header_syn
 
 CREATE TABLE public.headers (
     id integer NOT NULL,
-    hash character varying(66),
-    block_number bigint,
+    hash character varying(66) NOT NULL,
+    block_number bigint NOT NULL,
     raw jsonb,
     block_timestamp numeric,
     check_count integer DEFAULT 0 NOT NULL,
