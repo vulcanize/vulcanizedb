@@ -381,7 +381,7 @@ ALTER SEQUENCE public.header_sync_receipts_id_seq OWNED BY public.header_sync_re
 CREATE TABLE public.header_sync_transactions (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    hash character varying(66),
+    hash character varying(66) NOT NULL,
     gas_limit numeric,
     gas_price numeric,
     input_data bytea,
@@ -1102,7 +1102,7 @@ ALTER TABLE ONLY public.header_sync_logs
 --
 
 ALTER TABLE ONLY public.header_sync_logs
-    ADD CONSTRAINT header_sync_logs_tx_hash_fkey FOREIGN KEY (tx_hash) REFERENCES public.header_sync_transactions(hash);
+    ADD CONSTRAINT header_sync_logs_tx_hash_fkey FOREIGN KEY (tx_hash) REFERENCES public.header_sync_transactions(hash) ON DELETE CASCADE;
 
 
 --
