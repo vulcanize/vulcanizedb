@@ -82,7 +82,7 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 
 func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration) error {
 	ticker := time.NewTicker(queueRecheckInterval)
-	diffsChan := make(chan utils.StorageDiffInput)
+	diffsChan := make(chan utils.RawStorageDiff)
 	errsChan := make(chan error)
 
 	defer close(diffsChan)
@@ -108,11 +108,11 @@ func (storageWatcher StorageWatcher) getTransformer(diff utils.PersistedStorageD
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(diffInput utils.StorageDiffInput) {
+func (storageWatcher StorageWatcher) processRow(diffInput utils.RawStorageDiff) {
 	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(diffInput)
 	if err != nil {
 		if err == repositories.ErrDuplicateDiff {
-			logrus.Warn("ignoring duplicate diff")
+			logrus.Info("ignoring duplicate diff")
 			return
 		}
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())

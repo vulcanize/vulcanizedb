@@ -94,20 +94,20 @@ var _ = Describe("Storage Watcher", func() {
 				mockStorageDiffRepository *fakes.MockStorageDiffRepository
 				fakeBlockHash             common.Hash
 				fakeDiffID                int64
-				rawDiffInput              utils.StorageDiffInput
+				rawDiffInput              utils.RawStorageDiff
 				fakePersistedDiff         utils.PersistedStorageDiff
 			)
 
 			BeforeEach(func() {
 				fakeBlockHash = test_data.FakeHash()
-				rawDiffInput = utils.StorageDiffInput{
+				rawDiffInput = utils.RawStorageDiff{
 					HashedAddress: hashedAddress,
 					BlockHash:     fakeBlockHash,
 					BlockHeight:   0,
 					StorageKey:    common.HexToHash("0xabcdef1234567890"),
 					StorageValue:  common.HexToHash("0x9876543210abcdef"),
 				}
-				mockFetcher.DiffsToReturn = []utils.StorageDiffInput{rawDiffInput}
+				mockFetcher.DiffsToReturn = []utils.RawStorageDiff{rawDiffInput}
 
 				fakeHeaderID := rand.Int63()
 				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
@@ -118,16 +118,16 @@ var _ = Describe("Storage Watcher", func() {
 				storageWatcher.StorageDiffRepository = mockStorageDiffRepository
 
 				fakePersistedDiff = utils.PersistedStorageDiff{
-					StorageDiffInput: rawDiffInput,
-					ID:               fakeDiffID,
-					HeaderID:         fakeHeaderID,
+					RawStorageDiff: rawDiffInput,
+					ID:             fakeDiffID,
+					HeaderID:       fakeHeaderID,
 				}
 			})
 
 			It("writes raw diff before processing", func(done Done) {
 				go storageWatcher.Execute(time.Hour)
 
-				Eventually(func() []utils.StorageDiffInput {
+				Eventually(func() []utils.RawStorageDiff {
 					return mockStorageDiffRepository.CreatePassedInputs
 				}).Should(ContainElement(rawDiffInput))
 				close(done)
@@ -339,7 +339,7 @@ var _ = Describe("Storage Watcher", func() {
 				queuedDiff = utils.PersistedStorageDiff{
 					ID:       rand.Int63(),
 					HeaderID: fakeHeaderID,
-					StorageDiffInput: utils.StorageDiffInput{
+					RawStorageDiff: utils.RawStorageDiff{
 						HashedAddress: hashedAddress,
 						BlockHash:     fakeBlockHash,
 						BlockHeight:   rand.Int(),
@@ -494,7 +494,7 @@ var _ = Describe("Storage Watcher", func() {
 				It("deletes obsolete diff from queue", func(done Done) {
 					obsoleteDiff := utils.PersistedStorageDiff{
 						ID: queuedDiff.ID + 1,
-						StorageDiffInput: utils.StorageDiffInput{
+						RawStorageDiff: utils.RawStorageDiff{
 							HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 						},
 					}
@@ -514,7 +514,7 @@ var _ = Describe("Storage Watcher", func() {
 				It("logs error if deleting obsolete diff fails", func(done Done) {
 					obsoleteDiff := utils.PersistedStorageDiff{
 						ID: queuedDiff.ID + 1,
-						StorageDiffInput: utils.StorageDiffInput{
+						RawStorageDiff: utils.RawStorageDiff{
 							HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
 						},
 					}

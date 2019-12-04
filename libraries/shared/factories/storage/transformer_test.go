@@ -77,7 +77,7 @@ var _ = Describe("Storage transformer", func() {
 		fakeRow := utils.PersistedStorageDiff{
 			ID:       rand.Int63(),
 			HeaderID: fakeHeaderID,
-			StorageDiffInput: utils.StorageDiffInput{
+			RawStorageDiff: utils.RawStorageDiff{
 				HashedAddress: common.Hash{},
 				BlockHash:     common.HexToHash(fakeBlockHash),
 				BlockHeight:   fakeBlockNumber,
@@ -100,7 +100,7 @@ var _ = Describe("Storage transformer", func() {
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
-		diff := utils.PersistedStorageDiff{StorageDiffInput: utils.StorageDiffInput{StorageValue: rawValue.Hash()}}
+		diff := utils.PersistedStorageDiff{RawStorageDiff: utils.RawStorageDiff{StorageValue: rawValue.Hash()}}
 
 		err := t.Execute(diff)
 
@@ -131,7 +131,7 @@ var _ = Describe("Storage transformer", func() {
 			fakeRow := utils.PersistedStorageDiff{
 				ID:       rand.Int63(),
 				HeaderID: fakeHeaderID,
-				StorageDiffInput: utils.StorageDiffInput{
+				RawStorageDiff: utils.RawStorageDiff{
 					HashedAddress: common.Hash{},
 					BlockHash:     common.HexToHash(fakeBlockHash),
 					BlockHeight:   fakeBlockNumber,
@@ -155,7 +155,7 @@ var _ = Describe("Storage transformer", func() {
 		It("returns error if creating a row fails", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
-			diff := utils.PersistedStorageDiff{StorageDiffInput: utils.StorageDiffInput{StorageValue: rawValue.Hash()}}
+			diff := utils.PersistedStorageDiff{RawStorageDiff: utils.RawStorageDiff{StorageValue: rawValue.Hash()}}
 
 			err := t.Execute(diff)
 

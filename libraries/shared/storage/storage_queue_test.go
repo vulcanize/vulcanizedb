@@ -37,7 +37,7 @@ var _ = Describe("Storage queue", func() {
 
 	BeforeEach(func() {
 		fakeAddr := "0x123456"
-		rawDiff := utils.StorageDiffInput{
+		rawDiff := utils.RawStorageDiff{
 			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678901"),
 			BlockHeight:   987,
@@ -90,7 +90,7 @@ var _ = Describe("Storage queue", func() {
 
 	It("gets all storage diffs from db", func() {
 		fakeAddr := "0x234567"
-		diffTwo := utils.StorageDiffInput{
+		diffTwo := utils.RawStorageDiff{
 			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678902"),
 			BlockHeight:   988,

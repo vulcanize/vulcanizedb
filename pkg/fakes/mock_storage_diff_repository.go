@@ -21,12 +21,12 @@ import (
 )
 
 type MockStorageDiffRepository struct {
-	CreatePassedInputs []utils.StorageDiffInput
+	CreatePassedInputs []utils.RawStorageDiff
 	CreateReturnID     int64
 	CreateReturnError  error
 }
 
-func (repository *MockStorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+func (repository *MockStorageDiffRepository) CreateStorageDiff(input utils.RawStorageDiff) (int64, error) {
 	repository.CreatePassedInputs = append(repository.CreatePassedInputs, input)
 	return repository.CreateReturnID, repository.CreateReturnError
 }

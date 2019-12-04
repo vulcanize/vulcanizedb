@@ -27,7 +27,7 @@ import (
 
 const ExpectedRowLength = 5
 
-type StorageDiffInput struct {
+type RawStorageDiff struct {
 	HashedAddress common.Hash `db:"hashed_address"`
 	BlockHash     common.Hash `db:"block_hash"`
 	BlockHeight   int         `db:"block_height"`
@@ -36,20 +36,20 @@ type StorageDiffInput struct {
 }
 
 type PersistedStorageDiff struct {
-	StorageDiffInput
+	RawStorageDiff
 	ID       int64
 	HeaderID int64 `db:"header_id"`
 }
 
-func FromParityCsvRow(csvRow []string) (StorageDiffInput, error) {
+func FromParityCsvRow(csvRow []string) (RawStorageDiff, error) {
 	if len(csvRow) != ExpectedRowLength {
-		return StorageDiffInput{}, ErrRowMalformed{Length: len(csvRow)}
+		return RawStorageDiff{}, ErrRowMalformed{Length: len(csvRow)}
 	}
 	height, err := strconv.Atoi(csvRow[2])
 	if err != nil {
-		return StorageDiffInput{}, err
+		return RawStorageDiff{}, err
 	}
-	return StorageDiffInput{
+	return RawStorageDiff{
 		HashedAddress: HexToKeccak256Hash(csvRow[0]),
 		BlockHash:     common.HexToHash(csvRow[1]),
 		BlockHeight:   height,
@@ -58,14 +58,14 @@ func FromParityCsvRow(csvRow []string) (StorageDiffInput, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiffInput, error) {
+func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawStorageDiff, error) {
 	var decodedValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedValue)
 	if err != nil {
-		return StorageDiffInput{}, err
+		return RawStorageDiff{}, err
 	}
 
-	return StorageDiffInput{
+	return RawStorageDiff{
 		HashedAddress: common.BytesToHash(account.Key),
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
@@ -74,10 +74,10 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 	}, nil
 }
 
-func ToPersistedDiff(raw StorageDiffInput, id int64) PersistedStorageDiff {
+func ToPersistedDiff(raw RawStorageDiff, id int64) PersistedStorageDiff {
 	return PersistedStorageDiff{
-		StorageDiffInput: raw,
-		ID:               id,
+		RawStorageDiff: raw,
+		ID:             id,
 	}
 }
 

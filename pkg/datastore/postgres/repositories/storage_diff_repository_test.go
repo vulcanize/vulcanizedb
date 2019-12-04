@@ -33,14 +33,14 @@ var _ = Describe("Storage diffs repository", func() {
 	var (
 		db              *postgres.DB
 		repo            repositories.StorageDiffRepository
-		fakeStorageDiff utils.StorageDiffInput
+		fakeStorageDiff utils.RawStorageDiff
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repo = repositories.NewStorageDiffRepository(db)
-		fakeStorageDiff = utils.StorageDiffInput{
+		fakeStorageDiff = utils.RawStorageDiff{
 			HashedAddress: test_data.FakeHash(),
 			BlockHash:     test_data.FakeHash(),
 			BlockHeight:   rand.Int(),

@@ -33,7 +33,8 @@ func NewStorageDiffRepository(db *postgres.DB) StorageDiffRepository {
 	return StorageDiffRepository{db: db}
 }
 
-func (repository StorageDiffRepository) CreateStorageDiff(input utils.StorageDiffInput) (int64, error) {
+// CreateStorageDiff writes a raw storage diff to the database
+func (repository StorageDiffRepository) CreateStorageDiff(input utils.RawStorageDiff) (int64, error) {
 	var storageDiffID int64
 	row := repository.db.QueryRowx(`INSERT INTO public.storage_diff
 		(hashed_address, block_height, block_hash, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)
