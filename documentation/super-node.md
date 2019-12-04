@@ -1,4 +1,4 @@
-# Seed Node
+# Super Node
 
 Vulcanizedb can act as an index for Ethereum data stored on IPFS through the use of the `syncAndPublish` and
 `syncPublishScreenAndServe` commands. 
