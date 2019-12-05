@@ -50,8 +50,10 @@ var (
 )
 
 const (
-	pollingInterval  = 7 * time.Second
-	validationWindow = 15
+	pollingInterval              = 7 * time.Second
+	validationWindow             = 15
+	maxConsecutiveUnexpectedErrs = 5
+	retryInterval                = 7 * time.Second
 )
 
 var rootCmd = &cobra.Command{

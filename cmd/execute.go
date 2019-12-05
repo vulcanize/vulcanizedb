@@ -112,7 +112,7 @@ func execute() {
 	// Use WaitGroup to wait on both goroutines
 	var wg syn.WaitGroup
 	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain)
+		ew := watcher.NewEventWatcher(&db, blockChain, maxConsecutiveUnexpectedErrs, retryInterval)
 		addErr := ew.AddTransformers(ethEventInitializers)
 		if addErr != nil {
 			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())
