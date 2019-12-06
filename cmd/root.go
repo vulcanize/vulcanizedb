@@ -40,12 +40,9 @@ var (
 	databaseConfig       config.Database
 	genConfig            config.Plugin
 	ipc                  string
-	levelDbPath          string
 	queueRecheckInterval time.Duration
 	startingBlockNumber  int64
 	storageDiffsPath     string
-	syncAll              bool
-	endingBlockNumber    int64
 	recheckHeadersArg    bool
 	SubCommand           string
 	LogWithCommand       logrus.Entry
@@ -80,7 +77,6 @@ func initFuncs(cmd *cobra.Command, args []string) {
 
 func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
-	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	storageDiffsSource = viper.GetString("storageDiffs.source")
 	databaseConfig = config.Database{
@@ -119,7 +115,6 @@ func init() {
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
-	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
 	rootCmd.PersistentFlags().String("storageDiffs-source", "csv", "where to get the state diffs: csv or geth")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
@@ -131,7 +126,6 @@ func init() {
 	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("database-user"))
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
-	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
 	viper.BindPFlag("storageDiffs.source", rootCmd.PersistentFlags().Lookup("storageDiffs-source"))
 	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
