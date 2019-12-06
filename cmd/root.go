@@ -73,7 +73,7 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	setViperConfigs()
 	logLvlErr := logLevel()
 	if logLvlErr != nil {
-		logrus.Fatal("Could not set log level: ", logLvlErr)
+		logrus.Fatalf("Could not set log level: %s", logLvlErr.Error())
 	}
 
 }
@@ -107,10 +107,10 @@ func logLevel() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 	// When searching for env variables, replace dots in config keys with underscores
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
@@ -141,18 +141,14 @@ func init() {
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
+		if err := viper.ReadInConfig(); err == nil {
+			logrus.Infof("Using config file: %s\n\n", viper.ConfigFileUsed())
+		} else {
+			invalidConfigError := "couldn't read config file"
+			logrus.Fatalf("%s: %s", invalidConfigError, err.Error())
+		}
 	} else {
-		noConfigError := "No config file passed with --config flag"
-		fmt.Println("Error: ", noConfigError)
-		logrus.Fatal(noConfigError)
-	}
-
-	if err := viper.ReadInConfig(); err == nil {
-		logrus.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
-	} else {
-		invalidConfigError := "Couldn't read config file"
-		formattedError := fmt.Sprintf("%s: %s", invalidConfigError, err.Error())
-		logrus.Fatal(formattedError)
+		logrus.Warn("No config file passed with --config flag; attempting to use env vars")
 	}
 }
 
