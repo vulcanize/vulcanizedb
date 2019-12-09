@@ -89,25 +89,25 @@ var _ = Describe("Storage Watcher", func() {
 			Expect(string(logContent)).To(ContainSubstring(fakes.FakeError.Error()))
 		})
 
-		Describe("transforming new storage diffs from raw input", func() {
+		Describe("transforming new raw storage diffs", func() {
 			var (
 				mockStorageDiffRepository *fakes.MockStorageDiffRepository
 				fakeBlockHash             common.Hash
 				fakeDiffID                int64
-				rawDiffInput              utils.RawStorageDiff
+				fakeRawDiff               utils.RawStorageDiff
 				fakePersistedDiff         utils.PersistedStorageDiff
 			)
 
 			BeforeEach(func() {
 				fakeBlockHash = test_data.FakeHash()
-				rawDiffInput = utils.RawStorageDiff{
+				fakeRawDiff = utils.RawStorageDiff{
 					HashedAddress: hashedAddress,
 					BlockHash:     fakeBlockHash,
 					BlockHeight:   0,
 					StorageKey:    common.HexToHash("0xabcdef1234567890"),
 					StorageValue:  common.HexToHash("0x9876543210abcdef"),
 				}
-				mockFetcher.DiffsToReturn = []utils.RawStorageDiff{rawDiffInput}
+				mockFetcher.DiffsToReturn = []utils.RawStorageDiff{fakeRawDiff}
 
 				fakeHeaderID := rand.Int63()
 				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
@@ -118,7 +118,7 @@ var _ = Describe("Storage Watcher", func() {
 				storageWatcher.StorageDiffRepository = mockStorageDiffRepository
 
 				fakePersistedDiff = utils.PersistedStorageDiff{
-					RawStorageDiff: rawDiffInput,
+					RawStorageDiff: fakeRawDiff,
 					ID:             fakeDiffID,
 					HeaderID:       fakeHeaderID,
 				}
@@ -128,8 +128,8 @@ var _ = Describe("Storage Watcher", func() {
 				go storageWatcher.Execute(time.Hour)
 
 				Eventually(func() []utils.RawStorageDiff {
-					return mockStorageDiffRepository.CreatePassedInputs
-				}).Should(ContainElement(rawDiffInput))
+					return mockStorageDiffRepository.CreatePassedRawDiffs
+				}).Should(ContainElement(fakeRawDiff))
 				close(done)
 			})
 

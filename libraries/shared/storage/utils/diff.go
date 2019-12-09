@@ -59,8 +59,8 @@ func FromParityCsvRow(csvRow []string) (RawStorageDiff, error) {
 }
 
 func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawStorageDiff, error) {
-	var decodedValue []byte
-	err := rlp.DecodeBytes(storage.Value, &decodedValue)
+	var decodedRLPStorageValue []byte
+	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
 	if err != nil {
 		return RawStorageDiff{}, err
 	}
@@ -70,7 +70,7 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(storage.Key),
-		StorageValue:  common.BytesToHash(decodedValue),
+		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
 	}, nil
 }
 

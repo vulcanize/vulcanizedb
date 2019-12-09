@@ -108,8 +108,8 @@ func (storageWatcher StorageWatcher) getTransformer(diff utils.PersistedStorageD
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(diffInput utils.RawStorageDiff) {
-	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(diffInput)
+func (storageWatcher StorageWatcher) processRow(rawDiff utils.RawStorageDiff) {
+	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
 		if err == repositories.ErrDuplicateDiff {
 			logrus.Info("ignoring duplicate diff")
@@ -118,7 +118,7 @@ func (storageWatcher StorageWatcher) processRow(diffInput utils.RawStorageDiff) 
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())
 		// TODO: bail? Should we continue attempting to transform a diff we didn't persist
 	}
-	persistedDiff := utils.ToPersistedDiff(diffInput, diffID)
+	persistedDiff := utils.ToPersistedDiff(rawDiff, diffID)
 
 	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
