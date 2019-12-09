@@ -42,8 +42,6 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Starting headerSync..."
 # Fire up headerSync
-if [ $? -eq 0 ]; then
-  ./vulcanizedb headerSync -s $STARTING_BLOCK_NUMBER
-fi
+echo "Starting headerSync..."
+./vulcanizedb headerSync -s $STARTING_BLOCK_NUMBER
