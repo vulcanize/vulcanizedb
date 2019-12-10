@@ -17,6 +17,7 @@
 package mocks
 
 import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
@@ -41,5 +42,6 @@ func (delegator *MockLogDelegator) DelegateLogs() error {
 		delegator.DelegateErrors = []error{}
 		return thisErr
 	}
-	return nil
+	// return no logs error so that delegator hits retry interval when extractor under test
+	return logs.ErrNoLogs
 }
