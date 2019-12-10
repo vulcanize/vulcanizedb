@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"plugin"
-	syn "sync"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/statediff"
@@ -75,7 +75,16 @@ func execute() {
 	if configErr != nil {
 		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}
+	executeTransformers()
+}
 
+func init() {
+	rootCmd.AddCommand(executeCmd)
+	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
+	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
+}
+
+func executeTransformers() {
 	// Get the plugin path and load the plugin
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
 	if pathErr != nil {
@@ -110,7 +119,7 @@ func execute() {
 
 	// Execute over transformer sets returned by the exporter
 	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
+	var wg sync.WaitGroup
 	if len(ethEventInitializers) > 0 {
 		ew := watcher.NewEventWatcher(&db, blockChain, maxConsecutiveUnexpectedErrs, retryInterval)
 		addErr := ew.AddTransformers(ethEventInitializers)
@@ -153,17 +162,11 @@ func execute() {
 	wg.Wait()
 }
 
-func init() {
-	rootCmd.AddCommand(executeCmd)
-	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
-	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
-}
-
 type Exporter interface {
 	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
-func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
+func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the EventTransformerInitializer set using the watcher
 	LogWithCommand.Info("executing event transformers")
@@ -179,7 +182,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	}
 }
 
-func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
+func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
@@ -191,7 +194,7 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
 	}
 }
 
-func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
+func watchEthContract(w *watcher.ContractWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the ContractTransformerInitializer set using the contract watcher
 	LogWithCommand.Info("executing contract_watcher transformers")

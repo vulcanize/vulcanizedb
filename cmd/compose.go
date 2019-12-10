@@ -108,16 +108,8 @@ func compose() {
 		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}
 
-	// Generate code to build the plugin according to the config file
-	LogWithCommand.Info("generating plugin")
-	generator, constructorErr := plugin.NewGenerator(genConfig, databaseConfig)
-	if constructorErr != nil {
-		LogWithCommand.Fatalf("initializing plugin generator failed: %s", constructorErr.Error())
-	}
-	generateErr := generator.GenerateExporterPlugin()
-	if generateErr != nil {
-		LogWithCommand.Fatalf("generating plugin failed: %s", generateErr.Error())
-	}
+	composeTransformers()
+
 	// TODO: Embed versioning info in the .so files so we know which version of vulcanizedb to run them with
 	_, pluginPath, pathErr := genConfig.GetPluginPaths()
 	if pathErr != nil {
@@ -128,4 +120,17 @@ func compose() {
 
 func init() {
 	rootCmd.AddCommand(composeCmd)
+}
+
+func composeTransformers() {
+	// Generate code to build the plugin according to the config file
+	LogWithCommand.Info("generating plugin")
+	generator, constructorErr := plugin.NewGenerator(genConfig, databaseConfig)
+	if constructorErr != nil {
+		LogWithCommand.Fatalf("initializing plugin generator failed: %s", constructorErr.Error())
+	}
+	generateErr := generator.GenerateExporterPlugin()
+	if generateErr != nil {
+		LogWithCommand.Fatalf("generating plugin failed: %s", generateErr.Error())
+	}
 }
