@@ -98,32 +98,28 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
+	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
+	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs)
+}
+
+func (watcher *EventWatcher) delegateLogs(errs chan error) {
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs)
+}
+
+func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error) {
 	consecutiveUnexpectedErrCount := 0
 	for {
-		err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
+		err := call()
 		if err == nil {
 			consecutiveUnexpectedErrCount = 0
 		} else {
-			if err != logs.ErrNoUncheckedHeaders {
+			if err != expectedErr {
 				consecutiveUnexpectedErrCount++
-				logrus.Errorf("error extracting logs: %s", err.Error())
+				logrus.Errorf("error %s logs: %s", operation, err.Error())
 				if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
 					errs <- err
 				}
 			}
-			time.Sleep(watcher.RetryInterval)
-		}
-	}
-}
-
-func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	for {
-		err := watcher.LogDelegator.DelegateLogs()
-		if err != nil && err != logs.ErrNoLogs {
-			errs <- err
-			return
-		}
-		if err == logs.ErrNoLogs {
 			time.Sleep(watcher.RetryInterval)
 		}
 	}
