@@ -14,6 +14,13 @@ CREATE TABLE header_sync_receipts
     UNIQUE (header_id, transaction_id)
 );
 
+CREATE INDEX header_sync_receipts_contract_address
+    ON header_sync_receipts (contract_address_id);
+CREATE INDEX header_sync_receipts_transaction
+    ON header_sync_receipts (transaction_id);
+
 
 -- +goose Down
+DROP INDEX header_sync_receipts_transaction;
+DROP INDEX header_sync_receipts_contract_address;
 DROP TABLE header_sync_receipts;

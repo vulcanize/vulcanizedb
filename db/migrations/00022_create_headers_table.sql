@@ -13,6 +13,7 @@ CREATE TABLE public.headers
 
 -- Index is removed when table is
 CREATE INDEX headers_block_number ON public.headers (block_number);
+CREATE INDEX headers_eth_node ON public.headers (eth_node_id);
 
 
 -- +goose Down

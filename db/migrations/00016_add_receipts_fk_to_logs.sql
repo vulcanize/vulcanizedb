@@ -8,8 +8,13 @@ ALTER TABLE full_sync_logs
             REFERENCES full_sync_receipts (id)
             ON DELETE CASCADE;
 
+CREATE INDEX full_sync_logs_receipt
+    ON full_sync_logs (receipt_id);
+
 
 -- +goose Down
+DROP INDEX full_sync_logs_receipt;
+
 ALTER TABLE full_sync_logs
     DROP CONSTRAINT receipts_fk;
 

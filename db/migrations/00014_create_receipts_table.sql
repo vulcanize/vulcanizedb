@@ -11,6 +11,10 @@ CREATE TABLE full_sync_receipts
     tx_hash             VARCHAR(66)
 );
 
+CREATE INDEX full_sync_receipts_contract_address
+    ON full_sync_receipts (contract_address_id);
+
 
 -- +goose Down
+DROP INDEX full_sync_receipts_contract_address;
 DROP TABLE full_sync_receipts;
