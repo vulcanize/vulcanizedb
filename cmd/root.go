@@ -36,24 +36,24 @@ import (
 )
 
 var (
+	LogWithCommand       logrus.Entry
+	SubCommand           string
 	cfgFile              string
 	databaseConfig       config.Database
 	genConfig            config.Plugin
 	ipc                  string
+	maxUnexpectedErrors  int
 	queueRecheckInterval time.Duration
+	recheckHeadersArg    bool
+	retryInterval        time.Duration
 	startingBlockNumber  int64
 	storageDiffsPath     string
-	recheckHeadersArg    bool
-	SubCommand           string
-	LogWithCommand       logrus.Entry
 	storageDiffsSource   string
 )
 
 const (
-	pollingInterval              = 7 * time.Second
-	validationWindow             = 15
-	maxConsecutiveUnexpectedErrs = 5
-	retryInterval                = 7 * time.Second
+	pollingInterval  = 7 * time.Second
+	validationWindow = 15
 )
 
 var rootCmd = &cobra.Command{

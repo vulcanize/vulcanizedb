@@ -82,6 +82,8 @@ func init() {
 	rootCmd.AddCommand(executeCmd)
 	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
 	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
+	executeCmd.Flags().DurationVarP(&retryInterval, "retry-interval", "i", 7*time.Second, "interval duration between retries on execution error")
+	executeCmd.Flags().IntVarP(&maxUnexpectedErrors, "max-unexpected-errs", "m", 5, "maximum number of unexpected errors to allow (with retries) before exiting")
 }
 
 func executeTransformers() {
@@ -121,7 +123,7 @@ func executeTransformers() {
 	// Use WaitGroup to wait on both goroutines
 	var wg sync.WaitGroup
 	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain, maxConsecutiveUnexpectedErrs, retryInterval)
+		ew := watcher.NewEventWatcher(&db, blockChain, maxUnexpectedErrors, retryInterval)
 		addErr := ew.AddTransformers(ethEventInitializers)
 		if addErr != nil {
 			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())
