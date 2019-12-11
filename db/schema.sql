@@ -544,7 +544,7 @@ ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
 --
 
 CREATE TABLE public.storage_diff (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     block_height bigint,
     block_hash bytea,
     hashed_address bytea,
@@ -558,7 +558,6 @@ CREATE TABLE public.storage_diff (
 --
 
 CREATE SEQUENCE public.storage_diff_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE

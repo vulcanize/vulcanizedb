@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE public.storage_diff
 (
-    id             SERIAL PRIMARY KEY,
+    id             BIGSERIAL PRIMARY KEY,
     block_height   BIGINT,
     block_hash     BYTEA,
     hashed_address BYTEA,
