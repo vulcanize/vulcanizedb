@@ -23,7 +23,7 @@ import (
 )
 
 type StorageTransformer interface {
-	Execute(diff utils.StorageDiff) error
+	Execute(diff utils.PersistedStorageDiff) error
 	KeccakContractAddress() common.Hash
 }
 

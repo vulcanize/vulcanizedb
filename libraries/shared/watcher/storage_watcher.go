@@ -54,18 +54,21 @@ type StorageWatcher struct {
 	StorageFetcher            fetcher.IStorageFetcher
 	Queue                     storage.IStorageQueue
 	HeaderRepository          datastore.HeaderRepository
+	StorageDiffRepository     datastore.StorageDiffRepository
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
 }
 
 func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
 	queue := storage.NewStorageQueue(db)
 	headerRepository := repositories.NewHeaderRepository(db)
+	storageDiffRepository := repositories.NewStorageDiffRepository(db)
 	transformers := make(map[common.Hash]transformer.StorageTransformer)
 	return StorageWatcher{
 		db:                        db,
 		StorageFetcher:            fetcher,
 		Queue:                     queue,
 		HeaderRepository:          headerRepository,
+		StorageDiffRepository:     storageDiffRepository,
 		KeccakAddressTransformers: transformers,
 	}
 }
@@ -79,7 +82,7 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 
 func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration) error {
 	ticker := time.NewTicker(queueRecheckInterval)
-	diffsChan := make(chan utils.StorageDiff)
+	diffsChan := make(chan utils.RawStorageDiff)
 	errsChan := make(chan error)
 
 	defer close(diffsChan)
@@ -100,30 +103,41 @@ func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration)
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
+func (storageWatcher StorageWatcher) getTransformer(diff utils.PersistedStorageDiff) (transformer.StorageTransformer, bool) {
 	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
-	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(diff)
+func (storageWatcher StorageWatcher) processRow(rawDiff utils.RawStorageDiff) {
+	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
+	if err != nil {
+		if err == repositories.ErrDuplicateDiff {
+			logrus.Info("ignoring duplicate diff")
+			return
+		}
+		logrus.Warnf("failed to persist storage diff: %s", err.Error())
+		// TODO: bail? Should we continue attempting to transform a diff we didn't persist
+	}
+	persistedDiff := utils.ToPersistedDiff(rawDiff, diffID)
+
+	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
 		logrus.Debug("ignoring diff from an unwatched contract")
 		return
 	}
 
-	headerID, err := storageWatcher.getHeaderID(diff)
+	headerID, err := storageWatcher.getHeaderID(persistedDiff)
 	if err != nil {
 		logrus.Infof("error getting header for diff: %s", err.Error())
-		storageWatcher.queueDiff(diff)
+		storageWatcher.queueDiff(persistedDiff)
 		return
 	}
-	diff.HeaderID = headerID
+	persistedDiff.HeaderID = headerID
 
-	executeErr := storageTransformer.Execute(diff)
+	executeErr := storageTransformer.Execute(persistedDiff)
 	if executeErr != nil {
 		logrus.Infof("error executing storage transformer: %s", executeErr.Error())
-		storageWatcher.queueDiff(diff)
+		storageWatcher.queueDiff(persistedDiff)
 	}
 }
 
@@ -136,7 +150,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 	for _, diff := range diffs {
 		storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(diff)
 		if !isTransformerWatchingAddress {
-			storageWatcher.deleteRow(diff.Id)
+			storageWatcher.deleteRow(diff.ID)
 			continue
 		}
 
@@ -153,25 +167,25 @@ func (storageWatcher StorageWatcher) processQueue() {
 			continue
 		}
 
-		storageWatcher.deleteRow(diff.Id)
+		storageWatcher.deleteRow(diff.ID)
 	}
 }
 
-func (storageWatcher StorageWatcher) deleteRow(id int) {
-	deleteErr := storageWatcher.Queue.Delete(id)
+func (storageWatcher StorageWatcher) deleteRow(diffID int64) {
+	deleteErr := storageWatcher.Queue.Delete(diffID)
 	if deleteErr != nil {
 		logrus.Infof("error deleting persisted diff from queue: %s", deleteErr.Error())
 	}
 }
 
-func (storageWatcher StorageWatcher) queueDiff(diff utils.StorageDiff) {
+func (storageWatcher StorageWatcher) queueDiff(diff utils.PersistedStorageDiff) {
 	queueErr := storageWatcher.Queue.Add(diff)
 	if queueErr != nil {
 		logrus.Infof("error queueing storage diff: %s", queueErr.Error())
 	}
 }
 
-func (storageWatcher StorageWatcher) getHeaderID(diff utils.StorageDiff) (int64, error) {
+func (storageWatcher StorageWatcher) getHeaderID(diff utils.PersistedStorageDiff) (int64, error) {
 	header, getHeaderErr := storageWatcher.HeaderRepository.GetHeader(int64(diff.BlockHeight))
 	if getHeaderErr != nil {
 		return 0, getHeaderErr

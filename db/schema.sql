@@ -515,11 +515,7 @@ ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
 
 CREATE TABLE public.queued_storage (
     id integer NOT NULL,
-    block_height bigint,
-    block_hash bytea,
-    contract bytea,
-    storage_key bytea,
-    storage_value bytea
+    diff_id bigint NOT NULL
 );
 
 
@@ -541,6 +537,39 @@ CREATE SEQUENCE public.queued_storage_id_seq
 --
 
 ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
+
+
+--
+-- Name: storage_diff; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.storage_diff (
+    id bigint NOT NULL,
+    block_height bigint,
+    block_hash bytea,
+    hashed_address bytea,
+    storage_key bytea,
+    storage_value bytea
+);
+
+
+--
+-- Name: storage_diff_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.storage_diff_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: storage_diff_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.storage_diff_id_seq OWNED BY public.storage_diff.id;
 
 
 --
@@ -763,6 +792,13 @@ ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: storage_diff id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.storage_diff ALTER COLUMN id SET DEFAULT nextval('public.storage_diff_id_seq'::regclass);
+
+
+--
 -- Name: uncles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -952,11 +988,11 @@ ALTER TABLE ONLY public.eth_nodes
 
 
 --
--- Name: queued_storage queued_storage_block_height_block_hash_contract_storage_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: queued_storage queued_storage_diff_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.queued_storage
-    ADD CONSTRAINT queued_storage_block_height_block_hash_contract_storage_key_key UNIQUE (block_height, block_hash, contract, storage_key, storage_value);
+    ADD CONSTRAINT queued_storage_diff_id_key UNIQUE (diff_id);
 
 
 --
@@ -965,6 +1001,22 @@ ALTER TABLE ONLY public.queued_storage
 
 ALTER TABLE ONLY public.queued_storage
     ADD CONSTRAINT queued_storage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: storage_diff storage_diff_block_height_block_hash_hashed_address_storage_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.storage_diff
+    ADD CONSTRAINT storage_diff_block_height_block_hash_hashed_address_storage_key UNIQUE (block_height, block_hash, hashed_address, storage_key, storage_value);
+
+
+--
+-- Name: storage_diff storage_diff_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.storage_diff
+    ADD CONSTRAINT storage_diff_pkey PRIMARY KEY (id);
 
 
 --
@@ -1151,6 +1203,14 @@ ALTER TABLE ONLY public.headers
 
 ALTER TABLE ONLY public.blocks
     ADD CONSTRAINT node_fk FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: queued_storage queued_storage_diff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.queued_storage
+    ADD CONSTRAINT queued_storage_diff_id_fkey FOREIGN KEY (diff_id) REFERENCES public.storage_diff(id);
 
 
 --

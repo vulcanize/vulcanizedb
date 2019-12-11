@@ -53,7 +53,7 @@ var _ = Describe("Storage transformer", func() {
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(utils.StorageDiff{})
+		t.Execute(utils.PersistedStorageDiff{})
 
 		Expect(storageKeysLookup.LookupCalled).To(BeTrue())
 	})
@@ -61,7 +61,7 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if lookup fails", func() {
 		storageKeysLookup.LookupErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiff{})
+		err := t.Execute(utils.PersistedStorageDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -72,17 +72,25 @@ var _ = Describe("Storage transformer", func() {
 		storageKeysLookup.Metadata = fakeMetadata
 		rawValue := common.HexToAddress("0x12345")
 		fakeHeaderID := rand.Int63()
-		fakeRow := utils.StorageDiff{
-			HashedAddress: common.Hash{},
-			StorageKey:    common.Hash{},
-			StorageValue:  rawValue.Hash(),
-			HeaderID:      fakeHeaderID,
+		fakeBlockNumber := rand.Int()
+		fakeBlockHash := fakes.RandomString(64)
+		fakeRow := utils.PersistedStorageDiff{
+			ID:       rand.Int63(),
+			HeaderID: fakeHeaderID,
+			RawStorageDiff: utils.RawStorageDiff{
+				HashedAddress: common.Hash{},
+				BlockHash:     common.HexToHash(fakeBlockHash),
+				BlockHeight:   fakeBlockNumber,
+				StorageKey:    common.Hash{},
+				StorageValue:  rawValue.Hash(),
+			},
 		}
 
 		err := t.Execute(fakeRow)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
+		Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 		Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 		Expect(repository.PassedValue.(string)).To(Equal(rawValue.Hex()))
 	})
@@ -92,8 +100,9 @@ var _ = Describe("Storage transformer", func() {
 		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
+		diff := utils.PersistedStorageDiff{RawStorageDiff: utils.RawStorageDiff{StorageValue: rawValue.Hash()}}
 
-		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+		err := t.Execute(diff)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -117,17 +126,25 @@ var _ = Describe("Storage transformer", func() {
 
 		It("passes the decoded data items to the repository", func() {
 			storageKeysLookup.Metadata = fakeMetadata
-			fakeRow := utils.StorageDiff{
-				HashedAddress: common.Hash{},
-				StorageKey:    common.Hash{},
-				StorageValue:  rawValue.Hash(),
-				HeaderID:      fakeHeaderID,
+			fakeBlockNumber := rand.Int()
+			fakeBlockHash := fakes.RandomString(64)
+			fakeRow := utils.PersistedStorageDiff{
+				ID:       rand.Int63(),
+				HeaderID: fakeHeaderID,
+				RawStorageDiff: utils.RawStorageDiff{
+					HashedAddress: common.Hash{},
+					BlockHash:     common.HexToHash(fakeBlockHash),
+					BlockHeight:   fakeBlockNumber,
+					StorageKey:    common.Hash{},
+					StorageValue:  rawValue.Hash(),
+				},
 			}
 
 			err := t.Execute(fakeRow)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
+			Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 			expectedPassedValue := make(map[int]string)
 			expectedPassedValue[0] = "10800"
@@ -138,8 +155,9 @@ var _ = Describe("Storage transformer", func() {
 		It("returns error if creating a row fails", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
+			diff := utils.PersistedStorageDiff{RawStorageDiff: utils.RawStorageDiff{StorageValue: rawValue.Hash()}}
 
-			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+			err := t.Execute(diff)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

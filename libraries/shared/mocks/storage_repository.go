@@ -24,12 +24,14 @@ import (
 type MockStorageRepository struct {
 	CreateErr      error
 	PassedHeaderID int64
+	PassedDiffID   int64
 	PassedMetadata utils.StorageValueMetadata
 	PassedValue    interface{}
 }
 
-func (repository *MockStorageRepository) Create(headerID int64, metadata utils.StorageValueMetadata, value interface{}) error {
+func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata utils.StorageValueMetadata, value interface{}) error {
 	repository.PassedHeaderID = headerID
+	repository.PassedDiffID = diffID
 	repository.PassedMetadata = metadata
 	repository.PassedValue = value
 	return repository.CreateErr

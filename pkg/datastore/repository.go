@@ -19,6 +19,7 @@ package datastore
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
@@ -81,6 +82,10 @@ type FullSyncReceiptRepository interface {
 
 type HeaderSyncReceiptRepository interface {
 	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
+}
+
+type StorageDiffRepository interface {
+	CreateStorageDiff(rawDiff utils.RawStorageDiff) (int64, error)
 }
 
 type WatchedEventRepository interface {
