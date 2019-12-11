@@ -14,40 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage
 
 import (
-	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
-type ErrContractNotFound struct {
-	Contract string
+func AddHashedKeys(currentMappings map[common.Hash]StorageValueMetadata) map[common.Hash]StorageValueMetadata {
+	copyOfCurrentMappings := make(map[common.Hash]StorageValueMetadata)
+	for k, v := range currentMappings {
+		copyOfCurrentMappings[k] = v
+	}
+	for k, v := range copyOfCurrentMappings {
+		currentMappings[hashKey(k)] = v
+	}
+	return currentMappings
 }
 
-func (e ErrContractNotFound) Error() string {
-	return fmt.Sprintf("transformer not found for contract: %s", e.Contract)
-}
-
-type ErrMetadataMalformed struct {
-	MissingData Key
-}
-
-func (e ErrMetadataMalformed) Error() string {
-	return fmt.Sprintf("storage metadata malformed: missing %s", e.MissingData)
-}
-
-type ErrRowMalformed struct {
-	Length int
-}
-
-func (e ErrRowMalformed) Error() string {
-	return fmt.Sprintf("storage row malformed: length %d, expected %d", e.Length, ExpectedRowLength)
-}
-
-type ErrStorageKeyNotFound struct {
-	Key string
-}
-
-func (e ErrStorageKeyNotFound) Error() string {
-	return fmt.Sprintf("unknown storage key: %s", e.Key)
+func hashKey(key common.Hash) common.Hash {
+	return crypto.Keccak256Hash(key.Bytes())
 }

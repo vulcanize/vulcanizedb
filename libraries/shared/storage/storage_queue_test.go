@@ -19,7 +19,6 @@ package storage_test
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/test_config"
@@ -30,15 +29,15 @@ import (
 var _ = Describe("Storage queue", func() {
 	var (
 		db             *postgres.DB
-		diff           utils.PersistedStorageDiff
+		diff           storage.PersistedStorageDiff
 		diffRepository repositories.StorageDiffRepository
 		queue          storage.IStorageQueue
 	)
 
 	BeforeEach(func() {
 		fakeAddr := "0x123456"
-		rawDiff := utils.RawStorageDiff{
-			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
+		rawDiff := storage.RawStorageDiff{
+			HashedAddress: storage.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678901"),
 			BlockHeight:   987,
 			StorageKey:    common.HexToHash("0x654321"),
@@ -49,7 +48,7 @@ var _ = Describe("Storage queue", func() {
 		diffRepository = repositories.NewStorageDiffRepository(db)
 		diffID, insertDiffErr := diffRepository.CreateStorageDiff(rawDiff)
 		Expect(insertDiffErr).NotTo(HaveOccurred())
-		diff = utils.ToPersistedDiff(rawDiff, diffID)
+		diff = storage.ToPersistedDiff(rawDiff, diffID)
 		queue = storage.NewStorageQueue(db)
 		addErr := queue.Add(diff)
 		Expect(addErr).NotTo(HaveOccurred())
@@ -57,7 +56,7 @@ var _ = Describe("Storage queue", func() {
 
 	Describe("Add", func() {
 		It("adds a storage diff to the db", func() {
-			var result utils.PersistedStorageDiff
+			var result storage.PersistedStorageDiff
 			getErr := db.Get(&result, `SELECT storage_diff.id, hashed_address, block_hash, block_height, storage_key, storage_value
 				FROM public.queued_storage
 					LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)
@@ -90,8 +89,8 @@ var _ = Describe("Storage queue", func() {
 
 	It("gets all storage diffs from db", func() {
 		fakeAddr := "0x234567"
-		diffTwo := utils.RawStorageDiff{
-			HashedAddress: utils.HexToKeccak256Hash(fakeAddr),
+		diffTwo := storage.RawStorageDiff{
+			HashedAddress: storage.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678902"),
 			BlockHeight:   988,
 			StorageKey:    common.HexToHash("0x654322"),
@@ -99,7 +98,7 @@ var _ = Describe("Storage queue", func() {
 		}
 		persistedDiffTwoID, insertDiffErr := diffRepository.CreateStorageDiff(diffTwo)
 		Expect(insertDiffErr).NotTo(HaveOccurred())
-		persistedDiffTwo := utils.ToPersistedDiff(diffTwo, persistedDiffTwoID)
+		persistedDiffTwo := storage.ToPersistedDiff(diffTwo, persistedDiffTwoID)
 		addErr := queue.Add(persistedDiffTwo)
 		Expect(addErr).NotTo(HaveOccurred())
 

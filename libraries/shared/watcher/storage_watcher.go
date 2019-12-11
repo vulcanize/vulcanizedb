@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -82,7 +81,7 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 
 func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration) error {
 	ticker := time.NewTicker(queueRecheckInterval)
-	diffsChan := make(chan utils.RawStorageDiff)
+	diffsChan := make(chan storage.RawStorageDiff)
 	errsChan := make(chan error)
 
 	defer close(diffsChan)
@@ -103,12 +102,12 @@ func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration)
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(diff utils.PersistedStorageDiff) (transformer.StorageTransformer, bool) {
+func (storageWatcher StorageWatcher) getTransformer(diff storage.PersistedStorageDiff) (transformer.StorageTransformer, bool) {
 	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(rawDiff utils.RawStorageDiff) {
+func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawStorageDiff) {
 	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
 		if err == repositories.ErrDuplicateDiff {
@@ -118,7 +117,7 @@ func (storageWatcher StorageWatcher) processRow(rawDiff utils.RawStorageDiff) {
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())
 		// TODO: bail? Should we continue attempting to transform a diff we didn't persist
 	}
-	persistedDiff := utils.ToPersistedDiff(rawDiff, diffID)
+	persistedDiff := storage.ToPersistedDiff(rawDiff, diffID)
 
 	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
@@ -178,14 +177,14 @@ func (storageWatcher StorageWatcher) deleteRow(diffID int64) {
 	}
 }
 
-func (storageWatcher StorageWatcher) queueDiff(diff utils.PersistedStorageDiff) {
+func (storageWatcher StorageWatcher) queueDiff(diff storage.PersistedStorageDiff) {
 	queueErr := storageWatcher.Queue.Add(diff)
 	if queueErr != nil {
 		logrus.Infof("error queueing storage diff: %s", queueErr.Error())
 	}
 }
 
-func (storageWatcher StorageWatcher) getHeaderID(diff utils.PersistedStorageDiff) (int64, error) {
+func (storageWatcher StorageWatcher) getHeaderID(diff storage.PersistedStorageDiff) (int64, error) {
 	header, getHeaderErr := storageWatcher.HeaderRepository.GetHeader(int64(diff.BlockHeight))
 	if getHeaderErr != nil {
 		return 0, getHeaderErr

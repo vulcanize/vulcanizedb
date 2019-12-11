@@ -14,22 +14,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils_test
+package storage
 
 import (
-	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"fmt"
 )
 
-func TestShared(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Shared Storage Utils Suite")
+type ErrContractNotFound struct {
+	Contract string
 }
 
-var _ = BeforeSuite(func() {
-	logrus.SetOutput(ioutil.Discard)
-})
+func (e ErrContractNotFound) Error() string {
+	return fmt.Sprintf("transformer not found for contract: %s", e.Contract)
+}
+
+type ErrMetadataMalformed struct {
+	MissingData Key
+}
+
+func (e ErrMetadataMalformed) Error() string {
+	return fmt.Sprintf("storage metadata malformed: missing %s", e.MissingData)
+}
+
+type ErrRowMalformed struct {
+	Length int
+}
+
+func (e ErrRowMalformed) Error() string {
+	return fmt.Sprintf("storage row malformed: length %d, expected %d", e.Length, ExpectedRowLength)
+}
+
+type ErrStorageKeyNotFound struct {
+	Key string
+}
+
+func (e ErrStorageKeyNotFound) Error() string {
+	return fmt.Sprintf("unknown storage key: %s", e.Key)
+}

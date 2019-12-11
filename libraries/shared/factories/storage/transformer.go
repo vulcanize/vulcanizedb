@@ -18,7 +18,7 @@ package storage
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
@@ -39,12 +39,12 @@ func (transformer Transformer) KeccakContractAddress() common.Hash {
 	return transformer.HashedAddress
 }
 
-func (transformer Transformer) Execute(diff utils.PersistedStorageDiff) error {
+func (transformer Transformer) Execute(diff storage.PersistedStorageDiff) error {
 	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr
 	}
-	value, decodeErr := utils.Decode(diff, metadata)
+	value, decodeErr := storage.Decode(diff, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}

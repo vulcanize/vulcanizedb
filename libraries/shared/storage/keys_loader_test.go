@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils_test
+package storage_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -29,20 +29,20 @@ var _ = Describe("Storage keys loader utils", func() {
 			// ex. solidity:
 			//    	mapping (bytes32 => uint) public amounts
 			// to access amounts, pass in the index of the mapping on the contract + the bytes32 key for the uint val being looked up
-			indexOfMappingOnContract := utils.IndexZero
+			indexOfMappingOnContract := storage.IndexZero
 			keyForDesiredValueInMapping := "1234567890abcdef"
 
-			storageKey := utils.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKey := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
 			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 
 		It("returns same result if value includes hex prefix", func() {
-			indexOfMappingOnContract := utils.IndexZero
+			indexOfMappingOnContract := storage.IndexZero
 			keyForDesiredValueInMapping := "0x1234567890abcdef"
 
-			storageKey := utils.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKey := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
 			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
@@ -55,11 +55,11 @@ var _ = Describe("Storage keys loader utils", func() {
 			//    	mapping (bytes32 => uint) public amounts
 			//    	mapping (address => mapping (uint => bytes32)) public addressNames
 			// to access addressNames, pass in the index of the mapping on the contract + the address and uint keys for the bytes32 val being looked up
-			indexOfMappingOnContract := utils.IndexOne
+			indexOfMappingOnContract := storage.IndexOne
 			keyForOuterMapping := "1234567890abcdef"
 			keyForInnerMapping := "123"
 
-			storageKey := utils.GetStorageKeyForNestedMapping(indexOfMappingOnContract, keyForOuterMapping, keyForInnerMapping)
+			storageKey := storage.GetStorageKeyForNestedMapping(indexOfMappingOnContract, keyForOuterMapping, keyForInnerMapping)
 
 			expectedStorageKey := common.HexToHash("0x82113529f6cd61061d1a6f0de53f2bdd067a1addd3d2b46be50a99abfcdb1661")
 			Expect(storageKey).To(Equal(expectedStorageKey))
@@ -78,11 +78,11 @@ var _ = Describe("Storage keys loader utils", func() {
 			//    	mapping (bytes32 => Data) public itemData;
 			// to access quality from itemData, pass in the storage key for the zero-indexed value (quantity) + the number of increments required.
 			// (For "quality", we must increment the storage key for the corresponding "quantity" by 1).
-			indexOfMappingOnContract := utils.IndexTwo
+			indexOfMappingOnContract := storage.IndexTwo
 			keyForDesiredValueInMapping := "1234567890abcdef"
-			storageKeyForFirstPropertyOnStruct := utils.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKeyForFirstPropertyOnStruct := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
-			storageKey := utils.GetIncrementedStorageKey(storageKeyForFirstPropertyOnStruct, 1)
+			storageKey := storage.GetIncrementedStorageKey(storageKeyForFirstPropertyOnStruct, 1)
 
 			expectedStorageKey := common.HexToHash("0x69b38749f0a8ed5d505c8474f7fb62c7828aad8a7627f1c67e07af1d2368cad4")
 			Expect(storageKey).To(Equal(expectedStorageKey))

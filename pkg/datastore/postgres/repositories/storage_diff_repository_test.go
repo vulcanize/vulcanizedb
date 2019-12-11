@@ -20,7 +20,7 @@ import (
 	"database/sql"
 	"math/rand"
 
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -33,14 +33,14 @@ var _ = Describe("Storage diffs repository", func() {
 	var (
 		db              *postgres.DB
 		repo            repositories.StorageDiffRepository
-		fakeStorageDiff utils.RawStorageDiff
+		fakeStorageDiff storage.RawStorageDiff
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repo = repositories.NewStorageDiffRepository(db)
-		fakeStorageDiff = utils.RawStorageDiff{
+		fakeStorageDiff = storage.RawStorageDiff{
 			HashedAddress: test_data.FakeHash(),
 			BlockHash:     test_data.FakeHash(),
 			BlockHeight:   rand.Int(),
@@ -55,7 +55,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 			Expect(createErr).NotTo(HaveOccurred())
 			Expect(id).NotTo(BeZero())
-			var persisted utils.PersistedStorageDiff
+			var persisted storage.PersistedStorageDiff
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
