@@ -39,7 +39,7 @@ func (transformer Transformer) KeccakContractAddress() common.Hash {
 	return transformer.HashedAddress
 }
 
-func (transformer Transformer) Execute(diff storage.PersistedStorageDiff) error {
+func (transformer Transformer) Execute(diff storage.PersistedDiff) error {
 	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr

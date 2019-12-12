@@ -34,13 +34,13 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 	var (
 		errorsChannel  chan error
 		mockTailer     *fakes.MockTailer
-		diffsChannel   chan storage.RawStorageDiff
+		diffsChannel   chan storage.RawDiff
 		storageFetcher fetcher.CsvTailStorageFetcher
 	)
 
 	BeforeEach(func() {
 		errorsChannel = make(chan error)
-		diffsChannel = make(chan storage.RawStorageDiff)
+		diffsChannel = make(chan storage.RawDiff)
 		mockTailer = fakes.NewMockTailer()
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
 	})

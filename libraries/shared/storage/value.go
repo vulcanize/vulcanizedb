@@ -31,7 +31,7 @@ const (
 
 type Key string
 
-type StorageValueMetadata struct {
+type ValueMetadata struct {
 	Name        string
 	Keys        map[Key]string
 	Type        ValueType
@@ -39,18 +39,18 @@ type StorageValueMetadata struct {
 	PackedTypes map[int]ValueType //zero indexed position in map => type of packed item
 }
 
-func GetStorageValueMetadata(name string, keys map[Key]string, valueType ValueType) StorageValueMetadata {
+func GetValueMetadata(name string, keys map[Key]string, valueType ValueType) ValueMetadata {
 	return getMetadata(name, keys, valueType, nil, nil)
 }
 
-func GetStorageValueMetadataForPackedSlot(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
+func GetValueMetadataForPackedSlot(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) ValueMetadata {
 	return getMetadata(name, keys, valueType, packedNames, packedTypes)
 }
 
-func getMetadata(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) StorageValueMetadata {
+func getMetadata(name string, keys map[Key]string, valueType ValueType, packedNames map[int]string, packedTypes map[int]ValueType) ValueMetadata {
 	assertPackedSlotArgs(valueType, packedNames, packedTypes)
 
-	return StorageValueMetadata{
+	return ValueMetadata{
 		Name:        name,
 		Keys:        keys,
 		Type:        valueType,

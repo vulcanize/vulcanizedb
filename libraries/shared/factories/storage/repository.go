@@ -22,6 +22,6 @@ import (
 )
 
 type Repository interface {
-	Create(diffID, headerID int64, metadata storage.StorageValueMetadata, value interface{}) error
+	Create(diffID, headerID int64, metadata storage.ValueMetadata, value interface{}) error
 	SetDB(db *postgres.DB)
 }

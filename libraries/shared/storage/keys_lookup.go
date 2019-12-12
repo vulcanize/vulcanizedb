@@ -21,8 +21,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func AddHashedKeys(currentMappings map[common.Hash]StorageValueMetadata) map[common.Hash]StorageValueMetadata {
-	copyOfCurrentMappings := make(map[common.Hash]StorageValueMetadata)
+func AddHashedKeys(currentMappings map[common.Hash]ValueMetadata) map[common.Hash]ValueMetadata {
+	copyOfCurrentMappings := make(map[common.Hash]ValueMetadata)
 	for k, v := range currentMappings {
 		copyOfCurrentMappings[k] = v
 	}

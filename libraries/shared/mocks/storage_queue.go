@@ -23,15 +23,15 @@ import (
 type MockStorageQueue struct {
 	AddCalled      bool
 	AddError       error
-	AddPassedDiff  storage.PersistedStorageDiff
+	AddPassedDiff  storage.PersistedDiff
 	DeleteCalled   bool
 	DeleteErr      error
 	DeletePassedId int64
 	GetAllErr      error
-	DiffsToReturn  []storage.PersistedStorageDiff
+	DiffsToReturn  []storage.PersistedDiff
 }
 
-func (queue *MockStorageQueue) Add(diff storage.PersistedStorageDiff) error {
+func (queue *MockStorageQueue) Add(diff storage.PersistedDiff) error {
 	queue.AddCalled = true
 	queue.AddPassedDiff = diff
 	return queue.AddError
@@ -43,6 +43,6 @@ func (queue *MockStorageQueue) Delete(id int64) error {
 	return queue.DeleteErr
 }
 
-func (queue *MockStorageQueue) GetAll() ([]storage.PersistedStorageDiff, error) {
+func (queue *MockStorageQueue) GetAll() ([]storage.PersistedDiff, error) {
 	return queue.DiffsToReturn, queue.GetAllErr
 }

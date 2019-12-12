@@ -44,10 +44,10 @@ func (e ErrRowMalformed) Error() string {
 	return fmt.Sprintf("storage row malformed: length %d, expected %d", e.Length, ExpectedRowLength)
 }
 
-type ErrStorageKeyNotFound struct {
+type ErrKeyNotFound struct {
 	Key string
 }
 
-func (e ErrStorageKeyNotFound) Error() string {
+func (e ErrKeyNotFound) Error() string {
 	return fmt.Sprintf("unknown storage key: %s", e.Key)
 }

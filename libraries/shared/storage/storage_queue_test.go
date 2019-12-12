@@ -29,14 +29,14 @@ import (
 var _ = Describe("Storage queue", func() {
 	var (
 		db             *postgres.DB
-		diff           storage.PersistedStorageDiff
+		diff           storage.PersistedDiff
 		diffRepository repositories.StorageDiffRepository
 		queue          storage.IStorageQueue
 	)
 
 	BeforeEach(func() {
 		fakeAddr := "0x123456"
-		rawDiff := storage.RawStorageDiff{
+		rawDiff := storage.RawDiff{
 			HashedAddress: storage.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678901"),
 			BlockHeight:   987,
@@ -56,7 +56,7 @@ var _ = Describe("Storage queue", func() {
 
 	Describe("Add", func() {
 		It("adds a storage diff to the db", func() {
-			var result storage.PersistedStorageDiff
+			var result storage.PersistedDiff
 			getErr := db.Get(&result, `SELECT storage_diff.id, hashed_address, block_hash, block_height, storage_key, storage_value
 				FROM public.queued_storage
 					LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)
@@ -89,7 +89,7 @@ var _ = Describe("Storage queue", func() {
 
 	It("gets all storage diffs from db", func() {
 		fakeAddr := "0x234567"
-		diffTwo := storage.RawStorageDiff{
+		diffTwo := storage.RawDiff{
 			HashedAddress: storage.HexToKeccak256Hash(fakeAddr),
 			BlockHash:     common.HexToHash("0x678902"),
 			BlockHeight:   988,

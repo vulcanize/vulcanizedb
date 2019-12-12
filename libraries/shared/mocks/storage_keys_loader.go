@@ -26,10 +26,10 @@ type MockStorageKeysLoader struct {
 	LoadMappingsCallCount int
 	LoadMappingsError     error
 	SetDBCalled           bool
-	StorageKeyMappings    map[common.Hash]storage.StorageValueMetadata
+	StorageKeyMappings    map[common.Hash]storage.ValueMetadata
 }
 
-func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]storage.StorageValueMetadata, error) {
+func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]storage.ValueMetadata, error) {
 	loader.LoadMappingsCallCount++
 	return loader.StorageKeyMappings, loader.LoadMappingsError
 }

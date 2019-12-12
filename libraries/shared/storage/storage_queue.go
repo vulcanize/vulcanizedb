@@ -21,9 +21,9 @@ import (
 )
 
 type IStorageQueue interface {
-	Add(diff PersistedStorageDiff) error
+	Add(diff PersistedDiff) error
 	Delete(id int64) error
-	GetAll() ([]PersistedStorageDiff, error)
+	GetAll() ([]PersistedDiff, error)
 }
 
 type StorageQueue struct {
@@ -34,7 +34,7 @@ func NewStorageQueue(db *postgres.DB) StorageQueue {
 	return StorageQueue{db: db}
 }
 
-func (queue StorageQueue) Add(diff PersistedStorageDiff) error {
+func (queue StorageQueue) Add(diff PersistedDiff) error {
 	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (diff_id) VALUES
 		($1) ON CONFLICT DO NOTHING`, diff.ID)
 	return err
@@ -45,8 +45,8 @@ func (queue StorageQueue) Delete(diffID int64) error {
 	return err
 }
 
-func (queue StorageQueue) GetAll() ([]PersistedStorageDiff, error) {
-	var result []PersistedStorageDiff
+func (queue StorageQueue) GetAll() ([]PersistedDiff, error) {
+	var result []PersistedDiff
 	err := queue.db.Select(&result, `SELECT storage_diff.id, hashed_address, block_height, block_hash, storage_key, storage_value
 		FROM public.queued_storage
 			LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)

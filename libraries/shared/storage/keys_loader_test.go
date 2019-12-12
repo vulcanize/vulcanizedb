@@ -24,7 +24,7 @@ import (
 )
 
 var _ = Describe("Storage keys loader utils", func() {
-	Describe("GetStorageKeyForMapping", func() {
+	Describe("GetKeyForMapping", func() {
 		It("returns the storage key for a mapping when passed the mapping's index on the contract and the desired value's key", func() {
 			// ex. solidity:
 			//    	mapping (bytes32 => uint) public amounts
@@ -32,7 +32,7 @@ var _ = Describe("Storage keys loader utils", func() {
 			indexOfMappingOnContract := storage.IndexZero
 			keyForDesiredValueInMapping := "1234567890abcdef"
 
-			storageKey := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKey := storage.GetKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
 			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
@@ -42,14 +42,14 @@ var _ = Describe("Storage keys loader utils", func() {
 			indexOfMappingOnContract := storage.IndexZero
 			keyForDesiredValueInMapping := "0x1234567890abcdef"
 
-			storageKey := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKey := storage.GetKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
 			expectedStorageKey := common.HexToHash("0xee0c1b59a3856bafbfb8730e7694c4badc271eb5f01ce4a8d7a53d8a6499676f")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 	})
 
-	Describe("GetStorageKeyForNestedMapping", func() {
+	Describe("GetKeyForNestedMapping", func() {
 		It("returns the storage key for a nested mapping when passed the mapping's index on the contract and the desired value's keys", func() {
 			// ex. solidity:
 			//    	mapping (bytes32 => uint) public amounts
@@ -59,14 +59,14 @@ var _ = Describe("Storage keys loader utils", func() {
 			keyForOuterMapping := "1234567890abcdef"
 			keyForInnerMapping := "123"
 
-			storageKey := storage.GetStorageKeyForNestedMapping(indexOfMappingOnContract, keyForOuterMapping, keyForInnerMapping)
+			storageKey := storage.GetKeyForNestedMapping(indexOfMappingOnContract, keyForOuterMapping, keyForInnerMapping)
 
 			expectedStorageKey := common.HexToHash("0x82113529f6cd61061d1a6f0de53f2bdd067a1addd3d2b46be50a99abfcdb1661")
 			Expect(storageKey).To(Equal(expectedStorageKey))
 		})
 	})
 
-	Describe("GetIncrementedStorageKey", func() {
+	Describe("GetIncrementedKey", func() {
 		It("returns the storage key for later values sharing an index on the contract with other earlier values", func() {
 			// ex. solidity:
 			//    	mapping (bytes32 => uint) public amounts
@@ -80,9 +80,9 @@ var _ = Describe("Storage keys loader utils", func() {
 			// (For "quality", we must increment the storage key for the corresponding "quantity" by 1).
 			indexOfMappingOnContract := storage.IndexTwo
 			keyForDesiredValueInMapping := "1234567890abcdef"
-			storageKeyForFirstPropertyOnStruct := storage.GetStorageKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
+			storageKeyForFirstPropertyOnStruct := storage.GetKeyForMapping(indexOfMappingOnContract, keyForDesiredValueInMapping)
 
-			storageKey := storage.GetIncrementedStorageKey(storageKeyForFirstPropertyOnStruct, 1)
+			storageKey := storage.GetIncrementedKey(storageKeyForFirstPropertyOnStruct, 1)
 
 			expectedStorageKey := common.HexToHash("0x69b38749f0a8ed5d505c8474f7fb62c7828aad8a7627f1c67e07af1d2368cad4")
 			Expect(storageKey).To(Equal(expectedStorageKey))

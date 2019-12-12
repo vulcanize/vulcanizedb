@@ -85,7 +85,7 @@ type HeaderSyncReceiptRepository interface {
 }
 
 type StorageDiffRepository interface {
-	CreateStorageDiff(rawDiff storage.RawStorageDiff) (int64, error)
+	CreateStorageDiff(rawDiff storage.RawDiff) (int64, error)
 }
 
 type WatchedEventRepository interface {

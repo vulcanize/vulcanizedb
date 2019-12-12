@@ -23,20 +23,20 @@ import (
 )
 
 type KeysLookup interface {
-	Lookup(key common.Hash) (storage.StorageValueMetadata, error)
+	Lookup(key common.Hash) (storage.ValueMetadata, error)
 	SetDB(db *postgres.DB)
 }
 
 type keysLookup struct {
 	loader   KeysLoader
-	mappings map[common.Hash]storage.StorageValueMetadata
+	mappings map[common.Hash]storage.ValueMetadata
 }
 
 func NewKeysLookup(loader KeysLoader) KeysLookup {
-	return &keysLookup{loader: loader, mappings: make(map[common.Hash]storage.StorageValueMetadata)}
+	return &keysLookup{loader: loader, mappings: make(map[common.Hash]storage.ValueMetadata)}
 }
 
-func (lookup *keysLookup) Lookup(key common.Hash) (storage.StorageValueMetadata, error) {
+func (lookup *keysLookup) Lookup(key common.Hash) (storage.ValueMetadata, error) {
 	metadata, ok := lookup.mappings[key]
 	if !ok {
 		refreshErr := lookup.refreshMappings()
@@ -45,7 +45,7 @@ func (lookup *keysLookup) Lookup(key common.Hash) (storage.StorageValueMetadata,
 		}
 		metadata, ok = lookup.mappings[key]
 		if !ok {
-			return metadata, storage.ErrStorageKeyNotFound{Key: key.Hex()}
+			return metadata, storage.ErrKeyNotFound{Key: key.Hex()}
 		}
 	}
 	return metadata, nil

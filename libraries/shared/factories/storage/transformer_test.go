@@ -53,7 +53,7 @@ var _ = Describe("Storage transformer", func() {
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(storage.PersistedStorageDiff{})
+		t.Execute(storage.PersistedDiff{})
 
 		Expect(storageKeysLookup.LookupCalled).To(BeTrue())
 	})
@@ -61,23 +61,23 @@ var _ = Describe("Storage transformer", func() {
 	It("returns error if lookup fails", func() {
 		storageKeysLookup.LookupErr = fakes.FakeError
 
-		err := t.Execute(storage.PersistedStorageDiff{})
+		err := t.Execute(storage.PersistedDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("creates storage row with decoded data", func() {
-		fakeMetadata := storage.StorageValueMetadata{Type: storage.Address}
+		fakeMetadata := storage.ValueMetadata{Type: storage.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		rawValue := common.HexToAddress("0x12345")
 		fakeHeaderID := rand.Int63()
 		fakeBlockNumber := rand.Int()
 		fakeBlockHash := fakes.RandomString(64)
-		fakeRow := storage.PersistedStorageDiff{
+		fakeRow := storage.PersistedDiff{
 			ID:       rand.Int63(),
 			HeaderID: fakeHeaderID,
-			RawStorageDiff: storage.RawStorageDiff{
+			RawDiff: storage.RawDiff{
 				HashedAddress: common.Hash{},
 				BlockHash:     common.HexToHash(fakeBlockHash),
 				BlockHeight:   fakeBlockNumber,
@@ -97,10 +97,10 @@ var _ = Describe("Storage transformer", func() {
 
 	It("returns error if creating row fails", func() {
 		rawValue := common.HexToAddress("0x12345")
-		fakeMetadata := storage.StorageValueMetadata{Type: storage.Address}
+		fakeMetadata := storage.ValueMetadata{Type: storage.Address}
 		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
-		diff := storage.PersistedStorageDiff{RawStorageDiff: storage.RawStorageDiff{StorageValue: rawValue.Hash()}}
+		diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: rawValue.Hash()}}
 
 		err := t.Execute(diff)
 
@@ -117,7 +117,7 @@ var _ = Describe("Storage transformer", func() {
 		packedTypes[0] = storage.Uint48
 		packedTypes[1] = storage.Uint48
 
-		var fakeMetadata = storage.StorageValueMetadata{
+		var fakeMetadata = storage.ValueMetadata{
 			Name:        "",
 			Keys:        nil,
 			Type:        storage.PackedSlot,
@@ -128,10 +128,10 @@ var _ = Describe("Storage transformer", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			fakeBlockNumber := rand.Int()
 			fakeBlockHash := fakes.RandomString(64)
-			fakeRow := storage.PersistedStorageDiff{
+			fakeRow := storage.PersistedDiff{
 				ID:       rand.Int63(),
 				HeaderID: fakeHeaderID,
-				RawStorageDiff: storage.RawStorageDiff{
+				RawDiff: storage.RawDiff{
 					HashedAddress: common.Hash{},
 					BlockHash:     common.HexToHash(fakeBlockHash),
 					BlockHeight:   fakeBlockNumber,
@@ -155,7 +155,7 @@ var _ = Describe("Storage transformer", func() {
 		It("returns error if creating a row fails", func() {
 			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
-			diff := storage.PersistedStorageDiff{RawStorageDiff: storage.RawStorageDiff{StorageValue: rawValue.Hash()}}
+			diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: rawValue.Hash()}}
 
 			err := t.Execute(diff)
 

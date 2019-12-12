@@ -26,10 +26,10 @@ import (
 type MockStorageTransformer struct {
 	KeccakOfAddress common.Hash
 	ExecuteErr      error
-	PassedDiff      storage.PersistedStorageDiff
+	PassedDiff      storage.PersistedDiff
 }
 
-func (transformer *MockStorageTransformer) Execute(diff storage.PersistedStorageDiff) error {
+func (transformer *MockStorageTransformer) Execute(diff storage.PersistedDiff) error {
 	transformer.PassedDiff = diff
 	return transformer.ExecuteErr
 }

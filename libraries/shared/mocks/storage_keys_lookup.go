@@ -23,12 +23,12 @@ import (
 )
 
 type MockStorageKeysLookup struct {
-	Metadata     storage.StorageValueMetadata
+	Metadata     storage.ValueMetadata
 	LookupCalled bool
 	LookupErr    error
 }
 
-func (mappings *MockStorageKeysLookup) Lookup(key common.Hash) (storage.StorageValueMetadata, error) {
+func (mappings *MockStorageKeysLookup) Lookup(key common.Hash) (storage.ValueMetadata, error) {
 	mappings.LookupCalled = true
 	return mappings.Metadata, mappings.LookupErr
 }

@@ -31,7 +31,7 @@ func NewCsvTailStorageFetcher(tailer fs.Tailer) CsvTailStorageFetcher {
 	return CsvTailStorageFetcher{tailer: tailer}
 }
 
-func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- storage.RawStorageDiff, errs chan<- error) {
+func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- storage.RawDiff, errs chan<- error) {
 	t, tailErr := storageFetcher.tailer.Tail()
 	if tailErr != nil {
 		errs <- tailErr

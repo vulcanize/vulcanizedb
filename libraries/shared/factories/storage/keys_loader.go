@@ -23,6 +23,6 @@ import (
 )
 
 type KeysLoader interface {
-	LoadMappings() (map[common.Hash]storage.StorageValueMetadata, error)
+	LoadMappings() (map[common.Hash]storage.ValueMetadata, error)
 	SetDB(db *postgres.DB)
 }

@@ -36,7 +36,7 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- storage_pkg.RawStorageDiff, errs chan<- error) {
+func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- storage_pkg.RawDiff, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {

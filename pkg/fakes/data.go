@@ -56,8 +56,8 @@ func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	}
 }
 
-func GetFakeStorageDiffForHeader(header core.Header, hashedAddress, storageKey, storageValue common.Hash) storage.RawStorageDiff {
-	return storage.RawStorageDiff{
+func GetFakeStorageDiffForHeader(header core.Header, hashedAddress, storageKey, storageValue common.Hash) storage.RawDiff {
+	return storage.RawDiff{
 		HashedAddress: hashedAddress,
 		BlockHash:     common.HexToHash(header.Hash),
 		BlockHeight:   int(header.BlockNumber),

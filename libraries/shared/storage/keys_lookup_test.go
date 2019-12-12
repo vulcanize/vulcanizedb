@@ -26,10 +26,10 @@ import (
 var _ = Describe("Storage keys lookup utils", func() {
 	Describe("AddHashedKeys", func() {
 		It("returns a copy of the map with an additional slot for the hashed version of every key", func() {
-			fakeMap := map[common.Hash]storage.StorageValueMetadata{}
+			fakeMap := map[common.Hash]storage.ValueMetadata{}
 			fakeStorageKey := common.HexToHash("72c72de6b203d67cb6cd54fc93300109fcc6fd6eac88e390271a3d548794d800")
 			var fakeMappingKey storage.Key = "fakeKey"
-			fakeMetadata := storage.StorageValueMetadata{
+			fakeMetadata := storage.ValueMetadata{
 				Name: "fakeName",
 				Keys: map[storage.Key]string{fakeMappingKey: "fakeValue"},
 				Type: storage.Uint48,
