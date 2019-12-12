@@ -17,18 +17,8 @@
 package cmd
 
 import (
-	"plugin"
-	syn "sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
-	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
-	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
-	"github.com/makerdao/vulcanizedb/pkg/fs"
-	p2 "github.com/makerdao/vulcanizedb/pkg/plugin"
-	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
-	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -119,98 +109,14 @@ func composeAndExecute() {
 		LogWithCommand.Fatalf("failed to prepare config: %s", configErr.Error())
 	}
 
-	// Generate code to build the plugin according to the config file
-	LogWithCommand.Info("generating plugin")
-	generator, constructorErr := p2.NewGenerator(genConfig, databaseConfig)
-	if constructorErr != nil {
-		LogWithCommand.Fatalf("failed to initialize generator: %s", constructorErr.Error())
-	}
-	generateErr := generator.GenerateExporterPlugin()
-	if generateErr != nil {
-		LogWithCommand.Fatalf("generating plugin failed: %s", generateErr.Error())
-	}
-
-	// Get the plugin path and load the plugin
-	_, pluginPath, pathErr := genConfig.GetPluginPaths()
-	if pathErr != nil {
-		LogWithCommand.Fatalf("failed to get plugin paths: %s", pathErr.Error())
-	}
-	if !genConfig.Save {
-		defer helpers.ClearFiles(pluginPath)
-	}
-	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, openErr := plugin.Open(pluginPath)
-	if openErr != nil {
-		LogWithCommand.Fatalf("linking plugin failed: %s", openErr.Error())
-	}
-
-	// Load the `Exporter` symbol from the plugin
-	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, lookupErr := plug.Lookup("Exporter")
-	if lookupErr != nil {
-		LogWithCommand.Fatalf("loading Exporter symbol failed: %s", lookupErr.Error())
-	}
-
-	// Assert that the symbol is of type Exporter
-	exporter, ok := symExporter.(Exporter)
-	if !ok {
-		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
-	}
-
-	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
-
-	// Setup bc and db objects
-	blockChain := getBlockChain()
-	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
-
-	// Execute over transformer sets returned by the exporter
-	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
-	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain)
-		err := ew.AddTransformers(ethEventInitializers)
-		if err != nil {
-			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
-		}
-		wg.Add(1)
-		go watchEthEvents(&ew, &wg)
-	}
-
-	if len(ethStorageInitializers) > 0 {
-		switch storageDiffsSource {
-		case "geth":
-			logrus.Debug("fetching storage diffs from geth pub sub")
-			rpcClient, _ := getClients()
-			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		default:
-			logrus.Debug("fetching storage diffs from csv")
-			tailer := fs.FileTailer{Path: storageDiffsPath}
-			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		}
-	}
-
-	if len(ethContractInitializers) > 0 {
-		gw := watcher.NewContractWatcher(&db, blockChain)
-		gw.AddTransformers(ethContractInitializers)
-		wg.Add(1)
-		go watchEthContract(&gw, &wg)
-	}
-	wg.Wait()
+	composeTransformers()
+	executeTransformers()
 }
 
 func init() {
 	rootCmd.AddCommand(composeAndExecuteCmd)
 	composeAndExecuteCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
 	composeAndExecuteCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
+	composeAndExecuteCmd.Flags().DurationVarP(&retryInterval, "retry-interval", "i", 7*time.Second, "interval duration between retries on execution error")
+	composeAndExecuteCmd.Flags().IntVarP(&maxUnexpectedErrors, "max-unexpected-errs", "m", 5, "maximum number of unexpected errors to allow (with retries) before exiting")
 }

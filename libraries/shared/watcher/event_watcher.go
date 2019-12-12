@@ -30,16 +30,16 @@ import (
 	"time"
 )
 
-const NoNewDataPause = time.Second * 7
-
 type EventWatcher struct {
-	blockChain   core.BlockChain
-	db           *postgres.DB
-	LogDelegator logs.ILogDelegator
-	LogExtractor logs.ILogExtractor
+	blockChain                   core.BlockChain
+	db                           *postgres.DB
+	LogDelegator                 logs.ILogDelegator
+	LogExtractor                 logs.ILogExtractor
+	MaxConsecutiveUnexpectedErrs int
+	RetryInterval                time.Duration
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration) EventWatcher {
 	extractor := &logs.LogExtractor{
 		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
 		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
@@ -52,10 +52,12 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 		LogRepository: repositories.NewHeaderSyncLogRepository(db),
 	}
 	return EventWatcher{
-		blockChain:   bc,
-		db:           db,
-		LogExtractor: extractor,
-		LogDelegator: logTransformer,
+		blockChain:                   bc,
+		db:                           db,
+		LogDelegator:                 logTransformer,
+		LogExtractor:                 extractor,
+		MaxConsecutiveUnexpectedErrs: maxConsecutiveUnexpectedErrs,
+		RetryInterval:                retryInterval,
 	}
 }
 
@@ -96,27 +98,29 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 }
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	for {
-		err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
-		if err != nil && err != logs.ErrNoUncheckedHeaders {
-			errs <- err
-			return
-		}
-		if err == logs.ErrNoUncheckedHeaders {
-			time.Sleep(NoNewDataPause)
-		}
-	}
+	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
+	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs)
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error) {
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs)
+}
+
+func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error) {
+	consecutiveUnexpectedErrCount := 0
 	for {
-		err := watcher.LogDelegator.DelegateLogs()
-		if err != nil && err != logs.ErrNoLogs {
-			errs <- err
-			return
-		}
-		if err == logs.ErrNoLogs {
-			time.Sleep(NoNewDataPause)
+		err := call()
+		if err == nil {
+			consecutiveUnexpectedErrCount = 0
+		} else {
+			if err != expectedErr {
+				consecutiveUnexpectedErrCount++
+				logrus.Errorf("error %s logs: %s", operation, err.Error())
+				if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
+					errs <- err
+				}
+			}
+			time.Sleep(watcher.RetryInterval)
 		}
 	}
 }

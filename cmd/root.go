@@ -36,16 +36,18 @@ import (
 )
 
 var (
+	LogWithCommand       logrus.Entry
+	SubCommand           string
 	cfgFile              string
 	databaseConfig       config.Database
 	genConfig            config.Plugin
 	ipc                  string
+	maxUnexpectedErrors  int
 	queueRecheckInterval time.Duration
+	recheckHeadersArg    bool
+	retryInterval        time.Duration
 	startingBlockNumber  int64
 	storageDiffsPath     string
-	recheckHeadersArg    bool
-	SubCommand           string
-	LogWithCommand       logrus.Entry
 	storageDiffsSource   string
 )
 
