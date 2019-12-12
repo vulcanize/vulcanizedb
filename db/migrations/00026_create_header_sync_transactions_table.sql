@@ -14,5 +14,9 @@ CREATE TABLE header_sync_transactions (
   "value"     NUMERIC
 );
 
+CREATE INDEX header_sync_transactions_header
+    ON header_sync_transactions (header_id);
+
 -- +goose Down
+DROP INDEX header_sync_transactions_header;
 DROP TABLE header_sync_transactions;

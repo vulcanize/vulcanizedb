@@ -19,8 +19,13 @@ ON DELETE CASCADE;
 ALTER TABLE full_sync_receipts
   DROP COLUMN transaction_id;
 
+CREATE INDEX full_sync_receipts_block
+    ON full_sync_receipts (block_id);
+
 
 -- +goose Down
+DROP INDEX full_sync_receipts_block;
+
 ALTER TABLE full_sync_receipts
   ADD COLUMN transaction_id INT;
 

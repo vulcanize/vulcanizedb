@@ -11,5 +11,9 @@ CREATE TABLE public.uncles (
   UNIQUE (block_id, hash)
 );
 
+CREATE INDEX uncles_eth_node
+    ON uncles (eth_node_id);
+
 -- +goose Down
+DROP INDEX uncles_eth_node;
 DROP TABLE public.uncles;

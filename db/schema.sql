@@ -1067,10 +1067,73 @@ CREATE INDEX block_id_index ON public.full_sync_transactions USING btree (block_
 
 
 --
+-- Name: full_sync_logs_receipt; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX full_sync_logs_receipt ON public.full_sync_logs USING btree (receipt_id);
+
+
+--
+-- Name: full_sync_receipts_block; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX full_sync_receipts_block ON public.full_sync_receipts USING btree (block_id);
+
+
+--
+-- Name: full_sync_receipts_contract_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX full_sync_receipts_contract_address ON public.full_sync_receipts USING btree (contract_address_id);
+
+
+--
+-- Name: header_sync_logs_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_logs_address ON public.header_sync_logs USING btree (address);
+
+
+--
+-- Name: header_sync_logs_transaction; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_logs_transaction ON public.header_sync_logs USING btree (tx_hash);
+
+
+--
+-- Name: header_sync_receipts_contract_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_receipts_contract_address ON public.header_sync_receipts USING btree (contract_address_id);
+
+
+--
+-- Name: header_sync_receipts_transaction; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_receipts_transaction ON public.header_sync_receipts USING btree (transaction_id);
+
+
+--
+-- Name: header_sync_transactions_header; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX header_sync_transactions_header ON public.header_sync_transactions USING btree (header_id);
+
+
+--
 -- Name: headers_block_number; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
+
+
+--
+-- Name: headers_eth_node; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX headers_eth_node ON public.headers USING btree (eth_node_id);
 
 
 --
@@ -1099,6 +1162,13 @@ CREATE INDEX tx_from_index ON public.full_sync_transactions USING btree (tx_from
 --
 
 CREATE INDEX tx_to_index ON public.full_sync_transactions USING btree (tx_to);
+
+
+--
+-- Name: uncles_eth_node; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX uncles_eth_node ON public.uncles USING btree (eth_node_id);
 
 
 --

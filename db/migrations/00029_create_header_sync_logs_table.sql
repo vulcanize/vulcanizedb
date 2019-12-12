@@ -17,6 +17,13 @@ CREATE TABLE header_sync_logs
     UNIQUE (header_id, tx_index, log_index)
 );
 
+CREATE INDEX header_sync_logs_address
+    ON header_sync_logs (address);
+CREATE INDEX header_sync_logs_transaction
+    ON header_sync_logs (tx_hash);
+
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
+DROP INDEX header_sync_logs_transaction;
+DROP INDEX header_sync_logs_address;
 DROP TABLE header_sync_logs;
