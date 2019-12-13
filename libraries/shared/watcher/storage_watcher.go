@@ -111,7 +111,7 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
 		if err == repositories.ErrDuplicateDiff {
-			logrus.Info("ignoring duplicate diff")
+			logrus.Trace("ignoring duplicate diff")
 			return
 		}
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())
@@ -121,13 +121,13 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 
 	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
-		logrus.Debug("ignoring diff from an unwatched contract")
+		logrus.Trace("ignoring diff from an unwatched contract")
 		return
 	}
 
 	headerID, err := storageWatcher.getHeaderID(persistedDiff)
 	if err != nil {
-		logrus.Infof("error getting header for diff: %s", err.Error())
+		logrus.Tracef("error getting header for diff: %s", err.Error())
 		storageWatcher.queueDiff(persistedDiff)
 		return
 	}
@@ -155,7 +155,7 @@ func (storageWatcher StorageWatcher) processQueue() {
 
 		headerID, getHeaderErr := storageWatcher.getHeaderID(diff)
 		if getHeaderErr != nil {
-			logrus.Infof("error getting header for diff: %s", getHeaderErr.Error())
+			logrus.Tracef("error getting header for diff: %s", getHeaderErr.Error())
 			continue
 		}
 		diff.HeaderID = headerID

@@ -88,9 +88,6 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 	var header core.Header
 	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
 		blockNumber, repository.database.NodeID)
-	if err != nil {
-		logrus.Error("GetHeader: error getting headers: ", err)
-	}
 	return header, err
 }
 

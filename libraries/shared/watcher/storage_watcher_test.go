@@ -244,82 +244,33 @@ var _ = Describe("Storage Watcher", func() {
 			})
 
 			Describe("when getting header fails", func() {
-				Describe("when repository returns error", func() {
-					It("queues diff ", func(done Done) {
-						mockHeaderRepository.GetHeaderError = fakes.FakeError
+				It("queues diff when repository returns error", func(done Done) {
+					mockHeaderRepository.GetHeaderError = fakes.FakeError
 
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
+					go func() {
+						err := storageWatcher.Execute(time.Hour)
+						Expect(err).NotTo(HaveOccurred())
+					}()
 
-						Eventually(func() bool {
-							return mockQueue.AddCalled
-						}).Should(BeTrue())
-						close(done)
-					})
-
-					It("logs error", func(done Done) {
-						mockHeaderRepository.GetHeaderError = fakes.FakeError
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(fakes.FakeError.Error()))
-						close(done)
-					})
+					Eventually(func() bool {
+						return mockQueue.AddCalled
+					}).Should(BeTrue())
+					close(done)
 				})
 
-				Describe("when hash doesn't match", func() {
-					var (
-						wrongHash     string
-						expectedError error
-					)
+				It("queues diff when header hash doesn't match", func(done Done) {
+					wrongHash := fakes.RandomString(64)
+					mockHeaderRepository.GetHeaderReturnHash = wrongHash
 
-					BeforeEach(func() {
-						wrongHash = fakes.RandomString(64)
-						expectedError = watcher.NewErrHeaderMismatch(wrongHash, fakeBlockHash.Hex())
-						mockHeaderRepository.GetHeaderReturnHash = wrongHash
-					})
+					go func() {
+						err := storageWatcher.Execute(time.Hour)
+						Expect(err).NotTo(HaveOccurred())
+					}()
 
-					It("queues diff", func(done Done) {
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() bool {
-							return mockQueue.AddCalled
-						}).Should(BeTrue())
-						close(done)
-					})
-
-					It("logs error", func(done Done) {
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(expectedError.Error()))
-						close(done)
-					})
+					Eventually(func() bool {
+						return mockQueue.AddCalled
+					}).Should(BeTrue())
+					close(done)
 				})
 			})
 		})
@@ -435,46 +386,6 @@ var _ = Describe("Storage Watcher", func() {
 				})
 
 				Describe("when getting header fails", func() {
-					It("logs error if repository returns error", func(done Done) {
-						mockHeaderRepository.GetHeaderError = fakes.FakeError
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Nanosecond)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(fakes.FakeError.Error()))
-						close(done)
-					})
-
-					It("logs error if header hash doesn't match diff", func(done Done) {
-						wrongHash := fakes.RandomString(64)
-						mockHeaderRepository.GetHeaderReturnHash = wrongHash
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Nanosecond)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						expectedError := watcher.NewErrHeaderMismatch(wrongHash, fakeBlockHash.Hex())
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(expectedError.Error()))
-						close(done)
-					})
-
 					It("does not delete diff from queue", func(done Done) {
 						mockHeaderRepository.GetHeaderError = fakes.FakeError
 						go func() {
