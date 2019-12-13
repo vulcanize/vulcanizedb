@@ -17,14 +17,13 @@
 package storage
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type IStorageQueue interface {
-	Add(diff utils.PersistedStorageDiff) error
+	Add(diff PersistedDiff) error
 	Delete(id int64) error
-	GetAll() ([]utils.PersistedStorageDiff, error)
+	GetAll() ([]PersistedDiff, error)
 }
 
 type StorageQueue struct {
@@ -35,7 +34,7 @@ func NewStorageQueue(db *postgres.DB) StorageQueue {
 	return StorageQueue{db: db}
 }
 
-func (queue StorageQueue) Add(diff utils.PersistedStorageDiff) error {
+func (queue StorageQueue) Add(diff PersistedDiff) error {
 	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (diff_id) VALUES
 		($1) ON CONFLICT DO NOTHING`, diff.ID)
 	return err
@@ -46,8 +45,8 @@ func (queue StorageQueue) Delete(diffID int64) error {
 	return err
 }
 
-func (queue StorageQueue) GetAll() ([]utils.PersistedStorageDiff, error) {
-	var result []utils.PersistedStorageDiff
+func (queue StorageQueue) GetAll() ([]PersistedDiff, error) {
+	var result []PersistedDiff
 	err := queue.db.Select(&result, `SELECT storage_diff.id, hashed_address, block_height, block_hash, storage_key, storage_value
 		FROM public.queued_storage
 			LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)

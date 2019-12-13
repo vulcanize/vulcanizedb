@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ const (
 	bitsPerByte = 8
 )
 
-func Decode(diff PersistedStorageDiff, metadata StorageValueMetadata) (interface{}, error) {
+func Decode(diff PersistedDiff, metadata ValueMetadata) (interface{}, error) {
 	switch metadata.Type {
 	case Uint256:
 		return decodeInteger(diff.StorageValue.Bytes()), nil

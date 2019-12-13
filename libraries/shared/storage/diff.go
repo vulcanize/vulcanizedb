@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage
 
 import (
 	"strconv"
@@ -27,7 +27,7 @@ import (
 
 const ExpectedRowLength = 5
 
-type RawStorageDiff struct {
+type RawDiff struct {
 	HashedAddress common.Hash `db:"hashed_address"`
 	BlockHash     common.Hash `db:"block_hash"`
 	BlockHeight   int         `db:"block_height"`
@@ -35,21 +35,21 @@ type RawStorageDiff struct {
 	StorageValue  common.Hash `db:"storage_value"`
 }
 
-type PersistedStorageDiff struct {
-	RawStorageDiff
+type PersistedDiff struct {
+	RawDiff
 	ID       int64
 	HeaderID int64 `db:"header_id"`
 }
 
-func FromParityCsvRow(csvRow []string) (RawStorageDiff, error) {
+func FromParityCsvRow(csvRow []string) (RawDiff, error) {
 	if len(csvRow) != ExpectedRowLength {
-		return RawStorageDiff{}, ErrRowMalformed{Length: len(csvRow)}
+		return RawDiff{}, ErrRowMalformed{Length: len(csvRow)}
 	}
 	height, err := strconv.Atoi(csvRow[2])
 	if err != nil {
-		return RawStorageDiff{}, err
+		return RawDiff{}, err
 	}
-	return RawStorageDiff{
+	return RawDiff{
 		HashedAddress: HexToKeccak256Hash(csvRow[0]),
 		BlockHash:     common.HexToHash(csvRow[1]),
 		BlockHeight:   height,
@@ -58,14 +58,14 @@ func FromParityCsvRow(csvRow []string) (RawStorageDiff, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawStorageDiff, error) {
+func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
 	var decodedRLPStorageValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
 	if err != nil {
-		return RawStorageDiff{}, err
+		return RawDiff{}, err
 	}
 
-	return RawStorageDiff{
+	return RawDiff{
 		HashedAddress: common.BytesToHash(account.Key),
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
@@ -74,10 +74,10 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 	}, nil
 }
 
-func ToPersistedDiff(raw RawStorageDiff, id int64) PersistedStorageDiff {
-	return PersistedStorageDiff{
-		RawStorageDiff: raw,
-		ID:             id,
+func ToPersistedDiff(raw RawDiff, id int64) PersistedDiff {
+	return PersistedDiff{
+		RawDiff: raw,
+		ID:      id,
 	}
 }
 

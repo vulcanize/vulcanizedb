@@ -22,7 +22,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"math/rand"
 	"strconv"
@@ -56,8 +56,8 @@ func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	}
 }
 
-func GetFakeStorageDiffForHeader(header core.Header, hashedAddress, storageKey, storageValue common.Hash) utils.RawStorageDiff {
-	return utils.RawStorageDiff{
+func GetFakeStorageDiffForHeader(header core.Header, hashedAddress, storageKey, storageValue common.Hash) storage.RawDiff {
+	return storage.RawDiff{
 		HashedAddress: hashedAddress,
 		BlockHash:     common.HexToHash(header.Hash),
 		BlockHeight:   int(header.BlockNumber),

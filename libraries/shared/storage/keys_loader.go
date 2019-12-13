@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils
+package storage
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -37,17 +37,17 @@ const (
 	IndexEleven = "000000000000000000000000000000000000000000000000000000000000000b"
 )
 
-func GetStorageKeyForMapping(indexOnContract, key string) common.Hash {
+func GetKeyForMapping(indexOnContract, key string) common.Hash {
 	keyBytes := common.FromHex(key + indexOnContract)
 	return crypto.Keccak256Hash(keyBytes)
 }
 
-func GetStorageKeyForNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
+func GetKeyForNestedMapping(indexOnContract, primaryKey, secondaryKey string) common.Hash {
 	primaryMappingIndex := crypto.Keccak256(common.FromHex(primaryKey + indexOnContract))
 	return crypto.Keccak256Hash(common.FromHex(secondaryKey), primaryMappingIndex)
 }
 
-func GetIncrementedStorageKey(original common.Hash, incrementBy int64) common.Hash {
+func GetIncrementedKey(original common.Hash, incrementBy int64) common.Hash {
 	originalMappingAsInt := original.Big()
 	incremented := big.NewInt(0).Add(originalMappingAsInt, big.NewInt(incrementBy))
 	return common.BytesToHash(incremented.Bytes())

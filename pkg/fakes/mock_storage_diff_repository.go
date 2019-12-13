@@ -17,16 +17,16 @@
 package fakes
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 )
 
 type MockStorageDiffRepository struct {
-	CreatePassedRawDiffs []utils.RawStorageDiff
+	CreatePassedRawDiffs []storage.RawDiff
 	CreateReturnID       int64
 	CreateReturnError    error
 }
 
-func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff utils.RawStorageDiff) (int64, error) {
+func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff storage.RawDiff) (int64, error) {
 	repository.CreatePassedRawDiffs = append(repository.CreatePassedRawDiffs, rawDiff)
 	return repository.CreateReturnID, repository.CreateReturnError
 }

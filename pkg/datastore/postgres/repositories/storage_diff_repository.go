@@ -19,7 +19,7 @@ package repositories
 import (
 	"database/sql"
 
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -34,7 +34,7 @@ func NewStorageDiffRepository(db *postgres.DB) StorageDiffRepository {
 }
 
 // CreateStorageDiff writes a raw storage diff to the database
-func (repository StorageDiffRepository) CreateStorageDiff(rawDiff utils.RawStorageDiff) (int64, error) {
+func (repository StorageDiffRepository) CreateStorageDiff(rawDiff storage.RawDiff) (int64, error) {
 	var storageDiffID int64
 	row := repository.db.QueryRowx(`INSERT INTO public.storage_diff
 		(hashed_address, block_height, block_hash, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)

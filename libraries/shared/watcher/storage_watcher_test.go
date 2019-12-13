@@ -24,7 +24,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
@@ -39,7 +39,7 @@ import (
 var _ = Describe("Storage Watcher", func() {
 	Describe("AddTransformer", func() {
 		It("adds transformers", func() {
-			fakeHashedAddress := utils.HexToKeccak256Hash("0x12345")
+			fakeHashedAddress := storage.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
 			w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
 
@@ -63,7 +63,7 @@ var _ = Describe("Storage Watcher", func() {
 			mockFetcher = mocks.NewMockStorageFetcher()
 			storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
 
-			hashedAddress = utils.HexToKeccak256Hash("0x0123456789abcdef")
+			hashedAddress = storage.HexToKeccak256Hash("0x0123456789abcdef")
 			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
 			storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 
@@ -94,20 +94,20 @@ var _ = Describe("Storage Watcher", func() {
 				mockStorageDiffRepository *fakes.MockStorageDiffRepository
 				fakeBlockHash             common.Hash
 				fakeDiffID                int64
-				fakeRawDiff               utils.RawStorageDiff
-				fakePersistedDiff         utils.PersistedStorageDiff
+				fakeRawDiff               storage.RawDiff
+				fakePersistedDiff         storage.PersistedDiff
 			)
 
 			BeforeEach(func() {
 				fakeBlockHash = test_data.FakeHash()
-				fakeRawDiff = utils.RawStorageDiff{
+				fakeRawDiff = storage.RawDiff{
 					HashedAddress: hashedAddress,
 					BlockHash:     fakeBlockHash,
 					BlockHeight:   0,
 					StorageKey:    common.HexToHash("0xabcdef1234567890"),
 					StorageValue:  common.HexToHash("0x9876543210abcdef"),
 				}
-				mockFetcher.DiffsToReturn = []utils.RawStorageDiff{fakeRawDiff}
+				mockFetcher.DiffsToReturn = []storage.RawDiff{fakeRawDiff}
 
 				fakeHeaderID := rand.Int63()
 				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
@@ -117,17 +117,17 @@ var _ = Describe("Storage Watcher", func() {
 				mockStorageDiffRepository.CreateReturnID = fakeDiffID
 				storageWatcher.StorageDiffRepository = mockStorageDiffRepository
 
-				fakePersistedDiff = utils.PersistedStorageDiff{
-					RawStorageDiff: fakeRawDiff,
-					ID:             fakeDiffID,
-					HeaderID:       fakeHeaderID,
+				fakePersistedDiff = storage.PersistedDiff{
+					RawDiff:  fakeRawDiff,
+					ID:       fakeDiffID,
+					HeaderID: fakeHeaderID,
 				}
 			})
 
 			It("writes raw diff before processing", func(done Done) {
 				go storageWatcher.Execute(time.Hour)
 
-				Eventually(func() []utils.RawStorageDiff {
+				Eventually(func() []storage.RawDiff {
 					return mockStorageDiffRepository.CreatePassedRawDiffs
 				}).Should(ContainElement(fakeRawDiff))
 				close(done)
@@ -138,7 +138,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				go storageWatcher.Execute(time.Hour)
 
-				Consistently(func() utils.PersistedStorageDiff {
+				Consistently(func() storage.PersistedDiff {
 					return mockTransformer.PassedDiff
 				}).Should(BeZero())
 				close(done)
@@ -167,7 +167,7 @@ var _ = Describe("Storage Watcher", func() {
 						Expect(err).NotTo(HaveOccurred())
 					}()
 
-					Eventually(func() utils.PersistedStorageDiff {
+					Eventually(func() storage.PersistedDiff {
 						return mockTransformer.PassedDiff
 					}).Should(Equal(fakePersistedDiff))
 					close(done)
@@ -181,7 +181,7 @@ var _ = Describe("Storage Watcher", func() {
 						Expect(err).NotTo(HaveOccurred())
 					}()
 
-					Eventually(func() utils.PersistedStorageDiff {
+					Eventually(func() storage.PersistedDiff {
 						return mockTransformer.PassedDiff
 					}).Should(Equal(fakePersistedDiff))
 					close(done)
@@ -215,14 +215,14 @@ var _ = Describe("Storage Watcher", func() {
 							Expect(err).NotTo(HaveOccurred())
 						}()
 
-						Eventually(func() utils.PersistedStorageDiff {
+						Eventually(func() storage.PersistedDiff {
 							return mockQueue.AddPassedDiff
 						}).Should(Equal(fakePersistedDiff))
 						close(done)
 					})
 
 					It("logs error if queueing diff fails", func(done Done) {
-						mockTransformer.ExecuteErr = utils.ErrStorageKeyNotFound{}
+						mockTransformer.ExecuteErr = storage.ErrKeyNotFound{}
 						mockQueue.AddError = fakes.FakeError
 						tempFile, fileErr := ioutil.TempFile("", "log")
 						Expect(fileErr).NotTo(HaveOccurred())
@@ -327,7 +327,7 @@ var _ = Describe("Storage Watcher", func() {
 		Describe("transforming queued storage diffs", func() {
 			var (
 				fakeBlockHash common.Hash
-				queuedDiff    utils.PersistedStorageDiff
+				queuedDiff    storage.PersistedDiff
 			)
 
 			BeforeEach(func() {
@@ -336,10 +336,10 @@ var _ = Describe("Storage Watcher", func() {
 				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
 				mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()
 
-				queuedDiff = utils.PersistedStorageDiff{
+				queuedDiff = storage.PersistedDiff{
 					ID:       rand.Int63(),
 					HeaderID: fakeHeaderID,
-					RawStorageDiff: utils.RawStorageDiff{
+					RawDiff: storage.RawDiff{
 						HashedAddress: hashedAddress,
 						BlockHash:     fakeBlockHash,
 						BlockHeight:   rand.Int(),
@@ -347,7 +347,7 @@ var _ = Describe("Storage Watcher", func() {
 						StorageValue:  test_data.FakeHash(),
 					},
 				}
-				mockQueue.DiffsToReturn = []utils.PersistedStorageDiff{queuedDiff}
+				mockQueue.DiffsToReturn = []storage.PersistedDiff{queuedDiff}
 			})
 
 			Describe("when contract recognized", func() {
@@ -358,7 +358,7 @@ var _ = Describe("Storage Watcher", func() {
 							Expect(err).NotTo(HaveOccurred())
 						}()
 
-						Eventually(func() utils.PersistedStorageDiff {
+						Eventually(func() storage.PersistedDiff {
 							return mockTransformer.PassedDiff
 						}).Should(Equal(queuedDiff))
 						close(done)
@@ -492,13 +492,13 @@ var _ = Describe("Storage Watcher", func() {
 
 			Describe("when contract not recognized", func() {
 				It("deletes obsolete diff from queue", func(done Done) {
-					obsoleteDiff := utils.PersistedStorageDiff{
+					obsoleteDiff := storage.PersistedDiff{
 						ID: queuedDiff.ID + 1,
-						RawStorageDiff: utils.RawStorageDiff{
-							HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
+						RawDiff: storage.RawDiff{
+							HashedAddress: storage.HexToKeccak256Hash("0xfedcba9876543210"),
 						},
 					}
-					mockQueue.DiffsToReturn = []utils.PersistedStorageDiff{obsoleteDiff}
+					mockQueue.DiffsToReturn = []storage.PersistedDiff{obsoleteDiff}
 
 					go func() {
 						err := storageWatcher.Execute(time.Nanosecond)
@@ -512,13 +512,13 @@ var _ = Describe("Storage Watcher", func() {
 				})
 
 				It("logs error if deleting obsolete diff fails", func(done Done) {
-					obsoleteDiff := utils.PersistedStorageDiff{
+					obsoleteDiff := storage.PersistedDiff{
 						ID: queuedDiff.ID + 1,
-						RawStorageDiff: utils.RawStorageDiff{
-							HashedAddress: utils.HexToKeccak256Hash("0xfedcba9876543210"),
+						RawDiff: storage.RawDiff{
+							HashedAddress: storage.HexToKeccak256Hash("0xfedcba9876543210"),
 						},
 					}
-					mockQueue.DiffsToReturn = []utils.PersistedStorageDiff{obsoleteDiff}
+					mockQueue.DiffsToReturn = []storage.PersistedDiff{obsoleteDiff}
 					mockQueue.DeleteErr = fakes.FakeError
 					tempFile, fileErr := ioutil.TempFile("", "log")
 					Expect(fileErr).NotTo(HaveOccurred())

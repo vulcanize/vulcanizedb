@@ -17,7 +17,7 @@
 package fetcher
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -31,14 +31,14 @@ func NewCsvTailStorageFetcher(tailer fs.Tailer) CsvTailStorageFetcher {
 	return CsvTailStorageFetcher{tailer: tailer}
 }
 
-func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- utils.RawStorageDiff, errs chan<- error) {
+func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- storage.RawDiff, errs chan<- error) {
 	t, tailErr := storageFetcher.tailer.Tail()
 	if tailErr != nil {
 		errs <- tailErr
 	}
 	logrus.Debug("fetching storage diffs...")
 	for line := range t.Lines {
-		diff, parseErr := utils.FromParityCsvRow(strings.Split(line.Text, ","))
+		diff, parseErr := storage.FromParityCsvRow(strings.Split(line.Text, ","))
 		if parseErr != nil {
 			errs <- parseErr
 		} else {

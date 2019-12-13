@@ -19,7 +19,7 @@ package datastore
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
@@ -85,7 +85,7 @@ type HeaderSyncReceiptRepository interface {
 }
 
 type StorageDiffRepository interface {
-	CreateStorageDiff(rawDiff utils.RawStorageDiff) (int64, error)
+	CreateStorageDiff(rawDiff storage.RawDiff) (int64, error)
 }
 
 type WatchedEventRepository interface {

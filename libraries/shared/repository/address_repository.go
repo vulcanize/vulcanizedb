@@ -32,7 +32,7 @@ package repository
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -45,7 +45,7 @@ const getOrCreateAddressQuery = `WITH addressId AS (
 
 func GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
-	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
+	hashedAddress := storage.HexToKeccak256Hash(checksumAddress).Hex()
 
 	var addressId int64
 	getOrCreateErr := db.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)
@@ -55,7 +55,7 @@ func GetOrCreateAddress(db *postgres.DB, address string) (int64, error) {
 
 func GetOrCreateAddressInTransaction(tx *sqlx.Tx, address string) (int64, error) {
 	checksumAddress := getChecksumAddress(address)
-	hashedAddress := utils.HexToKeccak256Hash(checksumAddress).Hex()
+	hashedAddress := storage.HexToKeccak256Hash(checksumAddress).Hex()
 
 	var addressId int64
 	getOrCreateErr := tx.Get(&addressId, getOrCreateAddressQuery, checksumAddress, hashedAddress)

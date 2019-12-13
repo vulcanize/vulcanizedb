@@ -24,7 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hpcloud/tail"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,13 +34,13 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 	var (
 		errorsChannel  chan error
 		mockTailer     *fakes.MockTailer
-		diffsChannel   chan utils.RawStorageDiff
+		diffsChannel   chan storage.RawDiff
 		storageFetcher fetcher.CsvTailStorageFetcher
 	)
 
 	BeforeEach(func() {
 		errorsChannel = make(chan error)
-		diffsChannel = make(chan utils.RawStorageDiff)
+		diffsChannel = make(chan storage.RawDiff)
 		mockTailer = fakes.NewMockTailer()
 		storageFetcher = fetcher.NewCsvTailStorageFetcher(mockTailer)
 	})
@@ -60,7 +60,7 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 		mockTailer.Lines <- line
 
-		expectedRow, err := utils.FromParityCsvRow(strings.Split(line.Text, ","))
+		expectedRow, err := storage.FromParityCsvRow(strings.Split(line.Text, ","))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(<-diffsChannel).To(Equal(expectedRow))
 		close(done)

@@ -18,7 +18,7 @@ package repository_test
 
 import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -58,7 +58,7 @@ var _ = Describe("address lookup", func() {
 			var actualAddress dbAddress
 			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := utils.HexToKeccak256Hash(address).Hex()
+			hashedAddress := storage.HexToKeccak256Hash(address).Hex()
 			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
@@ -121,7 +121,7 @@ var _ = Describe("address lookup", func() {
 			var actualAddress dbAddress
 			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := utils.HexToKeccak256Hash(address).Hex()
+			hashedAddress := storage.HexToKeccak256Hash(address).Hex()
 			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
