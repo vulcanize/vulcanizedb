@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -135,7 +136,11 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 
 	executeErr := storageTransformer.Execute(persistedDiff)
 	if executeErr != nil {
-		logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+		if isKeyNotFoundErr(executeErr) {
+			logrus.Tracef("error executing storage transformer: %s", executeErr.Error())
+		} else {
+			logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+		}
 		storageWatcher.queueDiff(persistedDiff)
 	}
 }
@@ -162,7 +167,11 @@ func (storageWatcher StorageWatcher) processQueue() {
 
 		executeErr := storageTransformer.Execute(diff)
 		if executeErr != nil {
-			logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+			if isKeyNotFoundErr(executeErr) {
+				logrus.Tracef("error executing storage transformer: %s", executeErr.Error())
+			} else {
+				logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+			}
 			continue
 		}
 
@@ -193,4 +202,8 @@ func (storageWatcher StorageWatcher) getHeaderID(diff storage.PersistedDiff) (in
 		return 0, NewErrHeaderMismatch(header.Hash, diff.BlockHash.Hex())
 	}
 	return header.Id, nil
+}
+
+func isKeyNotFoundErr(err error) bool {
+	return reflect.TypeOf(err) == reflect.TypeOf(storage.ErrKeyNotFound{})
 }
