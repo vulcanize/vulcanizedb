@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -111,7 +112,7 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
 		if err == repositories.ErrDuplicateDiff {
-			logrus.Info("ignoring duplicate diff")
+			logrus.Trace("ignoring duplicate diff")
 			return
 		}
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())
@@ -121,13 +122,13 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 
 	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
-		logrus.Debug("ignoring diff from an unwatched contract")
+		logrus.Trace("ignoring diff from an unwatched contract")
 		return
 	}
 
 	headerID, err := storageWatcher.getHeaderID(persistedDiff)
 	if err != nil {
-		logrus.Infof("error getting header for diff: %s", err.Error())
+		logrus.Tracef("error getting header for diff: %s", err.Error())
 		storageWatcher.queueDiff(persistedDiff)
 		return
 	}
@@ -135,7 +136,11 @@ func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
 
 	executeErr := storageTransformer.Execute(persistedDiff)
 	if executeErr != nil {
-		logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+		if isKeyNotFoundErr(executeErr) {
+			logrus.Tracef("error executing storage transformer: %s", executeErr.Error())
+		} else {
+			logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+		}
 		storageWatcher.queueDiff(persistedDiff)
 	}
 }
@@ -155,14 +160,18 @@ func (storageWatcher StorageWatcher) processQueue() {
 
 		headerID, getHeaderErr := storageWatcher.getHeaderID(diff)
 		if getHeaderErr != nil {
-			logrus.Infof("error getting header for diff: %s", getHeaderErr.Error())
+			logrus.Tracef("error getting header for diff: %s", getHeaderErr.Error())
 			continue
 		}
 		diff.HeaderID = headerID
 
 		executeErr := storageTransformer.Execute(diff)
 		if executeErr != nil {
-			logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+			if isKeyNotFoundErr(executeErr) {
+				logrus.Tracef("error executing storage transformer: %s", executeErr.Error())
+			} else {
+				logrus.Infof("error executing storage transformer: %s", executeErr.Error())
+			}
 			continue
 		}
 
@@ -193,4 +202,8 @@ func (storageWatcher StorageWatcher) getHeaderID(diff storage.PersistedDiff) (in
 		return 0, NewErrHeaderMismatch(header.Hash, diff.BlockHash.Hex())
 	}
 	return header.Id, nil
+}
+
+func isKeyNotFoundErr(err error) bool {
+	return reflect.TypeOf(err) == reflect.TypeOf(storage.ErrKeyNotFound{})
 }
