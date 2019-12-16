@@ -35,7 +35,7 @@ converts timestamped migrations to migrations versioned by an incremented intege
 We use [github-changelog-generator](https://github.com/github-changelog-generator/github-changelog-generator) to generate release Changelogs. To be consistent with previous Changelogs, the following flags should be passed to the command:
 
 ```
---user vulcanize
+--user makerdao
 --project vulcanizedb
 --token {YOUR_GITHUB_TOKEN}
 --no-issues
