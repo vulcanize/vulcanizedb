@@ -17,6 +17,10 @@
 package watcher
 
 import (
+	"context"
+	"sync"
+	"time"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
@@ -27,7 +31,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type EventWatcher struct {
@@ -77,51 +80,68 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+	var waitGroup sync.WaitGroup
+	ctx, ctxDone := context.WithCancel(context.Background())
+
 	delegateErrsChan := make(chan error)
 	extractErrsChan := make(chan error)
 	defer close(delegateErrsChan)
 	defer close(extractErrsChan)
 
-	go watcher.extractLogs(recheckHeaders, extractErrsChan)
-	go watcher.delegateLogs(delegateErrsChan)
+	waitGroup.Add(1)
+	go watcher.extractLogs(ctx, &waitGroup, recheckHeaders, extractErrsChan)
+	waitGroup.Add(1)
+	go watcher.delegateLogs(ctx, &waitGroup, delegateErrsChan)
 
 	for {
 		select {
 		case delegateErr := <-delegateErrsChan:
+			ctxDone()
+			waitGroup.Done()
 			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
+			waitGroup.Wait()
 			return delegateErr
 		case extractErr := <-extractErrsChan:
+			ctxDone()
+			waitGroup.Done()
 			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			waitGroup.Wait()
 			return extractErr
 		}
 	}
 }
 
-func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
+func (watcher *EventWatcher) extractLogs(ctx context.Context, wg *sync.WaitGroup, recheckHeaders constants.TransformerExecution, errs chan error) {
 	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
-	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs)
+	watcher.withRetry(ctx, wg, call, logs.ErrNoUncheckedHeaders, "extracting", errs)
 }
 
-func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs)
+func (watcher *EventWatcher) delegateLogs(ctx context.Context,wg *sync.WaitGroup, errs chan error) {
+	watcher.withRetry(ctx, wg, watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs)
 }
 
-func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error) {
+func (watcher *EventWatcher) withRetry(ctx context.Context, wg *sync.WaitGroup, call func() error, expectedErr error, operation string, errs chan error) {
 	consecutiveUnexpectedErrCount := 0
 	for {
-		err := call()
-		if err == nil {
-			consecutiveUnexpectedErrCount = 0
-		} else {
-			if err != expectedErr {
-				consecutiveUnexpectedErrCount++
-				logrus.Errorf("error %s logs: %s", operation, err.Error())
-				if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
-					errs <- err
-					return
+		select {
+		case <-ctx.Done():
+			wg.Done()
+			return
+		default:
+			err := call()
+			if err == nil {
+				consecutiveUnexpectedErrCount = 0
+			} else {
+				if err != expectedErr {
+					consecutiveUnexpectedErrCount++
+					//logrus.Errorf("error %s logs: %s", operation, err.Error())
+					if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
+						errs <- err
+						return
+					}
 				}
+				time.Sleep(watcher.RetryInterval)
 			}
-			time.Sleep(watcher.RetryInterval)
 		}
 	}
 }
