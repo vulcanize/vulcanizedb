@@ -18,19 +18,17 @@ package eth_test
 
 import (
 	"context"
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	vulcCore "github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Geth blockchain", func() {
@@ -39,36 +37,15 @@ var _ = Describe("Geth blockchain", func() {
 		blockChain               *eth.BlockChain
 		mockRpcClient            *fakes.MockRpcClient
 		mockTransactionConverter *fakes.MockTransactionConverter
-		node                     vulcCore.Node
+		node                     core.Node
 	)
 
 	BeforeEach(func() {
 		mockClient = fakes.NewMockEthClient()
 		mockRpcClient = fakes.NewMockRpcClient()
 		mockTransactionConverter = fakes.NewMockTransactionConverter()
-		node = vulcCore.Node{}
+		node = core.Node{}
 		blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, mockTransactionConverter)
-	})
-
-	Describe("getting a block", func() {
-		It("fetches block from ethClient", func() {
-			mockClient.SetBlockByNumberReturnBlock(types.NewBlockWithHeader(&types.Header{}))
-			blockNumber := int64(100)
-
-			_, err := blockChain.GetBlockByNumber(blockNumber)
-
-			Expect(err).NotTo(HaveOccurred())
-			mockClient.AssertBlockByNumberCalledWith(context.Background(), big.NewInt(blockNumber))
-		})
-
-		It("returns err if ethClient returns err", func() {
-			mockClient.SetBlockByNumberErr(fakes.FakeError)
-
-			_, err := blockChain.GetBlockByNumber(100)
-
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
-		})
 	})
 
 	Describe("getting a header", func() {
@@ -102,19 +79,19 @@ var _ = Describe("Geth blockchain", func() {
 
 		Describe("POA/Kovan", func() {
 			It("fetches header from rpcClient", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = core.KOVAN_NETWORK_ID
 				blockNumber := hexutil.Big(*big.NewInt(100))
-				mockRpcClient.SetReturnPOAHeader(vulcCore.POAHeader{Number: &blockNumber})
+				mockRpcClient.SetReturnPOAHeader(core.POAHeader{Number: &blockNumber})
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
 
 				Expect(err).NotTo(HaveOccurred())
-				mockRpcClient.AssertCallContextCalledWith(context.Background(), &vulcCore.POAHeader{}, "eth_getBlockByNumber")
+				mockRpcClient.AssertCallContextCalledWith(context.Background(), &core.POAHeader{}, "eth_getBlockByNumber")
 			})
 
 			It("returns err if rpcClient returns err", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = core.KOVAN_NETWORK_ID
 				mockRpcClient.SetCallContextErr(fakes.FakeError)
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
@@ -125,7 +102,7 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("returns error if returned header is empty", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = core.KOVAN_NETWORK_ID
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
@@ -135,46 +112,15 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("returns multiple headers with multiple blocknumbers", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = core.KOVAN_NETWORK_ID
 				blockNumber := hexutil.Big(*big.NewInt(100))
-				mockRpcClient.SetReturnPOAHeaders([]vulcCore.POAHeader{{Number: &blockNumber}})
+				mockRpcClient.SetReturnPOAHeaders([]core.POAHeader{{Number: &blockNumber}})
 
 				_, err := blockChain.GetHeadersByNumbers([]int64{100, 99})
 
 				Expect(err).NotTo(HaveOccurred())
 				mockRpcClient.AssertBatchCalledWith("eth_getBlockByNumber", 2)
 			})
-		})
-	})
-
-	Describe("getting logs with default FilterQuery", func() {
-		It("fetches logs from ethClient", func() {
-			mockClient.SetFilterLogsReturnLogs([]types.Log{{}})
-			contract := vulcCore.Contract{Hash: common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex()}
-			startingBlockNumber := big.NewInt(1)
-			endingBlockNumber := big.NewInt(2)
-
-			_, err := blockChain.GetFullSyncLogs(contract, startingBlockNumber, endingBlockNumber)
-
-			Expect(err).NotTo(HaveOccurred())
-			expectedQuery := ethereum.FilterQuery{
-				FromBlock: startingBlockNumber,
-				ToBlock:   endingBlockNumber,
-				Addresses: []common.Address{common.HexToAddress(contract.Hash)},
-			}
-			mockClient.AssertFilterLogsCalledWith(context.Background(), expectedQuery)
-		})
-
-		It("returns err if ethClient returns err", func() {
-			mockClient.SetFilterLogsErr(fakes.FakeError)
-			contract := vulcCore.Contract{Hash: common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex()}
-			startingBlockNumber := big.NewInt(1)
-			endingBlockNumber := big.NewInt(2)
-
-			_, err := blockChain.GetFullSyncLogs(contract, startingBlockNumber, endingBlockNumber)
-
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(fakes.FakeError))
 		})
 	})
 
@@ -200,7 +146,7 @@ var _ = Describe("Geth blockchain", func() {
 
 		It("returns err if ethClient returns err", func() {
 			mockClient.SetFilterLogsErr(fakes.FakeError)
-			contract := vulcCore.Contract{Hash: common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex()}
+			contract := core.Contract{Hash: common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex()}
 			startingBlockNumber := big.NewInt(1)
 			endingBlockNumber := big.NewInt(2)
 			query := ethereum.FilterQuery{
@@ -225,11 +171,11 @@ var _ = Describe("Geth blockchain", func() {
 			mockRpcClient.AssertBatchCalledWith("eth_getTransactionByHash", 2)
 		})
 
-		It("converts transaction indexes from hex to int", func() {
+		It("converts rpc transaction to models", func() {
 			_, err := blockChain.GetTransactions([]common.Hash{{}, {}})
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(mockTransactionConverter.ConvertHeaderTransactionIndexToIntCalled).To(BeTrue())
+			Expect(mockTransactionConverter.ConvertRpcTransactionsToModelsCalled).To(BeTrue())
 		})
 	})
 
@@ -243,30 +189,6 @@ var _ = Describe("Geth blockchain", func() {
 
 			mockClient.AssertHeaderByNumberCalledWith(context.Background(), nil)
 			Expect(result).To(Equal(big.NewInt(blockNumber)))
-		})
-	})
-
-	Describe("getting an account balance", func() {
-		It("fetches the balance for a given account address at a given block height", func() {
-			balance := big.NewInt(100000)
-			mockClient.SetBalanceAt(balance)
-
-			result, err := blockChain.GetAccountBalance(common.HexToAddress("0x40"), big.NewInt(100))
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient.AssertBalanceAtCalled(context.Background(), common.HexToAddress("0x40"), big.NewInt(100))
-			Expect(result).To(Equal(balance))
-		})
-
-		It("fails if the client returns an error", func() {
-			balance := big.NewInt(100000)
-			mockClient.SetBalanceAt(balance)
-			setErr := errors.New("testError")
-			mockClient.SetBalanceAtErr(setErr)
-
-			_, err := blockChain.GetAccountBalance(common.HexToAddress("0x40"), big.NewInt(100))
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(Equal(setErr))
 		})
 	})
 })

@@ -17,31 +17,20 @@
 package fakes
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type MockTransactionConverter struct {
-	ConvertHeaderTransactionIndexToIntCalled  bool
-	ConvertBlockTransactionsToCoreCalled      bool
-	ConvertBlockTransactionsToCorePassedBlock *types.Block
+	ConvertRpcTransactionsToModelsCalled bool
 }
 
 func NewMockTransactionConverter() *MockTransactionConverter {
 	return &MockTransactionConverter{
-		ConvertHeaderTransactionIndexToIntCalled:  false,
-		ConvertBlockTransactionsToCoreCalled:      false,
-		ConvertBlockTransactionsToCorePassedBlock: nil,
+		ConvertRpcTransactionsToModelsCalled: false,
 	}
 }
 
-func (converter *MockTransactionConverter) ConvertBlockTransactionsToCore(gethBlock *types.Block) ([]core.TransactionModel, error) {
-	converter.ConvertBlockTransactionsToCoreCalled = true
-	converter.ConvertBlockTransactionsToCorePassedBlock = gethBlock
-	return []core.TransactionModel{}, nil
-}
-
 func (converter *MockTransactionConverter) ConvertRpcTransactionsToModels(transactions []core.RpcTransaction) ([]core.TransactionModel, error) {
-	converter.ConvertHeaderTransactionIndexToIntCalled = true
+	converter.ConvertRpcTransactionsToModelsCalled = true
 	return nil, nil
 }

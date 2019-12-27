@@ -18,7 +18,7 @@ package fakes
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 )
 
 type MockParser struct {

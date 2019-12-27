@@ -34,7 +34,6 @@ type MockBlockChain struct {
 	fetchContractDataPassedMethodArgs  []interface{}
 	fetchContractDataPassedResult      interface{}
 	fetchContractDataPassedBlockNumber int64
-	getBlockByNumberErr                error
 	GetTransactionsCalled              bool
 	GetTransactionsError               error
 	GetTransactionsPassedHashes        []common.Hash
@@ -44,8 +43,6 @@ type MockBlockChain struct {
 	lastBlock                          *big.Int
 	node                               core.Node
 	Transactions                       []core.TransactionModel
-	accountBalanceReturnValue          *big.Int
-	getAccountBalanceErr               error
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -60,10 +57,6 @@ func (blockChain *MockBlockChain) SetFetchContractDataErr(err error) {
 
 func (blockChain *MockBlockChain) SetLastBlock(blockNumber *big.Int) {
 	blockChain.lastBlock = blockNumber
-}
-
-func (blockChain *MockBlockChain) SetGetBlockByNumberErr(err error) {
-	blockChain.getBlockByNumberErr = err
 }
 
 func (blockChain *MockBlockChain) SetGetEthLogsWithCustomQueryErr(err error) {
@@ -84,10 +77,6 @@ func (blockChain *MockBlockChain) FetchContractData(abiJSON string, address stri
 	return blockChain.fetchContractDataErr
 }
 
-func (blockChain *MockBlockChain) GetBlockByNumber(blockNumber int64) (core.Block, error) {
-	return core.Block{Number: blockNumber}, blockChain.getBlockByNumberErr
-}
-
 func (blockChain *MockBlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
 	blockChain.logQuery = query
 	return blockChain.logQueryReturnLogs, blockChain.logQueryErr
@@ -104,10 +93,6 @@ func (blockChain *MockBlockChain) GetHeadersByNumbers(blockNumbers []int64) ([]c
 		headers = append(headers, header)
 	}
 	return headers, nil
-}
-
-func (blockChain *MockBlockChain) GetFullSyncLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.FullSyncLog, error) {
-	return []core.FullSyncLog{}, nil
 }
 
 func (blockChain *MockBlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
@@ -141,16 +126,4 @@ func (blockChain *MockBlockChain) AssertFetchContractDataCalledWith(abiJSON stri
 
 func (blockChain *MockBlockChain) AssertGetEthLogsWithCustomQueryCalledWith(query ethereum.FilterQuery) {
 	Expect(blockChain.logQuery).To(Equal(query))
-}
-
-func (blockChain *MockBlockChain) SetGetAccountBalanceErr(err error) {
-	blockChain.getAccountBalanceErr = err
-}
-
-func (blockChain *MockBlockChain) SetGetAccountBalance(balance *big.Int) {
-	blockChain.accountBalanceReturnValue = balance
-}
-
-func (blockChain *MockBlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	return blockChain.accountBalanceReturnValue, blockChain.getAccountBalanceErr
 }

@@ -18,21 +18,12 @@ package datastore
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/jmoiron/sqlx"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/core"
-	"github.com/makerdao/vulcanizedb/pkg/filters"
 )
 
 type AddressRepository interface {
 	GetOrCreateAddress(address string) (int, error)
-}
-
-type BlockRepository interface {
-	CreateOrUpdateBlock(block core.Block) (int64, error)
-	GetBlock(blockNumber int64) (core.Block, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) []int64
-	SetBlocksStatus(chainHead int64) error
 }
 
 type CheckedHeadersRepository interface {
@@ -44,22 +35,6 @@ type CheckedHeadersRepository interface {
 type CheckedLogsRepository interface {
 	AlreadyWatchingLog(addresses []string, topic0 string) (bool, error)
 	MarkLogWatched(addresses []string, topic0 string) error
-}
-
-type ContractRepository interface {
-	CreateContract(contract core.Contract) error
-	GetContract(contractHash string) (core.Contract, error)
-	ContractExists(contractHash string) (bool, error)
-}
-
-type FilterRepository interface {
-	CreateFilter(filter filters.LogFilter) error
-	GetFilter(name string) (filters.LogFilter, error)
-}
-
-type FullSyncLogRepository interface {
-	CreateLogs(logs []core.FullSyncLog, receiptId int64) error
-	GetLogs(address string, blockNumber int64) ([]core.FullSyncLog, error)
 }
 
 type HeaderRepository interface {
@@ -74,20 +49,6 @@ type HeaderSyncLogRepository interface {
 	CreateHeaderSyncLogs(headerID int64, logs []types.Log) error
 }
 
-type FullSyncReceiptRepository interface {
-	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
-	GetFullSyncReceipt(txHash string) (core.Receipt, error)
-}
-
-type HeaderSyncReceiptRepository interface {
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
-}
-
 type StorageDiffRepository interface {
 	CreateStorageDiff(rawDiff storage.RawDiff) (int64, error)
-}
-
-type WatchedEventRepository interface {
-	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
 }

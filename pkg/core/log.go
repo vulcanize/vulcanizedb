@@ -18,7 +18,7 @@ package core
 
 import "github.com/ethereum/go-ethereum/core/types"
 
-type FullSyncLog struct {
+type Log struct {
 	BlockNumber int64
 	TxHash      string
 	Address     string
