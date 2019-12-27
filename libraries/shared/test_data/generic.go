@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
@@ -42,8 +41,6 @@ var GenericTestLog = func() types.Log {
 		Index:       uint(rand.Int31()),
 	}
 }
-
-var GenericModel = event.InsertionModel{}
 
 var GenericTestConfig = transformer.EventTransformerConfig{
 	TransformerName:     "generic-test-transformer",

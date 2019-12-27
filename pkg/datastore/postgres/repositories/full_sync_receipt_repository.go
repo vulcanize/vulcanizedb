@@ -18,6 +18,7 @@ package repositories
 
 import (
 	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
 	"github.com/makerdao/vulcanizedb/pkg/core"
@@ -51,21 +52,6 @@ func (receiptRepository FullSyncReceiptRepository) CreateReceiptsAndLogs(blockId
 	}
 	tx.Commit()
 	return nil
-}
-
-func createReceipt(receipt core.Receipt, blockId int64, tx *sqlx.Tx) (int64, error) {
-	var receiptId int64
-	err := tx.QueryRow(
-		`INSERT INTO full_sync_receipts
-		               (contract_address, tx_hash, cumulative_gas_used, gas_used, state_root, status, block_id)
-		               VALUES ($1, $2, $3, $4, $5, $6, $7)
-		               RETURNING id`,
-		receipt.ContractAddress, receipt.TxHash, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.StateRoot, receipt.Status, blockId,
-	).Scan(&receiptId)
-	if err != nil {
-		logrus.Error("createReceipt: Error inserting: ", err)
-	}
-	return receiptId, err
 }
 
 func createLogs(logs []core.FullSyncLog, receiptId int64, tx *sqlx.Tx) error {

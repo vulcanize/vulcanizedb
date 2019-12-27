@@ -20,13 +20,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/lib/pq"
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/plugin/helpers"
 	"github.com/pressly/goose"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 // Interface for managing the db migrations for plugin transformers
@@ -101,7 +102,7 @@ func (m *manager) setupMigrationEnv() error {
 		removeErrString := "unable to remove file found at %s where tmp directory needs to be written: %s"
 		return errors.New(fmt.Sprintf(removeErrString, m.tmpMigDir, removeErr.Error()))
 	}
-	mkdirErr := os.Mkdir(m.tmpMigDir, os.FileMode(os.ModePerm))
+	mkdirErr := os.Mkdir(m.tmpMigDir, os.ModePerm)
 	if mkdirErr != nil {
 		mkdirErrString := "unable to create temporary migration directory %s: %s"
 		return errors.New(fmt.Sprintf(mkdirErrString, m.tmpMigDir, mkdirErr.Error()))

@@ -48,8 +48,8 @@ var _ = Describe("Conversion of GethBlock to core.Block", func() {
 
 		header := types.Header{
 			Difficulty: difficulty,
-			GasLimit:   uint64(gasLimit),
-			GasUsed:    uint64(gasUsed),
+			GasLimit:   gasLimit,
+			GasUsed:    gasUsed,
 			Extra:      extraData,
 			Coinbase:   miner,
 			Nonce:      nonce,

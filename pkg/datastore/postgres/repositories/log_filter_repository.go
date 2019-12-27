@@ -72,7 +72,7 @@ type DBTopics []*string
 func (t *DBTopics) Scan(src interface{}) error {
 	asBytes, ok := src.([]byte)
 	if !ok {
-		return error(errors.New("scan source was not []byte"))
+		return errors.New("scan source was not []byte")
 	}
 	return json.Unmarshal(asBytes, &t)
 }

@@ -25,15 +25,6 @@ type MockCryptoParser struct {
 	parsePublicKeyReturnErr        error
 }
 
-func NewMockCryptoParser() *MockCryptoParser {
-	return &MockCryptoParser{
-		parsePublicKeyCalled:           false,
-		parsePublicKeyPassedPrivateKey: "",
-		parsePublicKeyReturnString:     "",
-		parsePublicKeyReturnErr:        nil,
-	}
-}
-
 func (mcp *MockCryptoParser) SetReturnVal(pubKey string) {
 	mcp.parsePublicKeyReturnString = pubKey
 }

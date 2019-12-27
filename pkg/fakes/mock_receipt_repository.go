@@ -30,15 +30,6 @@ type MockReceiptRepository struct {
 	createReceiptsAndLogsReturnErr      error
 }
 
-func NewMockReceiptRepository() *MockReceiptRepository {
-	return &MockReceiptRepository{
-		createReceiptsAndLogsCalled:         false,
-		createReceiptsAndLogsPassedBlockId:  0,
-		createReceiptsAndLogsPassedReceipts: nil,
-		createReceiptsAndLogsReturnErr:      nil,
-	}
-}
-
 func (mrr *MockReceiptRepository) SetCreateReceiptsAndLogsReturnErr(err error) {
 	mrr.createReceiptsAndLogsReturnErr = err
 }

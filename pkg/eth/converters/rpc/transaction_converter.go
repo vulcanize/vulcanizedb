@@ -20,18 +20,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"log"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
+	"golang.org/x/sync/errgroup"
 )
 
 type RpcTransactionConverter struct {
@@ -122,8 +121,8 @@ func (converter *RpcTransactionConverter) ConvertBlockTransactionsToCore(gethBlo
 	return coreTransactions, nil
 }
 
-func (rtc *RpcTransactionConverter) appendReceiptToTransaction(transaction core.TransactionModel) (core.TransactionModel, error) {
-	gethReceipt, err := rtc.client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
+func (converter *RpcTransactionConverter) appendReceiptToTransaction(transaction core.TransactionModel) (core.TransactionModel, error) {
+	gethReceipt, err := converter.client.TransactionReceipt(context.Background(), common.HexToHash(transaction.Hash))
 	if err != nil {
 		return transaction, err
 	}

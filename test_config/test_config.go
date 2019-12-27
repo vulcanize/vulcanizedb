@@ -19,15 +19,14 @@ package test_config
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
-	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var TestConfig *viper.Viper
@@ -106,12 +105,6 @@ func CleanTestDB(db *postgres.DB) {
 	db.MustExec("DELETE FROM watched_logs")
 }
 
-func CleanCheckedHeadersTable(db *postgres.DB, columnNames []string) {
-	for _, name := range columnNames {
-		db.MustExec("ALTER TABLE checked_headers DROP COLUMN IF EXISTS " + name)
-	}
-}
-
 // Returns a new test node, with the same ID
 func NewTestNode() core.Node {
 	return core.Node{
@@ -120,11 +113,4 @@ func NewTestNode() core.Node {
 		ID:           fakes.RandomString(128),
 		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 	}
-}
-
-func NewTestBlock(blockNumber int64, repository repositories.BlockRepository) (blockId int64) {
-	blockId, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
-	Expect(err).NotTo(HaveOccurred())
-
-	return blockId
 }

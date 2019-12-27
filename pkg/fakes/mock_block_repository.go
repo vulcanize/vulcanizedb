@@ -36,23 +36,6 @@ type MockBlockRepository struct {
 	setBlockStatusPassedChainHead                int64
 }
 
-func NewMockBlockRepository() *MockBlockRepository {
-	return &MockBlockRepository{
-		createOrUpdateBlockCallCount:                 0,
-		createOrUpdateBlockCalled:                    false,
-		createOrUpdateBlockPassedBlock:               core.Block{},
-		createOrUpdateBlockPassedBlockNumbers:        nil,
-		createOrUpdateBlockReturnErr:                 nil,
-		createOrUpdateBlockReturnInt:                 0,
-		missingBlockNumbersCalled:                    false,
-		missingBlockNumbersPassedEndingBlockNumber:   0,
-		missingBlockNumbersPassedStartingBlockNumber: 0,
-		missingBlockNumbersReturnArray:               nil,
-		setBlockStatusCalled:                         false,
-		setBlockStatusPassedChainHead:                0,
-	}
-}
-
 func (repository *MockBlockRepository) SetCreateOrUpdateBlockReturnVals(i int64, err error) {
 	repository.createOrUpdateBlockReturnInt = i
 	repository.createOrUpdateBlockReturnErr = err

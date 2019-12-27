@@ -26,18 +26,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
-func ToCoreReceipts(gethReceipts types.Receipts) ([]core.Receipt, error) {
-	var coreReceipts []core.Receipt
-	for _, receipt := range gethReceipts {
-		coreReceipt, err := ToCoreReceipt(receipt)
-		if err != nil {
-			return nil, err
-		}
-		coreReceipts = append(coreReceipts, coreReceipt)
-	}
-	return coreReceipts, nil
-}
-
 func ToCoreReceipt(gethReceipt *types.Receipt) (core.Receipt, error) {
 	bloom := hexutil.Encode(gethReceipt.Bloom.Bytes())
 	var postState string
