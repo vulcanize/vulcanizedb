@@ -1,29 +1,37 @@
 #!/bin/sh
 # Runs the migrations and starts the headerSync and continuousLogSync services
 
-# Exit if the variable tests fail
-set -e
+# DEBUG
+set -x
 
-# Check the database variables are set
-test $DATABASE_NAME
-test $DATABASE_HOSTNAME
-test $DATABASE_PORT
-test $DATABASE_USER
-test $DATABASE_PASSWORD
+if test -z "$VDB_PG_CONNECT"; then
+  # Exit if the variable tests fail
+  set -e
 
-# Construct the connection string for postgres
-CONNECT_STRING=postgresql://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOSTNAME:$DATABASE_PORT/$DATABASE_NAME?sslmode=disable
-echo "Connecting with: $CONNECT_STRING"
+  # Check the database variables are set
+  test $VDB_PG_NAME
+  test $VDB_PG_HOSTNAME
+  test $VDB_PG_PORT
+  test $VDB_PG_USER
+  test $VDB_PG_PASSWORD
+  set +e
 
-set +e
+  # Construct the connection string for postgres
+  VDB_PG_CONNECT=postgresql://$VDB_PG_USER:$VDB_PG_PASSWORD@$VDB_PG_HOSTNAME:$VDB_PG_PORT/$VDB_PG_NAME?sslmode=disable
+fi
 
 # Run the DB migrations
-./goose postgres "$CONNECT_STRING" up
-if [ $? -eq 0 ]; then
-  # Fire up the services
-  ./vulcanizedb headerSync --config environments/staging.toml &
-  ./vulcanizedb continuousLogSync --config environments/staging.toml &
-else
+echo "Connecting with: $VDB_PG_CONNECT"
+./goose -dir migrations/vulcanizedb postgres "$VDB_PG_CONNECT" up
+
+if [ $? -ne 0 ]; then
   echo "Could not run migrations. Are the database details correct?"
+  exit 1
 fi
+
+# Fire up the services
+for command in $VDB_COMMAND; do
+  ./vulcanizedb $command --config config.toml &
+done
+
 wait
