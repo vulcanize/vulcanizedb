@@ -1130,6 +1130,13 @@ CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
 
 
 --
+-- Name: headers_check_count; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX headers_check_count ON public.headers USING btree (check_count);
+
+
+--
 -- Name: headers_eth_node; Type: INDEX; Schema: public; Owner: -
 --
 
