@@ -40,9 +40,9 @@ var _ = Describe("Transformer", func() {
 	BeforeEach(func() {
 		converter = mocks.MockConverter{}
 
-		t = event.Transformer{
-			Converter: &converter,
-			Config:    config,
+		t = event.ConfiguredTransformer{
+			Transformer: &converter,
+			Config:      config,
 		}.NewTransformer(nil)
 
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}

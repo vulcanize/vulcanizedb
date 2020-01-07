@@ -23,35 +23,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Transformer implements the EventTransformer interface, to be run by the Watcher
-type Transformer struct {
-	Config    transformer.EventTransformerConfig
-	Converter Converter
-	DB        *postgres.DB
+// ConfiguredTransformer implements the EventTransformer interface, to be run by the Watcher
+type ConfiguredTransformer struct {
+	Config      transformer.EventTransformerConfig
+	Transformer Transformer
+	DB          *postgres.DB
 }
 
 // NewTransformer instantiates a new transformer by passing the DB connection to the converter
-func (t Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
-	t.DB = db
-	return t
+func (ct ConfiguredTransformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	ct.DB = db
+	return ct
 }
 
 // Execute runs a transformer on a set of logs, converting data into models and persisting to the DB
-func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
-	transformerName := t.Config.TransformerName
-	config := t.Config
+func (ct ConfiguredTransformer) Execute(logs []core.HeaderSyncLog) error {
+	transformerName := ct.Config.TransformerName
+	config := ct.Config
 
 	if len(logs) < 1 {
 		return nil
 	}
 
-	models, err := t.Converter.ToModels(config.ContractAbi, logs, t.DB)
+	models, err := ct.Transformer.ToModels(config.ContractAbi, logs, ct.DB)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
-	err = PersistModels(models, t.DB)
+	err = PersistModels(models, ct.DB)
 	if err != nil {
 		logrus.Errorf("error persisting %v record: %v", transformerName, err)
 		return err
@@ -61,6 +61,6 @@ func (t Transformer) Execute(logs []core.HeaderSyncLog) error {
 }
 
 // GetConfig returns the config for a given transformer
-func (t Transformer) GetConfig() transformer.EventTransformerConfig {
-	return t.Config
+func (ct ConfiguredTransformer) GetConfig() transformer.EventTransformerConfig {
+	return ct.Config
 }
