@@ -21,9 +21,13 @@ CREATE INDEX header_sync_logs_address
     ON header_sync_logs (address);
 CREATE INDEX header_sync_logs_transaction
     ON header_sync_logs (tx_hash);
+CREATE INDEX header_sync_logs_untransformed
+    ON header_sync_logs (transformed)
+    WHERE transformed is false;
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
 DROP INDEX header_sync_logs_transaction;
 DROP INDEX header_sync_logs_address;
+DROP INDEX header_sync_logs_untransformed;
 DROP TABLE header_sync_logs;
