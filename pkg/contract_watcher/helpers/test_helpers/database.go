@@ -33,7 +33,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type HeaderSyncTransferLog struct {
+type TransferLog struct {
 	Id        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
@@ -45,7 +45,7 @@ type HeaderSyncTransferLog struct {
 	RawLog    []byte `db:"raw_log"`
 }
 
-type HeaderSyncNewOwnerLog struct {
+type NewOwnerLog struct {
 	Id        int64  `db:"id"`
 	HeaderID  int64  `db:"header_id"`
 	TokenName string `db:"token_name"`
@@ -193,22 +193,22 @@ func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM addresses`)
+	_, err = tx.Exec(`DELETE FROM public.addresses`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM headers`)
+	_, err = tx.Exec(`DELETE FROM public.headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec("DELETE FROM header_sync_transactions")
+	_, err = tx.Exec("DELETE FROM public.transactions")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM header_sync_receipts`)
+	_, err = tx.Exec(`DELETE FROM public.receipts`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DROP TABLE checked_headers`)
+	_, err = tx.Exec(`DROP TABLE public.checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`CREATE TABLE checked_headers (
+	_, err = tx.Exec(`CREATE TABLE public.checked_headers (
     	id SERIAL PRIMARY KEY,
     	header_id INTEGER UNIQUE NOT NULL REFERENCES headers (id) ON DELETE CASCADE);`)
 	Expect(err).NotTo(HaveOccurred())
@@ -222,6 +222,6 @@ func TearDown(db *postgres.DB) {
 	err = tx.Commit()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = db.Exec(`VACUUM checked_headers`)
+	_, err = db.Exec(`VACUUM public.checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
 }

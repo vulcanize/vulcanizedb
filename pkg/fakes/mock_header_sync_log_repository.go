@@ -21,21 +21,21 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
-type MockHeaderSyncLogRepository struct {
+type MockEventLogRepository struct {
 	CreateError    error
 	GetCalled      bool
 	GetError       error
 	PassedHeaderID int64
 	PassedLogs     []types.Log
-	ReturnLogs     []core.HeaderSyncLog
+	ReturnLogs     []core.EventLog
 }
 
-func (repository *MockHeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error) {
+func (repository *MockEventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, error) {
 	repository.GetCalled = true
 	return repository.ReturnLogs, repository.GetError
 }
 
-func (repository *MockHeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []types.Log) error {
+func (repository *MockEventLogRepository) CreateEventLogs(headerID int64, logs []types.Log) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedLogs = logs
 	return repository.CreateError

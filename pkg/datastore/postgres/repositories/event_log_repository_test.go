@@ -35,7 +35,7 @@ var _ = Describe("Header sync log repository", func() {
 	var (
 		db               *postgres.DB
 		headerID         int64
-		repo             datastore.HeaderSyncLogRepository
+		repo             datastore.EventLogRepository
 		headerRepository repositories.HeaderRepository
 	)
 
@@ -47,7 +47,7 @@ var _ = Describe("Header sync log repository", func() {
 		headerID, headerErr = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 		Expect(headerErr).NotTo(HaveOccurred())
 
-		repo = repositories.NewHeaderSyncLogRepository(db)
+		repo = repositories.NewEventLogRepository(db)
 	})
 
 	AfterEach(func() {
@@ -55,8 +55,8 @@ var _ = Describe("Header sync log repository", func() {
 		Expect(closeErr).NotTo(HaveOccurred())
 	})
 
-	Describe("CreateHeaderSyncLogs", func() {
-		type headerSyncLog struct {
+	Describe("CreateEventLogs", func() {
+		type rawEventLog struct {
 			ID          int64
 			HeaderID    int64 `db:"header_id"`
 			Address     int64
@@ -74,11 +74,11 @@ var _ = Describe("Header sync log repository", func() {
 		It("writes a log to the db", func() {
 			log := test_data.GenericTestLog()
 			test_data.CreateMatchingTx(log, headerID, headerRepository)
-			err := repo.CreateHeaderSyncLogs(headerID, []types.Log{log})
+			err := repo.CreateEventLogs(headerID, []types.Log{log})
 
 			Expect(err).NotTo(HaveOccurred())
-			var dbLog headerSyncLog
-			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
+			var dbLog rawEventLog
+			lookupErr := db.Get(&dbLog, `SELECT * FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(dbLog.ID).NotTo(BeZero())
 			Expect(dbLog.HeaderID).To(Equal(headerID))
@@ -107,11 +107,11 @@ var _ = Describe("Header sync log repository", func() {
 			test_data.CreateMatchingTx(log2, headerID, headerRepository)
 
 			logs := []types.Log{log1, log2}
-			err := repo.CreateHeaderSyncLogs(headerID, logs)
+			err := repo.CreateEventLogs(headerID, logs)
 			Expect(err).NotTo(HaveOccurred())
 
 			var count int
-			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM header_sync_logs`)
+			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(count).To(Equal(len(logs)))
 		})
@@ -122,11 +122,11 @@ var _ = Describe("Header sync log repository", func() {
 
 			log := test_data.GenericTestLog()
 			test_data.CreateMatchingTx(log, headerID, headerRepository)
-			err := repo.CreateHeaderSyncLogs(headerID, []types.Log{log})
+			err := repo.CreateEventLogs(headerID, []types.Log{log})
 			Expect(err).NotTo(HaveOccurred())
 
-			var dbLog headerSyncLog
-			lookupErr := db.Get(&dbLog, `SELECT * FROM header_sync_logs`)
+			var dbLog rawEventLog
+			lookupErr := db.Get(&dbLog, `SELECT * FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 
 			var logTopics []common.Hash
@@ -153,20 +153,20 @@ var _ = Describe("Header sync log repository", func() {
 		It("does not duplicate logs", func() {
 			log := test_data.GenericTestLog()
 			test_data.CreateMatchingTx(log, headerID, headerRepository)
-			err := repo.CreateHeaderSyncLogs(headerID, []types.Log{log, log})
+			err := repo.CreateEventLogs(headerID, []types.Log{log, log})
 			Expect(err).NotTo(HaveOccurred())
 
 			var count int
-			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM header_sync_logs`)
+			lookupErr := db.Get(&count, `SELECT COUNT(*) FROM public.event_logs`)
 			Expect(lookupErr).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
 		})
 	})
 
-	Describe("GetUntransformedHeaderSyncLogs", func() {
+	Describe("GetUntransformedEventLogs", func() {
 		Describe("when there are no logs", func() {
 			It("returns empty collection", func() {
-				result, err := repo.GetUntransformedHeaderSyncLogs()
+				result, err := repo.GetUntransformedEventLogs()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(BeZero())
 			})
@@ -182,12 +182,12 @@ var _ = Describe("Header sync log repository", func() {
 				test_data.CreateMatchingTx(log2, headerID, headerRepository)
 
 				logs := []types.Log{log1, log2}
-				logsErr := repo.CreateHeaderSyncLogs(headerID, logs)
+				logsErr := repo.CreateEventLogs(headerID, logs)
 				Expect(logsErr).NotTo(HaveOccurred())
 			})
 
 			It("returns persisted logs", func() {
-				result, err := repo.GetUntransformedHeaderSyncLogs()
+				result, err := repo.GetUntransformedEventLogs()
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(Equal(2))
@@ -197,10 +197,10 @@ var _ = Describe("Header sync log repository", func() {
 			})
 
 			It("excludes logs that have been transformed", func() {
-				_, insertErr := db.Exec(`UPDATE public.header_sync_logs SET transformed = true WHERE tx_hash = $1`, log1.TxHash.Hex())
+				_, insertErr := db.Exec(`UPDATE public.event_logs SET transformed = true WHERE tx_hash = $1`, log1.TxHash.Hex())
 				Expect(insertErr).NotTo(HaveOccurred())
 
-				result, err := repo.GetUntransformedHeaderSyncLogs()
+				result, err := repo.GetUntransformedEventLogs()
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(Equal(1))
@@ -208,10 +208,10 @@ var _ = Describe("Header sync log repository", func() {
 			})
 
 			It("returns empty collection if all logs transformed", func() {
-				_, insertErr := db.Exec(`UPDATE public.header_sync_logs SET transformed = true WHERE header_id = $1`, headerID)
+				_, insertErr := db.Exec(`UPDATE public.event_logs SET transformed = true WHERE header_id = $1`, headerID)
 				Expect(insertErr).NotTo(HaveOccurred())
 
-				result, err := repo.GetUntransformedHeaderSyncLogs()
+				result, err := repo.GetUntransformedEventLogs()
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(BeZero())

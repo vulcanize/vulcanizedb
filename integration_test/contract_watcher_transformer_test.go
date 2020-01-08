@@ -122,7 +122,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.HeaderSyncTransferLog{}
+			log := test_helpers.TransferLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.transfer_event", tusdAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
@@ -230,7 +230,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(t.Start).To(Equal(int64(6885698)))
 
-			log := test_helpers.HeaderSyncNewOwnerLog{}
+			log := test_helpers.NewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
@@ -309,7 +309,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			err = t.Execute()
 			Expect(err).ToNot(HaveOccurred())
 
-			log := test_helpers.HeaderSyncNewOwnerLog{}
+			log := test_helpers.NewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.newowner_event", ensAddr)).StructScan(&log)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does not exist"))
@@ -360,7 +360,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(t.Start).To(Equal(int64(6885702)))
 
-			newOwnerLog := test_helpers.HeaderSyncNewOwnerLog{}
+			newOwnerLog := test_helpers.NewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
@@ -368,7 +368,7 @@ var _ = Describe("contractWatcher transformer", func() {
 			Expect(newOwnerLog.Label).To(Equal("0x95832c7a47ff8a7840e28b78ce695797aaf402b1c186bad9eca28842625b5047"))
 			Expect(newOwnerLog.Owner).To(Equal("0x6090A6e47849629b7245Dfa1Ca21D94cd15878Ef"))
 
-			transferLog := test_helpers.HeaderSyncTransferLog{}
+			transferLog := test_helpers.TransferLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
 			Expect(err).ToNot(HaveOccurred())
 			// We don't know vulcID, so compare individual fields instead of complete structures
@@ -385,10 +385,10 @@ var _ = Describe("contractWatcher transformer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(t.Start).To(Equal(int64(6885702)))
 
-			newOwnerLog := test_helpers.HeaderSyncNewOwnerLog{}
+			newOwnerLog := test_helpers.NewOwnerLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.newowner_event", ensAddr)).StructScan(&newOwnerLog)
 			Expect(err).ToNot(HaveOccurred())
-			transferLog := test_helpers.HeaderSyncTransferLog{}
+			transferLog := test_helpers.TransferLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.transfer_event", tusdAddr)).StructScan(&transferLog)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(transferLog.HeaderID).ToNot(Equal(newOwnerLog.HeaderID))

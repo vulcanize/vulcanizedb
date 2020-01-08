@@ -34,7 +34,7 @@ var _ = Describe("Transformer", func() {
 	var fakeAddress = "0x1234567890abcdef"
 	Describe("Init", func() {
 		It("Initializes transformer's contract objects", func() {
-			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever := &fakes.BlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -62,7 +62,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("Fails to initialize if first block cannot be fetched from vDB headers table", func() {
-			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever := &fakes.BlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 
@@ -75,7 +75,7 @@ var _ = Describe("Transformer", func() {
 
 	Describe("Execute", func() {
 		It("Executes contract transformations", func() {
-			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever := &fakes.BlockRetriever{}
 			firstBlock := int64(1)
 			blockRetriever.FirstBlock = firstBlock
 
@@ -103,7 +103,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("uses first block from config if vDB headers table has no rows", func() {
-			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever := &fakes.BlockRetriever{}
 			blockRetriever.FirstBlockErr = sql.ErrNoRows
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 
@@ -113,7 +113,7 @@ var _ = Describe("Transformer", func() {
 		})
 
 		It("returns error if fetching first block fails for other reason", func() {
-			blockRetriever := &fakes.MockHeaderSyncBlockRetriever{}
+			blockRetriever := &fakes.BlockRetriever{}
 			blockRetriever.FirstBlockErr = fakes.FakeError
 			t := getFakeTransformer(blockRetriever, &fakes.MockParser{}, &fakes.MockPoller{})
 
@@ -130,7 +130,7 @@ func getFakeTransformer(blockRetriever retriever.BlockRetriever, parsr parser.Pa
 		Parser:           parsr,
 		Retriever:        blockRetriever,
 		Poller:           pollr,
-		HeaderRepository: &fakes.MockHeaderSyncHeaderRepository{},
+		HeaderRepository: &fakes.MockCheckedHeaderRepository{},
 		Contracts:        map[string]*contract.Contract{},
 		Config:           mocks.MockConfig,
 	}

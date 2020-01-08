@@ -23,16 +23,16 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
-type HeaderSyncReceiptRepository struct{}
+type ReceiptRepository struct{}
 
-func (HeaderSyncReceiptRepository) CreateHeaderSyncReceiptInTx(headerID, transactionID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
+func (ReceiptRepository) CreateReceiptInTx(headerID, transactionID int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error) {
 	var receiptId int64
 	addressId, getAddressErr := repository.GetOrCreateAddressInTransaction(tx, receipt.ContractAddress)
 	if getAddressErr != nil {
 		log.Error("createReceipt: Error getting address id: ", getAddressErr)
 		return receiptId, getAddressErr
 	}
-	err := tx.QueryRowx(`INSERT INTO public.header_sync_receipts
+	err := tx.QueryRowx(`INSERT INTO public.receipts
                (header_id, transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			   ON CONFLICT (header_id, transaction_id) DO UPDATE

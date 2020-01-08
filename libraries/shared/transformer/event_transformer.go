@@ -23,7 +23,7 @@ import (
 )
 
 type EventTransformer interface {
-	Execute(logs []core.HeaderSyncLog) error
+	Execute(logs []core.EventLog) error
 	GetConfig() EventTransformerConfig
 }
 

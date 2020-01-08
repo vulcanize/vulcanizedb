@@ -27,21 +27,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const insertHeaderSyncLogQuery = `INSERT INTO header_sync_logs
+const insertEventLogQuery = `INSERT INTO public.event_logs
 		(header_id, address, topics, data, block_number, block_hash, tx_index, tx_hash, log_index, raw)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING`
 
-type HeaderSyncLogRepository struct {
+type EventLogRepository struct {
 	db *postgres.DB
 }
 
-func NewHeaderSyncLogRepository(db *postgres.DB) HeaderSyncLogRepository {
-	return HeaderSyncLogRepository{
+func NewEventLogRepository(db *postgres.DB) EventLogRepository {
+	return EventLogRepository{
 		db: db,
 	}
 }
 
-type headerSyncLog struct {
+type rawEventLog struct {
 	ID          int64
 	HeaderID    int64 `db:"header_id"`
 	Address     int64
@@ -56,15 +56,15 @@ type headerSyncLog struct {
 	Raw         []byte
 }
 
-func (repo HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error) {
-	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.header_sync_logs WHERE transformed = false`)
+func (repo EventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, error) {
+	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.event_logs WHERE transformed = false`)
 	if queryErr != nil {
 		return nil, queryErr
 	}
 
-	var results []core.HeaderSyncLog
+	var results []core.EventLog
 	for rows.Next() {
-		var rawLog headerSyncLog
+		var rawLog rawEventLog
 		scanErr := rows.StructScan(&rawLog)
 		if scanErr != nil {
 			return nil, scanErr
@@ -90,7 +90,7 @@ func (repo HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.Hea
 			// currently, fetched logs are cascade deleted if removed
 			Removed: false,
 		}
-		result := core.HeaderSyncLog{
+		result := core.EventLog{
 			ID:          rawLog.ID,
 			HeaderID:    rawLog.HeaderID,
 			Log:         reconstructedLog,
@@ -103,7 +103,7 @@ func (repo HeaderSyncLogRepository) GetUntransformedHeaderSyncLogs() ([]core.Hea
 	return results, nil
 }
 
-func (repo HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []types.Log) error {
+func (repo EventLogRepository) CreateEventLogs(headerID int64, logs []types.Log) error {
 	tx, txErr := repo.db.Beginx()
 	if txErr != nil {
 		return txErr
@@ -121,7 +121,7 @@ func (repo HeaderSyncLogRepository) CreateHeaderSyncLogs(headerID int64, logs []
 	return tx.Commit()
 }
 
-func (repo HeaderSyncLogRepository) insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
+func (repo EventLogRepository) insertLog(headerID int64, log types.Log, tx *sqlx.Tx) error {
 	topics := buildTopics(log)
 	raw, jsonErr := log.MarshalJSON()
 	if jsonErr != nil {
@@ -131,7 +131,7 @@ func (repo HeaderSyncLogRepository) insertLog(headerID int64, log types.Log, tx 
 	if addrErr != nil {
 		return addrErr
 	}
-	_, insertErr := tx.Exec(insertHeaderSyncLogQuery, headerID, addressID, topics, log.Data, log.BlockNumber,
+	_, insertErr := tx.Exec(insertEventLogQuery, headerID, addressID, topics, log.Data, log.BlockNumber,
 		log.BlockHash.Hex(), log.TxIndex, log.TxHash.Hex(), log.Index, raw)
 	return insertErr
 }

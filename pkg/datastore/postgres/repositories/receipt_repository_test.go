@@ -37,7 +37,7 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 		err         error
 		timestamp   string
 		db          *postgres.DB
-		receiptRepo repositories.HeaderSyncReceiptRepository
+		receiptRepo repositories.ReceiptRepository
 		headerRepo  repositories.HeaderRepository
 		header      core.Header
 	)
@@ -49,7 +49,7 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		receiptRepo = repositories.HeaderSyncReceiptRepository{}
+		receiptRepo = repositories.ReceiptRepository{}
 		headerRepo = repositories.NewHeaderRepository(db)
 		header = core.Header{
 			BlockNumber: 100,
@@ -94,7 +94,7 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 				Rlp:               []byte{1, 2, 3},
 			}
 
-			_, receiptErr := receiptRepo.CreateHeaderSyncReceiptInTx(headerID, txId, receipt, tx)
+			_, receiptErr := receiptRepo.CreateReceiptInTx(headerID, txId, receipt, tx)
 			Expect(receiptErr).ToNot(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
@@ -117,7 +117,7 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 			var dbReceipt idModel
 			getReceiptErr := db.Get(&dbReceipt,
 				`SELECT transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
-				FROM public.header_sync_receipts WHERE header_id = $1`, headerID)
+				FROM public.receipts WHERE header_id = $1`, headerID)
 			Expect(getReceiptErr).NotTo(HaveOccurred())
 
 			Expect(dbReceipt.TransactionId).To(Equal(txId))

@@ -80,11 +80,11 @@ func (r *eventRepository) PersistLogs(logs []types.Log, eventInfo types.Event, c
 }
 
 func (r *eventRepository) persistLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
-	return r.persistHeaderSyncLogs(logs, eventInfo, contractAddr, contractName)
+	return r.persistEventLogs(logs, eventInfo, contractAddr, contractName)
 }
 
 // Creates a custom postgres command to persist logs for the given event (compatible with header synced vDB)
-func (r *eventRepository) persistHeaderSyncLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
+func (r *eventRepository) persistEventLogs(logs []types.Log, eventInfo types.Event, contractAddr, contractName string) error {
 	tx, txErr := r.db.Beginx()
 	if txErr != nil {
 		return fmt.Errorf("error beginning db transaction: %s", txErr.Error())

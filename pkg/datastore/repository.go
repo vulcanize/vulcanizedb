@@ -44,9 +44,9 @@ type HeaderRepository interface {
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error)
 }
 
-type HeaderSyncLogRepository interface {
-	GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error)
-	CreateHeaderSyncLogs(headerID int64, logs []types.Log) error
+type EventLogRepository interface {
+	GetUntransformedEventLogs() ([]core.EventLog, error)
+	CreateEventLogs(headerID int64, logs []types.Log) error
 }
 
 type StorageDiffRepository interface {

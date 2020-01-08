@@ -14,7 +14,7 @@ import (
 )
 
 // Create a header sync log to reference in an event, returning inserted header sync log
-func CreateTestLog(headerID int64, db *postgres.DB) core.HeaderSyncLog {
+func CreateTestLog(headerID int64, db *postgres.DB) core.EventLog {
 	txHash := getRandomHash()
 	log := types.Log{
 		Address:     common.Address{},
@@ -33,15 +33,15 @@ func CreateTestLog(headerID int64, db *postgres.DB) core.HeaderSyncLog {
 	txErr := headerRepository.CreateTransactions(headerID, []core.TransactionModel{tx})
 	Expect(txErr).NotTo(HaveOccurred())
 
-	headerSyncLogRepository := repositories.NewHeaderSyncLogRepository(db)
-	insertLogsErr := headerSyncLogRepository.CreateHeaderSyncLogs(headerID, []types.Log{log})
+	eventLogRepository := repositories.NewEventLogRepository(db)
+	insertLogsErr := eventLogRepository.CreateEventLogs(headerID, []types.Log{log})
 	Expect(insertLogsErr).NotTo(HaveOccurred())
 
-	headerSyncLogs, getLogsErr := headerSyncLogRepository.GetUntransformedHeaderSyncLogs()
+	eventLogs, getLogsErr := eventLogRepository.GetUntransformedEventLogs()
 	Expect(getLogsErr).NotTo(HaveOccurred())
-	for _, headerSyncLog := range headerSyncLogs {
-		if headerSyncLog.Log.TxIndex == log.TxIndex {
-			return headerSyncLog
+	for _, eventLog := range eventLogs {
+		if eventLog.Log.TxIndex == log.TxIndex {
+			return eventLog
 		}
 	}
 	panic("couldn't find inserted test log")

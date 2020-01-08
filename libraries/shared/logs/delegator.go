@@ -37,7 +37,7 @@ type ILogDelegator interface {
 
 type LogDelegator struct {
 	Chunker       chunker.Chunker
-	LogRepository datastore.HeaderSyncLogRepository
+	LogRepository datastore.EventLogRepository
 	Transformers  []transformer.EventTransformer
 }
 
@@ -51,7 +51,7 @@ func (delegator *LogDelegator) DelegateLogs() error {
 		return ErrNoTransformers
 	}
 
-	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedHeaderSyncLogs()
+	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedEventLogs()
 	if fetchErr != nil {
 		logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
 		return fetchErr
@@ -70,7 +70,7 @@ func (delegator *LogDelegator) DelegateLogs() error {
 	return nil
 }
 
-func (delegator *LogDelegator) delegateLogs(logs []core.HeaderSyncLog) error {
+func (delegator *LogDelegator) delegateLogs(logs []core.EventLog) error {
 	chunkedLogs := delegator.Chunker.ChunkLogs(logs)
 	for _, t := range delegator.Transformers {
 		transformerName := t.GetConfig().TransformerName

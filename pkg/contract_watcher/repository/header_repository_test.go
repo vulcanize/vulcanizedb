@@ -31,7 +31,7 @@ import (
 
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
-	var contractHeaderRepo repository.HeaderRepository // contract_watcher headerSync header repository
+	var contractHeaderRepo repository.HeaderRepository // contract_watcher header repository
 	var coreHeaderRepo repositories.HeaderRepository   // pkg/datastore header repository
 	var eventIDs = []string{
 		"eventName_contractAddr",

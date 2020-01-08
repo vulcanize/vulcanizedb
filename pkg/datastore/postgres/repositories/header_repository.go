@@ -53,7 +53,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 
 func (repository HeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
 	for _, transaction := range transactions {
-		_, err := repository.database.Exec(`INSERT INTO public.header_sync_transactions
+		_, err := repository.database.Exec(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") 
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		ON CONFLICT DO NOTHING`, headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
@@ -68,7 +68,7 @@ func (repository HeaderRepository) CreateTransactions(headerID int64, transactio
 
 func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
 	var txId int64
-	err := tx.QueryRowx(`INSERT INTO public.header_sync_transactions
+	err := tx.QueryRowx(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		ON CONFLICT (hash) DO UPDATE

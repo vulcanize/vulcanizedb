@@ -143,7 +143,7 @@ var _ = Describe("Repository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(2))
 
-			scanLog := test_helpers.HeaderSyncTransferLog{}
+			scanLog := test_helpers.TransferLog{}
 			err = db.QueryRowx(fmt.Sprintf("SELECT * FROM cw_%s.transfer_event LIMIT 1", constants.TusdContractAddress)).StructScan(&scanLog)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(scanLog.HeaderID).To(Equal(headerID))

@@ -2,41 +2,41 @@ package fakes
 
 import "github.com/makerdao/vulcanizedb/pkg/core"
 
-type MockHeaderSyncHeaderRepository struct {
+type MockCheckedHeaderRepository struct {
 }
 
-func (*MockHeaderSyncHeaderRepository) AddCheckColumn(id string) error {
+func (*MockCheckedHeaderRepository) AddCheckColumn(id string) error {
 	return nil
 }
 
-func (*MockHeaderSyncHeaderRepository) AddCheckColumns(ids []string) error {
+func (*MockCheckedHeaderRepository) AddCheckColumns(ids []string) error {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MarkHeaderChecked(headerID int64, eventID string) error {
+func (*MockCheckedHeaderRepository) MarkHeaderChecked(headerID int64, eventID string) error {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MarkHeaderCheckedForAll(headerID int64, ids []string) error {
+func (*MockCheckedHeaderRepository) MarkHeaderCheckedForAll(headerID int64, ids []string) error {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MarkHeadersCheckedForAll(headers []core.Header, ids []string) error {
+func (*MockCheckedHeaderRepository) MarkHeadersCheckedForAll(headers []core.Header, ids []string) error {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MissingHeaders(startingBlockNumber int64, endingBlockNumber int64, eventID string) ([]core.Header, error) {
+func (*MockCheckedHeaderRepository) MissingHeaders(startingBlockNumber int64, endingBlockNumber int64, eventID string) ([]core.Header, error) {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error) {
+func (*MockCheckedHeaderRepository) MissingMethodsCheckedEventsIntersection(startingBlockNumber, endingBlockNumber int64, methodIds, eventIds []string) ([]core.Header, error) {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) MissingHeadersForAll(startingBlockNumber, endingBlockNumber int64, ids []string) ([]core.Header, error) {
+func (*MockCheckedHeaderRepository) MissingHeadersForAll(startingBlockNumber, endingBlockNumber int64, ids []string) ([]core.Header, error) {
 	panic("implement me")
 }
 
-func (*MockHeaderSyncHeaderRepository) CheckCache(key string) (interface{}, bool) {
+func (*MockCheckedHeaderRepository) CheckCache(key string) (interface{}, bool) {
 	panic("implement me")
 }

@@ -27,7 +27,7 @@ import (
 )
 
 // SetLogTransformedQuery marks the log as transformed in the database
-const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`
+const SetLogTransformedQuery = `UPDATE public.event_logs SET transformed = true WHERE id = $1`
 
 // ErrEmptyModelSlice is returned when PersistModel gets 0 InsertionModels
 var ErrEmptyModelSlice = fmt.Errorf("repository got empty model slice")
@@ -159,7 +159,7 @@ func PersistModels(models []InsertionModel, db *postgres.DB) error {
 		_, logErr := tx.Exec(SetLogTransformedQuery, model.ColumnValues[LogFK])
 
 		if logErr != nil {
-			utils.RollbackAndLogFailure(tx, logErr, "header_sync_logs.transformed")
+			utils.RollbackAndLogFailure(tx, logErr, "event_logs.transformed")
 			return logErr
 		}
 	}

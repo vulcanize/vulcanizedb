@@ -1,8 +1,8 @@
 -- +goose Up
-CREATE TABLE header_sync_transactions
+CREATE TABLE public.transactions
 (
     id         SERIAL PRIMARY KEY,
-    header_id  INTEGER            NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
+    header_id  INTEGER            NOT NULL REFERENCES public.headers (id) ON DELETE CASCADE,
     hash       VARCHAR(66) UNIQUE NOT NULL,
     gas_limit  NUMERIC,
     gas_price  NUMERIC,
@@ -15,9 +15,9 @@ CREATE TABLE header_sync_transactions
     "value"    NUMERIC
 );
 
-CREATE INDEX header_sync_transactions_header
-    ON header_sync_transactions (header_id);
+CREATE INDEX transactions_header
+    ON transactions (header_id);
 
 -- +goose Down
-DROP INDEX header_sync_transactions_header;
-DROP TABLE header_sync_transactions;
+DROP INDEX transactions_header;
+DROP TABLE transactions;
