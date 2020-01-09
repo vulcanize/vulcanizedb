@@ -37,6 +37,7 @@ COPY --from=builder /vulcanizedb/vulcanizedb .
 COPY --from=builder /vulcanizedb/dockerfiles/header_sync/startup_script.sh .
 COPY --from=builder /vulcanizedb/db/migrations/* db/migrations/
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
+# needed for waiting until postgres is ready before starting from docker-compose
 COPY --from=builder /vulcanizedb/dockerfiles/wait-for-it.sh .
 
 # need to execute with a shell to access env variables
