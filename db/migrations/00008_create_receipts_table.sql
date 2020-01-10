@@ -19,6 +19,8 @@ CREATE INDEX receipts_contract_address
 CREATE INDEX receipts_transaction
     ON public.receipts (transaction_id);
 
+COMMENT ON TABLE public.receipts
+    IS E'@omit';
 
 -- +goose Down
 DROP INDEX receipts_transaction;

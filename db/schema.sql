@@ -62,6 +62,13 @@ CREATE TABLE public.checked_headers (
 
 
 --
+-- Name: TABLE checked_headers; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.checked_headers IS '@omit';
+
+
+--
 -- Name: checked_headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -92,6 +99,13 @@ CREATE TABLE public.eth_nodes (
     network_id numeric,
     eth_node_id character varying(128)
 );
+
+
+--
+-- Name: TABLE eth_nodes; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.eth_nodes IS '@omit';
 
 
 --
@@ -232,6 +246,13 @@ CREATE TABLE public.queued_storage (
 
 
 --
+-- Name: TABLE queued_storage; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.queued_storage IS '@omit';
+
+
+--
 -- Name: queued_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -267,6 +288,13 @@ CREATE TABLE public.receipts (
     tx_hash character varying(66),
     rlp bytea
 );
+
+
+--
+-- Name: TABLE receipts; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.receipts IS '@omit';
 
 
 --
@@ -371,6 +399,13 @@ CREATE TABLE public.watched_logs (
     contract_address character varying(42),
     topic_zero character varying(66)
 );
+
+
+--
+-- Name: TABLE watched_logs; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.watched_logs IS '@omit';
 
 
 --
