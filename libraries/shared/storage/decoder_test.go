@@ -17,10 +17,11 @@
 package storage_test
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,8 +29,8 @@ import (
 var _ = Describe("Storage decoder", func() {
 	It("decodes uint256", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000539")
-		diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: fakeInt}}
-		metadata := storage.ValueMetadata{Type: storage.Uint256}
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
+		metadata := types.ValueMetadata{Type: types.Uint256}
 
 		result, err := storage.Decode(diff, metadata)
 
@@ -39,8 +40,8 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes uint128", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000011123")
-		diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: fakeInt}}
-		metadata := storage.ValueMetadata{Type: storage.Uint128}
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
+		metadata := types.ValueMetadata{Type: types.Uint128}
 
 		result, err := storage.Decode(diff, metadata)
 
@@ -50,8 +51,8 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes uint48", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000123")
-		diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: fakeInt}}
-		metadata := storage.ValueMetadata{Type: storage.Uint48}
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
+		metadata := types.ValueMetadata{Type: types.Uint48}
 
 		result, err := storage.Decode(diff, metadata)
 
@@ -61,8 +62,8 @@ var _ = Describe("Storage decoder", func() {
 
 	It("decodes address", func() {
 		fakeAddress := common.HexToAddress("0x12345")
-		diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: fakeAddress.Hash()}}
-		metadata := storage.ValueMetadata{Type: storage.Address}
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeAddress.Hash()}}
+		metadata := types.ValueMetadata{Type: types.Address}
 
 		result, err := storage.Decode(diff, metadata)
 
@@ -74,13 +75,13 @@ var _ = Describe("Storage decoder", func() {
 		It("decodes uint48 items", func() {
 			//this is a real storage data example
 			packedStorage := common.HexToHash("000000000000000000000000000000000000000000000002a300000000002a30")
-			diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: packedStorage}}
-			packedTypes := map[int]storage.ValueType{}
-			packedTypes[0] = storage.Uint48
-			packedTypes[1] = storage.Uint48
+			diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: packedStorage}}
+			packedTypes := map[int]types.ValueType{}
+			packedTypes[0] = types.Uint48
+			packedTypes[1] = types.Uint48
 
-			metadata := storage.ValueMetadata{
-				Type:        storage.PackedSlot,
+			metadata := types.ValueMetadata{
+				Type:        types.PackedSlot,
 				PackedTypes: packedTypes,
 			}
 
@@ -98,16 +99,16 @@ var _ = Describe("Storage decoder", func() {
 			packedStorageHex := "0000000A5D1AFFFFFFFFFFFE00000009F3C600000002A300000000002A30"
 
 			packedStorage := common.HexToHash(packedStorageHex)
-			diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: packedStorage}}
-			packedTypes := map[int]storage.ValueType{}
-			packedTypes[0] = storage.Uint48
-			packedTypes[1] = storage.Uint48
-			packedTypes[2] = storage.Uint48
-			packedTypes[3] = storage.Uint48
-			packedTypes[4] = storage.Uint48
+			diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: packedStorage}}
+			packedTypes := map[int]types.ValueType{}
+			packedTypes[0] = types.Uint48
+			packedTypes[1] = types.Uint48
+			packedTypes[2] = types.Uint48
+			packedTypes[3] = types.Uint48
+			packedTypes[4] = types.Uint48
 
-			metadata := storage.ValueMetadata{
-				Type:        storage.PackedSlot,
+			metadata := types.ValueMetadata{
+				Type:        types.PackedSlot,
 				PackedTypes: packedTypes,
 			}
 
@@ -128,13 +129,13 @@ var _ = Describe("Storage decoder", func() {
 			packedStorageHex := "000000038D7EA4C67FF8E502B6730000" +
 				"0000000000000000AB54A98CEB1F0AD2"
 			packedStorage := common.HexToHash(packedStorageHex)
-			diff := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: packedStorage}}
-			packedTypes := map[int]storage.ValueType{}
-			packedTypes[0] = storage.Uint128
-			packedTypes[1] = storage.Uint128
+			diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: packedStorage}}
+			packedTypes := map[int]types.ValueType{}
+			packedTypes[0] = types.Uint128
+			packedTypes[1] = types.Uint128
 
-			metadata := storage.ValueMetadata{
-				Type:        storage.PackedSlot,
+			metadata := types.ValueMetadata{
+				Type:        types.PackedSlot,
 				PackedTypes: packedTypes,
 			}
 
@@ -150,14 +151,14 @@ var _ = Describe("Storage decoder", func() {
 			//TODO: replace with real data when available
 			addressHex := "0000000000000000000000000000000000012345"
 			packedStorage := common.HexToHash("00000002a300" + "000000002a30" + addressHex)
-			row := storage.PersistedDiff{RawDiff: storage.RawDiff{StorageValue: packedStorage}}
-			packedTypes := map[int]storage.ValueType{}
-			packedTypes[0] = storage.Address
-			packedTypes[1] = storage.Uint48
-			packedTypes[2] = storage.Uint48
+			row := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: packedStorage}}
+			packedTypes := map[int]types.ValueType{}
+			packedTypes[0] = types.Address
+			packedTypes[1] = types.Uint48
+			packedTypes[2] = types.Uint48
 
-			metadata := storage.ValueMetadata{
-				Type:        storage.PackedSlot,
+			metadata := types.ValueMetadata{
+				Type:        types.PackedSlot,
 				PackedTypes: packedTypes,
 			}
 

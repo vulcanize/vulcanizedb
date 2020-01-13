@@ -23,7 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
-	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"

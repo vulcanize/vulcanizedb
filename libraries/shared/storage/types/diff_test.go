@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package storage_test
+package types_test
 
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -39,10 +39,10 @@ var _ = Describe("Storage row parsing", func() {
 			storageValue := "0x654"
 			data := []string{contract, blockHash, blockHeight, storageKey, storageValue}
 
-			result, err := storage.FromParityCsvRow(data)
+			result, err := types.FromParityCsvRow(data)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedKeccakOfContractAddress := storage.HexToKeccak256Hash(contract)
+			expectedKeccakOfContractAddress := types.HexToKeccak256Hash(contract)
 			Expect(result.HashedAddress).To(Equal(expectedKeccakOfContractAddress))
 			Expect(result.BlockHash).To(Equal(common.HexToHash(blockHash)))
 			Expect(result.BlockHeight).To(Equal(789))
@@ -51,14 +51,14 @@ var _ = Describe("Storage row parsing", func() {
 		})
 
 		It("returns an error if row is missing data", func() {
-			_, err := storage.FromParityCsvRow([]string{"0x123"})
+			_, err := types.FromParityCsvRow([]string{"0x123"})
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(storage.ErrRowMalformed{Length: 1}))
+			Expect(err).To(MatchError(types.ErrRowMalformed{Length: 1}))
 		})
 
 		It("returns error if block height malformed", func() {
-			_, err := storage.FromParityCsvRow([]string{"", "", "", "", ""})
+			_, err := types.FromParityCsvRow([]string{"", "", "", "", ""})
 
 			Expect(err).To(HaveOccurred())
 		})
@@ -83,7 +83,7 @@ var _ = Describe("Storage row parsing", func() {
 				Value: storageValueRlp,
 			}
 
-			result, err := storage.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedAddress := common.BytesToHash(accountDiff.Key)
@@ -107,13 +107,13 @@ var _ = Describe("Storage row parsing", func() {
 				Value: storageValueRlp,
 			}
 
-			result, err := storage.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
+			result, err := types.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.StorageValue).To(Equal(common.BytesToHash(storageValueBytes)))
 		})
 
 		It("returns an err if decoding the storage value Rlp fails", func() {
-			_, err := storage.FromGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
+			_, err := types.FromGethStateDiff(accountDiff, stateDiff, test_data.StorageWithBadValue)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("rlp: input contains more than one value"))
 		})

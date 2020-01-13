@@ -18,17 +18,17 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockStorageKeysLookup struct {
-	Metadata     storage.ValueMetadata
+	Metadata     types.ValueMetadata
 	LookupCalled bool
 	LookupErr    error
 }
 
-func (mappings *MockStorageKeysLookup) Lookup(key common.Hash) (storage.ValueMetadata, error) {
+func (mappings *MockStorageKeysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 	mappings.LookupCalled = true
 	return mappings.Metadata, mappings.LookupErr
 }

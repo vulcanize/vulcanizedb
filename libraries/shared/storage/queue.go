@@ -17,36 +17,37 @@
 package storage
 
 import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
-type IStorageQueue interface {
-	Add(diff PersistedDiff) error
+type Queue interface {
+	Add(diff types.PersistedDiff) error
 	Delete(id int64) error
-	GetAll() ([]PersistedDiff, error)
+	GetAll() ([]types.PersistedDiff, error)
 }
 
-type StorageQueue struct {
+type queue struct {
 	db *postgres.DB
 }
 
-func NewStorageQueue(db *postgres.DB) StorageQueue {
-	return StorageQueue{db: db}
+func NewStorageQueue(db *postgres.DB) queue {
+	return queue{db: db}
 }
 
-func (queue StorageQueue) Add(diff PersistedDiff) error {
+func (queue queue) Add(diff types.PersistedDiff) error {
 	_, err := queue.db.Exec(`INSERT INTO public.queued_storage (diff_id) VALUES
 		($1) ON CONFLICT DO NOTHING`, diff.ID)
 	return err
 }
 
-func (queue StorageQueue) Delete(diffID int64) error {
+func (queue queue) Delete(diffID int64) error {
 	_, err := queue.db.Exec(`DELETE FROM public.queued_storage WHERE diff_id = $1`, diffID)
 	return err
 }
 
-func (queue StorageQueue) GetAll() ([]PersistedDiff, error) {
-	var result []PersistedDiff
+func (queue queue) GetAll() ([]types.PersistedDiff, error) {
+	var result []types.PersistedDiff
 	err := queue.db.Select(&result, `SELECT storage_diff.id, hashed_address, block_height, block_hash, storage_key, storage_value
 		FROM public.queued_storage
 			LEFT JOIN public.storage_diff ON queued_storage.diff_id = storage_diff.id`)

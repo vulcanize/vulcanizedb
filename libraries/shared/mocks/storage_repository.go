@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -25,11 +25,11 @@ type MockStorageRepository struct {
 	CreateErr      error
 	PassedHeaderID int64
 	PassedDiffID   int64
-	PassedMetadata storage.ValueMetadata
+	PassedMetadata types.ValueMetadata
 	PassedValue    interface{}
 }
 
-func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata storage.ValueMetadata, value interface{}) error {
+func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata types.ValueMetadata, value interface{}) error {
 	repository.PassedHeaderID = headerID
 	repository.PassedDiffID = diffID
 	repository.PassedMetadata = metadata

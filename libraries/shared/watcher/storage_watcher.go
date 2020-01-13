@@ -22,8 +22,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -52,16 +53,16 @@ type IStorageWatcher interface {
 type StorageWatcher struct {
 	db                        *postgres.DB
 	StorageFetcher            fetcher.IStorageFetcher
-	Queue                     storage.IStorageQueue
+	Queue                     storage.Queue
 	HeaderRepository          datastore.HeaderRepository
-	StorageDiffRepository     datastore.StorageDiffRepository
+	StorageDiffRepository     storage.DiffRepository
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
 }
 
 func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
 	queue := storage.NewStorageQueue(db)
 	headerRepository := repositories.NewHeaderRepository(db)
-	storageDiffRepository := repositories.NewStorageDiffRepository(db)
+	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]transformer.StorageTransformer)
 	return StorageWatcher{
 		db:                        db,
@@ -82,7 +83,7 @@ func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.
 
 func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration) error {
 	ticker := time.NewTicker(queueRecheckInterval)
-	diffsChan := make(chan storage.RawDiff)
+	diffsChan := make(chan types.RawDiff)
 	errsChan := make(chan error)
 
 	defer close(diffsChan)
@@ -103,22 +104,22 @@ func (storageWatcher StorageWatcher) Execute(queueRecheckInterval time.Duration)
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(diff storage.PersistedDiff) (transformer.StorageTransformer, bool) {
+func (storageWatcher StorageWatcher) getTransformer(diff types.PersistedDiff) (transformer.StorageTransformer, bool) {
 	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(rawDiff storage.RawDiff) {
+func (storageWatcher StorageWatcher) processRow(rawDiff types.RawDiff) {
 	diffID, err := storageWatcher.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
-		if err == repositories.ErrDuplicateDiff {
+		if err == storage.ErrDuplicateDiff {
 			logrus.Trace("ignoring duplicate diff")
 			return
 		}
 		logrus.Warnf("failed to persist storage diff: %s", err.Error())
 		// TODO: bail? Should we continue attempting to transform a diff we didn't persist
 	}
-	persistedDiff := storage.ToPersistedDiff(rawDiff, diffID)
+	persistedDiff := types.ToPersistedDiff(rawDiff, diffID)
 
 	storageTransformer, isTransformerWatchingAddress := storageWatcher.getTransformer(persistedDiff)
 	if !isTransformerWatchingAddress {
@@ -186,14 +187,14 @@ func (storageWatcher StorageWatcher) deleteRow(diffID int64) {
 	}
 }
 
-func (storageWatcher StorageWatcher) queueDiff(diff storage.PersistedDiff) {
+func (storageWatcher StorageWatcher) queueDiff(diff types.PersistedDiff) {
 	queueErr := storageWatcher.Queue.Add(diff)
 	if queueErr != nil {
 		logrus.Infof("error queueing storage diff: %s", queueErr.Error())
 	}
 }
 
-func (storageWatcher StorageWatcher) getHeaderID(diff storage.PersistedDiff) (int64, error) {
+func (storageWatcher StorageWatcher) getHeaderID(diff types.PersistedDiff) (int64, error) {
 	header, getHeaderErr := storageWatcher.HeaderRepository.GetHeader(int64(diff.BlockHeight))
 	if getHeaderErr != nil {
 		return 0, getHeaderErr
@@ -205,5 +206,5 @@ func (storageWatcher StorageWatcher) getHeaderID(diff storage.PersistedDiff) (in
 }
 
 func isKeyNotFoundErr(err error) bool {
-	return reflect.TypeOf(err) == reflect.TypeOf(storage.ErrKeyNotFound{})
+	return reflect.TypeOf(err) == reflect.TypeOf(types.ErrKeyNotFound{})
 }

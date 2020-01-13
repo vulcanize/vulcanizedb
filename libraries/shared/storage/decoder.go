@@ -21,25 +21,26 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 )
 
 const (
 	bitsPerByte = 8
 )
 
-func Decode(diff PersistedDiff, metadata ValueMetadata) (interface{}, error) {
+func Decode(diff types.PersistedDiff, metadata types.ValueMetadata) (interface{}, error) {
 	switch metadata.Type {
-	case Uint256:
+	case types.Uint256:
 		return decodeInteger(diff.StorageValue.Bytes()), nil
-	case Uint48:
+	case types.Uint48:
 		return decodeInteger(diff.StorageValue.Bytes()), nil
-	case Uint128:
+	case types.Uint128:
 		return decodeInteger(diff.StorageValue.Bytes()), nil
-	case Address:
+	case types.Address:
 		return decodeAddress(diff.StorageValue.Bytes()), nil
-	case Bytes32:
+	case types.Bytes32:
 		return diff.StorageValue.Hex(), nil
-	case PackedSlot:
+	case types.PackedSlot:
 		return decodePackedSlot(diff.StorageValue.Bytes(), metadata.PackedTypes), nil
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", metadata.Type))
@@ -55,7 +56,7 @@ func decodeAddress(raw []byte) string {
 	return common.BytesToAddress(raw).Hex()
 }
 
-func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string {
+func decodePackedSlot(raw []byte, packedTypes map[int]types.ValueType) map[int]string {
 	storageSlotData := raw
 	decodedStorageSlotItems := map[int]string{}
 	numberOfTypes := len(packedTypes)
@@ -81,24 +82,24 @@ func decodePackedSlot(raw []byte, packedTypes map[int]ValueType) map[int]string 
 	return decodedStorageSlotItems
 }
 
-func decodeIndividualItem(itemBytes []byte, valueType ValueType) string {
+func decodeIndividualItem(itemBytes []byte, valueType types.ValueType) string {
 	switch valueType {
-	case Uint48, Uint128:
+	case types.Uint48, types.Uint128:
 		return decodeInteger(itemBytes)
-	case Address:
+	case types.Address:
 		return decodeAddress(itemBytes)
 	default:
 		panic(fmt.Sprintf("can't decode unknown type: %d", valueType))
 	}
 }
 
-func getNumberOfBytes(valueType ValueType) int {
+func getNumberOfBytes(valueType types.ValueType) int {
 	switch valueType {
-	case Uint48:
+	case types.Uint48:
 		return 48 / bitsPerByte
-	case Uint128:
+	case types.Uint128:
 		return 128 / bitsPerByte
-	case Address:
+	case types.Address:
 		return 20
 	default:
 		panic(fmt.Sprintf("ValueType %d not recognized", valueType))

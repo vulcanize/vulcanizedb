@@ -19,24 +19,25 @@ package storage
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type KeysLookup interface {
-	Lookup(key common.Hash) (storage.ValueMetadata, error)
+	Lookup(key common.Hash) (types.ValueMetadata, error)
 	SetDB(db *postgres.DB)
 }
 
 type keysLookup struct {
 	loader   KeysLoader
-	mappings map[common.Hash]storage.ValueMetadata
+	mappings map[common.Hash]types.ValueMetadata
 }
 
 func NewKeysLookup(loader KeysLoader) KeysLookup {
-	return &keysLookup{loader: loader, mappings: make(map[common.Hash]storage.ValueMetadata)}
+	return &keysLookup{loader: loader, mappings: make(map[common.Hash]types.ValueMetadata)}
 }
 
-func (lookup *keysLookup) Lookup(key common.Hash) (storage.ValueMetadata, error) {
+func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 	metadata, ok := lookup.mappings[key]
 	if !ok {
 		refreshErr := lookup.refreshMappings()
@@ -45,7 +46,7 @@ func (lookup *keysLookup) Lookup(key common.Hash) (storage.ValueMetadata, error)
 		}
 		metadata, ok = lookup.mappings[key]
 		if !ok {
-			return metadata, storage.ErrKeyNotFound{Key: key.Hex()}
+			return metadata, types.ErrKeyNotFound{Key: key.Hex()}
 		}
 	}
 	return metadata, nil
