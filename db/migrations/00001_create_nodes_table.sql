@@ -9,5 +9,8 @@ CREATE TABLE eth_nodes
     UNIQUE (genesis_block, network_id, eth_node_id)
 );
 
+COMMENT ON TABLE public.eth_nodes
+    IS E'@omit';
+
 -- +goose Down
 DROP TABLE eth_nodes;

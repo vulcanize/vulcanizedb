@@ -7,6 +7,9 @@ CREATE TABLE public.watched_logs
     topic_zero       VARCHAR(66)
 );
 
+COMMENT ON TABLE public.watched_logs
+    IS E'@omit';
+
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
 DROP TABLE public.watched_logs;
