@@ -25,12 +25,12 @@ import (
 type MockConverter struct {
 	ToModelsError           error
 	ContractAbi             string
-	LogsToConvert           []core.HeaderSyncLog
+	LogsToConvert           []core.EventLog
 	PassedContractAddresses []string
 	ToModelsCalledCounter   int
 }
 
-func (converter *MockConverter) ToModels(abi string, logs []core.HeaderSyncLog, _ *postgres.DB) ([]event.InsertionModel, error) {
+func (converter *MockConverter) ToModels(abi string, logs []core.EventLog, _ *postgres.DB) ([]event.InsertionModel, error) {
 	converter.LogsToConvert = logs
 	converter.ContractAbi = abi
 	converter.ToModelsCalledCounter = converter.ToModelsCalledCounter + 1

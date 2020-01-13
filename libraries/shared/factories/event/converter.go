@@ -23,5 +23,5 @@ import (
 
 // Transformer transforms log data into general InsertionModels the Repository can persist
 type Transformer interface {
-	ToModels(contractAbi string, ethLog []core.HeaderSyncLog, db *postgres.DB) ([]InsertionModel, error)
+	ToModels(contractAbi string, ethLog []core.EventLog, db *postgres.DB) ([]InsertionModel, error)
 }

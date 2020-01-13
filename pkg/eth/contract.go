@@ -18,15 +18,10 @@ package eth
 
 import (
 	"context"
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-)
-
-var (
-	ErrInvalidStateAttribute = errors.New("invalid state attribute")
 )
 
 func (blockChain *BlockChain) FetchContractData(abiJSON string, address string, method string, methodArgs []interface{}, result interface{}, blockNumber int64) error {

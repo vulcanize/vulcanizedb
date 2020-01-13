@@ -19,15 +19,14 @@ package test_config
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
-	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var TestConfig *viper.Viper
@@ -87,29 +86,17 @@ func NewTestDB(node core.Node) *postgres.DB {
 }
 
 func CleanTestDB(db *postgres.DB) {
-	db.MustExec("DELETE FROM addresses")
-	db.MustExec("DELETE FROM blocks")
-	db.MustExec("DELETE FROM checked_headers")
+	db.MustExec("DELETE FROM public.addresses")
+	db.MustExec("DELETE FROM public.checked_headers")
 	// can't delete from eth_nodes since this function is called after the required eth_node is persisted
-	db.MustExec("DELETE FROM full_sync_logs")
-	db.MustExec("DELETE FROM full_sync_receipts")
-	db.MustExec("DELETE FROM full_sync_transactions")
-	db.MustExec("DELETE FROM goose_db_version")
-	db.MustExec("DELETE FROM header_sync_logs")
-	db.MustExec("DELETE FROM header_sync_receipts")
-	db.MustExec("DELETE FROM header_sync_transactions")
-	db.MustExec("DELETE FROM headers")
-	db.MustExec("DELETE FROM log_filters")
-	db.MustExec("DELETE FROM queued_storage")
-	db.MustExec("DELETE FROM storage_diff")
-	db.MustExec("DELETE FROM watched_contracts")
-	db.MustExec("DELETE FROM watched_logs")
-}
-
-func CleanCheckedHeadersTable(db *postgres.DB, columnNames []string) {
-	for _, name := range columnNames {
-		db.MustExec("ALTER TABLE checked_headers DROP COLUMN IF EXISTS " + name)
-	}
+	db.MustExec("DELETE FROM public.goose_db_version")
+	db.MustExec("DELETE FROM public.event_logs")
+	db.MustExec("DELETE FROM public.receipts")
+	db.MustExec("DELETE FROM public.transactions")
+	db.MustExec("DELETE FROM public.headers")
+	db.MustExec("DELETE FROM public.queued_storage")
+	db.MustExec("DELETE FROM public.storage_diff")
+	db.MustExec("DELETE FROM public.watched_logs")
 }
 
 // Returns a new test node, with the same ID
@@ -120,11 +107,4 @@ func NewTestNode() core.Node {
 		ID:           fakes.RandomString(128),
 		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 	}
-}
-
-func NewTestBlock(blockNumber int64, repository repositories.BlockRepository) (blockId int64) {
-	blockId, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
-	Expect(err).NotTo(HaveOccurred())
-
-	return blockId
 }

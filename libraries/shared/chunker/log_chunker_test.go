@@ -99,7 +99,7 @@ var _ = Describe("Log chunker", func() {
 
 	Describe("ChunkLogs", func() {
 		It("only associates logs with relevant topic0 and address to transformers", func() {
-			logs := []core.HeaderSyncLog{log1, log2, log3, log4, log5}
+			logs := []core.EventLog{log1, log2, log3, log4, log5}
 			chunks := chunker.ChunkLogs(logs)
 
 			Expect(chunks["TransformerA"]).To(And(ContainElement(log1), ContainElement(log4)))
@@ -111,7 +111,7 @@ var _ = Describe("Log chunker", func() {
 
 var (
 	// Match TransformerA
-	log1 = core.HeaderSyncLog{
+	log1 = core.EventLog{
 		Log: types.Log{
 			Address: common.HexToAddress("0xA1"),
 			Topics: []common.Hash{
@@ -121,7 +121,7 @@ var (
 		},
 	}
 	// Match TransformerA address, but not topic0
-	log2 = core.HeaderSyncLog{
+	log2 = core.EventLog{
 		Log: types.Log{
 			Address: common.HexToAddress("0xA1"),
 			Topics: []common.Hash{
@@ -131,7 +131,7 @@ var (
 		},
 	}
 	// Match TransformerA topic, but TransformerB address
-	log3 = core.HeaderSyncLog{
+	log3 = core.EventLog{
 		Log: types.Log{
 			Address: common.HexToAddress("0xB1"),
 			Topics: []common.Hash{
@@ -141,7 +141,7 @@ var (
 		},
 	}
 	// Match TransformerA, with the other address
-	log4 = core.HeaderSyncLog{
+	log4 = core.EventLog{
 		Log: types.Log{
 			Address: common.HexToAddress("0xA2"),
 			Topics: []common.Hash{
@@ -151,7 +151,7 @@ var (
 		},
 	}
 	// Match TransformerC, which shares address with TransformerA
-	log5 = core.HeaderSyncLog{
+	log5 = core.EventLog{
 		Log: types.Log{
 			Address: common.HexToAddress("0xA2"),
 			Topics: []common.Hash{

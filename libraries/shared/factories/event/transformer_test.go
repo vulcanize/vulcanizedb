@@ -34,7 +34,7 @@ var _ = Describe("Transformer", func() {
 		t         transformer.EventTransformer
 		headerOne core.Header
 		config    = test_data.GenericTestConfig
-		logs      []core.HeaderSyncLog
+		logs      []core.EventLog
 	)
 
 	BeforeEach(func() {
@@ -47,7 +47,7 @@ var _ = Describe("Transformer", func() {
 
 		headerOne = core.Header{Id: rand.Int63(), BlockNumber: rand.Int63()}
 
-		logs = []core.HeaderSyncLog{{
+		logs = []core.EventLog{{
 			ID:          0,
 			HeaderID:    headerOne.Id,
 			Log:         test_data.GenericTestLog(),
@@ -56,7 +56,7 @@ var _ = Describe("Transformer", func() {
 	})
 
 	It("doesn't attempt to convert or persist an empty collection when there are no logs", func() {
-		err := t.Execute([]core.HeaderSyncLog{})
+		err := t.Execute([]core.EventLog{})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(converter.ToModelsCalledCounter).To(Equal(0))

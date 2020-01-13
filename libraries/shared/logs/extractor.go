@@ -43,7 +43,7 @@ type LogExtractor struct {
 	CheckedHeadersRepository datastore.CheckedHeadersRepository
 	CheckedLogsRepository    datastore.CheckedLogsRepository
 	Fetcher                  fetcher.ILogFetcher
-	LogRepository            datastore.HeaderSyncLogRepository
+	LogRepository            datastore.EventLogRepository
 	StartingBlock            *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
@@ -99,7 +99,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 				return transactionsSyncErr
 			}
 
-			createLogsErr := extractor.LogRepository.CreateHeaderSyncLogs(header.Id, logs)
+			createLogsErr := extractor.LogRepository.CreateEventLogs(header.Id, logs)
 			if createLogsErr != nil {
 				logError("error persisting logs: %s", createLogsErr, header)
 				return createLogsErr

@@ -222,8 +222,8 @@ var _ = Describe("Block header repository", func() {
 				Rlp:               []byte{1, 2, 3},
 			}
 
-			receiptRepo := repositories.HeaderSyncReceiptRepository{}
-			_, receiptErr := receiptRepo.CreateHeaderSyncReceiptInTx(headerID, txId, receipt, tx)
+			receiptRepo := repositories.ReceiptRepository{}
+			_, receiptErr := receiptRepo.CreateReceiptInTx(headerID, txId, receipt, tx)
 			Expect(receiptErr).ToNot(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
@@ -246,7 +246,7 @@ var _ = Describe("Block header repository", func() {
 			var dbReceipt idModel
 			getReceiptErr := db.Get(&dbReceipt,
 				`SELECT transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
-				FROM public.header_sync_receipts WHERE header_id = $1`, headerID)
+				FROM public.receipts WHERE header_id = $1`, headerID)
 			Expect(getReceiptErr).NotTo(HaveOccurred())
 
 			Expect(dbReceipt.TransactionId).To(Equal(txId))
@@ -308,7 +308,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransactions).To(ConsistOf(transactions))
 		})
@@ -320,7 +320,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(2))
 		})
@@ -357,7 +357,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransaction core.TransactionModel
 			err = db.Get(&dbTransaction,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransaction).To(Equal(transaction))
 		})
@@ -392,7 +392,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(1))
 		})

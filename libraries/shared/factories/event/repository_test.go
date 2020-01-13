@@ -40,8 +40,8 @@ var _ = Describe("Repository", func() {
 	Describe("PersistModels", func() {
 		const createTestEventTableQuery = `CREATE TABLE public.testEvent(
 		id        SERIAL PRIMARY KEY,
-		header_id INTEGER NOT NULL REFERENCES headers (id) ON DELETE CASCADE,
-		log_id    BIGINT  NOT NULL REFERENCES header_sync_logs (id) ON DELETE CASCADE,
+		header_id INTEGER NOT NULL REFERENCES public.headers (id) ON DELETE CASCADE,
+		log_id    BIGINT  NOT NULL REFERENCES public.event_logs (id) ON DELETE CASCADE,
 		variable1 TEXT,
 		UNIQUE (header_id, log_id)
 		);`
@@ -59,8 +59,8 @@ var _ = Describe("Repository", func() {
 			var insertHeaderErr error
 			headerID, insertHeaderErr = headerRepository.CreateOrUpdateHeader(fakes.FakeHeader)
 			Expect(insertHeaderErr).NotTo(HaveOccurred())
-			headerSyncLog := test_data.CreateTestLog(headerID, db)
-			logID = headerSyncLog.ID
+			eventLog := test_data.CreateTestLog(headerID, db)
+			logID = eventLog.ID
 
 			testModel = event.InsertionModel{
 				SchemaName: "public",
@@ -191,7 +191,7 @@ var _ = Describe("Repository", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var logTransformed bool
-			getErr := db.Get(&logTransformed, `SELECT transformed FROM public.header_sync_logs WHERE id = $1`, logID)
+			getErr := db.Get(&logTransformed, `SELECT transformed FROM public.event_logs WHERE id = $1`, logID)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(logTransformed).To(BeTrue())
 		})

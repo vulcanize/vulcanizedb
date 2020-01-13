@@ -28,7 +28,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
-	vRpc "github.com/makerdao/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/makerdao/vulcanizedb/pkg/eth/converters"
 	"github.com/makerdao/vulcanizedb/pkg/eth/node"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -152,7 +152,7 @@ func getBlockChain() *eth.BlockChain {
 	rpcClient, ethClient := getClients()
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
+	transactionConverter := converters.NewTransactionConverter(ethClient)
 	return eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }
 

@@ -26,11 +26,11 @@ import (
 type MockEventTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
-	PassedLogs       []core.HeaderSyncLog
+	PassedLogs       []core.EventLog
 	config           transformer.EventTransformerConfig
 }
 
-func (t *MockEventTransformer) Execute(logs []core.HeaderSyncLog) error {
+func (t *MockEventTransformer) Execute(logs []core.EventLog) error {
 	if t.ExecuteError != nil {
 		return t.ExecuteError
 	}

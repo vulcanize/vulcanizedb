@@ -44,7 +44,7 @@ var _ = Describe("Log extractor", func() {
 			CheckedHeadersRepository: checkedHeadersRepository,
 			CheckedLogsRepository:    checkedLogsRepository,
 			Fetcher:                  &mocks.MockLogFetcher{},
-			LogRepository:            &fakes.MockHeaderSyncLogRepository{},
+			LogRepository:            &fakes.MockEventLogRepository{},
 			Syncer:                   &fakes.MockTransactionSyncer{},
 		}
 	})
@@ -320,7 +320,7 @@ var _ = Describe("Log extractor", func() {
 					}}
 					mockLogFetcher := &mocks.MockLogFetcher{ReturnLogs: fakeLogs}
 					extractor.Fetcher = mockLogFetcher
-					mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
+					mockLogRepository := &fakes.MockEventLogRepository{}
 					extractor.LogRepository = mockLogRepository
 
 					err := extractor.ExtractLogs(constants.HeaderUnchecked)
@@ -333,7 +333,7 @@ var _ = Describe("Log extractor", func() {
 					addUncheckedHeader(extractor)
 					addFetchedLog(extractor)
 					addTransformerConfig(extractor)
-					mockLogRepository := &fakes.MockHeaderSyncLogRepository{}
+					mockLogRepository := &fakes.MockEventLogRepository{}
 					mockLogRepository.CreateError = fakes.FakeError
 					extractor.LogRepository = mockLogRepository
 

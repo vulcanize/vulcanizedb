@@ -44,12 +44,12 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain, maxConsecutiveUnexpect
 		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
 		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
 		Fetcher:                  fetcher.NewLogFetcher(bc),
-		LogRepository:            repositories.NewHeaderSyncLogRepository(db),
+		LogRepository:            repositories.NewEventLogRepository(db),
 		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
 	}
 	logTransformer := &logs.LogDelegator{
 		Chunker:       chunker.NewLogChunker(),
-		LogRepository: repositories.NewHeaderSyncLogRepository(db),
+		LogRepository: repositories.NewEventLogRepository(db),
 	}
 	return EventWatcher{
 		blockChain:                   bc,

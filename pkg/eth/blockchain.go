@@ -18,18 +18,17 @@ package eth
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum"
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"golang.org/x/net/context"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
-	vulcCommon "github.com/makerdao/vulcanizedb/pkg/eth/converters/common"
+	"github.com/makerdao/vulcanizedb/pkg/eth/converters"
+	"golang.org/x/net/context"
 )
 
 var ErrEmptyHeader = errors.New("empty header returned over RPC")
@@ -37,31 +36,21 @@ var ErrEmptyHeader = errors.New("empty header returned over RPC")
 const MAX_BATCH_SIZE = 100
 
 type BlockChain struct {
-	blockConverter       vulcCommon.BlockConverter
 	ethClient            core.EthClient
-	headerConverter      vulcCommon.HeaderConverter
+	headerConverter      converters.HeaderConverter
 	node                 core.Node
 	rpcClient            core.RpcClient
-	transactionConverter vulcCommon.TransactionConverter
+	transactionConverter converters.TransactionConverter
 }
 
-func NewBlockChain(ethClient core.EthClient, rpcClient core.RpcClient, node core.Node, converter vulcCommon.TransactionConverter) *BlockChain {
+func NewBlockChain(ethClient core.EthClient, rpcClient core.RpcClient, node core.Node, converter converters.TransactionConverter) *BlockChain {
 	return &BlockChain{
-		blockConverter:       vulcCommon.NewBlockConverter(converter),
 		ethClient:            ethClient,
-		headerConverter:      vulcCommon.HeaderConverter{},
+		headerConverter:      converters.HeaderConverter{},
 		node:                 node,
 		rpcClient:            rpcClient,
 		transactionConverter: converter,
 	}
-}
-
-func (blockChain *BlockChain) GetBlockByNumber(blockNumber int64) (block core.Block, err error) {
-	gethBlock, err := blockChain.ethClient.BlockByNumber(context.Background(), big.NewInt(blockNumber))
-	if err != nil {
-		return block, err
-	}
-	return blockChain.blockConverter.ToCoreBlock(gethBlock)
 }
 
 func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQuery) ([]types.Log, error) {
@@ -84,25 +73,6 @@ func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header 
 		return blockChain.getPOAHeaders(blockNumbers)
 	}
 	return blockChain.getPOWHeaders(blockNumbers)
-}
-
-func (blockChain *BlockChain) GetFullSyncLogs(contract core.Contract, startingBlockNumber, endingBlockNumber *big.Int) ([]core.FullSyncLog, error) {
-	if endingBlockNumber == nil {
-		endingBlockNumber = startingBlockNumber
-	}
-	contractAddress := common.HexToAddress(contract.Hash)
-	fc := ethereum.FilterQuery{
-		FromBlock: startingBlockNumber,
-		ToBlock:   endingBlockNumber,
-		Addresses: []common.Address{contractAddress},
-		Topics:    nil,
-	}
-	gethLogs, err := blockChain.GetEthLogsWithCustomQuery(fc)
-	if err != nil {
-		return []core.FullSyncLog{}, err
-	}
-	logs := vulcCommon.ToFullSyncLogs(gethLogs)
-	return logs, nil
 }
 
 func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
@@ -265,8 +235,4 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 	}
 
 	return headers, err
-}
-
-func (blockChain *BlockChain) GetAccountBalance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	return blockChain.ethClient.BalanceAt(context.Background(), address, blockNumber)
 }

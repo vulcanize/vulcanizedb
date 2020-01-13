@@ -37,7 +37,7 @@ func (ct ConfiguredTransformer) NewTransformer(db *postgres.DB) transformer.Even
 }
 
 // Execute runs a transformer on a set of logs, converting data into models and persisting to the DB
-func (ct ConfiguredTransformer) Execute(logs []core.HeaderSyncLog) error {
+func (ct ConfiguredTransformer) Execute(logs []core.EventLog) error {
 	transformerName := ct.Config.TransformerName
 	config := ct.Config
 
