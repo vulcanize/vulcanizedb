@@ -63,51 +63,52 @@ func NewIPLDPublisher(ipfsPath string) (*Publisher, error) {
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
 func (pub *Publisher) Publish(payload *IPLDPayload) (*CIDPayload, error) {
 	// Process and publish headers
-	headerCid, headersErr := pub.publishHeaders(payload.HeaderRLP)
-	if headersErr != nil {
-		return nil, headersErr
+	headerCid, err := pub.publishHeaders(payload.HeaderRLP)
+	if err != nil {
+		return nil, err
 	}
 
 	// Process and publish uncles
 	uncleCids := make(map[common.Hash]string)
 	for _, uncle := range payload.BlockBody.Uncles {
-		uncleRlp, encodeErr := rlp.EncodeToBytes(uncle)
-		if encodeErr != nil {
-			return nil, encodeErr
+		uncleRlp, err := rlp.EncodeToBytes(uncle)
+		if err != nil {
+			return nil, err
 		}
-		cid, unclesErr := pub.publishHeaders(uncleRlp)
-		if unclesErr != nil {
-			return nil, unclesErr
+		cid, err := pub.publishHeaders(uncleRlp)
+		if err != nil {
+			return nil, err
 		}
 		uncleCids[uncle.Hash()] = cid
 	}
 
 	// Process and publish transactions
-	transactionCids, trxsErr := pub.publishTransactions(payload.BlockBody, payload.TrxMetaData)
-	if trxsErr != nil {
-		return nil, trxsErr
+	transactionCids, err := pub.publishTransactions(payload.BlockBody, payload.TrxMetaData)
+	if err != nil {
+		return nil, err
 	}
 
 	// Process and publish receipts
-	receiptsCids, rctsErr := pub.publishReceipts(payload.Receipts, payload.ReceiptMetaData)
-	if rctsErr != nil {
-		return nil, rctsErr
+	receiptsCids, err := pub.publishReceipts(payload.Receipts, payload.ReceiptMetaData)
+	if err != nil {
+		return nil, err
 	}
 
 	// Process and publish state leafs
-	stateNodeCids, stateErr := pub.publishStateNodes(payload.StateNodes)
-	if stateErr != nil {
-		return nil, stateErr
+	stateNodeCids, err := pub.publishStateNodes(payload.StateNodes)
+	if err != nil {
+		return nil, err
 	}
 
 	// Process and publish storage leafs
-	storageNodeCids, storageErr := pub.publishStorageNodes(payload.StorageNodes)
-	if storageErr != nil {
-		return nil, storageErr
+	storageNodeCids, err := pub.publishStorageNodes(payload.StorageNodes)
+	if err != nil {
+		return nil, err
 	}
 
 	// Package CIDs and their metadata into a single struct
 	return &CIDPayload{
+		TotalDifficulty: payload.TotalDifficulty.String(),
 		BlockHash:       payload.BlockHash,
 		BlockNumber:     payload.BlockNumber.String(),
 		HeaderCID:       headerCid,

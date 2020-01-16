@@ -19,7 +19,6 @@ package super_node_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
@@ -45,14 +44,18 @@ var _ = Describe("Repository", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
 			err = repo.Index(mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			pgStr := `SELECT cid FROM header_cids
+			pgStr := `SELECT cid, td FROM header_cids
 				WHERE block_number = $1 AND uncle IS FALSE`
 			// check header was properly indexed
-			headers := make([]string, 0)
-			err = db.Select(&headers, pgStr, 1)
+			type res struct {
+				CID string
+				TD  string
+			}
+			headers := new(res)
+			err = db.QueryRowx(pgStr, 1).StructScan(headers)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(headers)).To(Equal(1))
-			Expect(headers[0]).To(Equal("mockHeaderCID"))
+			Expect(headers.CID).To(Equal("mockHeaderCID"))
+			Expect(headers.TD).To(Equal("1337"))
 			// check trxs were properly indexed
 			trxs := make([]string, 0)
 			pgStr = `SELECT transaction_cids.cid FROM transaction_cids INNER JOIN header_cids ON (transaction_cids.header_id = header_cids.id)

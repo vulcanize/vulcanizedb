@@ -18,6 +18,7 @@ package repositories
 
 import (
 	"database/sql"
+
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"

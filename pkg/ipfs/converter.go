@@ -45,17 +45,18 @@ func NewPayloadConverter(chainConfig *params.ChainConfig) *Converter {
 func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	// Unpack block rlp to access fields
 	block := new(types.Block)
-	decodeErr := rlp.DecodeBytes(payload.BlockRlp, block)
-	if decodeErr != nil {
-		return nil, decodeErr
+	err := rlp.DecodeBytes(payload.BlockRlp, block)
+	if err != nil {
+		return nil, err
 	}
 	header := block.Header()
-	headerRlp, encodeErr := rlp.EncodeToBytes(header)
-	if encodeErr != nil {
-		return nil, encodeErr
+	headerRlp, err := rlp.EncodeToBytes(header)
+	if err != nil {
+		return nil, err
 	}
 	trxLen := len(block.Transactions())
 	convertedPayload := &IPLDPayload{
+		TotalDifficulty: payload.TotalDifficulty,
 		BlockHash:       block.Hash(),
 		BlockNumber:     block.Number(),
 		HeaderRLP:       headerRlp,
@@ -70,9 +71,9 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 	transactions := block.Transactions()
 	for _, trx := range transactions {
 		// Extract to and from data from the the transactions for indexing
-		from, senderErr := types.Sender(signer, trx)
-		if senderErr != nil {
-			return nil, senderErr
+		from, err := types.Sender(signer, trx)
+		if err != nil {
+			return nil, err
 		}
 		txMeta := &TrxMetaData{
 			Dst: handleNullAddr(trx.To()),
@@ -84,14 +85,12 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 
 	// Decode receipts for this block
 	receipts := make(types.Receipts, 0)
-	decodeErr = rlp.DecodeBytes(payload.ReceiptsRlp, &receipts)
-	if decodeErr != nil {
-		return nil, decodeErr
+	if err := rlp.DecodeBytes(payload.ReceiptsRlp, &receipts); err != nil {
+		return nil, err
 	}
 	// Derive any missing fields
-	deriveErr := receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions())
-	if deriveErr != nil {
-		return nil, deriveErr
+	if err := receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions()); err != nil {
+		return nil, err
 	}
 	for i, receipt := range receipts {
 		// If the transaction for this receipt has a "to" address, the above DeriveFields() fails to assign it to the receipt's ContractAddress
@@ -118,9 +117,8 @@ func (pc *Converter) Convert(payload statediff.Payload) (*IPLDPayload, error) {
 
 	// Unpack state diff rlp to access fields
 	stateDiff := new(statediff.StateDiff)
-	decodeErr = rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
-	if decodeErr != nil {
-		return nil, decodeErr
+	if err = rlp.DecodeBytes(payload.StateDiffRlp, stateDiff); err != nil {
+		return nil, err
 	}
 	for _, createdAccount := range stateDiff.CreatedAccounts {
 		hashKey := common.BytesToHash(createdAccount.Key)

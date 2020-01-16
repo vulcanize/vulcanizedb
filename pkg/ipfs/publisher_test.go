@@ -63,6 +63,7 @@ var _ = Describe("Publisher", func() {
 			}
 			cidPayload, err := publisher.Publish(mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(cidPayload.TotalDifficulty).To(Equal(mocks.MockIPLDPayload.TotalDifficulty.String()))
 			Expect(cidPayload.BlockNumber).To(Equal(mocks.MockCIDPayload.BlockNumber))
 			Expect(cidPayload.BlockHash).To(Equal(mocks.MockCIDPayload.BlockHash))
 			Expect(cidPayload.UncleCIDs).To(Equal(mocks.MockCIDPayload.UncleCIDs))

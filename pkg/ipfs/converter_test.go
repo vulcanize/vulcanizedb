@@ -36,6 +36,7 @@ var _ = Describe("Converter", func() {
 			Expect(converterPayload.BlockHash).To(Equal(mocks.MockBlock.Hash()))
 			Expect(converterPayload.StateNodes).To(Equal(mocks.MockStateNodes))
 			Expect(converterPayload.StorageNodes).To(Equal(mocks.MockStorageNodes))
+			Expect(converterPayload.TotalDifficulty.Int64()).To(Equal(mocks.MockStateDiffPayload.TotalDifficulty.Int64()))
 			gotBody, err := rlp.EncodeToBytes(converterPayload.BlockBody)
 			Expect(err).ToNot(HaveOccurred())
 			expectedBody, err := rlp.EncodeToBytes(mocks.MockBlock.Body())

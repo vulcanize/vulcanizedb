@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.10
--- Dumped by pg_dump version 11.5
+-- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,8 +17,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: addresses; Type: TABLE; Schema: public; Owner: -
@@ -316,7 +314,8 @@ CREATE TABLE public.header_cids (
     block_number bigint NOT NULL,
     block_hash character varying(66) NOT NULL,
     cid text NOT NULL,
-    uncle boolean NOT NULL
+    uncle boolean NOT NULL,
+    td bigint NOT NULL
 );
 
 

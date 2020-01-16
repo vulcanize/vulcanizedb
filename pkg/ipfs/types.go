@@ -49,6 +49,7 @@ type IPLDWrapper struct {
 // IPLDPayload is a custom type which packages raw ETH data for the IPFS publisher
 type IPLDPayload struct {
 	HeaderRLP       []byte
+	TotalDifficulty *big.Int
 	BlockNumber     *big.Int
 	BlockHash       common.Hash
 	BlockBody       *types.Body
@@ -76,6 +77,7 @@ type StorageNode struct {
 type CIDPayload struct {
 	BlockNumber     string
 	BlockHash       common.Hash
+	TotalDifficulty string
 	HeaderCID       string
 	UncleCIDs       map[common.Hash]string
 	TransactionCIDs map[common.Hash]*TrxMetaData

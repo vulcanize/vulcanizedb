@@ -161,17 +161,19 @@ var (
 
 	// aggregate payloads
 	MockStateDiffPayload = statediff.Payload{
-		BlockRlp:     MockBlockRlp,
-		StateDiffRlp: MockStateDiffBytes,
-		ReceiptsRlp:  ReceiptsRlp,
+		BlockRlp:        MockBlockRlp,
+		StateDiffRlp:    MockStateDiffBytes,
+		ReceiptsRlp:     ReceiptsRlp,
+		TotalDifficulty: big.NewInt(1337),
 	}
 
 	MockIPLDPayload = &ipfs.IPLDPayload{
-		BlockNumber: big.NewInt(1),
-		BlockHash:   MockBlock.Hash(),
-		Receipts:    MockReceipts,
-		HeaderRLP:   MockHeaderRlp,
-		BlockBody:   MockBlock.Body(),
+		TotalDifficulty: big.NewInt(1337),
+		BlockNumber:     big.NewInt(1),
+		BlockHash:       MockBlock.Hash(),
+		Receipts:        MockReceipts,
+		HeaderRLP:       MockHeaderRlp,
+		BlockBody:       MockBlock.Body(),
 		TrxMetaData: []*ipfs.TrxMetaData{
 			{
 				CID: "",
@@ -205,10 +207,11 @@ var (
 	}
 
 	MockCIDPayload = &ipfs.CIDPayload{
-		BlockNumber: "1",
-		BlockHash:   MockBlock.Hash(),
-		HeaderCID:   "mockHeaderCID",
-		UncleCIDs:   make(map[common.Hash]string),
+		TotalDifficulty: "1337",
+		BlockNumber:     "1",
+		BlockHash:       MockBlock.Hash(),
+		HeaderCID:       "mockHeaderCID",
+		UncleCIDs:       make(map[common.Hash]string),
 		TransactionCIDs: map[common.Hash]*ipfs.TrxMetaData{
 			MockTransactions[0].Hash(): {
 				CID: "mockTrxCID1",
