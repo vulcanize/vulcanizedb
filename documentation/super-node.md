@@ -328,9 +328,12 @@ not send any transactions to the subscriber; `src` and `dst` are string arrays w
 if they have any addresses then the super-node will only send transactions that were sent or received by the addresses contained
 in `src` and `dst`, respectively.
 
-`subscription.receiptFilter` has two sub-options: `off` and `topics`. Setting `off` to true tells the super-node to
+`subscription.receiptFilter` has four sub-options: `off`, `topics`, `contracts` and `matchTxs`. Setting `off` to true tells the super-node to
 not send any receipts to the subscriber; `topic0s` is a string array which can be filled with event topics we want to filter for,
-if it has any topics then the super-node will only send receipts that contain logs which have that topic0.
+if it has any topics then the super-node will only send receipts that contain logs which have that topic0. Similarly, `contracts` is
+a string array which can be filled with contract addresses we want to filter for, if it contains any contract addresses the super-node will
+only send receipts that correspond to one of those contracts. `matchTrxs` is a bool which when set to true any receipts that correspond to filtered for
+transactions will be sent by the super-node, regardless of whether or not the receipt satisfies the `topics` or `contracts` filters.
 
 `subscription.stateFilter` has three sub-options: `off`, `addresses`, and `intermediateNodes`. Setting `off` to true tells the super-node to
 not send any state data to the subscriber; `addresses` is a string array which can be filled with ETH addresses we want to filter state for,

@@ -312,6 +312,7 @@ var (
 	MockSeeNodePayload = streamer.SuperNodePayload{
 		BlockNumber:     big.NewInt(1),
 		HeadersRlp:      [][]byte{MockHeaderRlp},
+		UnclesRlp:       [][]byte{},
 		TransactionsRlp: [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
 		ReceiptsRlp:     [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
 		StateNodesRlp: map[common.Hash][]byte{

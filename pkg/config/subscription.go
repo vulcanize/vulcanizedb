@@ -44,6 +44,7 @@ type TrxFilter struct {
 
 type ReceiptFilter struct {
 	Off       bool
+	MatchTxs  bool // turn on to retrieve receipts that pair with retrieved transactions
 	Contracts []string
 	Topic0s   []string
 }

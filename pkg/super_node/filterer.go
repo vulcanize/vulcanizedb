@@ -43,35 +43,35 @@ func NewResponseFilterer() *Filterer {
 
 // FilterResponse is used to filter through eth data to extract and package requested data into a Payload
 func (s *Filterer) FilterResponse(streamFilters config.Subscription, payload ipfs.IPLDPayload) (streamer.SuperNodePayload, error) {
-	response := new(streamer.SuperNodePayload)
-	headersErr := s.filterHeaders(streamFilters, response, payload)
-	if headersErr != nil {
-		return streamer.SuperNodePayload{}, headersErr
+	if checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+		response := new(streamer.SuperNodePayload)
+		if err := s.filterHeaders(streamFilters.HeaderFilter, response, payload); err != nil {
+			return streamer.SuperNodePayload{}, err
+		}
+		txHashes, err := s.filterTransactions(streamFilters.TrxFilter, response, payload)
+		if err != nil {
+			return streamer.SuperNodePayload{}, err
+		}
+		if err := s.filerReceipts(streamFilters.ReceiptFilter, response, payload, txHashes); err != nil {
+			return streamer.SuperNodePayload{}, err
+		}
+		if err := s.filterState(streamFilters.StateFilter, response, payload); err != nil {
+			return streamer.SuperNodePayload{}, err
+		}
+		if err := s.filterStorage(streamFilters.StorageFilter, response, payload); err != nil {
+			return streamer.SuperNodePayload{}, err
+		}
+		response.BlockNumber = payload.BlockNumber
+		return *response, nil
 	}
-	txHashes, trxsErr := s.filterTransactions(streamFilters, response, payload)
-	if trxsErr != nil {
-		return streamer.SuperNodePayload{}, trxsErr
-	}
-	rctsErr := s.filerReceipts(streamFilters, response, payload, txHashes)
-	if rctsErr != nil {
-		return streamer.SuperNodePayload{}, rctsErr
-	}
-	stateErr := s.filterState(streamFilters, response, payload)
-	if stateErr != nil {
-		return streamer.SuperNodePayload{}, stateErr
-	}
-	storageErr := s.filterStorage(streamFilters, response, payload)
-	if storageErr != nil {
-		return streamer.SuperNodePayload{}, storageErr
-	}
-	response.BlockNumber = payload.BlockNumber
-	return *response, nil
+	return streamer.SuperNodePayload{}, nil
 }
 
-func (s *Filterer) filterHeaders(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
-	if !streamFilters.HeaderFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+func (s *Filterer) filterHeaders(headerFilter config.HeaderFilter, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
+	if !headerFilter.Off {
 		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
-		if streamFilters.HeaderFilter.Uncles {
+		if headerFilter.Uncles {
+			response.UnclesRlp = make([][]byte, 0, len(payload.BlockBody.Uncles))
 			for _, uncle := range payload.BlockBody.Uncles {
 				uncleRlp, err := rlp.EncodeToBytes(uncle)
 				if err != nil {
@@ -91,11 +91,11 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *Filterer) filterTransactions(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) ([]common.Hash, error) {
+func (s *Filterer) filterTransactions(trxFilter config.TrxFilter, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) ([]common.Hash, error) {
 	trxHashes := make([]common.Hash, 0, len(payload.BlockBody.Transactions))
-	if !streamFilters.TrxFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+	if !trxFilter.Off {
 		for i, trx := range payload.BlockBody.Transactions {
-			if checkTransactions(streamFilters.TrxFilter.Src, streamFilters.TrxFilter.Dst, payload.TrxMetaData[i].Src, payload.TrxMetaData[i].Dst) {
+			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TrxMetaData[i].Src, payload.TrxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				err := trx.EncodeRLP(trxBuffer)
 				if err != nil {
@@ -127,10 +127,10 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 	return false
 }
 
-func (s *Filterer) filerReceipts(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload, trxHashes []common.Hash) error {
-	if !streamFilters.ReceiptFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+func (s *Filterer) filerReceipts(receiptFilter config.ReceiptFilter, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload, trxHashes []common.Hash) error {
+	if !receiptFilter.Off {
 		for i, receipt := range payload.Receipts {
-			if checkReceipts(receipt, streamFilters.ReceiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, streamFilters.ReceiptFilter.Contracts, payload.ReceiptMetaData[i].ContractAddress, trxHashes) {
+			if checkReceipts(receipt, receiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, receiptFilter.Contracts, payload.ReceiptMetaData[i].ContractAddress, trxHashes, receiptFilter.MatchTxs) {
 				receiptForStorage := (*types.ReceiptForStorage)(receipt)
 				receiptBuffer := new(bytes.Buffer)
 				err := receiptForStorage.EncodeRLP(receiptBuffer)
@@ -144,15 +144,17 @@ func (s *Filterer) filerReceipts(streamFilters config.Subscription, response *st
 	return nil
 }
 
-func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash) bool {
-	// If we aren't filtering for any topics or contracts, all topics are a go
-	if len(wantedTopics) == 0 && len(wantedContracts) == 0 {
+func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash, matchTxs bool) bool {
+	// If we aren't filtering for any topics, contracts, or corresponding trxs then all receipts are a go
+	if len(wantedTopics) == 0 && len(wantedContracts) == 0 && (len(wantedTrxHashes) == 0 || !matchTxs) {
 		return true
 	}
-	// No matter what filters we have, we keep receipts for the trxs we are interested in
-	for _, wantedTrxHash := range wantedTrxHashes {
-		if bytes.Equal(wantedTrxHash.Bytes(), rct.TxHash.Bytes()) {
-			return true
+	// No matter what filters we have, we keep receipts for specific trxs we are interested in
+	if matchTxs {
+		for _, wantedTrxHash := range wantedTrxHashes {
+			if bytes.Equal(wantedTrxHash.Bytes(), rct.TxHash.Bytes()) {
+				return true
+			}
 		}
 	}
 
@@ -165,7 +167,7 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 				}
 			}
 		}
-	} else { // We keep receipts that belong to one of the specified contracts and have logs with topics if we aren't filtering on topics
+	} else { // We keep all receipts that belong to one of the specified contracts if we aren't filtering on topics
 		for _, wantedContract := range wantedContracts {
 			if wantedContract == actualContract {
 				if len(wantedTopics) == 0 {
@@ -186,17 +188,17 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContrac
 	return false
 }
 
-func (s *Filterer) filterState(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
-	if !streamFilters.StateFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+func (s *Filterer) filterState(stateFilter config.StateFilter, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
+	if !stateFilter.Off {
 		response.StateNodesRlp = make(map[common.Hash][]byte)
-		keyFilters := make([]common.Hash, 0, len(streamFilters.StateFilter.Addresses))
-		for _, addr := range streamFilters.StateFilter.Addresses {
+		keyFilters := make([]common.Hash, 0, len(stateFilter.Addresses))
+		for _, addr := range stateFilter.Addresses {
 			keyFilter := ipfs.AddressToKey(common.HexToAddress(addr))
 			keyFilters = append(keyFilters, keyFilter)
 		}
 		for key, stateNode := range payload.StateNodes {
 			if checkNodeKeys(keyFilters, key) {
-				if stateNode.Leaf || streamFilters.StateFilter.IntermediateNodes {
+				if stateNode.Leaf || stateFilter.IntermediateNodes {
 					response.StateNodesRlp[key] = stateNode.Value
 				}
 			}
@@ -218,16 +220,16 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *Filterer) filterStorage(streamFilters config.Subscription, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
-	if !streamFilters.StorageFilter.Off && checkRange(streamFilters.StartingBlock.Int64(), streamFilters.EndingBlock.Int64(), payload.BlockNumber.Int64()) {
+func (s *Filterer) filterStorage(storageFilter config.StorageFilter, response *streamer.SuperNodePayload, payload ipfs.IPLDPayload) error {
+	if !storageFilter.Off {
 		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
-		stateKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.Addresses))
-		for _, addr := range streamFilters.StorageFilter.Addresses {
+		stateKeyFilters := make([]common.Hash, 0, len(storageFilter.Addresses))
+		for _, addr := range storageFilter.Addresses {
 			keyFilter := ipfs.AddressToKey(common.HexToAddress(addr))
 			stateKeyFilters = append(stateKeyFilters, keyFilter)
 		}
-		storageKeyFilters := make([]common.Hash, 0, len(streamFilters.StorageFilter.StorageKeys))
-		for _, store := range streamFilters.StorageFilter.StorageKeys {
+		storageKeyFilters := make([]common.Hash, 0, len(storageFilter.StorageKeys))
+		for _, store := range storageFilter.StorageKeys {
 			keyFilter := ipfs.HexToKey(store)
 			storageKeyFilters = append(storageKeyFilters, keyFilter)
 		}

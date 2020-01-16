@@ -46,7 +46,8 @@ var _ = Describe("Filterer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeeNodePayload.BlockNumber.Int64()))
 			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeeNodePayload.HeadersRlp))
-			Expect(superNodePayload.UnclesRlp).To(Equal(mocks.MockSeeNodePayload.UnclesRlp))
+			var unclesRlp [][]byte
+			Expect(superNodePayload.UnclesRlp).To(Equal(unclesRlp))
 			Expect(len(superNodePayload.TransactionsRlp)).To(Equal(2))
 			Expect(super_node.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
 			Expect(super_node.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
