@@ -22,8 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
@@ -35,47 +33,47 @@ const APIVersion = "0.0.1"
 
 // PublicSuperNodeAPI is the public api for the super node
 type PublicSuperNodeAPI struct {
-	sni NodeInterface
+	sn SuperNode
 }
 
 // NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSuperNodeAPI(superNodeInterface NodeInterface) *PublicSuperNodeAPI {
+func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
 	return &PublicSuperNodeAPI{
-		sni: superNodeInterface,
+		sn: superNodeInterface,
 	}
 }
 
-// Stream is the public method to setup a subscription that fires off SyncPublishScreenAndServe payloads as they are created
-func (api *PublicSuperNodeAPI) Stream(ctx context.Context, streamFilters config.Subscription) (*rpc.Subscription, error) {
+// Stream is the public method to setup a subscription that fires off super node payloads as they are processed
+func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params SubscriptionSettings) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
 		return nil, rpc.ErrNotificationsUnsupported
 	}
 
-	// create subscription and start waiting for statediff events
+	// create subscription and start waiting for stream events
 	rpcSub := notifier.CreateSubscription()
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan streamer.SuperNodePayload, payloadChanBufferSize)
+		payloadChannel := make(chan Payload, PayloadChanBufferSize)
 		quitChan := make(chan bool, 1)
-		go api.sni.Subscribe(rpcSub.ID, payloadChannel, quitChan, streamFilters)
+		go api.sn.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
 
-		// loop and await state diff payloads and relay them to the subscriber with then notifier
+		// loop and await payloads and relay them to the subscriber using notifier
 		for {
 			select {
 			case packet := <-payloadChannel:
-				if notifyErr := notifier.Notify(rpcSub.ID, packet); notifyErr != nil {
-					log.Error("Failed to send state diff packet", "err", notifyErr)
-					api.sni.Unsubscribe(rpcSub.ID)
+				if err := notifier.Notify(rpcSub.ID, packet); err != nil {
+					log.Error("Failed to send super node packet", "err", err)
+					api.sn.Unsubscribe(rpcSub.ID)
 					return
 				}
 			case <-rpcSub.Err():
-				api.sni.Unsubscribe(rpcSub.ID)
+				api.sn.Unsubscribe(rpcSub.ID)
 				return
 			case <-quitChan:
-				// don't need to unsubscribe, SyncPublishScreenAndServe service does so before sending the quit signal
+				// don't need to unsubscribe to super node, the service does so before sending the quit signal this way
 				return
 			}
 		}
@@ -84,7 +82,7 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, streamFilters config.
 	return rpcSub, nil
 }
 
-// Node is a public rpc method to allow transformers to fetch the Geth node info for the super node
+// Node is a public rpc method to allow transformers to fetch the node info for the super node
 func (api *PublicSuperNodeAPI) Node() core.Node {
-	return api.sni.Node()
+	return api.sn.Node()
 }

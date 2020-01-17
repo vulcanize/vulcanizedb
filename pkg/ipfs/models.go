@@ -14,18 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package ipfs
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-)
-
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+type IPLDModel struct {
+	Key  string `db:"key"`
+	Data []byte `db:"data"`
 }
-
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer

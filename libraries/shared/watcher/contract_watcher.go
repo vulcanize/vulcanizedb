@@ -22,6 +22,7 @@ package watcher
 
 import (
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"

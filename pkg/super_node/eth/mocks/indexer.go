@@ -14,18 +14,26 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"fmt"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+// CIDIndexer is the underlying struct for the Indexer interface
+type CIDIndexer struct {
+	PassedCIDPayload []*eth.CIDPayload
+	ReturnErr        error
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+// Index indexes a cidPayload in Postgres
+func (repo *CIDIndexer) Index(cids interface{}) error {
+	cidPayload, ok := cids.(*eth.CIDPayload)
+	if !ok {
+		return fmt.Errorf("index expected cids type %T got %T", &eth.CIDPayload{}, cids)
+	}
+	repo.PassedCIDPayload = append(repo.PassedCIDPayload, cidPayload)
+	return repo.ReturnErr
+}

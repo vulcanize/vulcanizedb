@@ -1,3 +1,19 @@
+// VulcanizeDB
+// Copyright © 2019 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package eth
 
 import (
@@ -6,16 +22,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/hashicorp/golang-lru"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 var (
@@ -23,8 +36,8 @@ var (
 )
 
 type Backend struct {
-	retriever super_node.CIDRetriever
-	fetcher   ipfs.IPLDFetcher
+	retriever *CIDRetriever
+	fetcher   *IPLDFetcher
 	db        *postgres.DB
 
 	headerCache *lru.Cache // Cache for the most recent block headers
@@ -32,12 +45,17 @@ type Backend struct {
 	numberCache *lru.Cache // Cache for the most recent block numbers
 }
 
-func NewEthBackend(r super_node.CIDRetriever, f ipfs.IPLDFetcher) *Backend {
+func NewEthBackend(db *postgres.DB, ipfsPath string) (*Backend, error) {
+	r := NewCIDRetriever(db)
+	f, err := NewIPLDFetcher(ipfsPath)
+	if err != nil {
+		return nil, err
+	}
 	return &Backend{
 		retriever: r,
 		fetcher:   f,
 		db:        r.Database(),
-	}
+	}, nil
 }
 
 func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumber) (*types.Header, error) {

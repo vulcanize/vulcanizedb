@@ -14,18 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package eth_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"io/ioutil"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+func TestETHSuperNode(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Super Node ETH Suite Test")
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})

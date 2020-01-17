@@ -14,18 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package super_node
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-)
+import log "github.com/sirupsen/logrus"
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+func sendNonBlockingErr(sub Subscription, err error) {
+	log.Error(err)
+	select {
+	case sub.PayloadChan <- Payload{nil, err.Error()}:
+	default:
+		log.Infof("unable to send error to subscription %s", sub.ID)
+	}
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+func sendNonBlockingQuit(sub Subscription) {
+	select {
+	case sub.QuitChan <- true:
+		log.Infof("closing subscription %s", sub.ID)
+	default:
+		log.Infof("unable to close subscription %s; channel has no receiver", sub.ID)
+	}
+}

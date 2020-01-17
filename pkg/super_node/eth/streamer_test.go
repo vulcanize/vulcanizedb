@@ -12,25 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package streamer_test
+package eth_test
 
 import (
-	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
 	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
 var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
 		client := &fakes.MockRPCClient{}
-		streamer := streamer.NewStateDiffStreamer(client)
-		payloadChan := make(chan statediff.Payload)
+		streamer := eth.NewPayloadStreamer(client)
+		payloadChan := make(chan interface{})
 		_, err := streamer.Stream(payloadChan)
 		Expect(err).NotTo(HaveOccurred())
-
 		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream"})
 	})
 })

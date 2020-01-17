@@ -34,13 +34,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
+	config2 "github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 )
 
 var (
 	cfgFile              string
 	databaseConfig       config.Database
 	genConfig            config.Plugin
-	subscriptionConfig   config.Subscription
+	subscriptionConfig   *config2.EthSubscription
 	ipc                  string
 	levelDbPath          string
 	queueRecheckInterval time.Duration

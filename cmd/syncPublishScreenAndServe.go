@@ -21,8 +21,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // syncPublishScreenAndServeCmd represents the syncPublishScreenAndServe command
@@ -52,7 +50,7 @@ func syncPublishScreenAndServe() {
 	}
 
 	wg := &syn.WaitGroup{}
-	forwardPayloadChan := make(chan ipfs.IPLDPayload, 20000)
+	forwardPayloadChan := make(chan interface{}, 20000)
 	forwardQuitChan := make(chan bool, 1)
 	syncAndPubErr := superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan)
 	if syncAndPubErr != nil {

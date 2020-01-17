@@ -14,18 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/statediff"
 )
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+// StateDiffStreamer is the underlying struct for the Streamer interface
+type StateDiffStreamer struct {
+	PassedPayloadChan chan interface{}
+	ReturnSub         *rpc.ClientSubscription
+	ReturnErr         error
+	StreamPayloads    []statediff.Payload
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+// Stream is the main loop for subscribing to data from the Geth state diff process
+func (sds *StateDiffStreamer) Stream(payloadChan chan interface{}) (*rpc.ClientSubscription, error) {
+	sds.PassedPayloadChan = payloadChan
+
+	go func() {
+		for _, payload := range sds.StreamPayloads {
+			sds.PassedPayloadChan <- payload
+		}
+	}()
+
+	return sds.ReturnSub, sds.ReturnErr
+}

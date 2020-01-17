@@ -14,18 +14,45 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package config
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"errors"
+	"strings"
 )
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+// ChainType enum for specifying blockchain
+type ChainType int
+
+const (
+	Unknown ChainType = iota
+	Ethereum
+	Bitcoin
+	Omni
+)
+
+func (c ChainType) String() string {
+	switch c {
+	case Ethereum:
+		return "Ethereum"
+	case Bitcoin:
+		return "Bitcoin"
+	case Omni:
+		return "Omni"
+	default:
+		return ""
+	}
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+func NewChainType(name string) (ChainType, error) {
+	switch strings.ToLower(name) {
+	case "ethereum", "eth":
+		return Ethereum, nil
+	case "bitcoin", "btc", "xbt":
+		return Bitcoin, nil
+	case "omni":
+		return Omni, nil
+	default:
+		return Unknown, errors.New("invalid name for chain")
+	}
+}

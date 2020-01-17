@@ -33,6 +33,7 @@ import (
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -107,7 +108,7 @@ func newSuperNode() (super_node.NodeInterface, error) {
 	if workers < 1 {
 		workers = 1
 	}
-	return super_node.NewSuperNode(ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
+	return super_node.NewSuperNode(config.Ethereum, ipfsPath, &db, rpcClient, quitChan, workers, blockChain.Node())
 }
 
 func newBackFiller() (super_node.BackFillInterface, error) {
@@ -120,5 +121,5 @@ func newBackFiller() (super_node.BackFillInterface, error) {
 	} else {
 		frequency = time.Duration(freq)
 	}
-	return super_node.NewBackFillService(ipfsPath, &db, archivalRPCClient, time.Minute*frequency, super_node.DefaultMaxBatchSize)
+	return super_node.NewBackFillService(config.Ethereum, ipfsPath, &db, archivalRPCClient, time.Minute*frequency, super_node.DefaultMaxBatchSize)
 }

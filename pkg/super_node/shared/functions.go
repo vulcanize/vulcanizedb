@@ -14,18 +14,36 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package shared
 
-import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-)
+import "bytes"
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+// ListContainsString used to check if a list of strings contains a particular string
+func ListContainsString(sss []string, s string) bool {
+	for _, str := range sss {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+// ListContainsBytes used to check if a list of byte arrays contains a particular byte array
+func ListContainsBytes(bbb [][]byte, b []byte) bool {
+	for _, by := range bbb {
+		if bytes.Equal(by, b) {
+			return true
+		}
+	}
+	return false
+}
+
+// ListContainsGap used to check if a list of Gaps contains a particular Gap
+func ListContainsGap(gapList []Gap, gap Gap) bool {
+	for _, listGap := range gapList {
+		if listGap == gap {
+			return true
+		}
+	}
+	return false
+}

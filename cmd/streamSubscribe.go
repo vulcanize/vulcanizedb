@@ -30,9 +30,11 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
 // streamSubscribeCmd represents the streamSubscribe command
@@ -61,10 +63,10 @@ func streamSubscribe() {
 	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan streamer.SuperNodePayload, 20000)
+	payloadChan := make(chan super_node.Payload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
-	sub, err := str.Stream(payloadChan, subscriptionConfig)
+	sub, err := str.StreamETH(payloadChan, subscriptionConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
@@ -73,11 +75,16 @@ func streamSubscribe() {
 	for {
 		select {
 		case payload := <-payloadChan:
-			if payload.ErrMsg != "" {
-				logWithCommand.Error(payload.ErrMsg)
+			if payload.Err != "" {
+				logWithCommand.Error(payload.Err)
 				continue
 			}
-			for _, headerRlp := range payload.HeadersRlp {
+			data, ok := payload.Data.(eth.StreamPayload)
+			if !ok {
+				logWithCommand.Warnf("payload data expected type %T got %T", eth.StreamPayload{}, payload.Data)
+				continue
+			}
+			for _, headerRlp := range data.HeadersRlp {
 				var header types.Header
 				err = rlp.Decode(bytes.NewBuffer(headerRlp), &header)
 				if err != nil {
@@ -87,7 +94,7 @@ func streamSubscribe() {
 				fmt.Printf("Header number %d, hash %s\n", header.Number.Int64(), header.Hash().Hex())
 				fmt.Printf("header: %v\n", header)
 			}
-			for _, trxRlp := range payload.TransactionsRlp {
+			for _, trxRlp := range data.TransactionsRlp {
 				var trx types.Transaction
 				buff := bytes.NewBuffer(trxRlp)
 				stream := rlp.NewStream(buff, 0)
@@ -99,7 +106,7 @@ func streamSubscribe() {
 				fmt.Printf("Transaction with hash %s\n", trx.Hash().Hex())
 				fmt.Printf("trx: %v\n", trx)
 			}
-			for _, rctRlp := range payload.ReceiptsRlp {
+			for _, rctRlp := range data.ReceiptsRlp {
 				var rct types.ReceiptForStorage
 				buff := bytes.NewBuffer(rctRlp)
 				stream := rlp.NewStream(buff, 0)
@@ -121,7 +128,7 @@ func streamSubscribe() {
 				}
 			}
 			// This assumes leafs only
-			for key, stateRlp := range payload.StateNodesRlp {
+			for key, stateRlp := range data.StateNodesRlp {
 				var acct state.Account
 				err = rlp.Decode(bytes.NewBuffer(stateRlp), &acct)
 				if err != nil {
@@ -132,7 +139,7 @@ func streamSubscribe() {
 					key.Hex(), acct.Root.Hex(), acct.Balance.Int64())
 				fmt.Printf("state account: %v\n", acct)
 			}
-			for stateKey, mappedRlp := range payload.StorageNodesRlp {
+			for stateKey, mappedRlp := range data.StorageNodesRlp {
 				fmt.Printf("Storage for state key %s ", stateKey.Hex())
 				for storageKey, storageRlp := range mappedRlp {
 					fmt.Printf("with storage key %s\n", storageKey.Hex())
@@ -165,15 +172,15 @@ func streamSubscribe() {
 
 func configureSubscription() {
 	logWithCommand.Info("loading subscription config")
-	subscriptionConfig = config.Subscription{
+	subscriptionConfig = &config.EthSubscription{
 		// Below default to false, which means we do not backfill by default
 		BackFill:     viper.GetBool("subscription.backfill"),
 		BackFillOnly: viper.GetBool("subscription.backfillOnly"),
 
 		// Below default to 0
 		// 0 start means we start at the beginning and 0 end means we continue indefinitely
-		StartingBlock: big.NewInt(viper.GetInt64("subscription.startingBlock")),
-		EndingBlock:   big.NewInt(viper.GetInt64("subscription.endingBlock")),
+		Start: big.NewInt(viper.GetInt64("subscription.startingBlock")),
+		End:   big.NewInt(viper.GetInt64("subscription.endingBlock")),
 
 		// Below default to false, which means we get all headers by default
 		HeaderFilter: config.HeaderFilter{

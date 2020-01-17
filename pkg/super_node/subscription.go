@@ -17,11 +17,35 @@
 package super_node
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 )
 
 // Subscription holds the information for an individual client subscription to the super node
 type Subscription struct {
-	PayloadChan chan<- streamer.SuperNodePayload
+	ID          rpc.ID
+	PayloadChan chan<- Payload
 	QuitChan    chan<- bool
+}
+
+// Payload is the struct for a super node stream payload
+// It carries data of a type specific to the chain being supported/queried and an error message
+type Payload struct {
+	Data interface{} `json:"data"` // e.g. for Ethereum eth.StreamPayload
+	Err  string      `json:"err"`
+}
+
+// SubscriptionSettings is the interface every subscription filter type needs to satisfy, no matter the chain
+// Further specifics of the underlying filter type depend on the internal needs of the types
+// which satisfy the ResponseFilterer and CIDRetriever interfaces for a specific chain
+// The underlying type needs to be rlp serializable
+type SubscriptionSettings interface {
+	StartingBlock() *big.Int
+	EndingBlock() *big.Int
+	ChainType() config.ChainType
+	HistoricalData() bool
+	HistoricalDataOnly() bool
 }

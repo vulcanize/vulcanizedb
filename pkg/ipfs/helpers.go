@@ -19,8 +19,6 @@ package ipfs
 import (
 	"context"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/plugin/loader"
@@ -57,23 +55,4 @@ func InitIPFSBlockService(ipfsPath string) (blockservice.BlockService, error) {
 		return nil, newNodeErr
 	}
 	return ipfsNode.Blocks, nil
-}
-
-// AddressToKey hashes an address
-func AddressToKey(address common.Address) common.Hash {
-	return crypto.Keccak256Hash(address[:])
-}
-
-// HexToKey hashes a hex (0x leading or not) string
-func HexToKey(hex string) common.Hash {
-	addr := common.FromHex(hex)
-	return crypto.Keccak256Hash(addr[:])
-}
-
-// EmptyCIDWrapper returns whether or not the provided CIDWrapper has any Cids we need to process
-func EmptyCIDWrapper(cids CIDWrapper) bool {
-	if len(cids.Transactions) > 0 || len(cids.Headers) > 0 || len(cids.Uncles) > 0 || len(cids.Receipts) > 0 || len(cids.StateNodes) > 0 || len(cids.StorageNodes) > 0 {
-		return false
-	}
-	return true
 }

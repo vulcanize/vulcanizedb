@@ -14,18 +14,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package transformer
+package eth
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
-type SuperNodeTransformer interface {
-	Init() error
-	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+// AddressToKey hashes an address
+func AddressToKey(address common.Address) common.Hash {
+	return crypto.Keccak256Hash(address[:])
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+// HexToKey hashes a hex (0x leading or not) string
+func HexToKey(hex string) common.Hash {
+	addr := common.FromHex(hex)
+	return crypto.Keccak256Hash(addr[:])
+}

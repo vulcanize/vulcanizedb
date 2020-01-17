@@ -313,9 +313,10 @@ CREATE TABLE public.header_cids (
     id integer NOT NULL,
     block_number bigint NOT NULL,
     block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
     uncle boolean NOT NULL,
-    td bigint NOT NULL
+    td bigint
 );
 
 

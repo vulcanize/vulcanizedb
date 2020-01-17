@@ -18,19 +18,15 @@
 package streamer
 
 import (
-	"encoding/json"
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 // ISuperNodeStreamer is the interface for streaming SuperNodePayloads from a vulcanizeDB super node
 type ISuperNodeStreamer interface {
-	Stream(payloadChan chan SuperNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error)
+	Stream(payloadChan chan super_node.Payload, params super_node.SubscriptionSettings) (*rpc.ClientSubscription, error)
 }
 
 // SuperNodeStreamer is the underlying struct for the ISuperNodeStreamer interface
@@ -46,39 +42,6 @@ func NewSuperNodeStreamer(client core.RPCClient) *SuperNodeStreamer {
 }
 
 // Stream is the main loop for subscribing to data from a vulcanizedb super node
-func (sds *SuperNodeStreamer) Stream(payloadChan chan SuperNodePayload, streamFilters config.Subscription) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("vdb", payloadChan, "stream", streamFilters)
-}
-
-// Payload holds the data returned from the super node to the requesting client
-type SuperNodePayload struct {
-	BlockNumber     *big.Int                               `json:"blockNumber"`
-	HeadersRlp      [][]byte                               `json:"headersRlp"`
-	UnclesRlp       [][]byte                               `json:"unclesRlp"`
-	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
-	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
-	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
-	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
-	ErrMsg          string                                 `json:"errMsg"`
-
-	encoded []byte
-	err     error
-}
-
-func (sd *SuperNodePayload) ensureEncoded() {
-	if sd.encoded == nil && sd.err == nil {
-		sd.encoded, sd.err = json.Marshal(sd)
-	}
-}
-
-// Length to implement Encoder interface for StateDiff
-func (sd *SuperNodePayload) Length() int {
-	sd.ensureEncoded()
-	return len(sd.encoded)
-}
-
-// Encode to implement Encoder interface for StateDiff
-func (sd *SuperNodePayload) Encode() ([]byte, error) {
-	sd.ensureEncoded()
-	return sd.encoded, sd.err
+func (sds *SuperNodeStreamer) Stream(payloadChan chan super_node.Payload, params super_node.SubscriptionSettings) (*rpc.ClientSubscription, error) {
+	return sds.Client.Subscribe("vdb", payloadChan, "stream", params)
 }

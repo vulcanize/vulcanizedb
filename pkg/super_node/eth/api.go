@@ -1,3 +1,19 @@
+// VulcanizeDB
+// Copyright © 2019 Vulcanize
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package eth
 
 import (
@@ -9,18 +25,18 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// APIName is the namespace used for the state diffing service API
+// APIName is the namespace for the super node's eth api
 const APIName = "eth"
 
-// APIVersion is the version of the state diffing service API
+// APIVersion is the version of the super node's eth api
 const APIVersion = "0.0.1"
 
 type PublicEthAPI struct {
-	b Backend
+	b *Backend
 }
 
 // NewPublicEthAPI creates a new PublicEthAPI with the provided underlying Backend
-func NewPublicEthAPI(b Backend) *PublicEthAPI {
+func NewPublicEthAPI(b *Backend) *PublicEthAPI {
 	return &PublicEthAPI{
 		b: b,
 	}

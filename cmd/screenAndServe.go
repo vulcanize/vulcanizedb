@@ -26,10 +26,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -52,18 +52,17 @@ func init() {
 }
 
 func screenAndServe() {
-	superNode, newNodeErr := newSuperNodeWithoutPairedGethNode()
-	if newNodeErr != nil {
-		logWithCommand.Fatal(newNodeErr)
+	superNode, err := newSuperNodeWithoutPairedGethNode()
+	if err != nil {
+		logWithCommand.Fatal(err)
 	}
 	wg := &syn.WaitGroup{}
 	quitChan := make(chan bool, 1)
-	emptyPayloadChan := make(chan ipfs.IPLDPayload)
+	emptyPayloadChan := make(chan interface{})
 	superNode.ScreenAndServe(wg, emptyPayloadChan, quitChan)
 
-	serverErr := startServers(superNode)
-	if serverErr != nil {
-		logWithCommand.Fatal(serverErr)
+	if err := startServers(superNode); err != nil {
+		logWithCommand.Fatal(err)
 	}
 	wg.Wait()
 }
@@ -72,15 +71,15 @@ func startServers(superNode super_node.NodeInterface) error {
 	var ipcPath string
 	ipcPath = viper.GetString("server.ipcPath")
 	if ipcPath == "" {
-		home, homeDirErr := os.UserHomeDir()
-		if homeDirErr != nil {
-			return homeDirErr
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
 		}
 		ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
 	}
-	_, _, ipcErr := rpc.StartIPCEndpoint(ipcPath, superNode.APIs())
-	if ipcErr != nil {
-		return ipcErr
+	_, _, err := rpc.StartIPCEndpoint(ipcPath, superNode.APIs())
+	if err != nil {
+		return err
 	}
 
 	var wsEndpoint string
@@ -90,9 +89,9 @@ func startServers(superNode super_node.NodeInterface) error {
 	}
 	var exposeAll = true
 	var wsOrigins []string
-	_, _, wsErr := rpc.StartWSEndpoint(wsEndpoint, superNode.APIs(), []string{"vdb"}, wsOrigins, exposeAll)
-	if wsErr != nil {
-		return wsErr
+	_, _, err = rpc.StartWSEndpoint(wsEndpoint, superNode.APIs(), []string{"vdb"}, wsOrigins, exposeAll)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -100,27 +99,34 @@ func startServers(superNode super_node.NodeInterface) error {
 func newSuperNodeWithoutPairedGethNode() (super_node.NodeInterface, error) {
 	ipfsPath = viper.GetString("client.ipfsPath")
 	if ipfsPath == "" {
-		home, homeDirErr := os.UserHomeDir()
-		if homeDirErr != nil {
-			return nil, homeDirErr
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	ipfsInitErr := ipfs.InitIPFSPlugins()
-	if ipfsInitErr != nil {
-		return nil, ipfsInitErr
+	if err := ipfs.InitIPFSPlugins(); err != nil {
+		return nil, err
 	}
-	ipldFetcher, newFetcherErr := ipfs.NewIPLDFetcher(ipfsPath)
-	if newFetcherErr != nil {
-		return nil, newFetcherErr
+	ipldFetcher, err := super_node.NewIPLDFetcher(config.Ethereum, ipfsPath)
+	if err != nil {
+		return nil, err
 	}
 	db := utils.LoadPostgres(databaseConfig, core.Node{})
+	retriever, err := super_node.NewCIDRetriever(config.Ethereum, &db)
+	if err != nil {
+		return nil, err
+	}
+	resolver, err := super_node.NewIPLDResolver(config.Ethereum)
+	if err != nil {
+		return nil, err
+	}
 	return &super_node.Service{
 		IPLDFetcher:       ipldFetcher,
-		Retriever:         super_node.NewCIDRetriever(&db),
-		Resolver:          ipfs.NewIPLDResolver(),
+		Retriever:         retriever,
+		Resolver:          resolver,
 		Subscriptions:     make(map[common.Hash]map[rpc.ID]super_node.Subscription),
-		SubscriptionTypes: make(map[common.Hash]config.Subscription),
-		GethNode:          core.Node{},
+		SubscriptionTypes: make(map[common.Hash]super_node.SubscriptionSettings),
+		NodeInfo:          core.Node{},
 	}, nil
 }
