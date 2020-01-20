@@ -18,7 +18,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -37,26 +36,26 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
-// streamSubscribeCmd represents the streamSubscribe command
-var streamSubscribeCmd = &cobra.Command{
-	Use:   "streamSubscribe",
-	Short: "This command is used to subscribe to the super node stream with the provided filters",
+// streamEthSubscriptionCmd represents the streamEthSubscription command
+var streamEthSubscriptionCmd = &cobra.Command{
+	Use:   "streamEthSubscription",
+	Short: "This command is used to subscribe to the super node eth stream with the provided filters",
 	Long: `This command is for demo and testing purposes and is used to subscribe to the super node with the provided subscription configuration parameters.
 It does not do anything with the data streamed from the super node other than unpack it and print it out for demonstration purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
-		streamSubscribe()
+		streamEthSubscription()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(streamSubscribeCmd)
+	rootCmd.AddCommand(streamEthSubscriptionCmd)
 }
 
-func streamSubscribe() {
+func streamEthSubscription() {
 	// Prep the subscription config/filters to be sent to the server
-	configureSubscription()
+	ethSubConfig := config.NewEthSubscriptionConfig()
 
 	// Create a new rpc client and a subscription streamer with that client
 	rpcClient := getRPCClient()
@@ -66,7 +65,7 @@ func streamSubscribe() {
 	payloadChan := make(chan super_node.Payload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
-	sub, err := str.StreamETH(payloadChan, subscriptionConfig)
+	sub, err := str.Stream(payloadChan, ethSubConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
@@ -170,61 +169,8 @@ func streamSubscribe() {
 	}
 }
 
-func configureSubscription() {
-	logWithCommand.Info("loading subscription config")
-	subscriptionConfig = &config.EthSubscription{
-		// Below default to false, which means we do not backfill by default
-		BackFill:     viper.GetBool("subscription.backfill"),
-		BackFillOnly: viper.GetBool("subscription.backfillOnly"),
-
-		// Below default to 0
-		// 0 start means we start at the beginning and 0 end means we continue indefinitely
-		Start: big.NewInt(viper.GetInt64("subscription.startingBlock")),
-		End:   big.NewInt(viper.GetInt64("subscription.endingBlock")),
-
-		// Below default to false, which means we get all headers by default
-		HeaderFilter: config.HeaderFilter{
-			Off:    viper.GetBool("subscription.headerFilter.off"),
-			Uncles: viper.GetBool("subscription.headerFilter.uncles"),
-		},
-
-		// Below defaults to false and two slices of length 0
-		// Which means we get all transactions by default
-		TrxFilter: config.TrxFilter{
-			Off: viper.GetBool("subscription.trxFilter.off"),
-			Src: viper.GetStringSlice("subscription.trxFilter.src"),
-			Dst: viper.GetStringSlice("subscription.trxFilter.dst"),
-		},
-
-		// Below defaults to false and one slice of length 0
-		// Which means we get all receipts by default
-		ReceiptFilter: config.ReceiptFilter{
-			Off:       viper.GetBool("subscription.receiptFilter.off"),
-			Contracts: viper.GetStringSlice("subscription.receiptFilter.contracts"),
-			Topic0s:   viper.GetStringSlice("subscription.receiptFilter.topic0s"),
-		},
-
-		// Below defaults to two false, and a slice of length 0
-		// Which means we get all state leafs by default, but no intermediate nodes
-		StateFilter: config.StateFilter{
-			Off:               viper.GetBool("subscription.stateFilter.off"),
-			IntermediateNodes: viper.GetBool("subscription.stateFilter.intermediateNodes"),
-			Addresses:         viper.GetStringSlice("subscription.stateFilter.addresses"),
-		},
-
-		// Below defaults to two false, and two slices of length 0
-		// Which means we get all storage leafs by default, but no intermediate nodes
-		StorageFilter: config.StorageFilter{
-			Off:               viper.GetBool("subscription.storageFilter.off"),
-			IntermediateNodes: viper.GetBool("subscription.storageFilter.intermediateNodes"),
-			Addresses:         viper.GetStringSlice("subscription.storageFilter.addresses"),
-			StorageKeys:       viper.GetStringSlice("subscription.storageFilter.storageKeys"),
-		},
-	}
-}
-
 func getRPCClient() core.RPCClient {
-	vulcPath := viper.GetString("subscription.path")
+	vulcPath := viper.GetString("superNode.ethSubscription.wsPath")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}
