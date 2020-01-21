@@ -30,11 +30,17 @@ import (
 var superNodeCmd = &cobra.Command{
 	Use:   "superNode",
 	Short: "VulcanizeDB SuperNode",
-	Long: `This command works alongside a modified geth node which streams
-all block and state (diff) data over a websocket subscription. This process 
-then converts the eth data to IPLD objects and publishes them to IPFS. Additionally,
-it maintains a local index of the IPLD objects' CIDs in Postgres. It then opens up a server which 
-relays relevant data to requesting clients.`,
+	Long: `This command configures a VulcanizeDB SuperNode.
+
+The Sync process streams all chain data from the appropriate chain, processes this data into IPLD objects
+and publishes them to IPFS. It then indexes the CIDs against useful data fields/metadata in Postgres. 
+
+The Serve process creates and exposes a rpc subscription server over ws and ipc. Transformers can subscribe to
+these endpoints to stream
+
+The BackFill process spins up a background process which periodically probes the Postgres database to identify
+and fill in gaps in the data
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		subCommand = cmd.CalledAs()
 		logWithCommand = *log.WithField("SubCommand", subCommand)
@@ -68,7 +74,7 @@ func superNode() {
 		}
 	}
 	if superNodeConfig.BackFill {
-		backFiller, err := super_node.NewBackFillService(superNodeConfig.BackFillSettings)
+		backFiller, err := super_node.NewBackFillService(superNodeConfig)
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
@@ -97,5 +103,6 @@ func startServers(superNode super_node.SuperNode, settings *config.SuperNode) er
 	if err != nil {
 		return err
 	}
-	return nil
+	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{"eth"}, nil, nil, rpc.HTTPTimeouts{})
+	return err
 }

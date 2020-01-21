@@ -16,7 +16,7 @@
 
 package ipfs
 
-type IPLDModel struct {
-	Key  string `db:"key"`
+type BlockModel struct {
+	CID  string `db:"key"`
 	Data []byte `db:"data"`
 }

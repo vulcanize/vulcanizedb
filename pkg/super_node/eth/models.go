@@ -43,6 +43,9 @@ type ReceiptModel struct {
 	CID      string         `db:"cid"`
 	Contract string         `db:"contract"`
 	Topic0s  pq.StringArray `db:"topic0s"`
+	Topic1s  pq.StringArray `db:"topic1s"`
+	Topic2s  pq.StringArray `db:"topic2s"`
+	Topic3s  pq.StringArray `db:"topic3s"`
 }
 
 type StateNodeModel struct {

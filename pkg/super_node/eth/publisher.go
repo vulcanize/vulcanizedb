@@ -148,14 +148,14 @@ func (pub *IPLDPublisher) publishTransactions(blockBody *types.Body, trxMeta []T
 	if err != nil {
 		return nil, err
 	}
-	if len(transactionCids) != len(blockBody.Transactions) {
+	if len(transactionCids) != len(trxMeta) {
 		return nil, errors.New("expected one CID for each transaction")
 	}
 	mappedTrxCids := make([]TxModel, len(transactionCids))
-	for i, trx := range blockBody.Transactions {
+	for i, cid := range transactionCids {
 		mappedTrxCids[i] = TxModel{
-			CID:    transactionCids[i],
-			TxHash: trx.Hash().Hex(),
+			CID:    cid,
+			TxHash: trxMeta[i].TxHash,
 			Src:    trxMeta[i].Src,
 			Dst:    trxMeta[i].Dst,
 		}
@@ -178,6 +178,9 @@ func (pub *IPLDPublisher) publishReceipts(receipts types.Receipts, receiptMeta [
 			CID:      receiptsCids[i],
 			Contract: receiptMeta[i].Contract,
 			Topic0s:  receiptMeta[i].Topic0s,
+			Topic1s:  receiptMeta[i].Topic1s,
+			Topic2s:  receiptMeta[i].Topic2s,
+			Topic3s:  receiptMeta[i].Topic3s,
 		}
 	}
 	return mappedRctCids, nil

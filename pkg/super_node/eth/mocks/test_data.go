@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
@@ -52,32 +53,82 @@ var (
 	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
 	MockBlockRlp, _                            = rlp.EncodeToBytes(MockBlock)
 	MockHeaderRlp, _                           = rlp.EncodeToBytes(MockBlock.Header())
+	Address                                    = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
+	AnotherAddress                             = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
+	mockTopic11                                = common.HexToHash("0x04")
+	mockTopic12                                = common.HexToHash("0x06")
+	mockTopic21                                = common.HexToHash("0x05")
+	mockTopic22                                = common.HexToHash("0x07")
 	MockTrxMeta                                = []eth.TxModel{
 		{
-			CID: "", // This is empty until we go to publish to ipfs
-			Src: senderAddr.Hex(),
-			Dst: "0x0000000000000000000000000000000000000000",
+			CID:    "", // This is empty until we go to publish to ipfs
+			Src:    senderAddr.Hex(),
+			Dst:    Address.String(),
+			TxHash: MockTransactions[0].Hash().String(),
 		},
 		{
-			CID: "",
-			Src: senderAddr.Hex(),
-			Dst: "0x0000000000000000000000000000000000000001",
+			CID:    "",
+			Src:    senderAddr.Hex(),
+			Dst:    AnotherAddress.String(),
+			TxHash: MockTransactions[1].Hash().String(),
+		},
+	}
+	MockTrxMetaPostPublsh = []eth.TxModel{
+		{
+			CID:    "mockTrxCID1", // This is empty until we go to publish to ipfs
+			Src:    senderAddr.Hex(),
+			Dst:    Address.String(),
+			TxHash: MockTransactions[0].Hash().String(),
+		},
+		{
+			CID:    "mockTrxCID2",
+			Src:    senderAddr.Hex(),
+			Dst:    AnotherAddress.String(),
+			TxHash: MockTransactions[1].Hash().String(),
 		},
 	}
 	MockRctMeta = []eth.ReceiptModel{
 		{
 			CID: "",
 			Topic0s: []string{
-				"0x0000000000000000000000000000000000000000000000000000000000000004",
+				mockTopic11.String(),
 			},
-			Contract: "0x0000000000000000000000000000000000000000",
+			Topic1s: []string{
+				mockTopic12.String(),
+			},
+			Contract: Address.String(),
 		},
 		{
 			CID: "",
 			Topic0s: []string{
-				"0x0000000000000000000000000000000000000000000000000000000000000005",
+				mockTopic21.String(),
 			},
-			Contract: "0x0000000000000000000000000000000000000001",
+			Topic1s: []string{
+				mockTopic22.String(),
+			},
+			Contract: AnotherAddress.String(),
+		},
+	}
+	MockRctMetaPostPublish = []eth.ReceiptModel{
+		{
+			CID: "mockRctCID1",
+			Topic0s: []string{
+				mockTopic11.String(),
+			},
+			Topic1s: []string{
+				mockTopic12.String(),
+			},
+			Contract: Address.String(),
+		},
+		{
+			CID: "mockRctCID2",
+			Topic0s: []string{
+				mockTopic21.String(),
+			},
+			Topic1s: []string{
+				mockTopic22.String(),
+			},
+			Contract: AnotherAddress.String(),
 		},
 	}
 
@@ -99,10 +150,8 @@ var (
 		Leaf:  true,
 	}}
 	emptyStorage           = make([]statediff.StorageDiff, 0)
-	Address                = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
-	ContractLeafKey        = eth.AddressToKey(Address)
-	AnotherAddress         = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
-	AnotherContractLeafKey = eth.AddressToKey(AnotherAddress)
+	ContractLeafKey        = crypto.Keccak256Hash(Address.Bytes())
+	AnotherContractLeafKey = crypto.Keccak256Hash(AnotherAddress.Bytes())
 	testAccount            = state.Account{
 		Nonce:    NonceValue,
 		Balance:  big.NewInt(BalanceValue),
@@ -150,6 +199,18 @@ var (
 			Leaf:  true,
 		},
 	}
+	MockStateMetaPostPublish = []eth.StateNodeModel{
+		{
+			CID:      "mockStateCID1",
+			Leaf:     true,
+			StateKey: ContractLeafKey.String(),
+		},
+		{
+			CID:      "mockStateCID2",
+			Leaf:     true,
+			StateKey: AnotherContractLeafKey.String(),
+		},
+	}
 	MockStorageNodes = map[common.Hash][]eth.TrieNode{
 		ContractLeafKey: {
 			{
@@ -173,36 +234,10 @@ var (
 		Block:           MockBlock,
 		Receipts:        MockReceipts,
 		HeaderRLP:       MockHeaderRlp,
-		TrxMetaData: []eth.TxModel{
-			{
-				CID: "",
-				Src: senderAddr.Hex(),
-				Dst: "0x0000000000000000000000000000000000000000",
-			},
-			{
-				CID: "",
-				Src: senderAddr.Hex(),
-				Dst: "0x0000000000000000000000000000000000000001",
-			},
-		},
-		ReceiptMetaData: []eth.ReceiptModel{
-			{
-				CID: "",
-				Topic0s: []string{
-					"0x0000000000000000000000000000000000000000000000000000000000000004",
-				},
-				Contract: "0x0000000000000000000000000000000000000000",
-			},
-			{
-				CID: "",
-				Topic0s: []string{
-					"0x0000000000000000000000000000000000000000000000000000000000000005",
-				},
-				Contract: "0x0000000000000000000000000000000000000001",
-			},
-		},
-		StorageNodes: MockStorageNodes,
-		StateNodes:   MockStateNodes,
+		TrxMetaData:     MockTrxMeta,
+		ReceiptMetaData: MockRctMeta,
+		StorageNodes:    MockStorageNodes,
+		StateNodes:      MockStateNodes,
 	}
 
 	MockCIDPayload = &eth.CIDPayload{
@@ -214,45 +249,13 @@ var (
 			ParentHash:      MockBlock.ParentHash().String(),
 			TotalDifficulty: "1337",
 		},
-		UncleCIDs: []eth2.HeaderModel{},
-		TransactionCIDs: []eth.TxModel{
-			{
-				TxHash: MockTransactions[0].Hash().String(),
-				CID:    "mockTrxCID1",
-				Dst:    "0x0000000000000000000000000000000000000000",
-				Src:    senderAddr.Hex(),
-			},
-			{
-				TxHash: MockTransactions[1].Hash().String(),
-				CID:    "mockTrxCID2",
-				Dst:    "0x0000000000000000000000000000000000000001",
-				Src:    senderAddr.Hex(),
-			},
-		},
+		UncleCIDs:       []eth2.HeaderModel{},
+		TransactionCIDs: MockTrxMetaPostPublsh,
 		ReceiptCIDs: map[common.Hash]eth.ReceiptModel{
-			MockTransactions[0].Hash(): {
-				CID:      "mockRctCID1",
-				Topic0s:  []string{"0x0000000000000000000000000000000000000000000000000000000000000004"},
-				Contract: "0x0000000000000000000000000000000000000000",
-			},
-			MockTransactions[1].Hash(): {
-				CID:      "mockRctCID2",
-				Topic0s:  []string{"0x0000000000000000000000000000000000000000000000000000000000000005"},
-				Contract: "0x0000000000000000000000000000000000000001",
-			},
+			MockTransactions[0].Hash(): MockRctMetaPostPublish[0],
+			MockTransactions[1].Hash(): MockRctMetaPostPublish[1],
 		},
-		StateNodeCIDs: []eth.StateNodeModel{
-			{
-				CID:      "mockStateCID1",
-				Leaf:     true,
-				StateKey: ContractLeafKey.String(),
-			},
-			{
-				CID:      "mockStateCID2",
-				Leaf:     true,
-				StateKey: AnotherContractLeafKey.String(),
-			},
-		},
+		StateNodeCIDs: MockStateMetaPostPublish,
 		StorageNodeCIDs: map[common.Hash][]eth.StorageNodeModel{
 			ContractLeafKey: {
 				{
@@ -276,46 +279,10 @@ var (
 				TotalDifficulty: "1337",
 			},
 		},
-		Transactions: []eth2.TxModel{
-			{
-				CID: "mockTrxCID1",
-			},
-			{
-				TxHash: MockTransactions[1].Hash().String(),
-				CID:    "mockTrxCID2",
-				Dst:    "0x0000000000000000000000000000000000000001",
-				Src:    senderAddr.String(),
-			},
-		},
-		Receipts: []eth2.ReceiptModel{
-			{
-				CID:      "mockRctCID1",
-				Contract: "0x0000000000000000000000000000000000000000",
-				Topic0s: []string{
-					"0x0000000000000000000000000000000000000000000000000000000000000004",
-				},
-			},
-			{
-				CID:      "mockRctCID2",
-				Contract: "0x0000000000000000000000000000000000000001",
-				Topic0s: []string{
-					"0x0000000000000000000000000000000000000000000000000000000000000005",
-				},
-			},
-		},
-		Uncles: []eth2.HeaderModel{},
-		StateNodes: []eth.StateNodeModel{
-			{
-				CID:      "mockStateCID1",
-				Leaf:     true,
-				StateKey: ContractLeafKey.Hex(),
-			},
-			{
-				CID:      "mockStateCID2",
-				Leaf:     true,
-				StateKey: AnotherContractLeafKey.Hex(),
-			},
-		},
+		Transactions: MockTrxMetaPostPublsh,
+		Receipts:     MockRctMetaPostPublish,
+		Uncles:       []eth2.HeaderModel{},
+		StateNodes:   MockStateMetaPostPublish,
 		StorageNodes: []eth.StorageNodeWithStateKeyModel{
 			{
 				CID:        "mockStorageCID",
@@ -371,8 +338,8 @@ var (
 // createTransactionsAndReceipts is a helper function to generate signed mock transactions and mock receipts with mock logs
 func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common.Address) {
 	// make transactions
-	trx1 := types.NewTransaction(0, common.HexToAddress("0x0"), big.NewInt(1000), 50, big.NewInt(100), nil)
-	trx2 := types.NewTransaction(1, common.HexToAddress("0x1"), big.NewInt(2000), 100, big.NewInt(200), nil)
+	trx1 := types.NewTransaction(0, Address, big.NewInt(1000), 50, big.NewInt(100), nil)
+	trx2 := types.NewTransaction(1, AnotherAddress, big.NewInt(2000), 100, big.NewInt(200), nil)
 	transactionSigner := types.MakeSigner(params.MainnetChainConfig, BlockNumber)
 	mockCurve := elliptic.P256()
 	mockPrvKey, err := ecdsa.GenerateKey(mockCurve, rand.Reader)
@@ -392,19 +359,15 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 		log.Fatal(err)
 	}
 	// make receipts
-	mockTopic1 := common.HexToHash("0x04")
 	mockReceipt1 := types.NewReceipt(common.HexToHash("0x0").Bytes(), false, 50)
-	mockReceipt1.ContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
 	mockLog1 := &types.Log{
-		Topics: []common.Hash{mockTopic1},
+		Topics: []common.Hash{mockTopic11, mockTopic12},
 	}
 	mockReceipt1.Logs = []*types.Log{mockLog1}
 	mockReceipt1.TxHash = signedTrx1.Hash()
-	mockTopic2 := common.HexToHash("0x05")
 	mockReceipt2 := types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
-	mockReceipt2.ContractAddress = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
 	mockLog2 := &types.Log{
-		Topics: []common.Hash{mockTopic2},
+		Topics: []common.Hash{mockTopic21, mockTopic22},
 	}
 	mockReceipt2.Logs = []*types.Log{mockLog2}
 	mockReceipt2.TxHash = signedTrx2.Hash()

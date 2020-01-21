@@ -75,8 +75,9 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 			return nil, err
 		}
 		txMeta := TxModel{
-			Dst: handleNullAddr(trx.To()),
-			Src: handleNullAddr(&from),
+			Dst:    handleNullAddr(trx.To()),
+			Src:    handleNullAddr(&from),
+			TxHash: trx.Hash().String(),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
@@ -98,16 +99,21 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 		if transactions[i].To() != nil {
 			receipt.ContractAddress = *transactions[i].To()
 		}
-		// Extract topic0 data from the receipt's logs for indexing
-		rctMeta := ReceiptModel{
-			Topic0s:  make([]string, 0, len(receipt.Logs)),
-			Contract: receipt.ContractAddress.Hex(),
-		}
+		// Extract topic and contract data from the receipt for indexing
+		topicSets := make([][]string, 4)
 		for _, log := range receipt.Logs {
-			if len(log.Topics) < 1 {
-				continue
+			for i := range topicSets {
+				if i < len(log.Topics) {
+					topicSets[i] = append(topicSets[i], log.Topics[i].Hex())
+				}
 			}
-			rctMeta.Topic0s = append(rctMeta.Topic0s, log.Topics[0].Hex())
+		}
+		rctMeta := ReceiptModel{
+			Topic0s:  topicSets[0],
+			Topic1s:  topicSets[1],
+			Topic2s:  topicSets[2],
+			Topic3s:  topicSets[3],
+			Contract: receipt.ContractAddress.Hex(),
 		}
 		// receipt and rctMeta will have same indexes
 		convertedPayload.Receipts = append(convertedPayload.Receipts, receipt)

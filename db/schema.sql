@@ -593,7 +593,10 @@ CREATE TABLE public.receipt_cids (
     tx_id integer NOT NULL,
     cid text NOT NULL,
     contract character varying(66),
-    topic0s character varying(66)[]
+    topic0s character varying(66)[],
+    topic1s character varying(66)[],
+    topic2s character varying(66)[],
+    topic3s character varying(66)[]
 );
 
 

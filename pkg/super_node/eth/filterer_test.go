@@ -19,14 +19,13 @@ package eth_test
 import (
 	"bytes"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var (
@@ -159,6 +158,18 @@ var _ = Describe("Filterer", func() {
 			Expect(len(superNodePayload7.ReceiptsRlp)).To(Equal(0))
 			Expect(len(superNodePayload7.StateNodesRlp)).To(Equal(1))
 			Expect(superNodePayload7.StateNodesRlp[mocks.ContractLeafKey]).To(Equal(mocks.ValueBytes))
+
+			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockIPLDPayload)
+			Expect(err).ToNot(HaveOccurred())
+			superNodePayload8, ok := payload8.(eth.StreamPayload)
+			Expect(ok).To(BeTrue())
+			Expect(superNodePayload8.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
+			Expect(len(superNodePayload8.HeadersRlp)).To(Equal(0))
+			Expect(len(superNodePayload8.UnclesRlp)).To(Equal(0))
+			Expect(len(superNodePayload8.TransactionsRlp)).To(Equal(0))
+			Expect(len(superNodePayload8.StorageNodesRlp)).To(Equal(0))
+			Expect(len(superNodePayload8.StateNodesRlp)).To(Equal(0))
+			Expect(len(superNodePayload8.ReceiptsRlp)).To(Equal(0))
 		})
 	})
 })

@@ -19,8 +19,6 @@ package eth_test
 import (
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var (
@@ -51,7 +50,7 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: config.ReceiptFilter{
-			Contracts: []string{"0x0000000000000000000000000000000000000001"},
+			Contracts: []string{mocks.AnotherAddress.String()},
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -70,7 +69,7 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: config.ReceiptFilter{
-			Topic0s: []string{"0x0000000000000000000000000000000000000000000000000000000000000004"},
+			Topics: [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000004"}},
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -89,8 +88,34 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: config.ReceiptFilter{
-			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000004", "0x0000000000000000000000000000000000000000000000000000000000000005"},
-			Contracts: []string{"0x0000000000000000000000000000000000000000"},
+			Topics: [][]string{
+				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
+				{"0x0000000000000000000000000000000000000000000000000000000000000006"},
+			},
+			Contracts: []string{mocks.Address.String()},
+		},
+		StateFilter: config.StateFilter{
+			Off: true,
+		},
+		StorageFilter: config.StorageFilter{
+			Off: true,
+		},
+	}
+	rctTopicsAndContractFilterFail = &config.EthSubscription{
+		Start: big.NewInt(0),
+		End:   big.NewInt(1),
+		HeaderFilter: config.HeaderFilter{
+			Off: true,
+		},
+		TxFilter: config.TxFilter{
+			Off: true,
+		},
+		ReceiptFilter: config.ReceiptFilter{
+			Topics: [][]string{
+				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
+				{"0x0000000000000000000000000000000000000000000000000000000000000007"}, // This topic won't match on the mocks.Address.String() contract receipt
+			},
+			Contracts: []string{mocks.Address.String()},
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -109,8 +134,8 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: config.ReceiptFilter{
-			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000005"},
-			Contracts: []string{"0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000001"},
+			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000005"}},
+			Contracts: []string{mocks.Address.String(), mocks.AnotherAddress.String()},
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -128,8 +153,8 @@ var (
 		TxFilter: config.TxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
 		ReceiptFilter: config.ReceiptFilter{
 			MatchTxs:  true,
-			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
-			Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
+			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
+			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -145,12 +170,12 @@ var (
 			Off: true,
 		},
 		TxFilter: config.TxFilter{
-			Dst: []string{"0x0000000000000000000000000000000000000001"}, // We only filter for one of the trxs so we will only get the one corresponding receipt
+			Dst: []string{mocks.AnotherAddress.String()}, // We only filter for one of the trxs so we will only get the one corresponding receipt
 		},
 		ReceiptFilter: config.ReceiptFilter{
 			MatchTxs:  true,
-			Topic0s:   []string{"0x0000000000000000000000000000000000000000000000000000000000000006"}, // Topic isn't one of the topics we have
-			Contracts: []string{"0x0000000000000000000000000000000000000002"},                         // Contract isn't one of the contracts we have
+			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
+			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
 		StateFilter: config.StateFilter{
 			Off: true,
@@ -356,6 +381,10 @@ var _ = Describe("Retriever", func() {
 				StateKey: mocks.ContractLeafKey.Hex(),
 				CID:      "mockStateCID1",
 			}))
+
+			_, empty, err = retriever.Retrieve(rctTopicsAndContractFilterFail, 1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(empty).To(BeTrue())
 		})
 	})
 

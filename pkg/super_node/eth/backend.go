@@ -29,6 +29,7 @@ import (
 	"github.com/hashicorp/golang-lru"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 )
 
 var (
@@ -38,6 +39,7 @@ var (
 type Backend struct {
 	retriever *CIDRetriever
 	fetcher   *IPLDFetcher
+	resolver  *IPLDResolver
 	db        *postgres.DB
 
 	headerCache *lru.Cache // Cache for the most recent block headers
@@ -54,6 +56,7 @@ func NewEthBackend(db *postgres.DB, ipfsPath string) (*Backend, error) {
 	return &Backend{
 		retriever: r,
 		fetcher:   f,
+		resolver:  NewIPLDResolver(),
 		db:        r.Database(),
 	}, nil
 }
@@ -101,6 +104,49 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 	return header, nil
 }
 
-func (b *Backend) GetTd(blockHash common.Hash) *big.Int {
-	panic("implement me")
+// GetTd retrieves and returns the total difficulty at the given block hash
+func (b *Backend) GetTd(blockHash common.Hash) (*big.Int, error) {
+	pgStr := `SELECT header_cids.td FROM header_cids
+			WHERE header_cids.block_hash = $1`
+	var tdStr string
+	err := b.db.Select(&tdStr, pgStr, blockHash.String())
+	if err != nil {
+		return nil, err
+	}
+	td, ok := new(big.Int).SetString(tdStr, 10)
+	if !ok {
+		return nil, errors.New("total difficulty retrieved from Postgres cannot be converted to an integer")
+	}
+	return td, nil
+}
+
+func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log, error) {
+	tx, err := b.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	receiptCIDs, err := b.retriever.RetrieveRctCIDs(tx, config.ReceiptFilter{}, 0, &hash, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	if len(receiptCIDs) == 0 {
+		return nil, nil
+	}
+	receiptIPLDs, err := b.fetcher.FetchRcts(receiptCIDs)
+	if err != nil {
+		return nil, err
+	}
+	receiptBytes := b.resolver.ResolveReceipts(receiptIPLDs)
+	logs := make([][]*types.Log, len(receiptBytes))
+	for i, rctRLP := range receiptBytes {
+		var rct types.ReceiptForStorage
+		if err := rlp.DecodeBytes(rctRLP, &rct); err != nil {
+			return nil, err
+		}
+		logs[i] = rct.Logs
+	}
+	return logs, nil
 }

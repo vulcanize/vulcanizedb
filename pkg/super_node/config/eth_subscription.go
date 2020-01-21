@@ -17,6 +17,7 @@
 package config
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/spf13/viper"
@@ -53,7 +54,7 @@ type ReceiptFilter struct {
 	Off       bool
 	MatchTxs  bool // turn on to retrieve receipts that pair with retrieved transactions
 	Contracts []string
-	Topic0s   []string
+	Topics    [][]string
 }
 
 // StateFilter contains filter settings for state
@@ -72,7 +73,7 @@ type StorageFilter struct {
 }
 
 // Init is used to initialize a EthSubscription struct with env variables
-func NewEthSubscriptionConfig() *EthSubscription {
+func NewEthSubscriptionConfig() (*EthSubscription, error) {
 	sc := new(EthSubscription)
 	// Below default to false, which means we do not backfill by default
 	sc.BackFill = viper.GetBool("superNode.ethSubscription.historicalData")
@@ -89,16 +90,22 @@ func NewEthSubscriptionConfig() *EthSubscription {
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default
 	sc.TxFilter = TxFilter{
-		Off: viper.GetBool("superNode.ethSubscription.trxFilter.off"),
-		Src: viper.GetStringSlice("superNode.ethSubscription.trxFilter.src"),
-		Dst: viper.GetStringSlice("superNode.ethSubscription.trxFilter.dst"),
+		Off: viper.GetBool("superNode.ethSubscription.txFilter.off"),
+		Src: viper.GetStringSlice("superNode.ethSubscription.txFilter.src"),
+		Dst: viper.GetStringSlice("superNode.ethSubscription.txFilter.dst"),
 	}
 	// Below defaults to false and one slice of length 0
 	// Which means we get all receipts by default
+	t := viper.Get("superNode.ethSubscription.receiptFilter.topics")
+	topics, ok := t.([][]string)
+	if !ok {
+		return nil, errors.New("superNode.ethSubscription.receiptFilter.topics needs to be a slice of string slices")
+	}
 	sc.ReceiptFilter = ReceiptFilter{
 		Off:       viper.GetBool("superNode.ethSubscription.receiptFilter.off"),
+		MatchTxs:  viper.GetBool("superNode.ethSubscription.receiptFilter.matchTxs"),
 		Contracts: viper.GetStringSlice("superNode.ethSubscription.receiptFilter.contracts"),
-		Topic0s:   viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic0s"),
+		Topics:    topics,
 	}
 	// Below defaults to two false, and a slice of length 0
 	// Which means we get all state leafs by default, but no intermediate nodes
@@ -115,7 +122,7 @@ func NewEthSubscriptionConfig() *EthSubscription {
 		Addresses:         viper.GetStringSlice("superNode.ethSubscription.storageFilter.addresses"),
 		StorageKeys:       viper.GetStringSlice("superNode.ethSubscription.storageFilter.storageKeys"),
 	}
-	return sc
+	return sc, nil
 }
 
 // StartingBlock satisfies the SubscriptionSettings() interface

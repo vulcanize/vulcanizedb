@@ -55,7 +55,10 @@ func init() {
 
 func streamEthSubscription() {
 	// Prep the subscription config/filters to be sent to the server
-	ethSubConfig := config.NewEthSubscriptionConfig()
+	ethSubConfig, err := config.NewEthSubscriptionConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Create a new rpc client and a subscription streamer with that client
 	rpcClient := getRPCClient()
@@ -170,7 +173,7 @@ func streamEthSubscription() {
 }
 
 func getRPCClient() core.RPCClient {
-	vulcPath := viper.GetString("superNode.ethSubscription.wsPath")
+	vulcPath := viper.GetString("superNode.ethSubscription.path")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}

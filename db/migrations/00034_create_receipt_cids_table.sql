@@ -4,7 +4,10 @@ CREATE TABLE public.receipt_cids (
   tx_id                 INTEGER NOT NULL REFERENCES transaction_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   cid                   TEXT NOT NULL,
   contract              VARCHAR(66),
-  topic0s               VARCHAR(66)[]
+  topic0s               VARCHAR(66)[],
+  topic1s               VARCHAR(66)[],
+  topic2s               VARCHAR(66)[],
+  topic3s               VARCHAR(66)[]
 );
 
 -- +goose Down

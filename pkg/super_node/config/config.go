@@ -42,31 +42,35 @@ type SuperNode struct {
 	Chain    ChainType
 	IPFSPath string
 	DB       *postgres.DB
+	DBConfig config.Database
 	Quit     chan bool
 	// Server fields
-	Serve       bool
-	WSEndpoint  string
-	IPCEndpoint string
+	Serve        bool
+	WSEndpoint   string
+	HTTPEndpoint string
+	IPCEndpoint  string
 	// Sync params
 	Sync     bool
 	Workers  int
 	WSClient core.RPCClient
 	NodeInfo core.Node
 	// Backfiller params
-	BackFill         bool
-	BackFillSettings *BackFill
+	BackFill   bool
+	HTTPClient core.RPCClient
+	Frequency  time.Duration
+	BatchSize  uint64
 }
 
-// NewSuperNodeConfig is used to initialize a SuperNode config
+// NewSuperNodeConfig is used to initialize a SuperNode config from a config .toml file
 func NewSuperNodeConfig() (*SuperNode, error) {
-	dbConfig := config.Database{
+	sn := new(SuperNode)
+	sn.DBConfig = config.Database{
 		Name:     viper.GetString("superNode.database.name"),
 		Hostname: viper.GetString("superNode.database.hostname"),
 		Port:     viper.GetInt("superNode.database.port"),
 		User:     viper.GetString("superNode.database.user"),
 		Password: viper.GetString("superNode.database.password"),
 	}
-	sn := new(SuperNode)
 	var err error
 	sn.Chain, err = NewChainType(viper.GetString("superNode.chain"))
 	if err != nil {
@@ -94,7 +98,7 @@ func NewSuperNodeConfig() (*SuperNode, error) {
 	if sn.Serve {
 		wsPath := viper.GetString("superNode.server.wsPath")
 		if wsPath == "" {
-			wsPath = "127.0.0.1:8080"
+			wsPath = "ws://127.0.0.1:8546"
 		}
 		sn.WSEndpoint = wsPath
 		ipcPath := viper.GetString("superNode.server.ipcPath")
@@ -106,48 +110,31 @@ func NewSuperNodeConfig() (*SuperNode, error) {
 			ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
 		}
 		sn.IPCEndpoint = ipcPath
+		httpPath := viper.GetString("superNode.server.httpPath")
+		if httpPath == "" {
+			httpPath = "http://127.0.0.1:8547"
+		}
+		sn.HTTPEndpoint = httpPath
 	}
-	db := utils.LoadPostgres(dbConfig, sn.NodeInfo)
+	db := utils.LoadPostgres(sn.DBConfig, sn.NodeInfo)
 	sn.DB = &db
 	sn.Quit = make(chan bool)
 	if viper.GetBool("superNode.backFill.on") {
-		sn.BackFill = true
-		sn.BackFillSettings, err = NewBackFillerConfig(dbConfig)
+		if err := sn.BackFillFields(); err != nil {
+			return nil, err
+		}
 	}
 	return sn, err
 }
 
-// BackFill config struct
-type BackFill struct {
-	Chain      ChainType
-	IPFSPath   string
-	DB         *postgres.DB
-	HTTPClient core.RPCClient
-	Frequency  time.Duration
-	BatchSize  uint64
-}
-
-// newBackFillerConfig is used to initialize a backfiller config
-func NewBackFillerConfig(dbConfig config.Database) (*BackFill, error) {
-	bf := new(BackFill)
-	var err error
-	bf.Chain, err = NewChainType(viper.GetString("superNode.chain"))
+// BackFillFields is used to fill in the BackFill fields of the config
+func (sn *SuperNode) BackFillFields() error {
+	sn.BackFill = true
+	_, httpClient, err := getNodeAndClient(sn.Chain, viper.GetString("superNode.backFill.httpPath"))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	ipfsPath := viper.GetString("superNode.ipfsPath")
-	if ipfsPath == "" {
-		home, homeDirErr := os.UserHomeDir()
-		if homeDirErr != nil {
-			return nil, err
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
-	}
-	bf.IPFSPath = ipfsPath
-	node, httpClient, err := getNodeAndClient(bf.Chain, viper.GetString("superNode.backFill.httpPath"))
-	db := utils.LoadPostgres(dbConfig, node)
-	bf.DB = &db
-	bf.HTTPClient = httpClient
+	sn.HTTPClient = httpClient
 	freq := viper.GetInt("superNode.backFill.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
@@ -155,8 +142,9 @@ func NewBackFillerConfig(dbConfig config.Database) (*BackFill, error) {
 	} else {
 		frequency = time.Duration(freq)
 	}
-	bf.Frequency = frequency
-	return bf, nil
+	sn.Frequency = frequency
+	sn.BatchSize = uint64(viper.GetInt64("superNode.backFill.batchSize"))
+	return nil
 }
 
 func getNodeAndClient(chain ChainType, path string) (core.Node, core.RPCClient, error) {

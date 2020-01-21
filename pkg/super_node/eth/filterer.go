@@ -22,6 +22,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
@@ -54,7 +55,11 @@ func (s *ResponseFilterer) Filter(filter, payload interface{}) (interface{}, err
 		if err != nil {
 			return StreamPayload{}, err
 		}
-		if err := s.filerReceipts(ethFilters.ReceiptFilter, response, ethPayload, txHashes); err != nil {
+		var filterTxs []common.Hash
+		if ethFilters.ReceiptFilter.MatchTxs {
+			filterTxs = txHashes
+		}
+		if err := s.filerReceipts(ethFilters.ReceiptFilter, response, ethPayload, filterTxs); err != nil {
 			return StreamPayload{}, err
 		}
 		if err := s.filterState(ethFilters.StateFilter, response, ethPayload); err != nil {
@@ -99,8 +104,7 @@ func (s *ResponseFilterer) filterTransactions(trxFilter config.TxFilter, respons
 		for i, trx := range payload.Block.Body().Transactions {
 			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TrxMetaData[i].Src, payload.TrxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
-				err := trx.EncodeRLP(trxBuffer)
-				if err != nil {
+				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err
 				}
 				trxHashes = append(trxHashes, trx.Hash())
@@ -132,11 +136,12 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 func (s *ResponseFilterer) filerReceipts(receiptFilter config.ReceiptFilter, response *StreamPayload, payload *IPLDPayload, trxHashes []common.Hash) error {
 	if !receiptFilter.Off {
 		for i, receipt := range payload.Receipts {
-			if checkReceipts(receipt, receiptFilter.Topic0s, payload.ReceiptMetaData[i].Topic0s, receiptFilter.Contracts, payload.ReceiptMetaData[i].Contract, trxHashes, receiptFilter.MatchTxs) {
+			// topics is always length 4
+			topics := [][]string{payload.ReceiptMetaData[i].Topic0s, payload.ReceiptMetaData[i].Topic1s, payload.ReceiptMetaData[i].Topic2s, payload.ReceiptMetaData[i].Topic3s}
+			if checkReceipts(receipt, receiptFilter.Topics, topics, receiptFilter.Contracts, payload.ReceiptMetaData[i].Contract, trxHashes) {
 				receiptForStorage := (*types.ReceiptForStorage)(receipt)
 				receiptBuffer := new(bytes.Buffer)
-				err := receiptForStorage.EncodeRLP(receiptBuffer)
-				if err != nil {
+				if err := receiptForStorage.EncodeRLP(receiptBuffer); err != nil {
 					return err
 				}
 				response.ReceiptsRlp = append(response.ReceiptsRlp, receiptBuffer.Bytes())
@@ -146,57 +151,78 @@ func (s *ResponseFilterer) filerReceipts(receiptFilter config.ReceiptFilter, res
 	return nil
 }
 
-func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash, matchTxs bool) bool {
+func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash) bool {
 	// If we aren't filtering for any topics, contracts, or corresponding trxs then all receipts are a go
-	if len(wantedTopics) == 0 && len(wantedContracts) == 0 && (len(wantedTrxHashes) == 0 || !matchTxs) {
+	if len(wantedTopics) == 0 && len(wantedContracts) == 0 && len(wantedTrxHashes) == 0 {
 		return true
 	}
-	// No matter what filters we have, we keep receipts for specific trxs we are interested in
-	if matchTxs {
-		for _, wantedTrxHash := range wantedTrxHashes {
-			if bytes.Equal(wantedTrxHash.Bytes(), rct.TxHash.Bytes()) {
+	// Keep receipts that are from watched txs
+	for _, wantedTrxHash := range wantedTrxHashes {
+		if bytes.Equal(wantedTrxHash.Bytes(), rct.TxHash.Bytes()) {
+			return true
+		}
+	}
+	// If there are no wanted contract addresses, we keep all receipts that match the topic filter
+	if len(wantedContracts) == 0 {
+		if match := filterMatch(wantedTopics, actualTopics); match == true {
+			return true
+		}
+	}
+	// If there are wanted contract addresses to filter on
+	for _, wantedAddr := range wantedContracts {
+		// and this is an address of interest
+		if wantedAddr == actualContract {
+			// we keep the receipt if it matches on the topic filter
+			if match := filterMatch(wantedTopics, actualTopics); match == true {
 				return true
 			}
 		}
 	}
+	return false
+}
 
-	if len(wantedContracts) == 0 {
-		// We keep all receipts that have logs we are interested in
-		for _, wantedTopic := range wantedTopics {
-			for _, actualTopic := range actualTopics {
-				if wantedTopic == actualTopic {
-					return true
-				}
+func filterMatch(wantedTopics, actualTopics [][]string) bool {
+	// actualTopics should always be length 4, members could be nil slices though
+	lenWantedTopics := len(wantedTopics)
+	matches := 0
+	for i, actualTopicSet := range actualTopics {
+		if i < lenWantedTopics {
+			// If we have topics in this filter slot, count as a match if one of the topics matches
+			if len(wantedTopics[i]) > 0 {
+				matches += slicesShareString(actualTopicSet, wantedTopics[i])
+			} else {
+				// Filter slot is empty, not matching any topics at this slot => counts as a match
+				matches++
 			}
+		} else {
+			// Filter slot doesn't exist, not matching any topics at this slot => count as a match
+			matches++
 		}
-	} else { // We keep all receipts that belong to one of the specified contracts if we aren't filtering on topics
-		for _, wantedContract := range wantedContracts {
-			if wantedContract == actualContract {
-				if len(wantedTopics) == 0 {
-					return true
-				}
-				// Or if we have contracts and topics to filter on we only keep receipts that satisfy both conditions
-				for _, wantedTopic := range wantedTopics {
-					for _, actualTopic := range actualTopics {
-						if wantedTopic == actualTopic {
-							return true
-						}
-					}
-				}
+	}
+	if matches == 4 {
+		return true
+	}
+	return false
+}
+
+// returns 1 if the two slices have a string in common, 0 if they do not
+func slicesShareString(slice1, slice2 []string) int {
+	for _, str1 := range slice1 {
+		for _, str2 := range slice2 {
+			if str1 == str2 {
+				return 1
 			}
 		}
 	}
-
-	return false
+	return 0
 }
 
 func (s *ResponseFilterer) filterState(stateFilter config.StateFilter, response *StreamPayload, payload *IPLDPayload) error {
 	if !stateFilter.Off {
 		response.StateNodesRlp = make(map[common.Hash][]byte)
-		keyFilters := make([]common.Hash, 0, len(stateFilter.Addresses))
-		for _, addr := range stateFilter.Addresses {
-			keyFilter := AddressToKey(common.HexToAddress(addr))
-			keyFilters = append(keyFilters, keyFilter)
+		keyFilters := make([]common.Hash, len(stateFilter.Addresses))
+		for i, addr := range stateFilter.Addresses {
+			keyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
 		}
 		for _, stateNode := range payload.StateNodes {
 			if checkNodeKeys(keyFilters, stateNode.Key) {
@@ -225,15 +251,13 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 func (s *ResponseFilterer) filterStorage(storageFilter config.StorageFilter, response *StreamPayload, payload *IPLDPayload) error {
 	if !storageFilter.Off {
 		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
-		stateKeyFilters := make([]common.Hash, 0, len(storageFilter.Addresses))
-		for _, addr := range storageFilter.Addresses {
-			keyFilter := AddressToKey(common.HexToAddress(addr))
-			stateKeyFilters = append(stateKeyFilters, keyFilter)
+		stateKeyFilters := make([]common.Hash, len(storageFilter.Addresses))
+		for i, addr := range storageFilter.Addresses {
+			stateKeyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
 		}
-		storageKeyFilters := make([]common.Hash, 0, len(storageFilter.StorageKeys))
-		for _, store := range storageFilter.StorageKeys {
-			keyFilter := HexToKey(store)
-			storageKeyFilters = append(storageKeyFilters, keyFilter)
+		storageKeyFilters := make([]common.Hash, len(storageFilter.StorageKeys))
+		for i, store := range storageFilter.StorageKeys {
+			storageKeyFilters[i] = common.HexToHash(store)
 		}
 		for stateKey, storageNodes := range payload.StorageNodes {
 			if checkNodeKeys(stateKeyFilters, stateKey) {

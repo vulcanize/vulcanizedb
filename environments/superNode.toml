@@ -22,3 +22,4 @@
         on = false
         httpPath = ""
         frequency = 5
+        batchSize = 50

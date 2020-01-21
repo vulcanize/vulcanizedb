@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
@@ -118,8 +117,8 @@ func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPa
 }
 
 func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID int64) error {
-	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, contract, topic0s) VALUES ($1, $2, $3, $4)`,
-		txID, cidMeta.CID, cidMeta.Contract, pq.Array(cidMeta.Topic0s))
+	_, err := tx.Exec(`INSERT INTO public.receipt_cids (tx_id, cid, contract, topic0s, topic1s, topic2s, topic3s) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		txID, cidMeta.CID, cidMeta.Contract, pq.Array(cidMeta.Topic0s), pq.Array(cidMeta.Topic1s), pq.Array(cidMeta.Topic2s), pq.Array(cidMeta.Topic3s))
 	return err
 }
 

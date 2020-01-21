@@ -20,14 +20,15 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // CIDRetriever satisfies the CIDRetriever interface for ethereum
@@ -108,7 +109,7 @@ func (ecr *CIDRetriever) Retrieve(filter interface{}, blockNumber int64) (interf
 	}
 	// Retrieve cached receipt CIDs
 	if !streamFilter.ReceiptFilter.Off {
-		cw.Receipts, err = ecr.RetrieveRctCIDs(tx, streamFilter.ReceiptFilter, blockNumber, trxIds)
+		cw.Receipts, err = ecr.RetrieveRctCIDs(tx, streamFilter.ReceiptFilter, blockNumber, nil, trxIds)
 		if err != nil {
 			if err := tx.Rollback(); err != nil {
 				log.Error(err)
@@ -189,68 +190,94 @@ func (ecr *CIDRetriever) RetrieveTrxCIDs(tx *sqlx.Tx, txFilter config.TxFilter, 
 		pgStr += ` AND transaction_cids.src = ANY($3::VARCHAR(66)[])`
 		args = append(args, pq.Array(txFilter.Src))
 	}
-	err := tx.Select(&results, pgStr, args...)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
+	return results, tx.Select(&results, pgStr, args...)
 }
 
 // RetrieveRctCIDs retrieves and returns all of the rct cids at the provided blockheight that conform to the provided
 // filter parameters and correspond to the provided tx ids
-func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter config.ReceiptFilter, blockNumber int64, trxIds []int64) ([]ReceiptModel, error) {
+func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter config.ReceiptFilter, blockNumber int64, blockHash *common.Hash, trxIds []int64) ([]ReceiptModel, error) {
 	log.Debug("retrieving receipt cids for block ", blockNumber)
+	id := 1
 	args := make([]interface{}, 0, 4)
 	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
- 			receipt_cids.contract, receipt_cids.topic0s
+ 			receipt_cids.contract, receipt_cids.topic0s, receipt_cids.topic1s,
+			receipt_cids.topic2s, receipt_cids.topic3s
  			FROM receipt_cids, transaction_cids, header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
-			AND transaction_cids.header_id = header_cids.id
-			AND header_cids.block_number = $1`
-	args = append(args, blockNumber)
-	if len(rctFilter.Topic0s) > 0 {
-		pgStr += ` AND ((receipt_cids.topic0s && $2::VARCHAR(66)[]`
-		args = append(args, pq.Array(rctFilter.Topic0s))
-		if len(rctFilter.Contracts) > 0 {
-			pgStr += ` AND receipt_cids.contract = ANY($3::VARCHAR(66)[]))`
-			args = append(args, pq.Array(rctFilter.Contracts))
-			if rctFilter.MatchTxs && len(trxIds) > 0 {
-				pgStr += ` OR receipt_cids.tx_id = ANY($4::INTEGER[]))`
-				args = append(args, pq.Array(trxIds))
-			} else {
-				pgStr += `)`
+			AND transaction_cids.header_id = header_cids.id`
+	if blockNumber > 0 {
+		pgStr += fmt.Sprintf(` AND header_cids.block_number = $%d`, id)
+		args = append(args, blockNumber)
+		id++
+	}
+	if blockHash != nil {
+		pgStr += fmt.Sprintf(` AND header_cids.block_hash = $%d`, id)
+		args = append(args, blockHash.String())
+		id++
+	}
+	if len(rctFilter.Contracts) > 0 {
+		// Filter on contract addresses if there are any
+		pgStr += fmt.Sprintf(` AND ((receipt_cids.contract = ANY($%d::VARCHAR(66)[])`, id)
+		args = append(args, pq.Array(rctFilter.Contracts))
+		id++
+		// Filter on topics if there are any
+		if len(rctFilter.Topics) > 0 {
+			pgStr += " AND ("
+			first := true
+			for i, topicSet := range rctFilter.Topics {
+				if i < 4 && len(topicSet) > 0 {
+					if first {
+						pgStr += fmt.Sprintf(`receipt_cids.topic%ds && $%d::VARCHAR(66)[]`, i, id)
+						first = false
+					} else {
+						pgStr += fmt.Sprintf(` AND receipt_cids.topic%ds && $%d::VARCHAR(66)[]`, i, id)
+					}
+					args = append(args, pq.Array(topicSet))
+					id++
+				}
 			}
-		} else {
-			pgStr += `)`
-			if rctFilter.MatchTxs && len(trxIds) > 0 {
-				pgStr += ` OR receipt_cids.tx_id = ANY($3::INTEGER[]))`
-				args = append(args, pq.Array(trxIds))
-			} else {
-				pgStr += `)`
-			}
+			pgStr += ")"
 		}
-	} else {
-		if len(rctFilter.Contracts) > 0 {
-			pgStr += ` AND (receipt_cids.contract = ANY($2::VARCHAR(66)[])`
-			args = append(args, pq.Array(rctFilter.Contracts))
-			if rctFilter.MatchTxs && len(trxIds) > 0 {
-				pgStr += ` OR receipt_cids.tx_id = ANY($3::INTEGER[]))`
-				args = append(args, pq.Array(trxIds))
-			} else {
-				pgStr += `)`
+		pgStr += ")"
+		// Filter on txIDs if there are any and we are matching txs
+		if rctFilter.MatchTxs && len(trxIds) > 0 {
+			pgStr += fmt.Sprintf(` OR receipt_cids.tx_id = ANY($%d::INTEGER[])`, id)
+			args = append(args, pq.Array(trxIds))
+		}
+		pgStr += ")"
+	} else { // If there are no contract addresses to filter on
+		// Filter on topics if there are any
+		if len(rctFilter.Topics) > 0 {
+			pgStr += " AND (("
+			first := true
+			for i, topicSet := range rctFilter.Topics {
+				if i < 4 && len(topicSet) > 0 {
+					if first {
+						pgStr += fmt.Sprintf(`receipt_cids.topic%ds && $%d::VARCHAR(66)[]`, i, id)
+						first = false
+					} else {
+						pgStr += fmt.Sprintf(` AND receipt_cids.topic%ds && $%d::VARCHAR(66)[]`, i, id)
+					}
+					args = append(args, pq.Array(topicSet))
+					id++
+				}
 			}
+			pgStr += ")"
+			// Filter on txIDs if there are any and we are matching txs
+			if rctFilter.MatchTxs && len(trxIds) > 0 {
+				pgStr += fmt.Sprintf(` OR receipt_cids.tx_id = ANY($%d::INTEGER[])`, id)
+				args = append(args, pq.Array(trxIds))
+			}
+			pgStr += ")"
 		} else if rctFilter.MatchTxs && len(trxIds) > 0 {
-			pgStr += ` AND receipt_cids.tx_id = ANY($2::INTEGER[])`
+			// If there are no contract addresses or topics to filter on,
+			// Filter on txIDs if there are any and we are matching txs
+			pgStr += fmt.Sprintf(` AND receipt_cids.tx_id = ANY($%d::INTEGER[])`, id)
 			args = append(args, pq.Array(trxIds))
 		}
 	}
 	receiptCids := make([]ReceiptModel, 0)
-	err := tx.Select(&receiptCids, pgStr, args...)
-	if err != nil {
-		println(pgStr)
-		println("FUCK YOU\r\n\r\n\r\n")
-	}
-	return receiptCids, err
+	return receiptCids, tx.Select(&receiptCids, pgStr, args...)
 }
 
 // RetrieveStateCIDs retrieves and returns all of the state node cids at the provided blockheight that conform to the provided filter parameters
@@ -264,9 +291,9 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter config.State
 	args = append(args, blockNumber)
 	addrLen := len(stateFilter.Addresses)
 	if addrLen > 0 {
-		keys := make([]string, 0, addrLen)
-		for _, addr := range stateFilter.Addresses {
-			keys = append(keys, HexToKey(addr).Hex())
+		keys := make([]string, addrLen)
+		for i, addr := range stateFilter.Addresses {
+			keys[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes()).String()
 		}
 		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
@@ -275,8 +302,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter config.State
 		pgStr += ` AND state_cids.leaf = TRUE`
 	}
 	stateNodeCIDs := make([]StateNodeModel, 0)
-	err := tx.Select(&stateNodeCIDs, pgStr, args...)
-	return stateNodeCIDs, err
+	return stateNodeCIDs, tx.Select(&stateNodeCIDs, pgStr, args...)
 }
 
 // RetrieveStorageCIDs retrieves and returns all of the storage node cids at the provided blockheight that conform to the provided filter parameters
@@ -291,9 +317,9 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter config.S
 	args = append(args, blockNumber)
 	addrLen := len(storageFilter.Addresses)
 	if addrLen > 0 {
-		keys := make([]string, 0, addrLen)
-		for _, addr := range storageFilter.Addresses {
-			keys = append(keys, HexToKey(addr).Hex())
+		keys := make([]string, addrLen)
+		for i, addr := range storageFilter.Addresses {
+			keys[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes()).String()
 		}
 		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
@@ -309,8 +335,7 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter config.S
 		pgStr += ` AND storage_cids.leaf = TRUE`
 	}
 	storageNodeCIDs := make([]StorageNodeWithStateKeyModel, 0)
-	err := tx.Select(&storageNodeCIDs, pgStr, args...)
-	return storageNodeCIDs, err
+	return storageNodeCIDs, tx.Select(&storageNodeCIDs, pgStr, args...)
 }
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db

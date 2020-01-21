@@ -62,7 +62,7 @@ type BackFillService struct {
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(settings *config.BackFill) (BackFillInterface, error) {
+func NewBackFillService(settings *config.SuperNode) (BackFillInterface, error) {
 	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
@@ -83,6 +83,10 @@ func NewBackFillService(settings *config.BackFill) (BackFillInterface, error) {
 	if err != nil {
 		return nil, err
 	}
+	batchSize := settings.BatchSize
+	if batchSize == 0 {
+		batchSize = DefaultMaxBatchSize
+	}
 	return &BackFillService{
 		Indexer:           indexer,
 		Converter:         converter,
@@ -90,7 +94,7 @@ func NewBackFillService(settings *config.BackFill) (BackFillInterface, error) {
 		Retriever:         retriever,
 		Fetcher:           fetcher,
 		GapCheckFrequency: settings.Frequency,
-		BatchSize:         settings.BatchSize,
+		BatchSize:         batchSize,
 	}, nil
 }
 
