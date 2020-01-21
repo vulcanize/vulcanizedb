@@ -216,7 +216,7 @@ var _ = Describe("Event Watcher", func() {
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Expect(extractor.ExtractLogsCount > 0).To(BeTrue())
+			Expect(delegator.DelegateCallCount > 0).To(BeTrue())
 		})
 	})
 })

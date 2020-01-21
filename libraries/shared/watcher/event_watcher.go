@@ -77,51 +77,60 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+
+	//only writers should close channels
 	delegateErrsChan := make(chan error)
 	extractErrsChan := make(chan error)
-	defer close(delegateErrsChan)
-	defer close(extractErrsChan)
+	executeQuitChan := make(chan bool)
 
-	go watcher.extractLogs(recheckHeaders, extractErrsChan)
-	go watcher.delegateLogs(delegateErrsChan)
+	go watcher.extractLogs(recheckHeaders, extractErrsChan, executeQuitChan)
+	go watcher.delegateLogs(delegateErrsChan, executeQuitChan)
 
 	for {
 		select {
 		case delegateErr := <-delegateErrsChan:
 			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
+			close(executeQuitChan)
 			return delegateErr
 		case extractErr := <-extractErrsChan:
 			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			close(executeQuitChan)
 			return extractErr
 		}
 	}
 }
 
-func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
+func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error, quitChan chan bool) {
 	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
-	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs)
+	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs, quitChan)
 }
 
-func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs)
+func (watcher *EventWatcher) delegateLogs(errs chan error, quitChan chan bool) {
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs, quitChan)
 }
 
-func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error) {
+func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error, quitChan chan bool) {
+	defer close(errs)
 	consecutiveUnexpectedErrCount := 0
 	for {
-		err := call()
-		if err == nil {
-			consecutiveUnexpectedErrCount = 0
-		} else {
-			if err != expectedErr {
-				consecutiveUnexpectedErrCount++
-				logrus.Errorf("error %s logs: %s", operation, err.Error())
-				if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
-					errs <- err
-					return
+		select {
+		case <-quitChan:
+			return
+		default:
+			err := call()
+			if err == nil {
+				consecutiveUnexpectedErrCount = 0
+			} else {
+				if err != expectedErr {
+					consecutiveUnexpectedErrCount++
+					logrus.Errorf("error %s logs: %s", operation, err.Error())
+					if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
+						errs <- err
+						return
+					}
 				}
+				time.Sleep(watcher.RetryInterval)
 			}
-			time.Sleep(watcher.RetryInterval)
 		}
 	}
 }
