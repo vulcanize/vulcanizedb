@@ -23,7 +23,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,13 +30,12 @@ import (
 
 var _ = Describe("Storage diffs repository", func() {
 	var (
-		db              *postgres.DB
+		db              = test_config.NewTestDB(test_config.NewTestNode())
 		repo            storage.DiffRepository
 		fakeStorageDiff types.RawDiff
 	)
 
 	BeforeEach(func() {
-		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repo = storage.NewDiffRepository(db)
 		fakeStorageDiff = types.RawDiff{
@@ -78,6 +76,97 @@ var _ = Describe("Storage diffs repository", func() {
 			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
+		})
+	})
+
+	Describe("GetNewDiffs", func() {
+		It("sends diffs that are not marked as checked", func() {
+			diffs := make(chan types.PersistedDiff)
+			errs := make(chan error)
+			done := make(chan bool)
+			fakeRawDiff := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   rand.Int(),
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff: fakeRawDiff,
+				ID:      rand.Int63(),
+			}
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+				hashed_address, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5, $6)`, fakePersistedDiff.ID,
+				fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.HashedAddress.Bytes(),
+				fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes())
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			go repo.GetNewDiffs(diffs, errs, done)
+
+			Consistently(errs).ShouldNot(Receive())
+			Eventually(<-diffs).Should(Equal(fakePersistedDiff))
+			Eventually(<-done).Should(BeTrue())
+		})
+
+		It("does not send diff that's marked as checked", func() {
+			diffs := make(chan types.PersistedDiff)
+			errs := make(chan error)
+			done := make(chan bool)
+			fakeRawDiff := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   rand.Int(),
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff: fakeRawDiff,
+				ID:      rand.Int63(),
+				Checked: true,
+			}
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+				hashed_address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked)
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			go repo.GetNewDiffs(diffs, errs, done)
+
+			Consistently(errs).ShouldNot(Receive())
+			Consistently(diffs).ShouldNot(Receive())
+			Eventually(<-done).Should(BeTrue())
+		})
+	})
+
+	Describe("MarkChecked", func() {
+		It("marks a diff as checked", func() {
+			fakeRawDiff := types.RawDiff{
+				HashedAddress: test_data.FakeHash(),
+				BlockHash:     test_data.FakeHash(),
+				BlockHeight:   rand.Int(),
+				StorageKey:    test_data.FakeHash(),
+				StorageValue:  test_data.FakeHash(),
+			}
+			fakePersistedDiff := types.PersistedDiff{
+				RawDiff: fakeRawDiff,
+				ID:      rand.Int63(),
+				Checked: true,
+			}
+			_, insertErr := db.Exec(`INSERT INTO public.storage_diff (id, block_height, block_hash,
+				hashed_address, storage_key, storage_value, checked) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+				fakePersistedDiff.ID, fakeRawDiff.BlockHeight, fakeRawDiff.BlockHash.Bytes(),
+				fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes(),
+				fakePersistedDiff.Checked)
+			Expect(insertErr).NotTo(HaveOccurred())
+
+			err := repo.MarkChecked(fakePersistedDiff.ID)
+
+			Expect(err).NotTo(HaveOccurred())
+			var checked bool
+			checkedErr := db.Get(&checked, `SELECT checked FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
+			Expect(checkedErr).NotTo(HaveOccurred())
+			Expect(checked).To(BeTrue())
 		})
 	})
 })

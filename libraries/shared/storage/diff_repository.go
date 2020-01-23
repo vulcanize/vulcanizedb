@@ -21,12 +21,15 @@ import (
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/sirupsen/logrus"
 )
 
 var ErrDuplicateDiff = sql.ErrNoRows
 
 type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
+	GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool)
+	MarkChecked(id int64) error
 }
 
 type diffRepository struct {
@@ -49,4 +52,42 @@ func (repository diffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64
 		return 0, ErrDuplicateDiff
 	}
 	return storageDiffID, err
+}
+
+func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
+	rows, queryErr := repository.db.Queryx(`SELECT * FROM public.storage_diff WHERE checked = false`)
+	if queryErr != nil {
+		logrus.Errorf("error getting unchecked storage diffs: %s", queryErr.Error())
+		if rows != nil {
+			closeErr := rows.Close()
+			if closeErr != nil {
+				logrus.Errorf("error closing rows: %s", closeErr.Error())
+			}
+		}
+		errs <- queryErr
+		return
+	}
+
+	if rows != nil {
+		for rows.Next() {
+			var diff types.PersistedDiff
+			scanErr := rows.StructScan(&diff)
+			if scanErr != nil {
+				logrus.Errorf("error scanning diff: %s", scanErr.Error())
+				closeErr := rows.Close()
+				if closeErr != nil {
+					logrus.Errorf("error closing rows: %s", closeErr.Error())
+				}
+				errs <- scanErr
+			}
+			diffs <- diff
+		}
+	}
+
+	done <- true
+}
+
+func (repository diffRepository) MarkChecked(id int64) error {
+	_, err := repository.db.Exec(`UPDATE public.storage_diff SET checked = true WHERE id = $1`, id)
+	return err
 }
