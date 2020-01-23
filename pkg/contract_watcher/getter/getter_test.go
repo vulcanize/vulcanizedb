@@ -17,10 +17,29 @@
 package getter_test
 
 import (
+	"math/rand"
+
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/constants"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/getter"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 )
 
 var _ = Describe("Interface Getter", func() {
 	Describe("GetAbi", func() {
+		It("fetches the contract's data from the blockchain", func() {
+			blockChain := fakes.MockBlockChain{}
+			g := getter.NewInterfaceGetter(&blockChain)
+			testAddress := fakes.FakeAddress.Hex()
+			testBlockNumber := rand.Int63()
+			g.GetABI(testAddress, testBlockNumber)
+
+			methodArgs := make([]interface{}, 1)
+			methodArgs[0] = constants.MetaSig.Bytes()
+			result := new(bool)
+
+			blockChain.AssertFetchContractDataCalledWith(constants.SupportsInterfaceABI, testAddress,
+				"supportsInterface", methodArgs, &result, testBlockNumber)
+		})
 	})
 })
