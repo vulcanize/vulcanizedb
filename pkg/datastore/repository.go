@@ -18,7 +18,6 @@ package datastore
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
@@ -47,8 +46,4 @@ type HeaderRepository interface {
 type EventLogRepository interface {
 	GetUntransformedEventLogs() ([]core.EventLog, error)
 	CreateEventLogs(headerID int64, logs []types.Log) error
-}
-
-type StorageDiffRepository interface {
-	CreateStorageDiff(rawDiff storage.RawDiff) (int64, error)
 }

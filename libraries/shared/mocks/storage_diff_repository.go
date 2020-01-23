@@ -14,19 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package fakes
+package mocks
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 )
 
 type MockStorageDiffRepository struct {
-	CreatePassedRawDiffs []storage.RawDiff
+	CreatePassedRawDiffs []types.RawDiff
 	CreateReturnID       int64
 	CreateReturnError    error
 }
 
-func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff storage.RawDiff) (int64, error) {
+func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64, error) {
 	repository.CreatePassedRawDiffs = append(repository.CreatePassedRawDiffs, rawDiff)
 	return repository.CreateReturnID, repository.CreateReturnError
 }

@@ -19,10 +19,11 @@ package storage
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 )
 
-func AddHashedKeys(currentMappings map[common.Hash]ValueMetadata) map[common.Hash]ValueMetadata {
-	copyOfCurrentMappings := make(map[common.Hash]ValueMetadata)
+func AddHashedKeys(currentMappings map[common.Hash]types.ValueMetadata) map[common.Hash]types.ValueMetadata {
+	copyOfCurrentMappings := make(map[common.Hash]types.ValueMetadata)
 	for k, v := range currentMappings {
 		copyOfCurrentMappings[k] = v
 	}

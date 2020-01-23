@@ -18,7 +18,7 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
@@ -26,10 +26,10 @@ import (
 type MockStorageTransformer struct {
 	KeccakOfAddress common.Hash
 	ExecuteErr      error
-	PassedDiff      storage.PersistedDiff
+	PassedDiff      types.PersistedDiff
 }
 
-func (transformer *MockStorageTransformer) Execute(diff storage.PersistedDiff) error {
+func (transformer *MockStorageTransformer) Execute(diff types.PersistedDiff) error {
 	transformer.PassedDiff = diff
 	return transformer.ExecuteErr
 }

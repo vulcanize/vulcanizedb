@@ -14,8 +14,10 @@
 
 package fetcher
 
-import "github.com/makerdao/vulcanizedb/libraries/shared/storage"
+import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+)
 
 type IStorageFetcher interface {
-	FetchStorageDiffs(out chan<- storage.RawDiff, errs chan<- error)
+	FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error)
 }

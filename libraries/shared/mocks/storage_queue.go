@@ -17,21 +17,21 @@
 package mocks
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 )
 
 type MockStorageQueue struct {
 	AddCalled      bool
 	AddError       error
-	AddPassedDiff  storage.PersistedDiff
+	AddPassedDiff  types.PersistedDiff
 	DeleteCalled   bool
 	DeleteErr      error
 	DeletePassedId int64
 	GetAllErr      error
-	DiffsToReturn  []storage.PersistedDiff
+	DiffsToReturn  []types.PersistedDiff
 }
 
-func (queue *MockStorageQueue) Add(diff storage.PersistedDiff) error {
+func (queue *MockStorageQueue) Add(diff types.PersistedDiff) error {
 	queue.AddCalled = true
 	queue.AddPassedDiff = diff
 	return queue.AddError
@@ -43,6 +43,6 @@ func (queue *MockStorageQueue) Delete(id int64) error {
 	return queue.DeleteErr
 }
 
-func (queue *MockStorageQueue) GetAll() ([]storage.PersistedDiff, error) {
+func (queue *MockStorageQueue) GetAll() ([]types.PersistedDiff, error) {
 	return queue.DiffsToReturn, queue.GetAllErr
 }

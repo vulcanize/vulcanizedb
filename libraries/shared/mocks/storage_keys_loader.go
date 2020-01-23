@@ -18,7 +18,7 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -26,10 +26,10 @@ type MockStorageKeysLoader struct {
 	LoadMappingsCallCount int
 	LoadMappingsError     error
 	SetDBCalled           bool
-	StorageKeyMappings    map[common.Hash]storage.ValueMetadata
+	StorageKeyMappings    map[common.Hash]types.ValueMetadata
 }
 
-func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]storage.ValueMetadata, error) {
+func (loader *MockStorageKeysLoader) LoadMappings() (map[common.Hash]types.ValueMetadata, error) {
 	loader.LoadMappingsCallCount++
 	return loader.StorageKeyMappings, loader.LoadMappingsError
 }

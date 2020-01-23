@@ -17,17 +17,16 @@
 package repository_test
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("address lookup", func() {
@@ -58,7 +57,7 @@ var _ = Describe("address lookup", func() {
 			var actualAddress dbAddress
 			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := storage.HexToKeccak256Hash(address).Hex()
+			hashedAddress := types.HexToKeccak256Hash(address).Hex()
 			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
@@ -121,7 +120,7 @@ var _ = Describe("address lookup", func() {
 			var actualAddress dbAddress
 			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			hashedAddress := storage.HexToKeccak256Hash(address).Hex()
+			hashedAddress := types.HexToKeccak256Hash(address).Hex()
 			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})

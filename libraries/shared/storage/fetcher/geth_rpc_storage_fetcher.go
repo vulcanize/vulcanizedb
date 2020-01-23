@@ -19,7 +19,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/sirupsen/logrus"
 )
@@ -36,7 +36,7 @@ func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan c
 	}
 }
 
-func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- storage.RawDiff, errs chan<- error) {
+func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.statediffPayloadChan
 	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
 	if clientSubErr != nil {
@@ -60,7 +60,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- storage.RawDif
 		for _, account := range accounts {
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, accountStorage := range account.Storage {
-				diff, formatErr := storage.FromGethStateDiff(account, stateDiff, accountStorage)
+				diff, formatErr := types.FromGethStateDiff(account, stateDiff, accountStorage)
 				logrus.Trace("adding storage diff to out channel",
 					"keccak of address: ", diff.HashedAddress.Hex(),
 					"block height: ", diff.BlockHeight,

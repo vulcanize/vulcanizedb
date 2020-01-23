@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package repositories_test
+package storage_test
 
 import (
 	"database/sql"
 	"math/rand"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,15 +32,15 @@ import (
 var _ = Describe("Storage diffs repository", func() {
 	var (
 		db              *postgres.DB
-		repo            repositories.StorageDiffRepository
-		fakeStorageDiff storage.RawDiff
+		repo            storage.DiffRepository
+		fakeStorageDiff types.RawDiff
 	)
 
 	BeforeEach(func() {
 		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
-		repo = repositories.NewStorageDiffRepository(db)
-		fakeStorageDiff = storage.RawDiff{
+		repo = storage.NewDiffRepository(db)
+		fakeStorageDiff = types.RawDiff{
 			HashedAddress: test_data.FakeHash(),
 			BlockHash:     test_data.FakeHash(),
 			BlockHeight:   rand.Int(),
@@ -55,7 +55,7 @@ var _ = Describe("Storage diffs repository", func() {
 
 			Expect(createErr).NotTo(HaveOccurred())
 			Expect(id).NotTo(BeZero())
-			var persisted storage.PersistedDiff
+			var persisted types.PersistedDiff
 			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(persisted.ID).To(Equal(id))
