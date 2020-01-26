@@ -68,7 +68,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 	}
 	signer := types.MakeSigner(pc.chainConfig, block.Number())
 	transactions := block.Transactions()
-	for _, trx := range transactions {
+	for i, trx := range transactions {
 		// Extract to and from data from the the transactions for indexing
 		from, err := types.Sender(signer, trx)
 		if err != nil {
@@ -78,6 +78,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 			Dst:    handleNullAddr(trx.To()),
 			Src:    handleNullAddr(&from),
 			TxHash: trx.Hash().String(),
+			Index:  int64(i),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
 		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)

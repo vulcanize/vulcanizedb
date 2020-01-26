@@ -24,13 +24,21 @@ type HeaderModel struct {
 	BlockHash       string `db:"block_hash"`
 	ParentHash      string `db:"parent_hash"`
 	CID             string `db:"cid"`
-	Uncle           bool   `db:"uncle"`
 	TotalDifficulty string `db:"td"`
+}
+
+type UncleModel struct {
+	ID         int64  `db:"id"`
+	HeaderID   int64  `db:"header_id"`
+	BlockHash  string `db:"block_hash"`
+	ParentHash string `db:"parent_hash"`
+	CID        string `db:"cid"`
 }
 
 type TxModel struct {
 	ID       int64  `db:"id"`
 	HeaderID int64  `db:"header_id"`
+	Index    int64  `db:"index"`
 	TxHash   string `db:"tx_hash"`
 	CID      string `db:"cid"`
 	Dst      string `db:"dst"`

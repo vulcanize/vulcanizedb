@@ -109,7 +109,7 @@ func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([]blocks.Block, error) {
 
 // FetchUncles fetches uncles
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchUncles(cids []HeaderModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([]blocks.Block, error) {
 	log.Debug("fetching uncle iplds")
 	uncleCids := make([]cid.Cid, 0, len(cids))
 	for _, c := range cids {

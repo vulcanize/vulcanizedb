@@ -47,7 +47,7 @@ var _ = Describe("Indexer", func() {
 			err = repo.Index(mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
 			pgStr := `SELECT cid, td FROM header_cids
-				WHERE block_number = $1 AND uncle IS FALSE`
+				WHERE block_number = $1`
 			// check header was properly indexed
 			type res struct {
 				CID string

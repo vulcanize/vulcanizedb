@@ -64,12 +64,14 @@ var (
 			CID:    "", // This is empty until we go to publish to ipfs
 			Src:    senderAddr.Hex(),
 			Dst:    Address.String(),
+			Index:  0,
 			TxHash: MockTransactions[0].Hash().String(),
 		},
 		{
 			CID:    "",
 			Src:    senderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
+			Index:  1,
 			TxHash: MockTransactions[1].Hash().String(),
 		},
 	}
@@ -78,12 +80,14 @@ var (
 			CID:    "mockTrxCID1", // This is empty until we go to publish to ipfs
 			Src:    senderAddr.Hex(),
 			Dst:    Address.String(),
+			Index:  0,
 			TxHash: MockTransactions[0].Hash().String(),
 		},
 		{
 			CID:    "mockTrxCID2",
 			Src:    senderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
+			Index:  1,
 			TxHash: MockTransactions[1].Hash().String(),
 		},
 	}
@@ -245,11 +249,10 @@ var (
 			BlockHash:       MockBlock.Hash().String(),
 			BlockNumber:     MockBlock.Number().String(),
 			CID:             "mockHeaderCID",
-			Uncle:           false,
 			ParentHash:      MockBlock.ParentHash().String(),
 			TotalDifficulty: "1337",
 		},
-		UncleCIDs:       []eth2.HeaderModel{},
+		UncleCIDs:       []eth2.UncleModel{},
 		TransactionCIDs: MockTrxMetaPostPublsh,
 		ReceiptCIDs: map[common.Hash]eth.ReceiptModel{
 			MockTransactions[0].Hash(): MockRctMetaPostPublish[0],
@@ -275,13 +278,12 @@ var (
 				BlockHash:       MockBlock.Hash().String(),
 				ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
 				CID:             "mockHeaderCID",
-				Uncle:           false,
 				TotalDifficulty: "1337",
 			},
 		},
 		Transactions: MockTrxMetaPostPublsh,
 		Receipts:     MockRctMetaPostPublish,
-		Uncles:       []eth2.HeaderModel{},
+		Uncles:       []eth2.UncleModel{},
 		StateNodes:   MockStateMetaPostPublish,
 		StorageNodes: []eth.StorageNodeWithStateKeyModel{
 			{

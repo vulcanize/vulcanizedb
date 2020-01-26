@@ -52,7 +52,7 @@ var (
 				CID: mockHeaderBlock.Cid().String(),
 			},
 		},
-		Uncles: []eth.HeaderModel{
+		Uncles: []eth.UncleModel{
 			{
 				CID: mockUncleBlock.Cid().String(),
 			},

@@ -80,6 +80,7 @@ func superNode() {
 		}
 		backFiller.FillGaps(wg, nil)
 	}
+	wg.Wait()
 }
 
 func newSuperNode() (super_node.SuperNode, *config.SuperNode, error) {

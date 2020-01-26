@@ -51,7 +51,7 @@ type TrieNode struct {
 // Passed to CIDIndexer
 type CIDPayload struct {
 	HeaderCID       HeaderModel
-	UncleCIDs       []HeaderModel
+	UncleCIDs       []UncleModel
 	TransactionCIDs []TxModel
 	ReceiptCIDs     map[common.Hash]ReceiptModel
 	StateNodeCIDs   []StateNodeModel
@@ -64,7 +64,7 @@ type CIDPayload struct {
 type CIDWrapper struct {
 	BlockNumber  *big.Int
 	Headers      []HeaderModel
-	Uncles       []HeaderModel
+	Uncles       []UncleModel
 	Transactions []TxModel
 	Receipts     []ReceiptModel
 	StateNodes   []StateNodeModel

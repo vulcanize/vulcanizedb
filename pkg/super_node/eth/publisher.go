@@ -72,13 +72,12 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 		CID:             headerCid,
 		ParentHash:      ipldPayload.Block.ParentHash().String(),
 		BlockNumber:     ipldPayload.Block.Number().String(),
-		Uncle:           false,
 		BlockHash:       ipldPayload.Block.Hash().String(),
 		TotalDifficulty: ipldPayload.TotalDifficulty.String(),
 	}
 
 	// Process and publish uncles
-	uncleCids := make([]HeaderModel, 0, len(ipldPayload.Block.Uncles()))
+	uncleCids := make([]UncleModel, 0, len(ipldPayload.Block.Uncles()))
 	for _, uncle := range ipldPayload.Block.Uncles() {
 		uncleRlp, err := rlp.EncodeToBytes(uncle)
 		if err != nil {
@@ -88,12 +87,10 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		uncleCids = append(uncleCids, HeaderModel{
-			CID:         uncleCid,
-			ParentHash:  uncle.ParentHash.String(),
-			Uncle:       true,
-			BlockHash:   uncle.Hash().String(),
-			BlockNumber: uncle.Number.String(),
+		uncleCids = append(uncleCids, UncleModel{
+			CID:        uncleCid,
+			ParentHash: uncle.ParentHash.String(),
+			BlockHash:  uncle.Hash().String(),
 		})
 	}
 
@@ -155,6 +152,7 @@ func (pub *IPLDPublisher) publishTransactions(blockBody *types.Body, trxMeta []T
 	for i, cid := range transactionCids {
 		mappedTrxCids[i] = TxModel{
 			CID:    cid,
+			Index:  trxMeta[i].Index,
 			TxHash: trxMeta[i].TxHash,
 			Src:    trxMeta[i].Src,
 			Dst:    trxMeta[i].Dst,

@@ -5,7 +5,6 @@ CREATE TABLE public.header_cids (
   block_hash            VARCHAR(66) NOT NULL,
   parent_hash           VARCHAR(66) NOT NULL,
   cid                   TEXT NOT NULL,
-  uncle                 BOOLEAN NOT NULL,
   td                    BIGINT,
   UNIQUE (block_number, block_hash)
 );

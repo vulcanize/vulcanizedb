@@ -57,8 +57,7 @@ func (in *CIDIndexer) Index(cids interface{}) error {
 		return err
 	}
 	for _, uncle := range cidPayload.UncleCIDs {
-		err := in.indexUncleCID(tx, uncle)
-		if err != nil {
+		if err := in.indexUncleCID(tx, uncle, headerID); err != nil {
 			if err := tx.Rollback(); err != nil {
 				log.Error(err)
 			}
@@ -82,27 +81,27 @@ func (in *CIDIndexer) Index(cids interface{}) error {
 
 func (repo *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, parent_hash, cid, uncle, td) VALUES ($1, $2, $3, $4, $5, $6)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, uncle, td) = ($3, $4, $5, $6)
+	err := tx.QueryRowx(`INSERT INTO public.header_cids (block_number, block_hash, parent_hash, cid, td) VALUES ($1, $2, $3, $4, $5)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td) = ($3, $4, $5)
 								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, false, header.TotalDifficulty).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty).Scan(&headerID)
 	return headerID, err
 }
 
-func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle HeaderModel) error {
-	_, err := tx.Exec(`INSERT INTO public.header_cids (block_number, block_hash, parent_hash, cid, uncle) VALUES ($1, $2, $3, $4, $5)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, uncle) = ($3, $4, $5)`,
-		uncle.BlockNumber, uncle.BlockHash, uncle.ParentHash, uncle.CID, true)
+func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle UncleModel, headerID int64) error {
+	_, err := tx.Exec(`INSERT INTO public.uncle_cids (block_hash, header_id, parent_hash, cid) VALUES ($1, $2, $3, $4)
+								ON CONFLICT (header_id, block_hash) DO UPDATE SET (parent_hash, cid) = ($3, $4)`,
+		uncle.BlockHash, headerID, uncle.ParentHash, uncle.CID)
 	return err
 }
 
 func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
 	for _, trxCidMeta := range payload.TransactionCIDs {
 		var txID int64
-		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid, dst, src) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src) = ($3, $4, $5)
+		err := tx.QueryRowx(`INSERT INTO public.transaction_cids (header_id, tx_hash, cid, dst, src, index) VALUES ($1, $2, $3, $4, $5, $6)
+									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index) = ($3, $4, $5, $6)
 									RETURNING id`,
-			headerID, trxCidMeta.TxHash, trxCidMeta.CID, trxCidMeta.Dst, trxCidMeta.Src).Scan(&txID)
+			headerID, trxCidMeta.TxHash, trxCidMeta.CID, trxCidMeta.Dst, trxCidMeta.Src, trxCidMeta.Index).Scan(&txID)
 		if err != nil {
 			return err
 		}
