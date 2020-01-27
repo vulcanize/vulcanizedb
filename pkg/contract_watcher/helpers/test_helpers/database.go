@@ -188,6 +188,24 @@ func SetupMolochContract(wantedEvents, wantedMethods []string) *contract.Contrac
 	}.Init()
 }
 
+func SetupOasisContract(wantedEvents, wantedMethods []string) *contract.Contract {
+	p := mocks.NewParser(constants.OasisAbiString)
+	err := p.Parse()
+	Expect(err).NotTo(HaveOccurred())
+
+	return contract.Contract{
+		Name:          "Oasis",
+		Address:       constants.OasisContractAddress,
+		StartingBlock: 7183773,
+		Abi:           p.Abi(),
+		ParsedAbi:     p.ParsedAbi(),
+		Events:        p.GetEvents(wantedEvents),
+		Methods:       p.GetSelectMethods(wantedMethods),
+		FilterArgs:    map[string]bool{},
+		MethodArgs:    map[string]bool{},
+	}.Init()
+}
+
 // TODO: tear down/setup DB from migrations so this doesn't alter the schema between tests
 func TearDown(db *postgres.DB) {
 	tx, err := db.Beginx()
