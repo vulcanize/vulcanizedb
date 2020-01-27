@@ -51,11 +51,11 @@ func setTestConfig() {
 
 	// If we don't have an ipc path in the config file, check the env variable
 	if ipc == "" {
-		TestConfig.BindEnv("url", "INFURA_URL")
+		TestConfig.BindEnv("url", "CLIENT_IPCPATH")
 		ipc = TestConfig.GetString("url")
 	}
 	if ipc == "" {
-		logrus.Fatal(errors.New("testing.toml IPC path or $INFURA_URL env variable need to be set"))
+		logrus.Fatal(errors.New("testing.toml IPC path or $CLIENT_IPCPATH env variable need to be set"))
 	}
 
 	hn := TestConfig.GetString("database.hostname")
