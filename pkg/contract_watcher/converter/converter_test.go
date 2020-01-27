@@ -26,20 +26,23 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math/rand"
 )
 
 var _ = Describe("Converter", func() {
-	var con *contract.Contract
-	var tusdWantedEvents = []string{"Transfer", "Mint"}
-	var ensWantedEvents = []string{"NewOwner"}
-	var marketPlaceWantedEvents = []string{"OrderCreated"}
-	var molochWantedEvents = []string{"SubmitVote"}
-	var oasisWantedEvents = []string{"LogMake"}
-	var err error
+	var (
+		fakeHeaderID = rand.Int63()
+
+		ensWantedEvents         = []string{"NewOwner"}
+		marketPlaceWantedEvents = []string{"OrderCreated"}
+		molochWantedEvents      = []string{"SubmitVote"}
+		oasisWantedEvents       = []string{"LogMake"}
+		tusdWantedEvents        = []string{"Transfer", "Mint"}
+	)
 
 	Describe("Update", func() {
 		It("Updates contract info held by the converter", func() {
-			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
+			con := test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
 			c := converter.Converter{}
 			c.Update(con)
 			Expect(c.ContractInfo).To(Equal(con))
@@ -52,7 +55,7 @@ var _ = Describe("Converter", func() {
 
 	Describe("Convert", func() {
 		It("Converts a watched event log to mapping of event input names to values", func() {
-			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
+			con := test_helpers.SetupTusdContract(tusdWantedEvents, []string{})
 			_, ok := con.Events["Approval"]
 			Expect(ok).To(Equal(false))
 
@@ -61,7 +64,7 @@ var _ = Describe("Converter", func() {
 
 			c := converter.Converter{}
 			c.Update(con)
-			logs, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, 232)
+			logs, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, fakeHeaderID)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(logs)).To(Equal(2))
 
@@ -72,21 +75,21 @@ var _ = Describe("Converter", func() {
 			Expect(logs[0].Values["to"]).To(Equal(sender1.String()))
 			Expect(logs[0].Values["from"]).To(Equal(sender2.String()))
 			Expect(logs[0].Values["value"]).To(Equal(value.String()))
-			Expect(logs[0].ID).To(Equal(int64(232)))
+			Expect(logs[0].ID).To(Equal(fakeHeaderID))
 			Expect(logs[1].Values["to"]).To(Equal(sender2.String()))
 			Expect(logs[1].Values["from"]).To(Equal(sender1.String()))
 			Expect(logs[1].Values["value"]).To(Equal(value.String()))
-			Expect(logs[1].ID).To(Equal(int64(232)))
+			Expect(logs[1].ID).To(Equal(fakeHeaderID))
 		})
 
 		It("Keeps track of addresses it sees if they will be used for method polling", func() {
-			con = test_helpers.SetupTusdContract(tusdWantedEvents, []string{"balanceOf"})
+			con := test_helpers.SetupTusdContract(tusdWantedEvents, []string{"balanceOf"})
 			event, ok := con.Events["Transfer"]
 			Expect(ok).To(Equal(true))
 
 			c := converter.Converter{}
 			c.Update(con)
-			_, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, 232)
+			_, err := c.Convert([]types.Log{mocks.MockTransferLog1, mocks.MockTransferLog2}, event, fakeHeaderID)
 			Expect(err).ToNot(HaveOccurred())
 
 			b, ok := con.EmittedAddrs[common.HexToAddress("0x000000000000000000000000000000000000Af21")]
@@ -111,13 +114,13 @@ var _ = Describe("Converter", func() {
 		})
 
 		It("Keeps track of hashes it sees if they will be used for method polling", func() {
-			con = test_helpers.SetupENSContract(ensWantedEvents, []string{"owner"})
+			con := test_helpers.SetupENSContract(ensWantedEvents, []string{"owner"})
 			event, ok := con.Events["NewOwner"]
 			Expect(ok).To(Equal(true))
 
 			c := converter.Converter{}
 			c.Update(con)
-			_, err := c.Convert([]types.Log{mocks.MockNewOwnerLog1, mocks.MockNewOwnerLog2}, event, 232)
+			_, err := c.Convert([]types.Log{mocks.MockNewOwnerLog1, mocks.MockNewOwnerLog2}, event, fakeHeaderID)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(con.EmittedHashes)).To(Equal(3))
 
@@ -148,13 +151,13 @@ var _ = Describe("Converter", func() {
 		})
 
 		It("correctly parses bytes32", func() {
-			con = test_helpers.SetupMarketPlaceContract(marketPlaceWantedEvents, []string{})
+			con := test_helpers.SetupMarketPlaceContract(marketPlaceWantedEvents, []string{})
 			event, ok := con.Events["OrderCreated"]
 			Expect(ok).To(BeTrue())
 
 			c := converter.Converter{}
 			c.Update(con)
-			result, err := c.Convert([]types.Log{mocks.MockOrderCreatedLog}, event, 232)
+			result, err := c.Convert([]types.Log{mocks.MockOrderCreatedLog}, event, fakeHeaderID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(len(result)).To(Equal(1))
@@ -162,13 +165,13 @@ var _ = Describe("Converter", func() {
 		})
 
 		It("correctly parses uint8", func() {
-			con = test_helpers.SetupMolochContract(molochWantedEvents, []string{})
+			con := test_helpers.SetupMolochContract(molochWantedEvents, []string{})
 			event, ok := con.Events["SubmitVote"]
 			Expect(ok).To(BeTrue())
 
 			c := converter.Converter{}
 			c.Update(con)
-			result, err := c.Convert([]types.Log{mocks.MockSubmitVoteLog}, event, 232)
+			result, err := c.Convert([]types.Log{mocks.MockSubmitVoteLog}, event, fakeHeaderID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(len(result)).To(Equal(1))
@@ -176,13 +179,13 @@ var _ = Describe("Converter", func() {
 		})
 
 		It("correctly parses uint64", func() {
-			con = test_helpers.SetupOasisContract(oasisWantedEvents, []string{})
+			con := test_helpers.SetupOasisContract(oasisWantedEvents, []string{})
 			event, ok := con.Events["LogMake"]
 			Expect(ok).To(BeTrue())
 
 			c := converter.Converter{}
 			c.Update(con)
-			result, err := c.Convert([]types.Log{mocks.MockLogMakeLog}, event, 232)
+			result, err := c.Convert([]types.Log{mocks.MockLogMakeLog}, event, fakeHeaderID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(len(result)).To(Equal(1))
@@ -190,10 +193,13 @@ var _ = Describe("Converter", func() {
 		})
 
 		It("Fails with an empty contract", func() {
+			con := contract.Contract{}.Init()
 			event := con.Events["Transfer"]
 			c := converter.Converter{}
 			c.Update(&contract.Contract{})
-			_, err = c.Convert([]types.Log{mocks.MockTransferLog1}, event, 232)
+
+			_, err := c.Convert([]types.Log{mocks.MockTransferLog1}, event, fakeHeaderID)
+
 			Expect(err).To(HaveOccurred())
 		})
 	})
