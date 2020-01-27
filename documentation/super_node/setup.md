@@ -171,11 +171,11 @@ sudo -u postgres createdb ec2-user
 sudo su postgres
 psql
 ALTER USER "ec2-user" WITH SUPERUSER;
-/q
+\q
 exit
 ```
 
-4b. Edit hba_file to trust connections
+4b. Edit hba_file to trust local connections
 ```
 psql
 SHOW hba_file;
@@ -196,11 +196,10 @@ sudo service  docker start
 sudo usermod -aG docker ec2-user
 ```
 
-6. Fetch the repository and switch to this working branch
+6. Fetch the repository
 ```
 go get github.com/vulcanize/vulcanizedb
 cd $GOPATH/src/github.com/vulcanize/vulcanizedb
-git checkout ipfs_concurrency
 ```
 
 7. Create the db
@@ -212,5 +211,5 @@ createdb vulcanize_public
 ```
 cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node
 docker build .
-docker run --network host -e VDB_PG_CONNECT=postgres://localhost:5432/vulcanize_public?sslmode=disable {IMAGE_ID}
+docker run --network host -e IPFS_INIT=true -e VDB_PG_NAME=vulcanize_public -e VDB_PG_HOSTNAME=localhost -e VDB_PG_PORT=5432 -e VDB_PG_USER=postgres -e VDB_PG_PASSWORD=password {IMAGE_ID}
 ```

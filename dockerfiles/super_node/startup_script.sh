@@ -9,6 +9,7 @@ test $VDB_PG_NAME
 test $VDB_PG_HOSTNAME
 test $VDB_PG_PORT
 test $VDB_PG_USER
+test $IPFS_INIT
 set +e
 
 # Export our database variables so that the IPFS Postgres plugin can use them
@@ -26,35 +27,30 @@ echo "Connecting with: $VDB_PG_CONNECT"
 echo "Running database migrations"
 ./goose -dir migrations/vulcanizedb postgres "$VDB_PG_CONNECT" up
 
+
 # If the db migrations ran without err
-if [ $? -eq 0 ]; then
-    # Initialize PG-IPFS
-    echo "Initializing Postgres-IPFS profile"
-    ./ipfs init --profile=postgresds
+if [[ $? -eq 0 ]]; then
+    # and IPFS_INIT is true
+    if [[ "$IPFS_INIT" = true ]] ; then
+        # initialize PG-IPFS
+        echo "Initializing Postgres-IPFS profile"
+        ./ipfs init --profile=postgresds
+    else
+        echo "IPFS profile already initialized, skipping initialization"
+    fi
 else
     echo "Could not run migrations. Are the database details correct?"
     exit
 fi
 
 # If IPFS initialization was successful
-if [ $? -eq 0 ]; then
-    # Begin the state-diffing Geth process
-    echo "Beginning the state-diffing Geth process"
-    ./geth --statediff --statediff.streamblock --ws --syncmode=full 2>&1 | tee -a log.txt &
-    sleep 1
-else
-    echo "Could not initialize Postgres backed IPFS profile. Are the database details correct?"
-    exit
-fi
-
-# If Geth startup was successful
-if [ $? -eq 0 ]; then
+if [[ $? -eq 0 ]]; then
     # Wait until block synchronisation has begun
     echo "Waiting for block synchronization to begin"
     ( tail -f -n0 log.txt & ) | grep -q "Block synchronisation started" # this blocks til we see "Block synchronisation started"
     # And then spin up the syncPublishScreenAndServe Vulcanizedb service
     echo "Beginning the syncPublishScreenAndServe vulcanizedb process"
-    ./vulcanizedb syncPublishScreenAndServe --config=config.toml 2>&1 | tee -a log.txt &
+    ./vulcanizedb superNode --config=config.toml 2>&1 | tee -a log.txt &
 else
     echo "Could not initialize state-diffing Geth."
     exit

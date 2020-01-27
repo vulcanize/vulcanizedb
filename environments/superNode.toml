@@ -19,7 +19,7 @@
         wsPath = "127.0.0.1:8080"
 
     [superNode.backFill]
-        on = false
-        httpPath = ""
+        on = true
+        httpPath = "http://127.0.0.1:8545"
         frequency = 5
         batchSize = 50
