@@ -34,6 +34,7 @@ var _ = Describe("Converter", func() {
 	var ensWantedEvents = []string{"NewOwner"}
 	var marketPlaceWantedEvents = []string{"OrderCreated"}
 	var molochWantedEvents = []string{"SubmitVote"}
+	var oasisWantedEvents = []string{"LogMake"}
 	var err error
 
 	Describe("Update", func() {
@@ -172,6 +173,20 @@ var _ = Describe("Converter", func() {
 
 			Expect(len(result)).To(Equal(1))
 			Expect(result[0].Values["uintVote"]).To(Equal("1"))
+		})
+
+		It("correctly parses uint64", func() {
+			con = test_helpers.SetupOasisContract(oasisWantedEvents, []string{})
+			event, ok := con.Events["LogMake"]
+			Expect(ok).To(BeTrue())
+
+			c := converter.Converter{}
+			c.Update(con)
+			result, err := c.Convert([]types.Log{mocks.MockLogMakeLog}, event, 232)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(result)).To(Equal(1))
+			Expect(result[0].Values["timestamp"]).To(Equal("1580153827"))
 		})
 
 		It("Fails with an empty contract", func() {

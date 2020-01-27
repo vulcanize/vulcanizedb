@@ -90,6 +90,9 @@ func (c *Converter) Convert(logs []gethTypes.Log, event types.Event, headerID in
 				if len(b) == 32 {
 					seenHashes = append(seenHashes, common.HexToHash(strValues[fieldName]))
 				}
+			case uint64:
+				u := input.(uint64)
+				strValues[fieldName] = strconv.Itoa(int(u))
 			case uint8:
 				u := input.(uint8)
 				strValues[fieldName] = strconv.Itoa(int(u))
@@ -174,6 +177,9 @@ func (c *Converter) ConvertBatch(logs []gethTypes.Log, events map[string]types.E
 						if len(b) == 32 { // collect byte arrays of size 32 as hashes
 							seenHashes = append(seenHashes, common.BytesToHash(b))
 						}
+					case uint64:
+						u := input.(uint64)
+						strValues[fieldName] = strconv.Itoa(int(u))
 					case uint8:
 						u := input.(uint8)
 						strValues[fieldName] = strconv.Itoa(int(u))

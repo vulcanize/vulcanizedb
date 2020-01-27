@@ -57,6 +57,23 @@ var MockHeader4 = core.Header{
 	Timestamp:   "50000030",
 }
 
+var MockLogMakeLog = types.Log{
+	Address: common.HexToAddress(constants.OasisContractAddress),
+	Topics: []common.Hash{
+		common.HexToHash("0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82"),
+		common.HexToHash("0x00000000000000000000000000000000000000000000000000000000000bb1c8"),
+		common.HexToHash("0x7bda8b27e891f9687bd6d3312ab3f4f458e2cc91916429d721d617df7ac29fb8"),
+		common.HexToHash("0x0000000000000000000000003e5d6e1472c9331b5695b428d8006040e2e8a754"),
+	},
+	Data:        hexutil.MustDecode("0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000019677a72a4df936650000000000000000000000000000000000000000000000000262356c657a3cb000000000000000000000000000000000000000000000000000000000005e2f3be3"),
+	BlockNumber: 9365925,
+	TxHash:      common.HexToHash("0x6d40c9bd88c33ecbd1ec04610dbde53e870d8363824dfda697f8ee7cc881ecf7"),
+	TxIndex:     9,
+	BlockHash:   common.HexToHash("0x8d0831fc16d0719e4d5887442f51b02f82b807a7528557496d5f9b85030261b1"),
+	Index:       12,
+	Removed:     false,
+}
+
 var MockTransferLog1 = types.Log{
 	Index:       1,
 	Address:     common.HexToAddress(constants.TusdContractAddress),
