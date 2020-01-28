@@ -18,13 +18,14 @@ package node_test
 
 import (
 	"encoding/json"
+	"strconv"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth/node"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var EmpytHeaderHash = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
@@ -66,8 +67,17 @@ var _ = Describe("Node Info", func() {
 		It("returns parity ID and client name for parity node", func() {
 			client := fakes.NewMockRpcClient()
 			client.ClientVersion = "Parity-Ethereum//v2.5.13-stable-253ff3f-20191231/x86_64-linux-gnu/rustc1.40.0"
+			client.ParityEnode = "enode://ParityNode@172.17.0.1:30303"
+			client.ParityNodeInfo = core.ParityNodeInfo{
+				ParityVersion: core.ParityVersion{
+					Major: 1,
+					Minor: 2,
+					Patch: 3,
+				},
+			}
 
 			n := node.MakeNode(client)
+
 			Expect(n.ID).To(Equal("ParityNode"))
 			Expect(n.ClientName).To(Equal("Parity/v1.2.3/"))
 		})
@@ -75,42 +85,52 @@ var _ = Describe("Node Info", func() {
 
 	It("returns the genesis block for any client", func() {
 		client := fakes.NewMockRpcClient()
+
 		n := node.MakeNode(client)
+
 		Expect(n.GenesisBlock).To(Equal(EmpytHeaderHash))
 	})
 
 	It("returns the network id for any client", func() {
 		client := fakes.NewMockRpcClient()
+		client.NetworkID = "1234"
+
 		n := node.MakeNode(client)
-		Expect(n.NetworkID).To(Equal(float64(1234)))
+
+		expectedNetworkID, err := strconv.ParseFloat(client.NetworkID, 64)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(n.NetworkID).To(Equal(expectedNetworkID))
 	})
 
 	It("returns geth ID and client name for geth node", func() {
 		client := fakes.NewMockRpcClient()
 		client.ClientVersion = "Geth/v1.9.9-omnibus-e320ae4c-20191206/linux-amd64/go1.13.4"
+		gethNodeInfo := p2p.NodeInfo{
+			ID:   "enode://GethNode@172.17.0.1:30303",
+			Name: "Geth/v1.7",
+		}
+		client.GethNodeInfo = gethNodeInfo
 
 		n := node.MakeNode(client)
-		Expect(n.ID).To(Equal("enode://GethNode@172.17.0.1:30303"))
-		Expect(n.ClientName).To(Equal("Geth/v1.7"))
+		Expect(n.ID).To(Equal(gethNodeInfo.ID))
+		Expect(n.ClientName).To(Equal(gethNodeInfo.Name))
 	})
 
 	It("returns infura ID and client name for infura node", func() {
 		client := fakes.NewMockRpcClient()
 		client.SetIpcPath("infura/path")
+
 		n := node.MakeNode(client)
+
 		Expect(n.ID).To(Equal("infura"))
 		Expect(n.ClientName).To(Equal("infura"))
 	})
 
-	It("returns local id and client name for Local node", func() {
+	It("returns ganache by default", func() {
 		client := fakes.NewMockRpcClient()
-		client.SetIpcPath("127.0.0.1")
-		n := node.MakeNode(client)
-		Expect(n.ID).To(Equal("ganache"))
-		Expect(n.ClientName).To(Equal("ganache"))
 
-		client.SetIpcPath("localhost")
-		n = node.MakeNode(client)
+		n := node.MakeNode(client)
+
 		Expect(n.ID).To(Equal("ganache"))
 		Expect(n.ClientName).To(Equal("ganache"))
 	})

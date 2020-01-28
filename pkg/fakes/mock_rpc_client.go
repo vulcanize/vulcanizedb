@@ -34,8 +34,12 @@ import (
 type MockRpcClient struct {
 	callContextErr      error
 	ClientVersion       string
+	GethNodeInfo        p2p.NodeInfo
 	ipcPath             string
+	NetworkID           string
 	nodeType            core.NodeType
+	ParityEnode         string
+	ParityNodeInfo      core.ParityNodeInfo
 	passedContext       context.Context
 	passedMethod        string
 	passedResult        interface{}
@@ -108,8 +112,8 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 	switch method {
 	case "admin_nodeInfo":
 		if p, ok := result.(*p2p.NodeInfo); ok {
-			p.ID = "enode://GethNode@172.17.0.1:30303"
-			p.Name = "Geth/v1.7"
+			p.ID = client.GethNodeInfo.ID
+			p.Name = client.GethNodeInfo.Name
 		}
 	case "eth_getBlockByNumber":
 		if p, ok := result.(*types.Header); ok {
@@ -124,23 +128,15 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 		}
 	case "parity_versionInfo":
 		if p, ok := result.(*core.ParityNodeInfo); ok {
-			*p = core.ParityNodeInfo{
-				Track: "",
-				ParityVersion: core.ParityVersion{
-					Major: 1,
-					Minor: 2,
-					Patch: 3,
-				},
-				Hash: "",
-			}
+			*p = client.ParityNodeInfo
 		}
 	case "parity_enode":
 		if p, ok := result.(*string); ok {
-			*p = "enode://ParityNode@172.17.0.1:30303"
+			*p = client.ParityEnode
 		}
 	case "net_version":
 		if p, ok := result.(*string); ok {
-			*p = "1234"
+			*p = client.NetworkID
 		}
 	case "web3_clientVersion":
 		if p, ok := result.(*string); ok {

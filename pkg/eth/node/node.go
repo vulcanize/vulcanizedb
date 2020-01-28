@@ -102,7 +102,7 @@ func (reader PropertiesReader) NetworkId() float64 {
 	var version string
 	err := reader.client.CallContext(context.Background(), &version, "net_version")
 	if err != nil {
-		logrus.Println(err)
+		logrus.Warnf("error getting net_version: %s", err.Error())
 	}
 	networkId, _ := strconv.ParseFloat(version, 64)
 	return networkId
@@ -112,13 +112,19 @@ func (reader PropertiesReader) GenesisBlock() string {
 	var header *types.Header
 	blockZero := "0x0"
 	includeTransactions := false
-	reader.client.CallContext(context.Background(), &header, "eth_getBlockByNumber", blockZero, includeTransactions)
+	err := reader.client.CallContext(context.Background(), &header, "eth_getBlockByNumber", blockZero, includeTransactions)
+	if err != nil {
+		logrus.Warnf("error getting genesis block: %s", err.Error())
+	}
 	return header.Hash().Hex()
 }
 
 func (reader PropertiesReader) NodeInfo() (string, string) {
 	var info p2p.NodeInfo
-	reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
+	err := reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
+	if err != nil {
+		logrus.Warnf("error getting admin_nodeInfo: %s", err.Error())
+	}
 	return info.ID, info.Name
 }
 
@@ -138,14 +144,20 @@ func (client GanacheClient) NodeInfo() (string, string) {
 
 func (client ParityClient) parityNodeInfo() string {
 	var nodeInfo core.ParityNodeInfo
-	client.client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
+	err := client.client.CallContext(context.Background(), &nodeInfo, "parity_versionInfo")
+	if err != nil {
+		logrus.Warnf("error getting parity_versionInfo: %s", err.Error())
+	}
 	return nodeInfo.String()
 }
 
 func (client ParityClient) parityID() string {
 	var enodeId = regexp.MustCompile(`^enode://(.+)@.+$`)
 	var enodeURL string
-	client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
+	err := client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
+	if err != nil {
+		logrus.Warnf("error getting parity_enode: %s", err.Error())
+	}
 	enode := enodeId.FindStringSubmatch(enodeURL)
 	if len(enode) < 2 {
 		return ""
