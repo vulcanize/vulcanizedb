@@ -84,14 +84,18 @@ func getNodeType(client core.RpcClient) core.NodeType {
 	if strings.Contains(client.IpcPath(), "infura") {
 		return core.INFURA
 	}
-	if strings.Contains(client.IpcPath(), "127.0.0.1") || strings.Contains(client.IpcPath(), "localhost") {
-		return core.GANACHE
+	var version string
+	err := client.CallContext(context.Background(), &version, "web3_clientVersion")
+	if err != nil {
+		logrus.Warnf("error getting client version: %s\n", err.Error())
 	}
-	modules, _ := client.SupportedModules()
-	if _, ok := modules["admin"]; ok {
+	if strings.Contains(version, "Geth") {
 		return core.GETH
 	}
-	return core.PARITY
+	if strings.Contains(version, "Parity") {
+		return core.PARITY
+	}
+	return core.GANACHE
 }
 
 func (reader PropertiesReader) NetworkId() float64 {

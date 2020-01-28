@@ -33,16 +33,15 @@ var _ = Describe("Node Info", func() {
 	Describe("Parity Node Info", func() {
 		It("verifies parity_versionInfo can be unmarshalled into ParityNodeInfo", func() {
 			var parityNodeInfo core.ParityNodeInfo
-			nodeInfoJSON := []byte(
-				`{
-        "hash": "0x2ae8b4ca278dd7b896090366615fef81cbbbc0e0",
-        "track": "null",
-        "version": {
-          "major": 1,
-          "minor": 6,
-          "patch": 0
-             }
-        }`)
+			nodeInfoJSON := []byte(`{
+				"hash": "0x2ae8b4ca278dd7b896090366615fef81cbbbc0e0",
+				"track": "null",
+				"version": {
+				"major": 1,
+				"minor": 6,
+				"patch": 0
+				}
+			}`)
 			json.Unmarshal(nodeInfoJSON, &parityNodeInfo)
 			Expect(parityNodeInfo.Hash).To(Equal("0x2ae8b4ca278dd7b896090366615fef81cbbbc0e0"))
 			Expect(parityNodeInfo.Track).To(Equal("null"))
@@ -66,6 +65,7 @@ var _ = Describe("Node Info", func() {
 
 		It("returns parity ID and client name for parity node", func() {
 			client := fakes.NewMockRpcClient()
+			client.ClientVersion = "Parity-Ethereum//v2.5.13-stable-253ff3f-20191231/x86_64-linux-gnu/rustc1.40.0"
 
 			n := node.MakeNode(client)
 			Expect(n.ID).To(Equal("ParityNode"))
@@ -87,9 +87,7 @@ var _ = Describe("Node Info", func() {
 
 	It("returns geth ID and client name for geth node", func() {
 		client := fakes.NewMockRpcClient()
-		supportedModules := make(map[string]string)
-		supportedModules["admin"] = "ok"
-		client.SetSupporedModules(supportedModules)
+		client.ClientVersion = "Geth/v1.9.9-omnibus-e320ae4c-20191206/linux-amd64/go1.13.4"
 
 		n := node.MakeNode(client)
 		Expect(n.ID).To(Equal("enode://GethNode@172.17.0.1:30303"))

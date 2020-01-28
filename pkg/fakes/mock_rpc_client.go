@@ -33,6 +33,7 @@ import (
 
 type MockRpcClient struct {
 	callContextErr      error
+	ClientVersion       string
 	ipcPath             string
 	nodeType            core.NodeType
 	passedContext       context.Context
@@ -46,7 +47,10 @@ type MockRpcClient struct {
 	returnPOAHeader     core.POAHeader
 	returnPOAHeaders    []core.POAHeader
 	returnPOWHeaders    []*types.Header
-	supportedModules    map[string]string
+}
+
+func NewMockRpcClient() *MockRpcClient {
+	return &MockRpcClient{}
 }
 
 func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
@@ -70,10 +74,6 @@ func (client *MockRpcClient) AssertSubscribeCalledWith(namespace string, payload
 	Expect(client.passedNamespace).To(Equal(namespace))
 	Expect(client.passedPayloadChan).To(Equal(payloadChan))
 	Expect(client.passedSubscribeArgs).To(Equal(args))
-}
-
-func NewMockRpcClient() *MockRpcClient {
-	return &MockRpcClient{}
 }
 
 func (client *MockRpcClient) SetIpcPath(ipcPath string) {
@@ -142,20 +142,16 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 		if p, ok := result.(*string); ok {
 			*p = "1234"
 		}
+	case "web3_clientVersion":
+		if p, ok := result.(*string); ok {
+			*p = client.ClientVersion
+		}
 	}
 	return nil
 }
 
 func (client *MockRpcClient) IpcPath() string {
 	return client.ipcPath
-}
-
-func (client *MockRpcClient) SupportedModules() (map[string]string, error) {
-	return client.supportedModules, nil
-}
-
-func (client *MockRpcClient) SetSupporedModules(supportedModules map[string]string) {
-	client.supportedModules = supportedModules
 }
 
 func (client *MockRpcClient) SetCallContextErr(err error) {

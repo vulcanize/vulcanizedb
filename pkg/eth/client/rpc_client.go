@@ -58,10 +58,6 @@ func (client RpcClient) IpcPath() string {
 	return client.ipcPath
 }
 
-func (client RpcClient) SupportedModules() (map[string]string, error) {
-	return client.client.SupportedModules()
-}
-
 func (client RpcClient) BatchCall(batch []BatchElem) error {
 	var rpcBatch []rpc.BatchElem
 	for _, batchElem := range batch {
