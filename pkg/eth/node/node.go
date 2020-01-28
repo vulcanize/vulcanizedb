@@ -123,7 +123,7 @@ func (reader PropertiesReader) NodeInfo() (string, string) {
 	var info p2p.NodeInfo
 	err := reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
 	if err != nil {
-		logrus.Warnf("error getting admin_nodeInfo: %s", err.Error())
+		logrus.Debugf("error getting admin_nodeInfo: %s", err.Error())
 	}
 	return info.ID, info.Name
 }
