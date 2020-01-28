@@ -208,5 +208,15 @@ var _ = Describe("Event Watcher", func() {
 
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
+
+		It("doesn't panic if one of the go routines errors and closes the err channel", func() {
+			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed, errExecuteClosed}
+			delegator.DelegateErrors = []error{nil,  errExecuteClosed, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Expect(delegator.DelegateCallCount > 0 || extractor.ExtractLogsCount > 0).To(BeTrue())
+		})
 	})
 })

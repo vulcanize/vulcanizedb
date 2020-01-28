@@ -17,7 +17,7 @@
 package watcher_test
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"testing"
 
@@ -31,5 +31,5 @@ func TestShared(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
+	logrus.SetOutput(ioutil.Discard)
 })
