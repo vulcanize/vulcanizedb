@@ -32,7 +32,7 @@ type IPLDPayload struct {
 	TotalDifficulty *big.Int
 	Block           *types.Block
 	HeaderRLP       []byte
-	TrxMetaData     []TxModel
+	TxMetaData      []TxModel
 	Receipts        types.Receipts
 	ReceiptMetaData []ReceiptModel
 	StateNodes      []TrieNode

@@ -18,6 +18,8 @@ package super_node
 
 import (
 	"fmt"
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
@@ -67,10 +69,17 @@ func NewPayloadStreamer(chain config.ChainType, client interface{}) (shared.Payl
 		ethClient, ok := client.(core.RPCClient)
 		if !ok {
 			var expectedClientType core.RPCClient
-			return nil, nil, fmt.Errorf("ethereum payload constructor expected client type %T got %T", expectedClientType, client)
+			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", expectedClientType, client)
 		}
 		streamChan := make(chan interface{}, eth.PayloadChanBufferSize)
 		return eth.NewPayloadStreamer(ethClient), streamChan, nil
+	case config.Bitcoin:
+		btcClientConn, ok := client.(*rpcclient.ConnConfig)
+		if !ok {
+			return nil, nil, fmt.Errorf("bitcoin payload streamer constructor expected client config type %T got %T", rpcclient.ConnConfig{}, client)
+		}
+		streamChan := make(chan interface{}, btc.PayloadChanBufferSize)
+		return btc.NewPayloadStreamer(btcClientConn), streamChan, nil
 	default:
 		return nil, nil, fmt.Errorf("invalid chain %T for streamer constructor", chain)
 	}

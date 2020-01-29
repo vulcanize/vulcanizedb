@@ -16,21 +16,37 @@
 
 package shared
 
-import (
-	"github.com/ethereum/go-ethereum/rpc"
-)
-
-// ResponseFilterer applies a filter to the streamed payload and returns a subscription response packet
-type ResponseFilterer interface {
-	Filter(filter, payload interface{}) (response interface{}, err error)
+// PayloadStreamer streams chain-specific payloads to the provided channel
+type PayloadStreamer interface {
+	Stream(payloadChan chan interface{}) (ClientSubscription, error)
 }
 
-// CIDIndexer indexes a set of cids with their associated meta data in Postgres
+// PayloadFetcher fetches chain-specific payloads
+type PayloadFetcher interface {
+	FetchAt(blockHeights []uint64) ([]interface{}, error)
+}
+
+// PayloadConverter converts chain-specific payloads into IPLD payloads for publishing
+type PayloadConverter interface {
+	Convert(payload interface{}) (interface{}, error)
+}
+
+// IPLDPublisher publishes IPLD payloads and returns a CID payload for indexing
+type IPLDPublisher interface {
+	Publish(payload interface{}) (interface{}, error)
+}
+
+// CIDIndexer indexes a CID payload in Postgres
 type CIDIndexer interface {
 	Index(cids interface{}) error
 }
 
-// CIDRetriever retrieves cids according to a provided filter and returns a cid
+// ResponseFilterer applies a filter to an IPLD payload to return a subscription response packet
+type ResponseFilterer interface {
+	Filter(filter, payload interface{}) (response interface{}, err error)
+}
+
+// CIDRetriever retrieves cids according to a provided filter and returns a CID wrapper
 type CIDRetriever interface {
 	Retrieve(filter interface{}, blockNumber int64) (interface{}, bool, error)
 	RetrieveFirstBlockNumber() (int64, error)
@@ -38,26 +54,18 @@ type CIDRetriever interface {
 	RetrieveGapsInData() ([]Gap, error)
 }
 
-type PayloadStreamer interface {
-	Stream(payloadChan chan interface{}) (*rpc.ClientSubscription, error)
-}
-
-type PayloadFetcher interface {
-	FetchAt(blockHeights []uint64) ([]interface{}, error)
-}
-
+// IPLDFetcher uses a CID wrapper to fetch an IPLD wrapper
 type IPLDFetcher interface {
 	Fetch(cids interface{}) (interface{}, error)
 }
 
-type PayloadConverter interface {
-	Convert(payload interface{}) (interface{}, error)
-}
-
-type IPLDPublisher interface {
-	Publish(payload interface{}) (interface{}, error)
-}
-
+// IPLDResolver resolves an IPLD wrapper into chain-specific payloads
 type IPLDResolver interface {
 	Resolve(iplds interface{}) (interface{}, error)
+}
+
+// ClientSubscription is a general interface for chain data subscriptions
+type ClientSubscription interface {
+	Err() <-chan error
+	Unsubscribe()
 }

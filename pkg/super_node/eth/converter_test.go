@@ -45,7 +45,7 @@ var _ = Describe("Converter", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(gotBody).To(Equal(expectedBody))
 			Expect(convertedPayload.HeaderRLP).To(Equal(mocks.MockHeaderRlp))
-			Expect(convertedPayload.TrxMetaData).To(Equal(mocks.MockTrxMeta))
+			Expect(convertedPayload.TxMetaData).To(Equal(mocks.MockTrxMeta))
 			Expect(convertedPayload.ReceiptMetaData).To(Equal(mocks.MockRctMeta))
 		})
 	})

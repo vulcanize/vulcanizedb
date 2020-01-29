@@ -238,7 +238,7 @@ var (
 		Block:           MockBlock,
 		Receipts:        MockReceipts,
 		HeaderRLP:       MockHeaderRlp,
-		TrxMetaData:     MockTrxMeta,
+		TxMetaData:      MockTrxMeta,
 		ReceiptMetaData: MockRctMeta,
 		StorageNodes:    MockStorageNodes,
 		StateNodes:      MockStateNodes,

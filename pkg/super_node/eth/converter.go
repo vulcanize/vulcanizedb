@@ -31,14 +31,15 @@ type PayloadConverter struct {
 	chainConfig *params.ChainConfig
 }
 
-// NewPayloadConverter creates a pointer to a new Converter which satisfies the PayloadConverter interface
+// NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the PayloadConverter interface
 func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 	return &PayloadConverter{
 		chainConfig: chainConfig,
 	}
 }
 
-// Convert method is used to convert a geth statediff.Payload to a IPLDPayload
+// Convert method is used to convert a eth statediff.Payload to an IPLDPayload
+// Satisfies the shared.PayloadConverter interface
 func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
@@ -60,7 +61,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
 		HeaderRLP:       headerRlp,
-		TrxMetaData:     make([]TxModel, 0, trxLen),
+		TxMetaData:      make([]TxModel, 0, trxLen),
 		Receipts:        make(types.Receipts, 0, trxLen),
 		ReceiptMetaData: make([]ReceiptModel, 0, trxLen),
 		StateNodes:      make([]TrieNode, 0),
@@ -81,7 +82,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 			Index:  int64(i),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
-		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
+		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, txMeta)
 	}
 
 	// Decode receipts for this block

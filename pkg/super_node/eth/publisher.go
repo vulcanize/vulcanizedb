@@ -95,7 +95,7 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 	}
 
 	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(ipldPayload.Block.Body(), ipldPayload.TrxMetaData)
+	transactionCids, err := pub.publishTransactions(ipldPayload.Block.Body(), ipldPayload.TxMetaData)
 	if err != nil {
 		return nil, err
 	}

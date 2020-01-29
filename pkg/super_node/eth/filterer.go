@@ -102,7 +102,7 @@ func (s *ResponseFilterer) filterTransactions(trxFilter config.TxFilter, respons
 	trxHashes := make([]common.Hash, 0, len(payload.Block.Body().Transactions))
 	if !trxFilter.Off {
 		for i, trx := range payload.Block.Body().Transactions {
-			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TrxMetaData[i].Src, payload.TrxMetaData[i].Dst) {
+			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err

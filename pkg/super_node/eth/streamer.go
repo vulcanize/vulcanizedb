@@ -17,8 +17,8 @@
 package eth
 
 import (
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
@@ -32,7 +32,7 @@ type PayloadStreamer struct {
 	Client core.RPCClient
 }
 
-// NewPayloadStreamer creates a pointer to a new StateDiffStreamer which satisfies the PayloadStreamer interface
+// NewPayloadStreamer creates a pointer to a new PayloadStreamer which satisfies the PayloadStreamer interface for ethereum
 func NewPayloadStreamer(client core.RPCClient) *PayloadStreamer {
 	return &PayloadStreamer{
 		Client: client,
@@ -40,7 +40,8 @@ func NewPayloadStreamer(client core.RPCClient) *PayloadStreamer {
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *PayloadStreamer) Stream(payloadChan chan interface{}) (*rpc.ClientSubscription, error) {
+// Satisfies the shared.PayloadStreamer interface
+func (ps *PayloadStreamer) Stream(payloadChan chan interface{}) (shared.ClientSubscription, error) {
 	logrus.Info("streaming diffs from geth")
-	return sds.Client.Subscribe("statediff", payloadChan, "stream")
+	return ps.Client.Subscribe("statediff", payloadChan, "stream")
 }

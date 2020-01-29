@@ -10,6 +10,7 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 	github.com/bren2010/proquint v0.0.0-20160323162903-38337c27106d
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
+	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/btcsuite/goleveldb v1.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0
