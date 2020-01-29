@@ -18,6 +18,7 @@ package super_node
 
 import (
 	"fmt"
+
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 
@@ -109,6 +110,8 @@ func NewPayloadConverter(chain config.ChainType, settings interface{}) (shared.P
 			return nil, fmt.Errorf("ethereum converter constructor expected config type %T got %T", &params.ChainConfig{}, settings)
 		}
 		return eth.NewPayloadConverter(ethConfig), nil
+	case config.Bitcoin:
+		return btc.NewPayloadConverter(), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %T for converter constructor", chain)
 	}
