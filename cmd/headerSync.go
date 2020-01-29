@@ -87,7 +87,7 @@ func headerSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				LogWithCommand.Error("headerSync: ValidateHeaders failed: ", err)
+				LogWithCommand.Errorf("headerSync: ValidateHeaders failed: %s", err.Error())
 			}
 			LogWithCommand.Debug(window.GetString())
 		case n := <-missingBlocksPopulated:
@@ -102,12 +102,12 @@ func headerSync() {
 func validateArgs(blockChain *eth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		LogWithCommand.Error("validateArgs: Error getting last block: ", err)
+		LogWithCommand.Errorf("validateArgs: Error getting last block: %s", err.Error())
+		return
 	}
-	if lastBlock.Int64() == 0 {
-		LogWithCommand.Fatal("geth initial: state sync not finished")
-	}
-	if startingBlockNumber > lastBlock.Int64() {
-		LogWithCommand.Fatal("starting block number > current block number")
+	lastBlockNumber := lastBlock.Int64()
+	if startingBlockNumber > lastBlockNumber {
+		LogWithCommand.Fatalf("starting block number (%d) greater than client's most recent synced block (%d)",
+			startingBlockNumber, lastBlockNumber)
 	}
 }
