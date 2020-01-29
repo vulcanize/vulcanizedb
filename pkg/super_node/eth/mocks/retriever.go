@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 

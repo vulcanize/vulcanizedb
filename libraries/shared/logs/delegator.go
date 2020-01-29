@@ -22,8 +22,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore"
 )
 
 var (

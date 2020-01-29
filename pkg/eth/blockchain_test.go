@@ -28,9 +28,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	vulcCore "github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	vulcCore "github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Geth blockchain", func() {

@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 type IPropertiesReader interface {

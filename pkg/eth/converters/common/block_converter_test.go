@@ -31,7 +31,7 @@ import (
 
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Conversion of GethBlock to core.Block", func() {

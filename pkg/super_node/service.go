@@ -29,8 +29,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"

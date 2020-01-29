@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Csv Tail Storage Fetcher", func() {

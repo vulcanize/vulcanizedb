@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"golang.org/x/sync/errgroup"
 )
 

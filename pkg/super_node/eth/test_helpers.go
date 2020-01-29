@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
 
 // SetupDB is use to setup a db for super node tests

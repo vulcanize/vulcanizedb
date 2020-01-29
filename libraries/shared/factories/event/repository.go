@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
 
 const SetLogTransformedQuery = `UPDATE public.header_sync_logs SET transformed = true WHERE id = $1`

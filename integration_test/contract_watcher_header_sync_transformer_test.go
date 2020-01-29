@@ -25,13 +25,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/constants"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/helpers/test_helpers/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/header/transformer"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/constants"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
 )
 
 var _ = Describe("contractWatcher headerSync transformer", func() {

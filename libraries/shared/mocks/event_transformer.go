@@ -18,9 +18,9 @@ package mocks
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 type MockEventTransformer struct {

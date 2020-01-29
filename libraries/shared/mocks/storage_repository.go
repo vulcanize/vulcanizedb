@@ -18,7 +18,7 @@ package mocks
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
 
 type MockStorageRepository struct {

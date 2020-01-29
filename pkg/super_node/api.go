@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 // APIName is the namespace used for the state diffing service API

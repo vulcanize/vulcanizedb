@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 const (

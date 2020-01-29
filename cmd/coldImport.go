@@ -20,9 +20,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/pkg/crypto"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/crypto"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/ethereum"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/cold_import"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/cold_db"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"

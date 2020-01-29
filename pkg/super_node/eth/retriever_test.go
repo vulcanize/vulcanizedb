@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"

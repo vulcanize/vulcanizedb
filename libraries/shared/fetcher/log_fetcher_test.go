@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("LogFetcher", func() {

@@ -25,8 +25,8 @@ import (
 
 	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
-	ht "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
+	ft "github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/full/transformer"
+	ht "github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/header/transformer"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 

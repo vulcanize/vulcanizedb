@@ -20,10 +20,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/cold_import"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Geth cold importer", func() {

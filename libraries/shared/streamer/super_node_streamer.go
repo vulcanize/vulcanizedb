@@ -21,7 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 // ISuperNodeStreamer is the interface for streaming SuperNodePayloads from a vulcanizeDB super node

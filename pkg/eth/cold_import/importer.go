@@ -17,9 +17,9 @@
 package cold_import
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/ethereum"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/ethereum"
 )
 
 type ColdImporter struct {
