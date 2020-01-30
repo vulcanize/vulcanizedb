@@ -22,7 +22,6 @@ import (
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
 )
 
@@ -39,13 +38,6 @@ type BlockPayload struct {
 type IPLDPayload struct {
 	BlockPayload
 	TxMetaData []TxModel
-}
-
-// Trie struct used to flag node as leaf or not
-type TrieNode struct {
-	Key   common.Hash
-	Value []byte
-	Leaf  bool
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
