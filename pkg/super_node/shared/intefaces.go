@@ -69,3 +69,8 @@ type ClientSubscription interface {
 	Err() <-chan error
 	Unsubscribe()
 }
+
+// DagPutter is a general interface for a dag putter
+type DagPutter interface {
+	DagPut(raw interface{}) ([]string, error)
+}

@@ -31,7 +31,6 @@ import (
 type IPLDPayload struct {
 	TotalDifficulty *big.Int
 	Block           *types.Block
-	HeaderRLP       []byte
 	TxMetaData      []TxModel
 	Receipts        types.Receipts
 	ReceiptMetaData []ReceiptModel

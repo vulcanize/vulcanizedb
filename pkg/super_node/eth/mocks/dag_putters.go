@@ -25,22 +25,26 @@ import (
 // DagPutter is a mock for testing the ipfs publisher
 type DagPutter struct {
 	CIDsToReturn []string
+	PassedRaw    interface{}
 	ErrToReturn  error
 }
 
 // DagPut returns the pre-loaded CIDs or error
 func (dp *DagPutter) DagPut(raw interface{}) ([]string, error) {
+	dp.PassedRaw = raw
 	return dp.CIDsToReturn, dp.ErrToReturn
 }
 
 // MappedDagPutter is a mock for testing the ipfs publisher
 type MappedDagPutter struct {
 	CIDsToReturn map[common.Hash][]string
+	PassedRaw    interface{}
 	ErrToReturn  error
 }
 
 // DagPut returns the pre-loaded CIDs or error
 func (mdp *MappedDagPutter) DagPut(raw interface{}) ([]string, error) {
+	mdp.PassedRaw = raw
 	if mdp.CIDsToReturn == nil {
 		return nil, errors.New("mapped dag putter needs to be initialized with a map of cids to return")
 	}

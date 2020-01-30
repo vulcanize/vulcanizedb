@@ -37,7 +37,7 @@ type BlockPayload struct {
 // Returned by PayloadConverter
 // Passed to IPLDPublisher and ResponseFilterer
 type IPLDPayload struct {
-	Block      *btcutil.Block
+	BlockPayload
 	TxMetaData []TxModel
 }
 

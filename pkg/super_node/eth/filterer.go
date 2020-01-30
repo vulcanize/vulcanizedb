@@ -76,7 +76,11 @@ func (s *ResponseFilterer) Filter(filter, payload interface{}) (interface{}, err
 
 func (s *ResponseFilterer) filterHeaders(headerFilter config.HeaderFilter, response *StreamPayload, payload *IPLDPayload) error {
 	if !headerFilter.Off {
-		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
+		headerRLP, err := rlp.EncodeToBytes(payload.Block.Header())
+		if err != nil {
+			return err
+		}
+		response.HeadersRlp = append(response.HeadersRlp, headerRLP)
 		if headerFilter.Uncles {
 			response.UnclesRlp = make([][]byte, 0, len(payload.Block.Body().Uncles))
 			for _, uncle := range payload.Block.Body().Uncles {

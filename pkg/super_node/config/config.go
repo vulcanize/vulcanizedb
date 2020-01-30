@@ -52,11 +52,11 @@ type SuperNode struct {
 	// Sync params
 	Sync     bool
 	Workers  int
-	WSClient core.RPCClient
+	WSClient interface{}
 	NodeInfo core.Node
 	// Backfiller params
 	BackFill   bool
-	HTTPClient core.RPCClient
+	HTTPClient interface{}
 	Frequency  time.Duration
 	BatchSize  uint64
 }
@@ -147,7 +147,7 @@ func (sn *SuperNode) BackFillFields() error {
 	return nil
 }
 
-func getNodeAndClient(chain ChainType, path string) (core.Node, core.RPCClient, error) {
+func getNodeAndClient(chain ChainType, path string) (core.Node, interface{}, error) {
 	switch chain {
 	case Ethereum:
 		rawRPCClient, err := rpc.Dial(path)

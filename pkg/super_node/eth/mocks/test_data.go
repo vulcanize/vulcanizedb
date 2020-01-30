@@ -237,7 +237,6 @@ var (
 		TotalDifficulty: big.NewInt(1337),
 		Block:           MockBlock,
 		Receipts:        MockReceipts,
-		HeaderRLP:       MockHeaderRlp,
 		TxMetaData:      MockTrxMeta,
 		ReceiptMetaData: MockRctMeta,
 		StorageNodes:    MockStorageNodes,

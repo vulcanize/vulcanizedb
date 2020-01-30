@@ -50,17 +50,10 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(stateDiffPayload.BlockRlp, block); err != nil {
 		return nil, err
 	}
-	// Process and publish headers
-	header := block.Header()
-	headerRlp, err := rlp.EncodeToBytes(header)
-	if err != nil {
-		return nil, err
-	}
 	trxLen := len(block.Transactions())
 	convertedPayload := &IPLDPayload{
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
-		HeaderRLP:       headerRlp,
 		TxMetaData:      make([]TxModel, 0, trxLen),
 		Receipts:        make(types.Receipts, 0, trxLen),
 		ReceiptMetaData: make([]ReceiptModel, 0, trxLen),

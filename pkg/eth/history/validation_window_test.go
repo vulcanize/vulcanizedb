@@ -22,8 +22,8 @@ import (
 
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/history"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/history"
 )
 
 var _ = Describe("Validation window", func() {

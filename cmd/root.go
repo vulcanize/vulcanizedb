@@ -29,10 +29,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 )
 

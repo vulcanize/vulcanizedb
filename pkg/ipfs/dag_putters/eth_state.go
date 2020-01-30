@@ -14,23 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package integration_test
+package dag_putters
 
 import (
-	"io/ioutil"
-	"testing"
+	"fmt"
 
-	"github.com/sirupsen/logrus"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
 
-func TestIntegrationTest(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "IntegrationTest Suite")
+type EthStateDagPutter struct {
+	adder *ipfs.IPFS
 }
 
-var _ = BeforeSuite(func() {
-	logrus.SetOutput(ioutil.Discard)
-})
+func NewEthStateDagPutter(adder *ipfs.IPFS) *EthStateDagPutter {
+	return &EthStateDagPutter{adder: adder}
+}
+
+func (erdp *EthStateDagPutter) DagPut(raw interface{}) ([]string, error) {
+	stateNodeRLP, ok := raw.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("EthStateDagPutter expected input type %T got %T", []byte{}, raw)
+	}
+	node, err := ipld.FromStateTrieRLP(stateNodeRLP)
+	if err != nil {
+		return nil, err
+	}
+	if err := erdp.adder.Add(node); err != nil {
+		return nil, err
+	}
+	return []string{node.Cid().String()}, nil
+}

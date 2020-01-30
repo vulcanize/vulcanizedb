@@ -17,11 +17,7 @@
 package btc
 
 import (
-	"bytes"
 	"fmt"
-
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for bitcoin
@@ -39,18 +35,8 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("btc converter: expected payload type %T got %T", BlockPayload{}, payload)
 	}
-	msgBlock := wire.NewMsgBlock(btcBlockPayload.Header)
-	for _, tx := range btcBlockPayload.Txs {
-		msgBlock.AddTransaction(tx.MsgTx())
-	}
-	w := bytes.NewBuffer(make([]byte, 0, msgBlock.SerializeSize()))
-	if err := msgBlock.Serialize(w); err != nil {
-		return nil, err
-	}
-	utilBlock := btcutil.NewBlockFromBlockAndBytes(msgBlock, w.Bytes())
-	utilBlock.SetHeight(btcBlockPayload.Height)
 	txMeta := make([]TxModel, len(btcBlockPayload.Txs))
-	for _, tx := range utilBlock.Transactions() {
+	for _, tx := range btcBlockPayload.Txs {
 		index := tx.Index()
 		txModel := TxModel{
 			TxHash:     tx.Hash().String(),
@@ -63,7 +49,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 		txMeta[index] = txModel
 	}
 	return IPLDPayload{
-		Block:      utilBlock,
-		TxMetaData: txMeta,
+		BlockPayload: btcBlockPayload,
+		TxMetaData:   txMeta,
 	}, nil
 }

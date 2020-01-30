@@ -19,6 +19,7 @@ package mocks
 import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // StateDiffStreamer is the underlying struct for the Streamer interface
@@ -30,7 +31,7 @@ type StateDiffStreamer struct {
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *StateDiffStreamer) Stream(payloadChan chan interface{}) (*rpc.ClientSubscription, error) {
+func (sds *StateDiffStreamer) Stream(payloadChan chan interface{}) (shared.ClientSubscription, error) {
 	sds.PassedPayloadChan = payloadChan
 
 	go func() {

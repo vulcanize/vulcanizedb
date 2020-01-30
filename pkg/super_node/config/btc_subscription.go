@@ -14,23 +14,4 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package integration_test
-
-import (
-	"io/ioutil"
-	"testing"
-
-	"github.com/sirupsen/logrus"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-)
-
-func TestIntegrationTest(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "IntegrationTest Suite")
-}
-
-var _ = BeforeSuite(func() {
-	logrus.SetOutput(ioutil.Discard)
-})
+package config
