@@ -48,6 +48,7 @@ type LogExtractor struct {
 	Fetcher                  fetcher.ILogFetcher
 	LogRepository            datastore.EventLogRepository
 	StartingBlock            *int64
+	EndingBlock              *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
 }
@@ -69,16 +70,32 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 		return checkedHeadersErr
 	}
 
-	if extractor.StartingBlock == nil {
+	if resetStartingBlockNumber(config.StartingBlockNumber, extractor.StartingBlock) {
 		extractor.StartingBlock = &config.StartingBlockNumber
-	} else if earlierStartingBlockNumber(config.StartingBlockNumber, *extractor.StartingBlock) {
-		extractor.StartingBlock = &config.StartingBlockNumber
+	}
+
+	if resetEndingBlockNumber(config.EndingBlockNumber, extractor.EndingBlock) {
+		extractor.EndingBlock = &config.EndingBlockNumber
 	}
 
 	addresses := transformer.HexStringsToAddresses(config.ContractAddresses)
 	extractor.Addresses = append(extractor.Addresses, addresses...)
 	extractor.Topics = append(extractor.Topics, common.HexToHash(config.Topic))
 	return nil
+}
+
+func resetStartingBlockNumber(currentTransformerBlock int64, extractorBlock *int64) bool {
+	return extractorBlock == nil || currentTransformerBlock < *extractorBlock
+}
+
+func resetEndingBlockNumber(currentTransformerBlock int64, extractorBlock *int64) bool {
+	if extractorBlock == nil {
+		return true
+	} else if currentTransformerBlock == int64(-1) {
+		return true
+	}
+
+	return *extractorBlock != int64(-1) && currentTransformerBlock > *extractorBlock
 }
 
 // Fetch and persist watched logs
@@ -88,7 +105,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 		return ErrNoWatchedAddresses
 	}
 
-	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, -1, getCheckCount(recheckHeaders))
+	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
 		return uncheckedHeadersErr
@@ -128,8 +145,14 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 	return nil
 }
 
-func earlierStartingBlockNumber(transformerBlock, watcherBlock int64) bool {
-	return transformerBlock < watcherBlock
+func (extractor *LogExtractor) OverrideStartingAndEndingBlocks(startingBlock, endingBlock *int64) {
+	if startingBlock != nil {
+		extractor.StartingBlock = startingBlock
+	}
+
+	if endingBlock != nil {
+		extractor.EndingBlock = endingBlock
+	}
 }
 
 func logError(description string, err error, header core.Header) {
