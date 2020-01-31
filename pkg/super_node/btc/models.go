@@ -16,15 +16,19 @@
 
 package btc
 
+// HeaderModel is the db model for btc.header_cids table
 type HeaderModel struct {
 	ID          int64  `db:"id"`
 	BlockNumber string `db:"block_number"`
 	BlockHash   string `db:"block_hash"`
 	ParentHash  string `db:"parent_hash"`
 	CID         string `db:"cid"`
-	// TotalDifficulty string `db:"td"` Not sure we can support this unless we modify btcd
+	Version     int64  `db:"version"`
+	Timestamp   int64  `db:"timestamp"`
+	Bits        int64  `db:"bits"`
 }
 
+// TxModel is the db model for btc.transaction_cids table
 type TxModel struct {
 	ID          int64  `db:"id"`
 	HeaderID    int64  `db:"header_id"`
@@ -33,6 +37,25 @@ type TxModel struct {
 	CID         string `db:"cid"`
 	HasWitness  bool   `db:"has_witness"`
 	WitnessHash string `db:"witness_hash"`
-	//Dst      string `db:"dst"`
-	//Src      string `db:"src"`
+}
+
+// TxInput is the db model for btc.tx_inputs table
+type TxInput struct {
+	ID                    int64    `db:"id"`
+	TxID                  int64    `db:"tx_id"`
+	Index                 int64    `db:"index"`
+	TxWitness             [][]byte `db:"tx_witness"`
+	Sequence              int64    `db:"sequence"`
+	SignatureScript       []byte   `db:"script"`
+	PreviousOutPointHash  []byte   `db:"outpoint_hash"`
+	PreviousOutPointIndex int64    `db:"outpoint_index"`
+}
+
+// TxOutput is the db model for btc.tx_outputs table
+type TxOutput struct {
+	ID       int64  `db:"id"`
+	TxID     int64  `db:"tx_id"`
+	Index    int64  `db:"index"`
+	Value    int64  `db:"value"`
+	PkScript []byte `db:"script"`
 }

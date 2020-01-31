@@ -33,6 +33,146 @@ CREATE SCHEMA eth;
 SET default_tablespace = '';
 
 --
+-- Name: header_cids; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.header_cids (
+    id integer NOT NULL,
+    block_number bigint NOT NULL,
+    block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
+    cid text NOT NULL,
+    version integer NOT NULL,
+    "timestamp" integer NOT NULL,
+    bits integer NOT NULL
+);
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.header_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.header_cids_id_seq OWNED BY btc.header_cids.id;
+
+
+--
+-- Name: transaction_cids; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.transaction_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    index integer NOT NULL,
+    tx_hash character varying(66) NOT NULL,
+    cid text NOT NULL,
+    has_witness boolean NOT NULL,
+    witness_hash character varying(66)
+);
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.transaction_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.transaction_cids_id_seq OWNED BY btc.transaction_cids.id;
+
+
+--
+-- Name: tx_inputs; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.tx_inputs (
+    id integer NOT NULL,
+    tx_id integer NOT NULL,
+    index integer NOT NULL,
+    tx_witness bytea[],
+    sequence integer NOT NULL,
+    script bytea NOT NULL,
+    outpoint_hash character varying(66) NOT NULL,
+    outpoint_index integer NOT NULL
+);
+
+
+--
+-- Name: tx_inputs_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.tx_inputs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tx_inputs_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.tx_inputs_id_seq OWNED BY btc.tx_inputs.id;
+
+
+--
+-- Name: tx_outputs; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.tx_outputs (
+    id integer NOT NULL,
+    tx_id integer NOT NULL,
+    index integer NOT NULL,
+    value integer NOT NULL,
+    script bytea NOT NULL
+);
+
+
+--
+-- Name: tx_outputs_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.tx_outputs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tx_outputs_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.tx_outputs_id_seq OWNED BY btc.tx_outputs.id;
+
+
+--
 -- Name: header_cids; Type: TABLE; Schema: eth; Owner: -
 --
 
@@ -924,6 +1064,34 @@ ALTER SEQUENCE public.watched_logs_id_seq OWNED BY public.watched_logs.id;
 
 
 --
+-- Name: header_cids id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids ALTER COLUMN id SET DEFAULT nextval('btc.header_cids_id_seq'::regclass);
+
+
+--
+-- Name: transaction_cids id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids ALTER COLUMN id SET DEFAULT nextval('btc.transaction_cids_id_seq'::regclass);
+
+
+--
+-- Name: tx_inputs id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_inputs_id_seq'::regclass);
+
+
+--
+-- Name: tx_outputs id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_outputs_id_seq'::regclass);
+
+
+--
 -- Name: header_cids id; Type: DEFAULT; Schema: eth; Owner: -
 --
 
@@ -1089,6 +1257,70 @@ ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT n
 --
 
 ALTER TABLE ONLY public.watched_logs ALTER COLUMN id SET DEFAULT nextval('public.watched_logs_id_seq'::regclass);
+
+
+--
+-- Name: header_cids header_cids_block_number_block_hash_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_block_number_block_hash_key UNIQUE (block_number, block_hash);
+
+
+--
+-- Name: header_cids header_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transaction_cids transaction_cids_header_id_tx_hash_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_header_id_tx_hash_key UNIQUE (header_id, tx_hash);
+
+
+--
+-- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tx_inputs tx_inputs_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tx_inputs tx_inputs_tx_id_index_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_tx_id_index_key UNIQUE (tx_id, index);
+
+
+--
+-- Name: tx_outputs tx_outputs_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tx_outputs tx_outputs_tx_id_index_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_tx_id_index_key UNIQUE (tx_id, index);
 
 
 --
@@ -1502,6 +1734,30 @@ CREATE INDEX tx_from_index ON public.full_sync_transactions USING btree (tx_from
 --
 
 CREATE INDEX tx_to_index ON public.full_sync_transactions USING btree (tx_to);
+
+
+--
+-- Name: transaction_cids transaction_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES btc.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: tx_inputs tx_inputs_tx_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES btc.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: tx_outputs tx_outputs_tx_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES btc.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
