@@ -51,6 +51,7 @@ type LogExtractor struct {
 	EndingBlock              *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
+	RecheckHeaderCap         int64
 }
 
 func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
@@ -60,6 +61,7 @@ func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
 		Fetcher:                  fetcher.NewLogFetcher(bc),
 		LogRepository:            repositories.NewEventLogRepository(db),
 		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
+		RecheckHeaderCap:         constants.RecheckHeaderCap,
 	}
 }
 
@@ -105,7 +107,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 		return ErrNoWatchedAddresses
 	}
 
-	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, getCheckCount(recheckHeaders))
+	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, extractor.getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
 		return uncheckedHeadersErr
@@ -155,6 +157,10 @@ func (extractor *LogExtractor) OverrideStartingAndEndingBlocks(startingBlock, en
 	}
 }
 
+func (extractor *LogExtractor) OverrideRecheckHeaderCap(cap int64) {
+	extractor.RecheckHeaderCap = cap
+}
+
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
 		"headerId":    header.Id,
@@ -163,11 +169,11 @@ func logError(description string, err error, header core.Header) {
 	}).Errorf(description, err.Error())
 }
 
-func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
+func (extractor *LogExtractor) getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	if recheckHeaders == constants.HeaderUnchecked {
 		return 1
 	} else {
-		return constants.RecheckHeaderCap
+		return extractor.RecheckHeaderCap
 	}
 }
 
