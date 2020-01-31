@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
@@ -123,7 +124,9 @@ func executeTransformers() {
 	// Use WaitGroup to wait on both goroutines
 	var wg sync.WaitGroup
 	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain, maxUnexpectedErrors, retryInterval)
+		extractor := logs.NewLogExtractor(&db, blockChain)
+		delegator := logs.NewLogDelegator(&db)
+		ew := watcher.NewEventWatcher(&db, blockChain, extractor, delegator, maxUnexpectedErrors, retryInterval)
 		addErr := ew.AddTransformers(ethEventInitializers)
 		if addErr != nil {
 			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())

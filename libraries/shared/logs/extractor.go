@@ -18,6 +18,7 @@ package logs
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
@@ -25,6 +26,8 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,6 +50,16 @@ type LogExtractor struct {
 	StartingBlock            *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
+}
+
+func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
+	return &LogExtractor{
+		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
+		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
+		Fetcher:                  fetcher.NewLogFetcher(bc),
+		LogRepository:            repositories.NewEventLogRepository(db),
+		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
+	}
 }
 
 // Add additional logs to extract

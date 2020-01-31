@@ -17,48 +17,42 @@
 package watcher
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
+	"time"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
-	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transactions"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type EventWatcher struct {
 	blockChain                   core.BlockChain
 	db                           *postgres.DB
-	LogDelegator                 logs.ILogDelegator
 	LogExtractor                 logs.ILogExtractor
+	ExpectedExtractorError       error
+	LogDelegator                 logs.ILogDelegator
+	ExpectedDelegatorError       error
 	MaxConsecutiveUnexpectedErrs int
 	RetryInterval                time.Duration
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration) EventWatcher {
-	extractor := &logs.LogExtractor{
-		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
-		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
-		Fetcher:                  fetcher.NewLogFetcher(bc),
-		LogRepository:            repositories.NewEventLogRepository(db),
-		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
-	}
-	logTransformer := &logs.LogDelegator{
-		Chunker:       chunker.NewLogChunker(),
-		LogRepository: repositories.NewEventLogRepository(db),
-	}
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration) EventWatcher {
 	return EventWatcher{
 		blockChain:                   bc,
 		db:                           db,
-		LogDelegator:                 logTransformer,
 		LogExtractor:                 extractor,
+		ExpectedExtractorError:       logs.ErrNoUncheckedHeaders,
+		LogDelegator:                 delegator,
+		ExpectedDelegatorError:       logs.ErrNoLogs,
 		MaxConsecutiveUnexpectedErrs: maxConsecutiveUnexpectedErrs,
 		RetryInterval:                retryInterval,
 	}
+}
+
+func (watcher *EventWatcher) UnsetExpectedExtractorError() {
+	watcher.ExpectedExtractorError = nil
 }
 
 // Adds transformers to the watcher so that their logs will be extracted and delegated.
@@ -102,11 +96,11 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error, quitChan chan bool) {
 	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
-	watcher.withRetry(call, logs.ErrNoUncheckedHeaders, "extracting", errs, quitChan)
+	watcher.withRetry(call, watcher.ExpectedExtractorError, "extracting", errs, quitChan)
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error, quitChan chan bool) {
-	watcher.withRetry(watcher.LogDelegator.DelegateLogs, logs.ErrNoLogs, "delegating", errs, quitChan)
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, watcher.ExpectedDelegatorError, "delegating", errs, quitChan)
 }
 
 func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error, quitChan chan bool) {

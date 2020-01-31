@@ -36,18 +36,14 @@ var _ = Describe("Event Watcher", func() {
 	var (
 		delegator    *mocks.MockLogDelegator
 		extractor    *mocks.MockLogExtractor
-		eventWatcher *watcher.EventWatcher
+		eventWatcher watcher.EventWatcher
 	)
 
 	BeforeEach(func() {
 		delegator = &mocks.MockLogDelegator{}
 		extractor = &mocks.MockLogExtractor{}
-		eventWatcher = &watcher.EventWatcher{
-			LogDelegator:                 delegator,
-			LogExtractor:                 extractor,
-			MaxConsecutiveUnexpectedErrs: 0,
-			RetryInterval:                time.Nanosecond,
-		}
+		bc := fakes.MockBlockChain{}
+		eventWatcher = watcher.NewEventWatcher(nil, &bc, extractor, delegator, 0, time.Nanosecond)
 	})
 
 	Describe("AddTransformers", func() {
@@ -123,12 +119,21 @@ var _ = Describe("Event Watcher", func() {
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("does not treat absence of unchecked headers as an unexpected error", func() {
+		It("does not treat absence of unchecked headers as an unexpected error by default", func() {
 			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
+		})
+
+		It("can be configured to treat absence of unchecked headers as an unexpected error", func() {
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
+			eventWatcher.UnsetExpectedExtractorError()
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(logs.ErrNoUncheckedHeaders))
 		})
 
 		It("extracts watched logs again if missing headers found", func() {
@@ -211,7 +216,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("doesn't panic if one of the go routines errors and closes the err channel", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed, errExecuteClosed}
-			delegator.DelegateErrors = []error{nil,  errExecuteClosed, errExecuteClosed}
+			delegator.DelegateErrors = []error{nil, errExecuteClosed, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
