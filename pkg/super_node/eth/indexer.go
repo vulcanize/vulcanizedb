@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -40,7 +42,7 @@ func NewCIDIndexer(db *postgres.DB) *CIDIndexer {
 }
 
 // Index indexes a cidPayload in Postgres
-func (in *CIDIndexer) Index(cids interface{}) error {
+func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	cidPayload, ok := cids.(*CIDPayload)
 	if !ok {
 		return fmt.Errorf("eth indexer expected cids type %T got %T", &CIDPayload{}, cids)

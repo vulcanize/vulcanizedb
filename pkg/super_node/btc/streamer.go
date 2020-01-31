@@ -43,7 +43,7 @@ func NewPayloadStreamer(clientConfig *rpcclient.ConnConfig) *PayloadStreamer {
 
 // Stream is the main loop for subscribing to data from the btc block notifications
 // Satisfies the shared.PayloadStreamer interface
-func (ps *PayloadStreamer) Stream(payloadChan chan interface{}) (shared.ClientSubscription, error) {
+func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
 	logrus.Info("streaming block payloads from btc")
 	blockNotificationHandler := rpcclient.NotificationHandlers{
 		// Notification handler for block connections, forwards new block data to the payloadChan

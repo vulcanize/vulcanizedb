@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
 )
@@ -32,12 +34,12 @@ func NewIPLDResolver() *IPLDResolver {
 }
 
 // Resolve is the exported method for resolving all of the ETH IPLDs packaged in an IpfsBlockWrapper
-func (eir *IPLDResolver) Resolve(iplds interface{}) (interface{}, error) {
+func (eir *IPLDResolver) Resolve(iplds shared.FetchedIPLDs) (shared.ServerResponse, error) {
 	ipfsBlocks, ok := iplds.(*IPLDWrapper)
 	if !ok {
-		return StreamPayload{}, fmt.Errorf("eth resolver expected iplds type %T got %T", &IPLDWrapper{}, iplds)
+		return StreamResponse{}, fmt.Errorf("eth resolver expected iplds type %T got %T", &IPLDWrapper{}, iplds)
 	}
-	return StreamPayload{
+	return StreamResponse{
 		BlockNumber:     ipfsBlocks.BlockNumber,
 		HeadersRlp:      eir.ResolveHeaders(ipfsBlocks.Headers),
 		UnclesRlp:       eir.ResolveUncles(ipfsBlocks.Uncles),

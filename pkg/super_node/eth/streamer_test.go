@@ -17,6 +17,7 @@ package eth_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
@@ -26,7 +27,7 @@ var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
 		client := &fakes.MockRPCClient{}
 		streamer := eth.NewPayloadStreamer(client)
-		payloadChan := make(chan interface{})
+		payloadChan := make(chan shared.RawChainData)
 		_, err := streamer.Stream(payloadChan)
 		Expect(err).NotTo(HaveOccurred())
 		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream"})

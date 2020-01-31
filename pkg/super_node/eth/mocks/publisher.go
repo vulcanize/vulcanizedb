@@ -19,19 +19,21 @@ package mocks
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
 // IPLDPublisher is the underlying struct for the Publisher interface
 type IPLDPublisher struct {
-	PassedIPLDPayload *eth.IPLDPayload
+	PassedIPLDPayload eth.IPLDPayload
 	ReturnCIDPayload  *eth.CIDPayload
 	ReturnErr         error
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
-	ipldPayload, ok := payload.(*eth.IPLDPayload)
+func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(eth.IPLDPayload)
 	if !ok {
 		return nil, fmt.Errorf("publish expected payload type %T got %T", &eth.IPLDPayload{}, payload)
 	}
@@ -41,15 +43,15 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 
 // IterativeIPLDPublisher is the underlying struct for the Publisher interface; used in testing
 type IterativeIPLDPublisher struct {
-	PassedIPLDPayload []*eth.IPLDPayload
+	PassedIPLDPayload []eth.IPLDPayload
 	ReturnCIDPayload  []*eth.CIDPayload
 	ReturnErr         error
 	iteration         int
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IterativeIPLDPublisher) Publish(payload interface{}) (interface{}, error) {
-	ipldPayload, ok := payload.(*eth.IPLDPayload)
+func (pub *IterativeIPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(eth.IPLDPayload)
 	if !ok {
 		return nil, fmt.Errorf("publish expected payload type %T got %T", &eth.IPLDPayload{}, payload)
 	}

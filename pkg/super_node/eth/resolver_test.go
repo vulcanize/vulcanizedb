@@ -37,7 +37,7 @@ var _ = Describe("Resolver", func() {
 		It("Resolves IPLD data to their correct geth data types and packages them to send to requesting transformers", func() {
 			payload, err := resolver.Resolve(mocks.MockIPLDWrapper)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload, ok := payload.(eth.StreamPayload)
+			superNodePayload, ok := payload.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeedNodePayload.HeadersRlp))

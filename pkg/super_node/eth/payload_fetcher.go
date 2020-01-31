@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
@@ -47,7 +49,7 @@ func NewPayloadFetcher(bc BatchClient) *PayloadFetcher {
 
 // FetchAt fetches the statediff payloads at the given block heights
 // Calls StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
-func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]interface{}, error) {
+func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
 	batch := make([]client.BatchElem, 0)
 	for _, height := range blockHeights {
 		batch = append(batch, client.BatchElem{
@@ -60,7 +62,7 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]interface{}, er
 	if batchErr != nil {
 		return nil, fmt.Errorf("PayloadFetcher err: %s", batchErr.Error())
 	}
-	results := make([]interface{}, 0, len(blockHeights))
+	results := make([]shared.RawChainData, 0, len(blockHeights))
 	for _, batchElem := range batch {
 		if batchElem.Error != nil {
 			return nil, fmt.Errorf("PayloadFetcher err: %s", batchElem.Error.Error())

@@ -65,7 +65,7 @@ func streamEthSubscription() {
 	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan super_node.Payload, 20000)
+	payloadChan := make(chan super_node.SubscriptionPayload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, ethSubConfig)
@@ -81,9 +81,9 @@ func streamEthSubscription() {
 				logWithCommand.Error(payload.Err)
 				continue
 			}
-			data, ok := payload.Data.(eth.StreamPayload)
+			data, ok := payload.Data.(eth.StreamResponse)
 			if !ok {
-				logWithCommand.Warnf("payload data expected type %T got %T", eth.StreamPayload{}, payload.Data)
+				logWithCommand.Warnf("payload data expected type %T got %T", eth.StreamResponse{}, payload.Data)
 				continue
 			}
 			for _, headerRlp := range data.HeadersRlp {

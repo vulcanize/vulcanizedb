@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -41,7 +40,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks.MockCIDRetriever{
@@ -53,7 +52,7 @@ var _ = Describe("BackFiller", func() {
 				},
 			}
 			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 					101: mocks.MockStateDiffPayload,
 				},
@@ -95,7 +94,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks.MockCIDRetriever{
@@ -107,7 +106,7 @@ var _ = Describe("BackFiller", func() {
 				},
 			}
 			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 				},
 			}
@@ -145,7 +144,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks.MockCIDRetriever{
@@ -153,7 +152,7 @@ var _ = Describe("BackFiller", func() {
 				GapsToRetrieve:           []shared.Gap{},
 			}
 			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					1: mocks.MockStateDiffPayload,
 					2: mocks.MockStateDiffPayload,
 				},

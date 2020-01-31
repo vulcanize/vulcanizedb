@@ -24,14 +24,14 @@ import (
 
 // StateDiffStreamer is the underlying struct for the Streamer interface
 type StateDiffStreamer struct {
-	PassedPayloadChan chan interface{}
+	PassedPayloadChan chan shared.RawChainData
 	ReturnSub         *rpc.ClientSubscription
 	ReturnErr         error
 	StreamPayloads    []statediff.Payload
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *StateDiffStreamer) Stream(payloadChan chan interface{}) (shared.ClientSubscription, error) {
+func (sds *StateDiffStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
 	sds.PassedPayloadChan = payloadChan
 
 	go func() {

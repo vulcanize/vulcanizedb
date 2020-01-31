@@ -18,6 +18,8 @@ package btc
 
 import (
 	"fmt"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for bitcoin
@@ -30,7 +32,7 @@ func NewPayloadConverter() *PayloadConverter {
 
 // Convert method is used to convert a bitcoin BlockPayload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
 	btcBlockPayload, ok := payload.(BlockPayload)
 	if !ok {
 		return nil, fmt.Errorf("btc converter: expected payload type %T got %T", BlockPayload{}, payload)

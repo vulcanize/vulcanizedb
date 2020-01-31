@@ -41,7 +41,7 @@ func NewPayloadStreamer(client core.RPCClient) *PayloadStreamer {
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
 // Satisfies the shared.PayloadStreamer interface
-func (ps *PayloadStreamer) Stream(payloadChan chan interface{}) (shared.ClientSubscription, error) {
+func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
 	logrus.Info("streaming diffs from geth")
 	return ps.Client.Subscribe("statediff", payloadChan, "stream")
 }

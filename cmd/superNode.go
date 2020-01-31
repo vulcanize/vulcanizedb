@@ -18,6 +18,8 @@ package cmd
 import (
 	"sync"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -59,10 +61,10 @@ func superNode() {
 	}
 	wg := &sync.WaitGroup{}
 	var forwardQuitChan chan bool
-	var forwardPayloadChan chan interface{}
+	var forwardPayloadChan chan shared.StreamedIPLDs
 	if superNodeConfig.Serve {
 		forwardQuitChan = make(chan bool)
-		forwardPayloadChan = make(chan interface{}, super_node.PayloadChanBufferSize)
+		forwardPayloadChan = make(chan shared.StreamedIPLDs, super_node.PayloadChanBufferSize)
 		superNode.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
 		if err := startServers(superNode, superNodeConfig); err != nil {
 			logWithCommand.Fatal(err)

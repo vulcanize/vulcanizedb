@@ -19,6 +19,8 @@ package mocks
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
@@ -27,12 +29,12 @@ import (
 // PayloadConverter is the underlying struct for the Converter interface
 type PayloadConverter struct {
 	PassedStatediffPayload statediff.Payload
-	ReturnIPLDPayload      *eth.IPLDPayload
+	ReturnIPLDPayload      eth.IPLDPayload
 	ReturnErr              error
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("convert expected payload type %T got %T", statediff.Payload{}, payload)
@@ -44,13 +46,13 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 // IterativePayloadConverter is the underlying struct for the Converter interface
 type IterativePayloadConverter struct {
 	PassedStatediffPayload []statediff.Payload
-	ReturnIPLDPayload      []*eth.IPLDPayload
+	ReturnIPLDPayload      []eth.IPLDPayload
 	ReturnErr              error
 	iteration              int
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *IterativePayloadConverter) Convert(payload interface{}) (interface{}, error) {
+func (pc *IterativePayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("convert expected payload type %T got %T", statediff.Payload{}, payload)

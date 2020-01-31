@@ -22,14 +22,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
-
-	"github.com/ethereum/go-ethereum/params"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 const (
@@ -71,7 +68,7 @@ func NewBackFillService(settings *config.SuperNode) (BackFillInterface, error) {
 	if err != nil {
 		return nil, err
 	}
-	converter, err := NewPayloadConverter(settings.Chain, params.MainnetChainConfig)
+	converter, err := NewPayloadConverter(settings.Chain)
 	if err != nil {
 		return nil, err
 	}

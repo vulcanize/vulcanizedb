@@ -20,25 +20,25 @@ import (
 	"errors"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // StateDiffFetcher mock for tests
 type StateDiffFetcher struct {
-	PayloadsToReturn     map[uint64]statediff.Payload
+	PayloadsToReturn     map[uint64]shared.RawChainData
 	FetchErrs            map[uint64]error
 	CalledAtBlockHeights [][]uint64
 	CalledTimes          int64
 }
 
 // FetchStateDiffsAt mock method
-func (fetcher *StateDiffFetcher) FetchAt(blockHeights []uint64) ([]interface{}, error) {
+func (fetcher *StateDiffFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
 	if fetcher.PayloadsToReturn == nil {
 		return nil, errors.New("mock StateDiffFetcher needs to be initialized with payloads to return")
 	}
 	atomic.AddInt64(&fetcher.CalledTimes, 1) // thread-safe increment
 	fetcher.CalledAtBlockHeights = append(fetcher.CalledAtBlockHeights, blockHeights)
-	results := make([]interface{}, 0, len(blockHeights))
+	results := make([]shared.RawChainData, 0, len(blockHeights))
 	for _, height := range blockHeights {
 		results = append(results, fetcher.PayloadsToReturn[height])
 		err, ok := fetcher.FetchErrs[height]

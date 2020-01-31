@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
@@ -33,7 +35,7 @@ var _ = Describe("Service", func() {
 	Describe("SyncAndPublish", func() {
 		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
-			payloadChan := make(chan interface{}, 1)
+			payloadChan := make(chan shared.RawChainData, 1)
 			quitChan := make(chan bool, 1)
 			mockCidIndexer := &mocks2.CIDIndexer{
 				ReturnErr: nil,

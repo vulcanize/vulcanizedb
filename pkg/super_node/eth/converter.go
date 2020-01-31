@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -40,7 +42,7 @@ func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 
 // Convert method is used to convert a eth statediff.Payload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("eth converter: expected payload type %T got %T", statediff.Payload{}, payload)
@@ -51,7 +53,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 		return nil, err
 	}
 	trxLen := len(block.Transactions())
-	convertedPayload := &IPLDPayload{
+	convertedPayload := IPLDPayload{
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
 		TxMetaData:      make([]TxModel, 0, trxLen),

@@ -45,7 +45,7 @@ var _ = Describe("Filterer", func() {
 		It("Transcribes all the data from the IPLDPayload into the StreamPayload if given an open filter", func() {
 			payload, err := filterer.Filter(openFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload, ok := payload.(eth.StreamPayload)
+			superNodePayload, ok := payload.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeedNodePayload.HeadersRlp))
@@ -66,7 +66,7 @@ var _ = Describe("Filterer", func() {
 		It("Applies filters from the provided config.Subscription", func() {
 			payload1, err := filterer.Filter(rctContractFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload1, ok := payload1.(eth.StreamPayload)
+			superNodePayload1, ok := payload1.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload1.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload1.HeadersRlp)).To(Equal(0))
@@ -79,7 +79,7 @@ var _ = Describe("Filterer", func() {
 
 			payload2, err := filterer.Filter(rctTopicsFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload2, ok := payload2.(eth.StreamPayload)
+			superNodePayload2, ok := payload2.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload2.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload2.HeadersRlp)).To(Equal(0))
@@ -92,7 +92,7 @@ var _ = Describe("Filterer", func() {
 
 			payload3, err := filterer.Filter(rctTopicsAndContractFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload3, ok := payload3.(eth.StreamPayload)
+			superNodePayload3, ok := payload3.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload3.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload3.HeadersRlp)).To(Equal(0))
@@ -105,7 +105,7 @@ var _ = Describe("Filterer", func() {
 
 			payload4, err := filterer.Filter(rctContractsAndTopicFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload4, ok := payload4.(eth.StreamPayload)
+			superNodePayload4, ok := payload4.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload4.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload4.HeadersRlp)).To(Equal(0))
@@ -118,7 +118,7 @@ var _ = Describe("Filterer", func() {
 
 			payload5, err := filterer.Filter(rctsForAllCollectedTrxs, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload5, ok := payload5.(eth.StreamPayload)
+			superNodePayload5, ok := payload5.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload5.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload5.HeadersRlp)).To(Equal(0))
@@ -134,7 +134,7 @@ var _ = Describe("Filterer", func() {
 
 			payload6, err := filterer.Filter(rctsForSelectCollectedTrxs, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload6, ok := payload6.(eth.StreamPayload)
+			superNodePayload6, ok := payload6.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload6.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload6.HeadersRlp)).To(Equal(0))
@@ -148,7 +148,7 @@ var _ = Describe("Filterer", func() {
 
 			payload7, err := filterer.Filter(stateFilter, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload7, ok := payload7.(eth.StreamPayload)
+			superNodePayload7, ok := payload7.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload7.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload7.HeadersRlp)).To(Equal(0))
@@ -161,7 +161,7 @@ var _ = Describe("Filterer", func() {
 
 			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockIPLDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload8, ok := payload8.(eth.StreamPayload)
+			superNodePayload8, ok := payload8.(eth.StreamResponse)
 			Expect(ok).To(BeTrue())
 			Expect(superNodePayload8.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
 			Expect(len(superNodePayload8.HeadersRlp)).To(Equal(0))

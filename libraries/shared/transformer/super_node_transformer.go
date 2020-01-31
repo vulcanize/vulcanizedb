@@ -19,13 +19,13 @@ package transformer
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 type SuperNodeTransformer interface {
 	Init() error
 	Execute() error
-	GetConfig() super_node.SubscriptionSettings
+	GetConfig() shared.SubscriptionSettings
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer
+type SuperNodeTransformerInitializer func(db *postgres.DB, subCon shared.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer

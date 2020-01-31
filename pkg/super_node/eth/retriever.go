@@ -58,7 +58,7 @@ func (ecr *CIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 }
 
 // Retrieve is used to retrieve all of the CIDs which conform to the passed StreamFilters
-func (ecr *CIDRetriever) Retrieve(filter interface{}, blockNumber int64) (interface{}, bool, error) {
+func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) (shared.CIDsForFetching, bool, error) {
 	streamFilter, ok := filter.(*config.EthSubscription)
 	if !ok {
 		return nil, true, fmt.Errorf("eth retriever expected filter type %T got %T", &config.EthSubscription{}, filter)

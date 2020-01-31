@@ -64,7 +64,7 @@ func NewCIDRetriever(chain config.ChainType, db *postgres.DB) (shared.CIDRetriev
 }
 
 // NewPayloadStreamer constructs a PayloadStreamer for the provided chain type
-func NewPayloadStreamer(chain config.ChainType, client interface{}) (shared.PayloadStreamer, chan interface{}, error) {
+func NewPayloadStreamer(chain config.ChainType, client interface{}) (shared.PayloadStreamer, chan shared.RawChainData, error) {
 	switch chain {
 	case config.Ethereum:
 		ethClient, ok := client.(core.RPCClient)
@@ -72,14 +72,14 @@ func NewPayloadStreamer(chain config.ChainType, client interface{}) (shared.Payl
 			var expectedClientType core.RPCClient
 			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", expectedClientType, client)
 		}
-		streamChan := make(chan interface{}, eth.PayloadChanBufferSize)
+		streamChan := make(chan shared.RawChainData, eth.PayloadChanBufferSize)
 		return eth.NewPayloadStreamer(ethClient), streamChan, nil
 	case config.Bitcoin:
 		btcClientConn, ok := client.(*rpcclient.ConnConfig)
 		if !ok {
 			return nil, nil, fmt.Errorf("bitcoin payload streamer constructor expected client config type %T got %T", rpcclient.ConnConfig{}, client)
 		}
-		streamChan := make(chan interface{}, btc.PayloadChanBufferSize)
+		streamChan := make(chan shared.RawChainData, btc.PayloadChanBufferSize)
 		return btc.NewPayloadStreamer(btcClientConn), streamChan, nil
 	default:
 		return nil, nil, fmt.Errorf("invalid chain %T for streamer constructor", chain)
@@ -102,14 +102,10 @@ func NewPaylaodFetcher(chain config.ChainType, client interface{}) (shared.Paylo
 }
 
 // NewPayloadConverter constructs a PayloadConverter for the provided chain type
-func NewPayloadConverter(chain config.ChainType, settings interface{}) (shared.PayloadConverter, error) {
+func NewPayloadConverter(chain config.ChainType) (shared.PayloadConverter, error) {
 	switch chain {
 	case config.Ethereum:
-		ethConfig, ok := settings.(*params.ChainConfig)
-		if !ok {
-			return nil, fmt.Errorf("ethereum converter constructor expected config type %T got %T", &params.ChainConfig{}, settings)
-		}
-		return eth.NewPayloadConverter(ethConfig), nil
+		return eth.NewPayloadConverter(params.MainnetChainConfig), nil
 	case config.Bitcoin:
 		return btc.NewPayloadConverter(), nil
 	default:

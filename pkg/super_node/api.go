@@ -19,6 +19,8 @@ package super_node
 import (
 	"context"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
@@ -44,7 +46,7 @@ func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
 }
 
 // Stream is the public method to setup a subscription that fires off super node payloads as they are processed
-func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params SubscriptionSettings) (*rpc.Subscription, error) {
+func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params shared.SubscriptionSettings) (*rpc.Subscription, error) {
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
@@ -56,7 +58,7 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params SubscriptionSe
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan Payload, PayloadChanBufferSize)
+		payloadChannel := make(chan SubscriptionPayload, PayloadChanBufferSize)
 		quitChan := make(chan bool, 1)
 		go api.sn.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
 

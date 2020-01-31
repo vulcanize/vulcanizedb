@@ -16,6 +16,29 @@
 
 package shared
 
+// These types serve as very loose wrappers around a generic underlying interface{}
+type RawChainData interface{}
+
+// The concrete type underneath StreamedIPLDs can be a pointer only if the Value() method returns a copy of the values
+// stored at that memory location and not a copy of the pointer itself.
+// We want to avoid sending a pointer to publishAndIndex and screenAndServe channels; sharing memory across these processes
+type StreamedIPLDs interface {
+	Value() StreamedIPLDs
+}
+
+type CIDsForIndexing interface{}
+
+type CIDsForFetching interface{}
+
+type FetchedIPLDs interface{}
+
+// The concrete type underneath StreamedIPLDs can be a pointer only if the Value() method returns a copy of the values
+// stored at that memory location and not a copy of the pointer itself.
+// We want to avoid sending a pointer to subscription channels; sharing memory across all subscriptions
+type ServerResponse interface {
+	Value() ServerResponse
+}
+
 type Gap struct {
 	Start uint64
 	Stop  uint64

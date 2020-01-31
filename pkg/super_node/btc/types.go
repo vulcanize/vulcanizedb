@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/ipfs/go-block-format"
@@ -38,6 +40,10 @@ type BlockPayload struct {
 type IPLDPayload struct {
 	BlockPayload
 	TxMetaData []TxModel
+}
+
+func (ip IPLDPayload) Value() shared.StreamedIPLDs {
+	return ip
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
