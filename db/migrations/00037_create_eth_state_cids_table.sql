@@ -1,7 +1,7 @@
 -- +goose Up
-CREATE TABLE public.state_cids (
+CREATE TABLE eth.state_cids (
   id                    SERIAL PRIMARY KEY,
-  header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  header_id             INTEGER NOT NULL REFERENCES eth.header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   state_key             VARCHAR(66) NOT NULL,
   leaf                  BOOLEAN NOT NULL,
   cid                   TEXT NOT NULL,
@@ -9,4 +9,4 @@ CREATE TABLE public.state_cids (
 );
 
 -- +goose Down
-DROP TABLE public.state_cids;
+DROP TABLE eth.state_cids;

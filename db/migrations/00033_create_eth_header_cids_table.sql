@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE public.header_cids (
+CREATE TABLE eth.header_cids (
   id                    SERIAL PRIMARY KEY,
   block_number          BIGINT NOT NULL,
   block_hash            VARCHAR(66) NOT NULL,
@@ -10,4 +10,4 @@ CREATE TABLE public.header_cids (
 );
 
 -- +goose Down
-DROP TABLE public.header_cids;
+DROP TABLE eth.header_cids;

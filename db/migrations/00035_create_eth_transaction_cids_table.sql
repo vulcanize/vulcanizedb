@@ -1,7 +1,7 @@
 -- +goose Up
-CREATE TABLE public.transaction_cids (
+CREATE TABLE eth.transaction_cids (
   id                    SERIAL PRIMARY KEY,
-  header_id             INTEGER NOT NULL REFERENCES header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  header_id             INTEGER NOT NULL REFERENCES eth.header_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   tx_hash               VARCHAR(66) NOT NULL,
   index                 INTEGER NOT NULL,
   cid                   TEXT NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE public.transaction_cids (
 );
 
 -- +goose Down
-DROP TABLE public.transaction_cids;
+DROP TABLE eth.transaction_cids;

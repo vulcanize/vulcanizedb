@@ -46,7 +46,7 @@ var _ = Describe("Indexer", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
 			err = repo.Index(mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			pgStr := `SELECT cid, td FROM header_cids
+			pgStr := `SELECT cid, td FROM eth.header_cids
 				WHERE block_number = $1`
 			// check header was properly indexed
 			type res struct {
@@ -60,7 +60,7 @@ var _ = Describe("Indexer", func() {
 			Expect(headers.TD).To(Equal("1337"))
 			// check trxs were properly indexed
 			trxs := make([]string, 0)
-			pgStr = `SELECT transaction_cids.cid FROM transaction_cids INNER JOIN header_cids ON (transaction_cids.header_id = header_cids.id)
+			pgStr = `SELECT transaction_cids.cid FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
 				WHERE header_cids.block_number = $1`
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
@@ -69,7 +69,7 @@ var _ = Describe("Indexer", func() {
 			Expect(shared.ListContainsString(trxs, "mockTrxCID2")).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
-			pgStr = `SELECT receipt_cids.cid FROM receipt_cids, transaction_cids, header_cids
+			pgStr = `SELECT receipt_cids.cid FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
 				WHERE receipt_cids.tx_id = transaction_cids.id 
 				AND transaction_cids.header_id = header_cids.id
 				AND header_cids.block_number = $1`
@@ -80,7 +80,7 @@ var _ = Describe("Indexer", func() {
 			Expect(shared.ListContainsString(rcts, "mockRctCID2")).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]eth.StateNodeModel, 0)
-			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM state_cids INNER JOIN header_cids ON (state_cids.header_id = header_cids.id)
+			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 				WHERE header_cids.block_number = $1`
 			err = db.Select(&stateNodes, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
@@ -97,7 +97,7 @@ var _ = Describe("Indexer", func() {
 			}
 			// check that storage nodes were properly indexed
 			storageNodes := make([]eth.StorageNodeWithStateKeyModel, 0)
-			pgStr = `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key, storage_cids.leaf FROM storage_cids, state_cids, header_cids
+			pgStr = `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key, storage_cids.leaf FROM eth.storage_cids, eth.state_cids, eth.header_cids
 				WHERE storage_cids.state_id = state_cids.id 
 				AND state_cids.header_id = header_cids.id
 				AND header_cids.block_number = $1`

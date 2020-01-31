@@ -1,7 +1,7 @@
 -- +goose Up
-CREATE TABLE public.receipt_cids (
+CREATE TABLE eth.receipt_cids (
   id                    SERIAL PRIMARY KEY,
-  tx_id                 INTEGER NOT NULL REFERENCES transaction_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  tx_id                 INTEGER NOT NULL REFERENCES eth.transaction_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
   cid                   TEXT NOT NULL,
   contract              VARCHAR(66),
   topic0s               VARCHAR(66)[],
@@ -11,4 +11,4 @@ CREATE TABLE public.receipt_cids (
 );
 
 -- +goose Down
-DROP TABLE public.receipt_cids;
+DROP TABLE eth.receipt_cids;
