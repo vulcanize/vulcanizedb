@@ -48,6 +48,8 @@ func NewCIDIndexer(chain config.ChainType, db *postgres.DB) (shared.CIDIndexer, 
 	switch chain {
 	case config.Ethereum:
 		return eth.NewCIDIndexer(db), nil
+	case config.Bitcoin:
+		return btc.NewCIDIndexer(db), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %T for indexer constructor", chain)
 	}
@@ -128,6 +130,8 @@ func NewIPLDPublisher(chain config.ChainType, ipfsPath string) (shared.IPLDPubli
 	switch chain {
 	case config.Ethereum:
 		return eth.NewIPLDPublisher(ipfsPath)
+	case config.Bitcoin:
+		return btc.NewIPLDPublisher(ipfsPath)
 	default:
 		return nil, fmt.Errorf("invalid chain %T for publisher constructor", chain)
 	}

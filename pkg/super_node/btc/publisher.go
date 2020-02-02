@@ -63,6 +63,9 @@ func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForI
 		ParentHash:  ipldPayload.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(ipldPayload.Height)),
 		BlockHash:   ipldPayload.Header.BlockHash().String(),
+		Version:     ipldPayload.Header.Version,
+		Timestamp:   ipldPayload.Header.Timestamp.UnixNano(),
+		Bits:        ipldPayload.Header.Bits,
 	}
 	// Process and publish transactions
 	transactionCids, err := pub.publishTransactions(ipldPayload.Txs, ipldPayload.TxMetaData)
@@ -84,7 +87,7 @@ func (pub *IPLDPublisher) publishHeader(header *wire.BlockHeader) (string, error
 	return cids[0], nil
 }
 
-func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMeta []TxModel) ([]TxModel, error) {
+func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMeta []TxModelWithInsAndOuts) ([]TxModelWithInsAndOuts, error) {
 	transactionCids, err := pub.TransactionPutter.DagPut(transactions)
 	if err != nil {
 		return nil, err
@@ -92,14 +95,16 @@ func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMet
 	if len(transactionCids) != len(trxMeta) {
 		return nil, errors.New("expected one CID for each transaction")
 	}
-	mappedTrxCids := make([]TxModel, len(transactionCids))
+	mappedTrxCids := make([]TxModelWithInsAndOuts, len(transactionCids))
 	for i, cid := range transactionCids {
-		mappedTrxCids[i] = TxModel{
+		mappedTrxCids[i] = TxModelWithInsAndOuts{
 			CID:         cid,
 			Index:       trxMeta[i].Index,
 			TxHash:      trxMeta[i].TxHash,
 			HasWitness:  trxMeta[i].HasWitness,
 			WitnessHash: trxMeta[i].WitnessHash,
+			TxInputs:    trxMeta[i].TxInputs,
+			TxOutputs:   trxMeta[i].TxOutputs,
 		}
 	}
 	return mappedTrxCids, nil

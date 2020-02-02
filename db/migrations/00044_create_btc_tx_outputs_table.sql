@@ -4,7 +4,7 @@ CREATE TABLE btc.tx_outputs (
 	tx_id        INTEGER NOT NULL REFERENCES btc.transaction_cids (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
 	index        INTEGER NOT NULL,
 	value        INTEGER NOT NULL,
-	script       BYTEA NOT NULL,
+	pk_script    BYTEA NOT NULL,
 	UNIQUE (tx_id, index)
 );
 

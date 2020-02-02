@@ -37,16 +37,34 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 	if !ok {
 		return nil, fmt.Errorf("btc converter: expected payload type %T got %T", BlockPayload{}, payload)
 	}
-	txMeta := make([]TxModel, len(btcBlockPayload.Txs))
+	txMeta := make([]TxModelWithInsAndOuts, len(btcBlockPayload.Txs))
 	for _, tx := range btcBlockPayload.Txs {
 		index := tx.Index()
-		txModel := TxModel{
+		txModel := TxModelWithInsAndOuts{
 			TxHash:     tx.Hash().String(),
 			Index:      int64(tx.Index()),
 			HasWitness: tx.HasWitness(),
+			TxOutputs:  make([]TxOutput, len(tx.MsgTx().TxOut)),
+			TxInputs:   make([]TxInput, len(tx.MsgTx().TxIn)),
 		}
 		if tx.HasWitness() {
 			txModel.WitnessHash = tx.WitnessHash().String()
+		}
+		for i, in := range tx.MsgTx().TxIn {
+			txModel.TxInputs[i] = TxInput{
+				Index:                 int64(i),
+				SignatureScript:       in.SignatureScript,
+				PreviousOutPointHash:  in.PreviousOutPoint.Hash.String(),
+				PreviousOutPointIndex: in.PreviousOutPoint.Index,
+				TxWitness:             in.Witness,
+			}
+		}
+		for i, out := range tx.MsgTx().TxOut {
+			txModel.TxOutputs[i] = TxOutput{
+				Index:    int64(i),
+				Value:    out.Value,
+				PkScript: out.PkScript,
+			}
 		}
 		txMeta[index] = txModel
 	}

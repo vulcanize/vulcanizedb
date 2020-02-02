@@ -39,7 +39,7 @@ type BlockPayload struct {
 // Passed to IPLDPublisher and ResponseFilterer
 type IPLDPayload struct {
 	BlockPayload
-	TxMetaData []TxModel
+	TxMetaData []TxModelWithInsAndOuts
 }
 
 func (ip IPLDPayload) Value() shared.StreamedIPLDs {
@@ -51,7 +51,7 @@ func (ip IPLDPayload) Value() shared.StreamedIPLDs {
 // Passed to CIDIndexer
 type CIDPayload struct {
 	HeaderCID       HeaderModel
-	TransactionCIDs []TxModel
+	TransactionCIDs []TxModelWithInsAndOuts
 }
 
 // CIDWrapper is used to direct fetching of IPLDs from IPFS

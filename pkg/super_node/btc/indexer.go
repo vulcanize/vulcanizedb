@@ -15,3 +15,98 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package btc
+
+import (
+	"fmt"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+)
+
+type CIDIndexer struct {
+	db *postgres.DB
+}
+
+func NewCIDIndexer(db *postgres.DB) *CIDIndexer {
+	return &CIDIndexer{
+		db: db,
+	}
+}
+
+func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
+	cidWrapper, ok := cids.(*CIDPayload)
+	if !ok {
+		return fmt.Errorf("btc indexer expected cids type %T got %T", &CIDPayload{}, cids)
+	}
+	tx, err := in.db.Beginx()
+	if err != nil {
+		return err
+	}
+	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
+	if err != nil {
+		return err
+	}
+	if err := in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
+	var headerID int64
+	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, version, timestamp, bits)
+							VALUES ($1, $2, $3, $4, $5, $6, $7) 
+							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, version, timestamp, bits) = ($3, $4, $5, $6, $7)
+							RETURNING id`,
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Version, header.Timestamp, header.Bits).Scan(&headerID)
+	return headerID, err
+}
+
+func (in *CIDIndexer) indexTransactionCIDs(tx *sqlx.Tx, transactions []TxModelWithInsAndOuts, headerID int64) error {
+	for _, transaction := range transactions {
+		txID, err := in.indexTransactionCID(tx, transaction, headerID)
+		if err != nil {
+			return err
+		}
+		for _, input := range transaction.TxInputs {
+			if err := in.indexTxInput(tx, input, txID); err != nil {
+				return err
+			}
+		}
+		for _, output := range transaction.TxOutputs {
+			if err := in.indexTxOutput(tx, output, txID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModelWithInsAndOuts, headerID int64) (int64, error) {
+	var txID int64
+	err := tx.QueryRowx(`INSERT INTO btc.transaction_cids (header_id, tx_hash, index, cid, has_witness, witness_hash)
+							VALUES ($1, $2, $3, $4, $5, $6)
+							ON CONFLICT (header_id, tx_hash) DO UPDATE SET (index, cid, has_witness, witness_hash) = ($3, $4, $5, $6)
+							RETURNING id`,
+		headerID, transaction.TxHash, transaction.Index, transaction.CID, transaction.HasWitness, transaction.WitnessHash).Scan(&txID)
+	return txID, err
+}
+
+func (in *CIDIndexer) indexTxInput(tx *sqlx.Tx, txInput TxInput, txID int64) error {
+	_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, tx_witness, sig_script, outpoint_hash, outpoint_index)
+						VALUES ($1, $2, $3, $4, $5, $6)
+						ON CONFLICT (tx_id, index) DO UPDATE SET (tx_witness, sig_script, outpoint_hash, outpoint_index) = ($3, $4, $5, $6)`,
+		txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex)
+	return err
+}
+
+func (in *CIDIndexer) indexTxOutput(tx *sqlx.Tx, txOuput TxOutput, txID int64) error {
+	_, err := tx.Exec(`INSERT INTO btc.tx_outputs (tx_id, index, value, pk_script)
+							VALUES ($1, $2, $3, $4)
+							ON CONFLICT (ix_id, index) DO UPDATE SET (value, pk_script) = ($3, $4)`,
+		txID, txOuput.Index, txOuput.Value, txOuput.PkScript)
+	return err
+}

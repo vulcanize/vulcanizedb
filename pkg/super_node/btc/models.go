@@ -23,9 +23,9 @@ type HeaderModel struct {
 	BlockHash   string `db:"block_hash"`
 	ParentHash  string `db:"parent_hash"`
 	CID         string `db:"cid"`
-	Version     int64  `db:"version"`
+	Version     int32  `db:"version"`
 	Timestamp   int64  `db:"timestamp"`
-	Bits        int64  `db:"bits"`
+	Bits        uint32 `db:"bits"`
 }
 
 // TxModel is the db model for btc.transaction_cids table
@@ -39,16 +39,28 @@ type TxModel struct {
 	WitnessHash string `db:"witness_hash"`
 }
 
+// TxModelWithInsAndOuts is the db model for btc.transaction_cids table that includes the children tx_input and tx_output tables
+type TxModelWithInsAndOuts struct {
+	ID          int64  `db:"id"`
+	HeaderID    int64  `db:"header_id"`
+	Index       int64  `db:"index"`
+	TxHash      string `db:"tx_hash"`
+	CID         string `db:"cid"`
+	HasWitness  bool   `db:"has_witness"`
+	WitnessHash string `db:"witness_hash"`
+	TxInputs    []TxInput
+	TxOutputs   []TxOutput
+}
+
 // TxInput is the db model for btc.tx_inputs table
 type TxInput struct {
 	ID                    int64    `db:"id"`
 	TxID                  int64    `db:"tx_id"`
 	Index                 int64    `db:"index"`
 	TxWitness             [][]byte `db:"tx_witness"`
-	Sequence              int64    `db:"sequence"`
-	SignatureScript       []byte   `db:"script"`
-	PreviousOutPointHash  []byte   `db:"outpoint_hash"`
-	PreviousOutPointIndex int64    `db:"outpoint_index"`
+	SignatureScript       []byte   `db:"sig_script"`
+	PreviousOutPointHash  string   `db:"outpoint_hash"`
+	PreviousOutPointIndex uint32   `db:"outpoint_index"`
 }
 
 // TxOutput is the db model for btc.tx_outputs table
@@ -57,5 +69,5 @@ type TxOutput struct {
 	TxID     int64  `db:"tx_id"`
 	Index    int64  `db:"index"`
 	Value    int64  `db:"value"`
-	PkScript []byte `db:"script"`
+	PkScript []byte `db:"pk_script"`
 }
