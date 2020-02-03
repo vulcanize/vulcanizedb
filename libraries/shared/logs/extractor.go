@@ -147,10 +147,6 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 	return nil
 }
 
-func (extractor *LogExtractor) OverrideRecheckHeaderCap(cap int64) {
-	extractor.RecheckHeaderCap = cap
-}
-
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
 		"headerId":    header.Id,

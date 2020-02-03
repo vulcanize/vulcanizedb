@@ -413,40 +413,6 @@ var _ = Describe("Log extractor", func() {
 			})
 		})
 	})
-
-	Describe("OverrideRecheckHeaderCap", func() {
-		It("gets headers since configured starting block with check_count < RecheckHeaderCap by default", func() {
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{}}
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
-			startingBlockNumber := rand.Int63()
-			extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber, defaultEndingBlockNumber))
-
-			err := extractor.ExtractLogs(constants.HeaderRecheck)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(startingBlockNumber))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersEndingBlockNumber).To(Equal(defaultEndingBlockNumber))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersCheckCount).To(Equal(constants.RecheckHeaderCap))
-		})
-
-		It("uses the override RecheckHeaderCap when set", func() {
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{}}
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
-			startingBlockNumber := rand.Int63()
-			extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber, defaultEndingBlockNumber))
-
-			newRecheckHeaderCap := int64(6)
-			extractor.OverrideRecheckHeaderCap(newRecheckHeaderCap)
-			err := extractor.ExtractLogs(constants.HeaderRecheck)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(startingBlockNumber))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersEndingBlockNumber).To(Equal(defaultEndingBlockNumber))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersCheckCount).To(Equal(newRecheckHeaderCap))
-		})
-	})
 })
 
 func addTransformerConfig(extractor *logs.LogExtractor) {
