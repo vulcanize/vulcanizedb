@@ -28,6 +28,7 @@ type AddressRepository interface {
 type CheckedHeadersRepository interface {
 	MarkHeaderChecked(headerID int64) error
 	MarkHeadersUnchecked(startingBlockNumber int64) error
+	MarkSingleHeaderUnchecked(blockNumber int64) error
 	UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error)
 }
 

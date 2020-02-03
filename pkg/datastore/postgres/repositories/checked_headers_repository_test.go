@@ -119,6 +119,38 @@ var _ = Describe("Checked Headers repository", func() {
 		})
 	})
 
+	Describe("MarkHeadersUnchecked", func() {
+		It("removes rows for headers <= starting block number", func() {
+			blockNumberOne := rand.Int63()
+			blockNumberTwo := blockNumberOne + 1
+			fakeHeaderOne := fakes.GetFakeHeader(blockNumberOne)
+			fakeHeaderTwo := fakes.GetFakeHeader(blockNumberTwo)
+			headerRepository := repositories.NewHeaderRepository(db)
+			// insert three headers with incrementing block number
+			headerIdOne, insertHeaderOneErr := headerRepository.CreateOrUpdateHeader(fakeHeaderOne)
+			Expect(insertHeaderOneErr).NotTo(HaveOccurred())
+			headerIdTwo, insertHeaderTwoErr := headerRepository.CreateOrUpdateHeader(fakeHeaderTwo)
+			Expect(insertHeaderTwoErr).NotTo(HaveOccurred())
+			// mark all headers checked
+			markHeaderOneCheckedErr := repo.MarkHeaderChecked(headerIdOne)
+			Expect(markHeaderOneCheckedErr).NotTo(HaveOccurred())
+			markHeaderTwoCheckedErr := repo.MarkHeaderChecked(headerIdTwo)
+			Expect(markHeaderTwoCheckedErr).NotTo(HaveOccurred())
+
+			// mark header from blockNumberTwo unchecked
+			err := repo.MarkSingleHeaderUnchecked(blockNumberTwo)
+
+			Expect(err).NotTo(HaveOccurred())
+			var headerOneCheckCount, headerTwoCheckCount int
+			getHeaderOneErr := db.Get(&headerOneCheckCount, `SELECT check_count FROM public.headers WHERE id = $1`, headerIdOne)
+			Expect(getHeaderOneErr).NotTo(HaveOccurred())
+			Expect(headerOneCheckCount).To(Equal(1))
+			getHeaderTwoErr := db.Get(&headerTwoCheckCount, `SELECT check_count FROM public.headers WHERE id = $1`, headerIdTwo)
+			Expect(getHeaderTwoErr).NotTo(HaveOccurred())
+			Expect(headerTwoCheckCount).To(BeZero())
+		})
+	})
+
 	Describe("UncheckedHeaders", func() {
 		var (
 			headerRepository      datastore.HeaderRepository
