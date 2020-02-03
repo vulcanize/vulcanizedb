@@ -34,11 +34,11 @@ in case one was missed.
 
 Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 `,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
-
-		resetHeaderCount(int64(blockNumber))
+		LogWithCommand.Infof("Updating check_count for header %v set to 0.", blockNumber)
+		return resetHeaderCount(int64(blockNumber))
 	},
 }
 
@@ -47,14 +47,9 @@ func init() {
 	rootCmd.AddCommand(resetHeaderCheckCountCmd)
 }
 
-func resetHeaderCount(blockNumber int64) {
+func resetHeaderCount(blockNumber int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	repo := repositories.NewCheckedHeadersRepository(&db)
-	err := repo.MarkSingleHeaderUnchecked(blockNumber)
-	if err != nil {
-		LogWithCommand.Fatalf("Error updating header %v check_count: %v", blockNumber, err)
-	} else {
-		LogWithCommand.Infof("check_count for header %v set to 0.", blockNumber)
-	}
+	return repo.MarkSingleHeaderUnchecked(blockNumber)
 }
