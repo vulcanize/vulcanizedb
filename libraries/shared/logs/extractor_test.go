@@ -414,39 +414,6 @@ var _ = Describe("Log extractor", func() {
 		})
 	})
 
-	Describe("OverrideStartingAndEndingBlocks", func() {
-		It("uses the configured transformer blocks when no override blocks are passed in", func() {
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{}}
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
-			startingBlockNumber := rand.Int63()
-			extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber, defaultEndingBlockNumber))
-
-			err := extractor.ExtractLogs(constants.HeaderRecheck)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(startingBlockNumber))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersEndingBlockNumber).To(Equal(defaultEndingBlockNumber))
-		})
-
-		It("uses the override blocks to get UncheckedHeaders", func() {
-			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}
-			mockCheckedHeadersRepository.UncheckedHeadersReturnHeaders = []core.Header{{}}
-			extractor.CheckedHeadersRepository = mockCheckedHeadersRepository
-			startingBlockNumber := rand.Int63()
-			extractor.AddTransformerConfig(getTransformerConfig(startingBlockNumber, defaultEndingBlockNumber))
-			newStartingBlock := int64(1)
-			newEndingBlock := int64(2)
-			extractor.OverrideStartingAndEndingBlocks(&newStartingBlock, &newEndingBlock)
-
-			err := extractor.ExtractLogs(constants.HeaderRecheck)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersStartingBlockNumber).To(Equal(newStartingBlock))
-			Expect(mockCheckedHeadersRepository.UncheckedHeadersEndingBlockNumber).To(Equal(newEndingBlock))
-		})
-	})
-
 	Describe("OverrideRecheckHeaderCap", func() {
 		It("gets headers since configured starting block with check_count < RecheckHeaderCap by default", func() {
 			mockCheckedHeadersRepository := &fakes.MockCheckedHeadersRepository{}

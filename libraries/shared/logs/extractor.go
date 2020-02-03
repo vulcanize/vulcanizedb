@@ -147,16 +147,6 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 	return nil
 }
 
-func (extractor *LogExtractor) OverrideStartingAndEndingBlocks(startingBlock, endingBlock *int64) {
-	if startingBlock != nil {
-		extractor.StartingBlock = startingBlock
-	}
-
-	if endingBlock != nil {
-		extractor.EndingBlock = endingBlock
-	}
-}
-
 func (extractor *LogExtractor) OverrideRecheckHeaderCap(cap int64) {
 	extractor.RecheckHeaderCap = cap
 }
