@@ -72,11 +72,11 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 		return checkedHeadersErr
 	}
 
-	if resetStartingBlockNumber(config.StartingBlockNumber, extractor.StartingBlock) {
+	if shouldResetStartingBlockToEarlierTransformerBlock(config.StartingBlockNumber, extractor.StartingBlock) {
 		extractor.StartingBlock = &config.StartingBlockNumber
 	}
 
-	if resetEndingBlockNumber(config.EndingBlockNumber, extractor.EndingBlock) {
+	if shouldResetEndingBlockToLaterTransformerBlock(config.EndingBlockNumber, extractor.EndingBlock) {
 		extractor.EndingBlock = &config.EndingBlockNumber
 	}
 
@@ -86,18 +86,28 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 	return nil
 }
 
-func resetStartingBlockNumber(currentTransformerBlock int64, extractorBlock *int64) bool {
-	return extractorBlock == nil || currentTransformerBlock < *extractorBlock
-}
-
-func resetEndingBlockNumber(currentTransformerBlock int64, extractorBlock *int64) bool {
-	if extractorBlock == nil {
-		return true
-	} else if currentTransformerBlock == int64(-1) {
+func shouldResetStartingBlockToEarlierTransformerBlock(currentTransformerBlock int64, extractorBlock *int64) bool {
+	isExtractorBlockNil := extractorBlock == nil
+	if isExtractorBlockNil {
 		return true
 	}
 
-	return *extractorBlock != int64(-1) && currentTransformerBlock > *extractorBlock
+	isTransformerBlockLessThan := currentTransformerBlock < *extractorBlock
+	return isTransformerBlockLessThan
+}
+
+func shouldResetEndingBlockToLaterTransformerBlock(currentTransformerBlock int64, extractorBlock *int64) bool {
+	isExtractorBlockNil := extractorBlock == nil
+	isTransformerBlockNegativeOne := currentTransformerBlock == int64(-1)
+
+	if isExtractorBlockNil || isTransformerBlockNegativeOne {
+		return true
+	}
+
+	isCurrentBlockNegativeOne := *extractorBlock != int64(-1)
+	isTransformerBlockGreater := currentTransformerBlock > *extractorBlock
+
+	return isCurrentBlockNegativeOne && isTransformerBlockGreater
 }
 
 // Fetch and persist watched logs
@@ -169,7 +179,7 @@ func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTran
 		return watchingLogErr
 	}
 	if !alreadyWatchingLog {
-		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
+		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUncheckedSince(config.StartingBlockNumber)
 		if uncheckHeadersErr != nil {
 			return uncheckHeadersErr
 		}

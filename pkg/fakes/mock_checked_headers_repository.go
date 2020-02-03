@@ -37,7 +37,7 @@ func (repository *MockCheckedHeadersRepository) MarkSingleHeaderUnchecked(blockN
 	panic("implement me")
 }
 
-func (repository *MockCheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
+func (repository *MockCheckedHeadersRepository) MarkHeadersUncheckedSince(startingBlockNumber int64) error {
 	repository.MarkHeadersUncheckedCalled = true
 	repository.MarkHeadersUncheckedStartingBlockNumber = startingBlockNumber
 	return repository.MarkHeadersUncheckedReturnError

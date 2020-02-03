@@ -32,7 +32,7 @@ var blockNumber int
 var resetHeaderCheckCountCmd = &cobra.Command{
 	Use:   "resetHeaderCheckCount",
 	Short: "Resets header check_count for the given block number",
-	Long: `Resets check_count to zero for the given header so that the execute command may rechecked that header's logs
+	Long: `Resets check_count to zero for the given header so that the execute command may recheck that header's logs
 in case one was missed.
 
 Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
