@@ -18,14 +18,12 @@ package cmd
 import (
 	"sync"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // superNodeCmd represents the superNode command
@@ -85,8 +83,8 @@ func superNode() {
 	wg.Wait()
 }
 
-func newSuperNode() (super_node.SuperNode, *config.SuperNode, error) {
-	superNodeConfig, err := config.NewSuperNodeConfig()
+func newSuperNode() (super_node.SuperNode, *shared.SuperNodeConfig, error) {
+	superNodeConfig, err := shared.NewSuperNodeConfig()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,7 +95,7 @@ func newSuperNode() (super_node.SuperNode, *config.SuperNode, error) {
 	return sn, superNodeConfig, nil
 }
 
-func startServers(superNode super_node.SuperNode, settings *config.SuperNode) error {
+func startServers(superNode super_node.SuperNode, settings *shared.SuperNodeConfig) error {
 	_, _, err := rpc.StartIPCEndpoint(settings.IPCEndpoint, superNode.APIs())
 	if err != nil {
 		return err

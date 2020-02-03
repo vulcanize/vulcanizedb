@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package config
+package shared
 
 import (
 	"fmt"
@@ -36,8 +36,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// SuperNode config struct
-type SuperNode struct {
+// SuperNodeConfig struct
+type SuperNodeConfig struct {
 	// Ubiquitous fields
 	Chain    ChainType
 	IPFSPath string
@@ -62,8 +62,8 @@ type SuperNode struct {
 }
 
 // NewSuperNodeConfig is used to initialize a SuperNode config from a config .toml file
-func NewSuperNodeConfig() (*SuperNode, error) {
-	sn := new(SuperNode)
+func NewSuperNodeConfig() (*SuperNodeConfig, error) {
+	sn := new(SuperNodeConfig)
 	sn.DBConfig = config.Database{
 		Name:     viper.GetString("superNode.database.name"),
 		Hostname: viper.GetString("superNode.database.hostname"),
@@ -128,7 +128,7 @@ func NewSuperNodeConfig() (*SuperNode, error) {
 }
 
 // BackFillFields is used to fill in the BackFill fields of the config
-func (sn *SuperNode) BackFillFields() error {
+func (sn *SuperNodeConfig) BackFillFields() error {
 	sn.BackFill = true
 	_, httpClient, err := getNodeAndClient(sn.Chain, viper.GetString("superNode.backFill.httpPath"))
 	if err != nil {

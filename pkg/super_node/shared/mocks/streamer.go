@@ -18,20 +18,19 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// StateDiffStreamer is the underlying struct for the Streamer interface
-type StateDiffStreamer struct {
+// PayloadStreamer mock struct
+type PayloadStreamer struct {
 	PassedPayloadChan chan shared.RawChainData
 	ReturnSub         *rpc.ClientSubscription
 	ReturnErr         error
-	StreamPayloads    []statediff.Payload
+	StreamPayloads    []shared.RawChainData
 }
 
-// Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *StateDiffStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
+// Stream mock method
+func (sds *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
 	sds.PassedPayloadChan = payloadChan
 
 	go func() {

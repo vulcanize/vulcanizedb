@@ -23,16 +23,16 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// StateDiffFetcher mock for tests
-type StateDiffFetcher struct {
+// IPLDFetcher mock for tests
+type IPLDFetcher struct {
 	PayloadsToReturn     map[uint64]shared.RawChainData
 	FetchErrs            map[uint64]error
 	CalledAtBlockHeights [][]uint64
 	CalledTimes          int64
 }
 
-// FetchStateDiffsAt mock method
-func (fetcher *StateDiffFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
+// FetchAt mock method
+func (fetcher *IPLDFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
 	if fetcher.PayloadsToReturn == nil {
 		return nil, errors.New("mock StateDiffFetcher needs to be initialized with payloads to return")
 	}

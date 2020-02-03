@@ -31,7 +31,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -90,7 +89,7 @@ type Service struct {
 	// Number of publishAndIndex workers
 	WorkerPoolSize int
 	// chain type for this service
-	chain config.ChainType
+	chain shared.ChainType
 	// Path to ipfs data dir
 	ipfsPath string
 	// Underlying db
@@ -98,7 +97,7 @@ type Service struct {
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
-func NewSuperNode(settings *config.SuperNode) (SuperNode, error) {
+func NewSuperNode(settings *shared.SuperNodeConfig) (SuperNode, error) {
 	if err := ipfs.InitIPFSPlugins(); err != nil {
 		return nil, err
 	}

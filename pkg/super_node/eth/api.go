@@ -27,8 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ipfs/go-block-format"
-
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 )
 
 // APIName is the namespace for the super node's eth api
@@ -72,7 +70,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 			topicStrSets[i] = append(topicStrSets[i], topic.String())
 		}
 	}
-	filter := config.ReceiptFilter{
+	filter := ReceiptFilter{
 		Contracts: addrStrs,
 		Topics:    topicStrSets,
 	}

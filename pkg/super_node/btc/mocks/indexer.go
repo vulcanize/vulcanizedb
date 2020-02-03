@@ -14,4 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package config
+package mocks
+
+import (
+	"fmt"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+)
+
+// CIDIndexer is the underlying struct for the Indexer interface
+type CIDIndexer struct {
+	PassedCIDPayload []*btc.CIDPayload
+	ReturnErr        error
+}
+
+// Index indexes a cidPayload in Postgres
+func (repo *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
+	cidPayload, ok := cids.(*btc.CIDPayload)
+	if !ok {
+		return fmt.Errorf("index expected cids type %T got %T", &eth.CIDPayload{}, cids)
+	}
+	repo.PassedCIDPayload = append(repo.PassedCIDPayload, cidPayload)
+	return repo.ReturnErr
+}

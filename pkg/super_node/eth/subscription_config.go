@@ -14,17 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package config
+package eth
 
 import (
 	"errors"
 	"math/big"
 
 	"github.com/spf13/viper"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// EthSubscription config is used by a subscriber to specify what eth data to stream from the super node
-type EthSubscription struct {
+// SubscriptionSettings config is used by a subscriber to specify what eth data to stream from the super node
+type SubscriptionSettings struct {
 	BackFill      bool
 	BackFillOnly  bool
 	Start         *big.Int
@@ -73,8 +75,8 @@ type StorageFilter struct {
 }
 
 // Init is used to initialize a EthSubscription struct with env variables
-func NewEthSubscriptionConfig() (*EthSubscription, error) {
-	sc := new(EthSubscription)
+func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
+	sc := new(SubscriptionSettings)
 	// Below default to false, which means we do not backfill by default
 	sc.BackFill = viper.GetBool("superNode.ethSubscription.historicalData")
 	sc.BackFillOnly = viper.GetBool("superNode.ethSubscription.historicalDataOnly")
@@ -126,26 +128,26 @@ func NewEthSubscriptionConfig() (*EthSubscription, error) {
 }
 
 // StartingBlock satisfies the SubscriptionSettings() interface
-func (sc *EthSubscription) StartingBlock() *big.Int {
+func (sc *SubscriptionSettings) StartingBlock() *big.Int {
 	return sc.Start
 }
 
 // EndingBlock satisfies the SubscriptionSettings() interface
-func (sc *EthSubscription) EndingBlock() *big.Int {
+func (sc *SubscriptionSettings) EndingBlock() *big.Int {
 	return sc.End
 }
 
 // HistoricalData satisfies the SubscriptionSettings() interface
-func (sc *EthSubscription) HistoricalData() bool {
+func (sc *SubscriptionSettings) HistoricalData() bool {
 	return sc.BackFill
 }
 
 // HistoricalDataOnly satisfies the SubscriptionSettings() interface
-func (sc *EthSubscription) HistoricalDataOnly() bool {
+func (sc *SubscriptionSettings) HistoricalDataOnly() bool {
 	return sc.BackFillOnly
 }
 
 // ChainType satisfies the SubscriptionSettings() interface
-func (sc *EthSubscription) ChainType() ChainType {
-	return Ethereum
+func (sc *SubscriptionSettings) ChainType() shared.ChainType {
+	return shared.Ethereum
 }

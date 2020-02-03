@@ -18,8 +18,6 @@ package shared
 
 import (
 	"math/big"
-
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 )
 
 // PayloadStreamer streams chain-specific payloads to the provided channel
@@ -88,7 +86,7 @@ type DagPutter interface {
 type SubscriptionSettings interface {
 	StartingBlock() *big.Int
 	EndingBlock() *big.Int
-	ChainType() config.ChainType
+	ChainType() ChainType
 	HistoricalData() bool
 	HistoricalDataOnly() bool
 }

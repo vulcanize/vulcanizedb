@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	mocks2 "github.com/vulcanize/vulcanizedb/pkg/super_node/shared/mocks"
 )
 
 var _ = Describe("BackFiller", func() {
@@ -43,7 +44,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
+			mockRetriever := &mocks2.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
 				GapsToRetrieve: []shared.Gap{
 					{
@@ -51,7 +52,7 @@ var _ = Describe("BackFiller", func() {
 					},
 				},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
+			mockFetcher := &mocks2.IPLDFetcher{
 				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 					101: mocks.MockStateDiffPayload,
@@ -97,7 +98,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
+			mockRetriever := &mocks2.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
 				GapsToRetrieve: []shared.Gap{
 					{
@@ -105,7 +106,7 @@ var _ = Describe("BackFiller", func() {
 					},
 				},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
+			mockFetcher := &mocks2.IPLDFetcher{
 				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 				},
@@ -147,11 +148,11 @@ var _ = Describe("BackFiller", func() {
 				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
+			mockRetriever := &mocks2.MockCIDRetriever{
 				FirstBlockNumberToReturn: 3,
 				GapsToRetrieve:           []shared.Gap{},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
+			mockFetcher := &mocks2.IPLDFetcher{
 				PayloadsToReturn: map[uint64]shared.RawChainData{
 					1: mocks.MockStateDiffPayload,
 					2: mocks.MockStateDiffPayload,

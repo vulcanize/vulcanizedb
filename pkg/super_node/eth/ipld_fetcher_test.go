@@ -24,8 +24,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 )
 
 var (

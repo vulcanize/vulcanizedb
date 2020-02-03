@@ -32,7 +32,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
@@ -55,7 +54,7 @@ func init() {
 
 func streamEthSubscription() {
 	// Prep the subscription config/filters to be sent to the server
-	ethSubConfig, err := config.NewEthSubscriptionConfig()
+	ethSubConfig, err := eth.NewEthSubscriptionConfig()
 	if err != nil {
 		log.Fatal(err)
 	}

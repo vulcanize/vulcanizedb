@@ -18,6 +18,7 @@ package eth
 
 import "github.com/lib/pq"
 
+// HeaderModel is the db model for eth.header_cids
 type HeaderModel struct {
 	ID              int64  `db:"id"`
 	BlockNumber     string `db:"block_number"`
@@ -27,6 +28,7 @@ type HeaderModel struct {
 	TotalDifficulty string `db:"td"`
 }
 
+// UncleModel is the db model for eth.uncle_cids
 type UncleModel struct {
 	ID         int64  `db:"id"`
 	HeaderID   int64  `db:"header_id"`
@@ -35,6 +37,7 @@ type UncleModel struct {
 	CID        string `db:"cid"`
 }
 
+// TxModel is the db model for eth.transaction_cids
 type TxModel struct {
 	ID       int64  `db:"id"`
 	HeaderID int64  `db:"header_id"`
@@ -45,6 +48,7 @@ type TxModel struct {
 	Src      string `db:"src"`
 }
 
+// ReceiptModel is the db model for eth.receipt_cids
 type ReceiptModel struct {
 	ID       int64          `db:"id"`
 	TxID     int64          `db:"tx_id"`
@@ -56,6 +60,7 @@ type ReceiptModel struct {
 	Topic3s  pq.StringArray `db:"topic3s"`
 }
 
+// StateNodeModel is the db model for eth.state_cids
 type StateNodeModel struct {
 	ID       int64  `db:"id"`
 	HeaderID int64  `db:"header_id"`
@@ -64,6 +69,7 @@ type StateNodeModel struct {
 	CID      string `db:"cid"`
 }
 
+// StorageNodeModel is the db model for eth.storage_cids
 type StorageNodeModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
@@ -72,6 +78,7 @@ type StorageNodeModel struct {
 	CID        string `db:"cid"`
 }
 
+// StorageNodeWithStateKeyModel is a db model for eth.storage_cids + eth.state_cids.state_key
 type StorageNodeWithStateKeyModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
