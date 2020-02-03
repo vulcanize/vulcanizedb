@@ -17,6 +17,9 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
@@ -38,7 +41,14 @@ Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		LogWithCommand.Infof("Updating check_count for header %v set to 0.", blockNumber)
-		return resetHeaderCount(int64(blockNumber))
+
+		resetErr := resetHeaderCount(int64(blockNumber))
+		if resetErr != nil {
+			errorString := fmt.Sprintf("%v: Failed to reset header %v check_count to 0. Err: %v", SubCommand, blockNumber, resetErr)
+			return errors.New(errorString)
+		}
+
+		return nil
 	},
 }
 
