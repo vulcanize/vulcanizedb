@@ -51,10 +51,6 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExt
 	}
 }
 
-func (watcher *EventWatcher) UnsetExpectedExtractorError() {
-	watcher.ExpectedExtractorError = nil
-}
-
 // Adds transformers to the watcher so that their logs will be extracted and delegated.
 func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTransformerInitializer) error {
 	for _, initializer := range initializers {

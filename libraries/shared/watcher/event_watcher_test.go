@@ -119,21 +119,12 @@ var _ = Describe("Event Watcher", func() {
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("does not treat absence of unchecked headers as an unexpected error by default", func() {
+		It("does not treat absence of unchecked headers as an unexpected error", func() {
 			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-		})
-
-		It("can be configured to treat absence of unchecked headers as an unexpected error", func() {
-			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
-			eventWatcher.UnsetExpectedExtractorError()
-
-			err := eventWatcher.Execute(constants.HeaderUnchecked)
-
-			Expect(err).To(MatchError(logs.ErrNoUncheckedHeaders))
 		})
 
 		It("extracts watched logs again if missing headers found", func() {
