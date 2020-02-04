@@ -36,18 +36,14 @@ var _ = Describe("Event Watcher", func() {
 	var (
 		delegator    *mocks.MockLogDelegator
 		extractor    *mocks.MockLogExtractor
-		eventWatcher *watcher.EventWatcher
+		eventWatcher watcher.EventWatcher
 	)
 
 	BeforeEach(func() {
 		delegator = &mocks.MockLogDelegator{}
 		extractor = &mocks.MockLogExtractor{}
-		eventWatcher = &watcher.EventWatcher{
-			LogDelegator:                 delegator,
-			LogExtractor:                 extractor,
-			MaxConsecutiveUnexpectedErrs: 0,
-			RetryInterval:                time.Nanosecond,
-		}
+		bc := fakes.MockBlockChain{}
+		eventWatcher = watcher.NewEventWatcher(nil, &bc, extractor, delegator, 0, time.Nanosecond)
 	})
 
 	Describe("AddTransformers", func() {
@@ -211,7 +207,7 @@ var _ = Describe("Event Watcher", func() {
 
 		It("doesn't panic if one of the go routines errors and closes the err channel", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed, errExecuteClosed}
-			delegator.DelegateErrors = []error{nil,  errExecuteClosed, errExecuteClosed}
+			delegator.DelegateErrors = []error{nil, errExecuteClosed, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 

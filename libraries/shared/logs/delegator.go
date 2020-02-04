@@ -22,6 +22,8 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,6 +41,13 @@ type LogDelegator struct {
 	Chunker       chunker.Chunker
 	LogRepository datastore.EventLogRepository
 	Transformers  []transformer.EventTransformer
+}
+
+func NewLogDelegator(db *postgres.DB) *LogDelegator {
+	return &LogDelegator{
+		Chunker:       chunker.NewLogChunker(),
+		LogRepository: repositories.NewEventLogRepository(db),
+	}
 }
 
 func (delegator *LogDelegator) AddTransformer(t transformer.EventTransformer) {

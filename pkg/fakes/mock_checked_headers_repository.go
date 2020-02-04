@@ -33,7 +33,11 @@ type MockCheckedHeadersRepository struct {
 	UncheckedHeadersStartingBlockNumber     int64
 }
 
-func (repository *MockCheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
+func (repository *MockCheckedHeadersRepository) MarkSingleHeaderUnchecked(blockNumber int64) error {
+	panic("implement me")
+}
+
+func (repository *MockCheckedHeadersRepository) MarkHeadersUncheckedSince(startingBlockNumber int64) error {
 	repository.MarkHeadersUncheckedCalled = true
 	repository.MarkHeadersUncheckedStartingBlockNumber = startingBlockNumber
 	return repository.MarkHeadersUncheckedReturnError
