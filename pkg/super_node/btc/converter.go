@@ -19,14 +19,19 @@ package btc
 import (
 	"fmt"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
+
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for bitcoin
-type PayloadConverter struct{}
+type PayloadConverter struct{
+	chainConfig *chaincfg.Params
+}
 
 // NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the PayloadConverter interface
-func NewPayloadConverter() *PayloadConverter {
+func NewPayloadConverter(chainConfig *chaincfg.Params) *PayloadConverter {
 	return &PayloadConverter{}
 }
 
@@ -41,11 +46,11 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 	for _, tx := range btcBlockPayload.Txs {
 		index := tx.Index()
 		txModel := TxModelWithInsAndOuts{
-			TxHash:     tx.Hash().String(),
-			Index:      int64(tx.Index()),
-			HasWitness: tx.HasWitness(),
-			TxOutputs:  make([]TxOutput, len(tx.MsgTx().TxOut)),
-			TxInputs:   make([]TxInput, len(tx.MsgTx().TxIn)),
+			TxHash:    tx.Hash().String(),
+			Index:     int64(index),
+			SegWit:    tx.HasWitness(),
+			TxOutputs: make([]TxOutput, len(tx.MsgTx().TxOut)),
+			TxInputs:  make([]TxInput, len(tx.MsgTx().TxIn)),
 		}
 		if tx.HasWitness() {
 			txModel.WitnessHash = tx.WitnessHash().String()
@@ -60,10 +65,22 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 			}
 		}
 		for i, out := range tx.MsgTx().TxOut {
+			scriptClass, addresses, numberOfSigs, err := txscript.ExtractPkScriptAddrs(out.PkScript, pc.chainConfig)
+			// if we receive an error but the txscript type isn't NonStandardTy then something went wrong
+			if err != nil && scriptClass != txscript.NonStandardTy {
+				return nil, err
+			}
+			stringAddrs := make([]string, len(addresses))
+			for i, addr := range addresses {
+				stringAddrs[i] = addr.EncodeAddress()
+			}
 			txModel.TxOutputs[i] = TxOutput{
-				Index:    int64(i),
-				Value:    out.Value,
-				PkScript: out.PkScript,
+				Index:        int64(i),
+				Value:        out.Value,
+				PkScript:     out.PkScript,
+				RequiredSigs: int64(numberOfSigs),
+				ScriptClass:  (uint8)(scriptClass),
+				Addresses:    stringAddrs,
 			}
 		}
 		txMeta[index] = txModel

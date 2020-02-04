@@ -16,6 +16,8 @@
 
 package btc
 
+import "github.com/lib/pq"
+
 // HeaderModel is the db model for btc.header_cids table
 type HeaderModel struct {
 	ID          int64  `db:"id"`
@@ -35,7 +37,7 @@ type TxModel struct {
 	Index       int64  `db:"index"`
 	TxHash      string `db:"tx_hash"`
 	CID         string `db:"cid"`
-	HasWitness  bool   `db:"has_witness"`
+	SegWit      bool   `db:"segwit"`
 	WitnessHash string `db:"witness_hash"`
 }
 
@@ -46,7 +48,7 @@ type TxModelWithInsAndOuts struct {
 	Index       int64  `db:"index"`
 	TxHash      string `db:"tx_hash"`
 	CID         string `db:"cid"`
-	HasWitness  bool   `db:"has_witness"`
+	SegWit      bool   `db:"segwit"`
 	WitnessHash string `db:"witness_hash"`
 	TxInputs    []TxInput
 	TxOutputs   []TxOutput
@@ -57,17 +59,21 @@ type TxInput struct {
 	ID                    int64    `db:"id"`
 	TxID                  int64    `db:"tx_id"`
 	Index                 int64    `db:"index"`
-	TxWitness             [][]byte `db:"tx_witness"`
+	TxWitness             [][]byte `db:"witness"`
 	SignatureScript       []byte   `db:"sig_script"`
-	PreviousOutPointHash  string   `db:"outpoint_hash"`
+	PreviousOutPointTxID  int64    `db:"outpoint_tx_id"`
 	PreviousOutPointIndex uint32   `db:"outpoint_index"`
+	PreviousOutPointHash  string
 }
 
 // TxOutput is the db model for btc.tx_outputs table
 type TxOutput struct {
-	ID       int64  `db:"id"`
-	TxID     int64  `db:"tx_id"`
-	Index    int64  `db:"index"`
-	Value    int64  `db:"value"`
-	PkScript []byte `db:"pk_script"`
+	ID           int64          `db:"id"`
+	TxID         int64          `db:"tx_id"`
+	Index        int64          `db:"index"`
+	Value        int64          `db:"value"`
+	PkScript     []byte         `db:"pk_script"`
+	ScriptClass  uint8          `db:"script_class"`
+	RequiredSigs int64          `db:"required_sigs"`
+	Addresses    pq.StringArray `db:"addresses"`
 }

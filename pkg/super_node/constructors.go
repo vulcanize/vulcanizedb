@@ -18,6 +18,7 @@ package super_node
 
 import (
 	"fmt"
+	"github.com/btcsuite/btcd/chaincfg"
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/params"
@@ -106,7 +107,7 @@ func NewPayloadConverter(chain shared.ChainType) (shared.PayloadConverter, error
 	case shared.Ethereum:
 		return eth.NewPayloadConverter(params.MainnetChainConfig), nil
 	case shared.Bitcoin:
-		return btc.NewPayloadConverter(), nil
+		return btc.NewPayloadConverter(&chaincfg.MainNetParams), nil
 	default:
 		return nil, fmt.Errorf("invalid chain %T for converter constructor", chain)
 	}

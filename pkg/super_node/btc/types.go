@@ -77,8 +77,8 @@ type IPLDWrapper struct {
 // Passed to client subscriptions
 type StreamPayload struct {
 	BlockNumber       *big.Int `json:"blockNumber"`
-	HeadersBytes      [][]byte `json:"headerBytes"`
-	TransactionsBytes [][]byte `json:"transactionBytes"`
+	SerializedHeaders [][]byte `json:"headerBytes"`
+	SerializedTxs     [][]byte `json:"transactionBytes"`
 
 	encoded []byte
 	err     error

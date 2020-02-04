@@ -101,7 +101,7 @@ func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMet
 			CID:         cid,
 			Index:       trxMeta[i].Index,
 			TxHash:      trxMeta[i].TxHash,
-			HasWitness:  trxMeta[i].HasWitness,
+			SegWit:      trxMeta[i].SegWit,
 			WitnessHash: trxMeta[i].WitnessHash,
 			TxInputs:    trxMeta[i].TxInputs,
 			TxOutputs:   trxMeta[i].TxOutputs,
