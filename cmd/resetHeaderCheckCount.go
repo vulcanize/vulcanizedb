@@ -26,14 +26,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var blockNumber int
+var blockNumber int64
 
 // resetHeaderCheckCountCmd represents the resetHeaderCheckCount command
 var resetHeaderCheckCountCmd = &cobra.Command{
 	Use:   "resetHeaderCheckCount",
 	Short: "Resets header check_count for the given block number",
-	Long: `Resets check_count to zero for the given header so that the execute command may recheck that header's logs
-in case one was missed.
+	Long: `Resets check_count to zero for the given header so that the execute command may recheck that header's logs in case one was missed.
 
 Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 `,
@@ -41,6 +40,12 @@ Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		LogWithCommand.Infof("Updating check_count for header %v set to 0.", blockNumber)
+
+		validationErr := validateBlockNumberArg(blockNumber)
+		if validationErr != nil {
+			errorString := fmt.Sprintf("%v: header-block-number argument is required and not value was given.", SubCommand)
+			return errors.New(errorString)
+		}
 
 		resetErr := resetHeaderCount(int64(blockNumber))
 		if resetErr != nil {
@@ -53,8 +58,15 @@ Use: ./vulcanizedb resetHeaderCheckCount --header-block-number=<block number>
 }
 
 func init() {
-	resetHeaderCheckCountCmd.Flags().IntVarP(&blockNumber, "header-block-number", "b", 0, "block number of the header check_count to reset")
+	resetHeaderCheckCountCmd.Flags().Int64VarP(&blockNumber, "header-block-number", "b", -1, "block number of the header check_count to reset")
 	rootCmd.AddCommand(resetHeaderCheckCountCmd)
+}
+
+func validateBlockNumberArg(blockNumber int64) error {
+	if blockNumber == -1 {
+		return errors.New("header-block-number argument is required and no value was given")
+	}
+	return nil
 }
 
 func resetHeaderCount(blockNumber int64) error {
