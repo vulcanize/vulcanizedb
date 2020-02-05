@@ -204,12 +204,12 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 				}
 				// If we have a ScreenAndServe process running, forward the iplds to it
 				select {
-				case screenAndServePayload <- ipldPayload.Value():
+				case screenAndServePayload <- ipldPayload:
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
 				select {
-				case publishAndIndexPayload <- ipldPayload.Value():
+				case publishAndIndexPayload <- ipldPayload:
 				default:
 				}
 			case err := <-sub.Err():
@@ -296,7 +296,7 @@ func (sap *Service) sendResponse(payload shared.StreamedIPLDs) {
 		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{response.Value(), ""}:
+			case sub.PayloadChan <- SubscriptionPayload{response, ""}:
 				log.Infof("sending super node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
@@ -392,7 +392,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, params shared.Subscrip
 				continue
 			}
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{backFillIplds.Value(), ""}:
+			case sub.PayloadChan <- SubscriptionPayload{backFillIplds, ""}:
 				log.Infof("sending super node historical data payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)

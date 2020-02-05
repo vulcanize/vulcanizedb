@@ -64,30 +64,36 @@ type HeaderFilter struct {
 
 // TxFilter contains filter settings for txs
 type TxFilter struct {
-	Off           bool
-	Index         int64 // allow filtering by index so that we can filter for only coinbase transactions (index 0) if we want to
-	HasWitness    bool
-	WitnessHashes []string
+	Off bool
+	// Top level trx filters
+	Index         int64    // allow filtering by index so that we can filter for only coinbase transactions (index 0) if we want to
+	Segwit        bool     // allow filtering for segwit trxs
+	WitnessHashes []string // allow filtering for specific witness hashes
+	// TODO: trx input filters
+	// TODO: trx output filters
 }
 
 // Init is used to initialize a EthSubscription struct with env variables
 func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 	sc := new(SubscriptionSettings)
 	// Below default to false, which means we do not backfill by default
-	sc.BackFill = viper.GetBool("superNode.ethSubscription.historicalData")
-	sc.BackFillOnly = viper.GetBool("superNode.ethSubscription.historicalDataOnly")
+	sc.BackFill = viper.GetBool("superNode.btcSubscription.historicalData")
+	sc.BackFillOnly = viper.GetBool("superNode.btcSubscription.historicalDataOnly")
 	// Below default to 0
 	// 0 start means we start at the beginning and 0 end means we continue indefinitely
-	sc.Start = big.NewInt(viper.GetInt64("superNode.ethSubscription.startingBlock"))
-	sc.End = big.NewInt(viper.GetInt64("superNode.ethSubscription.endingBlock"))
+	sc.Start = big.NewInt(viper.GetInt64("superNode.btcSubscription.startingBlock"))
+	sc.End = big.NewInt(viper.GetInt64("superNode.btcSubscription.endingBlock"))
 	// Below default to false, which means we get all headers and no uncles by default
 	sc.HeaderFilter = HeaderFilter{
-		Off: viper.GetBool("superNode.ethSubscription.off"),
+		Off: viper.GetBool("superNode.btcSubscription.headerFilter.off"),
 	}
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default
 	sc.TxFilter = TxFilter{
-		Off: viper.GetBool("superNode.ethSubscription.txFilter.off"),
+		Off:           viper.GetBool("superNode.btcSubscription.txFilter.off"),
+		Index:         viper.GetInt64("superNode.btcSubscription.txFilter.index"),
+		Segwit:        viper.GetBool("superNode.btcSubscription.txFilter.segwit"),
+		WitnessHashes: viper.GetStringSlice("superNode.btcSubscription.txFilter.witnessHashes"),
 	}
 	return sc, nil
 }

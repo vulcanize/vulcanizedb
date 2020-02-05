@@ -86,8 +86,8 @@ func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 	sc.End = big.NewInt(viper.GetInt64("superNode.ethSubscription.endingBlock"))
 	// Below default to false, which means we get all headers and no uncles by default
 	sc.HeaderFilter = HeaderFilter{
-		Off:    viper.GetBool("superNode.ethSubscription.off"),
-		Uncles: viper.GetBool("superNode.ethSubscription.uncles"),
+		Off:    viper.GetBool("superNode.ethSubscription.headerFilter.off"),
+		Uncles: viper.GetBool("superNode.ethSubscription.headerFilter.uncles"),
 	}
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default

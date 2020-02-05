@@ -106,7 +106,7 @@ func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *Stre
 	trxHashes := make([]common.Hash, 0, len(payload.Block.Body().Transactions))
 	if !trxFilter.Off {
 		for i, trx := range payload.Block.Body().Transactions {
-			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
+			if checkTransactionAddrs(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err
@@ -119,7 +119,8 @@ func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *Stre
 	return trxHashes, nil
 }
 
-func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst string) bool {
+// checkTransactionAddrs returns true if either the transaction src and dst are one of the wanted src and dst addresses
+func checkTransactionAddrs(wantedSrc, wantedDst []string, actualSrc, actualDst string) bool {
 	// If we aren't filtering for any addresses, every transaction is a go
 	if len(wantedDst) == 0 && len(wantedSrc) == 0 {
 		return true
@@ -185,21 +186,16 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wa
 	return false
 }
 
+// filterMatch returns true if the actualTopics conform to the wantedTopics filter
 func filterMatch(wantedTopics, actualTopics [][]string) bool {
-	// actualTopics should always be length 4, members could be nil slices though
-	lenWantedTopics := len(wantedTopics)
+	// actualTopics should always be length 4, but the members can be nil slices
 	matches := 0
 	for i, actualTopicSet := range actualTopics {
-		if i < lenWantedTopics {
+		if i < len(wantedTopics) && len(wantedTopics[i]) > 0 {
 			// If we have topics in this filter slot, count as a match if one of the topics matches
-			if len(wantedTopics[i]) > 0 {
-				matches += slicesShareString(actualTopicSet, wantedTopics[i])
-			} else {
-				// Filter slot is empty, not matching any topics at this slot => counts as a match
-				matches++
-			}
+			matches += slicesShareString(actualTopicSet, wantedTopics[i])
 		} else {
-			// Filter slot doesn't exist, not matching any topics at this slot => count as a match
+			// Filter slot is either empty or doesn't exist => not matching any topics at this slot => counts as a match
 			matches++
 		}
 	}

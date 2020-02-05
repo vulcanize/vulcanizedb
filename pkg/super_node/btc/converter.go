@@ -26,7 +26,7 @@ import (
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for bitcoin
-type PayloadConverter struct{
+type PayloadConverter struct {
 	chainConfig *chaincfg.Params
 }
 

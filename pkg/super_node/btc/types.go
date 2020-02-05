@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/ipfs/go-block-format"
@@ -40,10 +38,6 @@ type BlockPayload struct {
 type IPLDPayload struct {
 	BlockPayload
 	TxMetaData []TxModelWithInsAndOuts
-}
-
-func (ip IPLDPayload) Value() shared.StreamedIPLDs {
-	return ip
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
@@ -72,10 +66,10 @@ type IPLDWrapper struct {
 	Transactions []blocks.Block
 }
 
-// StreamPayload holds the data streamed from the super node eth service to the requesting clients
+// StreamResponse holds the data streamed from the super node eth service to the requesting clients
 // Returned by IPLDResolver and ResponseFilterer
 // Passed to client subscriptions
-type StreamPayload struct {
+type StreamResponse struct {
 	BlockNumber       *big.Int `json:"blockNumber"`
 	SerializedHeaders [][]byte `json:"headerBytes"`
 	SerializedTxs     [][]byte `json:"transactionBytes"`
@@ -84,20 +78,20 @@ type StreamPayload struct {
 	err     error
 }
 
-func (sd *StreamPayload) ensureEncoded() {
-	if sd.encoded == nil && sd.err == nil {
-		sd.encoded, sd.err = json.Marshal(sd)
+func (sr *StreamResponse) ensureEncoded() {
+	if sr.encoded == nil && sr.err == nil {
+		sr.encoded, sr.err = json.Marshal(sr)
 	}
 }
 
 // Length to implement Encoder interface for StateDiff
-func (sd *StreamPayload) Length() int {
-	sd.ensureEncoded()
-	return len(sd.encoded)
+func (sr *StreamResponse) Length() int {
+	sr.ensureEncoded()
+	return len(sr.encoded)
 }
 
 // Encode to implement Encoder interface for StateDiff
-func (sd *StreamPayload) Encode() ([]byte, error) {
-	sd.ensureEncoded()
-	return sd.encoded, sd.err
+func (sr *StreamResponse) Encode() ([]byte, error) {
+	sr.ensureEncoded()
+	return sr.encoded, sr.err
 }

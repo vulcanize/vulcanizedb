@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ipfs/go-block-format"
@@ -38,10 +36,6 @@ type IPLDPayload struct {
 	ReceiptMetaData []ReceiptModel
 	StateNodes      []TrieNode
 	StorageNodes    map[common.Hash][]TrieNode
-}
-
-func (ip IPLDPayload) Value() shared.StreamedIPLDs {
-	return ip
 }
 
 // Trie struct used to flag node as leaf or not
@@ -105,24 +99,20 @@ type StreamResponse struct {
 	err     error
 }
 
-func (sr StreamResponse) Value() shared.ServerResponse {
-	return sr
-}
-
-func (sd *StreamResponse) ensureEncoded() {
-	if sd.encoded == nil && sd.err == nil {
-		sd.encoded, sd.err = json.Marshal(sd)
+func (sr *StreamResponse) ensureEncoded() {
+	if sr.encoded == nil && sr.err == nil {
+		sr.encoded, sr.err = json.Marshal(sr)
 	}
 }
 
 // Length to implement Encoder interface for StateDiff
-func (sd *StreamResponse) Length() int {
-	sd.ensureEncoded()
-	return len(sd.encoded)
+func (sr *StreamResponse) Length() int {
+	sr.ensureEncoded()
+	return len(sr.encoded)
 }
 
 // Encode to implement Encoder interface for StateDiff
-func (sd *StreamResponse) Encode() ([]byte, error) {
-	sd.ensureEncoded()
-	return sd.encoded, sd.err
+func (sr *StreamResponse) Encode() ([]byte, error) {
+	sr.ensureEncoded()
+	return sr.encoded, sr.err
 }
