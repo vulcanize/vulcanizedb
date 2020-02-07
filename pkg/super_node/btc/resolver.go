@@ -15,3 +15,40 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package btc
+
+import (
+	"fmt"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
+	"github.com/ipfs/go-block-format"
+)
+
+// IPLDResolver satisfies the IPLDResolver interface for bitcoin
+type IPLDResolver struct{}
+
+// NewIPLDResolver returns a pointer to an IPLDResolver which satisfies the IPLDResolver interface
+func NewIPLDResolver() *IPLDResolver {
+	return &IPLDResolver{}
+}
+
+// Resolve is the exported method for resolving all of the BTC IPLDs packaged in an IpfsBlockWrapper
+func (eir *IPLDResolver) Resolve(iplds shared.FetchedIPLDs) (shared.ServerResponse, error) {
+	ipfsBlocks, ok := iplds.(*IPLDWrapper)
+	if !ok {
+		return StreamResponse{}, fmt.Errorf("eth resolver expected iplds type %T got %T", &IPLDWrapper{}, iplds)
+	}
+	return StreamResponse{
+		BlockNumber:       ipfsBlocks.BlockNumber,
+		SerializedHeaders: eir.resolve(ipfsBlocks.Headers),
+		SerializedTxs:     eir.resolve(ipfsBlocks.Transactions),
+	}, nil
+}
+
+func (eir *IPLDResolver) resolve(iplds []blocks.Block) [][]byte {
+	rlps := make([][]byte, 0, len(iplds))
+	for _, ipld := range iplds {
+		rlps = append(rlps, ipld.RawData())
+	}
+	return rlps
+}
