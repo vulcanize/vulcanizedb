@@ -37,8 +37,10 @@ func NewResponseFilterer(chain shared.ChainType) (shared.ResponseFilterer, error
 	switch chain {
 	case shared.Ethereum:
 		return eth.NewResponseFilterer(), nil
+	case shared.Bitcoin:
+		return btc.NewResponseFilterer(), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for filterer constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for filterer constructor", chain.String())
 	}
 }
 
@@ -50,7 +52,7 @@ func NewCIDIndexer(chain shared.ChainType, db *postgres.DB) (shared.CIDIndexer, 
 	case shared.Bitcoin:
 		return btc.NewCIDIndexer(db), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for indexer constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for indexer constructor", chain.String())
 	}
 }
 
@@ -59,31 +61,33 @@ func NewCIDRetriever(chain shared.ChainType, db *postgres.DB) (shared.CIDRetriev
 	switch chain {
 	case shared.Ethereum:
 		return eth.NewCIDRetriever(db), nil
+	case shared.Bitcoin:
+		return btc.NewCIDRetriever(db), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for retriever constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for retriever constructor", chain.String())
 	}
 }
 
 // NewPayloadStreamer constructs a PayloadStreamer for the provided chain type
-func NewPayloadStreamer(chain shared.ChainType, client interface{}) (shared.PayloadStreamer, chan shared.RawChainData, error) {
+func NewPayloadStreamer(chain shared.ChainType, clientOrConfig interface{}) (shared.PayloadStreamer, chan shared.RawChainData, error) {
 	switch chain {
 	case shared.Ethereum:
-		ethClient, ok := client.(core.RPCClient)
+		ethClient, ok := clientOrConfig.(core.RPCClient)
 		if !ok {
 			var expectedClientType core.RPCClient
-			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", expectedClientType, client)
+			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", expectedClientType, clientOrConfig)
 		}
 		streamChan := make(chan shared.RawChainData, eth.PayloadChanBufferSize)
 		return eth.NewPayloadStreamer(ethClient), streamChan, nil
 	case shared.Bitcoin:
-		btcClientConn, ok := client.(*rpcclient.ConnConfig)
+		btcClientConn, ok := clientOrConfig.(*rpcclient.ConnConfig)
 		if !ok {
-			return nil, nil, fmt.Errorf("bitcoin payload streamer constructor expected client shared type %T got %T", rpcclient.ConnConfig{}, client)
+			return nil, nil, fmt.Errorf("bitcoin payload streamer constructor expected client config type %T got %T", rpcclient.ConnConfig{}, clientOrConfig)
 		}
 		streamChan := make(chan shared.RawChainData, btc.PayloadChanBufferSize)
 		return btc.NewPayloadStreamer(btcClientConn), streamChan, nil
 	default:
-		return nil, nil, fmt.Errorf("invalid chain %T for streamer constructor", chain)
+		return nil, nil, fmt.Errorf("invalid chain %s for streamer constructor", chain.String())
 	}
 }
 
@@ -94,11 +98,17 @@ func NewPaylaodFetcher(chain shared.ChainType, client interface{}) (shared.Paylo
 		batchClient, ok := client.(eth.BatchClient)
 		if !ok {
 			var expectedClient eth.BatchClient
-			return nil, fmt.Errorf("ethereum fetcher constructor expected client type %T got %T", expectedClient, client)
+			return nil, fmt.Errorf("ethereum payload fetcher constructor expected client type %T got %T", expectedClient, client)
 		}
 		return eth.NewPayloadFetcher(batchClient), nil
+	case shared.Bitcoin:
+		rpcClient, ok := client.(*rpcclient.Client)
+		if !ok {
+			return nil, fmt.Errorf("bitcoin payload fetcher constructor expected client type %T got %T", &rpcclient.Client{}, client)
+		}
+		return btc.NewPayloadFetcher(rpcClient), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for fetcher constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for payload fetcher constructor", chain.String())
 	}
 }
 
@@ -110,7 +120,7 @@ func NewPayloadConverter(chain shared.ChainType) (shared.PayloadConverter, error
 	case shared.Bitcoin:
 		return btc.NewPayloadConverter(&chaincfg.MainNetParams), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for converter constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for converter constructor", chain.String())
 	}
 }
 
@@ -119,8 +129,10 @@ func NewIPLDFetcher(chain shared.ChainType, ipfsPath string) (shared.IPLDFetcher
 	switch chain {
 	case shared.Ethereum:
 		return eth.NewIPLDFetcher(ipfsPath)
+	case shared.Bitcoin:
+		return btc.NewIPLDFetcher(ipfsPath)
 	default:
-		return nil, fmt.Errorf("invalid chain %T for fetcher constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for IPLD fetcher constructor", chain.String())
 	}
 }
 
@@ -132,7 +144,7 @@ func NewIPLDPublisher(chain shared.ChainType, ipfsPath string) (shared.IPLDPubli
 	case shared.Bitcoin:
 		return btc.NewIPLDPublisher(ipfsPath)
 	default:
-		return nil, fmt.Errorf("invalid chain %T for publisher constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for publisher constructor", chain.String())
 	}
 }
 
@@ -141,8 +153,10 @@ func NewIPLDResolver(chain shared.ChainType) (shared.IPLDResolver, error) {
 	switch chain {
 	case shared.Ethereum:
 		return eth.NewIPLDResolver(), nil
+	case shared.Bitcoin:
+		return btc.NewIPLDResolver(), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %T for resolver constructor", chain)
+		return nil, fmt.Errorf("invalid chain %s for resolver constructor", chain.String())
 	}
 }
 
@@ -161,6 +175,6 @@ func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc
 			Public:    true,
 		}, nil
 	default:
-		return rpc.API{}, fmt.Errorf("invalid chain %T for public api constructor", chain)
+		return rpc.API{}, fmt.Errorf("invalid chain %s for public api constructor", chain.String())
 	}
 }
