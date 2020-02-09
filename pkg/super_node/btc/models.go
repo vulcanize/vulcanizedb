@@ -60,8 +60,9 @@ type TxInput struct {
 	Index                 int64    `db:"index"`
 	TxWitness             [][]byte `db:"witness"`
 	SignatureScript       []byte   `db:"sig_script"`
-	PreviousOutPointIndex uint32   `db:"outpoint_index"`
-	PreviousOutPointHash  string   `db:"outpoint_tx_hash"`
+	PreviousOutPointID    int64    `db:"outpoint_id"`
+	PreviousOutPointIndex uint32
+	PreviousOutPointHash  string
 }
 
 // TxOutput is the db model for btc.tx_outputs table

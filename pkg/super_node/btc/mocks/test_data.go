@@ -699,11 +699,36 @@ var (
 				TxHash: "87a157f3fd88ac7907c05fc55e271dc4acdc5605d187d646604ca8c0e9382e03",
 				CID:    "dummyTx1",
 				Index:  0,
+				TxOutputs: []btc.TxOutput{
+					{
+						Index:        0,
+						RequiredSigs: 0,
+						Value:        0,
+						PkScript:     []byte{},
+						ScriptClass:  0,
+					},
+				},
 			},
 			{
 				TxHash: "cf4e2978d0611ce46592e02d7e7daf8627a316ab69759a9f3df109a7f2bf3ec3",
 				CID:    "dummyTx2",
 				Index:  1,
+				TxOutputs: []btc.TxOutput{
+					{
+						Index:        0,
+						RequiredSigs: 0,
+						Value:        0,
+						PkScript:     []byte{},
+						ScriptClass:  0,
+					},
+					{
+						Index:        1,
+						RequiredSigs: 0,
+						Value:        0,
+						PkScript:     []byte{},
+						ScriptClass:  0,
+					},
+				},
 			},
 		},
 	}
