@@ -18,7 +18,6 @@ package shared
 
 import (
 	"bytes"
-	"reflect"
 )
 
 // ListContainsString used to check if a list of strings contains a particular string
@@ -49,9 +48,4 @@ func ListContainsGap(gapList []Gap, gap Gap) bool {
 		}
 	}
 	return false
-}
-
-// IsPointer returns true if the concrete type underneath the provided interface is a pointer
-func IsPointer(i interface{}) bool {
-	return reflect.ValueOf(i).Type().Kind() == reflect.Ptr
 }

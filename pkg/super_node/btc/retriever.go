@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/lib/pq"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
@@ -58,7 +60,7 @@ func (ecr *CIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) (shared.CIDsForFetching, bool, error) {
 	streamFilter, ok := filter.(*SubscriptionSettings)
 	if !ok {
-		return nil, true, fmt.Errorf("eth retriever expected filter type %T got %T", &SubscriptionSettings{}, filter)
+		return nil, true, fmt.Errorf("btc retriever expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
 	log.Debug("retrieving cids")
 	tx, err := ecr.db.Beginx()
@@ -90,10 +92,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 			return nil, true, err
 		}
 	}
-	trxIds := make([]int64, 0, len(cw.Transactions))
-	for _, tx := range cw.Transactions {
-		trxIds = append(trxIds, tx.ID)
-	}
 	return cw, empty(cw), tx.Commit()
 }
 
@@ -113,18 +111,70 @@ func (ecr *CIDRetriever) RetrieveHeaderCIDs(tx *sqlx.Tx, blockNumber int64) ([]H
 	return headers, tx.Select(&headers, pgStr, blockNumber)
 }
 
+/*
+type TxModel struct {
+	ID          int64  `db:"id"`
+	HeaderID    int64  `db:"header_id"`
+	Index       int64  `db:"index"`
+	TxHash      string `db:"tx_hash"`
+	CID         string `db:"cid"`
+	SegWit      bool   `db:"segwit"`
+	WitnessHash string `db:"witness_hash"`
+}
+// TxFilter contains filter settings for txs
+type TxFilter struct {
+	Off bool
+	Index         int64    // allow filtering by index so that we can filter for only coinbase transactions (index 0) if we want to
+	Segwit        bool     // allow filtering for segwit trxs
+	WitnessHashes []string // allow filtering for specific witness hashes
+	PkScriptClass uint8 // allow filtering for txs that have at least one tx output with the specified pkscript class
+	MultiSig bool  // allow filtering for txs that have at least one tx output that requires more than one signature
+	Addresses []string // allow filtering for txs that have at least one tx output with at least one of the provided addresses
+}
+*/
+
 // RetrieveTxCIDs retrieves and returns all of the trx cids at the provided blockheight that conform to the provided filter parameters
 // also returns the ids for the returned transaction cids
 func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, blockNumber int64) ([]TxModel, error) {
 	log.Debug("retrieving transaction cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
 	results := make([]TxModel, 0)
-	pgStr := `SELECT transaction_cids.id, transaction_cids.header_id,
+	id := 1
+	pgStr := fmt.Sprintf(`SELECT transaction_cids.id, transaction_cids.header_id,
  			transaction_cids.tx_hash, transaction_cids.cid,
- 			transaction_cids.dst, transaction_cids.src, transaction_cids.index
- 			FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
-			WHERE header_cids.block_number = $1`
+ 			transaction_cids.segwit, transaction_cids.witness_hash, transaction_cids.index
+ 			FROM btc.transaction_cids, btc.header_cids, btc.tx_inputs, btc.tx_outputs
+			WHERE transaction_cids.header_id = header_cids.id
+			AND tx_inputs.tx_id = transaction_cids.id
+			AND tx_outputs.tx_id = transaction_cids.id
+			AND header_cids.block_number = $%d`, id)
 	args = append(args, blockNumber)
+	id++
+	if txFilter.Segwit {
+		pgStr += ` AND transaction_cids.segwit = true`
+	}
+	if txFilter.MultiSig {
+		pgStr += ` AND tx_outputs.required_sigs > 1`
+	}
+	if len(txFilter.WitnessHashes) > 0 {
+		pgStr += fmt.Sprintf(` AND transaction_cids.witness_hash = ANY($%d::VARCHAR(66)[])`, id)
+		args = append(args, pq.Array(txFilter.WitnessHashes))
+		id++
+	}
+	if len(txFilter.Addresses) > 0 {
+		pgStr += fmt.Sprintf(` AND tx_outputs.addresses && $%d::VARCHAR(66)[]`, id)
+		args = append(args, pq.Array(txFilter.Addresses))
+		id++
+	}
+	if len(txFilter.Indexes) > 0 {
+		pgStr += fmt.Sprintf(` AND transaction_cids.index = ANY($%d::INTEGER[])`, id)
+		args = append(args, pq.Array(txFilter.Indexes))
+		id++
+	}
+	if len(txFilter.PkScriptClasses) > 0 {
+		pgStr += fmt.Sprintf(` AND tx_outputs.script_class = ANY($%d::INTEGER[])`, id)
+		args = append(args, pq.Array(txFilter.PkScriptClasses))
+	}
 	return results, tx.Select(&results, pgStr, args...)
 }
 

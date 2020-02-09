@@ -21,12 +21,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcutil"
-
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// ResponseFilterer satisfies the ResponseFilterer interface for ethereum
+// ResponseFilterer satisfies the ResponseFilterer interface for bitcoin
 type ResponseFilterer struct{}
 
 // NewResponseFilterer creates a new Filterer satisfying the ResponseFilterer interface
@@ -34,15 +32,15 @@ func NewResponseFilterer() *ResponseFilterer {
 	return &ResponseFilterer{}
 }
 
-// Filter is used to filter through eth data to extract and package requested data into a Payload
+// Filter is used to filter through btc data to extract and package requested data into a Payload
 func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload shared.StreamedIPLDs) (shared.ServerResponse, error) {
 	btcFilters, ok := filter.(*SubscriptionSettings)
 	if !ok {
-		return StreamResponse{}, fmt.Errorf("eth filterer expected filter type %T got %T", &SubscriptionSettings{}, filter)
+		return StreamResponse{}, fmt.Errorf("btc filterer expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
 	btcPayload, ok := payload.(IPLDPayload)
 	if !ok {
-		return StreamResponse{}, fmt.Errorf("eth filterer expected payload type %T got %T", IPLDPayload{}, payload)
+		return StreamResponse{}, fmt.Errorf("btc filterer expected payload type %T got %T", IPLDPayload{}, payload)
 	}
 	height := int64(btcPayload.Height)
 	if checkRange(btcFilters.Start.Int64(), btcFilters.End.Int64(), height) {
@@ -79,10 +77,10 @@ func checkRange(start, end, actual int64) bool {
 
 func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *StreamResponse, payload IPLDPayload) error {
 	if !trxFilter.Off {
-		for _, trx := range payload.Txs {
-			if checkTransaction(trx, trxFilter) {
+		for i, txMeta := range payload.TxMetaData {
+			if checkTransaction(txMeta, trxFilter) {
 				trxBuffer := new(bytes.Buffer)
-				if err := trx.MsgTx().Serialize(trxBuffer); err != nil {
+				if err := payload.Txs[i].MsgTx().Serialize(trxBuffer); err != nil {
 					return err
 				}
 				response.SerializedTxs = append(response.SerializedTxs, trxBuffer.Bytes())
@@ -93,6 +91,48 @@ func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *Stre
 }
 
 // checkTransaction returns true if the provided transaction has a hit on the filter
-func checkTransaction(trx *btcutil.Tx, txFilter TxFilter) bool {
-	panic("implement me")
+func checkTransaction(txMeta TxModelWithInsAndOuts, txFilter TxFilter) bool {
+	passesSegwitFilter := false
+	if !txFilter.Segwit || (txFilter.Segwit && txMeta.SegWit) {
+		passesSegwitFilter = true
+	}
+	passesMultiSigFilter := !txFilter.MultiSig
+	if txFilter.MultiSig {
+		for _, out := range txMeta.TxOutputs {
+			if out.RequiredSigs > 1 {
+				passesMultiSigFilter = true
+			}
+		}
+	}
+	passesWitnessFilter := len(txFilter.WitnessHashes) == 0
+	for _, wantedWitnessHash := range txFilter.WitnessHashes {
+		if wantedWitnessHash == txMeta.WitnessHash {
+			passesWitnessFilter = true
+		}
+	}
+	passesAddressFilter := len(txFilter.Addresses) == 0
+	for _, wantedAddress := range txFilter.Addresses {
+		for _, out := range txMeta.TxOutputs {
+			for _, actualAddress := range out.Addresses {
+				if wantedAddress == actualAddress {
+					passesAddressFilter = true
+				}
+			}
+		}
+	}
+	passesIndexFilter := len(txFilter.Indexes) == 0
+	for _, wantedIndex := range txFilter.Indexes {
+		if wantedIndex == txMeta.Index {
+			passesIndexFilter = true
+		}
+	}
+	passesPkScriptClassFilter := len(txFilter.PkScriptClasses) == 0
+	for _, wantedPkScriptClass := range txFilter.PkScriptClasses {
+		for _, out := range txMeta.TxOutputs {
+			if out.ScriptClass == wantedPkScriptClass {
+				passesPkScriptClassFilter = true
+			}
+		}
+	}
+	return passesSegwitFilter && passesMultiSigFilter && passesWitnessFilter && passesAddressFilter && passesIndexFilter && passesPkScriptClassFilter
 }

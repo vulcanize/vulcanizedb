@@ -19,24 +19,23 @@ package eth_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
-	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var _ = Describe("Indexer", func() {
 	var (
 		db   *postgres.DB
 		err  error
-		repo *eth2.CIDIndexer
+		repo *eth.CIDIndexer
 	)
 	BeforeEach(func() {
-		db, err = eth.SetupDB()
+		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
-		repo = eth2.NewCIDIndexer(db)
+		repo = eth.NewCIDIndexer(db)
 	})
 	AfterEach(func() {
 		eth.TearDownDB(db)

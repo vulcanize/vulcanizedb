@@ -19,6 +19,8 @@ package btc
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
@@ -47,9 +49,12 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	}
 	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
 	if err != nil {
+		println("err")
+		logrus.Error("btc indexer error when indexing header")
 		return err
 	}
 	if err := in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID); err != nil {
+		logrus.Error("btc indexer error when indexing transactions")
 		return err
 	}
 	return tx.Commit()
@@ -57,11 +62,11 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, version, timestamp, bits)
-							VALUES ($1, $2, $3, $4, $5, $6, $7) 
-							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, version, timestamp, bits) = ($3, $4, $5, $6, $7)
+	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits)
+							VALUES ($1, $2, $3, $4, $5, $6) 
+							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits) = ($3, $4, $5, $6)
 							RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Version, header.Timestamp, header.Bits).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits).Scan(&headerID)
 	return headerID, err
 }
 
@@ -69,15 +74,21 @@ func (in *CIDIndexer) indexTransactionCIDs(tx *sqlx.Tx, transactions []TxModelWi
 	for _, transaction := range transactions {
 		txID, err := in.indexTransactionCID(tx, transaction, headerID)
 		if err != nil {
+			println(0)
+			logrus.Error("btc indexer error when indexing header")
 			return err
 		}
 		for _, input := range transaction.TxInputs {
 			if err := in.indexTxInput(tx, input, txID); err != nil {
+				println(1)
+				logrus.Error("btc indexer error when indexing tx inputs")
 				return err
 			}
 		}
 		for _, output := range transaction.TxOutputs {
 			if err := in.indexTxOutput(tx, output, txID); err != nil {
+				println(2)
+				logrus.Error("btc indexer error when indexing tx outputs")
 				return err
 			}
 		}
@@ -96,25 +107,25 @@ func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModelWithIn
 }
 
 func (in *CIDIndexer) indexTxInput(tx *sqlx.Tx, txInput TxInput, txID int64) error {
-	var referencedOutPutTxID int64
-	if err := tx.Get(&referencedOutPutTxID, `SELECT id FROM btc.transaction_cids
-						WHERE tx_hash = $1`, txInput.PreviousOutPointHash); err != nil {
+	// resolve zero-value hash to null value (coinbase tx input with no referenced outputs)
+	if txInput.PreviousOutPointHash == "0000000000000000000000000000000000000000000000000000000000000000" {
+		_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_tx_hash, outpoint_index)
+						VALUES ($1, $2, $3, $4, $5, $6)
+						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_tx_hash, outpoint_index) = ($3, $4, $5, $6)`,
+			txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, nil, txInput.PreviousOutPointIndex)
 		return err
 	}
-	if referencedOutPutTxID == 0 {
-		return fmt.Errorf("btc indexer could not find the tx hash %s referenced in tx input of tx id %d", txInput.PreviousOutPointHash, txID)
-	}
-	_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_tx_id, outpoint_index)
+	_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_tx_hash, outpoint_index)
 						VALUES ($1, $2, $3, $4, $5, $6)
-						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_tx_id, outpoint_index) = ($3, $4, $5, $6)`,
-		txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, referencedOutPutTxID, txInput.PreviousOutPointIndex)
+						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_tx_hash, outpoint_index) = ($3, $4, $5, $6)`,
+		txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex)
 	return err
 }
 
 func (in *CIDIndexer) indexTxOutput(tx *sqlx.Tx, txOuput TxOutput, txID int64) error {
 	_, err := tx.Exec(`INSERT INTO btc.tx_outputs (tx_id, index, value, pk_script, script_class, addresses, required_sigs)
 							VALUES ($1, $2, $3, $4, $5, $6, $7)
-							ON CONFLICT (ix_id, index) DO UPDATE SET (value, pk_script, script_class, addresses, required_sigs) = ($3, $4, $5, $6, $7)`,
+							ON CONFLICT (tx_id, index) DO UPDATE SET (value, pk_script, script_class, addresses, required_sigs) = ($3, $4, $5, $6, $7)`,
 		txID, txOuput.Index, txOuput.Value, txOuput.PkScript, txOuput.ScriptClass, txOuput.Addresses, txOuput.RequiredSigs)
 	return err
 }

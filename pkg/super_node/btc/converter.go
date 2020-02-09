@@ -32,7 +32,9 @@ type PayloadConverter struct {
 
 // NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the PayloadConverter interface
 func NewPayloadConverter(chainConfig *chaincfg.Params) *PayloadConverter {
-	return &PayloadConverter{}
+	return &PayloadConverter{
+		chainConfig: chainConfig,
+	}
 }
 
 // Convert method is used to convert a bitcoin BlockPayload to an IPLDPayload
@@ -43,11 +45,10 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		return nil, fmt.Errorf("btc converter: expected payload type %T got %T", BlockPayload{}, payload)
 	}
 	txMeta := make([]TxModelWithInsAndOuts, len(btcBlockPayload.Txs))
-	for _, tx := range btcBlockPayload.Txs {
-		index := tx.Index()
+	for i, tx := range btcBlockPayload.Txs {
 		txModel := TxModelWithInsAndOuts{
 			TxHash:    tx.Hash().String(),
-			Index:     int64(index),
+			Index:     int64(i),
 			SegWit:    tx.HasWitness(),
 			TxOutputs: make([]TxOutput, len(tx.MsgTx().TxOut)),
 			TxInputs:  make([]TxInput, len(tx.MsgTx().TxIn)),
@@ -79,11 +80,11 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 				Value:        out.Value,
 				PkScript:     out.PkScript,
 				RequiredSigs: int64(numberOfSigs),
-				ScriptClass:  (uint8)(scriptClass),
+				ScriptClass:  uint8(scriptClass),
 				Addresses:    stringAddrs,
 			}
 		}
-		txMeta[index] = txModel
+		txMeta[i] = txModel
 	}
 	return IPLDPayload{
 		BlockPayload: btcBlockPayload,

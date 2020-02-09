@@ -41,48 +41,24 @@ func (eir *IPLDResolver) Resolve(iplds shared.FetchedIPLDs) (shared.ServerRespon
 	}
 	return StreamResponse{
 		BlockNumber:     ipfsBlocks.BlockNumber,
-		HeadersRlp:      eir.ResolveHeaders(ipfsBlocks.Headers),
-		UnclesRlp:       eir.ResolveUncles(ipfsBlocks.Uncles),
-		TransactionsRlp: eir.ResolveTransactions(ipfsBlocks.Transactions),
-		ReceiptsRlp:     eir.ResolveReceipts(ipfsBlocks.Receipts),
-		StateNodesRlp:   eir.ResolveState(ipfsBlocks.StateNodes),
-		StorageNodesRlp: eir.ResolveStorage(ipfsBlocks.StorageNodes),
+		HeadersRlp:      eir.resolve(ipfsBlocks.Headers),
+		UnclesRlp:       eir.resolve(ipfsBlocks.Uncles),
+		TransactionsRlp: eir.resolve(ipfsBlocks.Transactions),
+		ReceiptsRlp:     eir.resolve(ipfsBlocks.Receipts),
+		StateNodesRlp:   eir.resolveState(ipfsBlocks.StateNodes),
+		StorageNodesRlp: eir.resolveStorage(ipfsBlocks.StorageNodes),
 	}, nil
 }
 
-func (eir *IPLDResolver) ResolveHeaders(iplds []blocks.Block) [][]byte {
-	headerRlps := make([][]byte, 0, len(iplds))
+func (eir *IPLDResolver) resolve(iplds []blocks.Block) [][]byte {
+	rlps := make([][]byte, 0, len(iplds))
 	for _, ipld := range iplds {
-		headerRlps = append(headerRlps, ipld.RawData())
+		rlps = append(rlps, ipld.RawData())
 	}
-	return headerRlps
+	return rlps
 }
 
-func (eir *IPLDResolver) ResolveUncles(iplds []blocks.Block) [][]byte {
-	uncleRlps := make([][]byte, 0, len(iplds))
-	for _, ipld := range iplds {
-		uncleRlps = append(uncleRlps, ipld.RawData())
-	}
-	return uncleRlps
-}
-
-func (eir *IPLDResolver) ResolveTransactions(iplds []blocks.Block) [][]byte {
-	trxs := make([][]byte, 0, len(iplds))
-	for _, ipld := range iplds {
-		trxs = append(trxs, ipld.RawData())
-	}
-	return trxs
-}
-
-func (eir *IPLDResolver) ResolveReceipts(iplds []blocks.Block) [][]byte {
-	rcts := make([][]byte, 0, len(iplds))
-	for _, ipld := range iplds {
-		rcts = append(rcts, ipld.RawData())
-	}
-	return rcts
-}
-
-func (eir *IPLDResolver) ResolveState(iplds map[common.Hash]blocks.Block) map[common.Hash][]byte {
+func (eir *IPLDResolver) resolveState(iplds map[common.Hash]blocks.Block) map[common.Hash][]byte {
 	stateNodes := make(map[common.Hash][]byte, len(iplds))
 	for key, ipld := range iplds {
 		stateNodes[key] = ipld.RawData()
@@ -90,7 +66,7 @@ func (eir *IPLDResolver) ResolveState(iplds map[common.Hash]blocks.Block) map[co
 	return stateNodes
 }
 
-func (eir *IPLDResolver) ResolveStorage(iplds map[common.Hash]map[common.Hash]blocks.Block) map[common.Hash]map[common.Hash][]byte {
+func (eir *IPLDResolver) resolveStorage(iplds map[common.Hash]map[common.Hash]blocks.Block) map[common.Hash]map[common.Hash][]byte {
 	storageNodes := make(map[common.Hash]map[common.Hash][]byte)
 	for stateKey, storageIPLDs := range iplds {
 		storageNodes[stateKey] = make(map[common.Hash][]byte)

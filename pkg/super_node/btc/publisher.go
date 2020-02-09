@@ -63,7 +63,6 @@ func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForI
 		ParentHash:  ipldPayload.Header.PrevBlock.String(),
 		BlockNumber: strconv.Itoa(int(ipldPayload.Height)),
 		BlockHash:   ipldPayload.Header.BlockHash().String(),
-		Version:     ipldPayload.Header.Version,
 		Timestamp:   ipldPayload.Header.Timestamp.UnixNano(),
 		Bits:        ipldPayload.Header.Bits,
 	}

@@ -176,18 +176,21 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, blockNum
 	log.Debug("retrieving transaction cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
 	results := make([]TxModel, 0)
-	pgStr := `SELECT transaction_cids.id, transaction_cids.header_id,
+	id := 1
+	pgStr := fmt.Sprintf(`SELECT transaction_cids.id, transaction_cids.header_id,
  			transaction_cids.tx_hash, transaction_cids.cid,
  			transaction_cids.dst, transaction_cids.src, transaction_cids.index
  			FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
-			WHERE header_cids.block_number = $1`
+			WHERE header_cids.block_number = $%d`, id)
 	args = append(args, blockNumber)
+	id++
 	if len(txFilter.Dst) > 0 {
-		pgStr += ` AND transaction_cids.dst = ANY($2::VARCHAR(66)[])`
+		pgStr += fmt.Sprintf(` AND transaction_cids.dst = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(txFilter.Dst))
+		id++
 	}
 	if len(txFilter.Src) > 0 {
-		pgStr += ` AND transaction_cids.src = ANY($3::VARCHAR(66)[])`
+		pgStr += fmt.Sprintf(` AND transaction_cids.src = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(txFilter.Src))
 	}
 	return results, tx.Select(&results, pgStr, args...)
@@ -309,26 +312,26 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageFilter, blockNumber int64) ([]StorageNodeWithStateKeyModel, error) {
 	log.Debug("retrieving storage cids for block ", blockNumber)
 	args := make([]interface{}, 0, 3)
-	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_key,
+	id := 1
+	pgStr := fmt.Sprintf(`SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_key,
  			storage_cids.leaf, storage_cids.cid, state_cids.state_key FROM eth.storage_cids, eth.state_cids, eth.header_cids
 			WHERE storage_cids.state_id = state_cids.id 
 			AND state_cids.header_id = header_cids.id
-			AND header_cids.block_number = $1`
+			AND header_cids.block_number = $%d`, id)
 	args = append(args, blockNumber)
+	id++
 	addrLen := len(storageFilter.Addresses)
 	if addrLen > 0 {
 		keys := make([]string, addrLen)
 		for i, addr := range storageFilter.Addresses {
 			keys[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes()).String()
 		}
-		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
+		pgStr += fmt.Sprintf(` AND state_cids.state_key = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(keys))
-		if len(storageFilter.StorageKeys) > 0 {
-			pgStr += ` AND storage_cids.storage_key = ANY($3::VARCHAR(66)[])`
-			args = append(args, pq.Array(storageFilter.StorageKeys))
-		}
-	} else if len(storageFilter.StorageKeys) > 0 {
-		pgStr += ` AND storage_cids.storage_key = ANY($2::VARCHAR(66)[])`
+		id++
+	}
+	if len(storageFilter.StorageKeys) > 0 {
+		pgStr += fmt.Sprintf(` AND storage_cids.storage_key = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(storageFilter.StorageKeys))
 	}
 	if !storageFilter.IntermediateNodes {

@@ -212,7 +212,7 @@ var _ = Describe("Retriever", func() {
 	)
 	BeforeEach(func() {
 		var err error
-		db, err = eth.SetupDB()
+		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth2.NewCIDIndexer(db)
 		retriever = eth2.NewCIDRetriever(db)

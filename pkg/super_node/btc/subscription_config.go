@@ -17,6 +17,7 @@
 package btc
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/spf13/viper"
@@ -24,29 +25,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-/*
-// HeaderModel is the db model for btc.header_cids table
-// TxInput is the db model for btc.tx_inputs table
-type TxInput struct {
-	ID                    int64    `db:"id"`
-	TxID                  int64    `db:"tx_id"`
-	Index                 int64    `db:"index"`
-	TxWitness             [][]byte `db:"tx_witness"`
-	SignatureScript       []byte   `db:"sig_script"`
-	PreviousOutPointHash  string   `db:"outpoint_hash"`
-	PreviousOutPointIndex uint32   `db:"outpoint_index"`
-}
-
-// TxOutput is the db model for btc.tx_outputs table
-type TxOutput struct {
-	ID       int64  `db:"id"`
-	TxID     int64  `db:"tx_id"`
-	Index    int64  `db:"index"`
-	Value    int64  `db:"value"`
-	PkScript []byte `db:"pk_script"`
-}
-
-*/
 // SubscriptionSettings config is used by a subscriber to specify what bitcoin data to stream from the super node
 type SubscriptionSettings struct {
 	BackFill     bool
@@ -64,13 +42,13 @@ type HeaderFilter struct {
 
 // TxFilter contains filter settings for txs
 type TxFilter struct {
-	Off bool
-	// Top level trx filters
-	Index         int64    // allow filtering by index so that we can filter for only coinbase transactions (index 0) if we want to
-	Segwit        bool     // allow filtering for segwit trxs
-	WitnessHashes []string // allow filtering for specific witness hashes
-	// TODO: trx input filters
-	// TODO: trx output filters
+	Off             bool
+	Segwit          bool     // allow filtering for segwit trxs
+	WitnessHashes   []string // allow filtering for specific witness hashes
+	Indexes         []int64  // allow filtering for specific transaction indexes (e.g. 0 for coinbase transactions)
+	PkScriptClasses []uint8  // allow filtering for txs that have at least one tx output with the specified pkscript class
+	MultiSig        bool     // allow filtering for txs that have at least one tx output that requires more than one signature
+	Addresses       []string // allow filtering for txs that have at least one tx output with at least one of the provided addresses
 }
 
 // Init is used to initialize a EthSubscription struct with env variables
@@ -83,17 +61,30 @@ func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 	// 0 start means we start at the beginning and 0 end means we continue indefinitely
 	sc.Start = big.NewInt(viper.GetInt64("superNode.btcSubscription.startingBlock"))
 	sc.End = big.NewInt(viper.GetInt64("superNode.btcSubscription.endingBlock"))
-	// Below default to false, which means we get all headers and no uncles by default
+	// Below default to false, which means we get all headers by default
 	sc.HeaderFilter = HeaderFilter{
 		Off: viper.GetBool("superNode.btcSubscription.headerFilter.off"),
 	}
 	// Below defaults to false and two slices of length 0
 	// Which means we get all transactions by default
+	pksc := viper.Get("superNode.btcSubscription.txFilter.pkScriptClass")
+	pkScriptClasses, ok := pksc.([]uint8)
+	if !ok {
+		return nil, errors.New("superNode.btcSubscription.txFilter.pkScriptClass needs to be an array of uint8s")
+	}
+	is := viper.Get("superNode.btcSubscription.txFilter.indexes")
+	indexes, ok := is.([]int64)
+	if !ok {
+		return nil, errors.New("superNode.btcSubscription.txFilter.indexes needs to be an array of int64s")
+	}
 	sc.TxFilter = TxFilter{
-		Off:           viper.GetBool("superNode.btcSubscription.txFilter.off"),
-		Index:         viper.GetInt64("superNode.btcSubscription.txFilter.index"),
-		Segwit:        viper.GetBool("superNode.btcSubscription.txFilter.segwit"),
-		WitnessHashes: viper.GetStringSlice("superNode.btcSubscription.txFilter.witnessHashes"),
+		Off:             viper.GetBool("superNode.btcSubscription.txFilter.off"),
+		Segwit:          viper.GetBool("superNode.btcSubscription.txFilter.segwit"),
+		WitnessHashes:   viper.GetStringSlice("superNode.btcSubscription.txFilter.witnessHashes"),
+		PkScriptClasses: pkScriptClasses,
+		Indexes:         indexes,
+		MultiSig:        viper.GetBool("superNode.btcSubscription.txFilter.multiSig"),
+		Addresses:       viper.GetStringSlice("superNode.btcSubscription.txFilter.addresses"),
 	}
 	return sc, nil
 }

@@ -14,22 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package btc_test
+package shared
 
 import (
-	"io/ioutil"
-	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
+	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
 
-func TestBTCSuperNode(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Super Node BTC Suite Test")
+// SetupDB is use to setup a db for super node tests
+func SetupDB() (*postgres.DB, error) {
+	return postgres.NewDB(config.Database{
+		Hostname: "localhost",
+		Name:     "vulcanize_testing",
+		Port:     5432,
+	}, core.Node{})
 }
-
-var _ = BeforeSuite(func() {
-	logrus.SetOutput(ioutil.Discard)
-})

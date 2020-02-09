@@ -14,22 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package btc_test
+package btc
 
 import (
-	"io/ioutil"
-	"testing"
-
-	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
+
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
 
-func TestBTCSuperNode(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Super Node BTC Suite Test")
-}
+// TearDownDB is used to tear down the super node dbs after tests
+func TearDownDB(db *postgres.DB) {
+	tx, err := db.Beginx()
+	Expect(err).NotTo(HaveOccurred())
 
-var _ = BeforeSuite(func() {
-	logrus.SetOutput(ioutil.Discard)
-})
+	_, err = tx.Exec(`DELETE FROM btc.header_cids`)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = tx.Exec(`DELETE FROM btc.transaction_cids`)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = tx.Exec(`DELETE FROM btc.tx_inputs`)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = tx.Exec(`DELETE FROM btc.tx_outputs`)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = tx.Exec(`DELETE FROM blocks`)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = tx.Commit()
+	Expect(err).NotTo(HaveOccurred())
+}

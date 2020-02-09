@@ -19,19 +19,8 @@ package eth
 import (
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 )
-
-// SetupDB is use to setup a db for super node tests
-func SetupDB() (*postgres.DB, error) {
-	return postgres.NewDB(config.Database{
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     5432,
-	}, core.Node{})
-}
 
 // TearDownDB is used to tear down the super node dbs after tests
 func TearDownDB(db *postgres.DB) {

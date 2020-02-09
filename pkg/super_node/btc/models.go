@@ -25,7 +25,6 @@ type HeaderModel struct {
 	BlockHash   string `db:"block_hash"`
 	ParentHash  string `db:"parent_hash"`
 	CID         string `db:"cid"`
-	Version     int32  `db:"version"`
 	Timestamp   int64  `db:"timestamp"`
 	Bits        uint32 `db:"bits"`
 }
@@ -61,9 +60,8 @@ type TxInput struct {
 	Index                 int64    `db:"index"`
 	TxWitness             [][]byte `db:"witness"`
 	SignatureScript       []byte   `db:"sig_script"`
-	PreviousOutPointTxID  int64    `db:"outpoint_tx_id"`
 	PreviousOutPointIndex uint32   `db:"outpoint_index"`
-	PreviousOutPointHash  string
+	PreviousOutPointHash  string   `db:"outpoint_tx_hash"`
 }
 
 // TxOutput is the db model for btc.tx_outputs table
