@@ -17,22 +17,21 @@
 package shared
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"time"
-
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
@@ -93,7 +92,21 @@ func NewSuperNodeConfig() (*SuperNodeConfig, error) {
 			workers = 1
 		}
 		sn.Workers = workers
-		sn.NodeInfo, sn.WSClient, err = getNodeAndClient(sn.Chain, viper.GetString("superNode.sync.wsPath"))
+		if sn.Chain == Ethereum {
+			sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(sn.Chain, viper.GetString("superNode.sync.wsPath"))
+		}
+		if sn.Chain == Bitcoin {
+			sn.NodeInfo = core.Node{
+				ID:           "temporaryID",
+				ClientName:   "omnicored",
+				GenesisBlock: "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+				NetworkID:    "0xD9B4BEF9",
+			}
+			sn.WSClient = &rpcclient.ConnConfig{
+				Host:     viper.GetString("superNode.sync.wsPath"),
+				Endpoint: "ws",
+			}
+		}
 	}
 	if sn.Serve {
 		wsPath := viper.GetString("superNode.server.wsPath")
@@ -130,9 +143,18 @@ func NewSuperNodeConfig() (*SuperNodeConfig, error) {
 // BackFillFields is used to fill in the BackFill fields of the config
 func (sn *SuperNodeConfig) BackFillFields() error {
 	sn.BackFill = true
-	_, httpClient, err := getNodeAndClient(sn.Chain, viper.GetString("superNode.backFill.httpPath"))
-	if err != nil {
-		return err
+	var httpClient interface{}
+	var err error
+	if sn.Chain == Ethereum {
+		_, httpClient, err = getEthNodeAndClient(sn.Chain, viper.GetString("superNode.backFill.httpPath"))
+		if err != nil {
+			return err
+		}
+	}
+	if sn.Chain == Bitcoin {
+		httpClient = &rpcclient.ConnConfig{
+			Host: viper.GetString("superNode.backFill.httpPath"),
+		}
 	}
 	sn.HTTPClient = httpClient
 	freq := viper.GetInt("superNode.backFill.frequency")
@@ -147,21 +169,16 @@ func (sn *SuperNodeConfig) BackFillFields() error {
 	return nil
 }
 
-func getNodeAndClient(chain ChainType, path string) (core.Node, interface{}, error) {
-	switch chain {
-	case Ethereum:
-		rawRPCClient, err := rpc.Dial(path)
-		if err != nil {
-			return core.Node{}, nil, err
-		}
-		rpcClient := client.NewRPCClient(rawRPCClient, path)
-		ethClient := ethclient.NewClient(rawRPCClient)
-		vdbEthClient := client.NewEthClient(ethClient)
-		vdbNode := node.MakeNode(rpcClient)
-		transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
-		blockChain := eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
-		return blockChain.Node(), rpcClient, nil
-	default:
-		return core.Node{}, nil, fmt.Errorf("unrecognized chain type %s", chain.String())
+func getEthNodeAndClient(chain ChainType, path string) (core.Node, interface{}, error) {
+	rawRPCClient, err := rpc.Dial(path)
+	if err != nil {
+		return core.Node{}, nil, err
 	}
+	rpcClient := client.NewRPCClient(rawRPCClient, path)
+	ethClient := ethclient.NewClient(rawRPCClient)
+	vdbEthClient := client.NewEthClient(ethClient)
+	vdbNode := node.MakeNode(rpcClient)
+	transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
+	blockChain := eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
+	return blockChain.Node(), rpcClient, nil
 }

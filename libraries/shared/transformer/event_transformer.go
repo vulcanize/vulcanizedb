@@ -19,7 +19,7 @@ package transformer
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 type EventTransformer interface {

@@ -18,7 +18,7 @@ package repositories
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 const (

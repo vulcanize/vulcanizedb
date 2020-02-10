@@ -27,6 +27,7 @@ type HeaderModel struct {
 	CID         string `db:"cid"`
 	Timestamp   int64  `db:"timestamp"`
 	Bits        uint32 `db:"bits"`
+	NodeID      int64  `db:"node_id"`
 }
 
 // TxModel is the db model for btc.transaction_cids table

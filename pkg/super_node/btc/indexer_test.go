@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"

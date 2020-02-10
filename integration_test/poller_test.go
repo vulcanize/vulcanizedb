@@ -29,7 +29,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/poller"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/types"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var _ = Describe("Poller", func() {

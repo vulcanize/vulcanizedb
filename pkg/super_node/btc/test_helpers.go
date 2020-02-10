@@ -19,7 +19,7 @@ package btc
 import (
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 // TearDownDB is used to tear down the super node dbs after tests

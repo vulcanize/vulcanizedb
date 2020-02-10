@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
@@ -102,11 +102,11 @@ func NewPaylaodFetcher(chain shared.ChainType, client interface{}) (shared.Paylo
 		}
 		return eth.NewPayloadFetcher(batchClient), nil
 	case shared.Bitcoin:
-		rpcClient, ok := client.(*rpcclient.Client)
+		connConfig, ok := client.(*rpcclient.ConnConfig)
 		if !ok {
 			return nil, fmt.Errorf("bitcoin payload fetcher constructor expected client type %T got %T", &rpcclient.Client{}, client)
 		}
-		return btc.NewPayloadFetcher(rpcClient), nil
+		return btc.NewPayloadFetcher(connConfig)
 	default:
 		return nil, fmt.Errorf("invalid chain %s for payload fetcher constructor", chain.String())
 	}

@@ -102,7 +102,7 @@ var _ = Describe("Geth blockchain", func() {
 
 		Describe("POA/Kovan", func() {
 			It("fetches header from rpcClient", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = string(vulcCore.KOVAN_NETWORK_ID)
 				blockNumber := hexutil.Big(*big.NewInt(100))
 				mockRpcClient.SetReturnPOAHeader(vulcCore.POAHeader{Number: &blockNumber})
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
@@ -114,7 +114,7 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("returns err if rpcClient returns err", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = string(vulcCore.KOVAN_NETWORK_ID)
 				mockRpcClient.SetCallContextErr(fakes.FakeError)
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
@@ -125,7 +125,7 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("returns error if returned header is empty", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = string(vulcCore.KOVAN_NETWORK_ID)
 				blockChain = eth.NewBlockChain(mockClient, mockRpcClient, node, fakes.NewMockTransactionConverter())
 
 				_, err := blockChain.GetHeaderByNumber(100)
@@ -135,7 +135,7 @@ var _ = Describe("Geth blockchain", func() {
 			})
 
 			It("returns multiple headers with multiple blocknumbers", func() {
-				node.NetworkID = vulcCore.KOVAN_NETWORK_ID
+				node.NetworkID = string(vulcCore.KOVAN_NETWORK_ID)
 				blockNumber := hexutil.Big(*big.NewInt(100))
 				mockRpcClient.SetReturnPOAHeaders([]vulcCore.POAHeader{{Number: &blockNumber}})
 

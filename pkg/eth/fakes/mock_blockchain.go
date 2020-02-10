@@ -52,7 +52,7 @@ type MockBlockChain struct {
 
 func NewMockBlockChain() *MockBlockChain {
 	return &MockBlockChain{
-		node: core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
+		node: core.Node{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "Geth"},
 	}
 }
 

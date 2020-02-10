@@ -18,6 +18,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,7 +61,7 @@ func MakeNode(rpcClient core.RPCClient) core.Node {
 	id, name := pr.NodeInfo()
 	return core.Node{
 		GenesisBlock: pr.GenesisBlock(),
-		NetworkID:    pr.NetworkID(),
+		NetworkID:    fmt.Sprintf("%f", pr.NetworkID()),
 		ID:           id,
 		ClientName:   name,
 	}

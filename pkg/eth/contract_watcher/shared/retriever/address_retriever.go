@@ -25,7 +25,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/contract"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 // AddressRetriever is used to retrieve the addresses associated with a contract

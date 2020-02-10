@@ -25,7 +25,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 // Indexer satisfies the Indexer interface for ethereum
@@ -50,7 +50,7 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if err != nil {
 		return err
 	}
-	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID)
+	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID, in.db.NodeID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			log.Error(err)
@@ -80,12 +80,12 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	return tx.Commit()
 }
 
-func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td) VALUES ($1, $2, $3, $4, $5)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td) = ($3, $4, $5)
+	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id) VALUES ($1, $2, $3, $4, $5, $6)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id) = ($3, $4, $5, $6)
 								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID).Scan(&headerID)
 	return headerID, err
 }
 

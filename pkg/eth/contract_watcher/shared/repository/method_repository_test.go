@@ -28,7 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/repository"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/types"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var _ = Describe("Repository", func() {

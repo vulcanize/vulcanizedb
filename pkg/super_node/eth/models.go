@@ -26,6 +26,7 @@ type HeaderModel struct {
 	ParentHash      string `db:"parent_hash"`
 	CID             string `db:"cid"`
 	TotalDifficulty string `db:"td"`
+	NodeID          int64  `db:"node_id"`
 }
 
 // UncleModel is the db model for eth.uncle_cids

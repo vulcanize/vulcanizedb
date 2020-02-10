@@ -32,10 +32,14 @@ type PayloadFetcher struct {
 }
 
 // NewStateDiffFetcher returns a PayloadFetcher
-func NewPayloadFetcher(c *rpcclient.Client) *PayloadFetcher {
-	return &PayloadFetcher{
-		client: c,
+func NewPayloadFetcher(c *rpcclient.ConnConfig) (*PayloadFetcher, error) {
+	client, err := rpcclient.New(c, nil)
+	if err != nil {
+		return nil, err
 	}
+	return &PayloadFetcher{
+		client: client,
+	}, nil
 }
 
 // FetchAt fetches the block payloads at the given block heights

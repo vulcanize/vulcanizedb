@@ -20,7 +20,7 @@ import (
 	"database/sql"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var ErrDuplicateDiff = sql.ErrNoRows

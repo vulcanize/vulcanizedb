@@ -7,7 +7,7 @@ CREATE TABLE public.headers
     raw                  JSONB,
     block_timestamp      NUMERIC,
     check_count          INTEGER NOT NULL DEFAULT 0,
-    eth_node_id          INTEGER NOT NULL REFERENCES eth_nodes (id) ON DELETE CASCADE,
+    node_id              INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
     eth_node_fingerprint VARCHAR(128),
     UNIQUE (block_number, hash, eth_node_fingerprint)
 );

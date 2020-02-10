@@ -28,8 +28,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 const NoNewDataPause = time.Second * 7
@@ -44,7 +44,6 @@ type EventWatcher struct {
 func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
 	extractor := &logs.LogExtractor{
 		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
-		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
 		Fetcher:                  fetcher.NewLogFetcher(bc),
 		LogRepository:            repositories.NewHeaderSyncLogRepository(db),
 		Syncer:                   transactions.NewTransactionsSyncer(db, bc),

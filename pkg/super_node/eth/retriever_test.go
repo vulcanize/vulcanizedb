@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
@@ -236,6 +236,7 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.Headers)).To(Equal(1))
 			expectedHeaderCIDs := mocks.MockCIDWrapper.Headers
 			expectedHeaderCIDs[0].ID = cidWrapper.Headers[0].ID
+			expectedHeaderCIDs[0].NodeID = cidWrapper.Headers[0].NodeID
 			Expect(cidWrapper.Headers).To(Equal(expectedHeaderCIDs))
 			Expect(len(cidWrapper.Transactions)).To(Equal(2))
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0].CID)).To(BeTrue())

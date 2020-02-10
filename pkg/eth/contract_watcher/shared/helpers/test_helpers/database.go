@@ -17,8 +17,6 @@
 package test_helpers
 
 import (
-	"math/rand"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	. "github.com/onsi/gomega"
@@ -31,9 +29,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers/mocks"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -129,34 +126,6 @@ func SetupDBandBC() (*postgres.DB, core.BlockChain) {
 	return db, blockChain
 }
 
-func SetupTusdRepo(vulcanizeLogID *int64, wantedEvents, wantedMethods []string) (*postgres.DB, *contract.Contract) {
-	db, err := postgres.NewDB(config.Database{
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     5432,
-	}, core.Node{})
-	Expect(err).NotTo(HaveOccurred())
-
-	receiptRepository := repositories.FullSyncReceiptRepository{DB: db}
-	logRepository := repositories.FullSyncLogRepository{DB: db}
-	blockRepository := *repositories.NewBlockRepository(db)
-
-	blockNumber := rand.Int63()
-	blockID := CreateBlock(blockNumber, blockRepository)
-
-	receipts := []core.Receipt{{Logs: []core.FullSyncLog{{}}}}
-
-	err = receiptRepository.CreateReceiptsAndLogs(blockID, receipts)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = logRepository.Get(vulcanizeLogID, `SELECT id FROM full_sync_logs`)
-	Expect(err).ToNot(HaveOccurred())
-
-	info := SetupTusdContract(wantedEvents, wantedMethods)
-
-	return db, info
-}
-
 func SetupTusdContract(wantedEvents, wantedMethods []string) *contract.Contract {
 	p := mocks.NewParser(constants.TusdAbiString)
 	err := p.Parse(constants.TusdContractAddress)
@@ -237,25 +206,10 @@ func TearDown(db *postgres.DB) {
 	_, err = tx.Exec(`DELETE FROM addresses`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM eth_blocks`)
-	Expect(err).NotTo(HaveOccurred())
-
 	_, err = tx.Exec(`DELETE FROM headers`)
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM full_sync_logs`)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = tx.Exec(`DELETE FROM log_filters`)
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = tx.Exec(`DELETE FROM full_sync_transactions`)
-	Expect(err).NotTo(HaveOccurred())
-
 	_, err = tx.Exec("DELETE FROM header_sync_transactions")
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = tx.Exec(`DELETE FROM full_sync_receipts`)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = tx.Exec(`DELETE FROM header_sync_receipts`)
@@ -286,11 +240,4 @@ func TearDown(db *postgres.DB) {
 
 	_, err = db.Exec(`VACUUM checked_headers`)
 	Expect(err).NotTo(HaveOccurred())
-}
-
-func CreateBlock(blockNumber int64, repository repositories.BlockRepository) int64 {
-	blockID, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
-	Expect(err).NotTo(HaveOccurred())
-
-	return blockID
 }

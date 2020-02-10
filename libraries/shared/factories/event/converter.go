@@ -18,7 +18,7 @@ package event
 
 import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 // Converter transforms log data into general InsertionModels the Repository can persist__

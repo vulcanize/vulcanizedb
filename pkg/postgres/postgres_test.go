@@ -28,8 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -82,30 +81,9 @@ var _ = Describe("Postgres DB", func() {
 		Expect(actual).To(Equal(bi))
 	})
 
-	It("does not commit block if block is invalid", func() {
-		//badNonce violates db Nonce field length
-		badNonce := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		badBlock := core.Block{
-			Number:       123,
-			Nonce:        badNonce,
-			Transactions: []core.TransactionModel{},
-		}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
-		db := test_config.NewTestDB(node)
-		test_config.CleanTestDB(db)
-		blocksRepository := repositories.NewBlockRepository(db)
-
-		_, err1 := blocksRepository.CreateOrUpdateBlock(badBlock)
-
-		Expect(err1).To(HaveOccurred())
-		savedBlock, err2 := blocksRepository.GetBlock(123)
-		Expect(err2).To(HaveOccurred())
-		Expect(savedBlock).To(BeZero())
-	})
-
 	It("throws error when can't connect to the database", func() {
 		invalidDatabase := config.Database{}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
+		node := core.Node{GenesisBlock: "GENESIS", NetworkID: "1", ID: "x123", ClientName: "geth"}
 
 		_, err := postgres.NewDB(invalidDatabase, node)
 
@@ -115,51 +93,11 @@ var _ = Describe("Postgres DB", func() {
 
 	It("throws error when can't create node", func() {
 		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		node := core.Node{GenesisBlock: badHash, NetworkID: 1, ID: "x123", ClientName: "geth"}
+		node := core.Node{GenesisBlock: badHash, NetworkID: "1", ID: "x123", ClientName: "geth"}
 
 		_, err := postgres.NewDB(test_config.DBConfig, node)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(postgres.SettingNodeFailedMsg))
-	})
-
-	It("does not commit log if log is invalid", func() {
-		//badTxHash violates db tx_hash field length
-		badTxHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		badLog := core.FullSyncLog{
-			Address:     "x123",
-			BlockNumber: 1,
-			TxHash:      badTxHash,
-		}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
-		db, _ := postgres.NewDB(test_config.DBConfig, node)
-		logRepository := repositories.FullSyncLogRepository{DB: db}
-
-		err := logRepository.CreateLogs([]core.FullSyncLog{badLog}, 123)
-
-		Expect(err).ToNot(BeNil())
-		savedBlock, err := logRepository.GetLogs("x123", 1)
-		Expect(savedBlock).To(BeNil())
-		Expect(err).To(Not(HaveOccurred()))
-	})
-
-	It("does not commit block or transactions if transaction is invalid", func() {
-		//badHash violates db To field length
-		badHash := fmt.Sprintf("x %s", strings.Repeat("1", 100))
-		badTransaction := core.TransactionModel{To: badHash}
-		block := core.Block{
-			Number:       123,
-			Transactions: []core.TransactionModel{badTransaction},
-		}
-		node := core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "geth"}
-		db, _ := postgres.NewDB(test_config.DBConfig, node)
-		blockRepository := repositories.NewBlockRepository(db)
-
-		_, err1 := blockRepository.CreateOrUpdateBlock(block)
-
-		Expect(err1).To(HaveOccurred())
-		savedBlock, err2 := blockRepository.GetBlock(123)
-		Expect(err2).To(HaveOccurred())
-		Expect(savedBlock).To(BeZero())
 	})
 })

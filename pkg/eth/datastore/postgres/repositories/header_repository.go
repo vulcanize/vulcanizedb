@@ -24,7 +24,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var ErrValidHeaderExists = errors.New("valid header already exists")
@@ -134,7 +134,7 @@ func (repository HeaderRepository) getHeaderHash(header core.Header) (string, er
 func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
 	var headerID int64
 	row := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint)
+		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, node_id, eth_node_fingerprint)
 		VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) ON CONFLICT DO NOTHING RETURNING id`,
 		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID)
 	err := row.Scan(&headerID)

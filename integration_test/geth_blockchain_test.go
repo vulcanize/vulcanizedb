@@ -27,8 +27,6 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/history"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
@@ -46,19 +44,6 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		transactionConverter := rpc2.NewRPCTransactionConverter(ethClient)
 		blockChain = eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 	})
-
-	It("reads two blocks", func(done Done) {
-		blocks := fakes.NewMockBlockRepository()
-		lastBlock, err := blockChain.LastBlock()
-		Expect(err).NotTo(HaveOccurred())
-
-		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
-		_, err = history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
-		Expect(err).NotTo(HaveOccurred())
-
-		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
-		close(done)
-	}, 30)
 
 	It("retrieves the genesis block and first block", func(done Done) {
 		genesisBlock, err := blockChain.GetBlockByNumber(int64(0))

@@ -30,8 +30,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/contract_watcher/shared/helpers/test_helpers/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var _ = Describe("contractWatcher headerSync transformer", func() {

@@ -6,6 +6,7 @@ CREATE TABLE eth.header_cids (
   parent_hash           VARCHAR(66) NOT NULL,
   cid                   TEXT NOT NULL,
   td                    BIGINT,
+  node_id               INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
   UNIQUE (block_number, block_hash)
 );
 

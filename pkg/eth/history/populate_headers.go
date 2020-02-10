@@ -17,6 +17,7 @@
 package history
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
@@ -60,4 +61,8 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 		}
 	}
 	return len(blockNumbers), nil
+}
+
+func getBlockRangeString(blockRange []int64) string {
+	return fmt.Sprintf("Backfilling |%v| blocks", len(blockRange))
 }

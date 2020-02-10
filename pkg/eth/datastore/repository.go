@@ -29,7 +29,6 @@ type AddressRepository interface {
 }
 
 type BlockRepository interface {
-	CreateOrUpdateBlock(block core.Block) (int64, error)
 	GetBlock(blockNumber int64) (core.Block, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
 	SetBlocksStatus(chainHead int64) error

@@ -24,7 +24,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -47,7 +47,7 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if err != nil {
 		return err
 	}
-	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
+	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID, in.db.NodeID)
 	if err != nil {
 		logrus.Error("btc indexer error when indexing header")
 		return err
@@ -59,13 +59,13 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	return tx.Commit()
 }
 
-func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits)
-							VALUES ($1, $2, $3, $4, $5, $6) 
-							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits) = ($3, $4, $5, $6)
+	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits, node_id)
+							VALUES ($1, $2, $3, $4, $5, $6, $7) 
+							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits, node_id) = ($3, $4, $5, $6, $7)
 							RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, nodeID).Scan(&headerID)
 	return headerID, err
 }
 

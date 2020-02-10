@@ -82,7 +82,7 @@ var _ = Describe("Node Info", func() {
 	It("returns the network id for any client", func() {
 		client := fakes.NewMockRPCClient()
 		n := node.MakeNode(client)
-		Expect(n.NetworkID).To(Equal(float64(1234)))
+		Expect(n.NetworkID).To(Equal("1234.000000"))
 	})
 
 	It("returns geth ID and client name for geth node", func() {

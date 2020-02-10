@@ -35,7 +35,7 @@ const (
 
 type Node struct {
 	GenesisBlock string
-	NetworkID    float64
+	NetworkID    string
 	ID           string
 	ClientName   string
 }
