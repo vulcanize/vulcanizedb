@@ -21,14 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
-	"github.com/makerdao/vulcanizedb/libraries/shared/streamer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
-	"github.com/makerdao/vulcanizedb/pkg/fs"
 	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -82,7 +78,6 @@ func execute() {
 func init() {
 	rootCmd.AddCommand(executeCmd)
 	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
-	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
 	executeCmd.Flags().DurationVarP(&retryInterval, "retry-interval", "i", 7*time.Second, "interval duration between retries on execution error")
 	executeCmd.Flags().IntVarP(&maxUnexpectedErrors, "max-unexpected-errs", "m", 5, "maximum number of unexpected errors to allow (with retries) before exiting")
 }
@@ -136,26 +131,10 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		switch storageDiffsSource {
-		case "geth":
-			logrus.Debug("fetching storage diffs from geth pub sub")
-			rpcClient, _ := getClients()
-			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		default:
-			logrus.Debug("fetching storage diffs from csv")
-			tailer := fs.FileTailer{Path: storageDiffsPath}
-			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		}
+		sw := watcher.NewStorageWatcher(&db, retryInterval)
+		sw.AddTransformers(ethStorageInitializers)
+		wg.Add(1)
+		go watchEthStorage(&sw, &wg)
 	}
 
 	if len(ethContractInitializers) > 0 {
@@ -193,7 +172,7 @@ func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	LogWithCommand.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	err := w.Execute(queueRecheckInterval)
+	err := w.Execute()
 	if err != nil {
 		LogWithCommand.Fatalf("error executing storage watcher: %s", err.Error())
 	}

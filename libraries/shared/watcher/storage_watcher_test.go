@@ -17,14 +17,12 @@
 package watcher_test
 
 import (
-	"io/ioutil"
+	"errors"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
-	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
@@ -33,7 +31,6 @@ import (
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 )
 
 var _ = Describe("Storage Watcher", func() {
@@ -41,7 +38,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("adds transformers", func() {
 			fakeHashedAddress := types.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
-			w := watcher.NewStorageWatcher(mocks.NewMockStorageFetcher(), test_config.NewTestDB(test_config.NewTestNode()))
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), time.Nanosecond)
 
 			w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -51,401 +48,123 @@ var _ = Describe("Storage Watcher", func() {
 
 	Describe("Execute", func() {
 		var (
-			hashedAddress        common.Hash
 			storageWatcher       watcher.StorageWatcher
-			mockFetcher          *mocks.MockStorageFetcher
-			mockQueue            *mocks.MockStorageQueue
+			mockDiffsRepository  *mocks.MockStorageDiffRepository
 			mockHeaderRepository *fakes.MockHeaderRepository
-			mockTransformer      *mocks.MockStorageTransformer
 		)
 
 		BeforeEach(func() {
-			mockFetcher = mocks.NewMockStorageFetcher()
-			storageWatcher = watcher.NewStorageWatcher(mockFetcher, test_config.NewTestDB(test_config.NewTestNode()))
-
-			hashedAddress = types.HexToKeccak256Hash("0x0123456789abcdef")
-			mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
-			storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
-
+			mockDiffsRepository = &mocks.MockStorageDiffRepository{}
 			mockHeaderRepository = &fakes.MockHeaderRepository{}
-			storageWatcher.HeaderRepository = mockHeaderRepository
+			storageWatcher = watcher.StorageWatcher{
+				HeaderRepository:          mockHeaderRepository,
+				StorageDiffRepository:     mockDiffsRepository,
+				KeccakAddressTransformers: map[common.Hash]transformer.StorageTransformer{},
+				RetryInterval:             time.Nanosecond,
+			}
 
-			mockQueue = &mocks.MockStorageQueue{}
-			storageWatcher.Queue = mockQueue
 		})
 
-		It("logs error if fetching storage diffs fails", func() {
-			mockFetcher.ErrsToReturn = []error{fakes.FakeError}
-			tempFile, fileErr := ioutil.TempFile("", "log")
-			Expect(fileErr).NotTo(HaveOccurred())
-			defer os.Remove(tempFile.Name())
-			logrus.SetOutput(tempFile)
+		It("marks diff as checked if no transformer is watching its address", func() {
+			unwatchedDiff := types.PersistedDiff{
+				RawDiff: types.RawDiff{
+					HashedAddress: test_data.FakeHash(),
+				},
+				ID: rand.Int63(),
+			}
+			mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{unwatchedDiff}
+			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
-			err := storageWatcher.Execute(time.Hour)
+			err := storageWatcher.Execute()
 
-			Expect(err).To(MatchError(fakes.FakeError))
-			logContent, readErr := ioutil.ReadFile(tempFile.Name())
-			Expect(readErr).NotTo(HaveOccurred())
-			Expect(string(logContent)).To(ContainSubstring(fakes.FakeError.Error()))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+			Expect(mockDiffsRepository.MarkCheckedPassedID).To(Equal(unwatchedDiff.ID))
 		})
 
-		Describe("transforming new raw storage diffs", func() {
+		Describe("when diff's address is watched", func() {
 			var (
-				mockStorageDiffRepository *mocks.MockStorageDiffRepository
-				fakeBlockHash             common.Hash
-				fakeDiffID                int64
-				fakeRawDiff               types.RawDiff
-				fakePersistedDiff         types.PersistedDiff
+				hashedAddress   common.Hash
+				mockTransformer *mocks.MockStorageTransformer
 			)
 
 			BeforeEach(func() {
-				fakeBlockHash = test_data.FakeHash()
-				fakeRawDiff = types.RawDiff{
-					HashedAddress: hashedAddress,
-					BlockHash:     fakeBlockHash,
-					BlockHeight:   0,
-					StorageKey:    common.HexToHash("0xabcdef1234567890"),
-					StorageValue:  common.HexToHash("0x9876543210abcdef"),
-				}
-				mockFetcher.DiffsToReturn = []types.RawDiff{fakeRawDiff}
-
-				fakeHeaderID := rand.Int63()
-				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
-				mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()
-
-				mockStorageDiffRepository = &mocks.MockStorageDiffRepository{}
-				mockStorageDiffRepository.CreateReturnID = fakeDiffID
-				storageWatcher.StorageDiffRepository = mockStorageDiffRepository
-
-				fakePersistedDiff = types.PersistedDiff{
-					RawDiff:  fakeRawDiff,
-					ID:       fakeDiffID,
-					HeaderID: fakeHeaderID,
-				}
+				hashedAddress = types.HexToKeccak256Hash("0x" + fakes.RandomString(20))
+				mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
+				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
-			It("writes raw diff before processing", func(done Done) {
-				go storageWatcher.Execute(time.Hour)
-
-				Eventually(func() []types.RawDiff {
-					return mockStorageDiffRepository.CreatePassedRawDiffs
-				}).Should(ContainElement(fakeRawDiff))
-				close(done)
-			})
-
-			It("discards raw diff if it's already been persisted", func(done Done) {
-				mockStorageDiffRepository.CreateReturnError = storage.ErrDuplicateDiff
-
-				go storageWatcher.Execute(time.Hour)
-
-				Consistently(func() types.PersistedDiff {
-					return mockTransformer.PassedDiff
-				}).Should(BeZero())
-				close(done)
-			})
-
-			It("logs error if persisting raw diff fails", func(done Done) {
-				mockStorageDiffRepository.CreateReturnError = fakes.FakeError
-				tempFile, fileErr := ioutil.TempFile("", "log")
-				Expect(fileErr).NotTo(HaveOccurred())
-				defer os.Remove(tempFile.Name())
-				logrus.SetOutput(tempFile)
-
-				go storageWatcher.Execute(time.Hour)
-
-				Eventually(func() (string, error) {
-					logContent, err := ioutil.ReadFile(tempFile.Name())
-					return string(logContent), err
-				}).Should(ContainSubstring(fakes.FakeError.Error()))
-				close(done)
-			})
-
-			Describe("when getting header succeeds", func() {
-				It("executes transformer for diff", func(done Done) {
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() types.PersistedDiff {
-						return mockTransformer.PassedDiff
-					}).Should(Equal(fakePersistedDiff))
-					close(done)
-				})
-
-				It("recognizes header match even if hash hex missing 0x prefix", func(done Done) {
-					mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()[2:]
-
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() types.PersistedDiff {
-						return mockTransformer.PassedDiff
-					}).Should(Equal(fakePersistedDiff))
-					close(done)
-				})
-
-				Describe("when executing transformer fails", func() {
-					It("logs error", func(done Done) {
-						mockTransformer.ExecuteErr = fakes.FakeError
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(fakes.FakeError.Error()))
-						close(done)
-					})
-
-					It("queues diff", func(done Done) {
-						mockTransformer.ExecuteErr = fakes.FakeError
-
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() types.PersistedDiff {
-							return mockQueue.AddPassedDiff
-						}).Should(Equal(fakePersistedDiff))
-						close(done)
-					})
-
-					It("logs error if queueing diff fails", func(done Done) {
-						mockTransformer.ExecuteErr = types.ErrKeyNotFound{}
-						mockQueue.AddError = fakes.FakeError
-						tempFile, fileErr := ioutil.TempFile("", "log")
-						Expect(fileErr).NotTo(HaveOccurred())
-						defer os.Remove(tempFile.Name())
-						logrus.SetOutput(tempFile)
-
-						go func() {
-							err := storageWatcher.Execute(time.Hour)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Eventually(func() (string, error) {
-							logContent, readErr := ioutil.ReadFile(tempFile.Name())
-							return string(logContent), readErr
-						}).Should(ContainSubstring(fakes.FakeError.Error()))
-						close(done)
-					})
-				})
-			})
-
-			Describe("when getting header fails", func() {
-				It("queues diff when repository returns error", func(done Done) {
-					mockHeaderRepository.GetHeaderError = fakes.FakeError
-
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() bool {
-						return mockQueue.AddCalled
-					}).Should(BeTrue())
-					close(done)
-				})
-
-				It("queues diff when header hash doesn't match", func(done Done) {
-					wrongHash := fakes.RandomString(64)
-					mockHeaderRepository.GetHeaderReturnHash = wrongHash
-
-					go func() {
-						err := storageWatcher.Execute(time.Hour)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-
-					Eventually(func() bool {
-						return mockQueue.AddCalled
-					}).Should(BeTrue())
-					close(done)
-				})
-			})
-		})
-
-		Describe("transforming queued storage diffs", func() {
-			var (
-				fakeBlockHash common.Hash
-				queuedDiff    types.PersistedDiff
-			)
-
-			BeforeEach(func() {
-				fakeHeaderID := rand.Int63()
-				fakeBlockHash = test_data.FakeHash()
-				mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
-				mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()
-
-				queuedDiff = types.PersistedDiff{
-					ID:       rand.Int63(),
-					HeaderID: fakeHeaderID,
+			It("does not mark diff checked if no matching header", func() {
+				diffWithoutHeader := types.PersistedDiff{
 					RawDiff: types.RawDiff{
 						HashedAddress: hashedAddress,
-						BlockHash:     fakeBlockHash,
+						BlockHash:     test_data.FakeHash(),
 						BlockHeight:   rand.Int(),
-						StorageKey:    test_data.FakeHash(),
-						StorageValue:  test_data.FakeHash(),
 					},
+					ID:       rand.Int63(),
+					HeaderID: rand.Int63(),
 				}
-				mockQueue.DiffsToReturn = []types.PersistedDiff{queuedDiff}
+				mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{diffWithoutHeader}
+				mockHeaderRepository.GetHeaderError = errors.New("no matching header")
+				mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+
+				err := storageWatcher.Execute()
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+				Expect(mockDiffsRepository.MarkCheckedPassedID).NotTo(Equal(diffWithoutHeader.ID))
 			})
 
-			Describe("when contract recognized", func() {
-				Describe("when getting header succeeds", func() {
-					It("executes transformer for storage diff", func(done Done) {
-						go func() {
-							err := storageWatcher.Execute(time.Nanosecond)
-							Expect(err).NotTo(HaveOccurred())
-						}()
+			Describe("when matching header exists", func() {
+				var (
+					fakeBlockHash     common.Hash
+					fakePersistedDiff types.PersistedDiff
+				)
 
-						Eventually(func() types.PersistedDiff {
-							return mockTransformer.PassedDiff
-						}).Should(Equal(queuedDiff))
-						close(done)
-					})
-
-					Describe("when transformer execution successful", func() {
-						It("deletes diff from queue", func(done Done) {
-							go func() {
-								err := storageWatcher.Execute(time.Nanosecond)
-								Expect(err).NotTo(HaveOccurred())
-							}()
-
-							Eventually(func() int64 {
-								return mockQueue.DeletePassedId
-							}).Should(Equal(queuedDiff.ID))
-							close(done)
-						})
-
-						It("logs error if deleting queued diff fails", func(done Done) {
-							mockQueue.DeleteErr = fakes.FakeError
-							tempFile, fileErr := ioutil.TempFile("", "log")
-							Expect(fileErr).NotTo(HaveOccurred())
-							defer os.Remove(tempFile.Name())
-							logrus.SetOutput(tempFile)
-
-							go func() {
-								err := storageWatcher.Execute(time.Nanosecond)
-								Expect(err).NotTo(HaveOccurred())
-							}()
-
-							Eventually(func() (string, error) {
-								logContent, readErr := ioutil.ReadFile(tempFile.Name())
-								return string(logContent), readErr
-							}).Should(ContainSubstring(fakes.FakeError.Error()))
-							close(done)
-						})
-					})
-
-					Describe("when transformer execution fails", func() {
-						BeforeEach(func() {
-							mockTransformer.ExecuteErr = fakes.FakeError
-						})
-
-						It("logs error", func(done Done) {
-							tempFile, fileErr := ioutil.TempFile("", "log")
-							Expect(fileErr).NotTo(HaveOccurred())
-							defer os.Remove(tempFile.Name())
-							logrus.SetOutput(tempFile)
-
-							go func() {
-								err := storageWatcher.Execute(time.Nanosecond)
-								Expect(err).NotTo(HaveOccurred())
-							}()
-
-							Eventually(func() (string, error) {
-								logContent, readErr := ioutil.ReadFile(tempFile.Name())
-								return string(logContent), readErr
-							}).Should(ContainSubstring(fakes.FakeError.Error()))
-							close(done)
-						})
-
-						It("does not delete diff from queue", func(done Done) {
-							go func() {
-								err := storageWatcher.Execute(time.Nanosecond)
-								Expect(err).NotTo(HaveOccurred())
-							}()
-
-							Consistently(func() bool {
-								return mockQueue.DeleteCalled
-							}).Should(BeFalse())
-							close(done)
-						})
-					})
-				})
-
-				Describe("when getting header fails", func() {
-					It("does not delete diff from queue", func(done Done) {
-						mockHeaderRepository.GetHeaderError = fakes.FakeError
-						go func() {
-							err := storageWatcher.Execute(time.Nanosecond)
-							Expect(err).NotTo(HaveOccurred())
-						}()
-
-						Consistently(func() bool {
-							return mockQueue.DeleteCalled
-						}).Should(BeFalse())
-						close(done)
-					})
-				})
-			})
-
-			Describe("when contract not recognized", func() {
-				It("deletes obsolete diff from queue", func(done Done) {
-					obsoleteDiff := types.PersistedDiff{
-						ID: queuedDiff.ID + 1,
-						RawDiff: types.RawDiff{
-							HashedAddress: types.HexToKeccak256Hash("0xfedcba9876543210"),
-						},
+				BeforeEach(func() {
+					fakeBlockHash = test_data.FakeHash()
+					fakeRawDiff := types.RawDiff{
+						HashedAddress: hashedAddress,
+						BlockHash:     fakeBlockHash,
+						BlockHeight:   0,
+						StorageKey:    common.HexToHash("0xabcdef1234567890"),
+						StorageValue:  common.HexToHash("0x9876543210abcdef"),
 					}
-					mockQueue.DiffsToReturn = []types.PersistedDiff{obsoleteDiff}
 
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+					fakeHeaderID := rand.Int63()
+					mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
+					mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()
 
-					Eventually(func() int64 {
-						return mockQueue.DeletePassedId
-					}).Should(Equal(obsoleteDiff.ID))
-					close(done)
+					fakePersistedDiff = types.PersistedDiff{
+						RawDiff:  fakeRawDiff,
+						ID:       rand.Int63(),
+						HeaderID: fakeHeaderID,
+					}
+					mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{fakePersistedDiff}
 				})
 
-				It("logs error if deleting obsolete diff fails", func(done Done) {
-					obsoleteDiff := types.PersistedDiff{
-						ID: queuedDiff.ID + 1,
-						RawDiff: types.RawDiff{
-							HashedAddress: types.HexToKeccak256Hash("0xfedcba9876543210"),
-						},
-					}
-					mockQueue.DiffsToReturn = []types.PersistedDiff{obsoleteDiff}
-					mockQueue.DeleteErr = fakes.FakeError
-					tempFile, fileErr := ioutil.TempFile("", "log")
-					Expect(fileErr).NotTo(HaveOccurred())
-					defer os.Remove(tempFile.Name())
-					logrus.SetOutput(tempFile)
+				It("does not mark diff checked if transformer execution fails", func() {
+					mockTransformer.ExecuteErr = errors.New("execute failed")
+					mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
-					go func() {
-						err := storageWatcher.Execute(time.Nanosecond)
-						Expect(err).NotTo(HaveOccurred())
-					}()
+					err := storageWatcher.Execute()
 
-					Eventually(func() (string, error) {
-						logContent, readErr := ioutil.ReadFile(tempFile.Name())
-						return string(logContent), readErr
-					}).Should(ContainSubstring(fakes.FakeError.Error()))
-					close(done)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+					Expect(mockDiffsRepository.MarkCheckedPassedID).NotTo(Equal(fakePersistedDiff.ID))
+				})
+
+				Describe("when transformer execution succeeds", func() {
+					It("marks diff checked", func() {
+						mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{fakePersistedDiff}
+						mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+
+						err := storageWatcher.Execute()
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring(fakes.FakeError.Error()))
+						Eventually(mockDiffsRepository.MarkCheckedPassedID).Should(Equal(fakePersistedDiff.ID))
+					})
 				})
 			})
 		})

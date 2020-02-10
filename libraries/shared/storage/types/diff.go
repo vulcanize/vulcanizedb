@@ -37,6 +37,7 @@ type RawDiff struct {
 
 type PersistedDiff struct {
 	RawDiff
+	Checked  bool
 	ID       int64
 	HeaderID int64 `db:"header_id"`
 }

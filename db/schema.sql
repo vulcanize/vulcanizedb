@@ -236,43 +236,6 @@ ALTER SEQUENCE public.headers_id_seq OWNED BY public.headers.id;
 
 
 --
--- Name: queued_storage; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.queued_storage (
-    id integer NOT NULL,
-    diff_id bigint NOT NULL
-);
-
-
---
--- Name: TABLE queued_storage; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.queued_storage IS '@omit';
-
-
---
--- Name: queued_storage_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.queued_storage_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: queued_storage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
-
-
---
 -- Name: receipts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -327,7 +290,8 @@ CREATE TABLE public.storage_diff (
     block_hash bytea,
     hashed_address bytea,
     storage_key bytea,
-    storage_value bytea
+    storage_value bytea,
+    checked boolean DEFAULT false NOT NULL
 );
 
 
@@ -471,13 +435,6 @@ ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.head
 
 
 --
--- Name: queued_storage id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('public.queued_storage_id_seq'::regclass);
-
-
---
 -- Name: receipts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -591,22 +548,6 @@ ALTER TABLE ONLY public.headers
 
 ALTER TABLE ONLY public.headers
     ADD CONSTRAINT headers_pkey PRIMARY KEY (id);
-
-
---
--- Name: queued_storage queued_storage_diff_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queued_storage
-    ADD CONSTRAINT queued_storage_diff_id_key UNIQUE (diff_id);
-
-
---
--- Name: queued_storage queued_storage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queued_storage
-    ADD CONSTRAINT queued_storage_pkey PRIMARY KEY (id);
 
 
 --
@@ -766,14 +707,6 @@ ALTER TABLE ONLY public.event_logs
 
 ALTER TABLE ONLY public.headers
     ADD CONSTRAINT headers_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
-
-
---
--- Name: queued_storage queued_storage_diff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.queued_storage
-    ADD CONSTRAINT queued_storage_diff_id_fkey FOREIGN KEY (diff_id) REFERENCES public.storage_diff(id);
 
 
 --

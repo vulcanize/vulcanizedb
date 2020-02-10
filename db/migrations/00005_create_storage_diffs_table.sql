@@ -7,6 +7,7 @@ CREATE TABLE public.storage_diff
     hashed_address BYTEA,
     storage_key    BYTEA,
     storage_value  BYTEA,
+    checked        BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE (block_height, block_hash, hashed_address, storage_key, storage_value)
 );
 
