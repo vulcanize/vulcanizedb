@@ -17,7 +17,9 @@
 package watcher
 
 import (
+	"database/sql"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -102,7 +104,11 @@ func (watcher StorageWatcher) transformDiffs() error {
 		case diff := <-diffs:
 			err := watcher.transformDiff(diff)
 			if err != nil {
-				logrus.Infof("error transforming diff: %s", err.Error())
+				if err == sql.ErrNoRows || reflect.TypeOf(err) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+					logrus.Tracef("error transforming diff: %s", err.Error())
+				} else {
+					logrus.Infof("error transforming diff: %s", err.Error())
+				}
 			}
 		case err := <-errs:
 			return fmt.Errorf("error getting new diffs: %s", err.Error())
@@ -125,13 +131,21 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 
 	headerID, headerErr := watcher.getHeaderID(diff)
 	if headerErr != nil {
-		return fmt.Errorf("error getting header for diff: %s", headerErr.Error())
+		if headerErr == sql.ErrNoRows {
+			return headerErr
+		} else {
+			return fmt.Errorf("error getting header for diff: %s", headerErr.Error())
+		}
 	}
 	diff.HeaderID = headerID
 
 	executeErr := t.Execute(diff)
 	if executeErr != nil {
-		return fmt.Errorf("error executing storage transformer: %s", executeErr.Error())
+		if reflect.TypeOf(executeErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+			return executeErr
+		} else {
+			return fmt.Errorf("error executing storage transformer: %s", executeErr.Error())
+		}
 	}
 
 	markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
