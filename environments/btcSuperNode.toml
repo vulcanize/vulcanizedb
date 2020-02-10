@@ -10,8 +10,10 @@
 
     [superNode.sync]
         on = true
-        wsPath  = "http://127.0.0.1:8332"
+        wsPath  = "127.0.0.1:8332"
         workers = 1
+        pass = "password"
+        user = "username"
 
     [superNode.server]
         on = true
@@ -21,6 +23,14 @@
 
     [superNode.backFill]
         on = true
-        httpPath = "http://127.0.0.1:8332"
-        frequency = 5
+        httpPath = "127.0.0.1:8332"
+        frequency = 15
         batchSize = 50
+        pass = "password"
+        user = "username"
+
+    [superNode.btc]
+        nodeID = "ocd0"
+        clientName = "Omnicore"
+        genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+        networkID = "0xD9B4BEF9"

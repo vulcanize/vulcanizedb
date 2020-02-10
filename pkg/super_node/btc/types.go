@@ -27,7 +27,7 @@ import (
 
 // BlockPayload packages the block and tx data received from block connection notifications
 type BlockPayload struct {
-	Height int32
+	Height int64
 	Header *wire.BlockHeader
 	Txs    []*btcutil.Tx
 }

@@ -43,8 +43,6 @@ var _ = Describe("Indexer", func() {
 
 	Describe("Index", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
-			err = repo.Index(&mocks.DummyCIDPayloadForFKReference)
-			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
 			pgStr := `SELECT * FROM btc.header_cids

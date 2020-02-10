@@ -114,9 +114,9 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
 					log.Error(err)
 					continue
 				}
-				if startingBlock != 1 {
+				if startingBlock != 0 {
 					log.Info("found gap at the beginning of the sync")
-					bfs.fillGaps(1, uint64(startingBlock-1))
+					bfs.fillGaps(0, uint64(startingBlock-1))
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData()
 				if err != nil {

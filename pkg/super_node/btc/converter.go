@@ -17,6 +17,7 @@
 package btc
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -62,7 +63,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 				SignatureScript:       in.SignatureScript,
 				PreviousOutPointHash:  in.PreviousOutPoint.Hash.String(),
 				PreviousOutPointIndex: in.PreviousOutPoint.Index,
-				TxWitness:             in.Witness,
+				TxWitness:             convertBytesToHexArray(in.Witness),
 			}
 		}
 		for i, out := range tx.MsgTx().TxOut {
@@ -90,4 +91,12 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		BlockPayload: btcBlockPayload,
 		TxMetaData:   txMeta,
 	}, nil
+}
+
+func convertBytesToHexArray(bytea [][]byte) []string {
+	var strs []string
+	for _, b := range bytea {
+		strs = append(strs, hex.EncodeToString(b))
+	}
+	return strs
 }

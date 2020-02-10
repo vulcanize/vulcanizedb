@@ -45,7 +45,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.MockCIDRetriever{
-				FirstBlockNumberToReturn: 1,
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 101,
@@ -99,7 +99,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.MockCIDRetriever{
-				FirstBlockNumberToReturn: 1,
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 100,
@@ -183,7 +183,7 @@ var _ = Describe("BackFiller", func() {
 			Expect(mockConverter.PassedStatediffPayload[1]).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockRetriever.CalledTimes).To(Equal(1))
 			Expect(len(mockFetcher.CalledAtBlockHeights)).To(Equal(1))
-			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{1, 2}))
+			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{0, 1, 2}))
 		})
 	})
 })

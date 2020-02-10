@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	MockBlockHeight int32 = 1337
+	MockBlockHeight int64 = 1337
 	MockBlock             = wire.MsgBlock{
 		Header: wire.BlockHeader{
 			Version: 1,

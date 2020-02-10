@@ -111,9 +111,10 @@ CREATE TABLE btc.tx_inputs (
     id integer NOT NULL,
     tx_id integer NOT NULL,
     index integer NOT NULL,
-    witness bytea[],
+    witness character varying[],
     sig_script bytea NOT NULL,
-    outpoint_id integer
+    outpoint_tx_hash character varying(66) NOT NULL,
+    outpoint_index numeric NOT NULL
 );
 
 
@@ -1286,14 +1287,6 @@ ALTER TABLE ONLY btc.header_cids
 
 ALTER TABLE ONLY btc.transaction_cids
     ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES btc.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: tx_inputs tx_inputs_outpoint_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
---
-
-ALTER TABLE ONLY btc.tx_inputs
-    ADD CONSTRAINT tx_inputs_outpoint_id_fkey FOREIGN KEY (outpoint_id) REFERENCES btc.tx_outputs(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --

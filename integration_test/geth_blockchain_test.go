@@ -61,10 +61,9 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	It("retrieves the node info", func(done Done) {
 		node := blockChain.Node()
-		mainnetID := float64(1)
 
 		Expect(node.GenesisBlock).ToNot(BeNil())
-		Expect(node.NetworkID).To(Equal(mainnetID))
+		Expect(node.NetworkID).To(Equal("1.000000"))
 		Expect(len(node.ID)).ToNot(BeZero())
 		Expect(node.ClientName).ToNot(BeZero())
 

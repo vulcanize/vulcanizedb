@@ -104,6 +104,6 @@ func startServers(superNode super_node.SuperNode, settings *shared.SuperNodeConf
 	if err != nil {
 		return err
 	}
-	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{"eth"}, nil, nil, rpc.HTTPTimeouts{})
+	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{"eth", "btc"}, nil, nil, rpc.HTTPTimeouts{})
 	return err
 }

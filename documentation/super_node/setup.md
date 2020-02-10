@@ -126,13 +126,14 @@ The config file contains the parameters needed to initialize a SuperNode with th
 
     [superNode.server]
         on = true
-        ipcPath = "/root/.vulcanize/vulcanize.ipc"
+        ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
         wsPath = "127.0.0.1:8080"
+        httpPath = "127.0.0.1:8081"
 
     [superNode.backFill]
-        on = false
-        httpPath = ""
-        frequency = 5
+        on = true
+        httpPath = "http://127.0.0.1:8545"
+        frequency = 15
         batchSize = 50
 ```
 
@@ -210,6 +211,6 @@ createdb vulcanize_public
 8. Build and run the Docker image
 ```
 cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node
-docker build .
+docker build --build-arg CONFIG_FILE=environments/ethSuperNode.toml --build-arg EXPOSE_PORT_1=8080 --build-arg EXPOSE_PORT_2=8081 .
 docker run --network host -e IPFS_INIT=true -e VDB_PG_NAME=vulcanize_public -e VDB_PG_HOSTNAME=localhost -e VDB_PG_PORT=5432 -e VDB_PG_USER=postgres -e VDB_PG_PASSWORD=password {IMAGE_ID}
 ```

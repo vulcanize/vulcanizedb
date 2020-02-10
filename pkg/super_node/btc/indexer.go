@@ -103,29 +103,10 @@ func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModelWithIn
 }
 
 func (in *CIDIndexer) indexTxInput(tx *sqlx.Tx, txInput TxInput, txID int64) error {
-	// resolve zero-value hash to null value (coinbase tx input with no referenced outputs)
-	if txInput.PreviousOutPointHash == "0000000000000000000000000000000000000000000000000000000000000000" {
-		_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_id)
-						VALUES ($1, $2, $3, $4, $5)
-						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_id) = ($3, $4, $5)`,
-			txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, nil)
-		return err
-	}
-	var referencedOutPutID int64
-	if err := tx.Get(&referencedOutPutID, `SELECT tx_outputs.id FROM btc.transaction_cids, btc.tx_outputs
-						WHERE tx_outputs.tx_id = transaction_cids.id
-						AND tx_hash = $1
-						AND tx_outputs.index = $2`, txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex); err != nil {
-		logrus.Errorf("btc indexer could not find the tx output (tx hash %s, output index %d) referenced in tx input %d of tx id %d", txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex, txInput.Index, txID)
-		return err
-	}
-	if referencedOutPutID == 0 {
-		return fmt.Errorf("btc indexer could not find the tx output (tx hash %s, output index %d) referenced in tx input %d of tx id %d", txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex, txInput.Index, txID)
-	}
-	_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_id)
-						VALUES ($1, $2, $3, $4, $5)
-						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_id) = ($3, $4, $5)`,
-		txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, referencedOutPutID)
+	_, err := tx.Exec(`INSERT INTO btc.tx_inputs (tx_id, index, witness, sig_script, outpoint_tx_hash, outpoint_index)
+						VALUES ($1, $2, $3, $4, $5, $6)
+						ON CONFLICT (tx_id, index) DO UPDATE SET (witness, sig_script, outpoint_tx_hash, outpoint_index) = ($3, $4, $5, $6)`,
+		txID, txInput.Index, pq.Array(txInput.TxWitness), txInput.SignatureScript, txInput.PreviousOutPointHash, txInput.PreviousOutPointIndex)
 	return err
 }
 

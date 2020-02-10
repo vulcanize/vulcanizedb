@@ -17,13 +17,14 @@
 package shared
 
 import (
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
@@ -92,19 +93,23 @@ func NewSuperNodeConfig() (*SuperNodeConfig, error) {
 			workers = 1
 		}
 		sn.Workers = workers
-		if sn.Chain == Ethereum {
-			sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(sn.Chain, viper.GetString("superNode.sync.wsPath"))
-		}
-		if sn.Chain == Bitcoin {
+		switch sn.Chain {
+		case Ethereum:
+			sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(viper.GetString("superNode.sync.wsPath"))
+		case Bitcoin:
 			sn.NodeInfo = core.Node{
-				ID:           "temporaryID",
-				ClientName:   "omnicored",
-				GenesisBlock: "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-				NetworkID:    "0xD9B4BEF9",
+				ID:           viper.GetString("superNode.btc.nodeID"),
+				ClientName:   viper.GetString("superNode.btc.clientName"),
+				GenesisBlock: viper.GetString("superNode.btc.genesisBlock"),
+				NetworkID:    viper.GetString("superNode.btc.networkID"),
 			}
+			// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
 			sn.WSClient = &rpcclient.ConnConfig{
-				Host:     viper.GetString("superNode.sync.wsPath"),
-				Endpoint: "ws",
+				Host:         viper.GetString("superNode.sync.wsPath"),
+				HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+				DisableTLS:   true, // Bitcoin core does not provide TLS by default
+				Pass:         viper.GetString("superNode.sync.pass"),
+				User:         viper.GetString("superNode.sync.user"),
 			}
 		}
 	}
@@ -125,7 +130,7 @@ func NewSuperNodeConfig() (*SuperNodeConfig, error) {
 		sn.IPCEndpoint = ipcPath
 		httpPath := viper.GetString("superNode.server.httpPath")
 		if httpPath == "" {
-			httpPath = "http://127.0.0.1:8547"
+			httpPath = "http://127.0.0.1:8545"
 		}
 		sn.HTTPEndpoint = httpPath
 	}
@@ -145,31 +150,35 @@ func (sn *SuperNodeConfig) BackFillFields() error {
 	sn.BackFill = true
 	var httpClient interface{}
 	var err error
-	if sn.Chain == Ethereum {
-		_, httpClient, err = getEthNodeAndClient(sn.Chain, viper.GetString("superNode.backFill.httpPath"))
+	switch sn.Chain {
+	case Ethereum:
+		_, httpClient, err = getEthNodeAndClient(viper.GetString("superNode.backFill.httpPath"))
 		if err != nil {
 			return err
 		}
-	}
-	if sn.Chain == Bitcoin {
+	case Bitcoin:
 		httpClient = &rpcclient.ConnConfig{
-			Host: viper.GetString("superNode.backFill.httpPath"),
+			Host:         viper.GetString("superNode.backFill.httpPath"),
+			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+			DisableTLS:   true, // Bitcoin core does not provide TLS by default
+			Pass:         viper.GetString("superNode.backFill.pass"),
+			User:         viper.GetString("superNode.backFill.user"),
 		}
 	}
 	sn.HTTPClient = httpClient
 	freq := viper.GetInt("superNode.backFill.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
-		frequency = time.Minute * 5
+		frequency = time.Second * 30
 	} else {
-		frequency = time.Duration(freq)
+		frequency = time.Second * time.Duration(freq)
 	}
 	sn.Frequency = frequency
 	sn.BatchSize = uint64(viper.GetInt64("superNode.backFill.batchSize"))
 	return nil
 }
 
-func getEthNodeAndClient(chain ChainType, path string) (core.Node, interface{}, error) {
+func getEthNodeAndClient(path string) (core.Node, interface{}, error) {
 	rawRPCClient, err := rpc.Dial(path)
 	if err != nil {
 		return core.Node{}, nil, err

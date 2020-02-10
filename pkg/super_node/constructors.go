@@ -85,7 +85,7 @@ func NewPayloadStreamer(chain shared.ChainType, clientOrConfig interface{}) (sha
 			return nil, nil, fmt.Errorf("bitcoin payload streamer constructor expected client config type %T got %T", rpcclient.ConnConfig{}, clientOrConfig)
 		}
 		streamChan := make(chan shared.RawChainData, btc.PayloadChanBufferSize)
-		return btc.NewPayloadStreamer(btcClientConn), streamChan, nil
+		return btc.NewHTTPPayloadStreamer(btcClientConn), streamChan, nil
 	default:
 		return nil, nil, fmt.Errorf("invalid chain %s for streamer constructor", chain.String())
 	}
