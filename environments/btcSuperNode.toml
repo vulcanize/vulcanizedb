@@ -1,0 +1,26 @@
+[superNode]
+    chain = "bitcoin"
+    ipfsPath = "/root/.ipfs"
+
+    [superNode.database]
+        name     = "vulcanize_public"
+        hostname = "localhost"
+        port     = 5432
+        user     = "ec2-user"
+
+    [superNode.sync]
+        on = true
+        wsPath  = "http://127.0.0.1:8332"
+        workers = 1
+
+    [superNode.server]
+        on = true
+        ipcPath = "/root/.vulcanize/btc/vulcanize.ipc"
+        wsPath = "127.0.0.1:8082"
+        httpPath = "127.0.0.1:8083"
+
+    [superNode.backFill]
+        on = true
+        httpPath = "http://127.0.0.1:8332"
+        frequency = 5
+        batchSize = 50

@@ -19,7 +19,6 @@ package ipld
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-cid"
 	node "github.com/ipfs/go-ipld-format"
 	mh "github.com/multiformats/go-multihash"
@@ -28,7 +27,8 @@ import (
 // EthStateTrie (eth-state-trie, codec 0x96), represents
 // a node from the state trie in ethereum.
 type EthStateTrie struct {
-	*TrieNode
+	cid     cid.Cid
+	rawdata []byte
 }
 
 // Static (compile time) check that EthStateTrie satisfies the node.Node interface.
@@ -45,40 +45,9 @@ func FromStateTrieRLP(stateNodeRLP []byte) (*EthStateTrie, error) {
 	if err != nil {
 		return nil, err
 	}
-	return DecodeEthStateTrie(c, stateNodeRLP)
-}
-
-/*
-  OUTPUT
-*/
-
-// DecodeEthStateTrie returns an EthStateTrie object from its cid and rawdata.
-func DecodeEthStateTrie(c cid.Cid, b []byte) (*EthStateTrie, error) {
-	tn, err := decodeTrieNode(c, b, decodeEthStateTrieLeaf)
-	if err != nil {
-		return nil, err
-	}
-	return &EthStateTrie{TrieNode: tn}, nil
-}
-
-// decodeEthStateTrieLeaf parses a eth-tx-trie leaf
-// from decoded RLP elements
-func decodeEthStateTrieLeaf(i []interface{}) ([]interface{}, error) {
-	var account EthAccount
-	if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
-		return nil, err
-	}
-	c, err := rawdataToCid(MEthAccountSnapshot, i[1].([]byte), mh.KECCAK_256)
-	if err != nil {
-		return nil, err
-	}
-	return []interface{}{
-		i[0].([]byte),
-		&EthAccountSnapshot{
-			EthAccount: &account,
-			cid:        c,
-			rawdata:    i[1].([]byte),
-		},
+	return &EthStateTrie{
+		cid:     c,
+		rawdata: stateNodeRLP,
 	}, nil
 }
 
@@ -99,6 +68,35 @@ func (st *EthStateTrie) Cid() cid.Cid {
 // String is a helper for output
 func (st *EthStateTrie) String() string {
 	return fmt.Sprintf("<EthereumStateTrie %s>", st.cid)
+}
+
+// Copy will go away. It is here to comply with the Node interface.
+func (*EthStateTrie) Copy() node.Node {
+	panic("implement me")
+}
+
+func (*EthStateTrie) Links() []*node.Link {
+	panic("implement me")
+}
+
+func (*EthStateTrie) Resolve(path []string) (interface{}, []string, error) {
+	panic("implement me")
+}
+
+func (*EthStateTrie) ResolveLink(path []string) (*node.Link, []string, error) {
+	panic("implement me")
+}
+
+func (*EthStateTrie) Size() (uint64, error) {
+	panic("implement me")
+}
+
+func (*EthStateTrie) Stat() (*node.NodeStat, error) {
+	panic("implement me")
+}
+
+func (*EthStateTrie) Tree(path string, depth int) []string {
+	panic("implement me")
 }
 
 // Loggable returns in a map the type of IPLD Link.

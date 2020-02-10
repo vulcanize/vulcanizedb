@@ -61,24 +61,6 @@ func NewEthHeader(header *types.Header) (*EthHeader, error) {
 }
 
 /*
-  OUTPUT
-*/
-
-// DecodeEthHeader takes a cid and its raw binary data
-// from IPFS and returns an EthHeader object for further processing.
-func DecodeEthHeader(c cid.Cid, b []byte) (*EthHeader, error) {
-	var h *types.Header
-	if err := rlp.DecodeBytes(b, h); err != nil {
-		return nil, err
-	}
-	return &EthHeader{
-		Header:  h,
-		cid:     c,
-		rawdata: b,
-	}, nil
-}
-
-/*
   Block INTERFACE
 */
 

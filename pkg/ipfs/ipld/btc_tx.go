@@ -45,25 +45,6 @@ func NewBtcTx(tx *wire.MsgTx) (*BtcTx, error) {
 }
 
 /*
-  OUTPUT
-*/
-
-// DecodeBtcTx takes a cid and its raw binary data
-// from IPFS and returns an BtcTx object for further processing.
-func DecodeBtcTx(c cid.Cid, b []byte) (*BtcTx, error) {
-	var tx *wire.MsgTx
-	w := bytes.NewBuffer(b)
-	if err := tx.Deserialize(w); err != nil {
-		return nil, err
-	}
-	return &BtcTx{
-		MsgTx:   tx,
-		cid:     c,
-		rawdata: b,
-	}, nil
-}
-
-/*
    Block INTERFACE
 */
 

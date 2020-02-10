@@ -183,7 +183,7 @@ CREATE TABLE eth.header_cids (
     block_hash character varying(66) NOT NULL,
     parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
-    td bigint,
+    td numeric NOT NULL,
     node_id integer NOT NULL
 );
 

@@ -60,25 +60,6 @@ func NewBtcHeader(header *wire.BlockHeader) (*BtcHeader, error) {
 }
 
 /*
-  OUTPUT
-*/
-
-// DecodeBtcHeader takes a cid and its raw binary data
-// from IPFS and returns an BtcHeader object for further processing.
-func DecodeBtcHeader(c cid.Cid, b []byte) (*BtcHeader, error) {
-	var h *wire.BlockHeader
-	w := bytes.NewBuffer(b)
-	if err := h.Deserialize(w); err != nil {
-		return nil, err
-	}
-	return &BtcHeader{
-		BlockHeader: h,
-		cid:         c,
-		rawdata:     b,
-	}, nil
-}
-
-/*
    Block INTERFACE
 */
 

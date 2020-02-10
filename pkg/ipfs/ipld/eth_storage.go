@@ -27,7 +27,8 @@ import (
 // EthStorageTrie (eth-storage-trie, codec 0x98), represents
 // a node from the storage trie in ethereum.
 type EthStorageTrie struct {
-	*TrieNode
+	cid     cid.Cid
+	rawdata []byte
 }
 
 // Static (compile time) check that EthStorageTrie satisfies the node.Node interface.
@@ -44,28 +45,9 @@ func FromStorageTrieRLP(storageNodeRLP []byte) (*EthStorageTrie, error) {
 	if err != nil {
 		return nil, err
 	}
-	return DecodeEthStorageTrie(c, storageNodeRLP)
-}
-
-/*
-  OUTPUT
-*/
-
-// DecodeEthStorageTrie returns an EthStorageTrie object from its cid and rawdata.
-func DecodeEthStorageTrie(c cid.Cid, b []byte) (*EthStorageTrie, error) {
-	tn, err := decodeTrieNode(c, b, decodeEthStorageTrieLeaf)
-	if err != nil {
-		return nil, err
-	}
-	return &EthStorageTrie{TrieNode: tn}, nil
-}
-
-// decodeEthStorageTrieLeaf parses a eth-tx-trie leaf
-// from decoded RLP elements
-func decodeEthStorageTrieLeaf(i []interface{}) ([]interface{}, error) {
-	return []interface{}{
-		i[0].([]byte),
-		i[1].([]byte),
+	return &EthStorageTrie{
+		cid:     c,
+		rawdata: storageNodeRLP,
 	}, nil
 }
 
@@ -86,6 +68,35 @@ func (st *EthStorageTrie) Cid() cid.Cid {
 // String is a helper for output
 func (st *EthStorageTrie) String() string {
 	return fmt.Sprintf("<EthereumStorageTrie %s>", st.cid)
+}
+
+// Copy will go away. It is here to comply with the Node interface.
+func (*EthStorageTrie) Copy() node.Node {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) Links() []*node.Link {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) Resolve(path []string) (interface{}, []string, error) {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) ResolveLink(path []string) (*node.Link, []string, error) {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) Size() (uint64, error) {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) Stat() (*node.NodeStat, error) {
+	panic("implement me")
+}
+
+func (*EthStorageTrie) Tree(path string, depth int) []string {
+	panic("implement me")
 }
 
 // Loggable returns in a map the type of IPLD Link.

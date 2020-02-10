@@ -17,10 +17,7 @@
 package ipld
 
 import (
-	"bytes"
-
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -89,14 +86,4 @@ func sha256ToCid(codec uint64, h []byte) cid.Cid {
 	}
 
 	return cid.NewCidV1(codec, hash)
-}
-
-// getRLP encodes the given object to RLP returning its bytes.
-func getRLP(object interface{}) []byte {
-	buf := new(bytes.Buffer)
-	if err := rlp.Encode(buf, object); err != nil {
-		panic(err)
-	}
-
-	return buf.Bytes()
 }

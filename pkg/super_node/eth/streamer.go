@@ -17,10 +17,11 @@
 package eth
 
 import (
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 const (
@@ -42,6 +43,15 @@ func NewPayloadStreamer(client core.RPCClient) *PayloadStreamer {
 // Stream is the main loop for subscribing to data from the Geth state diff process
 // Satisfies the shared.PayloadStreamer interface
 func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
+	stateDiffChan := make(chan statediff.Payload, PayloadChanBufferSize)
 	logrus.Info("streaming diffs from geth")
-	return ps.Client.Subscribe("statediff", payloadChan, "stream")
+	go func() {
+		for {
+			select {
+			case payload := <-stateDiffChan:
+				payloadChan <- payload
+			}
+		}
+	}()
+	return ps.Client.Subscribe("statediff", stateDiffChan, "stream")
 }
