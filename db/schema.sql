@@ -16,6 +16,20 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: set_header_updated(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.set_header_updated() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -211,7 +225,9 @@ CREATE TABLE public.headers (
     raw jsonb,
     block_timestamp numeric,
     check_count integer DEFAULT 0 NOT NULL,
-    eth_node_id integer NOT NULL
+    eth_node_id integer NOT NULL,
+    created timestamp without time zone DEFAULT now() NOT NULL,
+    updated timestamp without time zone DEFAULT now() NOT NULL
 );
 
 
@@ -667,6 +683,13 @@ CREATE INDEX receipts_transaction ON public.receipts USING btree (transaction_id
 --
 
 CREATE INDEX transactions_header ON public.transactions USING btree (header_id);
+
+
+--
+-- Name: headers header_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER header_updated BEFORE UPDATE ON public.headers FOR EACH ROW EXECUTE FUNCTION public.set_header_updated();
 
 
 --
