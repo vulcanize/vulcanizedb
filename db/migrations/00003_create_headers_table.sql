@@ -24,7 +24,8 @@ $$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 
 CREATE TRIGGER header_updated
-    BEFORE UPDATE ON public.headers
+    BEFORE UPDATE
+    ON public.headers
     FOR EACH ROW
 EXECUTE PROCEDURE set_header_updated();
 
