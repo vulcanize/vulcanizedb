@@ -1,6 +1,6 @@
 # Vulcanize DB
 
-[![Build Status](https://travis-ci.org/makerdao/vulcanizedb.svg?branch=master)](https://travis-ci.org/makerdao/vulcanizedb)
+[![Build Status](https://travis-ci.com/makerdao/vulcanizedb.svg?branch=staging)](https://travis-ci.com/makerdao/vulcanizedb)
 [![Go Report Card](https://goreportcard.com/badge/github.com/makerdao/vulcanizedb)](https://goreportcard.com/report/github.com/makerdao/vulcanizedb)
 
 > Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
