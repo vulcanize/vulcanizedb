@@ -307,7 +307,8 @@ CREATE TABLE public.storage_diff (
     hashed_address bytea,
     storage_key bytea,
     storage_value bytea,
-    checked boolean DEFAULT false NOT NULL
+    checked boolean DEFAULT false NOT NULL,
+    from_backfill boolean DEFAULT false NOT NULL
 );
 
 

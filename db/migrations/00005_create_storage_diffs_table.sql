@@ -8,6 +8,7 @@ CREATE TABLE public.storage_diff
     storage_key    BYTEA,
     storage_value  BYTEA,
     checked        BOOLEAN NOT NULL DEFAULT FALSE,
+    from_backfill  BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE (block_height, block_hash, hashed_address, storage_key, storage_value)
 );
 
