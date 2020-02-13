@@ -58,6 +58,7 @@ var _ = Describe("BackFiller", func() {
 					101: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -66,10 +67,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
@@ -111,6 +112,7 @@ var _ = Describe("BackFiller", func() {
 					100: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -119,10 +121,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
@@ -158,6 +160,7 @@ var _ = Describe("BackFiller", func() {
 					2: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -166,10 +169,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))

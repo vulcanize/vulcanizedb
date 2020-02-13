@@ -44,6 +44,19 @@ func (c ChainType) String() string {
 	}
 }
 
+func (c ChainType) API() string {
+	switch c {
+	case Ethereum:
+		return "eth"
+	case Bitcoin:
+		return "btc"
+	case Omni:
+		return "omni"
+	default:
+		return ""
+	}
+}
+
 func NewChainType(name string) (ChainType, error) {
 	switch strings.ToLower(name) {
 	case "ethereum", "eth":

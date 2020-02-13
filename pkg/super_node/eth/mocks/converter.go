@@ -58,7 +58,7 @@ func (pc *IterativePayloadConverter) Convert(payload shared.RawChainData) (share
 		return nil, fmt.Errorf("convert expected payload type %T got %T", statediff.Payload{}, payload)
 	}
 	pc.PassedStatediffPayload = append(pc.PassedStatediffPayload, stateDiffPayload)
-	if len(pc.PassedStatediffPayload) < pc.iteration+1 {
+	if len(pc.ReturnIPLDPayload) < pc.iteration+1 {
 		return nil, fmt.Errorf("IterativePayloadConverter does not have a payload to return at iteration %d", pc.iteration)
 	}
 	returnPayload := pc.ReturnIPLDPayload[pc.iteration]

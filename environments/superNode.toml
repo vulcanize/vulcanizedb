@@ -1,0 +1,59 @@
+[superNode]
+    chains = ["ethereum", "bitcoin"]
+    ipfsPath = "/root/.ipfs"
+
+    [superNode.ethereum.database]
+        name     = "vulcanize_public"
+        hostname = "localhost"
+        port     = 5432
+        user     = "ec2-user"
+
+    [superNode.ethereum.sync]
+        on = true
+        wsPath  = "ws://127.0.0.1:8546"
+        workers = 1
+
+    [superNode.ethereum.server]
+        on = true
+        ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
+        wsPath = "127.0.0.1:8080"
+        httpPath = "127.0.0.1:8081"
+
+    [superNode.ethereum.backFill]
+        on = true
+        httpPath = "http://127.0.0.1:8545"
+        frequency = 15
+        batchSize = 50
+
+    [superNode.bitcoin.database]
+         name     = "vulcanize_public"
+         hostname = "localhost"
+         port     = 5432
+         user     = "ec2-user"
+
+    [superNode.bitcoin.sync]
+         on = true
+         wsPath  = "127.0.0.1:8332"
+         workers = 1
+         pass = "password"
+         user = "username"
+
+    [superNode.bitcoin.server]
+         on = true
+         ipcPath = "/root/.vulcanize/btc/vulcanize.ipc"
+         wsPath = "127.0.0.1:8082"
+         httpPath = "127.0.0.1:8083"
+
+    [superNode.bitcoin.backFill]
+         on = true
+         httpPath = "127.0.0.1:8332"
+         frequency = 15
+         batchSize = 50
+         pass = "password"
+         user = "username"
+
+    [superNode.bitcoin.node]
+         nodeID = "ocd0"
+         clientName = "Omnicore"
+         genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+         networkID = "0xD9B4BEF9"

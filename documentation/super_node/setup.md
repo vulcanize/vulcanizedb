@@ -105,36 +105,69 @@ Usage:
 `./vulcanizedb superNode --config=<config_file.toml`
  
  
-The config file contains the parameters needed to initialize a SuperNode with the appropriate chain, settings, and services
-`./vulcanizedb syncAndPublish --config=<config_file.toml>`
+The config file contains the parameters needed to initialize a super node with the appropriate chain(s), settings, and services
 
+The below example spins up a super node for btc and eth
 ```toml
 [superNode]
-    chain = "ethereum"
-    ipfsPath = "/root/.ipfs"
+    chains = ["ethereum", "bitcoin"]
+    ipfsPath = "/Users/iannorden/.ipfs"
 
-    [superNode.database]
-        name     = "vulcanize_public"
+    [superNode.ethereum.database]
+        name     = "vulcanize_demo"
         hostname = "localhost"
         port     = 5432
-        user     = "ec2-user"
+        user     = "postgres"
 
-    [superNode.sync]
+    [superNode.ethereum.sync]
         on = true
         wsPath  = "ws://127.0.0.1:8546"
         workers = 1
 
-    [superNode.server]
+    [superNode.ethereum.server]
         on = true
-        ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
+        ipcPath = "/Users/iannorden/.vulcanize/eth/vulcanize.ipc"
         wsPath = "127.0.0.1:8080"
         httpPath = "127.0.0.1:8081"
 
-    [superNode.backFill]
+    [superNode.ethereum.backFill]
         on = true
         httpPath = "http://127.0.0.1:8545"
         frequency = 15
         batchSize = 50
+
+    [superNode.bitcoin.database]
+         name     = "vulcanize_demo"
+         hostname = "localhost"
+         port     = 5432
+         user     = "postgres"
+
+    [superNode.bitcoin.sync]
+         on = true
+         wsPath  = "127.0.0.1:8332"
+         workers = 1
+         pass = "GhhOhxL6GxteDhgzrTqj"
+         user = "ocdrpc"
+
+    [superNode.bitcoin.server]
+         on = true
+         ipcPath = "/Users/iannorden/.vulcanize/btc/vulcanize.ipc"
+         wsPath = "127.0.0.1:8082"
+         httpPath = "127.0.0.1:8083"
+
+    [superNode.bitcoin.backFill]
+         on = true
+         httpPath = "127.0.0.1:8332"
+         frequency = 15
+         batchSize = 50
+         pass = "GhhOhxL6GxteDhgzrTqj"
+         user = "ocdrpc"
+
+    [superNode.bitcoin.node]
+         nodeID = "ocd0"
+         clientName = "Omnicore"
+         genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+         networkID = "0xD9B4BEF9"
 ```
 
 ### Dockerfile Setup
@@ -211,6 +244,6 @@ createdb vulcanize_public
 8. Build and run the Docker image
 ```
 cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node
-docker build --build-arg CONFIG_FILE=environments/ethSuperNode.toml --build-arg EXPOSE_PORT_1=8080 --build-arg EXPOSE_PORT_2=8081 .
+docker build --build-arg CONFIG_FILE=environments/superNode.toml --build-arg EXPOSE_PORT_1=8080 --build-arg EXPOSE_PORT_2=8081 EXPOSE_PORT_3=8082 --build-arg EXPOSE_PORT_4=8083 .
 docker run --network host -e IPFS_INIT=true -e VDB_PG_NAME=vulcanize_public -e VDB_PG_HOSTNAME=localhost -e VDB_PG_PORT=5432 -e VDB_PG_USER=postgres -e VDB_PG_PASSWORD=password {IMAGE_ID}
 ```

@@ -17,6 +17,7 @@
 package shared
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -61,21 +62,12 @@ type SuperNodeConfig struct {
 	BatchSize  uint64
 }
 
-// NewSuperNodeConfig is used to initialize a SuperNode config from a config .toml file
-func NewSuperNodeConfig() (*SuperNodeConfig, error) {
-	sn := new(SuperNodeConfig)
-	sn.DBConfig = config.Database{
-		Name:     viper.GetString("superNode.database.name"),
-		Hostname: viper.GetString("superNode.database.hostname"),
-		Port:     viper.GetInt("superNode.database.port"),
-		User:     viper.GetString("superNode.database.user"),
-		Password: viper.GetString("superNode.database.password"),
-	}
+// NewSuperNodeConfigs is used to initialize multiple SuperNode configs from a single config .toml file
+// Separate chain supernode instances need to be ran in the same process in order to avoid lock contention on the ipfs repository
+func NewSuperNodeConfigs() ([]*SuperNodeConfig, error) {
+	chains := viper.GetStringSlice("superNode.chains")
+	configs := make([]*SuperNodeConfig, len(chains))
 	var err error
-	sn.Chain, err = NewChainType(viper.GetString("superNode.chain"))
-	if err != nil {
-		return nil, err
-	}
 	ipfsPath := viper.GetString("superNode.ipfsPath")
 	if ipfsPath == "" {
 		home, err := os.UserHomeDir()
@@ -84,89 +76,104 @@ func NewSuperNodeConfig() (*SuperNodeConfig, error) {
 		}
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
-	sn.IPFSPath = ipfsPath
-	sn.Serve = viper.GetBool("superNode.server.on")
-	sn.Sync = viper.GetBool("superNode.sync.on")
-	if sn.Sync {
-		workers := viper.GetInt("superNode.sync.workers")
-		if workers < 1 {
-			workers = 1
-		}
-		sn.Workers = workers
-		switch sn.Chain {
-		case Ethereum:
-			sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(viper.GetString("superNode.sync.wsPath"))
-		case Bitcoin:
-			sn.NodeInfo = core.Node{
-				ID:           viper.GetString("superNode.btc.nodeID"),
-				ClientName:   viper.GetString("superNode.btc.clientName"),
-				GenesisBlock: viper.GetString("superNode.btc.genesisBlock"),
-				NetworkID:    viper.GetString("superNode.btc.networkID"),
-			}
-			// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
-			sn.WSClient = &rpcclient.ConnConfig{
-				Host:         viper.GetString("superNode.sync.wsPath"),
-				HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
-				DisableTLS:   true, // Bitcoin core does not provide TLS by default
-				Pass:         viper.GetString("superNode.sync.pass"),
-				User:         viper.GetString("superNode.sync.user"),
-			}
-		}
-	}
-	if sn.Serve {
-		wsPath := viper.GetString("superNode.server.wsPath")
-		if wsPath == "" {
-			wsPath = "ws://127.0.0.1:8546"
-		}
-		sn.WSEndpoint = wsPath
-		ipcPath := viper.GetString("superNode.server.ipcPath")
-		if ipcPath == "" {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return nil, err
-			}
-			ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
-		}
-		sn.IPCEndpoint = ipcPath
-		httpPath := viper.GetString("superNode.server.httpPath")
-		if httpPath == "" {
-			httpPath = "http://127.0.0.1:8545"
-		}
-		sn.HTTPEndpoint = httpPath
-	}
-	db := utils.LoadPostgres(sn.DBConfig, sn.NodeInfo)
-	sn.DB = &db
-	sn.Quit = make(chan bool)
-	if viper.GetBool("superNode.backFill.on") {
-		if err := sn.BackFillFields(); err != nil {
+	for i, chain := range chains {
+		sn := new(SuperNodeConfig)
+		sn.Chain, err = NewChainType(chain)
+		if err != nil {
 			return nil, err
 		}
+		sn.DBConfig = config.Database{
+			Name:     viper.GetString(fmt.Sprintf("superNode.%s.database.name", chain)),
+			Hostname: viper.GetString(fmt.Sprintf("superNode.%s.database.hostname", chain)),
+			Port:     viper.GetInt(fmt.Sprintf("superNode.%s.database.port", chain)),
+			User:     viper.GetString(fmt.Sprintf("superNode.%s.database.user", chain)),
+			Password: viper.GetString(fmt.Sprintf("superNode.%s.database.password", chain)),
+		}
+		sn.IPFSPath = ipfsPath
+		sn.Serve = viper.GetBool(fmt.Sprintf("superNode.%s.server.on", chain))
+		sn.Sync = viper.GetBool(fmt.Sprintf("superNode.%s.sync.on", chain))
+		if sn.Sync {
+			workers := viper.GetInt("superNode.sync.workers")
+			if workers < 1 {
+				workers = 1
+			}
+			sn.Workers = workers
+			switch sn.Chain {
+			case Ethereum:
+				sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(viper.GetString("superNode.ethereum.sync.wsPath"))
+			case Bitcoin:
+				sn.NodeInfo = core.Node{
+					ID:           viper.GetString("superNode.bitcoin.node.nodeID"),
+					ClientName:   viper.GetString("superNode.bitcoin.node.clientName"),
+					GenesisBlock: viper.GetString("superNode.bitcoin.node.genesisBlock"),
+					NetworkID:    viper.GetString("superNode.bitcoin.node.networkID"),
+				}
+				// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
+				sn.WSClient = &rpcclient.ConnConfig{
+					Host:         viper.GetString("superNode.bitcoin.sync.wsPath"),
+					HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+					DisableTLS:   true, // Bitcoin core does not provide TLS by default
+					Pass:         viper.GetString("superNode.bitcoin.sync.pass"),
+					User:         viper.GetString("superNode.bitcoin.sync.user"),
+				}
+			}
+		}
+		if sn.Serve {
+			wsPath := viper.GetString(fmt.Sprintf("superNode.%s.server.wsPath", chain))
+			if wsPath == "" {
+				wsPath = "ws://127.0.0.1:8546"
+			}
+			sn.WSEndpoint = wsPath
+			ipcPath := viper.GetString(fmt.Sprintf("superNode.%s.server.ipcPath", chain))
+			if ipcPath == "" {
+				home, err := os.UserHomeDir()
+				if err != nil {
+					return nil, err
+				}
+				ipcPath = filepath.Join(home, ".vulcanize/vulcanize.ipc")
+			}
+			sn.IPCEndpoint = ipcPath
+			httpPath := viper.GetString(fmt.Sprintf("superNode.%s.server.httpPath", chain))
+			if httpPath == "" {
+				httpPath = "http://127.0.0.1:8545"
+			}
+			sn.HTTPEndpoint = httpPath
+		}
+		db := utils.LoadPostgres(sn.DBConfig, sn.NodeInfo)
+		sn.DB = &db
+		sn.Quit = make(chan bool)
+		if viper.GetBool(fmt.Sprintf("superNode.%s.backFill.on", chain)) {
+			if err := sn.BackFillFields(chain); err != nil {
+				return nil, err
+			}
+		}
+		configs[i] = sn
 	}
-	return sn, err
+	return configs, err
 }
 
 // BackFillFields is used to fill in the BackFill fields of the config
-func (sn *SuperNodeConfig) BackFillFields() error {
+func (sn *SuperNodeConfig) BackFillFields(chain string) error {
 	sn.BackFill = true
 	var httpClient interface{}
 	var err error
 	switch sn.Chain {
 	case Ethereum:
-		_, httpClient, err = getEthNodeAndClient(viper.GetString("superNode.backFill.httpPath"))
+		_, httpClient, err = getEthNodeAndClient(viper.GetString("superNode.ethereum.backFill.httpPath"))
 		if err != nil {
 			return err
 		}
 	case Bitcoin:
 		httpClient = &rpcclient.ConnConfig{
-			Host:         viper.GetString("superNode.backFill.httpPath"),
+			Host:         viper.GetString("superNode.bitcoin.backFill.httpPath"),
 			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
 			DisableTLS:   true, // Bitcoin core does not provide TLS by default
-			Pass:         viper.GetString("superNode.backFill.pass"),
-			User:         viper.GetString("superNode.backFill.user"),
+			Pass:         viper.GetString("superNode.bitcoin.backFill.pass"),
+			User:         viper.GetString("superNode.bitcoin.backFill.user"),
 		}
 	}
 	sn.HTTPClient = httpClient
-	freq := viper.GetInt("superNode.backFill.frequency")
+	freq := viper.GetInt(fmt.Sprintf("superNode.%s.backFill.frequency", chain))
 	var frequency time.Duration
 	if freq <= 0 {
 		frequency = time.Second * 30
@@ -174,7 +181,7 @@ func (sn *SuperNodeConfig) BackFillFields() error {
 		frequency = time.Second * time.Duration(freq)
 	}
 	sn.Frequency = frequency
-	sn.BatchSize = uint64(viper.GetInt64("superNode.backFill.batchSize"))
+	sn.BatchSize = uint64(viper.GetInt64(fmt.Sprintf("superNode.%s.backFill.batchSize", chain)))
 	return nil
 }
 

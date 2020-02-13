@@ -29,7 +29,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
@@ -45,9 +44,9 @@ type SuperNode interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for syncAndPublish processes
-	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.StreamedIPLDs, forwardQuitchan chan<- bool) error
+	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.StreamedIPLDs) error
 	// Main event loop for handling client pub-sub
-	ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs, screenAndServeQuit <-chan bool)
+	ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs)
 	// Method to subscribe to receive state diff processing output
 	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
 	// Method to unsubscribe from state diff processing
@@ -98,9 +97,6 @@ type Service struct {
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
 func NewSuperNode(settings *shared.SuperNodeConfig) (SuperNode, error) {
-	if err := ipfs.InitIPFSPlugins(); err != nil {
-		return nil, err
-	}
 	sn := new(Service)
 	var err error
 	// If we are syncing, initialize the needed interfaces
@@ -175,10 +171,10 @@ func (sap *Service) APIs() []rpc.API {
 	return append(apis, chainAPI)
 }
 
-// SyncAndPublish is the backend processing loop which streams data from geth, converts it to iplds, publishes them to ipfs, and indexes their cids
+// SyncAndPublish is the backend processing loop which streams data, converts it to iplds, publishes them to ipfs, and indexes their cids
 // This continues on no matter if or how many subscribers there are, it then forwards the data to the ScreenAndServe() loop
 // which filters and sends relevant data to client subscriptions, if there are any
-func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- shared.StreamedIPLDs, screenAndServeQuit chan<- bool) error {
+func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- shared.StreamedIPLDs) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -187,11 +183,10 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 
 	// Channels for forwarding data to the publishAndIndex workers
 	publishAndIndexPayload := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
-	publishAndIndexQuit := make(chan bool, sap.WorkerPoolSize)
 	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
 	// limiting the number of Postgres connections we can possibly open so as to prevent error
 	for i := 0; i < sap.WorkerPoolSize; i++ {
-		sap.publishAndIndex(i, publishAndIndexPayload, publishAndIndexQuit)
+		sap.publishAndIndex(i, publishAndIndexPayload)
 	}
 	go func() {
 		for {
@@ -208,25 +203,10 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
-				select {
-				case publishAndIndexPayload <- ipldPayload:
-				default:
-				}
+				publishAndIndexPayload <- ipldPayload
 			case err := <-sub.Err():
 				log.Error(err)
 			case <-sap.QuitChan:
-				// If we have a ScreenAndServe process running, forward the quit signal to it
-				select {
-				case screenAndServeQuit <- true:
-				default:
-				}
-				// Also forward a quit signal for each of the publishAndIndex workers
-				for i := 0; i < sap.WorkerPoolSize; i++ {
-					select {
-					case publishAndIndexQuit <- true:
-					default:
-					}
-				}
 				log.Info("quiting SyncAndPublish process")
 				wg.Done()
 				return
@@ -237,7 +217,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	return nil
 }
 
-func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.StreamedIPLDs, publishAndIndexQuit <-chan bool) {
+func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.StreamedIPLDs) {
 	go func() {
 		for {
 			select {
@@ -250,9 +230,6 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 				if err := sap.Indexer.Index(cidPayload); err != nil {
 					log.Errorf("worker %d error: %v", id, err)
 				}
-			case <-publishAndIndexQuit:
-				log.Infof("quiting publishAndIndex worker %d", id)
-				return
 			}
 		}
 	}()
@@ -261,14 +238,14 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 
 // ScreenAndServe is the loop used to screen data streamed from the state diffing eth node
 // and send the appropriate portions of it to a requesting client subscription, according to their subscription configuration
-func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs, screenAndServeQuit <-chan bool) {
+func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs) {
 	wg.Add(1)
 	go func() {
 		for {
 			select {
 			case payload := <-screenAndServePayload:
 				sap.sendResponse(payload)
-			case <-screenAndServeQuit:
+			case <-sap.QuitChan:
 				log.Info("quiting ScreenAndServe process")
 				wg.Done()
 				return
@@ -422,11 +399,10 @@ func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting super node service")
 	wg := new(sync.WaitGroup)
 	payloadChan := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
-	quitChan := make(chan bool, 1)
-	if err := sap.SyncAndPublish(wg, payloadChan, quitChan); err != nil {
+	if err := sap.SyncAndPublish(wg, payloadChan); err != nil {
 		return err
 	}
-	sap.ScreenAndServe(wg, payloadChan, quitChan)
+	sap.ScreenAndServe(wg, payloadChan)
 	return nil
 }
 

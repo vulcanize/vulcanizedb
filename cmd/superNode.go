@@ -18,6 +18,8 @@ package cmd
 import (
 	"sync"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -53,46 +55,41 @@ func init() {
 }
 
 func superNode() {
-	superNode, superNodeConfig, err := newSuperNode()
+	superNodeConfigs, err := shared.NewSuperNodeConfigs()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
+	if err := ipfs.InitIPFSPlugins(); err != nil {
+		logWithCommand.Fatal(err)
+	}
 	wg := &sync.WaitGroup{}
-	var forwardQuitChan chan bool
-	var forwardPayloadChan chan shared.StreamedIPLDs
-	if superNodeConfig.Serve {
-		forwardQuitChan = make(chan bool)
-		forwardPayloadChan = make(chan shared.StreamedIPLDs, super_node.PayloadChanBufferSize)
-		superNode.ScreenAndServe(wg, forwardPayloadChan, forwardQuitChan)
-		if err := startServers(superNode, superNodeConfig); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
-	if superNodeConfig.Sync {
-		if err := superNode.SyncAndPublish(wg, forwardPayloadChan, forwardQuitChan); err != nil {
-			logWithCommand.Fatal(err)
-		}
-	}
-	if superNodeConfig.BackFill {
-		backFiller, err := super_node.NewBackFillService(superNodeConfig)
+	for _, superNodeConfig := range superNodeConfigs {
+		superNode, err := super_node.NewSuperNode(superNodeConfig)
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
-		backFiller.FillGaps(wg, nil)
+		var forwardPayloadChan chan shared.StreamedIPLDs
+		if superNodeConfig.Serve {
+			forwardPayloadChan = make(chan shared.StreamedIPLDs, super_node.PayloadChanBufferSize)
+			superNode.ScreenAndServe(wg, forwardPayloadChan)
+			if err := startServers(superNode, superNodeConfig); err != nil {
+				logWithCommand.Fatal(err)
+			}
+		}
+		if superNodeConfig.Sync {
+			if err := superNode.SyncAndPublish(wg, forwardPayloadChan); err != nil {
+				logWithCommand.Fatal(err)
+			}
+		}
+		if superNodeConfig.BackFill {
+			backFiller, err := super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
+			if err != nil {
+				logWithCommand.Fatal(err)
+			}
+			backFiller.FillGaps(wg)
+		}
 	}
 	wg.Wait()
-}
-
-func newSuperNode() (super_node.SuperNode, *shared.SuperNodeConfig, error) {
-	superNodeConfig, err := shared.NewSuperNodeConfig()
-	if err != nil {
-		return nil, nil, err
-	}
-	sn, err := super_node.NewSuperNode(superNodeConfig)
-	if err != nil {
-		return nil, nil, err
-	}
-	return sn, superNodeConfig, nil
 }
 
 func startServers(superNode super_node.SuperNode, settings *shared.SuperNodeConfig) error {
@@ -104,6 +101,6 @@ func startServers(superNode super_node.SuperNode, settings *shared.SuperNodeConf
 	if err != nil {
 		return err
 	}
-	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{"eth", "btc"}, nil, nil, rpc.HTTPTimeouts{})
+	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
 	return err
 }

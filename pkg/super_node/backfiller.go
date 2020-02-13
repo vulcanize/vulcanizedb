@@ -36,7 +36,7 @@ const (
 // BackFillInterface for filling in gaps in the super node
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
-	FillGaps(wg *sync.WaitGroup, quitChan <-chan bool)
+	FillGaps(wg *sync.WaitGroup)
 }
 
 // BackFillService for filling in gaps in the super node
@@ -51,14 +51,18 @@ type BackFillService struct {
 	Retriever shared.CIDRetriever
 	// Interface for fetching payloads over at historical blocks; over http
 	Fetcher shared.PayloadFetcher
+	// Channel for forwarding backfill payloads to the ScreenAndServe process
+	ScreenAndServeChan chan shared.StreamedIPLDs
 	// Check frequency
 	GapCheckFrequency time.Duration
 	// Size of batch fetches
 	BatchSize uint64
+	// Channel for receiving quit signal
+	QuitChan chan bool
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(settings *shared.SuperNodeConfig) (BackFillInterface, error) {
+func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan chan shared.StreamedIPLDs) (BackFillInterface, error) {
 	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
@@ -84,26 +88,28 @@ func NewBackFillService(settings *shared.SuperNodeConfig) (BackFillInterface, er
 		batchSize = DefaultMaxBatchSize
 	}
 	return &BackFillService{
-		Indexer:           indexer,
-		Converter:         converter,
-		Publisher:         publisher,
-		Retriever:         retriever,
-		Fetcher:           fetcher,
-		GapCheckFrequency: settings.Frequency,
-		BatchSize:         batchSize,
+		Indexer:            indexer,
+		Converter:          converter,
+		Publisher:          publisher,
+		Retriever:          retriever,
+		Fetcher:            fetcher,
+		GapCheckFrequency:  settings.Frequency,
+		BatchSize:          batchSize,
+		ScreenAndServeChan: screenAndServeChan,
+		QuitChan:           settings.Quit,
 	}, nil
 }
 
 // FillGaps periodically checks for and fills in gaps in the super node db
 // this requires a core.RpcClient that is pointed at an archival node with the StateDiffAt method exposed
-func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
+func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
 	wg.Add(1)
 
 	go func() {
 		for {
 			select {
-			case <-quitChan:
+			case <-bfs.QuitChan:
 				log.Info("quiting FillGaps process")
 				wg.Done()
 				return
@@ -191,9 +197,11 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 						errChan <- err
 						continue
 					}
-					// make backfiller a part of super_node service and forward these
-					// ipldPayload the the regular publishAndIndex and screenAndServe channels
-					// this would allow us to stream backfilled data to subscribers
+					// If there is a ScreenAndServe process listening, forward payload to it
+					select {
+					case bfs.ScreenAndServeChan <- ipldPayload:
+					default:
+					}
 					cidPayload, err := bfs.Publisher.Publish(ipldPayload)
 					if err != nil {
 						errChan <- err
