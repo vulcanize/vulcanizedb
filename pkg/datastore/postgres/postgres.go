@@ -44,21 +44,21 @@ func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 }
 
 func (db *DB) CreateNode(node *core.Node) error {
-	var nodeId int64
+	var nodeID int64
 	err := db.QueryRow(
-		`INSERT INTO eth_nodes (genesis_block, network_id, eth_node_id, client_name)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (genesis_block, network_id, eth_node_id)
-                  DO UPDATE
-                    SET genesis_block = $1,
-                        network_id = $2,
-                        eth_node_id = $3,
-                        client_name = $4
-                RETURNING id`,
-		node.GenesisBlock, node.NetworkID, node.ID, node.ClientName).Scan(&nodeId)
+		`WITH nodeID AS (
+			INSERT INTO eth_nodes (genesis_block, network_id, eth_node_id, client_name)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (genesis_block, network_id, eth_node_id, client_name) DO NOTHING
+			RETURNING id
+		)
+		SELECT id FROM eth_nodes WHERE genesis_block = $1 AND network_id = $2 AND eth_node_id = $3 AND client_name = $4
+		UNION
+		SELECT id FROM nodeID`,
+		node.GenesisBlock, node.NetworkID, node.ID, node.ClientName).Scan(&nodeID)
 	if err != nil {
 		return ErrUnableToSetNode(err)
 	}
-	db.NodeID = nodeId
+	db.NodeID = nodeID
 	return nil
 }
