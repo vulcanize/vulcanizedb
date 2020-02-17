@@ -17,7 +17,7 @@
 package fakes
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/contract"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/contract"
 )
 
 type MockPoller struct {

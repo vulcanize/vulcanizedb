@@ -18,14 +18,14 @@ package chunker
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	"strings"
 )
 
 type Chunker interface {
 	AddConfig(transformerConfig transformer.EventTransformerConfig)
-	ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog
+	ChunkLogs(logs []core.EventLog) map[string][]core.EventLog
 }
 
 type LogChunker struct {
@@ -52,8 +52,8 @@ func (chunker *LogChunker) AddConfig(transformerConfig transformer.EventTransfor
 }
 
 // Goes through a slice of logs, associating relevant logs (matching addresses and topic) with transformers
-func (chunker *LogChunker) ChunkLogs(logs []core.HeaderSyncLog) map[string][]core.HeaderSyncLog {
-	chunks := map[string][]core.HeaderSyncLog{}
+func (chunker *LogChunker) ChunkLogs(logs []core.EventLog) map[string][]core.EventLog {
+	chunks := map[string][]core.EventLog{}
 	for _, log := range logs {
 		// Topic0 is not unique to each transformer, also need to consider the contract address
 		relevantTransformers := chunker.AddressToNames[strings.ToLower(log.Log.Address.Hex())]

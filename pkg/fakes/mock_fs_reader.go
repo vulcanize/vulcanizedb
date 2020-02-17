@@ -25,15 +25,6 @@ type MockFsReader struct {
 	readReturnErr   error
 }
 
-func NewMockFsReader() *MockFsReader {
-	return &MockFsReader{
-		readCalled:      false,
-		readPassedPath:  "",
-		readReturnBytes: nil,
-		readReturnErr:   nil,
-	}
-}
-
 func (mfr *MockFsReader) SetReturnBytes(returnBytes []byte) {
 	mfr.readReturnBytes = returnBytes
 }

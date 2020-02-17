@@ -17,45 +17,37 @@
 package watcher
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/logs"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"time"
+
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/sirupsen/logrus"
 )
 
-const NoNewDataPause = time.Second * 7
-
 type EventWatcher struct {
-	blockChain   core.BlockChain
-	db           *postgres.DB
-	LogDelegator logs.ILogDelegator
-	LogExtractor logs.ILogExtractor
+	blockChain                   core.BlockChain
+	db                           *postgres.DB
+	LogExtractor                 logs.ILogExtractor
+	ExpectedExtractorError       error
+	LogDelegator                 logs.ILogDelegator
+	ExpectedDelegatorError       error
+	MaxConsecutiveUnexpectedErrs int
+	RetryInterval                time.Duration
 }
 
-func NewEventWatcher(db *postgres.DB, bc core.BlockChain) EventWatcher {
-	extractor := &logs.LogExtractor{
-		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
-		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
-		Fetcher:                  fetcher.NewLogFetcher(bc),
-		LogRepository:            repositories.NewHeaderSyncLogRepository(db),
-		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
-	}
-	logTransformer := &logs.LogDelegator{
-		Chunker:       chunker.NewLogChunker(),
-		LogRepository: repositories.NewHeaderSyncLogRepository(db),
-	}
+func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExtractor, delegator logs.ILogDelegator, maxConsecutiveUnexpectedErrs int, retryInterval time.Duration) EventWatcher {
 	return EventWatcher{
-		blockChain:   bc,
-		db:           db,
-		LogExtractor: extractor,
-		LogDelegator: logTransformer,
+		blockChain:                   bc,
+		db:                           db,
+		LogExtractor:                 extractor,
+		ExpectedExtractorError:       logs.ErrNoUncheckedHeaders,
+		LogDelegator:                 delegator,
+		ExpectedDelegatorError:       logs.ErrNoLogs,
+		MaxConsecutiveUnexpectedErrs: maxConsecutiveUnexpectedErrs,
+		RetryInterval:                retryInterval,
 	}
 }
 
@@ -75,52 +67,60 @@ func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTra
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+
+	//only writers should close channels
 	delegateErrsChan := make(chan error)
 	extractErrsChan := make(chan error)
-	defer close(delegateErrsChan)
-	defer close(extractErrsChan)
+	executeQuitChan := make(chan bool)
 
-	go watcher.extractLogs(recheckHeaders, extractErrsChan)
-	go watcher.delegateLogs(delegateErrsChan)
+	go watcher.extractLogs(recheckHeaders, extractErrsChan, executeQuitChan)
+	go watcher.delegateLogs(delegateErrsChan, executeQuitChan)
 
 	for {
 		select {
 		case delegateErr := <-delegateErrsChan:
 			logrus.Errorf("error delegating logs in event watcher: %s", delegateErr.Error())
+			close(executeQuitChan)
 			return delegateErr
 		case extractErr := <-extractErrsChan:
 			logrus.Errorf("error extracting logs in event watcher: %s", extractErr.Error())
+			close(executeQuitChan)
 			return extractErr
 		}
 	}
 }
 
-func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error) {
-	err := watcher.LogExtractor.ExtractLogs(recheckHeaders)
-	if err != nil && err != logs.ErrNoUncheckedHeaders {
-		errs <- err
-		return
-	}
-
-	if err == logs.ErrNoUncheckedHeaders {
-		time.Sleep(NoNewDataPause)
-		watcher.extractLogs(recheckHeaders, errs)
-	} else {
-		watcher.extractLogs(recheckHeaders, errs)
-	}
+func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error, quitChan chan bool) {
+	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
+	watcher.withRetry(call, watcher.ExpectedExtractorError, "extracting", errs, quitChan)
 }
 
-func (watcher *EventWatcher) delegateLogs(errs chan error) {
-	err := watcher.LogDelegator.DelegateLogs()
-	if err != nil && err != logs.ErrNoLogs {
-		errs <- err
-		return
-	}
+func (watcher *EventWatcher) delegateLogs(errs chan error, quitChan chan bool) {
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, watcher.ExpectedDelegatorError, "delegating", errs, quitChan)
+}
 
-	if err == logs.ErrNoLogs {
-		time.Sleep(NoNewDataPause)
-		watcher.delegateLogs(errs)
-	} else {
-		watcher.delegateLogs(errs)
+func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error, quitChan chan bool) {
+	defer close(errs)
+	consecutiveUnexpectedErrCount := 0
+	for {
+		select {
+		case <-quitChan:
+			return
+		default:
+			err := call()
+			if err == nil {
+				consecutiveUnexpectedErrCount = 0
+			} else {
+				if err != expectedErr {
+					consecutiveUnexpectedErrCount++
+					logrus.Errorf("error %s logs: %s", operation, err.Error())
+					if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
+						errs <- err
+						return
+					}
+				}
+				time.Sleep(watcher.RetryInterval)
+			}
+		}
 	}
 }

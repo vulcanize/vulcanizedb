@@ -17,16 +17,16 @@
 package repository_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/repository"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
 var _ = Describe("address lookup", func() {
@@ -44,8 +44,9 @@ var _ = Describe("address lookup", func() {
 	})
 
 	type dbAddress struct {
-		Id      int64
-		Address string
+		Id            int64
+		Address       string
+		HashedAddress string `db:"hashed_address"`
 	}
 
 	Describe("GetOrCreateAddress", func() {
@@ -54,9 +55,10 @@ var _ = Describe("address lookup", func() {
 			Expect(createErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			expectedAddress := dbAddress{Id: addressId, Address: address}
+			hashedAddress := types.HexToKeccak256Hash(address).Hex()
+			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 
@@ -116,9 +118,10 @@ var _ = Describe("address lookup", func() {
 			Expect(commitErr).NotTo(HaveOccurred())
 
 			var actualAddress dbAddress
-			getErr := db.Get(&actualAddress, `SELECT id, address FROM public.addresses LIMIT 1`)
+			getErr := db.Get(&actualAddress, `SELECT id, address, hashed_address FROM public.addresses LIMIT 1`)
 			Expect(getErr).NotTo(HaveOccurred())
-			expectedAddress := dbAddress{Id: addressId, Address: address}
+			hashedAddress := types.HexToKeccak256Hash(address).Hex()
+			expectedAddress := dbAddress{Id: addressId, Address: address, HashedAddress: hashedAddress}
 			Expect(actualAddress).To(Equal(expectedAddress))
 		})
 

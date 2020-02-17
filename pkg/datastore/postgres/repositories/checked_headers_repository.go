@@ -17,8 +17,8 @@
 package repositories
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 const (
@@ -40,32 +40,49 @@ func (repo CheckedHeadersRepository) MarkHeaderChecked(headerID int64) error {
 }
 
 // Zero out check count for headers with block number >= startingBlockNumber
-func (repo CheckedHeadersRepository) MarkHeadersUnchecked(startingBlockNumber int64) error {
+func (repo CheckedHeadersRepository) MarkHeadersUncheckedSince(startingBlockNumber int64) error {
 	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number >= $1`, startingBlockNumber)
+	return err
+}
+
+// Zero out check count for header with the given block number
+func (repo CheckedHeadersRepository) MarkSingleHeaderUnchecked(blockNumber int64) error {
+	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number = $1`, blockNumber)
 	return err
 }
 
 // Return header if check_count  < passed checkCount
 func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
-	var result []core.Header
-	var query string
-	var err error
+	var (
+		result        []core.Header
+		query         string
+		err           error
+		recheckOffset = 15
+	)
 
 	if endingBlockNumber == -1 {
 		query = `SELECT id, block_number, hash
-				FROM headers
-				WHERE check_count < $2
-				AND block_number >= $1
-				AND eth_node_fingerprint = $3`
-		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.Node.ID)
+			FROM public.headers
+			WHERE (check_count < 1
+			           AND block_number >= $1
+			           AND eth_node_id = $3)
+			   OR (check_count < $2
+			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - $4)
+			           AND eth_node_id = $3)`
+		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.NodeID, recheckOffset)
 	} else {
 		query = `SELECT id, block_number, hash
-				FROM headers
-				WHERE check_count < $3
-				AND block_number >= $1
-				AND block_number <= $2
-				AND eth_node_fingerprint = $4`
-		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.Node.ID)
+			FROM public.headers
+			WHERE (check_count < 1
+			           AND block_number >= $1
+			           AND block_number <= $2
+			           AND eth_node_id = $4)
+			   OR (check_count < $3
+			           AND block_number >= $1
+			           AND block_number <= $2
+			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - $5)
+			           AND eth_node_id = $4)`
+		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.NodeID, recheckOffset)
 	}
 
 	return result, err

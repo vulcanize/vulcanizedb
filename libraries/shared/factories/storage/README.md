@@ -31,15 +31,15 @@ The storage transformer depends on contract-specific implementations of code cap
 
 ```golang
 func (transformer Transformer) Execute(row shared.StorageDiffRow) error {
-	metadata, lookupErr := transformer.Mappings.Lookup(row.StorageKey)
+	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr
 	}
-	value, decodeErr := shared.Decode(row, metadata)
+	value, decodeErr := utils.Decode(diff, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}
-	return transformer.Repository.Create(row.BlockHeight, row.BlockHash.Hex(), metadata, value)
+	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
 }
 ```
 
@@ -47,20 +47,36 @@ func (transformer Transformer) Execute(row shared.StorageDiffRow) error {
 
 In order to watch an additional smart contract, a developer must create three things:
 
-1. Mappings - specify how to identify keys in the contract's storage trie.
+1. StorageKeysLoader - identify keys in the contract's storage trie, providing metadata to describe how associated values should be decoded.
 1. Repository - specify how to persist a parsed version of the storage value matching the recognized storage key.
 1. Instance - create an instance of the storage transformer that uses your mappings and repository.
 
-### Mappings
+### StorageKeysLoader
+
+A `StorageKeysLoader` is used by the `StorageKeysLookup` object on a storage transformer.
 
 ```golang
-type Mappings interface {
-	Lookup(key common.Hash) (shared.StorageValueMetadata, error)
+type KeysLoader interface {
+	LoadMappings() (map[common.Hash]utils.StorageValueMetadata, error)
 	SetDB(db *postgres.DB)
 }
 ```
 
-A contract-specific implementation of the mappings interface enables the storage transformer to fetch metadata associated with a storage key.
+When a key is not found, the lookup object refreshes its known keys by calling the loader.
+
+```golang
+func (lookup *keysLookup) refreshMappings() error {
+	var err error
+	lookup.mappings, err = lookup.loader.LoadMappings()
+	if err != nil {
+		return err
+	}
+	lookup.mappings = utils.AddHashedKeys(lookup.mappings)
+	return nil
+}
+```
+
+A contract-specific implementation of the loader enables the storage transformer to fetch metadata associated with a storage key.
 
 Storage metadata contains: the name of the variable matching the storage key, a raw version of any keys associated with the variable (if the variable is a mapping), and the variable's type.
 
@@ -72,7 +88,7 @@ type StorageValueMetadata struct {
 }
 ```
 
-Keys are only relevant if the variable is a mapping. For example, in the following Solidity code:
+The `Keys` field on the metadata is only relevant if the variable is a mapping. For example, in the following Solidity code:
 
 ```solidity
 pragma solidity ^0.4.0;
@@ -85,7 +101,7 @@ contract Contract {
 
 The metadata for variable `x` would not have any associated keys, but the metadata for a storage key associated with `y` would include the address used to specify that key's index in the mapping.
 
-The `SetDB` function is required for the mappings to connect to the database.
+The `SetDB` function is required for the storage key loader to connect to the database.
 A database connection may be desired when keys in a mapping variable need to be read from log events (e.g. to lookup what addresses may exist in `y`, above).
 
 ### Repository
@@ -100,7 +116,7 @@ type Repository interface {
 A contract-specific implementation of the repository interface enables the transformer to write the decoded storage value to the appropriate table in postgres.
 
 The `Create` function is expected to recognize and persist a given storage value by the variable's name, as indicated on the row's metadata.
-Note: we advise silently discarding duplicates in `Create` - as it's possible that you may read the same diff several times, and an error will trigger the storage watcher to queue that diff for later processing.
+Note: we advise silently discarding duplicates in `Create` - as it's possible that you may read the same diff several times.
 
 The `SetDB` function is required for the repository to connect to the database.
 

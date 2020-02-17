@@ -18,12 +18,12 @@ package transformer
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type EventTransformer interface {
-	Execute(logs []core.HeaderSyncLog) error
+	Execute(logs []core.EventLog) error
 	GetConfig() EventTransformerConfig
 }
 
@@ -36,16 +36,6 @@ type EventTransformerConfig struct {
 	Topic               string
 	StartingBlockNumber int64
 	EndingBlockNumber   int64 // Set -1 for indefinite transformer
-}
-
-func HexToInt64(byteString string) int64 {
-	value := common.HexToHash(byteString)
-	return value.Big().Int64()
-}
-
-func HexToString(byteString string) string {
-	value := common.HexToHash(byteString)
-	return value.Big().String()
 }
 
 func HexStringsToAddresses(strings []string) (addresses []common.Address) {

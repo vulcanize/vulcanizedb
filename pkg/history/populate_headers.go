@@ -17,32 +17,33 @@
 package history
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/sirupsen/logrus"
 )
 
 func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		log.Error("PopulateMissingHeaders: Error getting last block: ", err)
+		logrus.Error("PopulateMissingHeaders: Error getting last block: ", err)
 		return 0, err
 	}
 
-	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64(), blockChain.Node().ID)
+	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64())
 	if err != nil {
-		log.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
+		logrus.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
 		return 0, err
 	} else if len(blockNumbers) == 0 {
 		return 0, nil
 	}
 
-	log.Debug(getBlockRangeString(blockNumbers))
+	logrus.Debug(getBlockRangeString(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
-		log.Error("PopulateMissingHeaders: Error getting/updating headers: ", err)
+		logrus.Error("PopulateMissingHeaders: Error getting/updating headers: ", err)
 		return 0, err
 	}
 	return len(blockNumbers), nil
@@ -60,4 +61,8 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 		}
 	}
 	return len(blockNumbers), nil
+}
+
+func getBlockRangeString(blockRange []int64) string {
+	return fmt.Sprintf("Backfilling |%v| blocks", len(blockRange))
 }

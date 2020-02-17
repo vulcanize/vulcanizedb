@@ -17,44 +17,41 @@
 package event
 
 import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
-type Transformer struct {
-	Config     transformer.EventTransformerConfig
-	Converter  Converter
-	Repository Repository
+// ConfiguredTransformer implements the EventTransformer interface, to be run by the Watcher
+type ConfiguredTransformer struct {
+	Config      transformer.EventTransformerConfig
+	Transformer Transformer
+	DB          *postgres.DB
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
-	transformer.Repository.SetDB(db)
-	return transformer
+// NewTransformer instantiates a new transformer by passing the DB connection to the converter
+func (ct ConfiguredTransformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+	ct.DB = db
+	return ct
 }
 
-func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
-	transformerName := transformer.Config.TransformerName
-	config := transformer.Config
+// Execute runs a transformer on a set of logs, converting data into models and persisting to the DB
+func (ct ConfiguredTransformer) Execute(logs []core.EventLog) error {
+	transformerName := ct.Config.TransformerName
+	config := ct.Config
 
 	if len(logs) < 1 {
 		return nil
 	}
 
-	entities, err := transformer.Converter.ToEntities(config.ContractAbi, logs)
-	if err != nil {
-		logrus.Errorf("error converting logs to entities in %v: %v", transformerName, err)
-		return err
-	}
-
-	models, err := transformer.Converter.ToModels(entities)
+	models, err := ct.Transformer.ToModels(config.ContractAbi, logs, ct.DB)
 	if err != nil {
 		logrus.Errorf("error converting entities to models in %v: %v", transformerName, err)
 		return err
 	}
 
-	err = transformer.Repository.Create(models)
+	err = PersistModels(models, ct.DB)
 	if err != nil {
 		logrus.Errorf("error persisting %v record: %v", transformerName, err)
 		return err
@@ -63,10 +60,7 @@ func (transformer Transformer) Execute(logs []core.HeaderSyncLog) error {
 	return nil
 }
 
-func (transformer Transformer) GetName() string {
-	return transformer.Config.TransformerName
-}
-
-func (transformer Transformer) GetConfig() transformer.EventTransformerConfig {
-	return transformer.Config
+// GetConfig returns the config for a given transformer
+func (ct ConfiguredTransformer) GetConfig() transformer.EventTransformerConfig {
+	return ct.Config
 }

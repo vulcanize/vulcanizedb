@@ -19,15 +19,14 @@ package cmd
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/history"
+	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/history"
-	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // headerSyncCmd represents the headerSync command
@@ -51,7 +50,7 @@ Expects ethereum node to be running and requires a .toml config:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		headerSync()
 	},
 }
@@ -88,7 +87,7 @@ func headerSync() {
 		case <-ticker.C:
 			window, err := validator.ValidateHeaders()
 			if err != nil {
-				LogWithCommand.Error("headerSync: ValidateHeaders failed: ", err)
+				LogWithCommand.Errorf("headerSync: ValidateHeaders failed: %s", err.Error())
 			}
 			LogWithCommand.Debug(window.GetString())
 		case n := <-missingBlocksPopulated:
@@ -100,15 +99,15 @@ func headerSync() {
 	}
 }
 
-func validateArgs(blockChain *geth.BlockChain) {
+func validateArgs(blockChain *eth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		LogWithCommand.Error("validateArgs: Error getting last block: ", err)
+		LogWithCommand.Errorf("validateArgs: Error getting last block: %s", err.Error())
+		return
 	}
-	if lastBlock.Int64() == 0 {
-		LogWithCommand.Fatal("geth initial: state sync not finished")
-	}
-	if startingBlockNumber > lastBlock.Int64() {
-		LogWithCommand.Fatal("starting block number > current block number")
+	lastBlockNumber := lastBlock.Int64()
+	if startingBlockNumber > lastBlockNumber {
+		LogWithCommand.Fatalf("starting block number (%d) greater than client's most recent synced block (%d)",
+			startingBlockNumber, lastBlockNumber)
 	}
 }

@@ -17,11 +17,11 @@
 package storage
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type Repository interface {
-	Create(blockNumber int, blockHash string, metadata utils.StorageValueMetadata, value interface{}) error
+	Create(diffID, headerID int64, metadata types.ValueMetadata, value interface{}) error
 	SetDB(db *postgres.DB)
 }

@@ -17,105 +17,157 @@
 package watcher
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"reflect"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/sirupsen/logrus"
 )
+
+type ErrHeaderMismatch struct {
+	dbHash   string
+	diffHash string
+}
+
+func NewErrHeaderMismatch(DBHash, diffHash string) *ErrHeaderMismatch {
+	return &ErrHeaderMismatch{dbHash: DBHash, diffHash: diffHash}
+}
+
+func (e ErrHeaderMismatch) Error() string {
+	return fmt.Sprintf("db header hash (%s) doesn't match diff header hash (%s)", e.dbHash, e.diffHash)
+}
 
 type IStorageWatcher interface {
 	AddTransformers(initializers []transformer.StorageTransformerInitializer)
-	Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration)
+	Execute() error
 }
 
 type StorageWatcher struct {
 	db                        *postgres.DB
-	StorageFetcher            fetcher.IStorageFetcher
-	Queue                     storage.IStorageQueue
+	HeaderRepository          datastore.HeaderRepository
 	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
+	RetryInterval             time.Duration
+	StorageDiffRepository     storage.DiffRepository
 }
 
-func NewStorageWatcher(fetcher fetcher.IStorageFetcher, db *postgres.DB) StorageWatcher {
-	queue := storage.NewStorageQueue(db)
+func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatcher {
+	headerRepository := repositories.NewHeaderRepository(db)
+	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]transformer.StorageTransformer)
 	return StorageWatcher{
 		db:                        db,
-		StorageFetcher:            fetcher,
-		Queue:                     queue,
+		HeaderRepository:          headerRepository,
 		KeccakAddressTransformers: transformers,
+		RetryInterval:             retryInterval,
+		StorageDiffRepository:     storageDiffRepository,
 	}
 }
 
-func (storageWatcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
+func (watcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
 	for _, initializer := range initializers {
-		storageTransformer := initializer(storageWatcher.db)
-		storageWatcher.KeccakAddressTransformers[storageTransformer.KeccakContractAddress()] = storageTransformer
+		storageTransformer := initializer(watcher.db)
+		watcher.KeccakAddressTransformers[storageTransformer.KeccakContractAddress()] = storageTransformer
 	}
 }
 
-func (storageWatcher StorageWatcher) Execute(diffsChan chan utils.StorageDiff, errsChan chan error, queueRecheckInterval time.Duration) {
-	ticker := time.NewTicker(queueRecheckInterval)
-	go storageWatcher.StorageFetcher.FetchStorageDiffs(diffsChan, errsChan)
+func (watcher StorageWatcher) Execute() error {
 	for {
-		select {
-		case fetchErr := <-errsChan:
-			logrus.Warn(fmt.Sprintf("error fetching storage diffs: %s", fetchErr))
-		case diff := <-diffsChan:
-			storageWatcher.processRow(diff)
-		case <-ticker.C:
-			storageWatcher.processQueue()
+		err := watcher.transformDiffs()
+		if err != nil {
+			logrus.Errorf("error transforming diffs: %s", err.Error())
+			return err
 		}
 	}
 }
 
-func (storageWatcher StorageWatcher) getTransformer(diff utils.StorageDiff) (transformer.StorageTransformer, bool) {
-	storageTransformer, ok := storageWatcher.KeccakAddressTransformers[diff.HashedAddress]
+func (watcher StorageWatcher) transformDiffs() error {
+	diffs := make(chan types.PersistedDiff)
+	errs := make(chan error)
+	done := make(chan bool)
+
+	defer close(diffs)
+	defer close(errs)
+	defer close(done)
+
+	go watcher.StorageDiffRepository.GetNewDiffs(diffs, errs, done)
+
+	for {
+		select {
+		case diff := <-diffs:
+			err := watcher.transformDiff(diff)
+			if err != nil {
+				if err == sql.ErrNoRows || reflect.TypeOf(err) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+					logrus.Tracef("error transforming diff: %s", err.Error())
+				} else {
+					logrus.Infof("error transforming diff: %s", err.Error())
+				}
+			}
+		case err := <-errs:
+			return fmt.Errorf("error getting new diffs: %s", err.Error())
+		case <-done:
+			time.Sleep(watcher.RetryInterval)
+			return nil
+		}
+	}
+}
+
+func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
+	t, watching := watcher.getTransformer(diff)
+	if !watching {
+		markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
+		if markCheckedErr != nil {
+			return fmt.Errorf("error marking diff checked: %s", markCheckedErr.Error())
+		}
+		return nil
+	}
+
+	headerID, headerErr := watcher.getHeaderID(diff)
+	if headerErr != nil {
+		if headerErr == sql.ErrNoRows {
+			return headerErr
+		} else {
+			return fmt.Errorf("error getting header for diff: %s", headerErr.Error())
+		}
+	}
+	diff.HeaderID = headerID
+
+	executeErr := t.Execute(diff)
+	if executeErr != nil {
+		if reflect.TypeOf(executeErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+			return executeErr
+		} else {
+			return fmt.Errorf("error executing storage transformer: %s", executeErr.Error())
+		}
+	}
+
+	markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
+	if markCheckedErr != nil {
+		return fmt.Errorf("error marking diff checked: %s", markCheckedErr.Error())
+	}
+
+	return nil
+}
+
+func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (transformer.StorageTransformer, bool) {
+	storageTransformer, ok := watcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }
 
-func (storageWatcher StorageWatcher) processRow(diff utils.StorageDiff) {
-	storageTransformer, ok := storageWatcher.getTransformer(diff)
-	if !ok {
-		logrus.Debug("ignoring a diff from an unwatched contract")
-		return
+func (watcher StorageWatcher) getHeaderID(diff types.PersistedDiff) (int64, error) {
+	header, getHeaderErr := watcher.HeaderRepository.GetHeader(int64(diff.BlockHeight))
+	if getHeaderErr != nil {
+		return 0, getHeaderErr
 	}
-	executeErr := storageTransformer.Execute(diff)
-	if executeErr != nil {
-		logrus.Warn(fmt.Sprintf("error executing storage transformer: %s", executeErr))
-		queueErr := storageWatcher.Queue.Add(diff)
-		if queueErr != nil {
-			logrus.Warn(fmt.Sprintf("error queueing storage diff: %s", queueErr))
-		}
+	if diff.BlockHash != common.HexToHash(header.Hash) {
+		return 0, NewErrHeaderMismatch(header.Hash, diff.BlockHash.Hex())
 	}
-}
-
-func (storageWatcher StorageWatcher) processQueue() {
-	diffs, fetchErr := storageWatcher.Queue.GetAll()
-	if fetchErr != nil {
-		logrus.Warn(fmt.Sprintf("error getting queued storage: %s", fetchErr))
-	}
-	for _, diff := range diffs {
-		storageTransformer, ok := storageWatcher.getTransformer(diff)
-		if !ok {
-			// delete diff from queue if address no longer watched
-			storageWatcher.deleteRow(diff.Id)
-			continue
-		}
-		executeErr := storageTransformer.Execute(diff)
-		if executeErr == nil {
-			storageWatcher.deleteRow(diff.Id)
-		}
-	}
-}
-
-func (storageWatcher StorageWatcher) deleteRow(id int) {
-	deleteErr := storageWatcher.Queue.Delete(id)
-	if deleteErr != nil {
-		logrus.Warn(fmt.Sprintf("error deleting persisted diff from queue: %s", deleteErr))
-	}
+	return header.Id, nil
 }

@@ -16,24 +16,26 @@
 
 package mocks
 
-import "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+)
 
 type MockStorageFetcher struct {
-	DiffsToReturn []utils.StorageDiff
-	ErrsToReturn  []error
+	DiffsToReturn           []types.RawDiff
+	ErrsToReturn            []error
+	FetchStorageDiffsCalled bool
 }
 
 func NewMockStorageFetcher() *MockStorageFetcher {
 	return &MockStorageFetcher{}
 }
 
-func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiff, errs chan<- error) {
-	defer close(out)
-	defer close(errs)
-	for _, err := range fetcher.ErrsToReturn {
-		errs <- err
-	}
+func (fetcher *MockStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff, errs chan<- error) {
+	fetcher.FetchStorageDiffsCalled = true
 	for _, diff := range fetcher.DiffsToReturn {
 		out <- diff
+	}
+	for _, err := range fetcher.ErrsToReturn {
+		errs <- err
 	}
 }

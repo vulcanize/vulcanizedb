@@ -17,16 +17,14 @@
 package test_data
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"math/rand"
-	"time"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
-
-type GenericModel struct{}
-type GenericEntity struct{}
 
 var startingBlockNumber = rand.Int63()
 var topic0 = "0x" + randomString(64)
@@ -34,12 +32,12 @@ var topic0 = "0x" + randomString(64)
 var GenericTestLog = func() types.Log {
 	return types.Log{
 		Address:     fakeAddress(),
-		Topics:      []common.Hash{common.HexToHash(topic0), fakeHash()},
-		Data:        hexutil.MustDecode(fakeHash().Hex()),
+		Topics:      []common.Hash{common.HexToHash(topic0), FakeHash()},
+		Data:        hexutil.MustDecode(FakeHash().Hex()),
 		BlockNumber: uint64(startingBlockNumber),
-		TxHash:      fakeHash(),
+		TxHash:      FakeHash(),
 		TxIndex:     uint(rand.Int31()),
-		BlockHash:   fakeHash(),
+		BlockHash:   FakeHash(),
 		Index:       uint(rand.Int31()),
 	}
 }
@@ -57,7 +55,7 @@ func fakeAddress() common.Address {
 	return common.HexToAddress("0x" + randomString(40))
 }
 
-func fakeHash() common.Hash {
+func FakeHash() common.Hash {
 	return common.HexToHash("0x" + randomString(64))
 }
 

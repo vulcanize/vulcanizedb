@@ -18,36 +18,44 @@ package storage
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type Transformer struct {
-	HashedAddress common.Hash
-	Mappings      storage.Mappings
-	Repository    Repository
+	Address           common.Address
+	StorageKeysLookup KeysLookup
+	Repository        Repository
+}
+
+func (transformer Transformer) GetStorageKeysLookup() interface{} {
+	return transformer.StorageKeysLookup
+}
+
+func (transformer Transformer) GetContractAddress() common.Address {
+	return transformer.Address
 }
 
 func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
-	transformer.Mappings.SetDB(db)
+	transformer.StorageKeysLookup.SetDB(db)
 	transformer.Repository.SetDB(db)
 	return transformer
 }
 
 func (transformer Transformer) KeccakContractAddress() common.Hash {
-	return transformer.HashedAddress
+	return types.HexToKeccak256Hash(transformer.Address.Hex())
 }
 
-func (transformer Transformer) Execute(diff utils.StorageDiff) error {
-	metadata, lookupErr := transformer.Mappings.Lookup(diff.StorageKey)
+func (transformer Transformer) Execute(diff types.PersistedDiff) error {
+	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
 	if lookupErr != nil {
 		return lookupErr
 	}
-	value, decodeErr := utils.Decode(diff, metadata)
+	value, decodeErr := storage.Decode(diff, metadata)
 	if decodeErr != nil {
 		return decodeErr
 	}
-	return transformer.Repository.Create(diff.BlockHeight, diff.BlockHash.Hex(), metadata, value)
+	return transformer.Repository.Create(diff.ID, diff.HeaderID, metadata, value)
 }

@@ -19,38 +19,45 @@ package test_config
 import (
 	"errors"
 	"fmt"
-	. "github.com/onsi/gomega"
+	"os"
+
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"os"
 )
 
 var TestConfig *viper.Viper
 var DBConfig config.Database
 var TestClient config.Client
-var Infura *viper.Viper
-var InfuraClient config.Client
 var ABIFilePath string
 
 func init() {
 	setTestConfig()
-	setInfuraConfig()
 	setABIPath()
 }
 
 func setTestConfig() {
 	TestConfig = viper.New()
-	TestConfig.SetConfigName("private")
-	TestConfig.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
+	TestConfig.SetConfigName("testing")
+	TestConfig.AddConfigPath("$GOPATH/src/github.com/makerdao/vulcanizedb/environments/")
 	err := TestConfig.ReadInConfig()
 	if err != nil {
 		logrus.Fatal(err)
 	}
 	ipc := TestConfig.GetString("client.ipcPath")
+
+	// If we don't have an ipc path in the config file, check the env variable
+	if ipc == "" {
+		TestConfig.BindEnv("url", "CLIENT_IPCPATH")
+		ipc = TestConfig.GetString("url")
+	}
+	if ipc == "" {
+		logrus.Fatal(errors.New("testing.toml IPC path or $CLIENT_IPCPATH env variable need to be set"))
+	}
+
 	hn := TestConfig.GetString("database.hostname")
 	port := TestConfig.GetInt("database.port")
 	name := TestConfig.GetString("database.name")
@@ -65,33 +72,9 @@ func setTestConfig() {
 	}
 }
 
-func setInfuraConfig() {
-	Infura = viper.New()
-	Infura.SetConfigName("infura")
-	Infura.AddConfigPath("$GOPATH/src/github.com/vulcanize/vulcanizedb/environments/")
-	err := Infura.ReadInConfig()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	ipc := Infura.GetString("client.ipcpath")
-
-	// If we don't have an ipc path in the config file, check the env variable
-	if ipc == "" {
-		Infura.BindEnv("url", "INFURA_URL")
-		ipc = Infura.GetString("url")
-	}
-	if ipc == "" {
-		logrus.Fatal(errors.New("infura.toml IPC path or $INFURA_URL env variable need to be set"))
-	}
-
-	InfuraClient = config.Client{
-		IPCPath: ipc,
-	}
-}
-
 func setABIPath() {
 	gp := os.Getenv("GOPATH")
-	ABIFilePath = gp + "/src/github.com/vulcanize/vulcanizedb/pkg/geth/testing/"
+	ABIFilePath = gp + "/src/github.com/makerdao/vulcanizedb/pkg/eth/testing/"
 }
 
 func NewTestDB(node core.Node) *postgres.DB {
@@ -103,28 +86,16 @@ func NewTestDB(node core.Node) *postgres.DB {
 }
 
 func CleanTestDB(db *postgres.DB) {
-	db.MustExec("DELETE FROM addresses")
-	db.MustExec("DELETE FROM blocks")
-	db.MustExec("DELETE FROM checked_headers")
+	db.MustExec("DELETE FROM public.addresses")
+	db.MustExec("DELETE FROM public.checked_headers")
 	// can't delete from eth_nodes since this function is called after the required eth_node is persisted
-	db.MustExec("DELETE FROM full_sync_logs")
-	db.MustExec("DELETE FROM full_sync_receipts")
-	db.MustExec("DELETE FROM full_sync_transactions")
-	db.MustExec("DELETE FROM goose_db_version")
-	db.MustExec("DELETE FROM header_sync_logs")
-	db.MustExec("DELETE FROM header_sync_receipts")
-	db.MustExec("DELETE FROM header_sync_transactions")
-	db.MustExec("DELETE FROM headers")
-	db.MustExec("DELETE FROM log_filters")
-	db.MustExec("DELETE FROM queued_storage")
-	db.MustExec("DELETE FROM watched_contracts")
-	db.MustExec("DELETE FROM watched_logs")
-}
-
-func CleanCheckedHeadersTable(db *postgres.DB, columnNames []string) {
-	for _, name := range columnNames {
-		db.MustExec("ALTER TABLE checked_headers DROP COLUMN IF EXISTS " + name)
-	}
+	db.MustExec("DELETE FROM public.goose_db_version")
+	db.MustExec("DELETE FROM public.event_logs")
+	db.MustExec("DELETE FROM public.receipts")
+	db.MustExec("DELETE FROM public.transactions")
+	db.MustExec("DELETE FROM public.headers")
+	db.MustExec("DELETE FROM public.storage_diff")
+	db.MustExec("DELETE FROM public.watched_logs")
 }
 
 // Returns a new test node, with the same ID
@@ -132,14 +103,7 @@ func NewTestNode() core.Node {
 	return core.Node{
 		GenesisBlock: "GENESIS",
 		NetworkID:    1,
-		ID:           "b6f90c0fdd8ec9607aed8ee45c69322e47b7063f0bfb7a29c8ecafab24d0a22d24dd2329b5ee6ed4125a03cb14e57fd584e67f9e53e6c631055cbbd82f080845",
+		ID:           fakes.RandomString(128),
 		ClientName:   "Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9",
 	}
-}
-
-func NewTestBlock(blockNumber int64, repository repositories.BlockRepository) (blockId int64) {
-	blockId, err := repository.CreateOrUpdateBlock(core.Block{Number: blockNumber})
-	Expect(err).NotTo(HaveOccurred())
-
-	return blockId
 }

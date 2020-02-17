@@ -17,8 +17,8 @@
 package repositories
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 )
 
 type CheckedLogsRepository struct {

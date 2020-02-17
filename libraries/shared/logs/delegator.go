@@ -18,11 +18,13 @@ package logs
 
 import (
 	"errors"
+	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
 var (
@@ -37,8 +39,15 @@ type ILogDelegator interface {
 
 type LogDelegator struct {
 	Chunker       chunker.Chunker
-	LogRepository datastore.HeaderSyncLogRepository
+	LogRepository datastore.EventLogRepository
 	Transformers  []transformer.EventTransformer
+}
+
+func NewLogDelegator(db *postgres.DB) *LogDelegator {
+	return &LogDelegator{
+		Chunker:       chunker.NewLogChunker(),
+		LogRepository: repositories.NewEventLogRepository(db),
+	}
 }
 
 func (delegator *LogDelegator) AddTransformer(t transformer.EventTransformer) {
@@ -51,7 +60,7 @@ func (delegator *LogDelegator) DelegateLogs() error {
 		return ErrNoTransformers
 	}
 
-	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedHeaderSyncLogs()
+	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedEventLogs()
 	if fetchErr != nil {
 		logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
 		return fetchErr
@@ -70,7 +79,7 @@ func (delegator *LogDelegator) DelegateLogs() error {
 	return nil
 }
 
-func (delegator *LogDelegator) delegateLogs(logs []core.HeaderSyncLog) error {
+func (delegator *LogDelegator) delegateLogs(logs []core.EventLog) error {
 	chunkedLogs := delegator.Chunker.ChunkLogs(logs)
 	for _, t := range delegator.Transformers {
 		transformerName := t.GetConfig().TransformerName

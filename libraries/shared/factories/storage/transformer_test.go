@@ -17,84 +17,93 @@
 package storage_test
 
 import (
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/storage"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
 var _ = Describe("Storage transformer", func() {
 	var (
-		mappings   *mocks.MockMappings
-		repository *mocks.MockStorageRepository
-		t          storage.Transformer
+		storageKeysLookup *mocks.MockStorageKeysLookup
+		repository        *mocks.MockStorageRepository
+		t                 storage.Transformer
 	)
 
 	BeforeEach(func() {
-		mappings = &mocks.MockMappings{}
+		storageKeysLookup = &mocks.MockStorageKeysLookup{}
 		repository = &mocks.MockStorageRepository{}
 		t = storage.Transformer{
-			HashedAddress: common.Hash{},
-			Mappings:      mappings,
-			Repository:    repository,
+			Address:           common.Address{},
+			StorageKeysLookup: storageKeysLookup,
+			Repository:        repository,
 		}
 	})
 
 	It("returns the contract address being watched", func() {
-		fakeAddress := utils.HexToKeccak256Hash("0x12345")
-		t.HashedAddress = fakeAddress
+		fakeAddress := fakes.FakeAddress
+		keccakOfAddress := types.HexToKeccak256Hash(fakeAddress.Hex())
+		t.Address = fakeAddress
 
-		Expect(t.KeccakContractAddress()).To(Equal(fakeAddress))
+		Expect(t.KeccakContractAddress()).To(Equal(keccakOfAddress))
 	})
 
 	It("looks up metadata for storage key", func() {
-		t.Execute(utils.StorageDiff{})
+		t.Execute(types.PersistedDiff{})
 
-		Expect(mappings.LookupCalled).To(BeTrue())
+		Expect(storageKeysLookup.LookupCalled).To(BeTrue())
 	})
 
 	It("returns error if lookup fails", func() {
-		mappings.LookupErr = fakes.FakeError
+		storageKeysLookup.LookupErr = fakes.FakeError
 
-		err := t.Execute(utils.StorageDiff{})
+		err := t.Execute(types.PersistedDiff{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
 	})
 
 	It("creates storage row with decoded data", func() {
-		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
-		mappings.Metadata = fakeMetadata
+		fakeMetadata := types.ValueMetadata{Type: types.Address}
+		storageKeysLookup.Metadata = fakeMetadata
 		rawValue := common.HexToAddress("0x12345")
-		fakeBlockNumber := 123
-		fakeBlockHash := "0x67890"
-		fakeRow := utils.StorageDiff{
-			HashedAddress: common.Hash{},
-			BlockHash:     common.HexToHash(fakeBlockHash),
-			BlockHeight:   fakeBlockNumber,
-			StorageKey:    common.Hash{},
-			StorageValue:  rawValue.Hash(),
+		fakeHeaderID := rand.Int63()
+		fakeBlockNumber := rand.Int()
+		fakeBlockHash := fakes.RandomString(64)
+		fakeRow := types.PersistedDiff{
+			ID:       rand.Int63(),
+			HeaderID: fakeHeaderID,
+			RawDiff: types.RawDiff{
+				HashedAddress: common.Hash{},
+				BlockHash:     common.HexToHash(fakeBlockHash),
+				BlockHeight:   fakeBlockNumber,
+				StorageKey:    common.Hash{},
+				StorageValue:  rawValue.Hash(),
+			},
 		}
 
 		err := t.Execute(fakeRow)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-		Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+		Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
+		Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 		Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 		Expect(repository.PassedValue.(string)).To(Equal(rawValue.Hex()))
 	})
 
 	It("returns error if creating row fails", func() {
 		rawValue := common.HexToAddress("0x12345")
-		fakeMetadata := utils.StorageValueMetadata{Type: utils.Address}
-		mappings.Metadata = fakeMetadata
+		fakeMetadata := types.ValueMetadata{Type: types.Address}
+		storageKeysLookup.Metadata = fakeMetadata
 		repository.CreateErr = fakes.FakeError
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: rawValue.Hash()}}
 
-		err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+		err := t.Execute(diff)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(fakes.FakeError))
@@ -102,36 +111,41 @@ var _ = Describe("Storage transformer", func() {
 
 	Describe("when a storage row contains more than one item packed in storage", func() {
 		var (
-			rawValue        = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
-			fakeBlockNumber = 123
-			fakeBlockHash   = "0x67890"
-			packedTypes     = make(map[int]utils.ValueType)
+			rawValue     = common.HexToAddress("000000000000000000000000000000000000000000000002a300000000002a30")
+			fakeHeaderID = rand.Int63()
+			packedTypes  = make(map[int]types.ValueType)
 		)
-		packedTypes[0] = utils.Uint48
-		packedTypes[1] = utils.Uint48
+		packedTypes[0] = types.Uint48
+		packedTypes[1] = types.Uint48
 
-		var fakeMetadata = utils.StorageValueMetadata{
+		var fakeMetadata = types.ValueMetadata{
 			Name:        "",
 			Keys:        nil,
-			Type:        utils.PackedSlot,
+			Type:        types.PackedSlot,
 			PackedTypes: packedTypes,
 		}
 
 		It("passes the decoded data items to the repository", func() {
-			mappings.Metadata = fakeMetadata
-			fakeRow := utils.StorageDiff{
-				HashedAddress: common.Hash{},
-				BlockHash:     common.HexToHash(fakeBlockHash),
-				BlockHeight:   fakeBlockNumber,
-				StorageKey:    common.Hash{},
-				StorageValue:  rawValue.Hash(),
+			storageKeysLookup.Metadata = fakeMetadata
+			fakeBlockNumber := rand.Int()
+			fakeBlockHash := fakes.RandomString(64)
+			fakeRow := types.PersistedDiff{
+				ID:       rand.Int63(),
+				HeaderID: fakeHeaderID,
+				RawDiff: types.RawDiff{
+					HashedAddress: common.Hash{},
+					BlockHash:     common.HexToHash(fakeBlockHash),
+					BlockHeight:   fakeBlockNumber,
+					StorageKey:    common.Hash{},
+					StorageValue:  rawValue.Hash(),
+				},
 			}
 
 			err := t.Execute(fakeRow)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(repository.PassedBlockNumber).To(Equal(fakeBlockNumber))
-			Expect(repository.PassedBlockHash).To(Equal(common.HexToHash(fakeBlockHash).Hex()))
+			Expect(repository.PassedHeaderID).To(Equal(fakeHeaderID))
+			Expect(repository.PassedDiffID).To(Equal(fakeRow.ID))
 			Expect(repository.PassedMetadata).To(Equal(fakeMetadata))
 			expectedPassedValue := make(map[int]string)
 			expectedPassedValue[0] = "10800"
@@ -140,10 +154,11 @@ var _ = Describe("Storage transformer", func() {
 		})
 
 		It("returns error if creating a row fails", func() {
-			mappings.Metadata = fakeMetadata
+			storageKeysLookup.Metadata = fakeMetadata
 			repository.CreateErr = fakes.FakeError
+			diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: rawValue.Hash()}}
 
-			err := t.Execute(utils.StorageDiff{StorageValue: rawValue.Hash()})
+			err := t.Execute(diff)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))

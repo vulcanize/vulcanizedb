@@ -26,10 +26,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/test_config"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/test_config"
 )
 
 var _ = Describe("Block header repository", func() {
@@ -78,10 +78,6 @@ var _ = Describe("Block header repository", func() {
 			err = db.Get(&ethNodeId, `SELECT eth_node_id FROM public.headers WHERE block_number = $1`, header.BlockNumber)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ethNodeId).To(Equal(db.NodeID))
-			var ethNodeFingerprint string
-			err = db.Get(&ethNodeFingerprint, `SELECT eth_node_fingerprint FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ethNodeFingerprint).To(Equal(db.Node.ID))
 		})
 
 		It("returns valid header exists error if attempting duplicate headers", func() {
@@ -89,6 +85,20 @@ var _ = Describe("Block header repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+
+			var dbHeaders []core.Header
+			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbHeaders)).To(Equal(1))
+		})
+
+		It("does not duplicate headers in concurrent insert", func() {
+			_, err = repo.InternalInsertHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = repo.InternalInsertHeader(header)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
 
@@ -119,12 +129,10 @@ var _ = Describe("Block header repository", func() {
 			Expect(dbHeader.Raw).To(MatchJSON(headerTwo.Raw))
 		})
 
-		It("does not replace header if node fingerprint is different", func() {
+		It("does not replace header if node id is different", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
@@ -143,13 +151,11 @@ var _ = Describe("Block header repository", func() {
 			Expect(len(dbHeaders)).To(Equal(2))
 		})
 
-		It("only replaces header with matching node fingerprint", func() {
+		It("only replaces header with matching node id", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 			headerTwo := core.Header{
@@ -216,8 +222,8 @@ var _ = Describe("Block header repository", func() {
 				Rlp:               []byte{1, 2, 3},
 			}
 
-			receiptRepo := repositories.HeaderSyncReceiptRepository{}
-			_, receiptErr := receiptRepo.CreateHeaderSyncReceiptInTx(headerID, txId, receipt, tx)
+			receiptRepo := repositories.ReceiptRepository{}
+			_, receiptErr := receiptRepo.CreateReceiptInTx(headerID, txId, receipt, tx)
 			Expect(receiptErr).ToNot(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
@@ -240,7 +246,7 @@ var _ = Describe("Block header repository", func() {
 			var dbReceipt idModel
 			getReceiptErr := db.Get(&dbReceipt,
 				`SELECT transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
-				FROM public.header_sync_receipts WHERE header_id = $1`, headerID)
+				FROM public.receipts WHERE header_id = $1`, headerID)
 			Expect(getReceiptErr).NotTo(HaveOccurred())
 
 			Expect(dbReceipt.TransactionId).To(Equal(txId))
@@ -302,7 +308,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransactions).To(ConsistOf(transactions))
 		})
@@ -314,7 +320,7 @@ var _ = Describe("Block header repository", func() {
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(2))
 		})
@@ -344,14 +350,14 @@ var _ = Describe("Block header repository", func() {
 			tx, err := db.Beginx()
 			Expect(err).ToNot(HaveOccurred())
 			_, insertErr := repo.CreateTransactionInTx(tx, headerID, transaction)
+			Expect(insertErr).NotTo(HaveOccurred())
 			commitErr := tx.Commit()
 			Expect(commitErr).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
 
 			var dbTransaction core.TransactionModel
 			err = db.Get(&dbTransaction,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbTransaction).To(Equal(transaction))
 		})
@@ -377,25 +383,16 @@ var _ = Describe("Block header repository", func() {
 				Value:    "0",
 			}
 
-			tx1, err := db.Beginx()
-			Expect(err).ToNot(HaveOccurred())
-			txId1, insertErr := repo.CreateTransactionInTx(tx1, headerID, transaction)
-			commit1Err := tx1.Commit()
-			Expect(commit1Err).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
+			tx1Err := repo.CreateTransactions(headerID, []core.TransactionModel{transaction})
+			Expect(tx1Err).NotTo(HaveOccurred())
 
-			tx2, err := db.Beginx()
-			Expect(err).ToNot(HaveOccurred())
-			txId2, insertErr := repo.CreateTransactionInTx(tx2, headerID, transaction)
-			commit2Err := tx2.Commit()
-			Expect(commit2Err).ToNot(HaveOccurred())
-			Expect(insertErr).NotTo(HaveOccurred())
-			Expect(txId1).To(Equal(txId2))
+			tx2Err := repo.CreateTransactions(headerID, []core.TransactionModel{transaction})
+			Expect(tx2Err).NotTo(HaveOccurred())
 
 			var dbTransactions []core.TransactionModel
 			err = db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
-				FROM public.header_sync_transactions WHERE header_id = $1`, headerID)
+				FROM public.transactions WHERE header_id = $1`, headerID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(1))
 		})
@@ -416,13 +413,11 @@ var _ = Describe("Block header repository", func() {
 			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
-		It("does not return header for a different node fingerprint", func() {
+		It("does not return header for a different node id", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
 			_, err = repoTwo.GetHeader(header.BlockNumber)
@@ -455,13 +450,13 @@ var _ = Describe("Block header repository", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5, db.Node.ID)
+			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
 		})
 
-		It("does not count headers created by a different node fingerprint", func() {
+		It("does not count headers created by a different node id", func() {
 			_, err = repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
@@ -483,12 +478,10 @@ var _ = Describe("Block header repository", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			nodeTwo := core.Node{ID: "FingerprintTwo"}
-			dbTwo, err := postgres.NewDB(test_config.DBConfig, nodeTwo)
-			Expect(err).NotTo(HaveOccurred())
+			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
-			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5, nodeTwo.ID)
+			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{1, 2, 3, 4, 5}))

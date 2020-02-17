@@ -17,38 +17,39 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"plugin"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	log "github.com/sirupsen/logrus"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/eth"
+	"github.com/makerdao/vulcanizedb/pkg/eth/client"
+	"github.com/makerdao/vulcanizedb/pkg/eth/converters"
+	"github.com/makerdao/vulcanizedb/pkg/eth/node"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/geth"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/geth/converters/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/geth/node"
 )
 
 var (
-	cfgFile              string
-	databaseConfig       config.Database
-	genConfig            config.Plugin
-	ipc                  string
-	levelDbPath          string
-	queueRecheckInterval time.Duration
-	startingBlockNumber  int64
-	storageDiffsPath     string
-	syncAll              bool
-	endingBlockNumber    int64
-	recheckHeadersArg    bool
-	SubCommand           string
-	LogWithCommand       log.Entry
-	storageDiffsSource   string
+	LogWithCommand      logrus.Entry
+	SubCommand          string
+	cfgFile             string
+	databaseConfig      config.Database
+	genConfig           config.Plugin
+	ipc                 string
+	maxUnexpectedErrors int
+	recheckHeadersArg   bool
+	retryInterval       time.Duration
+	startingBlockNumber int64
+	storageDiffsPath    string
+	storageDiffsSource  string
 )
 
 const (
@@ -62,9 +63,9 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	log.Info("----- Starting vDB -----")
+	logrus.Info("----- Starting vDB -----")
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
 
@@ -72,14 +73,13 @@ func initFuncs(cmd *cobra.Command, args []string) {
 	setViperConfigs()
 	logLvlErr := logLevel()
 	if logLvlErr != nil {
-		log.Fatal("Could not set log level: ", logLvlErr)
+		logrus.Fatalf("Could not set log level: %s", logLvlErr.Error())
 	}
 
 }
 
 func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
-	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	storageDiffsSource = viper.GetString("storageDiffs.source")
 	databaseConfig = config.Database{
@@ -93,23 +93,23 @@ func setViperConfigs() {
 }
 
 func logLevel() error {
-	lvl, err := log.ParseLevel(viper.GetString("log.level"))
+	lvl, err := logrus.ParseLevel(viper.GetString("log.level"))
 	if err != nil {
 		return err
 	}
-	log.SetLevel(lvl)
-	if lvl > log.InfoLevel {
-		log.SetReportCaller(true)
+	logrus.SetLevel(lvl)
+	if lvl > logrus.InfoLevel {
+		logrus.SetReportCaller(true)
 	}
-	log.Info("Log level set to ", lvl.String())
+	logrus.Info("Log level set to ", lvl.String())
 	return nil
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 	// When searching for env variables, replace dots in config keys with underscores
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
@@ -118,11 +118,10 @@ func init() {
 	rootCmd.PersistentFlags().String("database-user", "", "database user")
 	rootCmd.PersistentFlags().String("database-password", "", "database password")
 	rootCmd.PersistentFlags().String("client-ipcPath", "", "location of geth.ipc file")
-	rootCmd.PersistentFlags().String("client-levelDbPath", "", "location of levelDb chaindata")
 	rootCmd.PersistentFlags().String("filesystem-storageDiffsPath", "", "location of storage diffs csv file")
 	rootCmd.PersistentFlags().String("storageDiffs-source", "csv", "where to get the state diffs: csv or geth")
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
-	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().String("log-level", logrus.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
@@ -130,7 +129,6 @@ func init() {
 	viper.BindPFlag("database.user", rootCmd.PersistentFlags().Lookup("database-user"))
 	viper.BindPFlag("database.password", rootCmd.PersistentFlags().Lookup("database-password"))
 	viper.BindPFlag("client.ipcPath", rootCmd.PersistentFlags().Lookup("client-ipcPath"))
-	viper.BindPFlag("client.levelDbPath", rootCmd.PersistentFlags().Lookup("client-levelDbPath"))
 	viper.BindPFlag("filesystem.storageDiffsPath", rootCmd.PersistentFlags().Lookup("filesystem-storageDiffsPath"))
 	viper.BindPFlag("storageDiffs.source", rootCmd.PersistentFlags().Lookup("storageDiffs-source"))
 	viper.BindPFlag("exporter.fileName", rootCmd.PersistentFlags().Lookup("exporter-name"))
@@ -140,27 +138,23 @@ func init() {
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
+		if err := viper.ReadInConfig(); err == nil {
+			logrus.Infof("Using config file: %s\n\n", viper.ConfigFileUsed())
+		} else {
+			invalidConfigError := "couldn't read config file"
+			logrus.Fatalf("%s: %s", invalidConfigError, err.Error())
+		}
 	} else {
-		noConfigError := "No config file passed with --config flag"
-		fmt.Println("Error: ", noConfigError)
-		log.Fatal(noConfigError)
-	}
-
-	if err := viper.ReadInConfig(); err == nil {
-		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
-	} else {
-		invalidConfigError := "Couldn't read config file"
-		formattedError := fmt.Sprintf("%s: %s", invalidConfigError, err.Error())
-		log.Fatal(formattedError)
+		logrus.Warn("No config file passed with --config flag; attempting to use env vars")
 	}
 }
 
-func getBlockChain() *geth.BlockChain {
+func getBlockChain() *eth.BlockChain {
 	rpcClient, ethClient := getClients()
 	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRpcTransactionConverter(ethClient)
-	return geth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
+	transactionConverter := converters.NewTransactionConverter(ethClient)
+	return eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
 }
 
 func getClients() (client.RpcClient, *ethclient.Client) {
@@ -173,4 +167,103 @@ func getClients() (client.RpcClient, *ethclient.Client) {
 	ethClient := ethclient.NewClient(rawRpcClient)
 
 	return rpcClient, ethClient
+}
+
+func prepConfig() error {
+	LogWithCommand.Info("configuring plugin")
+	names := viper.GetStringSlice("exporter.transformerNames")
+	transformers := make(map[string]config.Transformer)
+	for _, name := range names {
+		transformer := viper.GetStringMapString("exporter." + name)
+		p, pOK := transformer["path"]
+		if !pOK || p == "" {
+			return fmt.Errorf("transformer config is missing `path` value: %s", name)
+		}
+		r, rOK := transformer["repository"]
+		if !rOK || r == "" {
+			return fmt.Errorf("transformer config is missing `repository` value: %s", name)
+		}
+		m, mOK := transformer["migrations"]
+		if !mOK || m == "" {
+			return fmt.Errorf("transformer config is missing `migrations` value: %s", name)
+		}
+		mr, mrOK := transformer["rank"]
+		if !mrOK || mr == "" {
+			return fmt.Errorf("transformer config is missing `rank` value: %s", name)
+		}
+		rank, err := strconv.ParseUint(mr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("migration `rank` can't be converted to an unsigned integer: %s", name)
+		}
+		t, tOK := transformer["type"]
+		if !tOK {
+			return fmt.Errorf("transformer config is missing `type` value: %s", name)
+		}
+		transformerType := config.GetTransformerType(t)
+		if transformerType == config.UnknownTransformerType {
+			return errors.New(`unknown transformer type in exporter config accepted types are "eth_event", "eth_storage"`)
+		}
+
+		transformers[name] = config.Transformer{
+			Path:           p,
+			Type:           transformerType,
+			RepositoryPath: r,
+			MigrationPath:  m,
+			MigrationRank:  rank,
+		}
+	}
+
+	genConfig = config.Plugin{
+		Transformers: transformers,
+		FilePath:     "$GOPATH/src/github.com/makerdao/vulcanizedb/plugins",
+		FileName:     viper.GetString("exporter.name"),
+		Save:         viper.GetBool("exporter.save"),
+		Home:         viper.GetString("exporter.home"),
+	}
+	return nil
+}
+
+func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer, error) {
+	// Build plugin generator config
+	configErr := prepConfig()
+	if configErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to to prepare config: %v", SubCommand, configErr)
+	}
+
+	// Get the plugin path and load the plugin
+	_, pluginPath, pathErr := genConfig.GetPluginPaths()
+	if pathErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to get plugin paths: %v", SubCommand, pathErr)
+	}
+
+	LogWithCommand.Info("linking plugin ", pluginPath)
+	plug, openErr := plugin.Open(pluginPath)
+	if openErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: linking plugin failed: %v", SubCommand, openErr)
+	}
+
+	// Load the `Exporter` symbol from the plugin
+	LogWithCommand.Info("loading transformers from plugin")
+	symExporter, lookupErr := plug.Lookup("Exporter")
+	if lookupErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: loading Exporter symbol failed: %v", SubCommand, lookupErr)
+	}
+
+	// Assert that the symbol is of type Exporter
+	exporter, ok := symExporter.(Exporter)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: plugged-in symbol not of type Exporter", SubCommand)
+	}
+
+	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
+	eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers := exporter.Export()
+
+	return eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers, nil
+}
+
+func validateBlockNumberArg(blockNumber int64, argName string) error {
+	if blockNumber == -1 {
+		return fmt.Errorf("SubCommand: %v: %s argument is required and no value was given", SubCommand, argName)
+	}
+	return nil
 }

@@ -63,7 +63,7 @@ these are run independently, instead of using `composeAndExecute`, a couple of t
 
 * The `execute` command does not require the plugin transformer dependencies be located in their `$GOPATH` directories,
 instead it expects a .so file (of the name specified in the config file) to be in
-`$GOPATH/src/github.com/vulcanize/vulcanizedb/plugins/` and, as noted above, also expects the plugin db migrations to
+`$GOPATH/src/github.com/makerdao/vulcanizedb/plugins/` and, as noted above, also expects the plugin db migrations to
  have already been ran against the database.
 
  * Usage:
@@ -81,11 +81,6 @@ Can be useful for redundancy if you suspect that your node is not always returni
 Argument is expected to be a boolean: e.g. `-r=true`.
 Defaults to `false`.
 
-- `query-recheck-interval`/`-q` - specifies interval for re-checking storage diffs that haven been queued for later processing
-(by default, the storage watched queues storage diffs if transformer execution fails, on the assumption that subsequent data derived from the event transformers may enable us to decode storage keys that we don't recognize right now).
-Argument is expected to be a duration (integer measured in nanoseconds): e.g. `-q=10m30s` (for 10 minute, 30 second intervals).
-Defaults to `5m` (5 minutes).
-
 ### Configuration
 A .toml config file is specified when executing the commands.
 The config provides information for composing a set of transformers from external repositories:
@@ -102,7 +97,7 @@ The config provides information for composing a set of transformers from externa
     ipcPath  = "/Users/user/Library/Ethereum/geth.ipc"
 
 [exporter]
-    home     = "github.com/vulcanize/vulcanizedb"
+    home     = "github.com/makerdao/vulcanizedb"
     name     = "exampleTransformerExporter"
     save     = false
     transformerNames = [
@@ -136,7 +131,7 @@ The config provides information for composing a set of transformers from externa
         migrations = "to/db/migrations"
         rank = "1"
 ```
-- `home` is the name of the package you are building the plugin for, in most cases this is github.com/vulcanize/vulcanizedb
+- `home` is the name of the package you are building the plugin for, in most cases this is github.com/makerdao/vulcanizedb
 - `name` is the name used for the plugin files (.so and .go)   
 - `save` indicates whether or not the user wants to save the .go file instead of removing it after .so compilation. Sometimes useful for debugging/trouble-shooting purposes.
 - `transformerNames` is the list of the names of the transformers we are composing together, so we know how to access their submaps in the exporter map
@@ -151,7 +146,7 @@ The config provides information for composing a set of transformers from externa
          that fetches event logs from an ETH node
         - `eth_contract` indicates the transformer works with the [contract watcher](../staging/libraries/shared/watcher/contract_watcher.go)
         that is made to work with [contract_watcher pkg](../../staging/pkg/contract_watcher)
-        based transformers which work with either a header or full sync vDB to watch events and poll public methods ([example1](https://github.com/vulcanize/account_transformers/tree/master/transformers/account/light), [example2](https://github.com/vulcanize/ens_transformers/tree/working/transformers/domain_records))
+        based transformers which work with vDB to watch events and poll public methods ([example1](https://github.com/vulcanize/account_transformers/tree/master/transformers/account/light), [example2](https://github.com/vulcanize/ens_transformers/tree/working/transformers/domain_records))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
         - this is to help isolate any potential conflicts between transformer migrations
@@ -172,7 +167,7 @@ The general structure of a plugin .go file, and what we would see built with the
 package main
 
 import (
-	interface1 "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	interface1 "github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	transformer1 "github.com/account/repo/path/to/transformer1"
 	transformer2 "github.com/account/repo/path/to/transformer2"
 	transformer3 "github.com/account/repo/path/to/transformer3"

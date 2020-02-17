@@ -18,25 +18,17 @@ package datastore
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/jmoiron/sqlx"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/filters"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type AddressRepository interface {
 	GetOrCreateAddress(address string) (int, error)
 }
 
-type BlockRepository interface {
-	CreateOrUpdateBlock(block core.Block) (int64, error)
-	GetBlock(blockNumber int64) (core.Block, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) []int64
-	SetBlocksStatus(chainHead int64) error
-}
-
 type CheckedHeadersRepository interface {
 	MarkHeaderChecked(headerID int64) error
-	MarkHeadersUnchecked(startingBlockNumber int64) error
+	MarkHeadersUncheckedSince(startingBlockNumber int64) error
+	MarkSingleHeaderUnchecked(blockNumber int64) error
 	UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error)
 }
 
@@ -45,44 +37,14 @@ type CheckedLogsRepository interface {
 	MarkLogWatched(addresses []string, topic0 string) error
 }
 
-type ContractRepository interface {
-	CreateContract(contract core.Contract) error
-	GetContract(contractHash string) (core.Contract, error)
-	ContractExists(contractHash string) (bool, error)
-}
-
-type FilterRepository interface {
-	CreateFilter(filter filters.LogFilter) error
-	GetFilter(name string) (filters.LogFilter, error)
-}
-
-type FullSyncLogRepository interface {
-	CreateLogs(logs []core.FullSyncLog, receiptId int64) error
-	GetLogs(address string, blockNumber int64) ([]core.FullSyncLog, error)
-}
-
 type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
 	GetHeader(blockNumber int64) (core.Header, error)
-	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error)
+	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error)
 }
 
-type HeaderSyncLogRepository interface {
-	GetUntransformedHeaderSyncLogs() ([]core.HeaderSyncLog, error)
-	CreateHeaderSyncLogs(headerID int64, logs []types.Log) error
-}
-
-type FullSyncReceiptRepository interface {
-	CreateReceiptsAndLogs(blockId int64, receipts []core.Receipt) error
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
-	GetFullSyncReceipt(txHash string) (core.Receipt, error)
-}
-
-type HeaderSyncReceiptRepository interface {
-	CreateFullSyncReceiptInTx(blockId int64, receipt core.Receipt, tx *sqlx.Tx) (int64, error)
-}
-
-type WatchedEventRepository interface {
-	GetWatchedEvents(name string) ([]*core.WatchedEvent, error)
+type EventLogRepository interface {
+	GetUntransformedEventLogs() ([]core.EventLog, error)
+	CreateEventLogs(headerID int64, logs []types.Log) error
 }

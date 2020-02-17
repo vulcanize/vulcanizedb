@@ -17,9 +17,8 @@
 package fakes
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/gomega"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 )
 
 type MockHeaderRepository struct {
@@ -29,8 +28,9 @@ type MockHeaderRepository struct {
 	createOrUpdateHeaderReturnID           int64
 	CreateTransactionsCalled               bool
 	CreateTransactionsError                error
-	getHeaderError                         error
-	getHeaderReturnBlockHash               string
+	GetHeaderError                         error
+	GetHeaderReturnHash                    string
+	GetHeaderReturnID                      int64
 	missingBlockNumbers                    []int64
 	headerExists                           bool
 	GetHeaderPassedBlockNumber             int64
@@ -65,19 +65,15 @@ func (repository *MockHeaderRepository) CreateTransactions(headerID int64, trans
 
 func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	repository.GetHeaderPassedBlockNumber = blockNumber
-	return core.Header{BlockNumber: blockNumber, Hash: repository.getHeaderReturnBlockHash}, repository.getHeaderError
+	return core.Header{
+		Id:          repository.GetHeaderReturnID,
+		BlockNumber: blockNumber,
+		Hash:        repository.GetHeaderReturnHash,
+	}, repository.GetHeaderError
 }
 
-func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
+func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	return repository.missingBlockNumbers, nil
-}
-
-func (repository *MockHeaderRepository) SetGetHeaderError(err error) {
-	repository.getHeaderError = err
-}
-
-func (repository *MockHeaderRepository) SetGetHeaderReturnBlockHash(hash string) {
-	repository.getHeaderReturnBlockHash = hash
 }
 
 func (repository *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(times int, blockNumbers []int64) {

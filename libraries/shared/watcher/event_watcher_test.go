@@ -18,14 +18,16 @@ package watcher_test
 
 import (
 	"errors"
+	"time"
+
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
+	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/logs"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
 var errExecuteClosed = errors.New("this error means the mocks were finished executing")
@@ -34,16 +36,14 @@ var _ = Describe("Event Watcher", func() {
 	var (
 		delegator    *mocks.MockLogDelegator
 		extractor    *mocks.MockLogExtractor
-		eventWatcher *watcher.EventWatcher
+		eventWatcher watcher.EventWatcher
 	)
 
 	BeforeEach(func() {
 		delegator = &mocks.MockLogDelegator{}
 		extractor = &mocks.MockLogExtractor{}
-		eventWatcher = &watcher.EventWatcher{
-			LogDelegator: delegator,
-			LogExtractor: extractor,
-		}
+		bc := fakes.MockBlockChain{}
+		eventWatcher = watcher.NewEventWatcher(nil, &bc, extractor, delegator, 0, time.Nanosecond)
 	})
 
 	Describe("AddTransformers", func() {
@@ -83,96 +83,136 @@ var _ = Describe("Event Watcher", func() {
 	})
 
 	Describe("Execute", func() {
-
-		It("extracts watched logs", func(done Done) {
-			delegator.DelegateErrors = []error{logs.ErrNoLogs}
+		It("extracts watched logs", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Eventually(func() bool {
-				return extractor.ExtractLogsCount > 0
-			}).Should(BeTrue())
-			close(done)
+			Expect(extractor.ExtractLogsCount > 0).To(BeTrue())
 		})
 
-		It("returns error if extracting logs fails", func(done Done) {
-			delegator.DelegateErrors = []error{logs.ErrNoLogs}
+		It("returns error if extracting logs fails", func() {
 			extractor.ExtractLogsErrors = []error{fakes.FakeError}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(fakes.FakeError))
-			close(done)
 		})
 
-		It("extracts watched logs again if missing headers found", func(done Done) {
-			delegator.DelegateErrors = []error{logs.ErrNoLogs}
+		It("retries on extractor error if watcher configured with greater than zero maximum consecutive errors", func() {
+			eventWatcher.MaxConsecutiveUnexpectedErrs = 1
+			extractor.ExtractLogsErrors = []error{fakes.FakeError, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Expect(extractor.ExtractLogsCount > 1).To(BeTrue())
+		})
+
+		It("returns error if maximum consecutive errors exceeded", func() {
+			eventWatcher.MaxConsecutiveUnexpectedErrs = 1
+			extractor.ExtractLogsErrors = []error{fakes.FakeError, fakes.FakeError}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
+		It("does not treat absence of unchecked headers as an unexpected error", func() {
+			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+		})
+
+		It("extracts watched logs again if missing headers found", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Eventually(func() bool {
-				return extractor.ExtractLogsCount > 1
-			}).Should(BeTrue())
-			close(done)
+			Expect(extractor.ExtractLogsCount > 1).To(BeTrue())
 		})
 
-		It("returns error if extracting logs fails on subsequent run", func(done Done) {
-			delegator.DelegateErrors = []error{logs.ErrNoLogs}
+		It("returns error if extracting logs fails on subsequent run", func() {
 			extractor.ExtractLogsErrors = []error{nil, fakes.FakeError}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(fakes.FakeError))
-			close(done)
 		})
 
 		It("delegates untransformed logs", func() {
 			delegator.DelegateErrors = []error{nil, errExecuteClosed}
-			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Eventually(func() bool {
-				return delegator.DelegateCallCount > 0
-			}).Should(BeTrue())
+			Expect(delegator.DelegateCallCount > 0).To(BeTrue())
 		})
 
-		It("returns error if delegating logs fails", func(done Done) {
+		It("returns error if delegating logs fails", func() {
 			delegator.DelegateErrors = []error{fakes.FakeError}
-			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(fakes.FakeError))
-			close(done)
 		})
 
-		It("delegates logs again if untransformed logs found", func(done Done) {
-			delegator.DelegateErrors = []error{nil, nil, nil, errExecuteClosed}
-			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
+		It("retries on delegator error if watcher configured with greater than zero maximum consecutive errors", func() {
+			eventWatcher.MaxConsecutiveUnexpectedErrs = 1
+			delegator.DelegateErrors = []error{fakes.FakeError, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(errExecuteClosed))
-			Eventually(func() bool {
-				return delegator.DelegateCallCount > 1
-			}).Should(BeTrue())
-			close(done)
+			Expect(delegator.DelegateCallCount > 1).To(BeTrue())
 		})
 
-		It("returns error if delegating logs fails on subsequent run", func(done Done) {
-			delegator.DelegateErrors = []error{nil, fakes.FakeError}
-			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders}
+		It("returns error if maximum consecutive errors exceeded", func() {
+			eventWatcher.MaxConsecutiveUnexpectedErrs = 1
+			delegator.DelegateErrors = []error{fakes.FakeError, fakes.FakeError}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 
 			Expect(err).To(MatchError(fakes.FakeError))
-			close(done)
+		})
+
+		It("does not treat absence of unchecked logs as an unexpected error", func() {
+			delegator.DelegateErrors = []error{logs.ErrNoLogs, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+		})
+
+		It("delegates logs again if untransformed logs found", func() {
+			delegator.DelegateErrors = []error{nil, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Expect(delegator.DelegateCallCount > 1).To(BeTrue())
+		})
+
+		It("returns error if delegating logs fails on subsequent run", func() {
+			delegator.DelegateErrors = []error{nil, fakes.FakeError}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(fakes.FakeError))
+		})
+
+		It("doesn't panic if one of the go routines errors and closes the err channel", func() {
+			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed, errExecuteClosed}
+			delegator.DelegateErrors = []error{nil, errExecuteClosed, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Expect(delegator.DelegateCallCount > 0 || extractor.ExtractLogsCount > 0).To(BeTrue())
 		})
 	})
 })

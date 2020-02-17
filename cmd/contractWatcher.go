@@ -18,22 +18,19 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/transformer"
+	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	st "github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	ft "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/full/transformer"
-	ht "github.com/vulcanize/vulcanizedb/pkg/contract_watcher/header/transformer"
-	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // contractWatcherCmd represents the contractWatcher command
 var contractWatcherCmd = &cobra.Command{
 	Use:   "contractWatcher",
-	Short: "Watches events at the provided contract address using fully synced vDB",
+	Short: "Watches events at the provided contract address",
 	Long: `Uses input contract address and event filters to watch events
 
 Expects an ethereum node to be running
@@ -80,14 +77,10 @@ Requires a .toml config file:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		contractWatcher()
 	},
 }
-
-var (
-	mode string
-)
 
 func contractWatcher() {
 	ticker := time.NewTicker(5 * time.Second)
@@ -96,17 +89,10 @@ func contractWatcher() {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
-	var t st.ContractTransformer
 	con := config.ContractConfig{}
 	con.PrepConfig()
-	switch mode {
-	case "header":
-		t = ht.NewTransformer(con, blockChain, &db)
-	case "full":
-		t = ft.NewTransformer(con, blockChain, &db)
-	default:
-		LogWithCommand.Fatal("Invalid mode")
-	}
+
+	t := transformer.NewTransformer(con, blockChain, &db)
 
 	err := t.Init()
 	if err != nil {
@@ -123,5 +109,4 @@ func contractWatcher() {
 
 func init() {
 	rootCmd.AddCommand(contractWatcherCmd)
-	contractWatcherCmd.Flags().StringVarP(&mode, "mode", "o", "header", "'header' or 'full' mode to work with either header synced or fully synced vDB (default is header)")
 }

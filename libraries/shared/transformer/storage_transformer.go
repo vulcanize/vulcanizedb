@@ -18,13 +18,15 @@ package transformer
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type StorageTransformer interface {
-	Execute(diff utils.StorageDiff) error
+	Execute(diff types.PersistedDiff) error
 	KeccakContractAddress() common.Hash
+	GetStorageKeysLookup() interface{}
+	GetContractAddress() common.Address
 }
 
 type StorageTransformerInitializer func(db *postgres.DB) StorageTransformer

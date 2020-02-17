@@ -17,23 +17,16 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/fs"
-	"plugin"
-	syn "sync"
+	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
+	"github.com/makerdao/vulcanizedb/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	storageUtils "github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // executeCmd represents the execute command
@@ -67,45 +60,27 @@ Specify config location when executing the command:
 ./vulcanizedb execute --config=./environments/config_name.toml`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCommand = cmd.CalledAs()
-		LogWithCommand = *log.WithField("SubCommand", SubCommand)
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		execute()
 	},
 }
 
 func execute() {
-	// Build plugin generator config
-	prepConfig()
+	executeTransformers()
+}
 
-	// Get the plugin path and load the plugin
-	_, pluginPath, err := genConfig.GetPluginPaths()
-	if err != nil {
-		LogWithCommand.Fatal(err)
+func init() {
+	rootCmd.AddCommand(executeCmd)
+	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
+	executeCmd.Flags().DurationVarP(&retryInterval, "retry-interval", "i", 7*time.Second, "interval duration between retries on execution error")
+	executeCmd.Flags().IntVarP(&maxUnexpectedErrors, "max-unexpected-errs", "m", 5, "maximum number of unexpected errors to allow (with retries) before exiting")
+}
+
+func executeTransformers() {
+	ethEventInitializers, ethStorageInitializers, ethContractInitializers, exportTransformersErr := exportTransformers()
+	if exportTransformersErr != nil {
+		LogWithCommand.Fatalf("SubCommand %v: exporting transformers failed: %v", SubCommand, exportTransformersErr)
 	}
-
-	fmt.Printf("Executing plugin %s", pluginPath)
-	LogWithCommand.Info("linking plugin ", pluginPath)
-	plug, err := plugin.Open(pluginPath)
-	if err != nil {
-		LogWithCommand.Warn("linking plugin failed")
-		LogWithCommand.Fatal(err)
-	}
-
-	// Load the `Exporter` symbol from the plugin
-	LogWithCommand.Info("loading transformers from plugin")
-	symExporter, err := plug.Lookup("Exporter")
-	if err != nil {
-		LogWithCommand.Warn("loading Exporter symbol failed")
-		LogWithCommand.Fatal(err)
-	}
-
-	// Assert that the symbol is of type Exporter
-	exporter, ok := symExporter.(Exporter)
-	if !ok {
-		LogWithCommand.Fatal("plugged-in symbol not of type Exporter")
-	}
-
-	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
-	ethEventInitializers, ethStorageInitializers, ethContractInitializers := exporter.Export()
 
 	// Setup bc and db objects
 	blockChain := getBlockChain()
@@ -113,38 +88,24 @@ func execute() {
 
 	// Execute over transformer sets returned by the exporter
 	// Use WaitGroup to wait on both goroutines
-	var wg syn.WaitGroup
+	var wg sync.WaitGroup
 	if len(ethEventInitializers) > 0 {
-		ew := watcher.NewEventWatcher(&db, blockChain)
-		err = ew.AddTransformers(ethEventInitializers)
-		if err != nil {
-			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", err.Error())
+		extractor := logs.NewLogExtractor(&db, blockChain)
+		delegator := logs.NewLogDelegator(&db)
+		ew := watcher.NewEventWatcher(&db, blockChain, extractor, delegator, maxUnexpectedErrors, retryInterval)
+		addErr := ew.AddTransformers(ethEventInitializers)
+		if addErr != nil {
+			LogWithCommand.Fatalf("failed to add event transformer initializers to watcher: %s", addErr.Error())
 		}
 		wg.Add(1)
 		go watchEthEvents(&ew, &wg)
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		switch storageDiffsSource {
-		case "geth":
-			log.Debug("fetching storage diffs from geth pub sub")
-			rpcClient, _ := getClients()
-			stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
-			payloadChan := make(chan statediff.Payload)
-			storageFetcher := fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		default:
-			log.Debug("fetching storage diffs from csv")
-			tailer := fs.FileTailer{Path: storageDiffsPath}
-			storageFetcher := fetcher.NewCsvTailStorageFetcher(tailer)
-			sw := watcher.NewStorageWatcher(storageFetcher, &db)
-			sw.AddTransformers(ethStorageInitializers)
-			wg.Add(1)
-			go watchEthStorage(&sw, &wg)
-		}
+		sw := watcher.NewStorageWatcher(&db, retryInterval)
+		sw.AddTransformers(ethStorageInitializers)
+		wg.Add(1)
+		go watchEthStorage(&sw, &wg)
 	}
 
 	if len(ethContractInitializers) > 0 {
@@ -156,17 +117,11 @@ func execute() {
 	wg.Wait()
 }
 
-func init() {
-	rootCmd.AddCommand(executeCmd)
-	executeCmd.Flags().BoolVarP(&recheckHeadersArg, "recheck-headers", "r", false, "whether to re-check headers for watched events")
-	executeCmd.Flags().DurationVarP(&queueRecheckInterval, "queue-recheck-interval", "q", 5*time.Minute, "interval duration for rechecking queued storage diffs (ex: 5m30s)")
-}
-
 type Exporter interface {
 	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
-func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
+func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the EventTransformerInitializer set using the watcher
 	LogWithCommand.Info("executing event transformers")
@@ -182,20 +137,19 @@ func watchEthEvents(w *watcher.EventWatcher, wg *syn.WaitGroup) {
 	}
 }
 
-func watchEthStorage(w watcher.IStorageWatcher, wg *syn.WaitGroup) {
+func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the StorageTransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
-	for range ticker.C {
-		errs := make(chan error)
-		diffs := make(chan storageUtils.StorageDiff)
-		w.Execute(diffs, errs, queueRecheckInterval)
+	err := w.Execute()
+	if err != nil {
+		LogWithCommand.Fatalf("error executing storage watcher: %s", err.Error())
 	}
 }
 
-func watchEthContract(w *watcher.ContractWatcher, wg *syn.WaitGroup) {
+func watchEthContract(w *watcher.ContractWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Execute over the ContractTransformerInitializer set using the contract watcher
 	LogWithCommand.Info("executing contract_watcher transformers")

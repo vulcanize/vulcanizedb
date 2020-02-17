@@ -16,9 +16,12 @@
 
 package event
 
-import "github.com/vulcanize/vulcanizedb/pkg/core"
+import (
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+)
 
-type Converter interface {
-	ToEntities(contractAbi string, ethLog []core.HeaderSyncLog) ([]interface{}, error)
-	ToModels([]interface{}) ([]interface{}, error)
+// Transformer transforms log data into general InsertionModels the Repository can persist
+type Transformer interface {
+	ToModels(contractAbi string, ethLog []core.EventLog, db *postgres.DB) ([]InsertionModel, error)
 }

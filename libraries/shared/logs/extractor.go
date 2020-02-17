@@ -18,14 +18,17 @@ package logs
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transactions"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transactions"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
 )
 
 var (
@@ -43,10 +46,23 @@ type LogExtractor struct {
 	CheckedHeadersRepository datastore.CheckedHeadersRepository
 	CheckedLogsRepository    datastore.CheckedLogsRepository
 	Fetcher                  fetcher.ILogFetcher
-	LogRepository            datastore.HeaderSyncLogRepository
+	LogRepository            datastore.EventLogRepository
 	StartingBlock            *int64
+	EndingBlock              *int64
 	Syncer                   transactions.ITransactionsSyncer
 	Topics                   []common.Hash
+	RecheckHeaderCap         int64
+}
+
+func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
+	return &LogExtractor{
+		CheckedHeadersRepository: repositories.NewCheckedHeadersRepository(db),
+		CheckedLogsRepository:    repositories.NewCheckedLogsRepository(db),
+		Fetcher:                  fetcher.NewLogFetcher(bc),
+		LogRepository:            repositories.NewEventLogRepository(db),
+		Syncer:                   transactions.NewTransactionsSyncer(db, bc),
+		RecheckHeaderCap:         constants.RecheckHeaderCap,
+	}
 }
 
 // Add additional logs to extract
@@ -56,16 +72,42 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 		return checkedHeadersErr
 	}
 
-	if extractor.StartingBlock == nil {
+	if shouldResetStartingBlockToEarlierTransformerBlock(config.StartingBlockNumber, extractor.StartingBlock) {
 		extractor.StartingBlock = &config.StartingBlockNumber
-	} else if earlierStartingBlockNumber(config.StartingBlockNumber, *extractor.StartingBlock) {
-		extractor.StartingBlock = &config.StartingBlockNumber
+	}
+
+	if shouldResetEndingBlockToLaterTransformerBlock(config.EndingBlockNumber, extractor.EndingBlock) {
+		extractor.EndingBlock = &config.EndingBlockNumber
 	}
 
 	addresses := transformer.HexStringsToAddresses(config.ContractAddresses)
 	extractor.Addresses = append(extractor.Addresses, addresses...)
 	extractor.Topics = append(extractor.Topics, common.HexToHash(config.Topic))
 	return nil
+}
+
+func shouldResetStartingBlockToEarlierTransformerBlock(currentTransformerBlock int64, extractorBlock *int64) bool {
+	isExtractorBlockNil := extractorBlock == nil
+	if isExtractorBlockNil {
+		return true
+	}
+
+	isTransformerBlockLessThan := currentTransformerBlock < *extractorBlock
+	return isTransformerBlockLessThan
+}
+
+func shouldResetEndingBlockToLaterTransformerBlock(currentTransformerBlock int64, extractorBlock *int64) bool {
+	isExtractorBlockNil := extractorBlock == nil
+	isTransformerBlockNegativeOne := currentTransformerBlock == int64(-1)
+
+	if isExtractorBlockNil || isTransformerBlockNegativeOne {
+		return true
+	}
+
+	isCurrentBlockNegativeOne := *extractorBlock != int64(-1)
+	isTransformerBlockGreater := currentTransformerBlock > *extractorBlock
+
+	return isCurrentBlockNegativeOne && isTransformerBlockGreater
 }
 
 // Fetch and persist watched logs
@@ -75,7 +117,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 		return ErrNoWatchedAddresses
 	}
 
-	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, -1, getCheckCount(recheckHeaders))
+	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, extractor.getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
 		return uncheckedHeadersErr
@@ -99,7 +141,7 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 				return transactionsSyncErr
 			}
 
-			createLogsErr := extractor.LogRepository.CreateHeaderSyncLogs(header.Id, logs)
+			createLogsErr := extractor.LogRepository.CreateEventLogs(header.Id, logs)
 			if createLogsErr != nil {
 				logError("error persisting logs: %s", createLogsErr, header)
 				return createLogsErr
@@ -115,10 +157,6 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 	return nil
 }
 
-func earlierStartingBlockNumber(transformerBlock, watcherBlock int64) bool {
-	return transformerBlock < watcherBlock
-}
-
 func logError(description string, err error, header core.Header) {
 	logrus.WithFields(logrus.Fields{
 		"headerId":    header.Id,
@@ -127,11 +165,11 @@ func logError(description string, err error, header core.Header) {
 	}).Errorf(description, err.Error())
 }
 
-func getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
+func (extractor *LogExtractor) getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	if recheckHeaders == constants.HeaderUnchecked {
 		return 1
 	} else {
-		return constants.RecheckHeaderCap
+		return extractor.RecheckHeaderCap
 	}
 }
 
@@ -141,7 +179,7 @@ func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTran
 		return watchingLogErr
 	}
 	if !alreadyWatchingLog {
-		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUnchecked(config.StartingBlockNumber)
+		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUncheckedSince(config.StartingBlockNumber)
 		if uncheckHeadersErr != nil {
 			return uncheckHeadersErr
 		}

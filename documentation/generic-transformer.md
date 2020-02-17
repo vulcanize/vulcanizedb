@@ -5,11 +5,9 @@ It also provides some state variable coverage by automating polling of public me
 1. The method's arguments must all be of type address or bytes32 (hash)
 1. The method must return a single value
 
-This command operates in two modes- `header` and `full`- which require a header or full-synced vulcanizeDB, respectively.
-
 This command requires the contract ABI be available on Etherscan if it is not provided in the config file by the user.
 
-If method polling is turned on we require an archival node at the ETH ipc endpoint in our config, whether or not we are operating in `header` or `full` mode.
+If method polling is turned on we require an archival node at the ETH ipc endpoint in our config.
 Otherwise we only need to connect to a full node.
 
 ## Configuration
@@ -99,14 +97,9 @@ remove the `balanceOf` method from the `0x8dd5fbce2f6a956c3022ba3663759011dd51e7
 
 If you are operating a header sync vDB, run:
 
- `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=header`
+ `./vulcanizedb contractWatcher --config=./environments/example.toml`
 
-If instead you are operating a full sync vDB and provided an archival node IPC path, run in full mode:
-
- `./vulcanizedb contractWatcher --config=./environments/example.toml --mode=full`
-
-This will run the contractWatcher and configures it to watch the contracts specified in the config file. Note that
-by default we operate in `header` mode but the flag is included here to demonstrate its use.
+This will run the contractWatcher and configures it to watch the contracts specified in the config file.
 
 The example config we link to in this example watches two contracts, the ENS Registry (0x314159265dD8dbb310642f98f50C066173C1259b) and TrueUSD (0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E).
 

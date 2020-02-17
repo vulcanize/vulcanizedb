@@ -17,8 +17,9 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/constants"
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
 type MockLogExtractor struct {
@@ -44,5 +45,6 @@ func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.Transfor
 		extractor.ExtractLogsErrors = []error{}
 		return thisErr
 	}
-	return nil
+	// return no unchecked headers error so that extractor hits retry interval when delegator under test
+	return logs.ErrNoUncheckedHeaders
 }

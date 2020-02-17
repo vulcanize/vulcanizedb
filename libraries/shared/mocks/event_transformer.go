@@ -17,20 +17,20 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
 )
 
 type MockEventTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
-	PassedLogs       []core.HeaderSyncLog
+	PassedLogs       []core.EventLog
 	config           transformer.EventTransformerConfig
 }
 
-func (t *MockEventTransformer) Execute(logs []core.HeaderSyncLog) error {
+func (t *MockEventTransformer) Execute(logs []core.EventLog) error {
 	if t.ExecuteError != nil {
 		return t.ExecuteError
 	}

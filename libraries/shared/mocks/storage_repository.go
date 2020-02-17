@@ -17,26 +17,25 @@
 package mocks
 
 import (
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockStorageRepository struct {
-	CreateErr         error
-	PassedBlockNumber int
-	PassedBlockHash   string
-	PassedMetadata    utils.StorageValueMetadata
-	PassedValue       interface{}
+	CreateErr      error
+	PassedHeaderID int64
+	PassedDiffID   int64
+	PassedMetadata types.ValueMetadata
+	PassedValue    interface{}
+	db             *postgres.DB
 }
 
-func (repository *MockStorageRepository) Create(blockNumber int, blockHash string, metadata utils.StorageValueMetadata, value interface{}) error {
-	repository.PassedBlockNumber = blockNumber
-	repository.PassedBlockHash = blockHash
+func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata types.ValueMetadata, value interface{}) error {
+	repository.PassedHeaderID = headerID
+	repository.PassedDiffID = diffID
 	repository.PassedMetadata = metadata
 	repository.PassedValue = value
 	return repository.CreateErr
 }
 
-func (*MockStorageRepository) SetDB(db *postgres.DB) {
-	panic("implement me")
-}
+func (repository *MockStorageRepository) SetDB(db *postgres.DB) {}

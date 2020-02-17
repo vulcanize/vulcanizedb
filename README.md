@@ -1,7 +1,7 @@
 # Vulcanize DB
 
-[![Build Status](https://travis-ci.org/vulcanize/vulcanizedb.svg?branch=master)](https://travis-ci.org/vulcanize/vulcanizedb)
-[![Go Report Card](https://goreportcard.com/badge/github.com/vulcanize/vulcanizedb)](https://goreportcard.com/report/github.com/vulcanize/vulcanizedb)
+[![Build Status](https://travis-ci.com/makerdao/vulcanizedb.svg?branch=staging)](https://travis-ci.com/makerdao/vulcanizedb)
+[![Go Report Card](https://goreportcard.com/badge/github.com/makerdao/vulcanizedb)](https://goreportcard.com/report/github.com/makerdao/vulcanizedb)
 
 > Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
 
@@ -44,11 +44,11 @@ data from VulcanizeDB's underlying Postgres database and making it accessible.
 ### Building the project
 Download the codebase to your local `GOPATH` via:
 
-`go get github.com/vulcanize/vulcanizedb`
+`go get github.com/makerdao/vulcanizedb`
 
 Move to the project directory:
 
-`cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
+`cd $GOPATH/src/github.com/makerdao/vulcanizedb`
 
 Be sure you have enabled Go Modules (`export GO111MODULE=on`), and build the executable with:
 
@@ -65,7 +65,7 @@ It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 1. Install Postgres
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. `createdb vulcanize_public`
-1. `cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
+1. `cd $GOPATH/src/github.com/makerdao/vulcanizedb`
 1.  Run the migrations: `make migrate HOST_NAME=localhost NAME=vulcanize_public PORT=5432`
     - There is an optional var `USER=username` if the database user is not the default user `postgres`
     - To rollback a single step: `make rollback NAME=vulcanize_public`
@@ -110,8 +110,8 @@ As mentioned above, VulcanizeDB's processes can be split into three categories: 
 
 ### Data syncing
 To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
-This is accomplished through the use of the `headerSync`, `fullSync`, or `coldImport` commands.
-These commands are described in detail [here](documentation/data-syncing.md).
+This is accomplished through the use of the `headerSync` command.
+This command is described in detail [here](documentation/data-syncing.md).
 
 ### Data transformation
 Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to
@@ -135,12 +135,12 @@ build and run custom transformers as Go plugins can be found
 
 
 ### Tests
-- Replace the empty `ipcPath` in the `environments/infura.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+- Replace the empty `ipcPath` in the `environments/testing.toml` with a path to a full node's eth_jsonrpc endpoint (e.g. local geth node ipc path or infura url)
+    - Note: must be mainnet
     - Note: integration tests require configuration with an archival node
-- `createdb vulcanize_private` will create the test db
-- `make migrate NAME=vulcanize_private` will run the db migrations
 - `make test` will run the unit tests and skip the integration tests
 - `make integrationtest` will run just the integration tests
+- `make test` and `make integrationtest` setup a clean `vulcanize_testing` db
 
 
 ## Contributing

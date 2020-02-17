@@ -1,26 +1,23 @@
 dist: trusty
 language: go
 go:
-  - 1.12
+- 1.12
 services:
-  - postgresql
+- postgresql
 addons:
   postgresql: '11.2'
-go_import_path: github.com/vulcanize/vulcanizedb
+go_import_path: github.com/makerdao/vulcanizedb
 before_install:
-  - make installtools
-  - bash ./scripts/install-postgres-11.sh
-  - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-  - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-  - sudo apt-get update && sudo apt-get install yarn
-before_script:
-  - sudo -u postgres createdb vulcanize_private
-  - make migrate NAME=vulcanize_private
+- make installtools
+- bash ./scripts/install-postgres-11.sh
+- curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+- echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+- sudo apt-get update && sudo apt-get install yarn
 script:
-  - env GO111MODULE=on make test
-  - env GO111MODULE=on make integrationtest
+- env GO111MODULE=on make test
+- env GO111MODULE=on make integrationtest
 notifications:
   email: false
 env:
   matrix:
-    secure: GA4GiMHy868UD/C+59jRUOdJxxdLSMauNapPA31AODUMv0lcEOXg6TBJkv6Vn3OOrLHYYSpwCGiGQjF86U2vpKWzD1mSITalPfP/kNpFnrHVNf2oPpfrQs8ccs9gnFpbCNLDy0w2+55pgnrd5hvdnlsTEUS1lHWSKEZmWsSqUeS/dw22IS0+nUja0Pc3pHaWlJz2R502uEKIixjq1fOX65Z/9r1BrMqklOwWrABK0GwgYcDZwc+b3iovyDPkDa3sT/Ddz/srkcYi/Y182zdLdrknj3MVR3GiW5iSqIVm6gr427SFXF4EQVwkEBwAGoo83wRhCgCAslYTRZZ5aleb1HUtAWzuiMAd/JlAYb2jc6VJa19+rQ/5wd7Bann3hB5bY2uV+b02qFK3qWe6uqZLBSESWjFEyWJVoaXgpH0QDc0JG1R9UFxLSVa8NM3P/jgTnUgnAvdW36mTC4dg73Ha9bYdeLpuAZr6k8iTh5qp0CazKAazsdJ+ECNt6q3fkgsI/V5ZwCFfQwlauq+PiBaZsQqr7eeP19klipE3vGf6BCBRvCBdubzSgGZPIRkxOQREc24j/gzBjBNGeqoU2uOp8sXMEG5idfIyHbMU+n2Yi6IRKKPe5lwjgWEsqLkkoM2REMPIEPffRQz0f+mD48HWP0H4KjKHvubKRCE0v2ONlM4=
+    secure: Bm0u6E0esyVjJ2SMg5kVKkTJI+q0vSTOlRUFsfYQG6xAPqaxPH3iXiIwtUIuWK/pKwGtMsXDTiLuoFFASdu+AWRto2I9FisgO/foZhnsfHc1wBLOj1PCukwYl1LUPrS21QAigoZ24YQi1PHx1INjjSX+2cAIoSsj1LD74L6GcwxZi4A0yh3Ntmtv5ttn6mtDr3GeKh6iaw2vS9OeHRUb4ARlz+pxgNULyYF8AR5cKp2gDX8SrDCikwjJm/i2fKOTfWSxKD/EenaeHKciBnakDAWGs90EOhNlakM5DGFhgGhGKKL/DTImb56VfQfOAJEgxIdNPSUPUJV6WLBGhRKOawfZem/8bV54j89QfVg2H4wKtU62OA4eT5IRKiyTPh1sk7QfVZAHWDnmjUsThaXIErNIHOwEMU+uaXY1bOgXBYG2dqsE0rOGZ+TxzrIzOVAr/4pU6b2qmI60OrjnX9dgX9jcm79FHiLtBYkuu12MrYUcuOt2n8bsqeZ/GkrcaEL25hQghaDsziWkthqciierTwzXZrleLARARjitv04aOV0/FQrawkxEysQXPVklWv9JVlk63+BGp6Wb5YVSDKfCYetPF9e31nwG8gIrglFpE5hgAycUkA6ms+EOJ+6UrUBRQt5JxCaxJ58n7QHOFscRWGfW90oIQ3jftyscKERMn/c=

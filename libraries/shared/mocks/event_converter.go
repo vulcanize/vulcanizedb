@@ -16,41 +16,23 @@
 
 package mocks
 
-import "github.com/vulcanize/vulcanizedb/pkg/core"
+import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+)
 
 type MockConverter struct {
-	ToEntitiesError         error
-	PassedContractAddresses []string
 	ToModelsError           error
-	entityConverterError    error
-	modelConverterError     error
 	ContractAbi             string
-	LogsToConvert           []core.HeaderSyncLog
-	EntitiesToConvert       []interface{}
-	EntitiesToReturn        []interface{}
-	ModelsToReturn          []interface{}
-	ToEntitiesCalledCounter int
+	LogsToConvert           []core.EventLog
+	PassedContractAddresses []string
 	ToModelsCalledCounter   int
 }
 
-func (converter *MockConverter) ToEntities(contractAbi string, ethLogs []core.HeaderSyncLog) ([]interface{}, error) {
-	for _, log := range ethLogs {
-		converter.PassedContractAddresses = append(converter.PassedContractAddresses, log.Log.Address.Hex())
-	}
-	converter.ContractAbi = contractAbi
-	converter.LogsToConvert = ethLogs
-	return converter.EntitiesToReturn, converter.ToEntitiesError
-}
-
-func (converter *MockConverter) ToModels(entities []interface{}) ([]interface{}, error) {
-	converter.EntitiesToConvert = entities
-	return converter.ModelsToReturn, converter.ToModelsError
-}
-
-func (converter *MockConverter) SetToEntityConverterError(err error) {
-	converter.entityConverterError = err
-}
-
-func (converter *MockConverter) SetToModelConverterError(err error) {
-	converter.modelConverterError = err
+func (converter *MockConverter) ToModels(abi string, logs []core.EventLog, _ *postgres.DB) ([]event.InsertionModel, error) {
+	converter.LogsToConvert = logs
+	converter.ContractAbi = abi
+	converter.ToModelsCalledCounter = converter.ToModelsCalledCounter + 1
+	return nil, converter.ToModelsError
 }

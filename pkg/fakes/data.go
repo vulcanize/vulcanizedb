@@ -17,22 +17,24 @@
 package fakes
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 var (
-	FakeAddress   = common.HexToAddress("0x" + RandomString(40))
-	FakeError     = errors.New("failed")
-	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
-	fakeTimestamp = rand.Int63n(1500000000)
+	FakeAddress        = common.HexToAddress("0x" + RandomString(40))
+	AnotherFakeAddress = common.HexToAddress("0x" + RandomString(40))
+	FakeError          = errors.New("failed")
+	FakeHash           = common.BytesToHash([]byte{1, 2, 3, 4, 5})
+	AnotherFakeHash    = common.BytesToHash([]byte{6, 7, 8, 9, 0})
+	fakeTimestamp      = rand.Int63n(1500000000)
 )
 
 var rawFakeHeader, _ = json.Marshal(types.Header{})
@@ -55,58 +57,8 @@ func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	}
 }
 
-var fakeTransaction types.Transaction
-var rawTransaction bytes.Buffer
-var _ = fakeTransaction.EncodeRLP(&rawTransaction)
-var FakeTransaction = core.TransactionModel{
-	Data:     []byte{},
-	From:     "",
-	GasLimit: 0,
-	GasPrice: 0,
-	Hash:     "",
-	Nonce:    0,
-	Raw:      rawTransaction.Bytes(),
-	Receipt:  core.Receipt{},
-	To:       "",
-	TxIndex:  0,
-	Value:    "0",
-}
-
-func GetFakeTransaction(hash string, receipt core.Receipt) core.TransactionModel {
-	gethTransaction := types.Transaction{}
-	var raw bytes.Buffer
-	err := gethTransaction.EncodeRLP(&raw)
-	if err != nil {
-		panic("failed to marshal transaction while creating test fake")
-	}
-	return core.TransactionModel{
-		Data:     []byte{},
-		From:     "",
-		GasLimit: 0,
-		GasPrice: 0,
-		Hash:     hash,
-		Nonce:    0,
-		Raw:      raw.Bytes(),
-		Receipt:  receipt,
-		To:       "",
-		TxIndex:  0,
-		Value:    "0",
-	}
-}
-
-func GetFakeUncle(hash, reward string) core.Uncle {
-	return core.Uncle{
-		Miner:     FakeAddress.String(),
-		Hash:      hash,
-		Reward:    reward,
-		Raw:       rawFakeHeader,
-		Timestamp: strconv.FormatInt(fakeTimestamp, 10),
-	}
-}
-
 func RandomString(length int) string {
-	var seededRand = rand.New(
-		rand.NewSource(time.Now().UnixNano()))
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	charset := "abcdef1234567890"
 	b := make([]byte, length)
 	for i := range b {

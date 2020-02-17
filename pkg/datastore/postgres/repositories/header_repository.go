@@ -21,10 +21,9 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
-	log "github.com/sirupsen/logrus"
-
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/sirupsen/logrus"
 )
 
 var ErrValidHeaderExists = errors.New("valid header already exists")
@@ -41,9 +40,9 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	hash, err := repository.getHeaderHash(header)
 	if err != nil {
 		if headerDoesNotExist(err) {
-			return repository.insertHeader(header)
+			return repository.InternalInsertHeader(header)
 		}
-		log.Error("CreateOrUpdateHeader: error getting header hash: ", err)
+		logrus.Error("CreateOrUpdateHeader: error getting header hash: ", err)
 		return 0, err
 	}
 	if headerMustBeReplaced(hash, header) {
@@ -54,7 +53,7 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 
 func (repository HeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
 	for _, transaction := range transactions {
-		_, err := repository.database.Exec(`INSERT INTO public.header_sync_transactions
+		_, err := repository.database.Exec(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") 
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		ON CONFLICT DO NOTHING`, headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
@@ -69,17 +68,17 @@ func (repository HeaderRepository) CreateTransactions(headerID int64, transactio
 
 func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
 	var txId int64
-	err := tx.QueryRowx(`INSERT INTO public.header_sync_transactions
+	err := tx.QueryRowx(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
-		ON CONFLICT (header_id, hash) DO UPDATE 
+		ON CONFLICT (hash) DO UPDATE
 		SET (gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") = ($3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		RETURNING id`,
 		headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
 		transaction.Data, transaction.Nonce, transaction.Raw, transaction.From,
 		transaction.TxIndex, transaction.To, transaction.Value).Scan(&txId)
 	if err != nil {
-		log.Error("header_repository: error inserting transaction: ", err)
+		logrus.Error("header_repository: error inserting transaction: ", err)
 		return txId, err
 	}
 	return txId, err
@@ -87,27 +86,24 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		blockNumber, repository.database.Node.ID)
-	if err != nil {
-		log.Error("GetHeader: error getting headers: ", err)
-	}
+	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		blockNumber, repository.database.NodeID)
 	return header, err
 }
 
-func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64, nodeID string) ([]int64, error) {
+func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	numbers := make([]int64, 0)
 	err := repository.database.Select(&numbers,
 		`SELECT series.block_number
 			FROM (SELECT generate_series($1::INT, $2::INT) AS block_number) AS series
 			LEFT OUTER JOIN (SELECT block_number FROM headers
-				WHERE eth_node_fingerprint = $3) AS synced
+				WHERE eth_node_id = $3) AS synced
 			USING (block_number)
 			WHERE  synced.block_number IS NULL`,
-		startingBlockNumber, endingBlockNumber, nodeID)
+		startingBlockNumber, endingBlockNumber, repository.database.NodeID)
 	if err != nil {
-		log.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
-			startingBlockNumber, endingBlockNumber, nodeID)
+		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
+			startingBlockNumber, endingBlockNumber, repository.database.NodeID)
 		return []int64{}, err
 	}
 	return numbers, nil
@@ -123,28 +119,36 @@ func headerDoesNotExist(err error) bool {
 
 func (repository HeaderRepository) getHeaderHash(header core.Header) (string, error) {
 	var hash string
-	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		header.BlockNumber, repository.database.Node.ID)
+	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		header.BlockNumber, repository.database.NodeID)
 	return hash, err
 }
 
-func (repository HeaderRepository) insertHeader(header core.Header) (int64, error) {
+// Function is public so we can test insert being called for the same header
+// Can happen when concurrent processes are inserting headers
+// Otherwise should not occur since only called in CreateOrUpdateHeader
+func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
 	var headerId int64
-	err := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id, eth_node_fingerprint) VALUES ($1, $2, $3::NUMERIC, $4, $5, $6) RETURNING id`,
-		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID, repository.database.Node.ID).Scan(&headerId)
+	row := repository.database.QueryRowx(
+		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id)
+		VALUES ($1, $2, $3::NUMERIC, $4, $5) ON CONFLICT DO NOTHING RETURNING id`,
+		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID)
+	err := row.Scan(&headerId)
 	if err != nil {
-		log.Error("insertHeader: error inserting header: ", err)
+		if err == sql.ErrNoRows {
+			return 0, ErrValidHeaderExists
+		}
+		logrus.Error("InternalInsertHeader: error inserting header: ", err)
 	}
 	return headerId, err
 }
 
 func (repository HeaderRepository) replaceHeader(header core.Header) (int64, error) {
-	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_fingerprint = $2`,
-		header.BlockNumber, repository.database.Node.ID)
+	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
+		header.BlockNumber, repository.database.NodeID)
 	if err != nil {
-		log.Error("replaceHeader: error deleting headers: ", err)
+		logrus.Error("replaceHeader: error deleting headers: ", err)
 		return 0, err
 	}
-	return repository.insertHeader(header)
+	return repository.InternalInsertHeader(header)
 }

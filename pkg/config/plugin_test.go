@@ -17,9 +17,9 @@
 package config_test
 
 import (
+	"github.com/makerdao/vulcanizedb/pkg/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"os"
 	"path/filepath"
 )

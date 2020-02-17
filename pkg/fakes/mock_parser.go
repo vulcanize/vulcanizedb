@@ -18,7 +18,7 @@ package fakes
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/vulcanize/vulcanizedb/pkg/contract_watcher/shared/types"
+	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/types"
 )
 
 type MockParser struct {
@@ -31,8 +31,8 @@ func (*MockParser) Parse(contractAddr string) error {
 	return nil
 }
 
-func (m *MockParser) ParseAbiStr(abiStr string) error {
-	m.AbiToReturn = abiStr
+func (parser *MockParser) ParseAbiStr(abiStr string) error {
+	parser.AbiToReturn = abiStr
 	return nil
 }
 

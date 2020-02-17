@@ -18,10 +18,10 @@ package plugin
 
 import (
 	"errors"
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/builder"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/manager"
-	"github.com/vulcanize/vulcanizedb/pkg/plugin/writer"
+	"github.com/makerdao/vulcanizedb/pkg/config"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/builder"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/manager"
+	"github.com/makerdao/vulcanizedb/pkg/plugin/writer"
 )
 
 // Generator is the top-level interface for creating transformer plugins
