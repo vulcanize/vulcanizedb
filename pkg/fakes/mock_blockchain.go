@@ -37,6 +37,11 @@ type MockBlockChain struct {
 	GetTransactionsCalled              bool
 	GetTransactionsError               error
 	GetTransactionsPassedHashes        []common.Hash
+	GetStorageAtPassedAccounts         []common.Address
+	GetStorageAtPassedKeys             []common.Hash
+	GetStorageAtPassedBlockNumber      *big.Int
+	GetStorageAtError                  error
+	storageValuesToReturn              map[common.Address][]byte
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
 	logQueryReturnLogs                 []types.Log
@@ -47,7 +52,8 @@ type MockBlockChain struct {
 
 func NewMockBlockChain() *MockBlockChain {
 	return &MockBlockChain{
-		node: core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
+		node:                  core.Node{GenesisBlock: "GENESIS", NetworkID: 1, ID: "x123", ClientName: "Geth"},
+		storageValuesToReturn: make(map[common.Address][]byte),
 	}
 }
 
@@ -107,6 +113,23 @@ func (blockChain *MockBlockChain) CallContract(contractHash string, input []byte
 
 func (blockChain *MockBlockChain) LastBlock() (*big.Int, error) {
 	return blockChain.lastBlock, nil
+}
+
+func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+	blockChain.GetStorageAtPassedAccounts = append(blockChain.GetStorageAtPassedAccounts, account)
+	blockChain.GetStorageAtPassedKeys = append(blockChain.GetStorageAtPassedKeys, key)
+	blockChain.GetStorageAtPassedBlockNumber = blockNumber
+
+	storageToReturn := blockChain.storageValuesToReturn[account]
+	return storageToReturn, blockChain.GetStorageAtError
+}
+
+func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
+	blockChain.GetStorageAtError = err
+}
+
+func (blockChain *MockBlockChain) SetStorageValuesToReturn(address common.Address, value []byte) {
+	blockChain.storageValuesToReturn[address] = value
 }
 
 func (blockChain *MockBlockChain) Node() core.Node {

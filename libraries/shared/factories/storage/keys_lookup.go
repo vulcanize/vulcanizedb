@@ -26,11 +26,24 @@ import (
 type KeysLookup interface {
 	Lookup(key common.Hash) (types.ValueMetadata, error)
 	SetDB(db *postgres.DB)
+	GetKeys() ([]common.Hash, error)
 }
 
 type keysLookup struct {
 	loader   KeysLoader
 	mappings map[common.Hash]types.ValueMetadata
+}
+
+func (lookup *keysLookup) GetKeys() ([]common.Hash, error) {
+	var keys []common.Hash
+	refreshErr := lookup.refreshMappings()
+	if refreshErr != nil {
+		return []common.Hash{}, refreshErr
+	}
+	for key, _ := range lookup.mappings {
+		keys = append(keys, key)
+	}
+	return keys, nil
 }
 
 func NewKeysLookup(loader KeysLoader) KeysLookup {

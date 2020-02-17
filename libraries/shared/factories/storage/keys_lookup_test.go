@@ -110,4 +110,48 @@ var _ = Describe("Storage keys lookup", func() {
 			Expect(loader.SetDBCalled).To(BeTrue())
 		})
 	})
+
+	Describe("GetKeys", func() {
+		var (
+			mappings       = make(map[common.Hash]types.ValueMetadata)
+			keyOne         = fakes.FakeHash
+			keyTwo         = fakes.AnotherFakeHash
+			keccakedKeyOne = crypto.Keccak256Hash(keyOne[:])
+			keccakedKeyTwo = crypto.Keccak256Hash(keyTwo[:])
+		)
+
+		BeforeEach(func() {
+			mappings[keyOne] = fakeMetadata
+			mappings[keyTwo] = fakeMetadata
+		})
+
+		It("gets the keys that were loaded with the loader", func() {
+			loader.StorageKeyMappings = mappings
+
+			keys, err := lookup.GetKeys()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(keys).To(ContainElement(keyOne))
+			Expect(keys).To(ContainElement(keyTwo))
+		})
+
+		It("gets the keccak hash of the loaded keys as well", func() {
+			loader.StorageKeyMappings = mappings
+
+			keys, err := lookup.GetKeys()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(keys).To(ContainElement(keccakedKeyOne))
+			Expect(keys).To(ContainElement(keccakedKeyTwo))
+		})
+
+		It("returns an error if GetKeys fails", func() {
+			loader.LoadMappingsError = fakes.FakeError
+
+			_, err := lookup.GetKeys()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(fakes.FakeError))
+		})
+	})
 })

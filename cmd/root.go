@@ -19,12 +19,14 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"plugin"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
@@ -217,6 +219,51 @@ func prepConfig() error {
 		FileName:     viper.GetString("exporter.name"),
 		Save:         viper.GetBool("exporter.save"),
 		Home:         viper.GetString("exporter.home"),
+	}
+	return nil
+}
+
+func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer, error) {
+	// Build plugin generator config
+	configErr := prepConfig()
+	if configErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to to prepare config: %v", SubCommand, configErr)
+	}
+
+	// Get the plugin path and load the plugin
+	_, pluginPath, pathErr := genConfig.GetPluginPaths()
+	if pathErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: failed to get plugin paths: %v", SubCommand, pathErr)
+	}
+
+	LogWithCommand.Info("linking plugin ", pluginPath)
+	plug, openErr := plugin.Open(pluginPath)
+	if openErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: linking plugin failed: %v", SubCommand, openErr)
+	}
+
+	// Load the `Exporter` symbol from the plugin
+	LogWithCommand.Info("loading transformers from plugin")
+	symExporter, lookupErr := plug.Lookup("Exporter")
+	if lookupErr != nil {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: loading Exporter symbol failed: %v", SubCommand, lookupErr)
+	}
+
+	// Assert that the symbol is of type Exporter
+	exporter, ok := symExporter.(Exporter)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("SubCommand %v: plugged-in symbol not of type Exporter", SubCommand)
+	}
+
+	// Use the Exporters export method to load the EventTransformerInitializer, StorageTransformerInitializer, and ContractTransformerInitializer sets
+	eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers := exporter.Export()
+
+	return eventTransformerInitializers, storageTransformerInitializers, contractTransformerInitializers, nil
+}
+
+func validateBlockNumberArg(blockNumber int64, argName string) error {
+	if blockNumber == -1 {
+		return fmt.Errorf("SubCommand: %v: %s argument is required and no value was given", SubCommand, argName)
 	}
 	return nil
 }

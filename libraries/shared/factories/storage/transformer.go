@@ -25,9 +25,17 @@ import (
 )
 
 type Transformer struct {
-	HashedAddress     common.Hash
+	Address           common.Address
 	StorageKeysLookup KeysLookup
 	Repository        Repository
+}
+
+func (transformer Transformer) GetStorageKeysLookup() interface{} {
+	return transformer.StorageKeysLookup
+}
+
+func (transformer Transformer) GetContractAddress() common.Address {
+	return transformer.Address
 }
 
 func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
@@ -37,7 +45,7 @@ func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.Stora
 }
 
 func (transformer Transformer) KeccakContractAddress() common.Hash {
-	return transformer.HashedAddress
+	return types.HexToKeccak256Hash(transformer.Address.Hex())
 }
 
 func (transformer Transformer) Execute(diff types.PersistedDiff) error {

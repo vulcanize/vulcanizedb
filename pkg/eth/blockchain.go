@@ -105,6 +105,10 @@ func (blockChain *BlockChain) LastBlock() (*big.Int, error) {
 	return block.Number, err
 }
 
+func (blockChain *BlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+	return blockChain.ethClient.StorageAt(context.Background(), account, key, blockNumber)
+}
+
 func (blockChain *BlockChain) Node() core.Node {
 	return blockChain.node
 }

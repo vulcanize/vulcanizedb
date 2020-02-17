@@ -27,6 +27,7 @@ type MockStorageRepository struct {
 	PassedDiffID   int64
 	PassedMetadata types.ValueMetadata
 	PassedValue    interface{}
+	db             *postgres.DB
 }
 
 func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata types.ValueMetadata, value interface{}) error {
@@ -37,6 +38,4 @@ func (repository *MockStorageRepository) Create(diffID, headerID int64, metadata
 	return repository.CreateErr
 }
 
-func (*MockStorageRepository) SetDB(db *postgres.DB) {
-	panic("implement me")
-}
+func (repository *MockStorageRepository) SetDB(db *postgres.DB) {}

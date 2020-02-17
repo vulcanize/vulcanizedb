@@ -18,15 +18,18 @@ package mocks
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
 type MockStorageTransformer struct {
-	KeccakOfAddress common.Hash
-	ExecuteErr      error
-	PassedDiff      types.PersistedDiff
+	Address           common.Address
+	StorageKeysLookup storage.KeysLookup
+	KeccakOfAddress   common.Hash
+	ExecuteErr        error
+	PassedDiff        types.PersistedDiff
 }
 
 func (transformer *MockStorageTransformer) Execute(diff types.PersistedDiff) error {
@@ -36,6 +39,14 @@ func (transformer *MockStorageTransformer) Execute(diff types.PersistedDiff) err
 
 func (transformer *MockStorageTransformer) KeccakContractAddress() common.Hash {
 	return transformer.KeccakOfAddress
+}
+
+func (transformer *MockStorageTransformer) GetContractAddress() common.Address {
+	return transformer.Address
+}
+
+func (transformer *MockStorageTransformer) GetStorageKeysLookup() interface{} {
+	return transformer.StorageKeysLookup
 }
 
 func (transformer *MockStorageTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.StorageTransformer {

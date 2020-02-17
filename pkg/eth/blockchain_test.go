@@ -19,6 +19,7 @@ package eth_test
 import (
 	"context"
 	"math/big"
+	"math/rand"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -189,6 +190,29 @@ var _ = Describe("Geth blockchain", func() {
 
 			mockClient.AssertHeaderByNumberCalledWith(context.Background(), nil)
 			Expect(result).To(Equal(big.NewInt(blockNumber)))
+		})
+	})
+
+	Describe("getting storage at the given block", func() {
+		var (
+			account     = fakes.FakeAddress
+			key         = fakes.FakeHash
+			blockNumber = big.NewInt(rand.Int63())
+		)
+
+		It("fetches the storage at the given key, contract and block", func() {
+			_, err := blockChain.GetStorageAt(account, key, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
+
+			mockClient.AssertStorageAtCalledWith(context.Background(), account, key, blockNumber)
+		})
+
+		It("returns an error if the call to the eth client fails", func() {
+			mockClient.SetStorageAtError(fakes.FakeError)
+
+			_, err := blockChain.GetStorageAt(account, key, blockNumber)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(fakes.FakeError))
 		})
 	})
 })

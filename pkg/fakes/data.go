@@ -29,10 +29,12 @@ import (
 )
 
 var (
-	FakeAddress   = common.HexToAddress("0x" + RandomString(40))
-	FakeError     = errors.New("failed")
-	FakeHash      = common.BytesToHash([]byte{1, 2, 3, 4, 5})
-	fakeTimestamp = rand.Int63n(1500000000)
+	FakeAddress        = common.HexToAddress("0x" + RandomString(40))
+	AnotherFakeAddress = common.HexToAddress("0x" + RandomString(40))
+	FakeError          = errors.New("failed")
+	FakeHash           = common.BytesToHash([]byte{1, 2, 3, 4, 5})
+	AnotherFakeHash    = common.BytesToHash([]byte{6, 7, 8, 9, 0})
+	fakeTimestamp      = rand.Int63n(1500000000)
 )
 
 var rawFakeHeader, _ = json.Marshal(types.Header{})
@@ -56,8 +58,7 @@ func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 }
 
 func RandomString(length int) string {
-	var seededRand = rand.New(
-		rand.NewSource(time.Now().UnixNano()))
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
 	charset := "abcdef1234567890"
 	b := make([]byte, length)
 	for i := range b {

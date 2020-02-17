@@ -39,17 +39,18 @@ var _ = Describe("Storage transformer", func() {
 		storageKeysLookup = &mocks.MockStorageKeysLookup{}
 		repository = &mocks.MockStorageRepository{}
 		t = storage.Transformer{
-			HashedAddress:     common.Hash{},
+			Address:           common.Address{},
 			StorageKeysLookup: storageKeysLookup,
 			Repository:        repository,
 		}
 	})
 
 	It("returns the contract address being watched", func() {
-		fakeAddress := types.HexToKeccak256Hash("0x12345")
-		t.HashedAddress = fakeAddress
+		fakeAddress := fakes.FakeAddress
+		keccakOfAddress := types.HexToKeccak256Hash(fakeAddress.Hex())
+		t.Address = fakeAddress
 
-		Expect(t.KeccakContractAddress()).To(Equal(fakeAddress))
+		Expect(t.KeccakContractAddress()).To(Equal(keccakOfAddress))
 	})
 
 	It("looks up metadata for storage key", func() {

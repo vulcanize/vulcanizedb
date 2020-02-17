@@ -169,4 +169,19 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(checked).To(BeTrue())
 		})
 	})
+
+	Describe("MarkFromBackfill", func() {
+		It("marks a diff as from_backfill", func() {
+			id, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			err := repo.MarkFromBackfill(id)
+
+			Expect(err).NotTo(HaveOccurred())
+			var fromBackfill bool
+			checkedErr := db.Get(&fromBackfill, `SELECT from_backfill FROM public.storage_diff WHERE id = $1`, id)
+			Expect(checkedErr).NotTo(HaveOccurred())
+			Expect(fromBackfill).To(BeTrue())
+		})
+	})
 })

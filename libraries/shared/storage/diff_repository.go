@@ -30,6 +30,7 @@ type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
 	GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool)
 	MarkChecked(id int64) error
+	MarkFromBackfill(id int64) error
 }
 
 type diffRepository struct {
@@ -89,5 +90,10 @@ func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, err
 
 func (repository diffRepository) MarkChecked(id int64) error {
 	_, err := repository.db.Exec(`UPDATE public.storage_diff SET checked = true WHERE id = $1`, id)
+	return err
+}
+
+func (repository diffRepository) MarkFromBackfill(id int64) error {
+	_, err := repository.db.Exec(`UPDATE public.storage_diff SET from_backfill = true WHERE id = $1`, id)
 	return err
 }

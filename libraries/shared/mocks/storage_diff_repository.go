@@ -21,12 +21,14 @@ import (
 )
 
 type MockStorageDiffRepository struct {
-	CreatePassedRawDiffs []types.RawDiff
-	CreateReturnID       int64
-	CreateReturnError    error
-	GetNewDiffsDiffs     []types.PersistedDiff
-	GetNewDiffsErrors    []error
-	MarkCheckedPassedID  int64
+	CreatePassedRawDiffs   []types.RawDiff
+	CreateReturnID         int64
+	CreateReturnError      error
+	GetNewDiffsDiffs       []types.PersistedDiff
+	GetNewDiffsErrors      []error
+	MarkCheckedPassedID    int64
+	MarkFromBackfillCalled bool
+	MarkFromBackfillError  error
 }
 
 func (repository *MockStorageDiffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
@@ -46,4 +48,9 @@ func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
 func (repository *MockStorageDiffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64, error) {
 	repository.CreatePassedRawDiffs = append(repository.CreatePassedRawDiffs, rawDiff)
 	return repository.CreateReturnID, repository.CreateReturnError
+}
+
+func (repository *MockStorageDiffRepository) MarkFromBackfill(id int64) error {
+	repository.MarkFromBackfillCalled = true
+	return repository.MarkFromBackfillError
 }
