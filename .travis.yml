@@ -9,6 +9,7 @@ addons:
 go_import_path: github.com/makerdao/vulcanizedb
 before_install:
 - make installtools
+- python3 -VV
 - bash ./scripts/install-postgres-11.sh
 - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 - echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
