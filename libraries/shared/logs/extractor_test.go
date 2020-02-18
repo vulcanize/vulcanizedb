@@ -22,9 +22,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -95,7 +95,7 @@ var _ = Describe("Log extractor", func() {
 
 		It("adds transformer's addresses to extractor's watched addresses", func() {
 			addresses := []string{"0xA", "0xB"}
-			configWithAddresses := transformer.EventTransformerConfig{
+			configWithAddresses := event.TransformerConfig{
 				ContractAddresses:   addresses,
 				StartingBlockNumber: rand.Int63(),
 			}
@@ -103,13 +103,13 @@ var _ = Describe("Log extractor", func() {
 			err := extractor.AddTransformerConfig(configWithAddresses)
 
 			Expect(err).NotTo(HaveOccurred())
-			expectedAddresses := transformer.HexStringsToAddresses(addresses)
+			expectedAddresses := event.HexStringsToAddresses(addresses)
 			Expect(extractor.Addresses).To(Equal(expectedAddresses))
 		})
 
 		It("adds transformer's topic to extractor's watched topics", func() {
 			topic := "0x1"
-			configWithTopic := transformer.EventTransformerConfig{
+			configWithTopic := event.TransformerConfig{
 				ContractAddresses:   []string{fakes.FakeAddress.Hex()},
 				Topic:               topic,
 				StartingBlockNumber: rand.Int63(),
@@ -265,7 +265,7 @@ var _ = Describe("Log extractor", func() {
 		Describe("when there are unchecked headers", func() {
 			It("fetches logs for unchecked headers", func() {
 				addUncheckedHeader(extractor)
-				config := transformer.EventTransformerConfig{
+				config := event.TransformerConfig{
 					ContractAddresses:   []string{fakes.FakeAddress.Hex()},
 					Topic:               fakes.FakeHash.Hex(),
 					StartingBlockNumber: rand.Int63(),
@@ -281,7 +281,7 @@ var _ = Describe("Log extractor", func() {
 				Expect(mockLogFetcher.FetchCalled).To(BeTrue())
 				expectedTopics := []common.Hash{common.HexToHash(config.Topic)}
 				Expect(mockLogFetcher.Topics).To(Equal(expectedTopics))
-				expectedAddresses := transformer.HexStringsToAddresses(config.ContractAddresses)
+				expectedAddresses := event.HexStringsToAddresses(config.ContractAddresses)
 				Expect(mockLogFetcher.ContractAddresses).To(Equal(expectedAddresses))
 			})
 
@@ -416,7 +416,7 @@ var _ = Describe("Log extractor", func() {
 })
 
 func addTransformerConfig(extractor *logs.LogExtractor) {
-	fakeConfig := transformer.EventTransformerConfig{
+	fakeConfig := event.TransformerConfig{
 		ContractAddresses:   []string{fakes.FakeAddress.Hex()},
 		Topic:               fakes.FakeHash.Hex(),
 		StartingBlockNumber: rand.Int63(),
@@ -436,8 +436,8 @@ func addFetchedLog(extractor *logs.LogExtractor) {
 	extractor.Fetcher = mockLogFetcher
 }
 
-func getTransformerConfig(startingBlockNumber, endingBlockNumber int64) transformer.EventTransformerConfig {
-	return transformer.EventTransformerConfig{
+func getTransformerConfig(startingBlockNumber, endingBlockNumber int64) event.TransformerConfig {
+	return event.TransformerConfig{
 		ContractAddresses:   []string{fakes.FakeAddress.Hex()},
 		Topic:               fakes.FakeHash.Hex(),
 		StartingBlockNumber: startingBlockNumber,

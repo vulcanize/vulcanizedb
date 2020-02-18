@@ -28,7 +28,7 @@ Contract Transformers: transform data derived from Ethereum log events and use i
 To plug in an external transformer we need to:
 
 1. Create a package that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](../staging/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](../../staging/libraries/shared/transformer/storage_transformer.go#L31),
+or [StorageTransformerInitializer](../../staging/libraries/shared/storage/storage_transformer.go#L31),
 or [ContractTransformerInitializer](../../staging/libraries/shared/transformer/contract_transformer.go#L31), respectively
 2. Design the transformers to work in the context of their [event](../staging/libraries/shared/watcher/event_watcher.go#L83),
 [storage](../../staging/libraries/shared/watcher/storage_watcher.go#L53),

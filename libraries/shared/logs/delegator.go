@@ -19,7 +19,7 @@ package logs
 import (
 	"errors"
 	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -33,14 +33,14 @@ var (
 )
 
 type ILogDelegator interface {
-	AddTransformer(t transformer.EventTransformer)
+	AddTransformer(t event.ITransformer)
 	DelegateLogs() error
 }
 
 type LogDelegator struct {
 	Chunker       chunker.Chunker
 	LogRepository datastore.EventLogRepository
-	Transformers  []transformer.EventTransformer
+	Transformers  []event.ITransformer
 }
 
 func NewLogDelegator(db *postgres.DB) *LogDelegator {
@@ -50,7 +50,7 @@ func NewLogDelegator(db *postgres.DB) *LogDelegator {
 	}
 }
 
-func (delegator *LogDelegator) AddTransformer(t transformer.EventTransformer) {
+func (delegator *LogDelegator) AddTransformer(t event.ITransformer) {
 	delegator.Transformers = append(delegator.Transformers, t)
 	delegator.Chunker.AddConfig(t.GetConfig())
 }

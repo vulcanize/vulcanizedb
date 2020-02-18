@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -46,14 +46,14 @@ func (e ErrHeaderMismatch) Error() string {
 }
 
 type IStorageWatcher interface {
-	AddTransformers(initializers []transformer.StorageTransformerInitializer)
+	AddTransformers(initializers []storage2.TransformerInitializer)
 	Execute() error
 }
 
 type StorageWatcher struct {
 	db                        *postgres.DB
 	HeaderRepository          datastore.HeaderRepository
-	KeccakAddressTransformers map[common.Hash]transformer.StorageTransformer // keccak hash of an address => transformer
+	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
 	RetryInterval             time.Duration
 	StorageDiffRepository     storage.DiffRepository
 }
@@ -61,7 +61,7 @@ type StorageWatcher struct {
 func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
-	transformers := make(map[common.Hash]transformer.StorageTransformer)
+	transformers := make(map[common.Hash]storage2.ITransformer)
 	return StorageWatcher{
 		db:                        db,
 		HeaderRepository:          headerRepository,
@@ -71,7 +71,7 @@ func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatc
 	}
 }
 
-func (watcher StorageWatcher) AddTransformers(initializers []transformer.StorageTransformerInitializer) {
+func (watcher StorageWatcher) AddTransformers(initializers []storage2.TransformerInitializer) {
 	for _, initializer := range initializers {
 		storageTransformer := initializer(watcher.db)
 		watcher.KeccakAddressTransformers[storageTransformer.KeccakContractAddress()] = storageTransformer
@@ -156,7 +156,7 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	return nil
 }
 
-func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (transformer.StorageTransformer, bool) {
+func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (storage2.ITransformer, bool) {
 	storageTransformer, ok := watcher.KeccakAddressTransformers[diff.HashedAddress]
 	return storageTransformer, ok
 }

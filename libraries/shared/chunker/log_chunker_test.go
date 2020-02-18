@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	chunk "github.com/makerdao/vulcanizedb/libraries/shared/chunker"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,21 +34,21 @@ var _ = Describe("Log chunker", func() {
 	BeforeEach(func() {
 		chunker = chunk.NewLogChunker()
 
-		configA := transformer.EventTransformerConfig{
+		configA := event.TransformerConfig{
 			TransformerName:   "TransformerA",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A1", "0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xA",
 		}
 		chunker.AddConfig(configA)
 
-		configB := transformer.EventTransformerConfig{
+		configB := event.TransformerConfig{
 			TransformerName:   "TransformerB",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000B1"},
 			Topic:             "0xB",
 		}
 		chunker.AddConfig(configB)
 
-		configC := transformer.EventTransformerConfig{
+		configC := event.TransformerConfig{
 			TransformerName:   "TransformerC",
 			ContractAddresses: []string{"0x00000000000000000000000000000000000000A2"},
 			Topic:             "0xC",
@@ -74,7 +74,7 @@ var _ = Describe("Log chunker", func() {
 
 	Describe("AddConfig", func() {
 		It("can add more configs later", func() {
-			configD := transformer.EventTransformerConfig{
+			configD := event.TransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",
@@ -86,7 +86,7 @@ var _ = Describe("Log chunker", func() {
 		})
 
 		It("lower cases address", func() {
-			configD := transformer.EventTransformerConfig{
+			configD := event.TransformerConfig{
 				TransformerName:   "TransformerD",
 				ContractAddresses: []string{"0x000000000000000000000000000000000000000D"},
 				Topic:             "0xD",

@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
@@ -52,7 +52,7 @@ func NewEventWatcher(db *postgres.DB, bc core.BlockChain, extractor logs.ILogExt
 }
 
 // Adds transformers to the watcher so that their logs will be extracted and delegated.
-func (watcher *EventWatcher) AddTransformers(initializers []transformer.EventTransformerInitializer) error {
+func (watcher *EventWatcher) AddTransformers(initializers []event.TransformerInitializer) error {
 	for _, initializer := range initializers {
 		t := initializer(watcher.db)
 

@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
@@ -27,7 +27,7 @@ type MockEventTransformer struct {
 	ExecuteWasCalled bool
 	ExecuteError     error
 	PassedLogs       []core.EventLog
-	config           transformer.EventTransformerConfig
+	config           event.TransformerConfig
 }
 
 func (t *MockEventTransformer) Execute(logs []core.EventLog) error {
@@ -39,19 +39,19 @@ func (t *MockEventTransformer) Execute(logs []core.EventLog) error {
 	return nil
 }
 
-func (t *MockEventTransformer) GetConfig() transformer.EventTransformerConfig {
+func (t *MockEventTransformer) GetConfig() event.TransformerConfig {
 	return t.config
 }
 
-func (t *MockEventTransformer) SetTransformerConfig(config transformer.EventTransformerConfig) {
+func (t *MockEventTransformer) SetTransformerConfig(config event.TransformerConfig) {
 	t.config = config
 }
 
-func (t *MockEventTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.EventTransformer {
+func (t *MockEventTransformer) FakeTransformerInitializer(db *postgres.DB) event.ITransformer {
 	return t
 }
 
-var FakeTransformerConfig = transformer.EventTransformerConfig{
+var FakeTransformerConfig = event.TransformerConfig{
 	TransformerName:   "FakeTransformer",
 	ContractAddresses: []string{fakes.FakeAddress.Hex()},
 	Topic:             fakes.FakeHash.Hex(),

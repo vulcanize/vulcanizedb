@@ -12,7 +12,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -24,8 +23,8 @@ var _ = Describe("getStorageValue Command", func() {
 		bc                             *fakes.MockBlockChain
 		keysLookupOne, keysLookupTwo   mocks.MockStorageKeysLookup
 		runner                         backfill.StorageValueLoader
-		initializerOne, initializerTwo transformer.StorageTransformerInitializer
-		initializers                   []transformer.StorageTransformerInitializer
+		initializerOne, initializerTwo storage.TransformerInitializer
+		initializers                   []storage.TransformerInitializer
 		keyOne, keyTwo                 common.Hash
 		valueOne, valueTwo             common.Hash
 		addressOne, addressTwo         common.Address
@@ -65,7 +64,7 @@ var _ = Describe("getStorageValue Command", func() {
 			Repository:        &mocks.MockStorageRepository{},
 		}.NewTransformer
 
-		initializers = []transformer.StorageTransformerInitializer{initializerOne, initializerTwo}
+		initializers = []storage.TransformerInitializer{initializerOne, initializerTwo}
 		blockNumber = rand.Int63()
 		bigIntBlockNumber = big.NewInt(blockNumber)
 

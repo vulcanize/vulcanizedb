@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
 
@@ -49,6 +48,6 @@ func (transformer *MockStorageTransformer) GetStorageKeysLookup() interface{} {
 	return transformer.StorageKeysLookup
 }
 
-func (transformer *MockStorageTransformer) FakeTransformerInitializer(db *postgres.DB) transformer.StorageTransformer {
+func (transformer *MockStorageTransformer) FakeTransformerInitializer(db *postgres.DB) storage.ITransformer {
 	return transformer
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -18,7 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []transformer.StorageTransformerInitializer, blockNumber int64) StorageValueLoader {
+func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, blockNumber int64) StorageValueLoader {
 	return StorageValueLoader{
 		bc:              bc,
 		db:              db,
@@ -34,7 +33,7 @@ type StorageValueLoader struct {
 	db              *postgres.DB
 	HeaderRepo      datastore.HeaderRepository
 	StorageDiffRepo storage2.DiffRepository
-	initializers    []transformer.StorageTransformerInitializer
+	initializers    []storage.TransformerInitializer
 	blockNumber     int64
 }
 
@@ -43,7 +42,6 @@ func (r *StorageValueLoader) Run() error {
 	if getKeysErr != nil {
 		return getKeysErr
 	}
-
 	header, getHeaderErr := r.HeaderRepo.GetHeader(r.blockNumber)
 	if getHeaderErr != nil {
 		return getHeaderErr
@@ -81,6 +79,9 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 }
 
 func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
+	logrus.Infof(
+		"Getting and persisting %v storage values. Address: %v HashedAddress: %v",
+		len(keys), address.Hex(), crypto.Keccak256Hash(address[:]).Hex())
 	blockNumberBigInt := big.NewInt(blockNumber)
 	keccakOfAddress := crypto.Keccak256Hash(address[:])
 	logrus.Infof("Getting and persisting %v storage keys for address: %v, keccak hash of address: %v", len(keys), address.Hex(), keccakOfAddress.Hex())

@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -56,7 +56,7 @@ var _ = Describe("Event Watcher", func() {
 			fakeTransformerOne.SetTransformerConfig(mocks.FakeTransformerConfig)
 			fakeTransformerTwo = &mocks.MockEventTransformer{}
 			fakeTransformerTwo.SetTransformerConfig(mocks.FakeTransformerConfig)
-			initializers := []transformer.EventTransformerInitializer{
+			initializers := []event.TransformerInitializer{
 				fakeTransformerOne.FakeTransformerInitializer,
 				fakeTransformerTwo.FakeTransformerInitializer,
 			}
@@ -66,7 +66,7 @@ var _ = Describe("Event Watcher", func() {
 		})
 
 		It("adds initialized transformer to log delegator", func() {
-			expectedTransformers := []transformer.EventTransformer{
+			expectedTransformers := []event.ITransformer{
 				fakeTransformerOne,
 				fakeTransformerTwo,
 			}
@@ -74,7 +74,7 @@ var _ = Describe("Event Watcher", func() {
 		})
 
 		It("adds transformer config to log extractor", func() {
-			expectedConfigs := []transformer.EventTransformerConfig{
+			expectedConfigs := []event.TransformerConfig{
 				mocks.FakeTransformerConfig,
 				mocks.FakeTransformerConfig,
 			}

@@ -21,9 +21,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transactions"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -37,7 +37,7 @@ var (
 )
 
 type ILogExtractor interface {
-	AddTransformerConfig(config transformer.EventTransformerConfig) error
+	AddTransformerConfig(config event.TransformerConfig) error
 	ExtractLogs(recheckHeaders constants.TransformerExecution) error
 }
 
@@ -66,7 +66,7 @@ func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
 }
 
 // Add additional logs to extract
-func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) error {
+func (extractor *LogExtractor) AddTransformerConfig(config event.TransformerConfig) error {
 	checkedHeadersErr := extractor.updateCheckedHeaders(config)
 	if checkedHeadersErr != nil {
 		return checkedHeadersErr
@@ -80,7 +80,7 @@ func (extractor *LogExtractor) AddTransformerConfig(config transformer.EventTran
 		extractor.EndingBlock = &config.EndingBlockNumber
 	}
 
-	addresses := transformer.HexStringsToAddresses(config.ContractAddresses)
+	addresses := event.HexStringsToAddresses(config.ContractAddresses)
 	extractor.Addresses = append(extractor.Addresses, addresses...)
 	extractor.Topics = append(extractor.Topics, common.HexToHash(config.Topic))
 	return nil
@@ -173,7 +173,7 @@ func (extractor *LogExtractor) getCheckCount(recheckHeaders constants.Transforme
 	}
 }
 
-func (extractor *LogExtractor) updateCheckedHeaders(config transformer.EventTransformerConfig) error {
+func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConfig) error {
 	alreadyWatchingLog, watchingLogErr := extractor.CheckedLogsRepository.AlreadyWatchingLog(config.ContractAddresses, config.Topic)
 	if watchingLogErr != nil {
 		return watchingLogErr
