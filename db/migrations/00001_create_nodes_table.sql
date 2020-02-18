@@ -6,7 +6,7 @@ CREATE TABLE eth_nodes
     genesis_block VARCHAR(66),
     network_id    NUMERIC,
     eth_node_id   VARCHAR(128),
-    UNIQUE (genesis_block, network_id, eth_node_id)
+    UNIQUE (genesis_block, network_id, eth_node_id, client_name)
 );
 
 COMMENT ON TABLE public.eth_nodes

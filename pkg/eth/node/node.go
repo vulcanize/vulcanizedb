@@ -18,18 +18,16 @@ package node
 
 import (
 	"context"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/sirupsen/logrus"
 )
 
 type IPropertiesReader interface {
-	NodeInfo() (id string, name string)
+	NodeClientName() string
 	NetworkId() float64
 	GenesisBlock() string
 }
@@ -56,12 +54,11 @@ type GanacheClient struct {
 
 func MakeNode(rpcClient core.RpcClient) core.Node {
 	pr := makePropertiesReader(rpcClient)
-	id, name := pr.NodeInfo()
 	return core.Node{
 		GenesisBlock: pr.GenesisBlock(),
 		NetworkID:    pr.NetworkId(),
-		ID:           id,
-		ClientName:   name,
+		ID:           rpcClient.IpcPath(),
+		ClientName:   pr.NodeClientName(),
 	}
 }
 
@@ -119,27 +116,25 @@ func (reader PropertiesReader) GenesisBlock() string {
 	return header.Hash().Hex()
 }
 
-func (reader PropertiesReader) NodeInfo() (string, string) {
-	var info p2p.NodeInfo
-	err := reader.client.CallContext(context.Background(), &info, "admin_nodeInfo")
+func (reader PropertiesReader) NodeClientName() string {
+	var nodeName string
+	err := reader.client.CallContext(context.Background(), &nodeName, "web3_clientVersion")
 	if err != nil {
-		logrus.Debugf("error getting admin_nodeInfo: %s", err.Error())
+		logrus.Debugf("error getting client version: %s", err.Error())
 	}
-	return info.ID, info.Name
+	return nodeName
 }
 
-func (client ParityClient) NodeInfo() (string, string) {
-	nodeInfo := client.parityNodeInfo()
-	id := client.parityID()
-	return id, nodeInfo
+func (client ParityClient) NodeClientName() string {
+	return client.parityNodeInfo()
 }
 
-func (client InfuraClient) NodeInfo() (string, string) {
-	return "infura", "infura"
+func (client InfuraClient) NodeClientName() string {
+	return "infura"
 }
 
-func (client GanacheClient) NodeInfo() (string, string) {
-	return "ganache", "ganache"
+func (client GanacheClient) NodeClientName() string {
+	return "ganache"
 }
 
 func (client ParityClient) parityNodeInfo() string {
@@ -149,18 +144,4 @@ func (client ParityClient) parityNodeInfo() string {
 		logrus.Warnf("error getting parity_versionInfo: %s", err.Error())
 	}
 	return nodeInfo.String()
-}
-
-func (client ParityClient) parityID() string {
-	var enodeId = regexp.MustCompile(`^enode://(.+)@.+$`)
-	var enodeURL string
-	err := client.client.CallContext(context.Background(), &enodeURL, "parity_enode")
-	if err != nil {
-		logrus.Warnf("error getting parity_enode: %s", err.Error())
-	}
-	enode := enodeId.FindStringSubmatch(enodeURL)
-	if len(enode) < 2 {
-		return ""
-	}
-	return enode[1]
 }
