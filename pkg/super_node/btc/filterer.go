@@ -42,7 +42,7 @@ func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload sh
 	if !ok {
 		return StreamResponse{}, fmt.Errorf("btc filterer expected payload type %T got %T", IPLDPayload{}, payload)
 	}
-	height := int64(btcPayload.Height)
+	height := int64(btcPayload.BlockPayload.BlockHeight)
 	if checkRange(btcFilters.Start.Int64(), btcFilters.End.Int64(), height) {
 		response := new(StreamResponse)
 		if err := s.filterHeaders(btcFilters.HeaderFilter, response, btcPayload); err != nil {

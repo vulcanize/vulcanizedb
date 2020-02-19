@@ -38,6 +38,11 @@ type IPLDPayload struct {
 	StorageNodes    map[common.Hash][]TrieNode
 }
 
+// Height satisfies the StreamedIPLDs interface
+func (i IPLDPayload) Height() int64 {
+	return i.Block.Number().Int64()
+}
+
 // Trie struct used to flag node as leaf or not
 type TrieNode struct {
 	Key   common.Hash
@@ -97,6 +102,11 @@ type StreamResponse struct {
 
 	encoded []byte
 	err     error
+}
+
+// Height satisfies the ServerResponse interface
+func (sr StreamResponse) Height() int64 {
+	return sr.BlockNumber.Int64()
 }
 
 func (sr *StreamResponse) ensureEncoded() {

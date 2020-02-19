@@ -34,7 +34,7 @@ var _ = Describe("Converter", func() {
 			convertedPayload, ok := payload.(btc.IPLDPayload)
 			Expect(ok).To(BeTrue())
 			Expect(convertedPayload).To(Equal(mocks.MockIPLDPayload))
-			Expect(convertedPayload.Height).To(Equal(mocks.MockBlockHeight))
+			Expect(convertedPayload.BlockHeight).To(Equal(mocks.MockBlockHeight))
 			Expect(convertedPayload.Header).To(Equal(&mocks.MockBlock.Header))
 			Expect(convertedPayload.Txs).To(Equal(mocks.MockTransactions))
 			Expect(convertedPayload.TxMetaData).To(Equal(mocks.MockTxsMetaData))

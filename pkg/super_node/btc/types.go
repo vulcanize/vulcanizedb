@@ -27,9 +27,9 @@ import (
 
 // BlockPayload packages the block and tx data received from block connection notifications
 type BlockPayload struct {
-	Height int64
-	Header *wire.BlockHeader
-	Txs    []*btcutil.Tx
+	BlockHeight int64
+	Header      *wire.BlockHeader
+	Txs         []*btcutil.Tx
 }
 
 // IPLDPayload is a custom type which packages raw BTC data for publishing to IPFS and filtering to subscribers
@@ -38,6 +38,11 @@ type BlockPayload struct {
 type IPLDPayload struct {
 	BlockPayload
 	TxMetaData []TxModelWithInsAndOuts
+}
+
+// Height satisfies the StreamedIPLDs interface
+func (i IPLDPayload) Height() int64 {
+	return i.BlockPayload.BlockHeight
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
@@ -76,6 +81,11 @@ type StreamResponse struct {
 
 	encoded []byte
 	err     error
+}
+
+// Height satisfies the ServerResponse interface
+func (sr StreamResponse) Height() int64 {
+	return sr.BlockNumber.Int64()
 }
 
 func (sr *StreamResponse) ensureEncoded() {

@@ -49,9 +49,9 @@ func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.
 		// Notification handler for block connections, forwards new block data to the payloadChan
 		OnFilteredBlockConnected: func(height int32, header *wire.BlockHeader, txs []*btcutil.Tx) {
 			payloadChan <- BlockPayload{
-				Height: int64(height),
-				Header: header,
-				Txs:    txs,
+				BlockHeight: int64(height),
+				Header:      header,
+				Txs:         txs,
 			}
 		},
 	}

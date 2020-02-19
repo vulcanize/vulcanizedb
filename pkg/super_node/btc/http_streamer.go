@@ -75,9 +75,9 @@ func (ps *HTTPPayloadStreamer) Stream(payloadChan chan shared.RawChainData) (sha
 					continue
 				}
 				payloadChan <- BlockPayload{
-					Header: &block.Header,
-					Height: height,
-					Txs:    msgTxsToUtilTxs(block.Transactions),
+					Header:      &block.Header,
+					BlockHeight: height,
+					Txs:         msgTxsToUtilTxs(block.Transactions),
 				}
 			default:
 			}

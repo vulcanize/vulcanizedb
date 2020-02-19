@@ -272,6 +272,12 @@ func (sap *Service) filterAndServe(payload shared.StreamedIPLDs) {
 			sap.closeType(ty)
 			continue
 		}
+		if subConfig.EndingBlock().Int64() > 0 && subConfig.EndingBlock().Int64() < payload.Height() {
+			// We are not out of range for this subscription type
+			// close it, and continue to the next
+			sap.closeType(ty)
+			continue
+		}
 		response, err := sap.Filterer.Filter(subConfig, payload)
 		if err != nil {
 			log.Error(err)
@@ -280,7 +286,7 @@ func (sap *Service) filterAndServe(payload shared.StreamedIPLDs) {
 		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: response, Err: "", Msg: ""}:
+			case sub.PayloadChan <- SubscriptionPayload{Data: response, Err: "", Flag: EmptyFlag}:
 				log.Debugf("sending super node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
@@ -312,15 +318,6 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 		return
 	}
 	subscriptionType := crypto.Keccak256Hash(by)
-	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
-	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
-	if params.HistoricalData() || params.HistoricalDataOnly() {
-		if err := sap.sendHistoricalData(subscription, id, params); err != nil {
-			sendNonBlockingErr(subscription, err)
-			sendNonBlockingQuit(subscription)
-			return
-		}
-	}
 	if !params.HistoricalDataOnly() {
 		// Add subscriber
 		sap.Lock()
@@ -330,6 +327,15 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 		sap.Subscriptions[subscriptionType][id] = subscription
 		sap.SubscriptionTypes[subscriptionType] = params
 		sap.Unlock()
+	}
+	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
+	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
+	if params.HistoricalData() || params.HistoricalDataOnly() {
+		if err := sap.sendHistoricalData(subscription, id, params); err != nil {
+			sendNonBlockingErr(subscription, err)
+			sendNonBlockingQuit(subscription)
+			return
+		}
 	}
 }
 
@@ -377,7 +383,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 				continue
 			}
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: backFillIplds, Err: "", Msg: ""}:
+			case sub.PayloadChan <- SubscriptionPayload{Data: backFillIplds, Err: "", Flag: EmptyFlag}:
 				log.Debugf("sending super node historical data payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
@@ -385,7 +391,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 		}
 		// when we are done backfilling send an empty payload signifying so in the msg
 		select {
-		case sub.PayloadChan <- SubscriptionPayload{Data: nil, Err: "", Msg: "BACKFILL COMPLETE"}:
+		case sub.PayloadChan <- SubscriptionPayload{Data: nil, Err: "", Flag: BackFillCompleteFlag}:
 			log.Debugf("sending backfill completion notice to subscription %s", id)
 		default:
 			log.Infof("unable to send backfill completion notice to subscription %s", id)

@@ -25,12 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// ISuperNodeStreamer is the interface for streaming SuperNodePayloads from a vulcanizeDB super node
-type ISuperNodeStreamer interface {
-	Stream(payloadChan chan super_node.SubscriptionPayload, params shared.SubscriptionSettings) (*rpc.ClientSubscription, error)
-}
-
-// SuperNodeStreamer is the underlying struct for the ISuperNodeStreamer interface
+// SuperNodeStreamer is the underlying struct for the shared.SuperNodeStreamer interface
 type SuperNodeStreamer struct {
 	Client core.RPCClient
 }
