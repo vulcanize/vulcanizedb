@@ -70,7 +70,7 @@ var _ = Describe("BackFiller", func() {
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGaps(wg)
+			backfiller.FillGapsInSuperNode(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
@@ -124,7 +124,7 @@ var _ = Describe("BackFiller", func() {
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGaps(wg)
+			backfiller.FillGapsInSuperNode(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
@@ -172,7 +172,7 @@ var _ = Describe("BackFiller", func() {
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGaps(wg)
+			backfiller.FillGapsInSuperNode(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))

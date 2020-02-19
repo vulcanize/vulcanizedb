@@ -71,13 +71,13 @@ func superNode() {
 		var forwardPayloadChan chan shared.StreamedIPLDs
 		if superNodeConfig.Serve {
 			forwardPayloadChan = make(chan shared.StreamedIPLDs, super_node.PayloadChanBufferSize)
-			superNode.ScreenAndServe(wg, forwardPayloadChan)
+			superNode.FilterAndServe(wg, forwardPayloadChan)
 			if err := startServers(superNode, superNodeConfig); err != nil {
 				logWithCommand.Fatal(err)
 			}
 		}
 		if superNodeConfig.Sync {
-			if err := superNode.SyncAndPublish(wg, forwardPayloadChan); err != nil {
+			if err := superNode.ProcessData(wg, forwardPayloadChan); err != nil {
 				logWithCommand.Fatal(err)
 			}
 		}
@@ -86,7 +86,7 @@ func superNode() {
 			if err != nil {
 				logWithCommand.Fatal(err)
 			}
-			backFiller.FillGaps(wg)
+			backFiller.FillGapsInSuperNode(wg)
 		}
 	}
 	wg.Wait()

@@ -19,13 +19,13 @@ package eth
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for ethereum

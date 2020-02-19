@@ -32,5 +32,6 @@ type Subscription struct {
 // It carries data of a type specific to the chain being supported/queried and an error message
 type SubscriptionPayload struct {
 	Data shared.ServerResponse `json:"data"` // e.g. for Ethereum eth.StreamPayload
-	Err  string                `json:"err"`
+	Err  string                `json:"err"`  // field for error
+	Msg  string                `json:"msg"`  // field for message
 }

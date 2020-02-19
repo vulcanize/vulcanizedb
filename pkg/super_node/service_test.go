@@ -63,7 +63,7 @@ var _ = Describe("Service", func() {
 				QuitChan:       quitChan,
 				WorkerPoolSize: 1,
 			}
-			err := processor.SyncAndPublish(wg, nil)
+			err := processor.ProcessData(wg, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			quitChan <- true

@@ -36,7 +36,7 @@ const (
 // BackFillInterface for filling in gaps in the super node
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
-	FillGaps(wg *sync.WaitGroup)
+	FillGapsInSuperNode(wg *sync.WaitGroup)
 }
 
 // BackFillService for filling in gaps in the super node
@@ -100,9 +100,8 @@ func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan cha
 	}, nil
 }
 
-// FillGaps periodically checks for and fills in gaps in the super node db
-// this requires a core.RpcClient that is pointed at an archival node with the StateDiffAt method exposed
-func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup) {
+// FillGapsInSuperNode periodically checks for and fills in gaps in the super node db
+func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
 	wg.Add(1)
 
