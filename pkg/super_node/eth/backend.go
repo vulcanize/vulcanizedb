@@ -93,19 +93,19 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 	// Decode the first header at this block height and return it
 	// We throw an error in FetchHeaders() if the number of headers does not match the number of CIDs and we already
 	// confirmed the number of CIDs is greater than 0 so there is no need to bound check the slice before accessing
-	header := new(types.Header)
-	if err := rlp.DecodeBytes(headerIPLDs[0], header); err != nil {
+	var header types.Header
+	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
 		return nil, err
 	}
-	return header, nil
+	return &header, nil
 }
 
 // GetTd retrieves and returns the total difficulty at the given block hash
 func (b *Backend) GetTd(blockHash common.Hash) (*big.Int, error) {
-	pgStr := `SELECT header_cids.td FROM header_cids
+	pgStr := `SELECT td FROM eth.header_cids
 			WHERE header_cids.block_hash = $1`
 	var tdStr string
-	err := b.DB.Select(&tdStr, pgStr, blockHash.String())
+	err := b.DB.Get(&tdStr, pgStr, blockHash.String())
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log
 	logs := make([][]*types.Log, len(receiptIPLDs))
 	for i, rctIPLD := range receiptIPLDs {
 		var rct types.Receipt
-		if err := rlp.DecodeBytes(rctIPLD, &rct); err != nil {
+		if err := rlp.DecodeBytes(rctIPLD.Data, &rct); err != nil {
 			return nil, err
 		}
 		logs[i] = rct.Logs
@@ -170,13 +170,14 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	if err != nil {
 		return nil, err
 	}
+
 	// Fetch and decode the header IPLD
 	headerIPLDs, err := b.Fetcher.FetchHeaders([]HeaderModel{headerCID})
 	if err != nil {
 		return nil, err
 	}
-	var header *types.Header
-	if err := rlp.DecodeBytes(headerIPLDs[0], header); err != nil {
+	var header types.Header
+	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs
@@ -186,11 +187,11 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	}
 	var uncles []*types.Header
 	for _, uncleIPLD := range uncleIPLDs {
-		var uncle *types.Header
-		if err := rlp.DecodeBytes(uncleIPLD, uncle); err != nil {
+		var uncle types.Header
+		if err := rlp.DecodeBytes(uncleIPLD.Data, &uncle); err != nil {
 			return nil, err
 		}
-		uncles = append(uncles, uncle)
+		uncles = append(uncles, &uncle)
 	}
 	// Fetch and decode the transaction IPLDs
 	txIPLDs, err := b.Fetcher.FetchTrxs(txCIDs)
@@ -199,11 +200,11 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	}
 	var transactions []*types.Transaction
 	for _, txIPLD := range txIPLDs {
-		var tx *types.Transaction
-		if err := rlp.DecodeBytes(txIPLD, tx); err != nil {
+		var tx types.Transaction
+		if err := rlp.DecodeBytes(txIPLD.Data, &tx); err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, tx)
+		transactions = append(transactions, &tx)
 	}
 	// Fetch and decode the receipt IPLDs
 	rctIPLDs, err := b.Fetcher.FetchRcts(rctCIDs)
@@ -212,14 +213,14 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	}
 	var receipts []*types.Receipt
 	for _, rctIPLD := range rctIPLDs {
-		var receipt *types.Receipt
-		if err := rlp.DecodeBytes(rctIPLD, receipt); err != nil {
+		var receipt types.Receipt
+		if err := rlp.DecodeBytes(rctIPLD.Data, &receipt); err != nil {
 			return nil, err
 		}
-		receipts = append(receipts, receipt)
+		receipts = append(receipts, &receipt)
 	}
 	// Compose everything together into a complete block
-	return types.NewBlock(header, transactions, uncles, receipts), nil
+	return types.NewBlock(&header, transactions, uncles, receipts), nil
 }
 
 // BlockByHash returns the requested block. When fullTx is true all transactions in the block are returned in full
@@ -235,8 +236,8 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 	if err != nil {
 		return nil, err
 	}
-	var header *types.Header
-	if err := rlp.DecodeBytes(headerIPLDs[0], header); err != nil {
+	var header types.Header
+	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs
@@ -246,11 +247,11 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 	}
 	var uncles []*types.Header
 	for _, uncleIPLD := range uncleIPLDs {
-		var uncle *types.Header
-		if err := rlp.DecodeBytes(uncleIPLD, uncle); err != nil {
+		var uncle types.Header
+		if err := rlp.DecodeBytes(uncleIPLD.Data, &uncle); err != nil {
 			return nil, err
 		}
-		uncles = append(uncles, uncle)
+		uncles = append(uncles, &uncle)
 	}
 	// Fetch and decode the transaction IPLDs
 	txIPLDs, err := b.Fetcher.FetchTrxs(txCIDs)
@@ -259,11 +260,11 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 	}
 	var transactions []*types.Transaction
 	for _, txIPLD := range txIPLDs {
-		var tx *types.Transaction
-		if err := rlp.DecodeBytes(txIPLD, tx); err != nil {
+		var tx types.Transaction
+		if err := rlp.DecodeBytes(txIPLD.Data, &tx); err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, tx)
+		transactions = append(transactions, &tx)
 	}
 	// Fetch and decode the receipt IPLDs
 	rctIPLDs, err := b.Fetcher.FetchRcts(rctCIDs)
@@ -272,21 +273,21 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 	}
 	var receipts []*types.Receipt
 	for _, rctIPLD := range rctIPLDs {
-		var receipt *types.Receipt
-		if err := rlp.DecodeBytes(rctIPLD, receipt); err != nil {
+		var receipt types.Receipt
+		if err := rlp.DecodeBytes(rctIPLD.Data, &receipt); err != nil {
 			return nil, err
 		}
-		receipts = append(receipts, receipt)
+		receipts = append(receipts, &receipt)
 	}
 	// Compose everything together into a complete block
-	return types.NewBlock(header, transactions, uncles, receipts), nil
+	return types.NewBlock(&header, transactions, uncles, receipts), nil
 }
 
 // GetTransaction retrieves a tx by hash
 // It also returns the blockhash, blocknumber, and tx index associated with the transaction
 func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*types.Transaction, common.Hash, uint64, uint64, error) {
 	pgStr := `SELECT transaction_cids.cid, transaction_cids.index, header_cids.block_hash, header_cids.block_number
-			FROM transaction_cids, header_cids
+			FROM eth.transaction_cids, eth.header_cids
 			WHERE transaction_cids.header_id = header_cids.id
 			AND transaction_cids.tx_hash = $1`
 	var txCIDWithHeaderInfo struct {
@@ -302,9 +303,9 @@ func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*type
 	if err != nil {
 		return nil, common.Hash{}, 0, 0, err
 	}
-	var transaction *types.Transaction
-	if err := rlp.DecodeBytes(txIPLD[0], transaction); err != nil {
+	var transaction types.Transaction
+	if err := rlp.DecodeBytes(txIPLD[0].Data, &transaction); err != nil {
 		return nil, common.Hash{}, 0, 0, err
 	}
-	return transaction, common.HexToHash(txCIDWithHeaderInfo.BlockHash), uint64(txCIDWithHeaderInfo.BlockNumber), uint64(txCIDWithHeaderInfo.Index), nil
+	return &transaction, common.HexToHash(txCIDWithHeaderInfo.BlockHash), uint64(txCIDWithHeaderInfo.BlockNumber), uint64(txCIDWithHeaderInfo.Index), nil
 }

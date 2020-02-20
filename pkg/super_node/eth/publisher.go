@@ -20,12 +20,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	common2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/dag_putters"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // IPLDPublisher satisfies the IPLDPublisher for ethereum
@@ -63,12 +64,14 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	if err != nil {
 		return nil, err
 	}
+	reward := common2.CalcEthBlockReward(ipldPayload.Block, ipldPayload.Receipts)
 	header := HeaderModel{
 		CID:             headerCid,
 		ParentHash:      ipldPayload.Block.ParentHash().String(),
 		BlockNumber:     ipldPayload.Block.Number().String(),
 		BlockHash:       ipldPayload.Block.Hash().String(),
 		TotalDifficulty: ipldPayload.TotalDifficulty.String(),
+		Reward:          reward.String(),
 	}
 
 	// Process and publish uncles
@@ -78,10 +81,12 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		if err != nil {
 			return nil, err
 		}
+		uncleReward := common2.CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncle.Number.Int64())
 		uncleCids = append(uncleCids, UncleModel{
 			CID:        uncleCid,
 			ParentHash: uncle.ParentHash.String(),
 			BlockHash:  uncle.Hash().String(),
+			Reward:     uncleReward.String(),
 		})
 	}
 

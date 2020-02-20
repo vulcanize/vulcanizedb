@@ -17,9 +17,8 @@
 package eth_test
 
 import (
-	"bytes"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -29,17 +28,13 @@ import (
 )
 
 var (
-	filterer                  *eth.ResponseFilterer
-	expectedRctForStorageRLP1 []byte
-	expectedRctForStorageRLP2 []byte
+	filterer *eth.ResponseFilterer
 )
 
 var _ = Describe("Filterer", func() {
 	Describe("FilterResponse", func() {
 		BeforeEach(func() {
 			filterer = eth.NewResponseFilterer()
-			expectedRctForStorageRLP1 = getReceiptForStorageRLP(mocks.MockReceipts, 0)
-			expectedRctForStorageRLP2 = getReceiptForStorageRLP(mocks.MockReceipts, 1)
 		})
 
 		It("Transcribes all the data from the IPLDPayload into the StreamPayload if given an open filter", func() {
@@ -49,22 +44,28 @@ var _ = Describe("Filterer", func() {
 			Expect(ok).To(BeTrue())
 			Expect(iplds.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
 			Expect(iplds.Headers).To(Equal(mocks.MockIPLDs.Headers))
-			var unclesRlp [][]byte
-			Expect(iplds.Uncles).To(Equal(unclesRlp))
+			var expectedEmptyUncles []ipfs.BlockModel
+			Expect(iplds.Uncles).To(Equal(expectedEmptyUncles))
 			Expect(len(iplds.Transactions)).To(Equal(2))
-			Expect(shared.ListContainsBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
-			Expect(shared.ListContainsBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
 			Expect(len(iplds.Receipts)).To(Equal(2))
-			Expect(shared.ListContainsBytes(iplds.Receipts, expectedRctForStorageRLP1)).To(BeTrue())
-			Expect(shared.ListContainsBytes(iplds.Receipts, expectedRctForStorageRLP2)).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
 			Expect(len(iplds.StateNodes)).To(Equal(2))
 			for _, stateNode := range iplds.StateNodes {
 				Expect(stateNode.Leaf).To(BeTrue())
 				if stateNode.StateTrieKey == mocks.ContractLeafKey {
-					Expect(stateNode.IPLD).To(Equal(mocks.ValueBytes))
+					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mocks.State1IPLD.RawData(),
+						CID:  mocks.State1IPLD.Cid().String(),
+					}))
 				}
 				if stateNode.StateTrieKey == mocks.AnotherContractLeafKey {
-					Expect(stateNode.IPLD).To(Equal(mocks.AnotherValueBytes))
+					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mocks.State2IPLD.RawData(),
+						CID:  mocks.State2IPLD.Cid().String(),
+					}))
 				}
 			}
 			Expect(iplds.StorageNodes).To(Equal(mocks.MockIPLDs.StorageNodes))
@@ -82,7 +83,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds1.StorageNodes)).To(Equal(0))
 			Expect(len(iplds1.StateNodes)).To(Equal(0))
 			Expect(len(iplds1.Receipts)).To(Equal(1))
-			Expect(iplds1.Receipts[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds1.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
 			payload2, err := filterer.Filter(rctTopicsFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -95,7 +99,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds2.StorageNodes)).To(Equal(0))
 			Expect(len(iplds2.StateNodes)).To(Equal(0))
 			Expect(len(iplds2.Receipts)).To(Equal(1))
-			Expect(iplds2.Receipts[0]).To(Equal(expectedRctForStorageRLP1))
+			Expect(iplds2.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct1IPLD.RawData(),
+				CID:  mocks.Rct1IPLD.Cid().String(),
+			}))
 
 			payload3, err := filterer.Filter(rctTopicsAndContractFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -108,7 +115,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds3.StorageNodes)).To(Equal(0))
 			Expect(len(iplds3.StateNodes)).To(Equal(0))
 			Expect(len(iplds3.Receipts)).To(Equal(1))
-			Expect(iplds3.Receipts[0]).To(Equal(expectedRctForStorageRLP1))
+			Expect(iplds3.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct1IPLD.RawData(),
+				CID:  mocks.Rct1IPLD.Cid().String(),
+			}))
 
 			payload4, err := filterer.Filter(rctContractsAndTopicFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -121,7 +131,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds4.StorageNodes)).To(Equal(0))
 			Expect(len(iplds4.StateNodes)).To(Equal(0))
 			Expect(len(iplds4.Receipts)).To(Equal(1))
-			Expect(iplds4.Receipts[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds4.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
 			payload5, err := filterer.Filter(rctsForAllCollectedTrxs, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -131,13 +144,13 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds5.Headers)).To(Equal(0))
 			Expect(len(iplds5.Uncles)).To(Equal(0))
 			Expect(len(iplds5.Transactions)).To(Equal(2))
-			Expect(shared.ListContainsBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
-			Expect(shared.ListContainsBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
 			Expect(len(iplds5.StorageNodes)).To(Equal(0))
 			Expect(len(iplds5.StateNodes)).To(Equal(0))
 			Expect(len(iplds5.Receipts)).To(Equal(2))
-			Expect(shared.ListContainsBytes(iplds5.Receipts, expectedRctForStorageRLP1)).To(BeTrue())
-			Expect(shared.ListContainsBytes(iplds5.Receipts, expectedRctForStorageRLP2)).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
 
 			payload6, err := filterer.Filter(rctsForSelectCollectedTrxs, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -147,11 +160,14 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds6.Headers)).To(Equal(0))
 			Expect(len(iplds6.Uncles)).To(Equal(0))
 			Expect(len(iplds6.Transactions)).To(Equal(1))
-			Expect(shared.ListContainsBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
 			Expect(len(iplds6.StorageNodes)).To(Equal(0))
 			Expect(len(iplds6.StateNodes)).To(Equal(0))
 			Expect(len(iplds6.Receipts)).To(Equal(1))
-			Expect(iplds4.Receipts[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds4.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
 			payload7, err := filterer.Filter(stateFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -165,7 +181,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds7.Receipts)).To(Equal(0))
 			Expect(len(iplds7.StateNodes)).To(Equal(1))
 			Expect(iplds7.StateNodes[0].StateTrieKey).To(Equal(mocks.ContractLeafKey))
-			Expect(iplds7.StateNodes[0].IPLD).To(Equal(mocks.ValueBytes))
+			Expect(iplds7.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
+				Data: mocks.State1IPLD.RawData(),
+				CID:  mocks.State1IPLD.Cid().String(),
+			}))
 
 			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -181,11 +200,3 @@ var _ = Describe("Filterer", func() {
 		})
 	})
 })
-
-func getReceiptForStorageRLP(receipts types.Receipts, i int) []byte {
-	receiptForStorage := (*types.ReceiptForStorage)(receipts[i])
-	receiptBuffer := new(bytes.Buffer)
-	err := receiptForStorage.EncodeRLP(receiptBuffer)
-	Expect(err).ToNot(HaveOccurred())
-	return receiptBuffer.Bytes()
-}

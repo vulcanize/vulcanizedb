@@ -45,16 +45,16 @@ var _ = Describe("Publisher", func() {
 
 	Describe("Publish", func() {
 		It("Publishes the passed IPLDPayload objects to IPFS and returns a CIDPayload for indexing", func() {
-			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
-			mockTrxDagPutter.CIDsToReturn = []string{"mockTrxCID1", "mockTrxCID2"}
-			mockRctDagPutter.CIDsToReturn = []string{"mockRctCID1", "mockRctCID2"}
+			mockHeaderDagPutter.CIDsToReturn = []string{mocks.HeaderCID.String()}
+			mockTrxDagPutter.CIDsToReturn = []string{mocks.Trx1CID.String(), mocks.Trx2CID.String()}
+			mockRctDagPutter.CIDsToReturn = []string{mocks.Rct1CID.String(), mocks.Rct2CID.String()}
 			val1 := common.BytesToHash(mocks.MockConvertedPayload.StateNodes[0].Value)
 			val2 := common.BytesToHash(mocks.MockConvertedPayload.StateNodes[1].Value)
 			mockStateDagPutter.CIDsToReturn = map[common.Hash][]string{
-				val1: {"mockStateCID1"},
-				val2: {"mockStateCID2"},
+				val1: {mocks.State1CID.String()},
+				val2: {mocks.State2CID.String()},
 			}
-			mockStorageDagPutter.CIDsToReturn = []string{"mockStorageCID"}
+			mockStorageDagPutter.CIDsToReturn = []string{mocks.StorageCID.String()}
 			publisher := eth.IPLDPublisher{
 				HeaderPutter:      mockHeaderDagPutter,
 				TransactionPutter: mockTrxDagPutter,
@@ -69,6 +69,7 @@ var _ = Describe("Publisher", func() {
 			Expect(cidPayload.HeaderCID.TotalDifficulty).To(Equal(mocks.MockConvertedPayload.TotalDifficulty.String()))
 			Expect(cidPayload.HeaderCID.BlockNumber).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockNumber))
 			Expect(cidPayload.HeaderCID.BlockHash).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockHash))
+			Expect(cidPayload.HeaderCID.Reward).To(Equal(mocks.MockCIDPayload.HeaderCID.Reward))
 			Expect(cidPayload.UncleCIDs).To(Equal(mocks.MockCIDPayload.UncleCIDs))
 			Expect(cidPayload.HeaderCID).To(Equal(mocks.MockCIDPayload.HeaderCID))
 			Expect(len(cidPayload.TransactionCIDs)).To(Equal(2))

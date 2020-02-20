@@ -29,7 +29,7 @@ import (
 )
 
 type EthReceipt struct {
-	*types.ReceiptForStorage
+	*types.Receipt
 
 	rawdata []byte
 	cid     cid.Cid
@@ -43,7 +43,7 @@ var _ node.Node = (*EthReceipt)(nil)
 */
 
 // NewReceipt converts a types.ReceiptForStorage to an EthReceipt IPLD node
-func NewReceipt(receipt *types.ReceiptForStorage) (*EthReceipt, error) {
+func NewReceipt(receipt *types.Receipt) (*EthReceipt, error) {
 	receiptRLP, err := rlp.EncodeToBytes(receipt)
 	if err != nil {
 		return nil, err
@@ -53,9 +53,9 @@ func NewReceipt(receipt *types.ReceiptForStorage) (*EthReceipt, error) {
 		return nil, err
 	}
 	return &EthReceipt{
-		ReceiptForStorage: receipt,
-		cid:               c,
-		rawdata:           receiptRLP,
+		Receipt: receipt,
+		cid:     c,
+		rawdata: receiptRLP,
 	}, nil
 }
 
@@ -158,7 +158,7 @@ func (r *EthReceipt) Stat() (*node.NodeStat, error) {
 
 // Size will go away. It is here to comply with the interface.
 func (r *EthReceipt) Size() (uint64, error) {
-	return strconv.ParseUint((*types.Receipt)(r.ReceiptForStorage).Size().String(), 10, 64)
+	return strconv.ParseUint(r.Receipt.Size().String(), 10, 64)
 }
 
 /*

@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
 	. "github.com/onsi/ginkgo"
@@ -106,26 +108,47 @@ var _ = Describe("Fetcher", func() {
 			Expect(ok).To(BeTrue())
 			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
 			Expect(len(iplds.Headers)).To(Equal(1))
-			Expect(iplds.Headers[0]).To(Equal(mockHeaderBlock.RawData()))
+			Expect(iplds.Headers[0]).To(Equal(ipfs.BlockModel{
+				Data: mockHeaderBlock.RawData(),
+				CID:  mockHeaderBlock.Cid().String(),
+			}))
 			Expect(len(iplds.Uncles)).To(Equal(1))
-			Expect(iplds.Uncles[0]).To(Equal(mockUncleBlock.RawData()))
+			Expect(iplds.Uncles[0]).To(Equal(ipfs.BlockModel{
+				Data: mockUncleBlock.RawData(),
+				CID:  mockUncleBlock.Cid().String(),
+			}))
 			Expect(len(iplds.Transactions)).To(Equal(1))
-			Expect(iplds.Transactions[0]).To(Equal(mockTrxBlock.RawData()))
+			Expect(iplds.Transactions[0]).To(Equal(ipfs.BlockModel{
+				Data: mockTrxBlock.RawData(),
+				CID:  mockTrxBlock.Cid().String(),
+			}))
 			Expect(len(iplds.Receipts)).To(Equal(1))
-			Expect(iplds.Receipts[0]).To(Equal(mockReceiptBlock.RawData()))
+			Expect(iplds.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mockReceiptBlock.RawData(),
+				CID:  mockReceiptBlock.Cid().String(),
+			}))
 			Expect(len(iplds.StateNodes)).To(Equal(1))
 			Expect(iplds.StateNodes[0].StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
 			Expect(iplds.StateNodes[0].Leaf).To(BeTrue())
-			Expect(iplds.StateNodes[0].IPLD).To(Equal(mockStateBlock.RawData()))
+			Expect(iplds.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
+				Data: mockStateBlock.RawData(),
+				CID:  mockStateBlock.Cid().String(),
+			}))
 			Expect(len(iplds.StorageNodes)).To(Equal(2))
 			for _, storage := range iplds.StorageNodes {
 				Expect(storage.Leaf).To(BeTrue())
 				Expect(storage.StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
 				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()) {
-					Expect(storage.IPLD).To(Equal(mockStorageBlock1.RawData()))
+					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mockStorageBlock1.RawData(),
+						CID:  mockStorageBlock1.Cid().String(),
+					}))
 				}
 				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002").Bytes()) {
-					Expect(storage.IPLD).To(Equal(mockStorageBlock2.RawData()))
+					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mockStorageBlock2.RawData(),
+						CID:  mockStorageBlock2.Cid().String(),
+					}))
 				}
 			}
 		})

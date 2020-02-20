@@ -19,6 +19,8 @@ package btc
 import (
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 )
@@ -64,8 +66,8 @@ type CIDWrapper struct {
 // Returned by IPLDFetcher and ResponseFilterer
 type IPLDs struct {
 	BlockNumber  *big.Int
-	Headers      [][]byte
-	Transactions [][]byte
+	Headers      []ipfs.BlockModel
+	Transactions []ipfs.BlockModel
 }
 
 // Height satisfies the StreamedIPLDs interface

@@ -24,7 +24,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/multiformats/go-multihash"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -80,15 +83,29 @@ func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *IP
 		if err != nil {
 			return err
 		}
-		response.Headers = append(response.Headers, headerRLP)
+		cid, err := ipld.RawdataToCid(ipld.MEthHeader, headerRLP, multihash.KECCAK_256)
+		if err != nil {
+			return err
+		}
+		response.Headers = append(response.Headers, ipfs.BlockModel{
+			Data: headerRLP,
+			CID:  cid.String(),
+		})
 		if headerFilter.Uncles {
-			response.Uncles = make([][]byte, len(payload.Block.Body().Uncles))
+			response.Uncles = make([]ipfs.BlockModel, len(payload.Block.Body().Uncles))
 			for i, uncle := range payload.Block.Body().Uncles {
 				uncleRlp, err := rlp.EncodeToBytes(uncle)
 				if err != nil {
 					return err
 				}
-				response.Uncles[i] = uncleRlp
+				cid, err := ipld.RawdataToCid(ipld.MEthHeader, uncleRlp, multihash.KECCAK_256)
+				if err != nil {
+					return err
+				}
+				response.Uncles[i] = ipfs.BlockModel{
+					Data: uncleRlp,
+					CID:  cid.String(),
+				}
 			}
 		}
 	}
@@ -107,14 +124,22 @@ func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *IPLD
 	if !trxFilter.Off {
 		trxLen := len(payload.Block.Body().Transactions)
 		trxHashes = make([]common.Hash, 0, trxLen)
-		response.Transactions = make([][]byte, 0, trxLen)
+		response.Transactions = make([]ipfs.BlockModel, 0, trxLen)
 		for i, trx := range payload.Block.Body().Transactions {
 			if checkTransactionAddrs(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err
 				}
-				response.Transactions = append(response.Transactions, trxBuffer.Bytes())
+				data := trxBuffer.Bytes()
+				cid, err := ipld.RawdataToCid(ipld.MEthTx, data, multihash.KECCAK_256)
+				if err != nil {
+					return nil, err
+				}
+				response.Transactions = append(response.Transactions, ipfs.BlockModel{
+					Data: data,
+					CID:  cid.String(),
+				})
 				trxHashes = append(trxHashes, trx.Hash())
 			}
 		}
@@ -143,17 +168,24 @@ func checkTransactionAddrs(wantedSrc, wantedDst []string, actualSrc, actualDst s
 
 func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *IPLDs, payload ConvertedPayload, trxHashes []common.Hash) error {
 	if !receiptFilter.Off {
-		response.Receipts = make([][]byte, 0, len(payload.Receipts))
+		response.Receipts = make([]ipfs.BlockModel, 0, len(payload.Receipts))
 		for i, receipt := range payload.Receipts {
 			// topics is always length 4
 			topics := [][]string{payload.ReceiptMetaData[i].Topic0s, payload.ReceiptMetaData[i].Topic1s, payload.ReceiptMetaData[i].Topic2s, payload.ReceiptMetaData[i].Topic3s}
 			if checkReceipts(receipt, receiptFilter.Topics, topics, receiptFilter.Contracts, payload.ReceiptMetaData[i].Contract, trxHashes) {
-				receiptForStorage := (*types.ReceiptForStorage)(receipt)
 				receiptBuffer := new(bytes.Buffer)
-				if err := receiptForStorage.EncodeRLP(receiptBuffer); err != nil {
+				if err := receipt.EncodeRLP(receiptBuffer); err != nil {
 					return err
 				}
-				response.Receipts = append(response.Receipts, receiptBuffer.Bytes())
+				data := receiptBuffer.Bytes()
+				cid, err := ipld.RawdataToCid(ipld.MEthTxReceipt, data, multihash.KECCAK_256)
+				if err != nil {
+					return err
+				}
+				response.Receipts = append(response.Receipts, ipfs.BlockModel{
+					Data: data,
+					CID:  cid.String(),
+				})
 			}
 		}
 	}
@@ -231,10 +263,17 @@ func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *IPLDs,
 		for _, stateNode := range payload.StateNodes {
 			if checkNodeKeys(keyFilters, stateNode.Key) {
 				if stateNode.Leaf || stateFilter.IntermediateNodes {
+					cid, err := ipld.RawdataToCid(ipld.MEthStateTrie, stateNode.Value, multihash.KECCAK_256)
+					if err != nil {
+						return err
+					}
 					response.StateNodes = append(response.StateNodes, StateNode{
 						StateTrieKey: stateNode.Key,
-						IPLD:         stateNode.Value,
-						Leaf:         stateNode.Leaf,
+						IPLD: ipfs.BlockModel{
+							Data: stateNode.Value,
+							CID:  cid.String(),
+						},
+						Leaf: stateNode.Leaf,
 					})
 				}
 			}
@@ -271,11 +310,18 @@ func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *
 			if checkNodeKeys(stateKeyFilters, stateKey) {
 				for _, storageNode := range storageNodes {
 					if checkNodeKeys(storageKeyFilters, storageNode.Key) {
+						cid, err := ipld.RawdataToCid(ipld.MEthStorageTrie, storageNode.Value, multihash.KECCAK_256)
+						if err != nil {
+							return err
+						}
 						response.StorageNodes = append(response.StorageNodes, StorageNode{
 							StateTrieKey:   stateKey,
 							StorageTrieKey: storageNode.Key,
-							IPLD:           storageNode.Value,
-							Leaf:           storageNode.Leaf,
+							IPLD: ipfs.BlockModel{
+								Data: storageNode.Value,
+								CID:  cid.String(),
+							},
+							Leaf: storageNode.Leaf,
 						})
 					}
 				}

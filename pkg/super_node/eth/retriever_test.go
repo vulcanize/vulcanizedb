@@ -246,11 +246,11 @@ var _ = Describe("Retriever", func() {
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1].CID)).To(BeTrue())
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
-				if stateNode.CID == "mockStateCID1" {
+				if stateNode.CID == mocks.State1CID.String() {
 					Expect(stateNode.StateKey).To(Equal(mocks.ContractLeafKey.Hex()))
 					Expect(stateNode.Leaf).To(Equal(true))
 				}
-				if stateNode.CID == "mockStateCID2" {
+				if stateNode.CID == mocks.State2CID.String() {
 					Expect(stateNode.StateKey).To(Equal(mocks.AnotherContractLeafKey.Hex()))
 					Expect(stateNode.Leaf).To(Equal(true))
 				}
@@ -335,13 +335,13 @@ var _ = Describe("Retriever", func() {
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(len(cidWrapper5.Headers)).To(Equal(0))
 			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
-			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, "mockTrxCID1")).To(BeTrue())
-			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, "mockTrxCID2")).To(BeTrue())
+			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx1CID.String())).To(BeTrue())
+			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx2CID.String())).To(BeTrue())
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
-			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
-			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct1CID.String())).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct2CID.String())).To(BeTrue())
 
 			cids6, empty, err := retriever.Retrieve(rctsForSelectCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
@@ -379,7 +379,7 @@ var _ = Describe("Retriever", func() {
 				HeaderID: cidWrapper7.StateNodes[0].HeaderID,
 				Leaf:     true,
 				StateKey: mocks.ContractLeafKey.Hex(),
-				CID:      "mockStateCID1",
+				CID:      mocks.State1CID.String(),
 			}))
 
 			_, empty, err = retriever.Retrieve(rctTopicsAndContractFilterFail, 1)

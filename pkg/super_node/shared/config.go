@@ -23,14 +23,11 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
-	vRpc "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
@@ -191,10 +188,6 @@ func getEthNodeAndClient(path string) (core.Node, interface{}, error) {
 		return core.Node{}, nil, err
 	}
 	rpcClient := client.NewRPCClient(rawRPCClient, path)
-	ethClient := ethclient.NewClient(rawRPCClient)
-	vdbEthClient := client.NewEthClient(ethClient)
 	vdbNode := node.MakeNode(rpcClient)
-	transactionConverter := vRpc.NewRPCTransactionConverter(ethClient)
-	blockChain := eth.NewBlockChain(vdbEthClient, rpcClient, vdbNode, transactionConverter)
-	return blockChain.Node(), rpcClient, nil
+	return vdbNode, rpcClient, nil
 }

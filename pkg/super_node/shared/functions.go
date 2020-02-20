@@ -18,6 +18,8 @@ package shared
 
 import (
 	"bytes"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 // ListContainsString used to check if a list of strings contains a particular string
@@ -30,10 +32,10 @@ func ListContainsString(sss []string, s string) bool {
 	return false
 }
 
-// ListContainsBytes used to check if a list of byte arrays contains a particular byte array
-func ListContainsBytes(bbb [][]byte, b []byte) bool {
-	for _, by := range bbb {
-		if bytes.Equal(by, b) {
+// IPLDsContainBytes used to check if a list of strings contains a particular string
+func IPLDsContainBytes(iplds []ipfs.BlockModel, b []byte) bool {
+	for _, ipld := range iplds {
+		if bytes.Equal(ipld.Data, b) {
 			return true
 		}
 	}

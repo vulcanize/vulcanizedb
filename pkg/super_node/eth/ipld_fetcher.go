@@ -90,7 +90,7 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 
 // FetchHeaders fetches headers
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([][]byte, error) {
+func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching header iplds")
 	headerCids := make([]cid.Cid, len(cids))
 	for i, c := range cids {
@@ -101,20 +101,23 @@ func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([][]byte, error) {
 		headerCids[i] = dc
 	}
 	headers := f.fetchBatch(headerCids)
-	headersRLP := make([][]byte, len(headers))
+	headerIPLDs := make([]ipfs.BlockModel, len(headers))
 	for i, header := range headers {
-		headersRLP[i] = header.RawData()
+		headerIPLDs[i] = ipfs.BlockModel{
+			Data: header.RawData(),
+			CID:  header.Cid().String(),
+		}
 	}
-	if len(headersRLP) != len(headerCids) {
+	if len(headerIPLDs) != len(headerCids) {
 		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(headers), len(headerCids))
-		return headersRLP, errUnexpectedNumberOfIPLDs
+		return headerIPLDs, errUnexpectedNumberOfIPLDs
 	}
-	return headersRLP, nil
+	return headerIPLDs, nil
 }
 
 // FetchUncles fetches uncles
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([][]byte, error) {
+func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching uncle iplds")
 	uncleCids := make([]cid.Cid, len(cids))
 	for i, c := range cids {
@@ -125,20 +128,23 @@ func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([][]byte, error) {
 		uncleCids[i] = dc
 	}
 	uncles := f.fetchBatch(uncleCids)
-	unclesRLP := make([][]byte, len(uncles))
+	uncleIPLDs := make([]ipfs.BlockModel, len(uncles))
 	for i, uncle := range uncles {
-		unclesRLP[i] = uncle.RawData()
+		uncleIPLDs[i] = ipfs.BlockModel{
+			Data: uncle.RawData(),
+			CID:  uncle.Cid().String(),
+		}
 	}
-	if len(unclesRLP) != len(uncleCids) {
+	if len(uncleIPLDs) != len(uncleCids) {
 		log.Errorf("ipfs fetcher: number of uncle blocks returned (%d) does not match number expected (%d)", len(uncles), len(uncleCids))
-		return unclesRLP, errUnexpectedNumberOfIPLDs
+		return uncleIPLDs, errUnexpectedNumberOfIPLDs
 	}
-	return unclesRLP, nil
+	return uncleIPLDs, nil
 }
 
 // FetchTrxs fetches transactions
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([][]byte, error) {
+func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching transaction iplds")
 	trxCids := make([]cid.Cid, len(cids))
 	for i, c := range cids {
@@ -149,20 +155,24 @@ func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([][]byte, error) {
 		trxCids[i] = dc
 	}
 	trxs := f.fetchBatch(trxCids)
-	trxsRLP := make([][]byte, len(trxs))
+	trxIPLDs := make([]ipfs.BlockModel, len(trxs))
 	for i, trx := range trxs {
-		trxsRLP[i] = trx.RawData()
+		trxIPLDs[i] = ipfs.BlockModel{
+			Data: trx.RawData(),
+			CID:  trx.Cid().String(),
+		}
 	}
-	if len(trxsRLP) != len(trxCids) {
+	if len(trxIPLDs) != len(trxCids) {
 		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
-		return trxsRLP, errUnexpectedNumberOfIPLDs
+		return trxIPLDs, errUnexpectedNumberOfIPLDs
 	}
-	return trxsRLP, nil
+	return trxIPLDs, nil
 }
 
 // FetchRcts fetches receipts
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([][]byte, error) {
+// batch fetch preserves order?
+func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching receipt iplds")
 	rctCids := make([]cid.Cid, len(cids))
 	for i, c := range cids {
@@ -173,15 +183,18 @@ func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([][]byte, error) {
 		rctCids[i] = dc
 	}
 	rcts := f.fetchBatch(rctCids)
-	rctsRLP := make([][]byte, len(rcts))
+	rctIPLDs := make([]ipfs.BlockModel, len(rcts))
 	for i, rct := range rcts {
-		rctsRLP[i] = rct.RawData()
+		rctIPLDs[i] = ipfs.BlockModel{
+			Data: rct.RawData(),
+			CID:  rct.Cid().String(),
+		}
 	}
-	if len(rctsRLP) != len(rctCids) {
+	if len(rctIPLDs) != len(rctCids) {
 		log.Errorf("ipfs fetcher: number of receipt blocks returned (%d) does not match number expected (%d)", len(rcts), len(rctCids))
-		return rctsRLP, errUnexpectedNumberOfIPLDs
+		return rctIPLDs, errUnexpectedNumberOfIPLDs
 	}
-	return rctsRLP, nil
+	return rctIPLDs, nil
 }
 
 // FetchState fetches state nodes
@@ -203,7 +216,10 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 			return nil, err
 		}
 		stateNodes[i] = StateNode{
-			IPLD:         state.RawData(),
+			IPLD: ipfs.BlockModel{
+				Data: state.RawData(),
+				CID:  state.Cid().String(),
+			},
 			StateTrieKey: common.HexToHash(stateNode.StateKey),
 			Leaf:         stateNode.Leaf,
 		}
@@ -230,7 +246,10 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]Stora
 			return nil, err
 		}
 		storageNodes[i] = StorageNode{
-			IPLD:           storage.RawData(),
+			IPLD: ipfs.BlockModel{
+				Data: storage.RawData(),
+				CID:  storage.Cid().String(),
+			},
 			StateTrieKey:   common.HexToHash(storageNode.StateKey),
 			StorageTrieKey: common.HexToHash(storageNode.StorageKey),
 			Leaf:           storageNode.Leaf,

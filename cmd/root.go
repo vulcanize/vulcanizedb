@@ -41,12 +41,9 @@ var (
 	databaseConfig       config.Database
 	genConfig            config.Plugin
 	ipc                  string
-	levelDbPath          string
 	queueRecheckInterval time.Duration
 	startingBlockNumber  int64
 	storageDiffsPath     string
-	syncAll              bool
-	endingBlockNumber    int64
 	recheckHeadersArg    bool
 	subCommand           string
 	logWithCommand       log.Entry
@@ -81,7 +78,6 @@ func initFuncs(cmd *cobra.Command, args []string) {
 
 func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
-	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	storageDiffsSource = viper.GetString("storageDiffs.source")
 	databaseConfig = config.Database{

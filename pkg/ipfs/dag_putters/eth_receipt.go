@@ -40,7 +40,7 @@ func (erdp *EthReceiptDagPutter) DagPut(raw interface{}) ([]string, error) {
 	}
 	cids := make([]string, len(receipts))
 	for i, receipt := range receipts {
-		node, err := ipld.NewReceipt((*types.ReceiptForStorage)(receipt))
+		node, err := ipld.NewReceipt(receipt)
 		if err != nil {
 			return nil, err
 		}

@@ -27,6 +27,7 @@ type HeaderModel struct {
 	CID             string `db:"cid"`
 	TotalDifficulty string `db:"td"`
 	NodeID          int64  `db:"node_id"`
+	Reward          string `db:"reward"`
 }
 
 // UncleModel is the db model for eth.uncle_cids
@@ -36,6 +37,7 @@ type UncleModel struct {
 	BlockHash  string `db:"block_hash"`
 	ParentHash string `db:"parent_hash"`
 	CID        string `db:"cid"`
+	Reward     string `db:"reward"`
 }
 
 // TxModel is the db model for eth.transaction_cids

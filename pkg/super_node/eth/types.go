@@ -19,6 +19,8 @@ package eth
 import (
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -77,10 +79,10 @@ type CIDWrapper struct {
 // Returned by IPLDFetcher and ResponseFilterer
 type IPLDs struct {
 	BlockNumber  *big.Int
-	Headers      [][]byte
-	Uncles       [][]byte
-	Transactions [][]byte
-	Receipts     [][]byte
+	Headers      []ipfs.BlockModel
+	Uncles       []ipfs.BlockModel
+	Transactions []ipfs.BlockModel
+	Receipts     []ipfs.BlockModel
 	StateNodes   []StateNode
 	StorageNodes []StorageNode
 }
@@ -92,13 +94,13 @@ func (i IPLDs) Height() int64 {
 
 type StateNode struct {
 	StateTrieKey common.Hash
-	IPLD         []byte
+	IPLD         ipfs.BlockModel
 	Leaf         bool
 }
 
 type StorageNode struct {
 	StateTrieKey   common.Hash
 	StorageTrieKey common.Hash
-	IPLD           []byte
+	IPLD           ipfs.BlockModel
 	Leaf           bool
 }

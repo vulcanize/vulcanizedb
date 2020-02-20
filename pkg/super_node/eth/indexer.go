@@ -82,16 +82,16 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id) VALUES ($1, $2, $3, $4, $5, $6)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id) = ($3, $4, $5, $6)
+	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward) VALUES ($1, $2, $3, $4, $5, $6, $7)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward) = ($3, $4, $5, $6, $7)
 								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID, header.Reward).Scan(&headerID)
 	return headerID, err
 }
 
 func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle UncleModel, headerID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.uncle_cids (block_hash, header_id, parent_hash, cid) VALUES ($1, $2, $3, $4)
-								ON CONFLICT (header_id, block_hash) DO UPDATE SET (parent_hash, cid) = ($3, $4)`,
+	_, err := tx.Exec(`INSERT INTO eth.uncle_cids (block_hash, header_id, parent_hash, cid, reward) VALUES ($1, $2, $3, $4, $5)
+								ON CONFLICT (header_id, block_hash) DO UPDATE SET (parent_hash, cid, reward) = ($3, $4, $5)`,
 		uncle.BlockHash, headerID, uncle.ParentHash, uncle.CID)
 	return err
 }

@@ -68,9 +68,9 @@ func superNode() {
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
-		var forwardPayloadChan chan shared.StreamedIPLDs
+		var forwardPayloadChan chan shared.ConvertedData
 		if superNodeConfig.Serve {
-			forwardPayloadChan = make(chan shared.StreamedIPLDs, super_node.PayloadChanBufferSize)
+			forwardPayloadChan = make(chan shared.ConvertedData, super_node.PayloadChanBufferSize)
 			superNode.FilterAndServe(wg, forwardPayloadChan)
 			if err := startServers(superNode, superNodeConfig); err != nil {
 				logWithCommand.Fatal(err)

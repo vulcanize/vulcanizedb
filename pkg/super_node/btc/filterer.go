@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/multiformats/go-multihash"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -63,7 +67,15 @@ func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *IP
 		if err := payload.Header.Serialize(headerBuffer); err != nil {
 			return err
 		}
-		response.Headers = append(response.Headers, headerBuffer.Bytes())
+		data := headerBuffer.Bytes()
+		cid, err := ipld.RawdataToCid(ipld.MBitcoinHeader, data, multihash.DBL_SHA2_256)
+		if err != nil {
+			return err
+		}
+		response.Headers = append(response.Headers, ipfs.BlockModel{
+			Data: data,
+			CID:  cid.String(),
+		})
 	}
 	return nil
 }
@@ -77,14 +89,22 @@ func checkRange(start, end, actual int64) bool {
 
 func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *IPLDs, payload ConvertedPayload) error {
 	if !trxFilter.Off {
-		response.Transactions = make([][]byte, 0, len(payload.TxMetaData))
+		response.Transactions = make([]ipfs.BlockModel, 0, len(payload.TxMetaData))
 		for i, txMeta := range payload.TxMetaData {
 			if checkTransaction(txMeta, trxFilter) {
 				trxBuffer := new(bytes.Buffer)
 				if err := payload.Txs[i].MsgTx().Serialize(trxBuffer); err != nil {
 					return err
 				}
-				response.Transactions = append(response.Transactions, trxBuffer.Bytes())
+				data := trxBuffer.Bytes()
+				cid, err := ipld.RawdataToCid(ipld.MBitcoinTx, data, multihash.DBL_SHA2_256)
+				if err != nil {
+					return err
+				}
+				response.Transactions = append(response.Transactions, ipfs.BlockModel{
+					Data: data,
+					CID:  cid.String(),
+				})
 			}
 		}
 	}

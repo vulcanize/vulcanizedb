@@ -193,6 +193,7 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, blockNum
 		pgStr += fmt.Sprintf(` AND transaction_cids.src = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(txFilter.Src))
 	}
+	pgStr += ` ORDER BY transaction_cids.index`
 	return results, tx.Select(&results, pgStr, args...)
 }
 
@@ -224,7 +225,7 @@ func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, b
 		args = append(args, pq.Array(rctFilter.Contracts))
 		id++
 		// Filter on topics if there are any
-		if len(rctFilter.Topics) > 0 {
+		if hasTopics(rctFilter.Topics) {
 			pgStr += " AND ("
 			first := true
 			for i, topicSet := range rctFilter.Topics {
@@ -250,7 +251,7 @@ func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, b
 		pgStr += ")"
 	} else { // If there are no contract addresses to filter on
 		// Filter on topics if there are any
-		if len(rctFilter.Topics) > 0 {
+		if hasTopics(rctFilter.Topics) {
 			pgStr += " AND (("
 			first := true
 			for i, topicSet := range rctFilter.Topics {
@@ -279,8 +280,18 @@ func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, b
 			args = append(args, pq.Array(trxIds))
 		}
 	}
+	pgStr += ` ORDER BY transaction_cids.index`
 	receiptCids := make([]ReceiptModel, 0)
 	return receiptCids, tx.Select(&receiptCids, pgStr, args...)
+}
+
+func hasTopics(topics [][]string) bool {
+	for _, topicSet := range topics {
+		if len(topicSet) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // RetrieveStateCIDs retrieves and returns all of the state node cids at the provided blockheight that conform to the provided filter parameters
@@ -474,7 +485,8 @@ func (ecr *CIDRetriever) RetrieveHeaderCIDByHash(tx *sqlx.Tx, blockHash common.H
 func (ecr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) ([]TxModel, error) {
 	log.Debug("retrieving tx cids for block id ", headerID)
 	pgStr := `SELECT * FROM eth.transaction_cids
-			WHERE header_id = $1`
+			WHERE header_id = $1
+			ORDER BY index`
 	var txCIDs []TxModel
 	return txCIDs, tx.Select(&txCIDs, pgStr, headerID)
 }
@@ -482,8 +494,13 @@ func (ecr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) (
 // RetrieveReceiptCIDsByTxIDs retrieves receipt CIDs by their associated tx IDs
 func (ecr *CIDRetriever) RetrieveReceiptCIDsByTxIDs(tx *sqlx.Tx, txIDs []int64) ([]ReceiptModel, error) {
 	log.Debugf("retrieving receipt cids for tx ids %v", txIDs)
-	pgStr := `SELECT * FROM eth.receipt_cids
-			WHERE tx_id = ANY($1::INTEGER[])`
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
+ 			receipt_cids.contract, receipt_cids.topic0s, receipt_cids.topic1s,
+			receipt_cids.topic2s, receipt_cids.topic3s
+			FROM eth.receipt_cids, eth.transaction_cids
+			WHERE tx_id = ANY($1::INTEGER[])
+			AND receipt_cids.tx_id = transaction_cids.id
+			ORDER BY transaction_cids.index`
 	var rctCIDs []ReceiptModel
 	return rctCIDs, tx.Select(&rctCIDs, pgStr, pq.Array(txIDs))
 }

@@ -75,3 +75,43 @@ func staticRewardByBlockNumber(blockNumber int64) *big.Int {
 	}
 	return staticBlockReward
 }
+
+func CalcEthBlockReward(block *types.Block, receipts types.Receipts) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(block.Number().Int64())
+	transactionFees := calcEthTransactionFees(block, receipts)
+	uncleInclusionRewards := calcEthUncleInclusionRewards(block, block.Uncles())
+	tmp := transactionFees.Add(transactionFees, uncleInclusionRewards)
+	return tmp.Add(tmp, staticBlockReward)
+}
+
+func CalcUncleMinerReward(blockNumber, uncleBlockNumber int64) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(blockNumber)
+	rewardDiv8 := staticBlockReward.Div(staticBlockReward, big.NewInt(8))
+	mainBlock := big.NewInt(blockNumber)
+	uncleBlock := big.NewInt(uncleBlockNumber)
+	uncleBlockPlus8 := uncleBlock.Add(uncleBlock, big.NewInt(8))
+	uncleBlockPlus8MinusMainBlock := uncleBlockPlus8.Sub(uncleBlockPlus8, mainBlock)
+	return rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
+}
+
+func calcEthTransactionFees(block *types.Block, receipts types.Receipts) *big.Int {
+	transactionFees := new(big.Int)
+	for i, transaction := range block.Transactions() {
+		receipt := receipts[i]
+		gasPrice := big.NewInt(transaction.GasPrice().Int64())
+		gasUsed := big.NewInt(int64(receipt.GasUsed))
+		transactionFee := gasPrice.Mul(gasPrice, gasUsed)
+		transactionFees = transactionFees.Add(transactionFees, transactionFee)
+	}
+	return transactionFees
+}
+
+func calcEthUncleInclusionRewards(block *types.Block, uncles []*types.Header) *big.Int {
+	uncleInclusionRewards := new(big.Int)
+	for range uncles {
+		staticBlockReward := staticRewardByBlockNumber(block.Number().Int64())
+		staticBlockReward.Div(staticBlockReward, big.NewInt(32))
+		uncleInclusionRewards.Add(uncleInclusionRewards, staticBlockReward)
+	}
+	return uncleInclusionRewards
+}
