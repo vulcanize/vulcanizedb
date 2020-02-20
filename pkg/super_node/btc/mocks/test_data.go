@@ -677,7 +677,7 @@ var (
 		Timestamp:   MockBlock.Header.Timestamp.UnixNano(),
 		Bits:        MockBlock.Header.Bits,
 	}
-	MockIPLDPayload = btc.IPLDPayload{
+	MockConvertedPayload = btc.ConvertedPayload{
 		BlockPayload: MockBlockPayload,
 		TxMetaData:   MockTxsMetaData,
 	}

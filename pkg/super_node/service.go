@@ -44,9 +44,9 @@ type SuperNode interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Data processing event loop
-	ProcessData(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.StreamedIPLDs) error
+	ProcessData(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.ConvertedData) error
 	// Pub-Sub handling event loop
-	FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs)
+	FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData)
 	// Method to subscribe to the service
 	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
 	// Method to unsubscribe from the service
@@ -73,8 +73,6 @@ type Service struct {
 	IPLDFetcher shared.IPLDFetcher
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever shared.CIDRetriever
-	// Interface for resolving IPLDs to their data types
-	Resolver shared.IPLDResolver
 	// Chan the processor uses to subscribe to payloads from the Streamer
 	PayloadChan chan shared.RawChainData
 	// Used to signal shutdown of the service
@@ -132,10 +130,6 @@ func NewSuperNode(settings *shared.SuperNodeConfig) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Resolver, err = NewIPLDResolver(settings.Chain)
-		if err != nil {
-			return nil, err
-		}
 	}
 	sn.QuitChan = settings.Quit
 	sn.Subscriptions = make(map[common.Hash]map[rpc.ID]Subscription)
@@ -175,7 +169,7 @@ func (sap *Service) APIs() []rpc.API {
 // It forwards the converted data to the publishAndIndex process(es) it spins up
 // If forwards the converted data to a ScreenAndServe process if it there is one listening on the passed screenAndServePayload channel
 // This continues on no matter if or how many subscribers there are
-func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<- shared.StreamedIPLDs) error {
+func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<- shared.ConvertedData) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -183,7 +177,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 	wg.Add(1)
 
 	// Channels for forwarding data to the publishAndIndex workers
-	publishAndIndexPayload := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
+	publishAndIndexPayload := make(chan shared.ConvertedData, PayloadChanBufferSize)
 	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
 	// limiting the number of Postgres connections we can possibly open so as to prevent error
 	for i := 0; i < sap.WorkerPoolSize; i++ {
@@ -220,7 +214,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 
 // publishAndIndex is spun up by SyncAndConvert and receives converted chain data from that process
 // it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.StreamedIPLDs) {
+func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.ConvertedData) {
 	go func() {
 		for {
 			select {
@@ -243,7 +237,7 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 // It filters and sends this data to any subscribers to the service
 // This process can be stood up alone, without an screenAndServePayload attached to a SyncAndConvert process
 // and it will hang on the WaitGroup indefinitely, allowing the Service to serve historical data requests only
-func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs) {
+func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData) {
 	wg.Add(1)
 	go func() {
 		for {
@@ -261,7 +255,7 @@ func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-c
 }
 
 // filterAndServe filters the payload according to each subscription type and sends to the subscriptions
-func (sap *Service) filterAndServe(payload shared.StreamedIPLDs) {
+func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 	log.Debugf("Sending payload to subscriptions")
 	sap.Lock()
 	for ty, subs := range sap.Subscriptions {
@@ -284,9 +278,14 @@ func (sap *Service) filterAndServe(payload shared.StreamedIPLDs) {
 			sap.closeType(ty)
 			continue
 		}
+		responseRLP, err := rlp.EncodeToBytes(response)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: response, Err: "", Flag: EmptyFlag}:
+			case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
 				log.Debugf("sending super node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
@@ -372,18 +371,18 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 			if empty {
 				continue
 			}
-			blocksWrapper, err := sap.IPLDFetcher.Fetch(cidWrapper)
+			response, err := sap.IPLDFetcher.Fetch(cidWrapper)
 			if err != nil {
 				sendNonBlockingErr(sub, fmt.Errorf("IPLD Fetching error at block %d\r%s", i, err.Error()))
 				continue
 			}
-			backFillIplds, err := sap.Resolver.Resolve(blocksWrapper)
+			responseRLP, err := rlp.EncodeToBytes(response)
 			if err != nil {
-				sendNonBlockingErr(sub, fmt.Errorf("IPLD Resolving error at block %d\r%s", i, err.Error()))
+				log.Error(err)
 				continue
 			}
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: backFillIplds, Err: "", Flag: EmptyFlag}:
+			case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
 				log.Debugf("sending super node historical data payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
@@ -420,7 +419,7 @@ func (sap *Service) Unsubscribe(id rpc.ID) {
 func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting super node service")
 	wg := new(sync.WaitGroup)
-	payloadChan := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
+	payloadChan := make(chan shared.ConvertedData, PayloadChanBufferSize)
 	if err := sap.ProcessData(wg, payloadChan); err != nil {
 		return err
 	}

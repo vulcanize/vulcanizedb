@@ -23,6 +23,9 @@ import (
 	"math/big"
 	rand2 "math/rand"
 
+	"github.com/multiformats/go-multihash"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -233,7 +236,7 @@ var (
 		TotalDifficulty: big.NewInt(1337),
 	}
 
-	MockIPLDPayload = eth.IPLDPayload{
+	MockConvertedPayload = eth.ConvertedPayload{
 		TotalDifficulty: big.NewInt(1337),
 		Block:           MockBlock,
 		Receipts:        MockReceipts,
@@ -293,44 +296,55 @@ var (
 			},
 		},
 	}
+	headerCID, _  = ipld.RawdataToCid(ipld.MEthHeader, MockHeaderRlp, multihash.KECCAK_256)
+	trx1CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(0), multihash.KECCAK_256)
+	trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(1), multihash.KECCAK_256)
+	rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(0), multihash.KECCAK_256)
+	rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(1), multihash.KECCAK_256)
+	state1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ValueBytes, multihash.KECCAK_256)
+	state2CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, AnotherValueBytes, multihash.KECCAK_256)
+	storageCID, _ = ipld.RawdataToCid(ipld.MEthStorageTrie, StorageValue, multihash.KECCAK_256)
 
-	MockIPLDWrapper = &eth.IPLDWrapper{
+	HeaderIPLD, _  = blocks.NewBlockWithCid(MockHeaderRlp, headerCID)
+	Trx1IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(0), trx1CID)
+	Trx2IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(1), trx2CID)
+	Rct1IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(0), rct1CID)
+	Rct2IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(1), rct2CID)
+	State1IPLD, _  = blocks.NewBlockWithCid(ValueBytes, state1CID)
+	State2IPLD, _  = blocks.NewBlockWithCid(AnotherValueBytes, state2CID)
+	StorageIPLD, _ = blocks.NewBlockWithCid(StorageValue, storageCID)
+
+	MockIPLDs = eth.IPLDs{
 		BlockNumber: big.NewInt(1),
-		Headers: []blocks.Block{
-			blocks.NewBlock(MockHeaderRlp),
+		Headers: [][]byte{
+			HeaderIPLD.RawData(),
 		},
-		Transactions: []blocks.Block{
-			blocks.NewBlock(MockTransactions.GetRlp(0)),
-			blocks.NewBlock(MockTransactions.GetRlp(1)),
+		Transactions: [][]byte{
+			Trx1IPLD.RawData(),
+			Trx2IPLD.RawData(),
 		},
-		Receipts: []blocks.Block{
-			blocks.NewBlock(MockReceipts.GetRlp(0)),
-			blocks.NewBlock(MockReceipts.GetRlp(1)),
+		Receipts: [][]byte{
+			Rct1IPLD.RawData(),
+			Rct2IPLD.RawData(),
 		},
-		StateNodes: map[common.Hash]blocks.Block{
-			ContractLeafKey:        blocks.NewBlock(ValueBytes),
-			AnotherContractLeafKey: blocks.NewBlock(AnotherValueBytes),
-		},
-		StorageNodes: map[common.Hash]map[common.Hash]blocks.Block{
-			ContractLeafKey: {
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): blocks.NewBlock(StorageValue),
+		StateNodes: []eth2.StateNode{
+			{
+				StateTrieKey: ContractLeafKey,
+				Leaf:         true,
+				IPLD:         State1IPLD.RawData(),
+			},
+			{
+				StateTrieKey: AnotherContractLeafKey,
+				Leaf:         true,
+				IPLD:         State2IPLD.RawData(),
 			},
 		},
-	}
-
-	MockSeedNodePayload = eth2.StreamResponse{
-		BlockNumber:     big.NewInt(1),
-		HeadersRlp:      [][]byte{MockHeaderRlp},
-		UnclesRlp:       [][]byte{},
-		TransactionsRlp: [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
-		ReceiptsRlp:     [][]byte{MockTransactions.GetRlp(0), MockTransactions.GetRlp(1)},
-		StateNodesRlp: map[common.Hash][]byte{
-			ContractLeafKey:        ValueBytes,
-			AnotherContractLeafKey: AnotherValueBytes,
-		},
-		StorageNodesRlp: map[common.Hash]map[common.Hash][]byte{
-			ContractLeafKey: {
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): StorageValue,
+		StorageNodes: []eth2.StorageNode{
+			{
+				StateTrieKey:   ContractLeafKey,
+				StorageTrieKey: common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
+				Leaf:           true,
+				IPLD:           StorageIPLD.RawData(),
 			},
 		},
 	}

@@ -26,12 +26,12 @@ import (
 // PayloadConverter is the underlying struct for the Converter interface
 type PayloadConverter struct {
 	PassedStatediffPayload btc.BlockPayload
-	ReturnIPLDPayload      btc.IPLDPayload
+	ReturnIPLDPayload      btc.ConvertedPayload
 	ReturnErr              error
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
 	stateDiffPayload, ok := payload.(btc.BlockPayload)
 	if !ok {
 		return nil, fmt.Errorf("convert expected payload type %T got %T", btc.BlockPayload{}, payload)
@@ -43,13 +43,13 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 // IterativePayloadConverter is the underlying struct for the Converter interface
 type IterativePayloadConverter struct {
 	PassedStatediffPayload []btc.BlockPayload
-	ReturnIPLDPayload      []btc.IPLDPayload
+	ReturnIPLDPayload      []btc.ConvertedPayload
 	ReturnErr              error
 	iteration              int
 }
 
 // Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *IterativePayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
+func (pc *IterativePayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
 	stateDiffPayload, ok := payload.(btc.BlockPayload)
 	if !ok {
 		return nil, fmt.Errorf("convert expected payload type %T got %T", btc.BlockPayload{}, payload)

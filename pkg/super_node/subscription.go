@@ -20,7 +20,6 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 type Flag int32
@@ -40,9 +39,10 @@ type Subscription struct {
 // SubscriptionPayload is the struct for a super node stream payload
 // It carries data of a type specific to the chain being supported/queried and an error message
 type SubscriptionPayload struct {
-	Data shared.ServerResponse `json:"data"` // e.g. for Ethereum eth.StreamPayload
-	Err  string                `json:"err"`  // field for error
-	Flag Flag                  `json:"flag"` // field for message
+	Data   []byte `json:"data"` // e.g. for Ethereum rlp serialized eth.StreamPayload
+	Height int64  `json:"height"`
+	Err    string `json:"err"`  // field for error
+	Flag   Flag   `json:"flag"` // field for message
 }
 
 func (sp SubscriptionPayload) Error() error {

@@ -33,7 +33,7 @@ func NewBtcTx(tx *wire.MsgTx) (*BtcTx, error) {
 		return nil, err
 	}
 	rawdata := w.Bytes()
-	c, err := rawdataToCid(MBitcoinTx, rawdata, mh.DBL_SHA2_256)
+	c, err := RawdataToCid(MBitcoinTx, rawdata, mh.DBL_SHA2_256)
 	if err != nil {
 		return nil, err
 	}

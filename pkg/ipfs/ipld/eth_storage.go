@@ -41,7 +41,7 @@ var _ node.Node = (*EthStorageTrie)(nil)
 // FromStorageTrieRLP takes the RLP bytes of an ethereum
 // storage trie node to return it as an IPLD node for further processing.
 func FromStorageTrieRLP(storageNodeRLP []byte) (*EthStorageTrie, error) {
-	c, err := rawdataToCid(MEthStorageTrie, storageNodeRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthStorageTrie, storageNodeRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}

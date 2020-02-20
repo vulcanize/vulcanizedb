@@ -40,9 +40,9 @@ const (
 	MBitcoinTx          = 0xb1
 )
 
-// rawdataToCid takes the desired codec and a slice of bytes
+// RawdataToCid takes the desired codec and a slice of bytes
 // and returns the proper cid of the object.
-func rawdataToCid(codec uint64, rawdata []byte, multiHash uint64) (cid.Cid, error) {
+func RawdataToCid(codec uint64, rawdata []byte, multiHash uint64) (cid.Cid, error) {
 	c, err := cid.Prefix{
 		Codec:    codec,
 		Version:  1,

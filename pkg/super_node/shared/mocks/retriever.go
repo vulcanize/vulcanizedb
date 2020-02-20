@@ -21,8 +21,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// MockCIDRetriever is a mock CID retriever for use in tests
-type MockCIDRetriever struct {
+// CIDRetriever is a mock CID retriever for use in tests
+type CIDRetriever struct {
 	GapsToRetrieve              []shared.Gap
 	GapsToRetrieveErr           error
 	CalledTimes                 int
@@ -31,34 +31,34 @@ type MockCIDRetriever struct {
 }
 
 // RetrieveCIDs mock method
-func (*MockCIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) (shared.CIDsForFetching, bool, error) {
+func (*CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) (shared.CIDsForFetching, bool, error) {
 	panic("implement me")
 }
 
 // RetrieveLastBlockNumber mock method
-func (*MockCIDRetriever) RetrieveLastBlockNumber() (int64, error) {
+func (*CIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 	panic("implement me")
 }
 
 // RetrieveFirstBlockNumber mock method
-func (mcr *MockCIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
+func (mcr *CIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
 	return mcr.FirstBlockNumberToReturn, mcr.RetrieveFirstBlockNumberErr
 }
 
 // RetrieveGapsInData mock method
-func (mcr *MockCIDRetriever) RetrieveGapsInData() ([]shared.Gap, error) {
+func (mcr *CIDRetriever) RetrieveGapsInData() ([]shared.Gap, error) {
 	mcr.CalledTimes++
 	return mcr.GapsToRetrieve, mcr.GapsToRetrieveErr
 }
 
 // SetGapsToRetrieve mock method
-func (mcr *MockCIDRetriever) SetGapsToRetrieve(gaps []shared.Gap) {
+func (mcr *CIDRetriever) SetGapsToRetrieve(gaps []shared.Gap) {
 	if mcr.GapsToRetrieve == nil {
 		mcr.GapsToRetrieve = make([]shared.Gap, 0)
 	}
 	mcr.GapsToRetrieve = append(mcr.GapsToRetrieve, gaps...)
 }
 
-func (mcr *MockCIDRetriever) Database() *postgres.DB {
+func (mcr *CIDRetriever) Database() *postgres.DB {
 	panic("implement me")
 }

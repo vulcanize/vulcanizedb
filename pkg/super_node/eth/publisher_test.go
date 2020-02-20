@@ -48,8 +48,8 @@ var _ = Describe("Publisher", func() {
 			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
 			mockTrxDagPutter.CIDsToReturn = []string{"mockTrxCID1", "mockTrxCID2"}
 			mockRctDagPutter.CIDsToReturn = []string{"mockRctCID1", "mockRctCID2"}
-			val1 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[0].Value)
-			val2 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[1].Value)
+			val1 := common.BytesToHash(mocks.MockConvertedPayload.StateNodes[0].Value)
+			val2 := common.BytesToHash(mocks.MockConvertedPayload.StateNodes[1].Value)
 			mockStateDagPutter.CIDsToReturn = map[common.Hash][]string{
 				val1: {"mockStateCID1"},
 				val2: {"mockStateCID2"},
@@ -62,11 +62,11 @@ var _ = Describe("Publisher", func() {
 				StatePutter:       mockStateDagPutter,
 				StoragePutter:     mockStorageDagPutter,
 			}
-			payload, err := publisher.Publish(mocks.MockIPLDPayload)
+			payload, err := publisher.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			cidPayload, ok := payload.(*eth.CIDPayload)
 			Expect(ok).To(BeTrue())
-			Expect(cidPayload.HeaderCID.TotalDifficulty).To(Equal(mocks.MockIPLDPayload.TotalDifficulty.String()))
+			Expect(cidPayload.HeaderCID.TotalDifficulty).To(Equal(mocks.MockConvertedPayload.TotalDifficulty.String()))
 			Expect(cidPayload.HeaderCID.BlockNumber).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockNumber))
 			Expect(cidPayload.HeaderCID.BlockHash).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockHash))
 			Expect(cidPayload.UncleCIDs).To(Equal(mocks.MockCIDPayload.UncleCIDs))

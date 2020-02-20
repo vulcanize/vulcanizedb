@@ -17,18 +17,16 @@
 package eth
 
 import (
-	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ipfs/go-block-format"
 )
 
-// IPLDPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
+// ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
 // Returned by PayloadConverter
 // Passed to IPLDPublisher and ResponseFilterer
-type IPLDPayload struct {
+type ConvertedPayload struct {
 	TotalDifficulty *big.Int
 	Block           *types.Block
 	TxMetaData      []TxModel
@@ -39,7 +37,7 @@ type IPLDPayload struct {
 }
 
 // Height satisfies the StreamedIPLDs interface
-func (i IPLDPayload) Height() int64 {
+func (i ConvertedPayload) Height() int64 {
 	return i.Block.Number().Int64()
 }
 
@@ -75,54 +73,32 @@ type CIDWrapper struct {
 	StorageNodes []StorageNodeWithStateKeyModel
 }
 
-// IPLDWrapper is used to package raw IPLD block data fetched from IPFS
-// Returned by IPLDFetcher
-// Passed to IPLDResolver
-type IPLDWrapper struct {
+// IPLDs is used to package raw IPLD block data fetched from IPFS and returned by the server
+// Returned by IPLDFetcher and ResponseFilterer
+type IPLDs struct {
 	BlockNumber  *big.Int
-	Headers      []blocks.Block
-	Uncles       []blocks.Block
-	Transactions []blocks.Block
-	Receipts     []blocks.Block
-	StateNodes   map[common.Hash]blocks.Block
-	StorageNodes map[common.Hash]map[common.Hash]blocks.Block
+	Headers      [][]byte
+	Uncles       [][]byte
+	Transactions [][]byte
+	Receipts     [][]byte
+	StateNodes   []StateNode
+	StorageNodes []StorageNode
 }
 
-// StreamResponse holds the data streamed from the super node eth service to the requesting clients
-// Returned by IPLDResolver and ResponseFilterer
-// Passed to client subscriptions
-type StreamResponse struct {
-	BlockNumber     *big.Int                               `json:"blockNumber"`
-	HeadersRlp      [][]byte                               `json:"headersRlp"`
-	UnclesRlp       [][]byte                               `json:"unclesRlp"`
-	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
-	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
-	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
-	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
-
-	encoded []byte
-	err     error
+// Height satisfies the StreamedIPLDs interface
+func (i IPLDs) Height() int64 {
+	return i.BlockNumber.Int64()
 }
 
-// Height satisfies the ServerResponse interface
-func (sr StreamResponse) Height() int64 {
-	return sr.BlockNumber.Int64()
+type StateNode struct {
+	StateTrieKey common.Hash
+	IPLD         []byte
+	Leaf         bool
 }
 
-func (sr *StreamResponse) ensureEncoded() {
-	if sr.encoded == nil && sr.err == nil {
-		sr.encoded, sr.err = json.Marshal(sr)
-	}
-}
-
-// Length to implement Encoder interface for StateDiff
-func (sr *StreamResponse) Length() int {
-	sr.ensureEncoded()
-	return len(sr.encoded)
-}
-
-// Encode to implement Encoder interface for StateDiff
-func (sr *StreamResponse) Encode() ([]byte, error) {
-	sr.ensureEncoded()
-	return sr.encoded, sr.err
+type StorageNode struct {
+	StateTrieKey   common.Hash
+	StorageTrieKey common.Hash
+	IPLD           []byte
+	Leaf           bool
 }

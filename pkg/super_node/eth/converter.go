@@ -42,7 +42,7 @@ func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 
 // Convert method is used to convert a eth statediff.Payload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("eth converter: expected payload type %T got %T", statediff.Payload{}, payload)
@@ -53,7 +53,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		return nil, err
 	}
 	trxLen := len(block.Transactions())
-	convertedPayload := IPLDPayload{
+	convertedPayload := ConvertedPayload{
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
 		TxMetaData:      make([]TxModel, 0, trxLen),

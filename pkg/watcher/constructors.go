@@ -24,7 +24,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/watcher/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/watcher/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/watcher/shared"
 )
 
 // NewSuperNodeStreamer returns a new shared.SuperNodeStreamer

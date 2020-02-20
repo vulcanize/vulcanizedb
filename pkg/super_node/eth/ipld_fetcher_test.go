@@ -17,6 +17,7 @@
 package eth_test
 
 import (
+	"bytes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -101,30 +102,32 @@ var _ = Describe("Fetcher", func() {
 			fetcher.BlockService = mockBlockService
 			i, err := fetcher.Fetch(mockCIDWrapper)
 			Expect(err).ToNot(HaveOccurred())
-			iplds, ok := i.(*eth.IPLDWrapper)
+			iplds, ok := i.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
 			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
 			Expect(len(iplds.Headers)).To(Equal(1))
-			Expect(iplds.Headers[0]).To(Equal(mockHeaderBlock))
+			Expect(iplds.Headers[0]).To(Equal(mockHeaderBlock.RawData()))
 			Expect(len(iplds.Uncles)).To(Equal(1))
-			Expect(iplds.Uncles[0]).To(Equal(mockUncleBlock))
+			Expect(iplds.Uncles[0]).To(Equal(mockUncleBlock.RawData()))
 			Expect(len(iplds.Transactions)).To(Equal(1))
-			Expect(iplds.Transactions[0]).To(Equal(mockTrxBlock))
+			Expect(iplds.Transactions[0]).To(Equal(mockTrxBlock.RawData()))
 			Expect(len(iplds.Receipts)).To(Equal(1))
-			Expect(iplds.Receipts[0]).To(Equal(mockReceiptBlock))
+			Expect(iplds.Receipts[0]).To(Equal(mockReceiptBlock.RawData()))
 			Expect(len(iplds.StateNodes)).To(Equal(1))
-			stateNode, ok := iplds.StateNodes[common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")]
-			Expect(ok).To(BeTrue())
-			Expect(stateNode).To(Equal(mockStateBlock))
-			Expect(len(iplds.StorageNodes)).To(Equal(1))
-			storageNodes := iplds.StorageNodes[common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")]
-			Expect(len(storageNodes)).To(Equal(2))
-			storageNode1, ok := storageNodes[common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001")]
-			Expect(ok).To(BeTrue())
-			Expect(storageNode1).To(Equal(mockStorageBlock1))
-			storageNode2, ok := storageNodes[common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002")]
-			Expect(storageNode2).To(Equal(mockStorageBlock2))
-			Expect(ok).To(BeTrue())
+			Expect(iplds.StateNodes[0].StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
+			Expect(iplds.StateNodes[0].Leaf).To(BeTrue())
+			Expect(iplds.StateNodes[0].IPLD).To(Equal(mockStateBlock.RawData()))
+			Expect(len(iplds.StorageNodes)).To(Equal(2))
+			for _, storage := range iplds.StorageNodes {
+				Expect(storage.Leaf).To(BeTrue())
+				Expect(storage.StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
+				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()) {
+					Expect(storage.IPLD).To(Equal(mockStorageBlock1.RawData()))
+				}
+				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002").Bytes()) {
+					Expect(storage.IPLD).To(Equal(mockStorageBlock2.RawData()))
+				}
+			}
 		})
 	})
 })

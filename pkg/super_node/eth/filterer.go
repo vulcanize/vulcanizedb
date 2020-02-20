@@ -37,58 +37,58 @@ func NewResponseFilterer() *ResponseFilterer {
 }
 
 // Filter is used to filter through eth data to extract and package requested data into a Payload
-func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload shared.StreamedIPLDs) (shared.ServerResponse, error) {
+func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload shared.ConvertedData) (shared.IPLDs, error) {
 	ethFilters, ok := filter.(*SubscriptionSettings)
 	if !ok {
-		return StreamResponse{}, fmt.Errorf("eth filterer expected filter type %T got %T", &SubscriptionSettings{}, filter)
+		return IPLDs{}, fmt.Errorf("eth filterer expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
-	ethPayload, ok := payload.(IPLDPayload)
+	ethPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return StreamResponse{}, fmt.Errorf("eth filterer expected payload type %T got %T", IPLDPayload{}, payload)
+		return IPLDs{}, fmt.Errorf("eth filterer expected payload type %T got %T", ConvertedPayload{}, payload)
 	}
 	if checkRange(ethFilters.Start.Int64(), ethFilters.End.Int64(), ethPayload.Block.Number().Int64()) {
-		response := new(StreamResponse)
+		response := new(IPLDs)
 		if err := s.filterHeaders(ethFilters.HeaderFilter, response, ethPayload); err != nil {
-			return StreamResponse{}, err
+			return IPLDs{}, err
 		}
 		txHashes, err := s.filterTransactions(ethFilters.TxFilter, response, ethPayload)
 		if err != nil {
-			return StreamResponse{}, err
+			return IPLDs{}, err
 		}
 		var filterTxs []common.Hash
 		if ethFilters.ReceiptFilter.MatchTxs {
 			filterTxs = txHashes
 		}
 		if err := s.filerReceipts(ethFilters.ReceiptFilter, response, ethPayload, filterTxs); err != nil {
-			return StreamResponse{}, err
+			return IPLDs{}, err
 		}
 		if err := s.filterState(ethFilters.StateFilter, response, ethPayload); err != nil {
-			return StreamResponse{}, err
+			return IPLDs{}, err
 		}
 		if err := s.filterStorage(ethFilters.StorageFilter, response, ethPayload); err != nil {
-			return StreamResponse{}, err
+			return IPLDs{}, err
 		}
 		response.BlockNumber = ethPayload.Block.Number()
 		return *response, nil
 	}
-	return StreamResponse{}, nil
+	return IPLDs{}, nil
 }
 
-func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *StreamResponse, payload IPLDPayload) error {
+func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *IPLDs, payload ConvertedPayload) error {
 	if !headerFilter.Off {
 		headerRLP, err := rlp.EncodeToBytes(payload.Block.Header())
 		if err != nil {
 			return err
 		}
-		response.HeadersRlp = append(response.HeadersRlp, headerRLP)
+		response.Headers = append(response.Headers, headerRLP)
 		if headerFilter.Uncles {
-			response.UnclesRlp = make([][]byte, 0, len(payload.Block.Body().Uncles))
-			for _, uncle := range payload.Block.Body().Uncles {
+			response.Uncles = make([][]byte, len(payload.Block.Body().Uncles))
+			for i, uncle := range payload.Block.Body().Uncles {
 				uncleRlp, err := rlp.EncodeToBytes(uncle)
 				if err != nil {
 					return err
 				}
-				response.UnclesRlp = append(response.UnclesRlp, uncleRlp)
+				response.Uncles[i] = uncleRlp
 			}
 		}
 	}
@@ -102,17 +102,20 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *StreamResponse, payload IPLDPayload) ([]common.Hash, error) {
-	trxHashes := make([]common.Hash, 0, len(payload.Block.Body().Transactions))
+func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *IPLDs, payload ConvertedPayload) ([]common.Hash, error) {
+	var trxHashes []common.Hash
 	if !trxFilter.Off {
+		trxLen := len(payload.Block.Body().Transactions)
+		trxHashes = make([]common.Hash, 0, trxLen)
+		response.Transactions = make([][]byte, 0, trxLen)
 		for i, trx := range payload.Block.Body().Transactions {
 			if checkTransactionAddrs(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err
 				}
+				response.Transactions = append(response.Transactions, trxBuffer.Bytes())
 				trxHashes = append(trxHashes, trx.Hash())
-				response.TransactionsRlp = append(response.TransactionsRlp, trxBuffer.Bytes())
 			}
 		}
 	}
@@ -138,8 +141,9 @@ func checkTransactionAddrs(wantedSrc, wantedDst []string, actualSrc, actualDst s
 	return false
 }
 
-func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *StreamResponse, payload IPLDPayload, trxHashes []common.Hash) error {
+func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *IPLDs, payload ConvertedPayload, trxHashes []common.Hash) error {
 	if !receiptFilter.Off {
+		response.Receipts = make([][]byte, 0, len(payload.Receipts))
 		for i, receipt := range payload.Receipts {
 			// topics is always length 4
 			topics := [][]string{payload.ReceiptMetaData[i].Topic0s, payload.ReceiptMetaData[i].Topic1s, payload.ReceiptMetaData[i].Topic2s, payload.ReceiptMetaData[i].Topic3s}
@@ -149,7 +153,7 @@ func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *
 				if err := receiptForStorage.EncodeRLP(receiptBuffer); err != nil {
 					return err
 				}
-				response.ReceiptsRlp = append(response.ReceiptsRlp, receiptBuffer.Bytes())
+				response.Receipts = append(response.Receipts, receiptBuffer.Bytes())
 			}
 		}
 	}
@@ -217,9 +221,9 @@ func slicesShareString(slice1, slice2 []string) int {
 	return 0
 }
 
-func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *StreamResponse, payload IPLDPayload) error {
+func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *IPLDs, payload ConvertedPayload) error {
 	if !stateFilter.Off {
-		response.StateNodesRlp = make(map[common.Hash][]byte)
+		response.StateNodes = make([]StateNode, 0, len(payload.StateNodes))
 		keyFilters := make([]common.Hash, len(stateFilter.Addresses))
 		for i, addr := range stateFilter.Addresses {
 			keyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
@@ -227,7 +231,11 @@ func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *Stream
 		for _, stateNode := range payload.StateNodes {
 			if checkNodeKeys(keyFilters, stateNode.Key) {
 				if stateNode.Leaf || stateFilter.IntermediateNodes {
-					response.StateNodesRlp[stateNode.Key] = stateNode.Value
+					response.StateNodes = append(response.StateNodes, StateNode{
+						StateTrieKey: stateNode.Key,
+						IPLD:         stateNode.Value,
+						Leaf:         stateNode.Leaf,
+					})
 				}
 			}
 		}
@@ -248,9 +256,9 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *StreamResponse, payload IPLDPayload) error {
+func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *IPLDs, payload ConvertedPayload) error {
 	if !storageFilter.Off {
-		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
+		response.StorageNodes = make([]StorageNode, 0)
 		stateKeyFilters := make([]common.Hash, len(storageFilter.Addresses))
 		for i, addr := range storageFilter.Addresses {
 			stateKeyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
@@ -261,10 +269,14 @@ func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *
 		}
 		for stateKey, storageNodes := range payload.StorageNodes {
 			if checkNodeKeys(stateKeyFilters, stateKey) {
-				response.StorageNodesRlp[stateKey] = make(map[common.Hash][]byte)
 				for _, storageNode := range storageNodes {
 					if checkNodeKeys(storageKeyFilters, storageNode.Key) {
-						response.StorageNodesRlp[stateKey][storageNode.Key] = storageNode.Value
+						response.StorageNodes = append(response.StorageNodes, StorageNode{
+							StateTrieKey:   stateKey,
+							StorageTrieKey: storageNode.Key,
+							IPLD:           storageNode.Value,
+							Leaf:           storageNode.Leaf,
+						})
 					}
 				}
 			}

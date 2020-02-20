@@ -48,7 +48,7 @@ func NewBtcHeader(header *wire.BlockHeader) (*BtcHeader, error) {
 		return nil, err
 	}
 	rawdata := w.Bytes()
-	c, err := rawdataToCid(MBitcoinHeader, rawdata, mh.DBL_SHA2_256)
+	c, err := RawdataToCid(MBitcoinHeader, rawdata, mh.DBL_SHA2_256)
 	if err != nil {
 		return nil, err
 	}

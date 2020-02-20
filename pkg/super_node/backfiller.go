@@ -52,7 +52,7 @@ type BackFillService struct {
 	// Interface for fetching payloads over at historical blocks; over http
 	Fetcher shared.PayloadFetcher
 	// Channel for forwarding backfill payloads to the ScreenAndServe process
-	ScreenAndServeChan chan shared.StreamedIPLDs
+	ScreenAndServeChan chan shared.ConvertedData
 	// Check frequency
 	GapCheckFrequency time.Duration
 	// Size of batch fetches
@@ -62,7 +62,7 @@ type BackFillService struct {
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan chan shared.StreamedIPLDs) (BackFillInterface, error) {
+func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
 	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err

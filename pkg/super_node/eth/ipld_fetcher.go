@@ -21,8 +21,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-blockservice"
@@ -30,6 +28,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var (
@@ -53,13 +52,13 @@ func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.FetchedIPLDs, error) {
+func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
 	}
 	log.Debug("fetching iplds")
-	iplds := new(IPLDWrapper)
+	iplds := IPLDs{}
 	iplds.BlockNumber = cidWrapper.BlockNumber
 	var err error
 	iplds.Headers, err = f.FetchHeaders(cidWrapper.Headers)
@@ -91,91 +90,107 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.FetchedIPLDs, e
 
 // FetchHeaders fetches headers
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([][]byte, error) {
 	log.Debug("fetching header iplds")
-	headerCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
+	headerCids := make([]cid.Cid, len(cids))
+	for i, c := range cids {
 		dc, err := cid.Decode(c.CID)
 		if err != nil {
 			return nil, err
 		}
-		headerCids = append(headerCids, dc)
+		headerCids[i] = dc
 	}
 	headers := f.fetchBatch(headerCids)
-	if len(headers) != len(headerCids) {
-		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(headers), len(headerCids))
-		return headers, errUnexpectedNumberOfIPLDs
+	headersRLP := make([][]byte, len(headers))
+	for i, header := range headers {
+		headersRLP[i] = header.RawData()
 	}
-	return headers, nil
+	if len(headersRLP) != len(headerCids) {
+		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(headers), len(headerCids))
+		return headersRLP, errUnexpectedNumberOfIPLDs
+	}
+	return headersRLP, nil
 }
 
 // FetchUncles fetches uncles
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchUncles(cids []UncleModel) ([][]byte, error) {
 	log.Debug("fetching uncle iplds")
-	uncleCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
+	uncleCids := make([]cid.Cid, len(cids))
+	for i, c := range cids {
 		dc, err := cid.Decode(c.CID)
 		if err != nil {
 			return nil, err
 		}
-		uncleCids = append(uncleCids, dc)
+		uncleCids[i] = dc
 	}
 	uncles := f.fetchBatch(uncleCids)
-	if len(uncles) != len(uncleCids) {
-		log.Errorf("ipfs fetcher: number of uncle blocks returned (%d) does not match number expected (%d)", len(uncles), len(uncleCids))
-		return uncles, errUnexpectedNumberOfIPLDs
+	unclesRLP := make([][]byte, len(uncles))
+	for i, uncle := range uncles {
+		unclesRLP[i] = uncle.RawData()
 	}
-	return uncles, nil
+	if len(unclesRLP) != len(uncleCids) {
+		log.Errorf("ipfs fetcher: number of uncle blocks returned (%d) does not match number expected (%d)", len(uncles), len(uncleCids))
+		return unclesRLP, errUnexpectedNumberOfIPLDs
+	}
+	return unclesRLP, nil
 }
 
 // FetchTrxs fetches transactions
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([][]byte, error) {
 	log.Debug("fetching transaction iplds")
-	trxCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
+	trxCids := make([]cid.Cid, len(cids))
+	for i, c := range cids {
 		dc, err := cid.Decode(c.CID)
 		if err != nil {
 			return nil, err
 		}
-		trxCids = append(trxCids, dc)
+		trxCids[i] = dc
 	}
 	trxs := f.fetchBatch(trxCids)
-	if len(trxs) != len(trxCids) {
-		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
-		return trxs, errUnexpectedNumberOfIPLDs
+	trxsRLP := make([][]byte, len(trxs))
+	for i, trx := range trxs {
+		trxsRLP[i] = trx.RawData()
 	}
-	return trxs, nil
+	if len(trxsRLP) != len(trxCids) {
+		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
+		return trxsRLP, errUnexpectedNumberOfIPLDs
+	}
+	return trxsRLP, nil
 }
 
 // FetchRcts fetches receipts
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([][]byte, error) {
 	log.Debug("fetching receipt iplds")
-	rctCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
+	rctCids := make([]cid.Cid, len(cids))
+	for i, c := range cids {
 		dc, err := cid.Decode(c.CID)
 		if err != nil {
 			return nil, err
 		}
-		rctCids = append(rctCids, dc)
+		rctCids[i] = dc
 	}
 	rcts := f.fetchBatch(rctCids)
-	if len(rcts) != len(rctCids) {
-		log.Errorf("ipfs fetcher: number of receipt blocks returned (%d) does not match number expected (%d)", len(rcts), len(rctCids))
-		return rcts, errUnexpectedNumberOfIPLDs
+	rctsRLP := make([][]byte, len(rcts))
+	for i, rct := range rcts {
+		rctsRLP[i] = rct.RawData()
 	}
-	return rcts, nil
+	if len(rctsRLP) != len(rctCids) {
+		log.Errorf("ipfs fetcher: number of receipt blocks returned (%d) does not match number expected (%d)", len(rcts), len(rctCids))
+		return rctsRLP, errUnexpectedNumberOfIPLDs
+	}
+	return rctsRLP, nil
 }
 
 // FetchState fetches state nodes
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state keys
-func (f *IPLDFetcher) FetchState(cids []StateNodeModel) (map[common.Hash]blocks.Block, error) {
+func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 	log.Debug("fetching state iplds")
-	stateNodes := make(map[common.Hash]blocks.Block)
-	for _, stateNode := range cids {
+	stateNodes := make([]StateNode, len(cids))
+	for i, stateNode := range cids {
 		if stateNode.CID == "" || stateNode.StateKey == "" {
 			continue
 		}
@@ -187,7 +202,11 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) (map[common.Hash]blocks.
 		if err != nil {
 			return nil, err
 		}
-		stateNodes[common.HexToHash(stateNode.StateKey)] = state
+		stateNodes[i] = StateNode{
+			IPLD:         state.RawData(),
+			StateTrieKey: common.HexToHash(stateNode.StateKey),
+			Leaf:         stateNode.Leaf,
+		}
 	}
 	return stateNodes, nil
 }
@@ -195,10 +214,10 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) (map[common.Hash]blocks.
 // FetchStorage fetches storage nodes
 // It uses the single f.fetch method instead of the batch fetch, because it
 // needs to maintain the data's relation to state and storage keys
-func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) (map[common.Hash]map[common.Hash]blocks.Block, error) {
+func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
 	log.Debug("fetching storage iplds")
-	storageNodes := make(map[common.Hash]map[common.Hash]blocks.Block)
-	for _, storageNode := range cids {
+	storageNodes := make([]StorageNode, len(cids))
+	for i, storageNode := range cids {
 		if storageNode.CID == "" || storageNode.StorageKey == "" || storageNode.StateKey == "" {
 			continue
 		}
@@ -210,10 +229,12 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) (map[com
 		if err != nil {
 			return nil, err
 		}
-		if storageNodes[common.HexToHash(storageNode.StateKey)] == nil {
-			storageNodes[common.HexToHash(storageNode.StateKey)] = make(map[common.Hash]blocks.Block)
+		storageNodes[i] = StorageNode{
+			IPLD:           storage.RawData(),
+			StateTrieKey:   common.HexToHash(storageNode.StateKey),
+			StorageTrieKey: common.HexToHash(storageNode.StorageKey),
+			Leaf:           storageNode.Leaf,
 		}
-		storageNodes[common.HexToHash(storageNode.StateKey)][common.HexToHash(storageNode.StorageKey)] = storage
 	}
 	return storageNodes, nil
 }

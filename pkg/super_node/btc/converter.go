@@ -40,7 +40,7 @@ func NewPayloadConverter(chainConfig *chaincfg.Params) *PayloadConverter {
 
 // Convert method is used to convert a bitcoin BlockPayload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
 	btcBlockPayload, ok := payload.(BlockPayload)
 	if !ok {
 		return nil, fmt.Errorf("btc converter: expected payload type %T got %T", BlockPayload{}, payload)
@@ -87,7 +87,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		}
 		txMeta[i] = txModel
 	}
-	return IPLDPayload{
+	return ConvertedPayload{
 		BlockPayload: btcBlockPayload,
 		TxMetaData:   txMeta,
 	}, nil

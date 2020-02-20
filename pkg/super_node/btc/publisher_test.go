@@ -44,7 +44,7 @@ var _ = Describe("Publisher", func() {
 				HeaderPutter:      mockHeaderDagPutter,
 				TransactionPutter: mockTrxDagPutter,
 			}
-			payload, err := publisher.Publish(mocks.MockIPLDPayload)
+			payload, err := publisher.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			cidPayload, ok := payload.(*btc.CIDPayload)
 			Expect(ok).To(BeTrue())

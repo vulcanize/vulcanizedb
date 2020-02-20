@@ -48,7 +48,7 @@ func NewReceipt(receipt *types.ReceiptForStorage) (*EthReceipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := rawdataToCid(MEthTxReceipt, receiptRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthTxReceipt, receiptRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}

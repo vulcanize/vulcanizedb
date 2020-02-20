@@ -48,10 +48,10 @@ func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
-	ipldPayload, ok := payload.(IPLDPayload)
+func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", &IPLDPayload{}, payload)
+		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", &ConvertedPayload{}, payload)
 	}
 	// Process and publish headers
 	headerCid, err := pub.publishHeader(ipldPayload.Header)

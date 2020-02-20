@@ -32,12 +32,12 @@ type PayloadFetcher interface {
 
 // PayloadConverter converts chain-specific payloads into IPLD payloads for publishing
 type PayloadConverter interface {
-	Convert(payload RawChainData) (StreamedIPLDs, error)
+	Convert(payload RawChainData) (ConvertedData, error)
 }
 
 // IPLDPublisher publishes IPLD payloads and returns a CID payload for indexing
 type IPLDPublisher interface {
-	Publish(payload StreamedIPLDs) (CIDsForIndexing, error)
+	Publish(payload ConvertedData) (CIDsForIndexing, error)
 }
 
 // CIDIndexer indexes a CID payload in Postgres
@@ -47,7 +47,7 @@ type CIDIndexer interface {
 
 // ResponseFilterer applies a filter to an IPLD payload to return a subscription response packet
 type ResponseFilterer interface {
-	Filter(filter SubscriptionSettings, payload StreamedIPLDs) (response ServerResponse, err error)
+	Filter(filter SubscriptionSettings, payload ConvertedData) (response IPLDs, err error)
 }
 
 // CIDRetriever retrieves cids according to a provided filter and returns a CID wrapper
@@ -60,12 +60,7 @@ type CIDRetriever interface {
 
 // IPLDFetcher uses a CID wrapper to fetch an IPLD wrapper
 type IPLDFetcher interface {
-	Fetch(cids CIDsForFetching) (FetchedIPLDs, error)
-}
-
-// IPLDResolver resolves an IPLD wrapper into chain-specific payloads
-type IPLDResolver interface {
-	Resolve(iplds FetchedIPLDs) (ServerResponse, error)
+	Fetch(cids CIDsForFetching) (IPLDs, error)
 }
 
 // ClientSubscription is a general interface for chain data subscriptions

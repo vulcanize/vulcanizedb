@@ -41,7 +41,7 @@ var _ node.Node = (*EthStateTrie)(nil)
 // FromStateTrieRLP takes the RLP bytes of an ethereum
 // state trie node to return it as an IPLD node for further processing.
 func FromStateTrieRLP(stateNodeRLP []byte) (*EthStateTrie, error) {
-	c, err := rawdataToCid(MEthStateTrie, stateNodeRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthStateTrie, stateNodeRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}

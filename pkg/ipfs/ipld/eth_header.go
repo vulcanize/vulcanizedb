@@ -49,7 +49,7 @@ func NewEthHeader(header *types.Header) (*EthHeader, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := rawdataToCid(MEthHeader, headerRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthHeader, headerRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}

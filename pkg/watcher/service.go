@@ -24,12 +24,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/watcher/shared"
 	"github.com/vulcanize/vulcanizedb/pkg/wasm"
+	"github.com/vulcanize/vulcanizedb/pkg/watcher/shared"
 )
 
-// SuperNodeWatcher is the top level interface for watching data from super node
-type SuperNodeWatcher interface {
+// Watcher is the top level interface for watching data from super node
+type Watcher interface {
 	Init() error
 	Watch(wg *sync.WaitGroup) error
 }
@@ -56,8 +56,8 @@ type Service struct {
 	backFilling  *int32 // 0 => not backfilling; 1 => backfilling
 }
 
-// NewSuperNodeWatcher returns a new Service which satisfies the SuperNodeWatcher interface
-func NewSuperNodeWatcher(c Config, quitChan chan bool) (SuperNodeWatcher, error) {
+// NewWatcher returns a new Service which satisfies the Watcher interface
+func NewWatcher(c Config, quitChan chan bool) (Watcher, error) {
 	repo, err := NewRepository(c.SubscriptionConfig.ChainType(), c.DB, c.TriggerFunctions)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 					logrus.Error(payload.Error())
 					continue
 				}
-				if payload.Data.Height() == atomic.LoadInt64(s.payloadIndex) {
+				if payload.Height == atomic.LoadInt64(s.payloadIndex) {
 					// If the data is at our current index it is ready to be processed; add it to the ready data queue
 					if err := s.Repository.ReadyData(payload); err != nil {
 						logrus.Error(err)
@@ -133,7 +133,7 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 			case err := <-sub.Err():
 				logrus.Error(err)
 			case <-s.QuitChan:
-				logrus.Info("WatchContract shutting down")
+				logrus.Info("Watcher shutting down")
 				wg.Done()
 				return
 			}
@@ -168,7 +168,7 @@ func (s *Service) backFillOnlyQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscri
 			case err := <-sub.Err():
 				logrus.Error(err)
 			case <-s.QuitChan:
-				logrus.Info("WatchContract shutting down")
+				logrus.Info("Watcher shutting down")
 				wg.Done()
 				return
 			}

@@ -17,9 +17,11 @@
 package eth
 
 import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/watcher/shared"
+	"github.com/vulcanize/vulcanizedb/pkg/watcher/shared"
 )
 
 // Repository is the underlying struct for satisfying the shared.Repository interface for eth
@@ -54,5 +56,29 @@ func (r *Repository) GetQueueData(height int64, hash string) (super_node.Subscri
 
 // ReadyData puts super node payload data in the tables ready for processing by trigger functions
 func (r *Repository) ReadyData(payload super_node.SubscriptionPayload) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyHeader(header *types.Header) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyUncle(uncle *types.Header) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyTxs(transactions types.Transactions) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyRcts(receipts types.Receipts) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyState(stateNodes map[common.Address][]byte) error {
+	panic("implement me")
+}
+
+func (r *Repository) readyStorage(storageNodes map[common.Address]map[common.Address][]byte) error {
 	panic("implement me")
 }

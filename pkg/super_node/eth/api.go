@@ -26,7 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ipfs/go-block-format"
 )
 
 // APIName is the namespace for the super node's eth api
@@ -48,7 +47,7 @@ func NewPublicEthAPI(b *Backend) *PublicEthAPI {
 
 // BlockNumber returns the block number of the chain head.
 func (pea *PublicEthAPI) BlockNumber() hexutil.Uint64 {
-	number, _ := pea.b.retriever.RetrieveLastBlockNumber()
+	number, _ := pea.b.Retriever.RetrieveLastBlockNumber()
 	return hexutil.Uint64(number)
 }
 
@@ -74,20 +73,20 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 		Contracts: addrStrs,
 		Topics:    topicStrSets,
 	}
-	tx, err := pea.b.db.Beginx()
+	tx, err := pea.b.DB.Beginx()
 	if err != nil {
 		return nil, err
 	}
 	// If we have a blockhash to filter on, fire off single retrieval query
 	if crit.BlockHash != nil {
-		rctCIDs, err := pea.b.retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
+		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
 		if err != nil {
 			return nil, err
 		}
 		if err := tx.Commit(); err != nil {
 			return nil, err
 		}
-		rctIPLDs, err := pea.b.fetcher.FetchRcts(rctCIDs)
+		rctIPLDs, err := pea.b.Fetcher.FetchRcts(rctCIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -98,14 +97,14 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	startingBlock := crit.FromBlock
 	endingBlock := crit.ToBlock
 	if startingBlock == nil {
-		startingBlockInt, err := pea.b.retriever.RetrieveFirstBlockNumber()
+		startingBlockInt, err := pea.b.Retriever.RetrieveFirstBlockNumber()
 		if err != nil {
 			return nil, err
 		}
 		startingBlock = big.NewInt(startingBlockInt)
 	}
 	if endingBlock == nil {
-		endingBlockInt, err := pea.b.retriever.RetrieveLastBlockNumber()
+		endingBlockInt, err := pea.b.Retriever.RetrieveLastBlockNumber()
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +114,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	end := endingBlock.Int64()
 	allRctCIDs := make([]ReceiptModel, 0)
 	for i := start; i <= end; i++ {
-		rctCIDs, err := pea.b.retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
+		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +123,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	rctIPLDs, err := pea.b.fetcher.FetchRcts(allRctCIDs)
+	rctIPLDs, err := pea.b.Fetcher.FetchRcts(allRctCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +180,10 @@ func (pea *PublicEthAPI) GetTransactionByHash(ctx context.Context, hash common.H
 }
 
 // extractLogsOfInterest returns logs from the receipt IPLD
-func extractLogsOfInterest(rctIPLDs []blocks.Block, wantedTopics [][]string) ([]*types.Log, error) {
+func extractLogsOfInterest(rctIPLDs [][]byte, wantedTopics [][]string) ([]*types.Log, error) {
 	var logs []*types.Log
 	for _, rctIPLD := range rctIPLDs {
-		rctRLP := rctIPLD.RawData()
+		rctRLP := rctIPLD
 		var rct types.Receipt
 		if err := rlp.DecodeBytes(rctRLP, &rct); err != nil {
 			return nil, err
