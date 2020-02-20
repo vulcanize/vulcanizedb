@@ -53,7 +53,7 @@ docker build -f dockerfiles/reset_header_check_count/Dockerfile . -t reset_heade
 
 ### Run
 ```
-docker run -e CLIENT_IPCPATH=ipc_path -e DATABASE_USER=user -e DATABASE_PASSWORD=password -e DATABASE_HOSTNAME=host -e DATABASE_PORT=port -e DATABASE_NAME=name -e HEADER_BLOCK_NUMBER=0 -it reset_header_check_count:latest
+docker run -e CLIENT_IPCPATH=ipc_path -e DATABASE_USER=user -e DATABASE_PASSWORD=password -e DATABASE_HOSTNAME=host -e DATABASE_PORT=port -e DATABASE_NAME=name -e RESET_HEADER_COUNT_BLOCK_NUMBER=block-number -it reset_header_check_count:latest
 ```
 Notes:
 - `HEADER_BLOCK_NUMBER` variable is required
