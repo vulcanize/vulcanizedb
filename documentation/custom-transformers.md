@@ -5,7 +5,8 @@ purpose can be leveraged.
 Individual custom transformers can be composed together from any number of external repositories and executed as a
 single process using the `compose` and `execute` commands or the `composeAndExecute` command. This is accomplished by
 generating a Go plugin which allows the `vulcanizedb` binary to link to the external transformers, so long as they
-abide by one of the standard [interfaces](../staging/libraries/shared/transformer).
+abide by the [event transformer interface](../staging/libraries/shared/factories/event/transformer.go) or the
+[storage transformer interface](../staging/libraries/shared/factories/storage/transformer.go).
 
 ## Writing custom transformers
 For help with writing different types of custom transformers please see below:
