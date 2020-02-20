@@ -44,7 +44,7 @@ func (transformer *MockStorageTransformer) GetContractAddress() common.Address {
 	return transformer.Address
 }
 
-func (transformer *MockStorageTransformer) GetStorageKeysLookup() interface{} {
+func (transformer *MockStorageTransformer) GetStorageKeysLookup() storage.KeysLookup {
 	return transformer.StorageKeysLookup
 }
 

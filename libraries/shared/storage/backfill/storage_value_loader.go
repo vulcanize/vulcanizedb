@@ -2,7 +2,6 @@ package backfill
 
 import (
 	"database/sql"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -62,10 +61,7 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 	addressToKeys := make(map[common.Address][]common.Hash)
 	for _, i := range r.initializers {
 		transformer := i(r.db)
-		keysLookup, ok := transformer.GetStorageKeysLookup().(storage.KeysLookup)
-		if !ok {
-			return addressToKeys, fmt.Errorf("%v type incompatible. Should be a storage.KeysLookup", keysLookup)
-		}
+		keysLookup := transformer.GetStorageKeysLookup()
 		keys, getKeysErr := keysLookup.GetKeys()
 		if getKeysErr != nil {
 			return addressToKeys, getKeysErr
