@@ -24,43 +24,42 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	mocks2 "github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	mocks3 "github.com/vulcanize/vulcanizedb/pkg/super_node/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var _ = Describe("BackFiller", func() {
 	Describe("FillGaps", func() {
 		It("Periodically checks for and fills in gaps in the super node's data", func() {
-			mockCidRepo := &mocks3.CIDRepository{
+			mockCidRepo := &mocks.CIDIndexer{
 				ReturnErr: nil,
 			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnCIDPayload: []*ipfs.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
+				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*ipfs.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks3.MockCIDRetriever{
+			mockRetriever := &mocks.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
-				GapsToRetrieve: [][2]uint64{
+				GapsToRetrieve: []shared.Gap{
 					{
-						100, 101,
+						Start: 100, Stop: 101,
 					},
 				},
 			}
-			mockFetcher := &mocks2.StateDiffFetcher{
+			mockFetcher := &mocks.StateDiffFetcher{
 				PayloadsToReturn: map[uint64]statediff.Payload{
 					100: mocks.MockStateDiffPayload,
 					101: mocks.MockStateDiffPayload,
 				},
 			}
 			backfiller := &super_node.BackFillService{
-				Repository:        mockCidRepo,
+				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
@@ -88,32 +87,32 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Works for single block `ranges`", func() {
-			mockCidRepo := &mocks3.CIDRepository{
+			mockCidRepo := &mocks.CIDIndexer{
 				ReturnErr: nil,
 			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnCIDPayload: []*ipfs.CIDPayload{mocks.MockCIDPayload},
+				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload},
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*ipfs.IPLDPayload{mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks3.MockCIDRetriever{
+			mockRetriever := &mocks.MockCIDRetriever{
 				FirstBlockNumberToReturn: 1,
-				GapsToRetrieve: [][2]uint64{
+				GapsToRetrieve: []shared.Gap{
 					{
-						100, 100,
+						Start: 100, Stop: 100,
 					},
 				},
 			}
-			mockFetcher := &mocks2.StateDiffFetcher{
+			mockFetcher := &mocks.StateDiffFetcher{
 				PayloadsToReturn: map[uint64]statediff.Payload{
 					100: mocks.MockStateDiffPayload,
 				},
 			}
 			backfiller := &super_node.BackFillService{
-				Repository:        mockCidRepo,
+				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,
@@ -138,29 +137,29 @@ var _ = Describe("BackFiller", func() {
 		})
 
 		It("Finds beginning gap", func() {
-			mockCidRepo := &mocks3.CIDRepository{
+			mockCidRepo := &mocks.CIDIndexer{
 				ReturnErr: nil,
 			}
 			mockPublisher := &mocks.IterativeIPLDPublisher{
-				ReturnCIDPayload: []*ipfs.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
+				ReturnCIDPayload: []*eth.CIDPayload{mocks.MockCIDPayload, mocks.MockCIDPayload},
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*ipfs.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks3.MockCIDRetriever{
+			mockRetriever := &mocks.MockCIDRetriever{
 				FirstBlockNumberToReturn: 3,
-				GapsToRetrieve:           [][2]uint64{},
+				GapsToRetrieve:           []shared.Gap{},
 			}
-			mockFetcher := &mocks2.StateDiffFetcher{
+			mockFetcher := &mocks.StateDiffFetcher{
 				PayloadsToReturn: map[uint64]statediff.Payload{
 					1: mocks.MockStateDiffPayload,
 					2: mocks.MockStateDiffPayload,
 				},
 			}
 			backfiller := &super_node.BackFillService{
-				Repository:        mockCidRepo,
+				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
 				Converter:         mockConverter,
 				Fetcher:           mockFetcher,

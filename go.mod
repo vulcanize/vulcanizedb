@@ -6,7 +6,7 @@ require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9
 	github.com/Stebalien/go-bitfield v0.0.1
-	github.com/allegro/bigcache v0.0.0-20190618191010-69ea0af04088
+	github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 	github.com/bren2010/proquint v0.0.0-20160323162903-38337c27106d
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
@@ -14,6 +14,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0
 	github.com/cheekybits/genny v1.0.0
+	github.com/coocood/freecache v1.1.0 // indirect
 	github.com/coreos/go-semver v0.3.0
 	github.com/cskr/pubsub v1.0.2
 	github.com/dave/jennifer v1.3.0
@@ -35,7 +36,7 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1
 	github.com/google/uuid v1.1.1
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.4.1-0.20190629185528-ae1634f6a989
 	github.com/hashicorp/errwrap v1.0.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/golang-lru v0.5.3
@@ -83,13 +84,13 @@ require (
 	github.com/ipfs/go-verifcid v0.0.1
 	github.com/ipfs/interface-go-ipfs-core v0.1.0
 	github.com/jackpal/gateway v1.0.5
-	github.com/jackpal/go-nat-pmp v1.0.1
+	github.com/jackpal/go-nat-pmp v1.0.2-0.20160603034137-1fa385a6f458
 	github.com/jbenet/go-is-domain v1.0.2
 	github.com/jbenet/go-temp-err-catcher v0.0.0-20150120210811-aac704a3f4f2
 	github.com/jbenet/goprocess v0.1.3
 	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/jmoiron/sqlx v0.0.0-20190426154859-38398a30ed85
-	github.com/karalabe/usb v0.0.0-20190703133951-9be757f914c0
+	github.com/karalabe/usb v0.0.0-20190919080040-51dc0efba356
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2
@@ -158,7 +159,7 @@ require (
 	github.com/multiformats/go-multibase v0.0.1
 	github.com/multiformats/go-multihash v0.0.6
 	github.com/multiformats/go-multistream v0.1.0
-	github.com/olekukonko/tablewriter v0.0.1
+	github.com/olekukonko/tablewriter v0.0.2-0.20190409134802-7e037d187b0c
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/opentracing/opentracing-go v1.1.0
@@ -181,10 +182,10 @@ require (
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48
-	github.com/steakknife/bloomfilter v0.0.0-20180906043351-99ee86d9200f
-	github.com/steakknife/hamming v0.0.0-20180906055317-003c143a81c2
-	github.com/syndtr/goleveldb v1.0.0
-	github.com/tyler-smith/go-bip39 v1.0.0
+	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570
+	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3
+	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
+	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
 	github.com/vulcanize/eth-block-extractor v0.0.0-20190801172153-2835f21156aa
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f
@@ -213,7 +214,6 @@ require (
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
-	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )
 
@@ -225,4 +225,4 @@ replace github.com/ipfs/go-ipfs v0.4.22 => github.com/vulcanize/go-ipfs v0.4.22-
 
 replace github.com/ipfs/go-ipfs-config v0.0.3 => github.com/vulcanize/go-ipfs-config v0.0.8-alpha
 
-replace github.com/ethereum/go-ethereum v1.9.1 => github.com/vulcanize/go-ethereum v0.0.0-20190731183759-8e20673bd101
+replace github.com/ethereum/go-ethereum v1.9.1 => github.com/vulcanize/go-ethereum v1.5.10-0.20200116224441-2a980ec3dcb8

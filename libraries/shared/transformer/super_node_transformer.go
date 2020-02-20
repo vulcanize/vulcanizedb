@@ -17,15 +17,15 @@
 package transformer
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/config"
 	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 )
 
 type SuperNodeTransformer interface {
 	Init() error
 	Execute() error
-	GetConfig() config.Subscription
+	GetConfig() super_node.SubscriptionSettings
 }
 
-type SuperNodeTransformerInitializer func(db *postgres.DB, subCon config.Subscription, client core.RPCClient) SuperNodeTransformer
+type SuperNodeTransformerInitializer func(db *postgres.DB, subCon super_node.SubscriptionSettings, client core.RPCClient) SuperNodeTransformer

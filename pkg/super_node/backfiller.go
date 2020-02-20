@@ -22,14 +22,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+
 	"github.com/ethereum/go-ethereum/params"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
 const (
@@ -45,35 +45,55 @@ type BackFillInterface interface {
 
 // BackFillService for filling in gaps in the super node
 type BackFillService struct {
-	// Interface for converting statediff payloads into ETH-IPLD object payloads
-	Converter ipfs.PayloadConverter
-	// Interface for publishing the ETH-IPLD payloads to IPFS
-	Publisher ipfs.IPLDPublisher
-	// Interface for indexing the CIDs of the published ETH-IPLDs in Postgres
-	Repository CIDRepository
+	// Interface for converting payloads into IPLD object payloads
+	Converter shared.PayloadConverter
+	// Interface for publishing the IPLD payloads to IPFS
+	Publisher shared.IPLDPublisher
+	// Interface for indexing the CIDs of the published IPLDs in Postgres
+	Indexer shared.CIDIndexer
 	// Interface for searching and retrieving CIDs from Postgres index
-	Retriever CIDRetriever
-	// State-diff fetcher; needs to be configured with an archival core.RpcClient
-	Fetcher fetcher.StateDiffFetcher
+	Retriever shared.CIDRetriever
+	// Interface for fetching payloads over at historical blocks; over http
+	Fetcher shared.PayloadFetcher
 	// Check frequency
 	GapCheckFrequency time.Duration
-	// size of batch fetches
+	// Size of batch fetches
 	BatchSize uint64
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(ipfsPath string, db *postgres.DB, archivalNodeRPCClient core.RPCClient, freq time.Duration, batchSize uint64) (BackFillInterface, error) {
-	publisher, err := ipfs.NewIPLDPublisher(ipfsPath)
+func NewBackFillService(settings *config.SuperNode) (BackFillInterface, error) {
+	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
 	}
+	indexer, err := NewCIDIndexer(settings.Chain, settings.DB)
+	if err != nil {
+		return nil, err
+	}
+	converter, err := NewPayloadConverter(settings.Chain, params.MainnetChainConfig)
+	if err != nil {
+		return nil, err
+	}
+	retriever, err := NewCIDRetriever(settings.Chain, settings.DB)
+	if err != nil {
+		return nil, err
+	}
+	fetcher, err := NewPaylaodFetcher(settings.Chain, settings.HTTPClient)
+	if err != nil {
+		return nil, err
+	}
+	batchSize := settings.BatchSize
+	if batchSize == 0 {
+		batchSize = DefaultMaxBatchSize
+	}
 	return &BackFillService{
-		Repository:        NewCIDRepository(db),
-		Converter:         ipfs.NewPayloadConverter(params.MainnetChainConfig),
+		Indexer:           indexer,
+		Converter:         converter,
 		Publisher:         publisher,
-		Retriever:         NewCIDRetriever(db),
-		Fetcher:           fetcher.NewStateDiffFetcher(archivalNodeRPCClient),
-		GapCheckFrequency: freq,
+		Retriever:         retriever,
+		Fetcher:           fetcher,
+		GapCheckFrequency: settings.Frequency,
 		BatchSize:         batchSize,
 	}, nil
 }
@@ -93,23 +113,24 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
 				return
 			case <-ticker.C:
 				log.Info("searching for gaps in the super node database")
-				startingBlock, firstBlockErr := bfs.Retriever.RetrieveFirstBlockNumber()
-				if firstBlockErr != nil {
-					log.Error(firstBlockErr)
+				startingBlock, err := bfs.Retriever.RetrieveFirstBlockNumber()
+				if err != nil {
+					log.Error(err)
 					continue
 				}
 				if startingBlock != 1 {
 					log.Info("found gap at the beginning of the sync")
 					bfs.fillGaps(1, uint64(startingBlock-1))
 				}
-
-				gaps, gapErr := bfs.Retriever.RetrieveGapsInData()
-				if gapErr != nil {
-					log.Error(gapErr)
+				gaps, err := bfs.Retriever.RetrieveGapsInData()
+				if err != nil {
+					log.Error(err)
 					continue
 				}
 				for _, gap := range gaps {
-					bfs.fillGaps(gap[0], gap[1])
+					if err := bfs.fillGaps(gap.Start, gap.Stop); err != nil {
+						log.Error(err)
+					}
 				}
 			}
 		}
@@ -117,14 +138,13 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup, quitChan <-chan bool) {
 	log.Info("fillGaps goroutine successfully spun up")
 }
 
-func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
+func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 	log.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 	errChan := make(chan error)
 	done := make(chan bool)
-	backFillInitErr := bfs.backFill(startingBlock, endingBlock, errChan, done)
-	if backFillInitErr != nil {
-		log.Error(backFillInitErr)
-		return
+	err := bfs.backFill(startingBlock, endingBlock, errChan, done)
+	if err != nil {
+		return err
 	}
 	for {
 		select {
@@ -132,7 +152,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) {
 			log.Error(err)
 		case <-done:
 			log.Infof("finished filling in gap from %d to %d", startingBlock, endingBlock)
-			return
+			return nil
 		}
 	}
 }
@@ -165,24 +185,26 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 				<-forwardDone
 			}
 			go func(blockHeights []uint64) {
-				payloads, fetchErr := bfs.Fetcher.FetchStateDiffsAt(blockHeights)
-				if fetchErr != nil {
-					errChan <- fetchErr
+				payloads, err := bfs.Fetcher.FetchAt(blockHeights)
+				if err != nil {
+					errChan <- err
 				}
 				for _, payload := range payloads {
-					ipldPayload, convertErr := bfs.Converter.Convert(payload)
-					if convertErr != nil {
-						errChan <- convertErr
+					ipldPayload, err := bfs.Converter.Convert(payload)
+					if err != nil {
+						errChan <- err
 						continue
 					}
-					cidPayload, publishErr := bfs.Publisher.Publish(ipldPayload)
-					if publishErr != nil {
-						errChan <- publishErr
+					// make backfiller a part of super_node service and forward these
+					// ipldPayload the the regular publishAndIndex and screenAndServe channels
+					// this would allow us to stream backfilled data to subscribers
+					cidPayload, err := bfs.Publisher.Publish(ipldPayload)
+					if err != nil {
+						errChan <- err
 						continue
 					}
-					indexErr := bfs.Repository.Index(cidPayload)
-					if indexErr != nil {
-						errChan <- indexErr
+					if err := bfs.Indexer.Index(cidPayload); err != nil {
+						errChan <- err
 					}
 				}
 				// when this goroutine is done, send out a signal

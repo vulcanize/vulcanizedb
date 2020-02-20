@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.10
--- Dumped by pg_dump version 11.5
+-- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,8 +17,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- Name: addresses; Type: TABLE; Schema: public; Owner: -
@@ -315,8 +313,9 @@ CREATE TABLE public.header_cids (
     id integer NOT NULL,
     block_number bigint NOT NULL,
     block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
-    uncle boolean NOT NULL
+    td bigint
 );
 
 
@@ -593,7 +592,10 @@ CREATE TABLE public.receipt_cids (
     tx_id integer NOT NULL,
     cid text NOT NULL,
     contract character varying(66),
-    topic0s character varying(66)[]
+    topic0s character varying(66)[],
+    topic1s character varying(66)[],
+    topic2s character varying(66)[],
+    topic3s character varying(66)[]
 );
 
 
@@ -725,6 +727,7 @@ CREATE TABLE public.transaction_cids (
     id integer NOT NULL,
     header_id integer NOT NULL,
     tx_hash character varying(66) NOT NULL,
+    index integer NOT NULL,
     cid text NOT NULL,
     dst character varying(66) NOT NULL,
     src character varying(66) NOT NULL
@@ -749,6 +752,39 @@ CREATE SEQUENCE public.transaction_cids_id_seq
 --
 
 ALTER SEQUENCE public.transaction_cids_id_seq OWNED BY public.transaction_cids.id;
+
+
+--
+-- Name: uncle_cids; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.uncle_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: uncle_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.uncle_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: uncle_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.uncle_cids_id_seq OWNED BY public.uncle_cids.id;
 
 
 --
@@ -1011,6 +1047,13 @@ ALTER TABLE ONLY public.storage_diff ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.transaction_cids ALTER COLUMN id SET DEFAULT nextval('public.transaction_cids_id_seq'::regclass);
+
+
+--
+-- Name: uncle_cids id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncle_cids ALTER COLUMN id SET DEFAULT nextval('public.uncle_cids_id_seq'::regclass);
 
 
 --
@@ -1315,6 +1358,22 @@ ALTER TABLE ONLY public.transaction_cids
 
 
 --
+-- Name: uncle_cids uncle_cids_header_id_block_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncle_cids
+    ADD CONSTRAINT uncle_cids_header_id_block_hash_key UNIQUE (header_id, block_hash);
+
+
+--
+-- Name: uncle_cids uncle_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncle_cids
+    ADD CONSTRAINT uncle_cids_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: uncles uncles_block_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1573,6 +1632,14 @@ ALTER TABLE ONLY public.storage_cids
 
 ALTER TABLE ONLY public.transaction_cids
     ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: uncle_cids uncle_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uncle_cids
+    ADD CONSTRAINT uncle_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
