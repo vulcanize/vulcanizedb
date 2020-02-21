@@ -26,7 +26,7 @@ import (
 type ITransformer interface {
 	Execute(diff types.PersistedDiff) error
 	KeccakContractAddress() common.Hash
-	GetStorageKeysLookup() interface{}
+	GetStorageKeysLookup() KeysLookup
 	GetContractAddress() common.Address
 }
 
@@ -39,7 +39,7 @@ type Transformer struct {
 	hashedAddress     common.Hash
 }
 
-func (transformer Transformer) GetStorageKeysLookup() interface{} {
+func (transformer Transformer) GetStorageKeysLookup() KeysLookup {
 	return transformer.StorageKeysLookup
 }
 

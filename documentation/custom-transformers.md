@@ -5,17 +5,18 @@ purpose can be leveraged.
 Individual custom transformers can be composed together from any number of external repositories and executed as a
 single process using the `compose` and `execute` commands or the `composeAndExecute` command. This is accomplished by
 generating a Go plugin which allows the `vulcanizedb` binary to link to the external transformers, so long as they
-abide by one of the standard [interfaces](../staging/libraries/shared/transformer).
+abide by the [event transformer interface](../libraries/shared/factories/event/transformer.go) or the
+[storage transformer interface](../libraries/shared/factories/storage/transformer.go).
 
 ## Writing custom transformers
 For help with writing different types of custom transformers please see below:
 
 Storage Transformers: transform data derived from contract storage tries
-   * [Guide](../../staging/libraries/shared/factories/storage/README.md)
-   * [Example](../../staging/libraries/shared/factories/storage/EXAMPLE.md)
+   * [Guide](../libraries/shared/factories/storage/README.md)
+   * [Example](../libraries/shared/factories/storage/EXAMPLE.md)
 
 Event Transformers: transform data derived from Ethereum log events
-   * [Guide](../../staging/libraries/shared/factories/event/README.md)
+   * [Guide](../libraries/shared/factories/event/README.md)
    * [Example 1](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registar)
    * [Example 2](https://github.com/vulcanize/ens_transformers/tree/master/transformers/registry)
    * [Example 3](https://github.com/vulcanize/ens_transformers/tree/master/transformers/resolver)
@@ -27,12 +28,13 @@ Contract Transformers: transform data derived from Ethereum log events and use i
 ## Preparing custom transformers to work as part of a plugin
 To plug in an external transformer we need to:
 
-1. Create a package that exports a variable `TransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer` that are of type [TransformerInitializer](../staging/libraries/shared/transformer/event_transformer.go#L33)
-or [StorageTransformerInitializer](../../staging/libraries/shared/storage/storage_transformer.go#L31),
-or [ContractTransformerInitializer](../../staging/libraries/shared/transformer/contract_transformer.go#L31), respectively
-2. Design the transformers to work in the context of their [event](../staging/libraries/shared/watcher/event_watcher.go#L83),
-[storage](../../staging/libraries/shared/watcher/storage_watcher.go#L53),
-or [contract](../../staging/libraries/shared/watcher/contract_watcher.go#L68) watcher execution modes
+1. Create a package that exports a variable `EventTransformerInitializer`, `StorageTransformerInitializer`, or `ContractTransformerInitializer`
+that are of type [event.TransformerInitializer](../libraries/shared/factories/event/transformer.go#L31)
+or [storage.TransformerInitializer](../libraries/shared/factories/storage/transformer.go#L33),
+or [ContractTransformerInitializer](../libraries/shared/transformer/contract_transformer.go#L31), respectively
+2. Design the transformers to work in the context of their [event](../libraries/shared/watcher/event_watcher.go),
+[storage](../libraries/shared/watcher/storage_watcher.go),
+or [contract](../libraries/shared/watcher/contract_watcher.go) watcher `Execute` methods
 3. Create db migrations to run against vulcanizeDB so that we can store the transformer output
     * Do not `goose fix` the transformer migrations, this is to ensure they are always ran after the core vulcanizedb migrations which are kept in their fixed form
     * Specify migration locations for each transformer in the config with the `exporter.transformer.migrations` fields
@@ -140,12 +142,12 @@ The config provides information for composing a set of transformers from externa
     - `path` is the relative path from `repository` to the transformer's `TransformerInitializer` directory (initializer package).
         - Transformer repositories need to be cloned into the user's $GOPATH (`go get`)
     - `type` is the type of the transformer; indicating which type of watcher it works with (for now, there are only two options: `eth_event` and `eth_storage`)
-        - `eth_storage` indicates the transformer works with the [storage watcher](../../staging/libraries/shared/watcher/storage_watcher.go)
+        - `eth_storage` indicates the transformer works with the [storage watcher](../libraries/shared/watcher/storage_watcher.go)
          that fetches state and storage diffs from an ETH node (instead of, for example, from IPFS)
-        - `eth_event` indicates the transformer works with the [event watcher](../../staging/libraries/shared/watcher/event_watcher.go)
+        - `eth_event` indicates the transformer works with the [event watcher](../libraries/shared/watcher/event_watcher.go)
          that fetches event logs from an ETH node
-        - `eth_contract` indicates the transformer works with the [contract watcher](../staging/libraries/shared/watcher/contract_watcher.go)
-        that is made to work with [contract_watcher pkg](../../staging/pkg/contract_watcher)
+        - `eth_contract` indicates the transformer works with the [contract watcher](../libraries/shared/watcher/contract_watcher.go)
+        that is made to work with [contract_watcher pkg](../pkg/contract_watcher)
         based transformers which work with vDB to watch events and poll public methods ([example1](https://github.com/vulcanize/account_transformers/tree/master/transformers/account/light), [example2](https://github.com/vulcanize/ens_transformers/tree/working/transformers/domain_records))
     - `migrations` is the relative path from `repository` to the db migrations directory for the transformer
     - `rank` determines the order that migrations are ran, with lower ranked migrations running first
@@ -167,7 +169,9 @@ The general structure of a plugin .go file, and what we would see built with the
 package main
 
 import (
-	interface1 "github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
+    "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+    interface1 "github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	transformer1 "github.com/account/repo/path/to/transformer1"
 	transformer2 "github.com/account/repo/path/to/transformer2"
 	transformer3 "github.com/account/repo/path/to/transformer3"
