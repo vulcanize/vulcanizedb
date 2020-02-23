@@ -67,7 +67,7 @@ type CIDPayload struct {
 // Passed to IPLDFetcher
 type CIDWrapper struct {
 	BlockNumber  *big.Int
-	Headers      []HeaderModel
+	Header       HeaderModel
 	Uncles       []UncleModel
 	Transactions []TxModel
 	Receipts     []ReceiptModel
@@ -79,7 +79,7 @@ type CIDWrapper struct {
 // Returned by IPLDFetcher and ResponseFilterer
 type IPLDs struct {
 	BlockNumber  *big.Int
-	Headers      []ipfs.BlockModel
+	Header       ipfs.BlockModel
 	Uncles       []ipfs.BlockModel
 	Transactions []ipfs.BlockModel
 	Receipts     []ipfs.BlockModel

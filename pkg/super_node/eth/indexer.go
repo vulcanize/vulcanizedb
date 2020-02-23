@@ -55,6 +55,7 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 		if err := tx.Rollback(); err != nil {
 			log.Error(err)
 		}
+		log.Error("eth indexer error when indexing header")
 		return err
 	}
 	for _, uncle := range cidPayload.UncleCIDs {
@@ -62,6 +63,7 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 			if err := tx.Rollback(); err != nil {
 				log.Error(err)
 			}
+			log.Error("eth indexer error when indexing uncle")
 			return err
 		}
 	}
@@ -69,12 +71,14 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 		if err := tx.Rollback(); err != nil {
 			log.Error(err)
 		}
+		log.Error("eth indexer error when indexing transactions and receipts")
 		return err
 	}
 	if err := in.indexStateAndStorageCIDs(tx, cidPayload, headerID); err != nil {
 		if err := tx.Rollback(); err != nil {
 			log.Error(err)
 		}
+		log.Error("eth indexer error when indexing state and storage nodes")
 		return err
 	}
 	return tx.Commit()
@@ -92,7 +96,7 @@ func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int
 func (in *CIDIndexer) indexUncleCID(tx *sqlx.Tx, uncle UncleModel, headerID int64) error {
 	_, err := tx.Exec(`INSERT INTO eth.uncle_cids (block_hash, header_id, parent_hash, cid, reward) VALUES ($1, $2, $3, $4, $5)
 								ON CONFLICT (header_id, block_hash) DO UPDATE SET (parent_hash, cid, reward) = ($3, $4, $5)`,
-		uncle.BlockHash, headerID, uncle.ParentHash, uncle.CID)
+		uncle.BlockHash, headerID, uncle.ParentHash, uncle.CID, uncle.Reward)
 	return err
 }
 

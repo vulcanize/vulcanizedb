@@ -23,7 +23,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	shared2 "github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/watcher/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/watcher/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/watcher/shared"
 )
 

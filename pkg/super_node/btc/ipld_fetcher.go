@@ -60,7 +60,7 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	iplds := IPLDs{}
 	iplds.BlockNumber = cidWrapper.BlockNumber
 	var err error
-	iplds.Headers, err = f.FetchHeaders(cidWrapper.Headers)
+	iplds.Header, err = f.FetchHeader(cidWrapper.Header)
 	if err != nil {
 		return nil, err
 	}
@@ -72,30 +72,21 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 }
 
 // FetchHeaders fetches headers
-// It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([]ipfs.BlockModel, error) {
-	log.Debug("fetching header iplds")
-	headerCids := make([]cid.Cid, len(cids))
-	for i, c := range cids {
-		dc, err := cid.Decode(c.CID)
-		if err != nil {
-			return nil, err
-		}
-		headerCids[i] = dc
+// It uses the f.fetch method
+func (f *IPLDFetcher) FetchHeader(c HeaderModel) (ipfs.BlockModel, error) {
+	log.Debug("fetching header ipld")
+	dc, err := cid.Decode(c.CID)
+	if err != nil {
+		return ipfs.BlockModel{}, err
 	}
-	headers := f.fetchBatch(headerCids)
-	headerIPLDs := make([]ipfs.BlockModel, len(headers))
-	for i, header := range headers {
-		headerIPLDs[i] = ipfs.BlockModel{
-			Data: header.RawData(),
-			CID:  header.Cid().String(),
-		}
+	header, err := f.fetch(dc)
+	if err != nil {
+		return ipfs.BlockModel{}, err
 	}
-	if len(headerIPLDs) != len(headerCids) {
-		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(headers), len(headerCids))
-		return headerIPLDs, errUnexpectedNumberOfIPLDs
-	}
-	return headerIPLDs, nil
+	return ipfs.BlockModel{
+		Data: header.RawData(),
+		CID:  header.Cid().String(),
+	}, nil
 }
 
 // FetchTrxs fetches transactions

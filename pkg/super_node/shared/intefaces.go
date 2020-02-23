@@ -52,7 +52,7 @@ type ResponseFilterer interface {
 
 // CIDRetriever retrieves cids according to a provided filter and returns a CID wrapper
 type CIDRetriever interface {
-	Retrieve(filter SubscriptionSettings, blockNumber int64) (CIDsForFetching, bool, error)
+	Retrieve(filter SubscriptionSettings, blockNumber int64) ([]CIDsForFetching, bool, error)
 	RetrieveFirstBlockNumber() (int64, error)
 	RetrieveLastBlockNumber() (int64, error)
 	RetrieveGapsInData() ([]Gap, error)

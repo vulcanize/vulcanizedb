@@ -69,6 +69,37 @@ ALTER SEQUENCE btc.header_cids_id_seq OWNED BY btc.header_cids.id;
 
 
 --
+-- Name: queue_data; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.queue_data (
+    id integer NOT NULL,
+    data bytea NOT NULL,
+    height bigint NOT NULL
+);
+
+
+--
+-- Name: queue_data_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.queue_data_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queue_data_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.queue_data_id_seq OWNED BY btc.queue_data.id;
+
+
+--
 -- Name: transaction_cids; Type: TABLE; Schema: btc; Owner: -
 --
 
@@ -185,7 +216,8 @@ CREATE TABLE eth.header_cids (
     parent_hash character varying(66) NOT NULL,
     cid text NOT NULL,
     td numeric NOT NULL,
-    node_id integer NOT NULL
+    node_id integer NOT NULL,
+    reward numeric NOT NULL
 );
 
 
@@ -207,6 +239,37 @@ CREATE SEQUENCE eth.header_cids_id_seq
 --
 
 ALTER SEQUENCE eth.header_cids_id_seq OWNED BY eth.header_cids.id;
+
+
+--
+-- Name: queue_data; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.queue_data (
+    id integer NOT NULL,
+    data bytea NOT NULL,
+    height bigint NOT NULL
+);
+
+
+--
+-- Name: queue_data_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.queue_data_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: queue_data_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.queue_data_id_seq OWNED BY eth.queue_data.id;
 
 
 --
@@ -355,7 +418,8 @@ CREATE TABLE eth.uncle_cids (
     header_id integer NOT NULL,
     block_hash character varying(66) NOT NULL,
     parent_hash character varying(66) NOT NULL,
-    cid text NOT NULL
+    cid text NOT NULL,
+    reward numeric NOT NULL
 );
 
 
@@ -772,6 +836,13 @@ ALTER TABLE ONLY btc.header_cids ALTER COLUMN id SET DEFAULT nextval('btc.header
 
 
 --
+-- Name: queue_data id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.queue_data ALTER COLUMN id SET DEFAULT nextval('btc.queue_data_id_seq'::regclass);
+
+
+--
 -- Name: transaction_cids id; Type: DEFAULT; Schema: btc; Owner: -
 --
 
@@ -797,6 +868,13 @@ ALTER TABLE ONLY btc.tx_outputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_outp
 --
 
 ALTER TABLE ONLY eth.header_cids ALTER COLUMN id SET DEFAULT nextval('eth.header_cids_id_seq'::regclass);
+
+
+--
+-- Name: queue_data id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.queue_data ALTER COLUMN id SET DEFAULT nextval('eth.queue_data_id_seq'::regclass);
 
 
 --
@@ -928,6 +1006,22 @@ ALTER TABLE ONLY btc.header_cids
 
 
 --
+-- Name: queue_data queue_data_height_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.queue_data
+    ADD CONSTRAINT queue_data_height_key UNIQUE (height);
+
+
+--
+-- Name: queue_data queue_data_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.queue_data
+    ADD CONSTRAINT queue_data_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
 --
 
@@ -989,6 +1083,22 @@ ALTER TABLE ONLY eth.header_cids
 
 ALTER TABLE ONLY eth.header_cids
     ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: queue_data queue_data_height_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.queue_data
+    ADD CONSTRAINT queue_data_height_key UNIQUE (height);
+
+
+--
+-- Name: queue_data queue_data_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.queue_data
+    ADD CONSTRAINT queue_data_pkey PRIMARY KEY (id);
 
 
 --

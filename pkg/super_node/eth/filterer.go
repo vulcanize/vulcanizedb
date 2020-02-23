@@ -87,10 +87,10 @@ func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *IP
 		if err != nil {
 			return err
 		}
-		response.Headers = append(response.Headers, ipfs.BlockModel{
+		response.Header = ipfs.BlockModel{
 			Data: headerRLP,
 			CID:  cid.String(),
-		})
+		}
 		if headerFilter.Uncles {
 			response.Uncles = make([]ipfs.BlockModel, len(payload.Block.Body().Uncles))
 			for i, uncle := range payload.Block.Body().Uncles {
@@ -126,6 +126,7 @@ func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *IPLD
 		trxHashes = make([]common.Hash, 0, trxLen)
 		response.Transactions = make([]ipfs.BlockModel, 0, trxLen)
 		for i, trx := range payload.Block.Body().Transactions {
+			// TODO: check if want corresponding receipt and if we do we must include this transaction
 			if checkTransactionAddrs(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {

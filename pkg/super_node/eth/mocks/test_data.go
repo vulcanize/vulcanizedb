@@ -296,15 +296,13 @@ var (
 
 	MockCIDWrapper = &eth.CIDWrapper{
 		BlockNumber: big.NewInt(1),
-		Headers: []eth2.HeaderModel{
-			{
-				BlockNumber:     "1",
-				BlockHash:       MockBlock.Hash().String(),
-				ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
-				CID:             HeaderCID.String(),
-				TotalDifficulty: MockBlock.Difficulty().String(),
-				Reward:          "5000000000000000000",
-			},
+		Header: eth2.HeaderModel{
+			BlockNumber:     "1",
+			BlockHash:       MockBlock.Hash().String(),
+			ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
+			CID:             HeaderCID.String(),
+			TotalDifficulty: MockBlock.Difficulty().String(),
+			Reward:          "5000000000000000000",
 		},
 		Transactions: MockTrxMetaPostPublsh,
 		Receipts:     MockRctMetaPostPublish,
@@ -331,11 +329,9 @@ var (
 
 	MockIPLDs = eth.IPLDs{
 		BlockNumber: big.NewInt(1),
-		Headers: []ipfs.BlockModel{
-			{
-				Data: HeaderIPLD.RawData(),
-				CID:  HeaderIPLD.Cid().String(),
-			},
+		Header: ipfs.BlockModel{
+			Data: HeaderIPLD.RawData(),
+			CID:  HeaderIPLD.Cid().String(),
 		},
 		Transactions: []ipfs.BlockModel{
 			{

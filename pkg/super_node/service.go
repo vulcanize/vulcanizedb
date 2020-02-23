@@ -53,6 +53,8 @@ type SuperNode interface {
 	Unsubscribe(id rpc.ID)
 	// Method to access the node info for the service
 	Node() core.Node
+	// Method to access chain type
+	Chain() shared.ChainType
 }
 
 // Service is the underlying struct for the super node
@@ -363,7 +365,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 	log.Debug("historical data ending block:", endingBlock)
 	go func() {
 		for i := startingBlock; i <= endingBlock; i++ {
-			cidWrapper, empty, err := sap.Retriever.Retrieve(params, i)
+			cidWrappers, empty, err := sap.Retriever.Retrieve(params, i)
 			if err != nil {
 				sendNonBlockingErr(sub, fmt.Errorf("CID Retrieval error at block %d\r%s", i, err.Error()))
 				continue
@@ -371,21 +373,23 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 			if empty {
 				continue
 			}
-			response, err := sap.IPLDFetcher.Fetch(cidWrapper)
-			if err != nil {
-				sendNonBlockingErr(sub, fmt.Errorf("IPLD Fetching error at block %d\r%s", i, err.Error()))
-				continue
-			}
-			responseRLP, err := rlp.EncodeToBytes(response)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
-				log.Debugf("sending super node historical data payload to subscription %s", id)
-			default:
-				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
+			for _, cids := range cidWrappers {
+				response, err := sap.IPLDFetcher.Fetch(cids)
+				if err != nil {
+					sendNonBlockingErr(sub, fmt.Errorf("IPLD Fetching error at block %d\r%s", i, err.Error()))
+					continue
+				}
+				responseRLP, err := rlp.EncodeToBytes(response)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				select {
+				case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
+					log.Debugf("sending super node historical data payload to subscription %s", id)
+				default:
+					log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
+				}
 			}
 		}
 		// when we are done backfilling send an empty payload signifying so in the msg
@@ -441,6 +445,11 @@ func (sap *Service) Stop() error {
 // Node returns the node info for this service
 func (sap *Service) Node() core.Node {
 	return sap.NodeInfo
+}
+
+// Chain returns the chain type for this service
+func (sap *Service) Chain() shared.ChainType {
+	return sap.chain
 }
 
 // close is used to close all listening subscriptions

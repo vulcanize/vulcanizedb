@@ -19,6 +19,9 @@ package watcher
 import (
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
@@ -84,7 +87,11 @@ func (s *Service) Init() error {
 
 // Watch is the top level loop for watching super node
 func (s *Service) Watch(wg *sync.WaitGroup) error {
-	sub, err := s.SuperNodeStreamer.Stream(s.PayloadChan, s.WatcherConfig.SubscriptionConfig)
+	rlpConfig, err := rlp.EncodeToBytes(s.WatcherConfig.SubscriptionConfig)
+	if err != nil {
+		return err
+	}
+	sub, err := s.SuperNodeStreamer.Stream(s.PayloadChan, rlpConfig)
 	if err != nil {
 		return err
 	}
@@ -108,8 +115,13 @@ func (s *Service) Watch(wg *sync.WaitGroup) error {
 // combinedQueuing assumes data is not necessarily going to come in linear order
 // this is true when we are backfilling and streaming at the head or when we are
 // only streaming at the head since reorgs can occur
+
+// NOTE: maybe we should push everything to the wait queue, otherwise the index could be shifted as we retrieve data from it
 func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscription) {
 	wg.Add(1)
+	// this goroutine is responsible for allocating incoming data to the ready or wait queue
+	// depending on if it is at the current index or not
+	forwardQuit := make(chan bool)
 	go func() {
 		for {
 			select {
@@ -120,7 +132,8 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 					continue
 				}
 				if payload.Height == atomic.LoadInt64(s.payloadIndex) {
-					// If the data is at our current index it is ready to be processed; add it to the ready data queue
+					// If the data is at our current index it is ready to be processed
+					// add it to the ready data queue and increment the index
 					if err := s.Repository.ReadyData(payload); err != nil {
 						logrus.Error(err)
 					}
@@ -134,15 +147,41 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 				logrus.Error(err)
 			case <-s.QuitChan:
 				logrus.Info("Watcher shutting down")
+				forwardQuit <- true
 				wg.Done()
 				return
 			}
 		}
 	}()
+	ticker := time.NewTicker(5 * time.Second)
+	// this goroutine is responsible for moving data from the wait queue to the ready queue
+	// preserving the correct order and alignment with the current index
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				// retrieve queued data, in order, and forward it to the ready queue
+				index := atomic.LoadInt64(s.payloadIndex)
+				queueData, newIndex, err := s.Repository.GetQueueData(index)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				atomic.StoreInt64(s.payloadIndex, newIndex)
+				if err := s.Repository.ReadyData(queueData); err != nil {
+					logrus.Error(err)
+				}
+			case <-forwardQuit:
+				return
+			default:
+				// do nothing, wait til next tick
+			}
+		}
+	}()
 }
 
-// backFillOnlyQueuing assumes the data is coming in contiguously and behind the head
-// it puts all data on the ready queue
+// backFillOnlyQueuing assumes the data is coming in contiguously from behind the head
+// it puts all data directly into the ready queue
 // it continues until the watcher is told to quit or we receive notification that the backfill is finished
 func (s *Service) backFillOnlyQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscription) {
 	wg.Add(1)

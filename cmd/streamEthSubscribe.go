@@ -67,7 +67,11 @@ func streamEthSubscription() {
 	payloadChan := make(chan super_node.SubscriptionPayload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
-	sub, err := str.Stream(payloadChan, ethSubConfig)
+	rlpParams, err := rlp.EncodeToBytes(ethSubConfig)
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+	sub, err := str.Stream(payloadChan, rlpParams)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
@@ -83,17 +87,16 @@ func streamEthSubscription() {
 			var ethData eth.IPLDs
 			if err := rlp.DecodeBytes(payload.Data, &ethData); err != nil {
 				logWithCommand.Error(err)
+				continue
 			}
-			for _, headerRlp := range ethData.Headers {
-				var header types.Header
-				err = rlp.Decode(bytes.NewBuffer(headerRlp.Data), &header)
-				if err != nil {
-					logWithCommand.Error(err)
-					continue
-				}
-				fmt.Printf("Header number %d, hash %s\n", header.Number.Int64(), header.Hash().Hex())
-				fmt.Printf("header: %v\n", header)
+			var header types.Header
+			err = rlp.Decode(bytes.NewBuffer(ethData.Header.Data), &header)
+			if err != nil {
+				logWithCommand.Error(err)
+				continue
 			}
+			fmt.Printf("Header number %d, hash %s\n", header.Number.Int64(), header.Hash().Hex())
+			fmt.Printf("header: %v\n", header)
 			for _, trxRlp := range ethData.Transactions {
 				var trx types.Transaction
 				buff := bytes.NewBuffer(trxRlp.Data)
@@ -107,7 +110,7 @@ func streamEthSubscription() {
 				fmt.Printf("trx: %v\n", trx)
 			}
 			for _, rctRlp := range ethData.Receipts {
-				var rct types.ReceiptForStorage
+				var rct types.Receipt
 				buff := bytes.NewBuffer(rctRlp.Data)
 				stream := rlp.NewStream(buff, 0)
 				err = rct.DecodeRLP(stream)

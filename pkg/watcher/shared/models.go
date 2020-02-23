@@ -16,21 +16,9 @@
 
 package shared
 
-import (
-	"github.com/ethereum/go-ethereum/rpc"
-
-	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-)
-
-// Repository is the interface for the Postgres database
-type Repository interface {
-	LoadTriggers() error
-	QueueData(payload super_node.SubscriptionPayload) error
-	GetQueueData(height int64) (super_node.SubscriptionPayload, int64, error)
-	ReadyData(payload super_node.SubscriptionPayload) error
-}
-
-// SuperNodeStreamer is the interface for streaming data from a vulcanizeDB super node
-type SuperNodeStreamer interface {
-	Stream(payloadChan chan super_node.SubscriptionPayload, rlpParams []byte) (*rpc.ClientSubscription, error)
+// QueuedData is the db model for queued data
+type QueuedData struct {
+	ID     int64  `db:"id"`
+	Data   []byte `db:"data"`
+	Height int64  `db:"height"`
 }

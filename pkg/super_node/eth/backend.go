@@ -86,7 +86,7 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 		return nil, fmt.Errorf("header at block %d is not available", number)
 	}
 	// Fetch the header IPLDs for those CIDs
-	headerIPLDs, err := b.Fetcher.FetchHeaders([]HeaderModel{headerCids[0]})
+	headerIPLD, err := b.Fetcher.FetchHeader(headerCids[0])
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 	// We throw an error in FetchHeaders() if the number of headers does not match the number of CIDs and we already
 	// confirmed the number of CIDs is greater than 0 so there is no need to bound check the slice before accessing
 	var header types.Header
-	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
+	if err := rlp.DecodeBytes(headerIPLD.Data, &header); err != nil {
 		return nil, err
 	}
 	return &header, nil
@@ -172,12 +172,12 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	}
 
 	// Fetch and decode the header IPLD
-	headerIPLDs, err := b.Fetcher.FetchHeaders([]HeaderModel{headerCID})
+	headerIPLD, err := b.Fetcher.FetchHeader(headerCID)
 	if err != nil {
 		return nil, err
 	}
 	var header types.Header
-	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
+	if err := rlp.DecodeBytes(headerIPLD.Data, &header); err != nil {
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs
@@ -232,12 +232,12 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 		return nil, err
 	}
 	// Fetch and decode the header IPLD
-	headerIPLDs, err := b.Fetcher.FetchHeaders([]HeaderModel{headerCID})
+	headerIPLD, err := b.Fetcher.FetchHeader(headerCID)
 	if err != nil {
 		return nil, err
 	}
 	var header types.Header
-	if err := rlp.DecodeBytes(headerIPLDs[0].Data, &header); err != nil {
+	if err := rlp.DecodeBytes(headerIPLD.Data, &header); err != nil {
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs

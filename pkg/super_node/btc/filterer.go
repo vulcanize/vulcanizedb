@@ -72,10 +72,10 @@ func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *IP
 		if err != nil {
 			return err
 		}
-		response.Headers = append(response.Headers, ipfs.BlockModel{
+		response.Header = ipfs.BlockModel{
 			Data: data,
 			CID:  cid.String(),
-		})
+		}
 	}
 	return nil
 }

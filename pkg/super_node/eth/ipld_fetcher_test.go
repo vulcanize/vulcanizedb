@@ -50,10 +50,8 @@ var (
 	mockBlockService  *mocks.MockIPFSBlockService
 	mockCIDWrapper    = &eth.CIDWrapper{
 		BlockNumber: big.NewInt(9000),
-		Headers: []eth.HeaderModel{
-			{
-				CID: mockHeaderBlock.Cid().String(),
-			},
+		Header: eth.HeaderModel{
+			CID: mockHeaderBlock.Cid().String(),
 		},
 		Uncles: []eth.UncleModel{
 			{
@@ -107,8 +105,7 @@ var _ = Describe("Fetcher", func() {
 			iplds, ok := i.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
 			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
-			Expect(len(iplds.Headers)).To(Equal(1))
-			Expect(iplds.Headers[0]).To(Equal(ipfs.BlockModel{
+			Expect(iplds.Header).To(Equal(ipfs.BlockModel{
 				Data: mockHeaderBlock.RawData(),
 				CID:  mockHeaderBlock.Cid().String(),
 			}))

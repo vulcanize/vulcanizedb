@@ -31,7 +31,7 @@ type CIDRetriever struct {
 }
 
 // RetrieveCIDs mock method
-func (*CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) (shared.CIDsForFetching, bool, error) {
+func (*CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) ([]shared.CIDsForFetching, bool, error) {
 	panic("implement me")
 }
 

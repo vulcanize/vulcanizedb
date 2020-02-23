@@ -19,12 +19,15 @@ package super_node
 import (
 	"context"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // APIName is the namespace used for the state diffing service API
@@ -46,7 +49,24 @@ func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
 }
 
 // Stream is the public method to setup a subscription that fires off super node payloads as they are processed
-func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params shared.SubscriptionSettings) (*rpc.Subscription, error) {
+func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc.Subscription, error) {
+	var params shared.SubscriptionSettings
+	switch api.sn.Chain() {
+	case shared.Ethereum:
+		var ethParams eth.SubscriptionSettings
+		if err := rlp.DecodeBytes(rlpParams, &ethParams); err != nil {
+			return nil, err
+		}
+		params = &ethParams
+	case shared.Bitcoin:
+		var btcParams btc.SubscriptionSettings
+		if err := rlp.DecodeBytes(rlpParams, &btcParams); err != nil {
+			return nil, err
+		}
+		params = &btcParams
+	default:
+		panic("SuperNode is not configured for a specific chain type")
+	}
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
