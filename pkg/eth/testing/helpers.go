@@ -18,8 +18,8 @@ package testing
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 

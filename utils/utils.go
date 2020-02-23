@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 func LoadPostgres(database config.Database, node core.Node) postgres.DB {

@@ -18,7 +18,7 @@ package mocks
 
 import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/event"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 type MockEventRepository struct {

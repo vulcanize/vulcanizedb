@@ -19,34 +19,23 @@ package eth
 import (
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
-
-// SetupDB is use to setup a db for super node tests
-func SetupDB() (*postgres.DB, error) {
-	return postgres.NewDB(config.Database{
-		Hostname: "localhost",
-		Name:     "vulcanize_testing",
-		Port:     5432,
-	}, core.Node{})
-}
 
 // TearDownDB is used to tear down the super node dbs after tests
 func TearDownDB(db *postgres.DB) {
 	tx, err := db.Beginx()
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = tx.Exec(`DELETE FROM header_cids`)
+	_, err = tx.Exec(`DELETE FROM eth.header_cids`)
 	Expect(err).NotTo(HaveOccurred())
-	_, err = tx.Exec(`DELETE FROM transaction_cids`)
+	_, err = tx.Exec(`DELETE FROM eth.transaction_cids`)
 	Expect(err).NotTo(HaveOccurred())
-	_, err = tx.Exec(`DELETE FROM receipt_cids`)
+	_, err = tx.Exec(`DELETE FROM eth.receipt_cids`)
 	Expect(err).NotTo(HaveOccurred())
-	_, err = tx.Exec(`DELETE FROM state_cids`)
+	_, err = tx.Exec(`DELETE FROM eth.state_cids`)
 	Expect(err).NotTo(HaveOccurred())
-	_, err = tx.Exec(`DELETE FROM storage_cids`)
+	_, err = tx.Exec(`DELETE FROM eth.storage_cids`)
 	Expect(err).NotTo(HaveOccurred())
 	_, err = tx.Exec(`DELETE FROM blocks`)
 	Expect(err).NotTo(HaveOccurred())

@@ -19,6 +19,8 @@ package mocks
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
@@ -29,7 +31,7 @@ type CIDIndexer struct {
 }
 
 // Index indexes a cidPayload in Postgres
-func (repo *CIDIndexer) Index(cids interface{}) error {
+func (repo *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	cidPayload, ok := cids.(*eth.CIDPayload)
 	if !ok {
 		return fmt.Errorf("index expected cids type %T got %T", &eth.CIDPayload{}, cids)

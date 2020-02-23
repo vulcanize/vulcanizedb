@@ -22,8 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
@@ -31,175 +30,175 @@ import (
 )
 
 var (
-	openFilter = &config.EthSubscription{
+	openFilter = &eth.SubscriptionSettings{
 		Start:         big.NewInt(0),
 		End:           big.NewInt(1),
-		HeaderFilter:  config.HeaderFilter{},
-		TxFilter:      config.TxFilter{},
-		ReceiptFilter: config.ReceiptFilter{},
-		StateFilter:   config.StateFilter{},
-		StorageFilter: config.StorageFilter{},
+		HeaderFilter:  eth.HeaderFilter{},
+		TxFilter:      eth.TxFilter{},
+		ReceiptFilter: eth.ReceiptFilter{},
+		StateFilter:   eth.StateFilter{},
+		StorageFilter: eth.StorageFilter{},
 	}
-	rctContractFilter = &config.EthSubscription{
+	rctContractFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Contracts: []string{mocks.AnotherAddress.String()},
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctTopicsFilter = &config.EthSubscription{
+	rctTopicsFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Topics: [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000004"}},
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctTopicsAndContractFilter = &config.EthSubscription{
+	rctTopicsAndContractFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Topics: [][]string{
 				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
 				{"0x0000000000000000000000000000000000000000000000000000000000000006"},
 			},
 			Contracts: []string{mocks.Address.String()},
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctTopicsAndContractFilterFail = &config.EthSubscription{
+	rctTopicsAndContractFilterFail = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Topics: [][]string{
 				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
 				{"0x0000000000000000000000000000000000000000000000000000000000000007"}, // This topic won't match on the mocks.Address.String() contract receipt
 			},
 			Contracts: []string{mocks.Address.String()},
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctContractsAndTopicFilter = &config.EthSubscription{
+	rctContractsAndTopicFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000005"}},
 			Contracts: []string{mocks.Address.String(), mocks.AnotherAddress.String()},
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctsForAllCollectedTrxs = &config.EthSubscription{
+	rctsForAllCollectedTrxs = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
-		ReceiptFilter: config.ReceiptFilter{
+		TxFilter: eth.TxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
+		ReceiptFilter: eth.ReceiptFilter{
 			MatchTxs:  true,
 			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
 			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	rctsForSelectCollectedTrxs = &config.EthSubscription{
+	rctsForSelectCollectedTrxs = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Dst: []string{mocks.AnotherAddress.String()}, // We only filter for one of the trxs so we will only get the one corresponding receipt
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			MatchTxs:  true,
 			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
 			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Off: true,
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
-	stateFilter = &config.EthSubscription{
+	stateFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
-		HeaderFilter: config.HeaderFilter{
+		HeaderFilter: eth.HeaderFilter{
 			Off: true,
 		},
-		TxFilter: config.TxFilter{
+		TxFilter: eth.TxFilter{
 			Off: true,
 		},
-		ReceiptFilter: config.ReceiptFilter{
+		ReceiptFilter: eth.ReceiptFilter{
 			Off: true,
 		},
-		StateFilter: config.StateFilter{
+		StateFilter: eth.StateFilter{
 			Addresses: []string{mocks.Address.Hex()},
 		},
-		StorageFilter: config.StorageFilter{
+		StorageFilter: eth.StorageFilter{
 			Off: true,
 		},
 	}
@@ -213,7 +212,7 @@ var _ = Describe("Retriever", func() {
 	)
 	BeforeEach(func() {
 		var err error
-		db, err = eth.SetupDB()
+		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		repo = eth2.NewCIDIndexer(db)
 		retriever = eth2.NewCIDRetriever(db)
@@ -237,6 +236,7 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.Headers)).To(Equal(1))
 			expectedHeaderCIDs := mocks.MockCIDWrapper.Headers
 			expectedHeaderCIDs[0].ID = cidWrapper.Headers[0].ID
+			expectedHeaderCIDs[0].NodeID = cidWrapper.Headers[0].NodeID
 			Expect(cidWrapper.Headers).To(Equal(expectedHeaderCIDs))
 			Expect(len(cidWrapper.Transactions)).To(Equal(2))
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0].CID)).To(BeTrue())

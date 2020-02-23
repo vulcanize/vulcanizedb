@@ -19,10 +19,10 @@ package transactions
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 type ITransactionsSyncer interface {

@@ -25,10 +25,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/testing"
 	"github.com/vulcanize/vulcanizedb/test_config"

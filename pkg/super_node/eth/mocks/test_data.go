@@ -233,12 +233,11 @@ var (
 		TotalDifficulty: big.NewInt(1337),
 	}
 
-	MockIPLDPayload = &eth.IPLDPayload{
+	MockIPLDPayload = eth.IPLDPayload{
 		TotalDifficulty: big.NewInt(1337),
 		Block:           MockBlock,
 		Receipts:        MockReceipts,
-		HeaderRLP:       MockHeaderRlp,
-		TrxMetaData:     MockTrxMeta,
+		TxMetaData:      MockTrxMeta,
 		ReceiptMetaData: MockRctMeta,
 		StorageNodes:    MockStorageNodes,
 		StateNodes:      MockStateNodes,
@@ -319,7 +318,7 @@ var (
 		},
 	}
 
-	MockSeedNodePayload = eth2.StreamPayload{
+	MockSeedNodePayload = eth2.StreamResponse{
 		BlockNumber:     big.NewInt(1),
 		HeadersRlp:      [][]byte{MockHeaderRlp},
 		UnclesRlp:       [][]byte{},

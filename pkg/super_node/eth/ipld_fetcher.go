@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-blockservice"
@@ -51,7 +53,7 @@ func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDFetcher) Fetch(cids interface{}) (interface{}, error) {
+func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.FetchedIPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)

@@ -28,8 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
 var (
@@ -123,7 +122,7 @@ func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log
 	if err != nil {
 		return nil, err
 	}
-	receiptCIDs, err := b.retriever.RetrieveRctCIDs(tx, config.ReceiptFilter{}, 0, &hash, nil)
+	receiptCIDs, err := b.retriever.RetrieveRctCIDs(tx, ReceiptFilter{}, 0, &hash, nil)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			logrus.Error(err)

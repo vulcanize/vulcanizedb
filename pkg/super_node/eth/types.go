@@ -31,8 +31,7 @@ import (
 type IPLDPayload struct {
 	TotalDifficulty *big.Int
 	Block           *types.Block
-	HeaderRLP       []byte
-	TrxMetaData     []TxModel
+	TxMetaData      []TxModel
 	Receipts        types.Receipts
 	ReceiptMetaData []ReceiptModel
 	StateNodes      []TrieNode
@@ -84,10 +83,10 @@ type IPLDWrapper struct {
 	StorageNodes map[common.Hash]map[common.Hash]blocks.Block
 }
 
-// StreamPayload holds the data streamed from the super node eth service to the requesting clients
+// StreamResponse holds the data streamed from the super node eth service to the requesting clients
 // Returned by IPLDResolver and ResponseFilterer
 // Passed to client subscriptions
-type StreamPayload struct {
+type StreamResponse struct {
 	BlockNumber     *big.Int                               `json:"blockNumber"`
 	HeadersRlp      [][]byte                               `json:"headersRlp"`
 	UnclesRlp       [][]byte                               `json:"unclesRlp"`
@@ -100,20 +99,20 @@ type StreamPayload struct {
 	err     error
 }
 
-func (sd *StreamPayload) ensureEncoded() {
-	if sd.encoded == nil && sd.err == nil {
-		sd.encoded, sd.err = json.Marshal(sd)
+func (sr *StreamResponse) ensureEncoded() {
+	if sr.encoded == nil && sr.err == nil {
+		sr.encoded, sr.err = json.Marshal(sr)
 	}
 }
 
 // Length to implement Encoder interface for StateDiff
-func (sd *StreamPayload) Length() int {
-	sd.ensureEncoded()
-	return len(sd.encoded)
+func (sr *StreamResponse) Length() int {
+	sr.ensureEncoded()
+	return len(sr.encoded)
 }
 
 // Encode to implement Encoder interface for StateDiff
-func (sd *StreamPayload) Encode() ([]byte, error) {
-	sd.ensureEncoded()
-	return sd.encoded, sd.err
+func (sr *StreamResponse) Encode() ([]byte, error) {
+	sr.ensureEncoded()
+	return sr.encoded, sr.err
 }

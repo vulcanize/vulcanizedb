@@ -21,7 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 // Streamer is the interface for streaming a statediff subscription

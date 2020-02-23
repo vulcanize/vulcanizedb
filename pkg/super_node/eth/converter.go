@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -31,15 +33,16 @@ type PayloadConverter struct {
 	chainConfig *params.ChainConfig
 }
 
-// NewPayloadConverter creates a pointer to a new Converter which satisfies the PayloadConverter interface
+// NewPayloadConverter creates a pointer to a new PayloadConverter which satisfies the PayloadConverter interface
 func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 	return &PayloadConverter{
 		chainConfig: chainConfig,
 	}
 }
 
-// Convert method is used to convert a geth statediff.Payload to a IPLDPayload
-func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
+// Convert method is used to convert a eth statediff.Payload to an IPLDPayload
+// Satisfies the shared.PayloadConverter interface
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("eth converter: expected payload type %T got %T", statediff.Payload{}, payload)
@@ -49,18 +52,11 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 	if err := rlp.DecodeBytes(stateDiffPayload.BlockRlp, block); err != nil {
 		return nil, err
 	}
-	// Process and publish headers
-	header := block.Header()
-	headerRlp, err := rlp.EncodeToBytes(header)
-	if err != nil {
-		return nil, err
-	}
 	trxLen := len(block.Transactions())
-	convertedPayload := &IPLDPayload{
+	convertedPayload := IPLDPayload{
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
-		HeaderRLP:       headerRlp,
-		TrxMetaData:     make([]TxModel, 0, trxLen),
+		TxMetaData:      make([]TxModel, 0, trxLen),
 		Receipts:        make(types.Receipts, 0, trxLen),
 		ReceiptMetaData: make([]ReceiptModel, 0, trxLen),
 		StateNodes:      make([]TrieNode, 0),
@@ -81,7 +77,7 @@ func (pc *PayloadConverter) Convert(payload interface{}) (interface{}, error) {
 			Index:  int64(i),
 		}
 		// txMeta will have same index as its corresponding trx in the convertedPayload.BlockBody
-		convertedPayload.TrxMetaData = append(convertedPayload.TrxMetaData, txMeta)
+		convertedPayload.TxMetaData = append(convertedPayload.TxMetaData, txMeta)
 	}
 
 	// Decode receipts for this block

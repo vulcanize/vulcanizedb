@@ -16,7 +16,368 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: btc; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA btc;
+
+
+--
+-- Name: eth; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA eth;
+
+
 SET default_tablespace = '';
+
+--
+-- Name: header_cids; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.header_cids (
+    id integer NOT NULL,
+    block_number bigint NOT NULL,
+    block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
+    cid text NOT NULL,
+    "timestamp" numeric NOT NULL,
+    bits bigint NOT NULL,
+    node_id integer NOT NULL
+);
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.header_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.header_cids_id_seq OWNED BY btc.header_cids.id;
+
+
+--
+-- Name: transaction_cids; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.transaction_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    index integer NOT NULL,
+    tx_hash character varying(66) NOT NULL,
+    cid text NOT NULL,
+    segwit boolean NOT NULL,
+    witness_hash character varying(66)
+);
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.transaction_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.transaction_cids_id_seq OWNED BY btc.transaction_cids.id;
+
+
+--
+-- Name: tx_inputs; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.tx_inputs (
+    id integer NOT NULL,
+    tx_id integer NOT NULL,
+    index integer NOT NULL,
+    witness character varying[],
+    sig_script bytea NOT NULL,
+    outpoint_tx_hash character varying(66) NOT NULL,
+    outpoint_index numeric NOT NULL
+);
+
+
+--
+-- Name: tx_inputs_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.tx_inputs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tx_inputs_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.tx_inputs_id_seq OWNED BY btc.tx_inputs.id;
+
+
+--
+-- Name: tx_outputs; Type: TABLE; Schema: btc; Owner: -
+--
+
+CREATE TABLE btc.tx_outputs (
+    id integer NOT NULL,
+    tx_id integer NOT NULL,
+    index integer NOT NULL,
+    value bigint NOT NULL,
+    pk_script bytea NOT NULL,
+    script_class integer NOT NULL,
+    addresses character varying(66)[],
+    required_sigs integer NOT NULL
+);
+
+
+--
+-- Name: tx_outputs_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
+--
+
+CREATE SEQUENCE btc.tx_outputs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tx_outputs_id_seq; Type: SEQUENCE OWNED BY; Schema: btc; Owner: -
+--
+
+ALTER SEQUENCE btc.tx_outputs_id_seq OWNED BY btc.tx_outputs.id;
+
+
+--
+-- Name: header_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.header_cids (
+    id integer NOT NULL,
+    block_number bigint NOT NULL,
+    block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
+    cid text NOT NULL,
+    td numeric NOT NULL,
+    node_id integer NOT NULL
+);
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.header_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: header_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.header_cids_id_seq OWNED BY eth.header_cids.id;
+
+
+--
+-- Name: receipt_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.receipt_cids (
+    id integer NOT NULL,
+    tx_id integer NOT NULL,
+    cid text NOT NULL,
+    contract character varying(66),
+    topic0s character varying(66)[],
+    topic1s character varying(66)[],
+    topic2s character varying(66)[],
+    topic3s character varying(66)[]
+);
+
+
+--
+-- Name: receipt_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.receipt_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: receipt_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.receipt_cids_id_seq OWNED BY eth.receipt_cids.id;
+
+
+--
+-- Name: state_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.state_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    state_key character varying(66) NOT NULL,
+    leaf boolean NOT NULL,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: state_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.state_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: state_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.state_cids_id_seq OWNED BY eth.state_cids.id;
+
+
+--
+-- Name: storage_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.storage_cids (
+    id integer NOT NULL,
+    state_id integer NOT NULL,
+    storage_key character varying(66) NOT NULL,
+    leaf boolean NOT NULL,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: storage_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.storage_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: storage_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.storage_cids_id_seq OWNED BY eth.storage_cids.id;
+
+
+--
+-- Name: transaction_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.transaction_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    tx_hash character varying(66) NOT NULL,
+    index integer NOT NULL,
+    cid text NOT NULL,
+    dst character varying(66) NOT NULL,
+    src character varying(66) NOT NULL
+);
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.transaction_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: transaction_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.transaction_cids_id_seq OWNED BY eth.transaction_cids.id;
+
+
+--
+-- Name: uncle_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.uncle_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    block_hash character varying(66) NOT NULL,
+    parent_hash character varying(66) NOT NULL,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: uncle_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.uncle_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: uncle_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.uncle_cids_id_seq OWNED BY eth.uncle_cids.id;
+
 
 --
 -- Name: addresses; Type: TABLE; Schema: public; Owner: -
@@ -47,35 +408,6 @@ CREATE SEQUENCE public.addresses_id_seq
 --
 
 ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
-
-
---
--- Name: full_sync_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.full_sync_logs (
-    id integer NOT NULL,
-    block_number bigint,
-    address character varying(66),
-    tx_hash character varying(66),
-    index bigint,
-    topic0 character varying(66),
-    topic1 character varying(66),
-    topic2 character varying(66),
-    topic3 character varying(66),
-    data text,
-    receipt_id integer
-);
-
-
---
--- Name: block_stats; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.block_stats AS
- SELECT max(full_sync_logs.block_number) AS max_block,
-    min(full_sync_logs.block_number) AS min_block
-   FROM public.full_sync_logs;
 
 
 --
@@ -119,161 +451,6 @@ ALTER SEQUENCE public.checked_headers_id_seq OWNED BY public.checked_headers.id;
 
 
 --
--- Name: eth_blocks; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.eth_blocks (
-    id integer NOT NULL,
-    difficulty bigint,
-    extra_data character varying,
-    gas_limit bigint,
-    gas_used bigint,
-    hash character varying(66),
-    miner character varying(42),
-    nonce character varying(20),
-    number bigint,
-    parent_hash character varying(66),
-    reward numeric,
-    uncles_reward numeric,
-    size character varying,
-    "time" bigint,
-    is_final boolean,
-    uncle_hash character varying(66),
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128) NOT NULL
-);
-
-
---
--- Name: eth_blocks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.eth_blocks_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: eth_blocks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.eth_blocks_id_seq OWNED BY public.eth_blocks.id;
-
-
---
--- Name: eth_nodes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.eth_nodes (
-    id integer NOT NULL,
-    client_name character varying,
-    genesis_block character varying(66),
-    network_id numeric,
-    eth_node_id character varying(128)
-);
-
-
---
--- Name: full_sync_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.full_sync_logs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: full_sync_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.full_sync_logs_id_seq OWNED BY public.full_sync_logs.id;
-
-
---
--- Name: full_sync_receipts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.full_sync_receipts (
-    id integer NOT NULL,
-    contract_address_id integer NOT NULL,
-    cumulative_gas_used numeric,
-    gas_used numeric,
-    state_root character varying(66),
-    status integer,
-    tx_hash character varying(66),
-    block_id integer NOT NULL
-);
-
-
---
--- Name: full_sync_receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.full_sync_receipts_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: full_sync_receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.full_sync_receipts_id_seq OWNED BY public.full_sync_receipts.id;
-
-
---
--- Name: full_sync_transactions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.full_sync_transactions (
-    id integer NOT NULL,
-    block_id integer NOT NULL,
-    gas_limit numeric,
-    gas_price numeric,
-    hash character varying(66),
-    input_data bytea,
-    nonce numeric,
-    raw bytea,
-    tx_from character varying(66),
-    tx_index integer,
-    tx_to character varying(66),
-    value numeric
-);
-
-
---
--- Name: full_sync_transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.full_sync_transactions_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: full_sync_transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.full_sync_transactions_id_seq OWNED BY public.full_sync_transactions.id;
-
-
---
 -- Name: goose_db_version; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -303,40 +480,6 @@ CREATE SEQUENCE public.goose_db_version_id_seq
 --
 
 ALTER SEQUENCE public.goose_db_version_id_seq OWNED BY public.goose_db_version.id;
-
-
---
--- Name: header_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.header_cids (
-    id integer NOT NULL,
-    block_number bigint NOT NULL,
-    block_hash character varying(66) NOT NULL,
-    parent_hash character varying(66) NOT NULL,
-    cid text NOT NULL,
-    td bigint
-);
-
-
---
--- Name: header_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.header_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: header_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.header_cids_id_seq OWNED BY public.header_cids.id;
 
 
 --
@@ -468,7 +611,7 @@ CREATE TABLE public.headers (
     raw jsonb,
     block_timestamp numeric,
     check_count integer DEFAULT 0 NOT NULL,
-    eth_node_id integer NOT NULL,
+    node_id integer NOT NULL,
     eth_node_fingerprint character varying(128)
 );
 
@@ -494,43 +637,16 @@ ALTER SEQUENCE public.headers_id_seq OWNED BY public.headers.id;
 
 
 --
--- Name: log_filters; Type: TABLE; Schema: public; Owner: -
+-- Name: nodes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.log_filters (
+CREATE TABLE public.nodes (
     id integer NOT NULL,
-    name character varying NOT NULL,
-    from_block bigint,
-    to_block bigint,
-    address character varying(66),
-    topic0 character varying(66),
-    topic1 character varying(66),
-    topic2 character varying(66),
-    topic3 character varying(66),
-    CONSTRAINT log_filters_from_block_check CHECK ((from_block >= 0)),
-    CONSTRAINT log_filters_name_check CHECK (((name)::text <> ''::text)),
-    CONSTRAINT log_filters_to_block_check CHECK ((to_block >= 0))
+    client_name character varying,
+    genesis_block character varying(66),
+    network_id character varying,
+    node_id character varying(128)
 );
-
-
---
--- Name: log_filters_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.log_filters_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: log_filters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.log_filters_id_seq OWNED BY public.log_filters.id;
 
 
 --
@@ -550,7 +666,7 @@ CREATE SEQUENCE public.nodes_id_seq
 -- Name: nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.nodes_id_seq OWNED BY public.eth_nodes.id;
+ALTER SEQUENCE public.nodes_id_seq OWNED BY public.nodes.id;
 
 
 --
@@ -581,108 +697,6 @@ CREATE SEQUENCE public.queued_storage_id_seq
 --
 
 ALTER SEQUENCE public.queued_storage_id_seq OWNED BY public.queued_storage.id;
-
-
---
--- Name: receipt_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.receipt_cids (
-    id integer NOT NULL,
-    tx_id integer NOT NULL,
-    cid text NOT NULL,
-    contract character varying(66),
-    topic0s character varying(66)[],
-    topic1s character varying(66)[],
-    topic2s character varying(66)[],
-    topic3s character varying(66)[]
-);
-
-
---
--- Name: receipt_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.receipt_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: receipt_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.receipt_cids_id_seq OWNED BY public.receipt_cids.id;
-
-
---
--- Name: state_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.state_cids (
-    id integer NOT NULL,
-    header_id integer NOT NULL,
-    state_key character varying(66) NOT NULL,
-    leaf boolean NOT NULL,
-    cid text NOT NULL
-);
-
-
---
--- Name: state_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.state_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: state_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.state_cids_id_seq OWNED BY public.state_cids.id;
-
-
---
--- Name: storage_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.storage_cids (
-    id integer NOT NULL,
-    state_id integer NOT NULL,
-    storage_key character varying(66) NOT NULL,
-    leaf boolean NOT NULL,
-    cid text NOT NULL
-);
-
-
---
--- Name: storage_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.storage_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: storage_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.storage_cids_id_seq OWNED BY public.storage_cids.id;
 
 
 --
@@ -720,165 +734,6 @@ ALTER SEQUENCE public.storage_diff_id_seq OWNED BY public.storage_diff.id;
 
 
 --
--- Name: transaction_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.transaction_cids (
-    id integer NOT NULL,
-    header_id integer NOT NULL,
-    tx_hash character varying(66) NOT NULL,
-    index integer NOT NULL,
-    cid text NOT NULL,
-    dst character varying(66) NOT NULL,
-    src character varying(66) NOT NULL
-);
-
-
---
--- Name: transaction_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.transaction_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: transaction_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.transaction_cids_id_seq OWNED BY public.transaction_cids.id;
-
-
---
--- Name: uncle_cids; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.uncle_cids (
-    id integer NOT NULL,
-    header_id integer NOT NULL,
-    block_hash character varying(66) NOT NULL,
-    parent_hash character varying(66) NOT NULL,
-    cid text NOT NULL
-);
-
-
---
--- Name: uncle_cids_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.uncle_cids_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: uncle_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.uncle_cids_id_seq OWNED BY public.uncle_cids.id;
-
-
---
--- Name: uncles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.uncles (
-    id integer NOT NULL,
-    hash character varying(66) NOT NULL,
-    block_id integer NOT NULL,
-    reward numeric NOT NULL,
-    miner character varying(42) NOT NULL,
-    raw jsonb,
-    block_timestamp numeric,
-    eth_node_id integer NOT NULL,
-    eth_node_fingerprint character varying(128)
-);
-
-
---
--- Name: uncles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.uncles_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: uncles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.uncles_id_seq OWNED BY public.uncles.id;
-
-
---
--- Name: watched_contracts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.watched_contracts (
-    contract_id integer NOT NULL,
-    contract_abi json,
-    contract_hash character varying(66)
-);
-
-
---
--- Name: watched_contracts_contract_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.watched_contracts_contract_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: watched_contracts_contract_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.watched_contracts_contract_id_seq OWNED BY public.watched_contracts.contract_id;
-
-
---
--- Name: watched_event_logs; Type: VIEW; Schema: public; Owner: -
---
-
-CREATE VIEW public.watched_event_logs AS
- SELECT log_filters.name,
-    full_sync_logs.id,
-    full_sync_logs.block_number,
-    full_sync_logs.address,
-    full_sync_logs.tx_hash,
-    full_sync_logs.index,
-    full_sync_logs.topic0,
-    full_sync_logs.topic1,
-    full_sync_logs.topic2,
-    full_sync_logs.topic3,
-    full_sync_logs.data,
-    full_sync_logs.receipt_id
-   FROM ((public.log_filters
-     CROSS JOIN public.block_stats)
-     JOIN public.full_sync_logs ON ((((full_sync_logs.address)::text = (log_filters.address)::text) AND (full_sync_logs.block_number >= COALESCE(log_filters.from_block, block_stats.min_block)) AND (full_sync_logs.block_number <= COALESCE(log_filters.to_block, block_stats.max_block)))))
-  WHERE ((((log_filters.topic0)::text = (full_sync_logs.topic0)::text) OR (log_filters.topic0 IS NULL)) AND (((log_filters.topic1)::text = (full_sync_logs.topic1)::text) OR (log_filters.topic1 IS NULL)) AND (((log_filters.topic2)::text = (full_sync_logs.topic2)::text) OR (log_filters.topic2 IS NULL)) AND (((log_filters.topic3)::text = (full_sync_logs.topic3)::text) OR (log_filters.topic3 IS NULL)));
-
-
---
 -- Name: watched_logs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -910,6 +765,76 @@ ALTER SEQUENCE public.watched_logs_id_seq OWNED BY public.watched_logs.id;
 
 
 --
+-- Name: header_cids id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids ALTER COLUMN id SET DEFAULT nextval('btc.header_cids_id_seq'::regclass);
+
+
+--
+-- Name: transaction_cids id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids ALTER COLUMN id SET DEFAULT nextval('btc.transaction_cids_id_seq'::regclass);
+
+
+--
+-- Name: tx_inputs id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_inputs_id_seq'::regclass);
+
+
+--
+-- Name: tx_outputs id; Type: DEFAULT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs ALTER COLUMN id SET DEFAULT nextval('btc.tx_outputs_id_seq'::regclass);
+
+
+--
+-- Name: header_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.header_cids ALTER COLUMN id SET DEFAULT nextval('eth.header_cids_id_seq'::regclass);
+
+
+--
+-- Name: receipt_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.receipt_cids ALTER COLUMN id SET DEFAULT nextval('eth.receipt_cids_id_seq'::regclass);
+
+
+--
+-- Name: state_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_cids ALTER COLUMN id SET DEFAULT nextval('eth.state_cids_id_seq'::regclass);
+
+
+--
+-- Name: storage_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_cids ALTER COLUMN id SET DEFAULT nextval('eth.storage_cids_id_seq'::regclass);
+
+
+--
+-- Name: transaction_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.transaction_cids ALTER COLUMN id SET DEFAULT nextval('eth.transaction_cids_id_seq'::regclass);
+
+
+--
+-- Name: uncle_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.uncle_cids ALTER COLUMN id SET DEFAULT nextval('eth.uncle_cids_id_seq'::regclass);
+
+
+--
 -- Name: addresses id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -924,52 +849,10 @@ ALTER TABLE ONLY public.checked_headers ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- Name: eth_blocks id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_blocks ALTER COLUMN id SET DEFAULT nextval('public.eth_blocks_id_seq'::regclass);
-
-
---
--- Name: eth_nodes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_nodes ALTER COLUMN id SET DEFAULT nextval('public.nodes_id_seq'::regclass);
-
-
---
--- Name: full_sync_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_logs ALTER COLUMN id SET DEFAULT nextval('public.full_sync_logs_id_seq'::regclass);
-
-
---
--- Name: full_sync_receipts id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_receipts ALTER COLUMN id SET DEFAULT nextval('public.full_sync_receipts_id_seq'::regclass);
-
-
---
--- Name: full_sync_transactions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_transactions ALTER COLUMN id SET DEFAULT nextval('public.full_sync_transactions_id_seq'::regclass);
-
-
---
 -- Name: goose_db_version id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.goose_db_version ALTER COLUMN id SET DEFAULT nextval('public.goose_db_version_id_seq'::regclass);
-
-
---
--- Name: header_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.header_cids ALTER COLUMN id SET DEFAULT nextval('public.header_cids_id_seq'::regclass);
 
 
 --
@@ -1001,10 +884,10 @@ ALTER TABLE ONLY public.headers ALTER COLUMN id SET DEFAULT nextval('public.head
 
 
 --
--- Name: log_filters id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: nodes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.log_filters ALTER COLUMN id SET DEFAULT nextval('public.log_filters_id_seq'::regclass);
+ALTER TABLE ONLY public.nodes ALTER COLUMN id SET DEFAULT nextval('public.nodes_id_seq'::regclass);
 
 
 --
@@ -1015,27 +898,6 @@ ALTER TABLE ONLY public.queued_storage ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
--- Name: receipt_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.receipt_cids ALTER COLUMN id SET DEFAULT nextval('public.receipt_cids_id_seq'::regclass);
-
-
---
--- Name: state_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.state_cids ALTER COLUMN id SET DEFAULT nextval('public.state_cids_id_seq'::regclass);
-
-
---
--- Name: storage_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.storage_cids ALTER COLUMN id SET DEFAULT nextval('public.storage_cids_id_seq'::regclass);
-
-
---
 -- Name: storage_diff id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1043,38 +905,162 @@ ALTER TABLE ONLY public.storage_diff ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: transaction_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transaction_cids ALTER COLUMN id SET DEFAULT nextval('public.transaction_cids_id_seq'::regclass);
-
-
---
--- Name: uncle_cids id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncle_cids ALTER COLUMN id SET DEFAULT nextval('public.uncle_cids_id_seq'::regclass);
-
-
---
--- Name: uncles id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles ALTER COLUMN id SET DEFAULT nextval('public.uncles_id_seq'::regclass);
-
-
---
--- Name: watched_contracts contract_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.watched_contracts ALTER COLUMN contract_id SET DEFAULT nextval('public.watched_contracts_contract_id_seq'::regclass);
-
-
---
 -- Name: watched_logs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.watched_logs ALTER COLUMN id SET DEFAULT nextval('public.watched_logs_id_seq'::regclass);
+
+
+--
+-- Name: header_cids header_cids_block_number_block_hash_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_block_number_block_hash_key UNIQUE (block_number, block_hash);
+
+
+--
+-- Name: header_cids header_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transaction_cids transaction_cids_tx_hash_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_tx_hash_key UNIQUE (tx_hash);
+
+
+--
+-- Name: tx_inputs tx_inputs_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tx_inputs tx_inputs_tx_id_index_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_tx_id_index_key UNIQUE (tx_id, index);
+
+
+--
+-- Name: tx_outputs tx_outputs_pkey; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tx_outputs tx_outputs_tx_id_index_key; Type: CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_tx_id_index_key UNIQUE (tx_id, index);
+
+
+--
+-- Name: header_cids header_cids_block_number_block_hash_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.header_cids
+    ADD CONSTRAINT header_cids_block_number_block_hash_key UNIQUE (block_number, block_hash);
+
+
+--
+-- Name: header_cids header_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.header_cids
+    ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: receipt_cids receipt_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.receipt_cids
+    ADD CONSTRAINT receipt_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: state_cids state_cids_header_id_state_key_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_cids
+    ADD CONSTRAINT state_cids_header_id_state_key_key UNIQUE (header_id, state_key);
+
+
+--
+-- Name: state_cids state_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_cids
+    ADD CONSTRAINT state_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: storage_cids storage_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_cids
+    ADD CONSTRAINT storage_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: storage_cids storage_cids_state_id_storage_key_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_cids
+    ADD CONSTRAINT storage_cids_state_id_storage_key_key UNIQUE (state_id, storage_key);
+
+
+--
+-- Name: transaction_cids transaction_cids_header_id_tx_hash_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.transaction_cids
+    ADD CONSTRAINT transaction_cids_header_id_tx_hash_key UNIQUE (header_id, tx_hash);
+
+
+--
+-- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.transaction_cids
+    ADD CONSTRAINT transaction_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: uncle_cids uncle_cids_header_id_block_hash_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.uncle_cids
+    ADD CONSTRAINT uncle_cids_header_id_block_hash_key UNIQUE (header_id, block_hash);
+
+
+--
+-- Name: uncle_cids uncle_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.uncle_cids
+    ADD CONSTRAINT uncle_cids_pkey PRIMARY KEY (id);
 
 
 --
@@ -1118,75 +1104,11 @@ ALTER TABLE ONLY public.checked_headers
 
 
 --
--- Name: eth_blocks eth_blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_blocks
-    ADD CONSTRAINT eth_blocks_pkey PRIMARY KEY (id);
-
-
---
--- Name: eth_blocks eth_node_id_block_number_uc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_blocks
-    ADD CONSTRAINT eth_node_id_block_number_uc UNIQUE (number, eth_node_id);
-
-
---
--- Name: eth_nodes eth_node_uc; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_nodes
-    ADD CONSTRAINT eth_node_uc UNIQUE (genesis_block, network_id, eth_node_id);
-
-
---
--- Name: full_sync_logs full_sync_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_logs
-    ADD CONSTRAINT full_sync_logs_pkey PRIMARY KEY (id);
-
-
---
--- Name: full_sync_receipts full_sync_receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_receipts
-    ADD CONSTRAINT full_sync_receipts_pkey PRIMARY KEY (id);
-
-
---
--- Name: full_sync_transactions full_sync_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_transactions
-    ADD CONSTRAINT full_sync_transactions_pkey PRIMARY KEY (id);
-
-
---
 -- Name: goose_db_version goose_db_version_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.goose_db_version
     ADD CONSTRAINT goose_db_version_pkey PRIMARY KEY (id);
-
-
---
--- Name: header_cids header_cids_block_number_block_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.header_cids
-    ADD CONSTRAINT header_cids_block_number_block_hash_key UNIQUE (block_number, block_hash);
-
-
---
--- Name: header_cids header_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.header_cids
-    ADD CONSTRAINT header_cids_pkey PRIMARY KEY (id);
 
 
 --
@@ -1254,18 +1176,18 @@ ALTER TABLE ONLY public.headers
 
 
 --
--- Name: log_filters name_uc; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: nodes node_uc; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.log_filters
-    ADD CONSTRAINT name_uc UNIQUE (name);
+ALTER TABLE ONLY public.nodes
+    ADD CONSTRAINT node_uc UNIQUE (genesis_block, network_id, node_id);
 
 
 --
--- Name: eth_nodes nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: nodes nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.eth_nodes
+ALTER TABLE ONLY public.nodes
     ADD CONSTRAINT nodes_pkey PRIMARY KEY (id);
 
 
@@ -1286,46 +1208,6 @@ ALTER TABLE ONLY public.queued_storage
 
 
 --
--- Name: receipt_cids receipt_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.receipt_cids
-    ADD CONSTRAINT receipt_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: state_cids state_cids_header_id_state_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.state_cids
-    ADD CONSTRAINT state_cids_header_id_state_key_key UNIQUE (header_id, state_key);
-
-
---
--- Name: state_cids state_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.state_cids
-    ADD CONSTRAINT state_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: storage_cids storage_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.storage_cids
-    ADD CONSTRAINT storage_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: storage_cids storage_cids_state_id_storage_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.storage_cids
-    ADD CONSTRAINT storage_cids_state_id_storage_key_key UNIQUE (state_id, storage_key);
-
-
---
 -- Name: storage_diff storage_diff_block_height_block_hash_hashed_address_storage_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1342,82 +1224,11 @@ ALTER TABLE ONLY public.storage_diff
 
 
 --
--- Name: transaction_cids transaction_cids_header_id_tx_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transaction_cids
-    ADD CONSTRAINT transaction_cids_header_id_tx_hash_key UNIQUE (header_id, tx_hash);
-
-
---
--- Name: transaction_cids transaction_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transaction_cids
-    ADD CONSTRAINT transaction_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: uncle_cids uncle_cids_header_id_block_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncle_cids
-    ADD CONSTRAINT uncle_cids_header_id_block_hash_key UNIQUE (header_id, block_hash);
-
-
---
--- Name: uncle_cids uncle_cids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncle_cids
-    ADD CONSTRAINT uncle_cids_pkey PRIMARY KEY (id);
-
-
---
--- Name: uncles uncles_block_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_block_id_hash_key UNIQUE (block_id, hash);
-
-
---
--- Name: uncles uncles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_pkey PRIMARY KEY (id);
-
-
---
--- Name: watched_contracts watched_contracts_contract_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.watched_contracts
-    ADD CONSTRAINT watched_contracts_contract_hash_key UNIQUE (contract_hash);
-
-
---
--- Name: watched_contracts watched_contracts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.watched_contracts
-    ADD CONSTRAINT watched_contracts_pkey PRIMARY KEY (contract_id);
-
-
---
 -- Name: watched_logs watched_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.watched_logs
     ADD CONSTRAINT watched_logs_pkey PRIMARY KEY (id);
-
-
---
--- Name: block_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX block_id_index ON public.full_sync_transactions USING btree (block_id);
 
 
 --
@@ -1463,31 +1274,83 @@ CREATE INDEX headers_block_timestamp ON public.headers USING btree (block_timest
 
 
 --
--- Name: node_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: header_cids header_cids_node_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
 --
 
-CREATE INDEX node_id_index ON public.eth_blocks USING btree (eth_node_id);
-
-
---
--- Name: number_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX number_index ON public.eth_blocks USING btree (number);
+ALTER TABLE ONLY btc.header_cids
+    ADD CONSTRAINT header_cids_node_id_fkey FOREIGN KEY (node_id) REFERENCES public.nodes(id) ON DELETE CASCADE;
 
 
 --
--- Name: tx_from_index; Type: INDEX; Schema: public; Owner: -
+-- Name: transaction_cids transaction_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
 --
 
-CREATE INDEX tx_from_index ON public.full_sync_transactions USING btree (tx_from);
+ALTER TABLE ONLY btc.transaction_cids
+    ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES btc.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: tx_to_index; Type: INDEX; Schema: public; Owner: -
+-- Name: tx_inputs tx_inputs_tx_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
 --
 
-CREATE INDEX tx_to_index ON public.full_sync_transactions USING btree (tx_to);
+ALTER TABLE ONLY btc.tx_inputs
+    ADD CONSTRAINT tx_inputs_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES btc.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: tx_outputs tx_outputs_tx_id_fkey; Type: FK CONSTRAINT; Schema: btc; Owner: -
+--
+
+ALTER TABLE ONLY btc.tx_outputs
+    ADD CONSTRAINT tx_outputs_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES btc.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: header_cids header_cids_node_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.header_cids
+    ADD CONSTRAINT header_cids_node_id_fkey FOREIGN KEY (node_id) REFERENCES public.nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: receipt_cids receipt_cids_tx_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.receipt_cids
+    ADD CONSTRAINT receipt_cids_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES eth.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: state_cids state_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_cids
+    ADD CONSTRAINT state_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES eth.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: storage_cids storage_cids_state_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_cids
+    ADD CONSTRAINT storage_cids_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: transaction_cids transaction_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.transaction_cids
+    ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES eth.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: uncle_cids uncle_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.uncle_cids
+    ADD CONSTRAINT uncle_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES eth.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1496,30 +1359,6 @@ CREATE INDEX tx_to_index ON public.full_sync_transactions USING btree (tx_to);
 
 ALTER TABLE ONLY public.checked_headers
     ADD CONSTRAINT checked_headers_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.headers(id) ON DELETE CASCADE;
-
-
---
--- Name: full_sync_receipts eth_blocks_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_receipts
-    ADD CONSTRAINT eth_blocks_fk FOREIGN KEY (block_id) REFERENCES public.eth_blocks(id) ON DELETE CASCADE;
-
-
---
--- Name: full_sync_receipts full_sync_receipts_contract_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_receipts
-    ADD CONSTRAINT full_sync_receipts_contract_address_id_fkey FOREIGN KEY (contract_address_id) REFERENCES public.addresses(id) ON DELETE CASCADE;
-
-
---
--- Name: full_sync_transactions full_sync_transactions_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_transactions
-    ADD CONSTRAINT full_sync_transactions_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.eth_blocks(id) ON DELETE CASCADE;
 
 
 --
@@ -1571,19 +1410,11 @@ ALTER TABLE ONLY public.header_sync_transactions
 
 
 --
--- Name: headers headers_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: headers headers_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers
-    ADD CONSTRAINT headers_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
-
-
---
--- Name: eth_blocks node_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eth_blocks
-    ADD CONSTRAINT node_fk FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT headers_node_id_fkey FOREIGN KEY (node_id) REFERENCES public.nodes(id) ON DELETE CASCADE;
 
 
 --
@@ -1592,70 +1423,6 @@ ALTER TABLE ONLY public.eth_blocks
 
 ALTER TABLE ONLY public.queued_storage
     ADD CONSTRAINT queued_storage_diff_id_fkey FOREIGN KEY (diff_id) REFERENCES public.storage_diff(id);
-
-
---
--- Name: receipt_cids receipt_cids_tx_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.receipt_cids
-    ADD CONSTRAINT receipt_cids_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES public.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: full_sync_logs receipts_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.full_sync_logs
-    ADD CONSTRAINT receipts_fk FOREIGN KEY (receipt_id) REFERENCES public.full_sync_receipts(id) ON DELETE CASCADE;
-
-
---
--- Name: state_cids state_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.state_cids
-    ADD CONSTRAINT state_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: storage_cids storage_cids_state_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.storage_cids
-    ADD CONSTRAINT storage_cids_state_id_fkey FOREIGN KEY (state_id) REFERENCES public.state_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: transaction_cids transaction_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transaction_cids
-    ADD CONSTRAINT transaction_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: uncle_cids uncle_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncle_cids
-    ADD CONSTRAINT uncle_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES public.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: uncles uncles_block_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_block_id_fkey FOREIGN KEY (block_id) REFERENCES public.eth_blocks(id) ON DELETE CASCADE;
-
-
---
--- Name: uncles uncles_eth_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uncles
-    ADD CONSTRAINT uncles_eth_node_id_fkey FOREIGN KEY (eth_node_id) REFERENCES public.eth_nodes(id) ON DELETE CASCADE;
 
 
 --

@@ -20,26 +20,21 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
-
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs"
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_header"
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_receipts"
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_block_transactions"
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_state_trie"
-	"github.com/vulcanize/eth-block-extractor/pkg/ipfs/eth_storage_trie"
-	rlp2 "github.com/vulcanize/eth-block-extractor/pkg/wrappers/rlp"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/dag_putters"
 )
 
 // IPLDPublisher satisfies the IPLDPublisher for ethereum
 type IPLDPublisher struct {
-	HeaderPutter      ipfs.DagPutter
-	TransactionPutter ipfs.DagPutter
-	ReceiptPutter     ipfs.DagPutter
-	StatePutter       ipfs.DagPutter
-	StoragePutter     ipfs.DagPutter
+	HeaderPutter      shared.DagPutter
+	TransactionPutter shared.DagPutter
+	ReceiptPutter     shared.DagPutter
+	StatePutter       shared.DagPutter
+	StoragePutter     shared.DagPutter
 }
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
@@ -49,22 +44,22 @@ func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 		return nil, err
 	}
 	return &IPLDPublisher{
-		HeaderPutter:      eth_block_header.NewBlockHeaderDagPutter(node, rlp2.RlpDecoder{}),
-		TransactionPutter: eth_block_transactions.NewBlockTransactionsDagPutter(node),
-		ReceiptPutter:     eth_block_receipts.NewEthBlockReceiptDagPutter(node),
-		StatePutter:       eth_state_trie.NewStateTrieDagPutter(node),
-		StoragePutter:     eth_storage_trie.NewStorageTrieDagPutter(node),
+		HeaderPutter:      dag_putters.NewEthBlockHeaderDagPutter(node),
+		TransactionPutter: dag_putters.NewEthTxsDagPutter(node),
+		ReceiptPutter:     dag_putters.NewEthReceiptDagPutter(node),
+		StatePutter:       dag_putters.NewEthStateDagPutter(node),
+		StoragePutter:     dag_putters.NewEthStorageDagPutter(node),
 	}, nil
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
-	ipldPayload, ok := payload.(*IPLDPayload)
+func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(IPLDPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", &IPLDPayload{}, payload)
+		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", IPLDPayload{}, payload)
 	}
 	// Process and publish headers
-	headerCid, err := pub.publishHeader(ipldPayload.HeaderRLP)
+	headerCid, err := pub.publishHeader(ipldPayload.Block.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +74,7 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 	// Process and publish uncles
 	uncleCids := make([]UncleModel, 0, len(ipldPayload.Block.Uncles()))
 	for _, uncle := range ipldPayload.Block.Uncles() {
-		uncleRlp, err := rlp.EncodeToBytes(uncle)
-		if err != nil {
-			return nil, err
-		}
-		uncleCid, err := pub.publishHeader(uncleRlp)
+		uncleCid, err := pub.publishHeader(uncle)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +86,7 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 	}
 
 	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(ipldPayload.Block.Body(), ipldPayload.TrxMetaData)
+	transactionCids, err := pub.publishTransactions(ipldPayload.Block.Body().Transactions, ipldPayload.TxMetaData)
 	if err != nil {
 		return nil, err
 	}
@@ -129,19 +120,16 @@ func (pub *IPLDPublisher) Publish(payload interface{}) (interface{}, error) {
 	}, nil
 }
 
-func (pub *IPLDPublisher) publishHeader(headerRLP []byte) (string, error) {
-	headerCids, err := pub.HeaderPutter.DagPut(headerRLP)
+func (pub *IPLDPublisher) publishHeader(header *types.Header) (string, error) {
+	cids, err := pub.HeaderPutter.DagPut(header)
 	if err != nil {
 		return "", err
 	}
-	if len(headerCids) != 1 {
-		return "", errors.New("single CID expected to be returned for header")
-	}
-	return headerCids[0], nil
+	return cids[0], nil
 }
 
-func (pub *IPLDPublisher) publishTransactions(blockBody *types.Body, trxMeta []TxModel) ([]TxModel, error) {
-	transactionCids, err := pub.TransactionPutter.DagPut(blockBody)
+func (pub *IPLDPublisher) publishTransactions(transactions types.Transactions, trxMeta []TxModel) ([]TxModel, error) {
+	transactionCids, err := pub.TransactionPutter.DagPut(transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -187,16 +175,13 @@ func (pub *IPLDPublisher) publishReceipts(receipts types.Receipts, receiptMeta [
 func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, error) {
 	stateNodeCids := make([]StateNodeModel, 0, len(stateNodes))
 	for _, node := range stateNodes {
-		stateNodeCid, err := pub.StatePutter.DagPut(node.Value)
+		cids, err := pub.StatePutter.DagPut(node.Value)
 		if err != nil {
 			return nil, err
 		}
-		if len(stateNodeCid) != 1 {
-			return nil, errors.New("single CID expected to be returned for state leaf")
-		}
 		stateNodeCids = append(stateNodeCids, StateNodeModel{
 			StateKey: node.Key.String(),
-			CID:      stateNodeCid[0],
+			CID:      cids[0],
 			Leaf:     node.Leaf,
 		})
 	}
@@ -208,17 +193,14 @@ func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]Tri
 	for addrKey, storageTrie := range storageNodes {
 		storageLeafCids[addrKey] = make([]StorageNodeModel, 0, len(storageTrie))
 		for _, node := range storageTrie {
-			storageNodeCid, err := pub.StoragePutter.DagPut(node.Value)
+			cids, err := pub.StoragePutter.DagPut(node.Value)
 			if err != nil {
 				return nil, err
-			}
-			if len(storageNodeCid) != 1 {
-				return nil, errors.New("single CID expected to be returned for storage leaf")
 			}
 			// Map storage node cids to their state key hashes
 			storageLeafCids[addrKey] = append(storageLeafCids[addrKey], StorageNodeModel{
 				StorageKey: node.Key.Hex(),
-				CID:        storageNodeCid[0],
+				CID:        cids[0],
 				Leaf:       node.Leaf,
 			})
 		}

@@ -110,7 +110,7 @@ As mentioned above, VulcanizeDB's processes can be split into three categories: 
 
 ### Data syncing
 To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
-This is accomplished through the use of the `headerSync`, `fullSync`, or `coldImport` commands.
+This is accomplished through the use of the `headerSync` command.
 These commands are described in detail [here](documentation/data-syncing.md).
 
 ### Data transformation

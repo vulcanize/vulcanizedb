@@ -29,9 +29,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	vulcCommon "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 var ErrEmptyHeader = errors.New("empty header returned over RPC")
@@ -78,7 +78,7 @@ func (blockChain *BlockChain) GetEthLogsWithCustomQuery(query ethereum.FilterQue
 
 func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.Header, err error) {
 	logrus.Debugf("GetHeaderByNumber called with block %d", blockNumber)
-	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
+	if blockChain.node.NetworkID == string(core.KOVAN_NETWORK_ID) {
 		return blockChain.getPOAHeader(blockNumber)
 	}
 	return blockChain.getPOWHeader(blockNumber)
@@ -86,7 +86,7 @@ func (blockChain *BlockChain) GetHeaderByNumber(blockNumber int64) (header core.
 
 func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header []core.Header, err error) {
 	logrus.Debug("GetHeadersByNumbers called")
-	if blockChain.node.NetworkID == core.KOVAN_NETWORK_ID {
+	if blockChain.node.NetworkID == string(core.KOVAN_NETWORK_ID) {
 		return blockChain.getPOAHeaders(blockNumbers)
 	}
 	return blockChain.getPOWHeaders(blockNumbers)

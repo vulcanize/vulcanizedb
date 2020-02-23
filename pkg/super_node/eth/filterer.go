@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // ResponseFilterer satisfies the ResponseFilterer interface for ethereum
@@ -37,46 +37,50 @@ func NewResponseFilterer() *ResponseFilterer {
 }
 
 // Filter is used to filter through eth data to extract and package requested data into a Payload
-func (s *ResponseFilterer) Filter(filter, payload interface{}) (interface{}, error) {
-	ethFilters, ok := filter.(*config.EthSubscription)
+func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload shared.StreamedIPLDs) (shared.ServerResponse, error) {
+	ethFilters, ok := filter.(*SubscriptionSettings)
 	if !ok {
-		return StreamPayload{}, fmt.Errorf("eth filterer expected filter type %T got %T", &config.EthSubscription{}, filter)
+		return StreamResponse{}, fmt.Errorf("eth filterer expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
-	ethPayload, ok := payload.(*IPLDPayload)
+	ethPayload, ok := payload.(IPLDPayload)
 	if !ok {
-		return StreamPayload{}, fmt.Errorf("eth filterer expected payload type %T got %T", &IPLDPayload{}, payload)
+		return StreamResponse{}, fmt.Errorf("eth filterer expected payload type %T got %T", IPLDPayload{}, payload)
 	}
 	if checkRange(ethFilters.Start.Int64(), ethFilters.End.Int64(), ethPayload.Block.Number().Int64()) {
-		response := new(StreamPayload)
+		response := new(StreamResponse)
 		if err := s.filterHeaders(ethFilters.HeaderFilter, response, ethPayload); err != nil {
-			return StreamPayload{}, err
+			return StreamResponse{}, err
 		}
 		txHashes, err := s.filterTransactions(ethFilters.TxFilter, response, ethPayload)
 		if err != nil {
-			return StreamPayload{}, err
+			return StreamResponse{}, err
 		}
 		var filterTxs []common.Hash
 		if ethFilters.ReceiptFilter.MatchTxs {
 			filterTxs = txHashes
 		}
 		if err := s.filerReceipts(ethFilters.ReceiptFilter, response, ethPayload, filterTxs); err != nil {
-			return StreamPayload{}, err
+			return StreamResponse{}, err
 		}
 		if err := s.filterState(ethFilters.StateFilter, response, ethPayload); err != nil {
-			return StreamPayload{}, err
+			return StreamResponse{}, err
 		}
 		if err := s.filterStorage(ethFilters.StorageFilter, response, ethPayload); err != nil {
-			return StreamPayload{}, err
+			return StreamResponse{}, err
 		}
 		response.BlockNumber = ethPayload.Block.Number()
 		return *response, nil
 	}
-	return StreamPayload{}, nil
+	return StreamResponse{}, nil
 }
 
-func (s *ResponseFilterer) filterHeaders(headerFilter config.HeaderFilter, response *StreamPayload, payload *IPLDPayload) error {
+func (s *ResponseFilterer) filterHeaders(headerFilter HeaderFilter, response *StreamResponse, payload IPLDPayload) error {
 	if !headerFilter.Off {
-		response.HeadersRlp = append(response.HeadersRlp, payload.HeaderRLP)
+		headerRLP, err := rlp.EncodeToBytes(payload.Block.Header())
+		if err != nil {
+			return err
+		}
+		response.HeadersRlp = append(response.HeadersRlp, headerRLP)
 		if headerFilter.Uncles {
 			response.UnclesRlp = make([][]byte, 0, len(payload.Block.Body().Uncles))
 			for _, uncle := range payload.Block.Body().Uncles {
@@ -98,11 +102,11 @@ func checkRange(start, end, actual int64) bool {
 	return false
 }
 
-func (s *ResponseFilterer) filterTransactions(trxFilter config.TxFilter, response *StreamPayload, payload *IPLDPayload) ([]common.Hash, error) {
+func (s *ResponseFilterer) filterTransactions(trxFilter TxFilter, response *StreamResponse, payload IPLDPayload) ([]common.Hash, error) {
 	trxHashes := make([]common.Hash, 0, len(payload.Block.Body().Transactions))
 	if !trxFilter.Off {
 		for i, trx := range payload.Block.Body().Transactions {
-			if checkTransactions(trxFilter.Src, trxFilter.Dst, payload.TrxMetaData[i].Src, payload.TrxMetaData[i].Dst) {
+			if checkTransactionAddrs(trxFilter.Src, trxFilter.Dst, payload.TxMetaData[i].Src, payload.TxMetaData[i].Dst) {
 				trxBuffer := new(bytes.Buffer)
 				if err := trx.EncodeRLP(trxBuffer); err != nil {
 					return nil, err
@@ -115,7 +119,8 @@ func (s *ResponseFilterer) filterTransactions(trxFilter config.TxFilter, respons
 	return trxHashes, nil
 }
 
-func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst string) bool {
+// checkTransactionAddrs returns true if either the transaction src and dst are one of the wanted src and dst addresses
+func checkTransactionAddrs(wantedSrc, wantedDst []string, actualSrc, actualDst string) bool {
 	// If we aren't filtering for any addresses, every transaction is a go
 	if len(wantedDst) == 0 && len(wantedSrc) == 0 {
 		return true
@@ -133,7 +138,7 @@ func checkTransactions(wantedSrc, wantedDst []string, actualSrc, actualDst strin
 	return false
 }
 
-func (s *ResponseFilterer) filerReceipts(receiptFilter config.ReceiptFilter, response *StreamPayload, payload *IPLDPayload, trxHashes []common.Hash) error {
+func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *StreamResponse, payload IPLDPayload, trxHashes []common.Hash) error {
 	if !receiptFilter.Off {
 		for i, receipt := range payload.Receipts {
 			// topics is always length 4
@@ -181,21 +186,16 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wa
 	return false
 }
 
+// filterMatch returns true if the actualTopics conform to the wantedTopics filter
 func filterMatch(wantedTopics, actualTopics [][]string) bool {
-	// actualTopics should always be length 4, members could be nil slices though
-	lenWantedTopics := len(wantedTopics)
+	// actualTopics should always be length 4, but the members can be nil slices
 	matches := 0
 	for i, actualTopicSet := range actualTopics {
-		if i < lenWantedTopics {
+		if i < len(wantedTopics) && len(wantedTopics[i]) > 0 {
 			// If we have topics in this filter slot, count as a match if one of the topics matches
-			if len(wantedTopics[i]) > 0 {
-				matches += slicesShareString(actualTopicSet, wantedTopics[i])
-			} else {
-				// Filter slot is empty, not matching any topics at this slot => counts as a match
-				matches++
-			}
+			matches += slicesShareString(actualTopicSet, wantedTopics[i])
 		} else {
-			// Filter slot doesn't exist, not matching any topics at this slot => count as a match
+			// Filter slot is either empty or doesn't exist => not matching any topics at this slot => counts as a match
 			matches++
 		}
 	}
@@ -217,7 +217,7 @@ func slicesShareString(slice1, slice2 []string) int {
 	return 0
 }
 
-func (s *ResponseFilterer) filterState(stateFilter config.StateFilter, response *StreamPayload, payload *IPLDPayload) error {
+func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *StreamResponse, payload IPLDPayload) error {
 	if !stateFilter.Off {
 		response.StateNodesRlp = make(map[common.Hash][]byte)
 		keyFilters := make([]common.Hash, len(stateFilter.Addresses))
@@ -248,7 +248,7 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 	return false
 }
 
-func (s *ResponseFilterer) filterStorage(storageFilter config.StorageFilter, response *StreamPayload, payload *IPLDPayload) error {
+func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *StreamResponse, payload IPLDPayload) error {
 	if !storageFilter.Off {
 		response.StorageNodesRlp = make(map[common.Hash]map[common.Hash][]byte)
 		stateKeyFilters := make([]common.Hash, len(storageFilter.Addresses))

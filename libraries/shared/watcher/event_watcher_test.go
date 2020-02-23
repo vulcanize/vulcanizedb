@@ -26,7 +26,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var errExecuteClosed = errors.New("this error means the mocks were finished executing")

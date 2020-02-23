@@ -24,9 +24,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/event"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 

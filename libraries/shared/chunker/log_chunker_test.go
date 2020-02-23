@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	chunk "github.com/vulcanize/vulcanizedb/libraries/shared/chunker"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 var _ = Describe("Log chunker", func() {

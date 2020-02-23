@@ -24,15 +24,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -47,11 +44,11 @@ type SuperNode interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Main event loop for syncAndPublish processes
-	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- interface{}, forwardQuitchan chan<- bool) error
+	SyncAndPublish(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.StreamedIPLDs) error
 	// Main event loop for handling client pub-sub
-	ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan interface{}, screenAndServeQuit <-chan bool)
+	ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs)
 	// Method to subscribe to receive state diff processing output
-	Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- bool, params SubscriptionSettings)
+	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
 	// Method to unsubscribe from state diff processing
 	Unsubscribe(id rpc.ID)
 	// Method to access the node info for this service
@@ -79,19 +76,19 @@ type Service struct {
 	// Interface for resolving IPLDs to their data types
 	Resolver shared.IPLDResolver
 	// Chan the processor uses to subscribe to payloads from the Streamer
-	PayloadChan chan interface{}
+	PayloadChan chan shared.RawChainData
 	// Used to signal shutdown of the service
 	QuitChan chan bool
 	// A mapping of rpc.IDs to their subscription channels, mapped to their subscription type (hash of the StreamFilters)
 	Subscriptions map[common.Hash]map[rpc.ID]Subscription
 	// A mapping of subscription params hash to the corresponding subscription params
-	SubscriptionTypes map[common.Hash]SubscriptionSettings
+	SubscriptionTypes map[common.Hash]shared.SubscriptionSettings
 	// Info for the Geth node that this super node is working with
 	NodeInfo core.Node
 	// Number of publishAndIndex workers
 	WorkerPoolSize int
 	// chain type for this service
-	chain config.ChainType
+	chain shared.ChainType
 	// Path to ipfs data dir
 	ipfsPath string
 	// Underlying db
@@ -99,10 +96,7 @@ type Service struct {
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
-func NewSuperNode(settings *config.SuperNode) (SuperNode, error) {
-	if err := ipfs.InitIPFSPlugins(); err != nil {
-		return nil, err
-	}
+func NewSuperNode(settings *shared.SuperNodeConfig) (SuperNode, error) {
 	sn := new(Service)
 	var err error
 	// If we are syncing, initialize the needed interfaces
@@ -111,7 +105,7 @@ func NewSuperNode(settings *config.SuperNode) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Converter, err = NewPayloadConverter(settings.Chain, params.MainnetChainConfig)
+		sn.Converter, err = NewPayloadConverter(settings.Chain)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +139,7 @@ func NewSuperNode(settings *config.SuperNode) (SuperNode, error) {
 	}
 	sn.QuitChan = settings.Quit
 	sn.Subscriptions = make(map[common.Hash]map[rpc.ID]Subscription)
-	sn.SubscriptionTypes = make(map[common.Hash]SubscriptionSettings)
+	sn.SubscriptionTypes = make(map[common.Hash]shared.SubscriptionSettings)
 	sn.WorkerPoolSize = settings.Workers
 	sn.NodeInfo = settings.NodeInfo
 	sn.ipfsPath = settings.IPFSPath
@@ -177,10 +171,10 @@ func (sap *Service) APIs() []rpc.API {
 	return append(apis, chainAPI)
 }
 
-// SyncAndPublish is the backend processing loop which streams data from geth, converts it to iplds, publishes them to ipfs, and indexes their cids
+// SyncAndPublish is the backend processing loop which streams data, converts it to iplds, publishes them to ipfs, and indexes their cids
 // This continues on no matter if or how many subscribers there are, it then forwards the data to the ScreenAndServe() loop
 // which filters and sends relevant data to client subscriptions, if there are any
-func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- interface{}, screenAndServeQuit chan<- bool) error {
+func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload chan<- shared.StreamedIPLDs) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -188,12 +182,11 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	wg.Add(1)
 
 	// Channels for forwarding data to the publishAndIndex workers
-	publishAndIndexPayload := make(chan interface{}, PayloadChanBufferSize)
-	publishAndIndexQuit := make(chan bool, sap.WorkerPoolSize)
+	publishAndIndexPayload := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
 	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
 	// limiting the number of Postgres connections we can possibly open so as to prevent error
 	for i := 0; i < sap.WorkerPoolSize; i++ {
-		sap.publishAndIndex(i, publishAndIndexPayload, publishAndIndexQuit)
+		sap.publishAndIndex(i, publishAndIndexPayload)
 	}
 	go func() {
 		for {
@@ -204,31 +197,16 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 					log.Error(err)
 					continue
 				}
-				// If we have a ScreenAndServe process running, forward the payload to it
+				// If we have a ScreenAndServe process running, forward the iplds to it
 				select {
 				case screenAndServePayload <- ipldPayload:
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
-				select {
-				case publishAndIndexPayload <- ipldPayload:
-				default:
-				}
+				publishAndIndexPayload <- ipldPayload
 			case err := <-sub.Err():
 				log.Error(err)
 			case <-sap.QuitChan:
-				// If we have a ScreenAndServe process running, forward the quit signal to it
-				select {
-				case screenAndServeQuit <- true:
-				default:
-				}
-				// Also forward a quit signal for each of the publishAndIndex workers
-				for i := 0; i < sap.WorkerPoolSize; i++ {
-					select {
-					case publishAndIndexQuit <- true:
-					default:
-					}
-				}
 				log.Info("quiting SyncAndPublish process")
 				wg.Done()
 				return
@@ -239,7 +217,7 @@ func (sap *Service) SyncAndPublish(wg *sync.WaitGroup, screenAndServePayload cha
 	return nil
 }
 
-func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan interface{}, publishAndIndexQuit <-chan bool) {
+func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.StreamedIPLDs) {
 	go func() {
 		for {
 			select {
@@ -252,9 +230,6 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan interf
 				if err := sap.Indexer.Index(cidPayload); err != nil {
 					log.Errorf("worker %d error: %v", id, err)
 				}
-			case <-publishAndIndexQuit:
-				log.Infof("quiting publishAndIndex worker %d", id)
-				return
 			}
 		}
 	}()
@@ -263,14 +238,14 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan interf
 
 // ScreenAndServe is the loop used to screen data streamed from the state diffing eth node
 // and send the appropriate portions of it to a requesting client subscription, according to their subscription configuration
-func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan interface{}, screenAndServeQuit <-chan bool) {
+func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.StreamedIPLDs) {
 	wg.Add(1)
 	go func() {
 		for {
 			select {
 			case payload := <-screenAndServePayload:
 				sap.sendResponse(payload)
-			case <-screenAndServeQuit:
+			case <-sap.QuitChan:
 				log.Info("quiting ScreenAndServe process")
 				wg.Done()
 				return
@@ -280,7 +255,7 @@ func (sap *Service) ScreenAndServe(wg *sync.WaitGroup, screenAndServePayload <-c
 	log.Info("screenAndServe goroutine successfully spun up")
 }
 
-func (sap *Service) sendResponse(payload interface{}) {
+func (sap *Service) sendResponse(payload shared.StreamedIPLDs) {
 	sap.Lock()
 	for ty, subs := range sap.Subscriptions {
 		// Retrieve the subscription parameters for this subscription type
@@ -298,7 +273,7 @@ func (sap *Service) sendResponse(payload interface{}) {
 		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- Payload{response, ""}:
+			case sub.PayloadChan <- SubscriptionPayload{response, ""}:
 				log.Infof("sending super node payload to subscription %s", id)
 			default:
 				log.Infof("unable to send payload to subscription %s; channel has no receiver", id)
@@ -309,8 +284,8 @@ func (sap *Service) sendResponse(payload interface{}) {
 }
 
 // Subscribe is used by the API to subscribe to the service loop
-// The params must be rlp serializable and satisfy the Params() interface
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- bool, params SubscriptionSettings) {
+// The params must be rlp serializable and satisfy the SubscriptionSettings() interface
+func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings) {
 	log.Info("Subscribing to the super node service")
 	subscription := Subscription{
 		ID:          id,
@@ -351,7 +326,7 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- Payload, quitChan chan<- boo
 	}
 }
 
-func (sap *Service) backFill(sub Subscription, id rpc.ID, params SubscriptionSettings) error {
+func (sap *Service) backFill(sub Subscription, id rpc.ID, params shared.SubscriptionSettings) error {
 	log.Debug("sending historical data for subscriber", id)
 	// Retrieve cached CIDs relevant to this subscriber
 	var endingBlock int64
@@ -394,7 +369,7 @@ func (sap *Service) backFill(sub Subscription, id rpc.ID, params SubscriptionSet
 				continue
 			}
 			select {
-			case sub.PayloadChan <- Payload{backFillIplds, ""}:
+			case sub.PayloadChan <- SubscriptionPayload{backFillIplds, ""}:
 				log.Infof("sending super node historical data payload to subscription %s", id)
 			default:
 				log.Infof("unable to send back-fill payload to subscription %s; channel has no receiver", id)
@@ -423,12 +398,11 @@ func (sap *Service) Unsubscribe(id rpc.ID) {
 func (sap *Service) Start(*p2p.Server) error {
 	log.Info("Starting super node service")
 	wg := new(sync.WaitGroup)
-	payloadChan := make(chan interface{}, PayloadChanBufferSize)
-	quitChan := make(chan bool, 1)
-	if err := sap.SyncAndPublish(wg, payloadChan, quitChan); err != nil {
+	payloadChan := make(chan shared.StreamedIPLDs, PayloadChanBufferSize)
+	if err := sap.SyncAndPublish(wg, payloadChan); err != nil {
 		return err
 	}
-	sap.ScreenAndServe(wg, payloadChan, quitChan)
+	sap.ScreenAndServe(wg, payloadChan)
 	return nil
 }
 

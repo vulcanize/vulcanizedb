@@ -29,10 +29,9 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/streamer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/config"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
 
@@ -55,7 +54,7 @@ func init() {
 
 func streamEthSubscription() {
 	// Prep the subscription config/filters to be sent to the server
-	ethSubConfig, err := config.NewEthSubscriptionConfig()
+	ethSubConfig, err := eth.NewEthSubscriptionConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +64,7 @@ func streamEthSubscription() {
 	str := streamer.NewSuperNodeStreamer(rpcClient)
 
 	// Buffered channel for reading subscription payloads
-	payloadChan := make(chan super_node.Payload, 20000)
+	payloadChan := make(chan super_node.SubscriptionPayload, 20000)
 
 	// Subscribe to the super node service with the given config/filter parameters
 	sub, err := str.Stream(payloadChan, ethSubConfig)
@@ -81,9 +80,9 @@ func streamEthSubscription() {
 				logWithCommand.Error(payload.Err)
 				continue
 			}
-			data, ok := payload.Data.(eth.StreamPayload)
+			data, ok := payload.Data.(eth.StreamResponse)
 			if !ok {
-				logWithCommand.Warnf("payload data expected type %T got %T", eth.StreamPayload{}, payload.Data)
+				logWithCommand.Warnf("payload data expected type %T got %T", eth.StreamResponse{}, payload.Data)
 				continue
 			}
 			for _, headerRlp := range data.HeadersRlp {

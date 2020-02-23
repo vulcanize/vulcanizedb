@@ -16,7 +16,9 @@
 
 package shared
 
-import "bytes"
+import (
+	"bytes"
+)
 
 // ListContainsString used to check if a list of strings contains a particular string
 func ListContainsString(sss []string, s string) bool {

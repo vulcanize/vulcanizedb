@@ -21,25 +21,26 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	mocks2 "github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 )
 
 var (
-	mockHeaderDagPutter  *mocks.DagPutter
-	mockTrxDagPutter     *mocks.DagPutter
-	mockRctDagPutter     *mocks.DagPutter
-	mockStateDagPutter   *mocks.MappedDagPutter
-	mockStorageDagPutter *mocks.DagPutter
+	mockHeaderDagPutter  *mocks2.DagPutter
+	mockTrxDagPutter     *mocks2.DagPutter
+	mockRctDagPutter     *mocks2.DagPutter
+	mockStateDagPutter   *mocks2.MappedDagPutter
+	mockStorageDagPutter *mocks2.DagPutter
 )
 
 var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
-		mockHeaderDagPutter = new(mocks.DagPutter)
-		mockTrxDagPutter = new(mocks.DagPutter)
-		mockRctDagPutter = new(mocks.DagPutter)
-		mockStateDagPutter = new(mocks.MappedDagPutter)
-		mockStorageDagPutter = new(mocks.DagPutter)
+		mockHeaderDagPutter = new(mocks2.DagPutter)
+		mockTrxDagPutter = new(mocks2.DagPutter)
+		mockRctDagPutter = new(mocks2.DagPutter)
+		mockStateDagPutter = new(mocks2.MappedDagPutter)
+		mockStorageDagPutter = new(mocks2.DagPutter)
 	})
 
 	Describe("Publish", func() {

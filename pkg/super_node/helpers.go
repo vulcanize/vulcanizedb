@@ -21,7 +21,7 @@ import log "github.com/sirupsen/logrus"
 func sendNonBlockingErr(sub Subscription, err error) {
 	log.Error(err)
 	select {
-	case sub.PayloadChan <- Payload{nil, err.Error()}:
+	case sub.PayloadChan <- SubscriptionPayload{nil, err.Error()}:
 	default:
 		log.Infof("unable to send error to subscription %s", sub.ID)
 	}

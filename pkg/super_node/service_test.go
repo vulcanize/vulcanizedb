@@ -21,36 +21,37 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	mocks2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	mocks2 "github.com/vulcanize/vulcanizedb/pkg/super_node/shared/mocks"
 )
 
 var _ = Describe("Service", func() {
 	Describe("SyncAndPublish", func() {
 		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
-			payloadChan := make(chan interface{}, 1)
+			payloadChan := make(chan shared.RawChainData, 1)
 			quitChan := make(chan bool, 1)
-			mockCidIndexer := &mocks2.CIDIndexer{
+			mockCidIndexer := &mocks.CIDIndexer{
 				ReturnErr: nil,
 			}
-			mockPublisher := &mocks2.IPLDPublisher{
-				ReturnCIDPayload: mocks2.MockCIDPayload,
+			mockPublisher := &mocks.IPLDPublisher{
+				ReturnCIDPayload: mocks.MockCIDPayload,
 				ReturnErr:        nil,
 			}
-			mockStreamer := &mocks2.StateDiffStreamer{
+			mockStreamer := &mocks2.PayloadStreamer{
 				ReturnSub: &rpc.ClientSubscription{},
-				StreamPayloads: []statediff.Payload{
-					mocks2.MockStateDiffPayload,
+				StreamPayloads: []shared.RawChainData{
+					mocks.MockStateDiffPayload,
 				},
 				ReturnErr: nil,
 			}
-			mockConverter := &mocks2.PayloadConverter{
-				ReturnIPLDPayload: mocks2.MockIPLDPayload,
+			mockConverter := &mocks.PayloadConverter{
+				ReturnIPLDPayload: mocks.MockIPLDPayload,
 				ReturnErr:         nil,
 			}
 			processor := &super_node.Service{
@@ -62,15 +63,15 @@ var _ = Describe("Service", func() {
 				QuitChan:       quitChan,
 				WorkerPoolSize: 1,
 			}
-			err := processor.SyncAndPublish(wg, nil, nil)
+			err := processor.SyncAndPublish(wg, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			quitChan <- true
 			wg.Wait()
-			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks2.MockStateDiffPayload))
+			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
 			Expect(len(mockCidIndexer.PassedCIDPayload)).To(Equal(1))
-			Expect(mockCidIndexer.PassedCIDPayload[0]).To(Equal(mocks2.MockCIDPayload))
-			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks2.MockIPLDPayload))
+			Expect(mockCidIndexer.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockIPLDPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})
 	})

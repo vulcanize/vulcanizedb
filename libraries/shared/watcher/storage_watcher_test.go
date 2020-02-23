@@ -33,8 +33,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/watcher"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 

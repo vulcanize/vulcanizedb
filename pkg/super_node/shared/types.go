@@ -16,6 +16,21 @@
 
 package shared
 
+// These types serve as very loose wrappers around a generic underlying interface{}
+type RawChainData interface{}
+
+// The concrete type underneath StreamedIPLDs should not be a pointer
+type StreamedIPLDs interface{}
+
+type CIDsForIndexing interface{}
+
+type CIDsForFetching interface{}
+
+type FetchedIPLDs interface{}
+
+// The concrete type underneath StreamedIPLDs should not be a pointer
+type ServerResponse interface{}
+
 type Gap struct {
 	Start uint64
 	Stop  uint64

@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	mocks2 "github.com/vulcanize/vulcanizedb/pkg/super_node/shared/mocks"
 )
 
 var _ = Describe("BackFiller", func() {
@@ -41,23 +41,24 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
-				FirstBlockNumberToReturn: 1,
+			mockRetriever := &mocks2.MockCIDRetriever{
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 101,
 					},
 				},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+			mockFetcher := &mocks2.IPLDFetcher{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 					101: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -66,10 +67,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
@@ -95,22 +96,23 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
-				FirstBlockNumberToReturn: 1,
+			mockRetriever := &mocks2.MockCIDRetriever{
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 100,
 					},
 				},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+			mockFetcher := &mocks2.IPLDFetcher{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					100: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -119,10 +121,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
@@ -145,19 +147,20 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:        nil,
 			}
 			mockConverter := &mocks.IterativePayloadConverter{
-				ReturnIPLDPayload: []*eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
+				ReturnIPLDPayload: []eth.IPLDPayload{mocks.MockIPLDPayload, mocks.MockIPLDPayload},
 				ReturnErr:         nil,
 			}
-			mockRetriever := &mocks.MockCIDRetriever{
+			mockRetriever := &mocks2.MockCIDRetriever{
 				FirstBlockNumberToReturn: 3,
 				GapsToRetrieve:           []shared.Gap{},
 			}
-			mockFetcher := &mocks.StateDiffFetcher{
-				PayloadsToReturn: map[uint64]statediff.Payload{
+			mockFetcher := &mocks2.IPLDFetcher{
+				PayloadsToReturn: map[uint64]shared.RawChainData{
 					1: mocks.MockStateDiffPayload,
 					2: mocks.MockStateDiffPayload,
 				},
 			}
+			quitChan := make(chan bool, 1)
 			backfiller := &super_node.BackFillService{
 				Indexer:           mockCidRepo,
 				Publisher:         mockPublisher,
@@ -166,10 +169,10 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
-			quitChan := make(chan bool, 1)
-			backfiller.FillGaps(wg, quitChan)
+			backfiller.FillGaps(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
@@ -183,7 +186,7 @@ var _ = Describe("BackFiller", func() {
 			Expect(mockConverter.PassedStatediffPayload[1]).To(Equal(mocks.MockStateDiffPayload))
 			Expect(mockRetriever.CalledTimes).To(Equal(1))
 			Expect(len(mockFetcher.CalledAtBlockHeights)).To(Equal(1))
-			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{1, 2}))
+			Expect(mockFetcher.CalledAtBlockHeights[0]).To(Equal([]uint64{0, 1, 2}))
 		})
 	})
 })

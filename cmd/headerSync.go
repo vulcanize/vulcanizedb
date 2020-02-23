@@ -22,11 +22,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore"
-	"github.com/vulcanize/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
-	"github.com/vulcanize/vulcanizedb/pkg/history"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/datastore/postgres/repositories"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/history"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 

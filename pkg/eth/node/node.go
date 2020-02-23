@@ -18,6 +18,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
 
 type IPropertiesReader interface {
@@ -60,7 +61,7 @@ func MakeNode(rpcClient core.RPCClient) core.Node {
 	id, name := pr.NodeInfo()
 	return core.Node{
 		GenesisBlock: pr.GenesisBlock(),
-		NetworkID:    pr.NetworkID(),
+		NetworkID:    fmt.Sprintf("%f", pr.NetworkID()),
 		ID:           id,
 		ClientName:   name,
 	}

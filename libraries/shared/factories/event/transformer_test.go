@@ -25,8 +25,8 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/test_data"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/transformer"
-	"github.com/vulcanize/vulcanizedb/pkg/core"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Transformer", func() {

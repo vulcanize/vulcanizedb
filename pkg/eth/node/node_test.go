@@ -22,9 +22,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
 )
 
 var EmpytHeaderHash = "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
@@ -82,7 +82,7 @@ var _ = Describe("Node Info", func() {
 	It("returns the network id for any client", func() {
 		client := fakes.NewMockRPCClient()
 		n := node.MakeNode(client)
-		Expect(n.NetworkID).To(Equal(float64(1234)))
+		Expect(n.NetworkID).To(Equal("1234.000000"))
 	})
 
 	It("returns geth ID and client name for geth node", func() {

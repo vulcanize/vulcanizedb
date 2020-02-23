@@ -25,7 +25,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
 )
 
 var _ = Describe("Storage transformer", func() {

@@ -23,13 +23,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	rpc2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/rpc"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
-	"github.com/vulcanize/vulcanizedb/pkg/fakes"
-	"github.com/vulcanize/vulcanizedb/pkg/history"
 	"github.com/vulcanize/vulcanizedb/test_config"
 )
 
@@ -47,19 +45,6 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 		blockChain = eth.NewBlockChain(blockChainClient, rpcClient, node, transactionConverter)
 	})
 
-	It("reads two blocks", func(done Done) {
-		blocks := fakes.NewMockBlockRepository()
-		lastBlock, err := blockChain.LastBlock()
-		Expect(err).NotTo(HaveOccurred())
-
-		queriedBlocks := []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6}
-		_, err = history.RetrieveAndUpdateBlocks(blockChain, blocks, queriedBlocks)
-		Expect(err).NotTo(HaveOccurred())
-
-		blocks.AssertCreateOrUpdateBlocksCallCountAndBlockNumbersEquals(2, []int64{lastBlock.Int64() - 5, lastBlock.Int64() - 6})
-		close(done)
-	}, 30)
-
 	It("retrieves the genesis block and first block", func(done Done) {
 		genesisBlock, err := blockChain.GetBlockByNumber(int64(0))
 		Expect(err).ToNot(HaveOccurred())
@@ -76,10 +61,9 @@ var _ = Describe("Reading from the Geth blockchain", func() {
 
 	It("retrieves the node info", func(done Done) {
 		node := blockChain.Node()
-		mainnetID := float64(1)
 
 		Expect(node.GenesisBlock).ToNot(BeNil())
-		Expect(node.NetworkID).To(Equal(mainnetID))
+		Expect(node.NetworkID).To(Equal("1.000000"))
 		Expect(len(node.ID)).ToNot(BeZero())
 		Expect(node.ClientName).ToNot(BeZero())
 
