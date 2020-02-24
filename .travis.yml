@@ -18,14 +18,14 @@ script:
 - env GO111MODULE=on make test
 - env GO111MODULE=on make integrationtest
 deploy:
-  - provider: script
-    script: bash ./.travis/deploy.sh staging
-    on:
-      branch: staging
-  - provider: script
-    script: bash ./.travis/deploy.sh prod
-    on:
-      branch: master
+- provider: script
+  script: bash ./.travis/deploy.sh staging
+  on:
+    branch: staging
+- provider: script
+  script: bash ./.travis/deploy.sh prod
+  on:
+    branch: master
 notifications:
   email: false
 env:
@@ -34,3 +34,5 @@ env:
   global:
   - secure: tz62S53XiFomz/R/X0Rl143KLugl/cBCP8C2us5v5qbJhqbVrOUXPKsK6HZThl20S8EqHC/yaXUWrL6+mhTFH3Ee4GILvchMpAHfqOWYZOWtxcgoO/2UcOKzjBORMJK/Oosp/OAYrR86Om1T4P1gatsbIm90dnE6ausBsNxLtCjCr+Ozbx4yDJ37X327o4uvm+0O0+SbxJw8/aVgtNUJDXqNp1CjwtXwrUTH6PbxNiRGgFrZ24lSS0+0ESCJ5GVZSVSWKDUf4ML5gLCA5/JxKooZisUpbbtHPa9CYzbK8jF4eSYbWrg9W3zJ5Xv2+fN7uFBut/DJbg9RWboSo2txWcv/z1Jdao4q0boOgGgYGf8pphKsx2oNVc5ZKgnygAlN1wma7dwddfiTh3u4WB3zzWbjgj0ONhYkMFhKOjMLqNdAdNjOfFUZB2+Xf/FPUKc5MfL0b2GWpEf/sKhJ1xkf8ZpQgbiyCpaDDIQHoGUsrFVQKk8/frEsLWgdJQlZciuNHDThdHntEQx38EcvotKWss5Mc2tcF+HNr32ob0PuQl6aHkuAX9JwR9hYg6UcoG3MTcCta/e4kZ0PmcltXzbvVVM0+NzcQv6vVsBqH3CNY+Uhhd2uIYluescJNhwfK5g+PHDPgQsT0iGJTXDVmR0H658joBTNniYBsWujJ0o6rSg=
   - secure: qJYh+sEjGmDb4SyXnHkvu+1JEYExaRDbapwVdfx/U8e+AK7ZNno4wsHEEA8aMZVkNW7JOfsRjx3Dp1B6Rgd/2QH6J40yz7hMbCZWbres7KnBD3ib8iwHT5TeQ+DndNZh5wDGgNkxgyDWB05fdtAVu6fH77dWaiCkvejI/Jsl0HSUyv+B+TeoC4SkgQgfWSiHOdQ6Q47LVgmL7Yu64+AwwGBawqFvwZdy6pYk0nJtmliYxA3Uaucaml2O1U/fR4bYejzpqz6mnJsuSsLjZKuzrjPFwRVtpc1MsKYyX/Vs7DYnETi+fbCqxB6zbJjelsKMsq83tN6Gk+zk49AWPehQ/UAE3HdOdJo31JJ5MUt8DLL5oczDdTWIaRiNa+Oidoemmf+8w1TwUQavgBe3ubMwPtBf/m+jPUDTpCsykYjwQDyPCl8W3vI+rxgXQcwIn9v0JCdcM+lmPaQ0v41WXxEBxbQriYHeOAbRyU9RR68rnvQQ7Ly2yUne2onEASW8dEGepelvk4Wddc7Oa58fOXzWK2pM1g0K2MtR1weLsRQiDrI0IFQqXJQzXsrXLoYkSeU/FP/j9RP21sd7b4gXcnSRuV3Z6PeoAgbGegrrIQm3bnFdxZs47mov8c01cG7ExdhT78dp1TvKe90JI82DYK/aZOEK9jKoT+sbZsHpojVxOJI=
+  - secure: c9L/ZJY5JmPlDDlwDPh+guvzY07FUAr3Kh6xenWalzbVzRscFyUtaJTFpjaxzQmI4ICWXQh08A7kEpE/7nd87raBaLRj29KkCjHgKWWgV0x/30Uzu15GiKl7BbhiAukRLTT84abtb7KqTxkBsXyGLIn/xBszE9cNPRXiFb84EEGlNNb9saDV+e8fir3quHxdwCWGHzfl/Li8n5pY/v3wIioDnGU20O16QtL0vTChI8jLaZxvdwB52Je8YgzFPEPz0bJbmHHdV892VPI3P6XyWBJ2Dz94a0tOrFUCBDXFG7rZUBOXcJwtJFNn9c8jAGXdaz7BhAGICAHRqcnxf4N/d10I7cZM8IXQXPb6U1T93KUvn8cKyfPGiSRkmxuc8zkrkRPBVzqDuIFvjOfZ+RkmAQF8+3SnjFuMFWrCDUPy/WkU3sa6JbW4cFkMtc03E8zpzVmeB3MxMbwAtO+wohg83/YTNe6l2sBcMVBxn3zfUAn+uen3KJ3xlXShkMgYFYnhJ7Y26M+kMHuZ1uR8t9Htsx7dCOJM/0IPMTKVk4AhB0vzE3h2SMD91EdScYjmGXrr/xCuGxKeJawow3+CAQZlgq5QwUMsYo2yEDrqm7/FEQbilkVEtdi0V15oL9EEnyOiDWnS6Fjp2R+CN7oKtJU2EYbFXTEmlFtuh4KG75Jmn/E=
+  - secure: kh8o0PUc5zQfvQ1zaX9mKY+EJW5T9PWxGbVTR/ui30yh6UlSjAYHW3dySUT6kqfuZW8CPsSbFQg5DOgSJquYXf2CzHYdb9pUWgX+7bwUCRArndDS84JpgHw8Am9NHfJzegs2+gOX8ul+pbnc4xkYsBaLzh3paIQAr4IZbfqvSfiQiqNKtcAxB2j2ZYBbhxG7pLHmYIp3rB4UUzoMO7jdcPxA2+YxoNJVYjekayk/LFfmpP70BTe9rKCJkyaap+/kl+lAyVR0f1hyRYbwQVOrLRLWga5avYZetFV5XyrqLFwBghfnzDOGWH9J8/iRXWKoWYTO+1G4Cka/74UCqCoYrm5mi/j3GFX0KRjgX7vxcyWjab8uu6L2ictRQq8wP2gE+wuftySDgCtqf2rijsUGFtiA3h2sqUPtKnQD9Zu+e4XnuyHJPtJ1jwviBUgx1N1t5uskx1h5VS+xVG4gc+9zQq3LI+RYOOlVyWfDhK0WxVPbtwH/s9nFibVnNdA2X6fs409toEq9aEbdg9I9Xtz3U6qPYM88BMC6FnrySFFydNxfKCtVldUQmA5Tj3mCexbeTMRS57WmXZLRlWIIisFkTKNYUP9x8RtwOM1OtbiM9HyVs4l7rBIw7iVmidEdb5PYlfFfK7sc32qrQtz5Pr+e9y6ogAMK3u7WEl5EP/ozeOI=
