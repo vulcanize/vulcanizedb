@@ -7,7 +7,6 @@ CREATE TABLE public.headers
     raw             JSONB,
     block_timestamp NUMERIC,
     check_count     INTEGER     NOT NULL DEFAULT 0,
-    last_checked    BIGINT,
     eth_node_id     INTEGER     NOT NULL REFERENCES eth_nodes (id) ON DELETE CASCADE,
     created         TIMESTAMP   NOT NULL DEFAULT NOW(),
     updated         TIMESTAMP   NOT NULL DEFAULT NOW(),

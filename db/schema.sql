@@ -211,7 +211,6 @@ CREATE TABLE public.headers (
     raw jsonb,
     block_timestamp numeric,
     check_count integer DEFAULT 0 NOT NULL,
-    last_checked bigint,
     eth_node_id integer NOT NULL,
     created timestamp without time zone DEFAULT now() NOT NULL,
     updated timestamp without time zone DEFAULT now() NOT NULL
