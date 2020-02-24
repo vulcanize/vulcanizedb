@@ -54,9 +54,9 @@ func (repo CheckedHeadersRepository) MarkSingleHeaderUnchecked(blockNumber int64
 // Return header if check_count  < passed checkCount
 func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	var (
-		result        []core.Header
-		query         string
-		err           error
+		result                  []core.Header
+		query                   string
+		err                     error
 		recheckOffsetMultiplier = 15
 	)
 
@@ -67,7 +67,7 @@ func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endin
 			           AND block_number >= $1
 			           AND eth_node_id = $3)
 			   OR (check_count < $2
-			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - ($4 * (check_count * (check_count + 1) / 2)))
+			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - ($4 * check_count * (check_count + 1) / 2))
 			           AND eth_node_id = $3)`
 		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.NodeID, recheckOffsetMultiplier)
 	} else {
