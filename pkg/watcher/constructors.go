@@ -28,12 +28,22 @@ import (
 )
 
 // NewSuperNodeStreamer returns a new shared.SuperNodeStreamer
-func NewSuperNodeStreamer(client core.RPCClient) shared.SuperNodeStreamer {
-	return streamer.NewSuperNodeStreamer(client)
+func NewSuperNodeStreamer(source shared.SourceType, client interface{}) (shared.SuperNodeStreamer, error) {
+	switch source {
+	case shared.VulcanizeDB:
+		cli, ok := client.(core.RPCClient)
+		if !ok {
+			var expectedClientType core.RPCClient
+			return nil, fmt.Errorf("vulcanizedb NewSuperNodeStreamer construct expects client type %T got %T", expectedClientType, client)
+		}
+		return streamer.NewSuperNodeStreamer(cli), nil
+	default:
+		return nil, fmt.Errorf("NewSuperNodeStreamer constructor unexpected souce type %s", source.String())
+	}
 }
 
 // NewRepository constructs and returns a new Repository that satisfies the shared.Repository interface for the specified chain
-func NewRepository(chain shared2.ChainType, db *postgres.DB, triggerFuncs [][2]string) (shared.Repository, error) {
+func NewRepository(chain shared2.ChainType, db *postgres.DB, triggerFuncs []string) (shared.Repository, error) {
 	switch chain {
 	case shared2.Ethereum:
 		return eth.NewRepository(db, triggerFuncs), nil

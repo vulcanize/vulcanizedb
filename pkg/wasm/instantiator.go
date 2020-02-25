@@ -16,16 +16,23 @@
 
 package wasm
 
-import "github.com/vulcanize/vulcanizedb/pkg/postgres"
+import (
+	"github.com/vulcanize/vulcanizedb/pkg/postgres"
+)
 
 // Instantiator is used to instantiate WASM functions in Postgres
 type Instantiator struct {
 	db        *postgres.DB
-	instances [][2]string // list of WASM file paths and namespaces
+	instances []WasmFunction // WASM file paths and namespaces
+}
+
+type WasmFunction struct {
+	BinaryPath string
+	Namespace  string
 }
 
 // NewWASMInstantiator returns a pointer to a new Instantiator
-func NewWASMInstantiator(db *postgres.DB, instances [][2]string) *Instantiator {
+func NewWASMInstantiator(db *postgres.DB, instances []WasmFunction) *Instantiator {
 	return &Instantiator{
 		db:        db,
 		instances: instances,
@@ -39,7 +46,7 @@ func (i *Instantiator) Instantiate() error {
 		return err
 	}
 	for _, pn := range i.instances {
-		_, err := tx.Exec(`SELECT wasm_new_instance('$1', '$2')`, pn[0], pn[1])
+		_, err := tx.Exec(`SELECT wasm_new_instance('$1', '$2')`, pn.BinaryPath, pn.Namespace)
 		if err != nil {
 			return err
 		}

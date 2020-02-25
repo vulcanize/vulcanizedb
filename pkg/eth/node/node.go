@@ -83,6 +83,10 @@ func makePropertiesReader(client core.RPCClient) IPropertiesReader {
 }
 
 func getNodeType(client core.RPCClient) core.NodeType {
+	// TODO: fix this
+	// This heuristics for figuring out the node type are not usefull...
+	// for example we often port forward remote nodes to localhost
+	// and geth does not have to expose the admin api...
 	if strings.Contains(client.IpcPath(), "infura") {
 		return core.INFURA
 	}

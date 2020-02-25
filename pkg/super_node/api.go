@@ -19,8 +19,8 @@ package super_node
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rlp"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
@@ -105,6 +105,41 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*r
 }
 
 // Node is a public rpc method to allow transformers to fetch the node info for the super node
-func (api *PublicSuperNodeAPI) Node() core.Node {
+// NOTE: this is the node info for the node that the super node is syncing from, not the node info for the super node itself
+func (api *PublicSuperNodeAPI) Node() *core.Node {
 	return api.sn.Node()
+}
+
+// Chain returns the chain type that this super node instance supports
+func (api *PublicSuperNodeAPI) Chain() shared.ChainType {
+	return api.sn.Chain()
+}
+
+// Struct for holding super node meta data
+type InfoAPI struct{}
+
+// NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
+func NewInfoAPI() *InfoAPI {
+	return &InfoAPI{}
+}
+
+// Modules returns modules supported by this api
+func (iapi *InfoAPI) Modules() map[string]string {
+	return map[string]string{
+		"vdb": "Stream",
+	}
+}
+
+// NodeInfo gathers and returns a collection of metadata for the super node
+func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
+	return &p2p.NodeInfo{
+		// TODO: formalize this
+		ID:   "vulcanizeDB",
+		Name: "superNode",
+	}
+}
+
+// Version returns the version of the super node
+func (iapi *InfoAPI) Version() string {
+	return VersionWithMeta
 }

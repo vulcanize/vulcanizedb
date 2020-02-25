@@ -40,7 +40,7 @@ type Watcher interface {
 // Service is the underlying struct for the SuperNodeWatcher
 type Service struct {
 	// Config
-	WatcherConfig Config
+	WatcherConfig *Config
 	// Interface for streaming data from super node
 	SuperNodeStreamer shared.SuperNodeStreamer
 	// Interface for db operations
@@ -60,16 +60,20 @@ type Service struct {
 }
 
 // NewWatcher returns a new Service which satisfies the Watcher interface
-func NewWatcher(c Config, quitChan chan bool) (Watcher, error) {
+func NewWatcher(c *Config, quitChan chan bool) (Watcher, error) {
 	repo, err := NewRepository(c.SubscriptionConfig.ChainType(), c.DB, c.TriggerFunctions)
+	if err != nil {
+		return nil, err
+	}
+	streamer, err := NewSuperNodeStreamer(c.Source, c.Client)
 	if err != nil {
 		return nil, err
 	}
 	return &Service{
 		WatcherConfig:     c,
-		SuperNodeStreamer: NewSuperNodeStreamer(c.Client),
+		SuperNodeStreamer: streamer,
 		Repository:        repo,
-		WASMIniter:        wasm.NewWASMInstantiator(c.DB, c.WASMInstances),
+		WASMIniter:        wasm.NewWASMInstantiator(c.DB, c.WASMFunctions),
 		PayloadChan:       make(chan super_node.SubscriptionPayload, super_node.PayloadChanBufferSize),
 		QuitChan:          quitChan,
 	}, nil
@@ -85,7 +89,7 @@ func (s *Service) Init() error {
 	return s.Repository.LoadTriggers()
 }
 
-// Watch is the top level loop for watching super node
+// Watch is the top level loop for watching
 func (s *Service) Watch(wg *sync.WaitGroup) error {
 	rlpConfig, err := rlp.EncodeToBytes(s.WatcherConfig.SubscriptionConfig)
 	if err != nil {

@@ -17,7 +17,7 @@
 package super_node
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -59,10 +59,12 @@ type BackFillService struct {
 	BatchSize uint64
 	// Channel for receiving quit signal
 	QuitChan chan bool
+	// Chain type
+	chain shared.ChainType
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
+func NewBackFillService(settings *Config, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
 	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
@@ -97,6 +99,7 @@ func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan cha
 		BatchSize:          batchSize,
 		ScreenAndServeChan: screenAndServeChan,
 		QuitChan:           settings.Quit,
+		chain:              settings.Chain,
 	}, nil
 }
 
@@ -109,18 +112,18 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 		for {
 			select {
 			case <-bfs.QuitChan:
-				log.Info("quiting FillGaps process")
+				log.Infof("quiting %s FillGaps process", bfs.chain.String())
 				wg.Done()
 				return
 			case <-ticker.C:
-				log.Info("searching for gaps in the super node database")
+				log.Infof("searching for gaps in the %s super node database", bfs.chain.String())
 				startingBlock, err := bfs.Retriever.RetrieveFirstBlockNumber()
 				if err != nil {
 					log.Error(err)
 					continue
 				}
 				if startingBlock != 0 {
-					log.Info("found gap at the beginning of the sync")
+					log.Infof("found gap at the beginning of the %s sync", bfs.chain.String())
 					bfs.fillGaps(0, uint64(startingBlock-1))
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData()
@@ -136,11 +139,11 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 			}
 		}
 	}()
-	log.Info("fillGaps goroutine successfully spun up")
+	log.Infof("%s fillGaps goroutine successfully spun up", bfs.chain.String())
 }
 
 func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
-	log.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
+	log.Infof("going to fill in %s gap from %d to %d", bfs.chain.String(), startingBlock, endingBlock)
 	errChan := make(chan error)
 	done := make(chan bool)
 	err := bfs.backFill(startingBlock, endingBlock, errChan, done)
@@ -152,7 +155,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 		case err := <-errChan:
 			log.Error(err)
 		case <-done:
-			log.Infof("finished filling in gap from %d to %d", startingBlock, endingBlock)
+			log.Infof("finished filling in %s gap from %d to %d", bfs.chain.String(), startingBlock, endingBlock)
 			return nil
 		}
 	}
@@ -162,7 +165,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
 func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
 	if endingBlock < startingBlock {
-		return errors.New("backfill: ending block number needs to be greater than starting block number")
+		return fmt.Errorf("%s backfill: ending block number needs to be greater than starting block number", bfs.chain.String())
 	}
 	//
 	// break the range up into bins of smaller ranges
@@ -230,7 +233,7 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 				case forwardDone <- true:
 				default:
 				}
-				log.Infof("finished filling in gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
+				log.Infof("finished filling in %s gap sub-bin from %d to %d", bfs.chain.String(), doneWithHeights[0], doneWithHeights[1])
 				goroutinesFinished++
 				if goroutinesFinished >= len(blockRangeBins) {
 					done <- true

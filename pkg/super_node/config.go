@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package shared
+package super_node
 
 import (
 	"fmt"
@@ -31,13 +31,14 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 	"github.com/vulcanize/vulcanizedb/utils"
 )
 
-// SuperNodeConfig struct
-type SuperNodeConfig struct {
+// Config struct
+type Config struct {
 	// Ubiquitous fields
-	Chain    ChainType
+	Chain    shared.ChainType
 	IPFSPath string
 	DB       *postgres.DB
 	DBConfig config.Database
@@ -61,9 +62,9 @@ type SuperNodeConfig struct {
 
 // NewSuperNodeConfigs is used to initialize multiple SuperNode configs from a single config .toml file
 // Separate chain supernode instances need to be ran in the same process in order to avoid lock contention on the ipfs repository
-func NewSuperNodeConfigs() ([]*SuperNodeConfig, error) {
+func NewSuperNodeConfigs() ([]*Config, error) {
 	chains := viper.GetStringSlice("superNode.chains")
-	configs := make([]*SuperNodeConfig, len(chains))
+	configs := make([]*Config, len(chains))
 	var err error
 	ipfsPath := viper.GetString("superNode.ipfsPath")
 	if ipfsPath == "" {
@@ -74,8 +75,8 @@ func NewSuperNodeConfigs() ([]*SuperNodeConfig, error) {
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
 	for i, chain := range chains {
-		sn := new(SuperNodeConfig)
-		sn.Chain, err = NewChainType(chain)
+		sn := new(Config)
+		sn.Chain, err = shared.NewChainType(chain)
 		if err != nil {
 			return nil, err
 		}
@@ -96,9 +97,12 @@ func NewSuperNodeConfigs() ([]*SuperNodeConfig, error) {
 			}
 			sn.Workers = workers
 			switch sn.Chain {
-			case Ethereum:
+			case shared.Ethereum:
 				sn.NodeInfo, sn.WSClient, err = getEthNodeAndClient(viper.GetString("superNode.ethereum.sync.wsPath"))
-			case Bitcoin:
+				if err != nil {
+					return nil, err
+				}
+			case shared.Bitcoin:
 				sn.NodeInfo = core.Node{
 					ID:           viper.GetString("superNode.bitcoin.node.nodeID"),
 					ClientName:   viper.GetString("superNode.bitcoin.node.clientName"),
@@ -146,21 +150,21 @@ func NewSuperNodeConfigs() ([]*SuperNodeConfig, error) {
 		}
 		configs[i] = sn
 	}
-	return configs, err
+	return configs, nil
 }
 
 // BackFillFields is used to fill in the BackFill fields of the config
-func (sn *SuperNodeConfig) BackFillFields(chain string) error {
+func (sn *Config) BackFillFields(chain string) error {
 	sn.BackFill = true
 	var httpClient interface{}
 	var err error
 	switch sn.Chain {
-	case Ethereum:
+	case shared.Ethereum:
 		_, httpClient, err = getEthNodeAndClient(viper.GetString("superNode.ethereum.backFill.httpPath"))
 		if err != nil {
 			return err
 		}
-	case Bitcoin:
+	case shared.Bitcoin:
 		httpClient = &rpcclient.ConnConfig{
 			Host:         viper.GetString("superNode.bitcoin.backFill.httpPath"),
 			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode

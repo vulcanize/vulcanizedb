@@ -32,12 +32,12 @@ var (
 // Repository is the underlying struct for satisfying the shared.Repository interface for eth
 type Repository struct {
 	db               *postgres.DB
-	triggerFunctions [][2]string
+	triggerFunctions []string
 	deleteCalls      int64
 }
 
 // NewRepository returns a new eth.Repository that satisfies the shared.Repository interface
-func NewRepository(db *postgres.DB, triggerFunctions [][2]string) shared.Repository {
+func NewRepository(db *postgres.DB, triggerFunctions []string) shared.Repository {
 	return &Repository{
 		db:               db,
 		triggerFunctions: triggerFunctions,
