@@ -58,6 +58,8 @@ func (w *writer) WritePlugin() error {
 
 	// Import pkgs for generic TransformerInitializer interface and specific TransformerInitializers specified in config
 	f.ImportAlias("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "interface")
+	f.ImportAlias("github.com/makerdao/vulcanizedb/libraries/shared/factories/event", "event")
+	f.ImportAlias("github.com/makerdao/vulcanizedb/libraries/shared/factories/storage", "storage")
 	for name, transformer := range w.GenConfig.Transformers {
 		f.ImportAlias(transformer.RepositoryPath+"/"+transformer.Path, name)
 	}
@@ -72,16 +74,16 @@ func (w *writer) WritePlugin() error {
 	f.Type().Id("exporter").String()
 	f.Var().Id("Exporter").Id("exporter")
 	f.Func().Params(Id("e").Id("exporter")).Id("Export").Params().Parens(List(
-		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "EventTransformerInitializer"),
-		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "StorageTransformerInitializer"),
+		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/factories/event", "TransformerInitializer"),
+		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/factories/storage", "TransformerInitializer"),
 		Index().Qual("github.com/makerdao/vulcanizedb/libraries/shared/transformer", "ContractTransformerInitializer"),
 	)).Block(Return(
 		Index().Qual(
-			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
-			"EventTransformerInitializer").Values(code[config.EthEvent]...),
+			"github.com/makerdao/vulcanizedb/libraries/shared/factories/event",
+			"TransformerInitializer").Values(code[config.EthEvent]...),
 		Index().Qual(
-			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
-			"StorageTransformerInitializer").Values(code[config.EthStorage]...),
+			"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage",
+			"TransformerInitializer").Values(code[config.EthStorage]...),
 		Index().Qual(
 			"github.com/makerdao/vulcanizedb/libraries/shared/transformer",
 			"ContractTransformerInitializer").Values(code[config.EthContract]...))) // Exports the collected event and storage transformer initializers

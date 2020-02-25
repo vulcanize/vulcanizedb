@@ -20,9 +20,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
@@ -38,7 +38,7 @@ var _ = Describe("Log delegator", func() {
 
 			delegator.AddTransformer(fakeTransformer)
 
-			Expect(delegator.Transformers).To(Equal([]transformer.EventTransformer{fakeTransformer}))
+			Expect(delegator.Transformers).To(Equal([]event.ITransformer{fakeTransformer}))
 		})
 
 		It("passes transformers' configs to the chunker", func() {

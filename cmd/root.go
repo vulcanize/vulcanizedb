@@ -26,6 +26,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
@@ -223,7 +225,7 @@ func prepConfig() error {
 	return nil
 }
 
-func exportTransformers() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer, error) {
+func exportTransformers() ([]event.TransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer, error) {
 	// Build plugin generator config
 	configErr := prepConfig()
 	if configErr != nil {

@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
 	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
@@ -118,7 +120,7 @@ func executeTransformers() {
 }
 
 type Exporter interface {
-	Export() ([]transformer.EventTransformerInitializer, []transformer.StorageTransformerInitializer, []transformer.ContractTransformerInitializer)
+	Export() ([]event.TransformerInitializer, []storage.TransformerInitializer, []transformer.ContractTransformerInitializer)
 }
 
 func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
@@ -139,7 +141,7 @@ func watchEthEvents(w *watcher.EventWatcher, wg *sync.WaitGroup) {
 
 func watchEthStorage(w watcher.IStorageWatcher, wg *sync.WaitGroup) {
 	defer wg.Done()
-	// Execute over the StorageTransformerInitializer set using the storage watcher
+	// Execute over the storage.TransformerInitializer set using the storage watcher
 	LogWithCommand.Info("executing storage transformers")
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()

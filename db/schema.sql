@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped from database version 11.6
+-- Dumped by pg_dump version 11.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,7 +32,7 @@ $$;
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
+SET default_with_oids = false;
 
 --
 -- Name: addresses; Type: TABLE; Schema: public; Owner: -
@@ -76,13 +76,6 @@ CREATE TABLE public.checked_headers (
 
 
 --
--- Name: TABLE checked_headers; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.checked_headers IS '@omit';
-
-
---
 -- Name: checked_headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -113,13 +106,6 @@ CREATE TABLE public.eth_nodes (
     network_id numeric,
     eth_node_id character varying(128)
 );
-
-
---
--- Name: TABLE eth_nodes; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.eth_nodes IS '@omit';
 
 
 --
@@ -270,13 +256,6 @@ CREATE TABLE public.receipts (
 
 
 --
--- Name: TABLE receipts; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.receipts IS '@omit';
-
-
---
 -- Name: receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -380,13 +359,6 @@ CREATE TABLE public.watched_logs (
     contract_address character varying(42),
     topic_zero character varying(66)
 );
-
-
---
--- Name: TABLE watched_logs; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON TABLE public.watched_logs IS '@omit';
 
 
 --
@@ -512,11 +484,11 @@ ALTER TABLE ONLY public.checked_headers
 
 
 --
--- Name: eth_nodes eth_nodes_genesis_block_network_id_eth_node_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: eth_nodes eth_nodes_genesis_block_network_id_eth_node_id_client_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.eth_nodes
-    ADD CONSTRAINT eth_nodes_genesis_block_network_id_eth_node_id_key UNIQUE (genesis_block, network_id, eth_node_id);
+    ADD CONSTRAINT eth_nodes_genesis_block_network_id_eth_node_id_client_name_key UNIQUE (genesis_block, network_id, eth_node_id, client_name);
 
 
 --
@@ -690,7 +662,7 @@ CREATE INDEX transactions_header ON public.transactions USING btree (header_id);
 -- Name: headers header_updated; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER header_updated BEFORE UPDATE ON public.headers FOR EACH ROW EXECUTE FUNCTION public.set_header_updated();
+CREATE TRIGGER header_updated BEFORE UPDATE ON public.headers FOR EACH ROW EXECUTE PROCEDURE public.set_header_updated();
 
 
 --

@@ -97,7 +97,6 @@ func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
 			*p = types.Header{Number: big.NewInt(100)}
 		}
 		if p, ok := batchElem.Result.(*core.POAHeader); ok {
-
 			*p = client.returnPOAHeader
 		}
 	}
@@ -110,11 +109,6 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 	client.passedResult = result
 	client.passedMethod = method
 	switch method {
-	case "admin_nodeInfo":
-		if p, ok := result.(*p2p.NodeInfo); ok {
-			p.ID = client.GethNodeInfo.ID
-			p.Name = client.GethNodeInfo.Name
-		}
 	case "eth_getBlockByNumber":
 		if p, ok := result.(*types.Header); ok {
 			*p = types.Header{Number: big.NewInt(100)}

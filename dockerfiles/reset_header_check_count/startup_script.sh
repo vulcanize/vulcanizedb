@@ -4,9 +4,9 @@
 # Verify required args present
 MISSING_VAR_MESSAGE=" is required and no value was given"
 
-if test -z "$HEADER_BLOCK_NUMBER"
+if test -z "$RESET_HEADER_COUNT_BLOCK_NUMBER"
 then
-    echo HEADER_BLOCK_NUMBER $MISSING_VAR_MESSAGE
+    echo RESET_HEADER_COUNT_BLOCK_NUMBER $MISSING_VAR_MESSAGE
     exit 1
 fi
 
@@ -36,4 +36,4 @@ fi
 # Run resetHeaderCheckCount
 echo "Running resetHeaderCheckCount..."
 echo header_block_number: $HEADER_BLOCK_NUMBER
-./vulcanizedb resetHeaderCheckCount --header-block-number=$HEADER_BLOCK_NUMBER
+./vulcanizedb resetHeaderCheckCount --reset-header-count-block-number=$RESET_HEADER_COUNT_BLOCK_NUMBER

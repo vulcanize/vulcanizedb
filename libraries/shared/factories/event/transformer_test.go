@@ -17,21 +17,21 @@
 package event_test
 
 import (
+	"math/rand"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/rand"
 )
 
 var _ = Describe("Transformer", func() {
 	var (
 		converter mocks.MockConverter
-		t         transformer.EventTransformer
+		t         event.ITransformer
 		headerOne core.Header
 		config    = test_data.GenericTestConfig
 		logs      []core.EventLog

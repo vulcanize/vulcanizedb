@@ -17,14 +17,15 @@
 package chunker
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
-	"github.com/makerdao/vulcanizedb/pkg/core"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type Chunker interface {
-	AddConfig(transformerConfig transformer.EventTransformerConfig)
+	AddConfig(transformerConfig event.TransformerConfig)
 	ChunkLogs(logs []core.EventLog) map[string][]core.EventLog
 }
 
@@ -43,7 +44,7 @@ func NewLogChunker() *LogChunker {
 }
 
 // Configures the chunker by adding one config with more addresses and topics to consider.
-func (chunker *LogChunker) AddConfig(transformerConfig transformer.EventTransformerConfig) {
+func (chunker *LogChunker) AddConfig(transformerConfig event.TransformerConfig) {
 	for _, address := range transformerConfig.ContractAddresses {
 		var lowerCaseAddress = strings.ToLower(address)
 		chunker.AddressToNames[lowerCaseAddress] = append(chunker.AddressToNames[lowerCaseAddress], transformerConfig.TransformerName)

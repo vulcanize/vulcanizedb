@@ -23,7 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 )
 
 var startingBlockNumber = rand.Int63()
@@ -42,7 +42,7 @@ var GenericTestLog = func() types.Log {
 	}
 }
 
-var GenericTestConfig = transformer.EventTransformerConfig{
+var GenericTestConfig = event.TransformerConfig{
 	TransformerName:     "generic-test-transformer",
 	ContractAddresses:   []string{fakeAddress().Hex()},
 	ContractAbi:         randomString(100),

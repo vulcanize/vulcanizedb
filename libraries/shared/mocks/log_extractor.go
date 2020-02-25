@@ -18,18 +18,18 @@ package mocks
 
 import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
 type MockLogExtractor struct {
-	AddedConfigs              []transformer.EventTransformerConfig
+	AddedConfigs              []event.TransformerConfig
 	AddTransformerConfigError error
 	ExtractLogsCount          int
 	ExtractLogsErrors         []error
 }
 
-func (extractor *MockLogExtractor) AddTransformerConfig(config transformer.EventTransformerConfig) error {
+func (extractor *MockLogExtractor) AddTransformerConfig(config event.TransformerConfig) error {
 	extractor.AddedConfigs = append(extractor.AddedConfigs, config)
 	return extractor.AddTransformerConfigError
 }

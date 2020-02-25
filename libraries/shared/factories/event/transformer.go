@@ -17,21 +17,44 @@
 package event
 
 import (
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
 )
 
+type ITransformer interface {
+	Execute(logs []core.EventLog) error
+	GetConfig() TransformerConfig
+}
+
+type TransformerInitializer func(db *postgres.DB) ITransformer
+
+type TransformerConfig struct {
+	TransformerName     string
+	ContractAddresses   []string
+	ContractAbi         string
+	Topic               string
+	StartingBlockNumber int64
+	EndingBlockNumber   int64 // Set -1 for indefinite transformer
+}
+
+func HexStringsToAddresses(strings []string) (addresses []common.Address) {
+	for _, hexString := range strings {
+		addresses = append(addresses, common.HexToAddress(hexString))
+	}
+	return
+}
+
 // ConfiguredTransformer implements the EventTransformer interface, to be run by the Watcher
 type ConfiguredTransformer struct {
-	Config      transformer.EventTransformerConfig
+	Config      TransformerConfig
 	Transformer Transformer
 	DB          *postgres.DB
 }
 
 // NewTransformer instantiates a new transformer by passing the DB connection to the converter
-func (ct ConfiguredTransformer) NewTransformer(db *postgres.DB) transformer.EventTransformer {
+func (ct ConfiguredTransformer) NewTransformer(db *postgres.DB) ITransformer {
 	ct.DB = db
 	return ct
 }
@@ -61,6 +84,6 @@ func (ct ConfiguredTransformer) Execute(logs []core.EventLog) error {
 }
 
 // GetConfig returns the config for a given transformer
-func (ct ConfiguredTransformer) GetConfig() transformer.EventTransformerConfig {
+func (ct ConfiguredTransformer) GetConfig() TransformerConfig {
 	return ct.Config
 }

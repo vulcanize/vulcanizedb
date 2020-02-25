@@ -20,17 +20,26 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
+
+type ITransformer interface {
+	Execute(diff types.PersistedDiff) error
+	KeccakContractAddress() common.Hash
+	GetStorageKeysLookup() KeysLookup
+	GetContractAddress() common.Address
+}
+
+type TransformerInitializer func(db *postgres.DB) ITransformer
 
 type Transformer struct {
 	Address           common.Address
 	StorageKeysLookup KeysLookup
 	Repository        Repository
+	hashedAddress     common.Hash
 }
 
-func (transformer Transformer) GetStorageKeysLookup() interface{} {
+func (transformer Transformer) GetStorageKeysLookup() KeysLookup {
 	return transformer.StorageKeysLookup
 }
 
@@ -38,14 +47,20 @@ func (transformer Transformer) GetContractAddress() common.Address {
 	return transformer.Address
 }
 
-func (transformer Transformer) NewTransformer(db *postgres.DB) transformer.StorageTransformer {
+func (transformer Transformer) NewTransformer(db *postgres.DB) ITransformer {
 	transformer.StorageKeysLookup.SetDB(db)
 	transformer.Repository.SetDB(db)
-	return transformer
+	return &transformer
 }
 
-func (transformer Transformer) KeccakContractAddress() common.Hash {
-	return types.HexToKeccak256Hash(transformer.Address.Hex())
+func (transformer *Transformer) KeccakContractAddress() common.Hash {
+	emptyHash := common.Hash{}
+	if transformer.hashedAddress == emptyHash {
+		transformer.hashedAddress = types.HexToKeccak256Hash(transformer.Address.Hex())
+		return transformer.hashedAddress
+	}
+
+	return transformer.hashedAddress
 }
 
 func (transformer Transformer) Execute(diff types.PersistedDiff) error {

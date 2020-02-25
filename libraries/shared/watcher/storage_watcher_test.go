@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
@@ -40,7 +40,7 @@ var _ = Describe("Storage Watcher", func() {
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
 			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), time.Nanosecond)
 
-			w.AddTransformers([]transformer.StorageTransformerInitializer{fakeTransformer.FakeTransformerInitializer})
+			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
 			Expect(w.KeccakAddressTransformers[fakeHashedAddress]).To(Equal(fakeTransformer))
 		})
@@ -59,7 +59,7 @@ var _ = Describe("Storage Watcher", func() {
 			storageWatcher = watcher.StorageWatcher{
 				HeaderRepository:          mockHeaderRepository,
 				StorageDiffRepository:     mockDiffsRepository,
-				KeccakAddressTransformers: map[common.Hash]transformer.StorageTransformer{},
+				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 				RetryInterval:             time.Nanosecond,
 			}
 
@@ -91,7 +91,7 @@ var _ = Describe("Storage Watcher", func() {
 			BeforeEach(func() {
 				hashedAddress = types.HexToKeccak256Hash("0x" + fakes.RandomString(20))
 				mockTransformer = &mocks.MockStorageTransformer{KeccakOfAddress: hashedAddress}
-				storageWatcher.AddTransformers([]transformer.StorageTransformerInitializer{mockTransformer.FakeTransformerInitializer})
+				storageWatcher.AddTransformers([]storage.TransformerInitializer{mockTransformer.FakeTransformerInitializer})
 			})
 
 			It("does not mark diff checked if no matching header", func() {

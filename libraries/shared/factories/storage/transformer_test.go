@@ -45,12 +45,19 @@ var _ = Describe("Storage transformer", func() {
 		}
 	})
 
-	It("returns the contract address being watched", func() {
+	It("returns the keccaked contract address being watched", func() {
 		fakeAddress := fakes.FakeAddress
 		keccakOfAddress := types.HexToKeccak256Hash(fakeAddress.Hex())
 		t.Address = fakeAddress
 
 		Expect(t.KeccakContractAddress()).To(Equal(keccakOfAddress))
+	})
+
+	It("returns the contract address being watched", func() {
+		fakeAddress := fakes.FakeAddress
+		t.Address = fakeAddress
+
+		Expect(t.GetContractAddress()).To(Equal(fakeAddress))
 	})
 
 	It("looks up metadata for storage key", func() {

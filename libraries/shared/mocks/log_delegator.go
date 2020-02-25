@@ -17,17 +17,17 @@
 package mocks
 
 import (
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/logs"
-	"github.com/makerdao/vulcanizedb/libraries/shared/transformer"
 )
 
 type MockLogDelegator struct {
-	AddedTransformers []transformer.EventTransformer
+	AddedTransformers []event.ITransformer
 	DelegateCallCount int
 	DelegateErrors    []error
 }
 
-func (delegator *MockLogDelegator) AddTransformer(t transformer.EventTransformer) {
+func (delegator *MockLogDelegator) AddTransformer(t event.ITransformer) {
 	delegator.AddedTransformers = append(delegator.AddedTransformers, t)
 }
 
