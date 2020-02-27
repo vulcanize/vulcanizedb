@@ -10,7 +10,7 @@ CREATE TABLE public.headers
     eth_node_id     INTEGER     NOT NULL REFERENCES eth_nodes (id) ON DELETE CASCADE,
     created         TIMESTAMP   NOT NULL DEFAULT NOW(),
     updated         TIMESTAMP   NOT NULL DEFAULT NOW(),
-    UNIQUE (block_number, hash, eth_node_id)
+    UNIQUE (block_number, eth_node_id)
 );
 
 -- +goose StatementBegin
