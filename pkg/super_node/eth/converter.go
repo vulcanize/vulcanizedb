@@ -71,8 +71,8 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			return nil, err
 		}
 		txMeta := TxModel{
-			Dst:    handleNullAddr(trx.To()),
-			Src:    handleNullAddr(&from),
+			Dst:    shared.HandleNullAddr(trx.To()),
+			Src:    shared.HandleNullAddr(&from),
 			TxHash: trx.Hash().String(),
 			Index:  int64(i),
 		}
@@ -168,11 +168,4 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		}
 	}
 	return convertedPayload, nil
-}
-
-func handleNullAddr(to *common.Address) string {
-	if to == nil {
-		return "0x0000000000000000000000000000000000000000000000000000000000000000"
-	}
-	return to.Hex()
 }

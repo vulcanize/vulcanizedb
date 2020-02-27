@@ -51,6 +51,7 @@ func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload sh
 	}
 	if checkRange(ethFilters.Start.Int64(), ethFilters.End.Int64(), ethPayload.Block.Number().Int64()) {
 		response := new(IPLDs)
+		response.TotalDifficulty = ethPayload.TotalDifficulty
 		if err := s.filterHeaders(ethFilters.HeaderFilter, response, ethPayload); err != nil {
 			return IPLDs{}, err
 		}

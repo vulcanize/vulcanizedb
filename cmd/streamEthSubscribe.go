@@ -133,14 +133,14 @@ func streamEthSubscription() {
 			// This assumes leafs only
 			for _, stateNode := range ethData.StateNodes {
 				var acct state.Account
-				err = rlp.Decode(bytes.NewBuffer(stateNode.IPLD.Data), &acct)
+				err = rlp.DecodeBytes(stateNode.IPLD.Data, &acct)
 				if err != nil {
 					logWithCommand.Error(err)
 					continue
 				}
-				fmt.Printf("Account for key %s, and root %s, with balance %d\n",
-					stateNode.StateTrieKey.Hex(), acct.Root.Hex(), acct.Balance.Int64())
-				fmt.Printf("state account: %v\n", acct)
+				fmt.Printf("Account for key %s, and root %s, with balance %s\n",
+					stateNode.StateTrieKey.Hex(), acct.Root.Hex(), acct.Balance.String())
+				fmt.Printf("state account: %+v\n", acct)
 			}
 			for _, storageNode := range ethData.StorageNodes {
 				fmt.Printf("Storage for state key %s ", storageNode.StateTrieKey.Hex())

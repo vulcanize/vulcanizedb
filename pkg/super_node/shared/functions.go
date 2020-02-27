@@ -19,6 +19,8 @@ package shared
 import (
 	"bytes"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 
@@ -50,4 +52,12 @@ func ListContainsGap(gapList []Gap, gap Gap) bool {
 		}
 	}
 	return false
+}
+
+// HandleNullAddr converts a nil pointer to an address to a zero-valued hex address string
+func HandleNullAddr(to *common.Address) string {
+	if to == nil {
+		return "0x0000000000000000000000000000000000000000000000000000000000000000"
+	}
+	return to.Hex()
 }

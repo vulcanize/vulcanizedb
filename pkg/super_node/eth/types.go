@@ -78,13 +78,14 @@ type CIDWrapper struct {
 // IPLDs is used to package raw IPLD block data fetched from IPFS and returned by the server
 // Returned by IPLDFetcher and ResponseFilterer
 type IPLDs struct {
-	BlockNumber  *big.Int
-	Header       ipfs.BlockModel
-	Uncles       []ipfs.BlockModel
-	Transactions []ipfs.BlockModel
-	Receipts     []ipfs.BlockModel
-	StateNodes   []StateNode
-	StorageNodes []StorageNode
+	BlockNumber     *big.Int
+	TotalDifficulty *big.Int
+	Header          ipfs.BlockModel
+	Uncles          []ipfs.BlockModel
+	Transactions    []ipfs.BlockModel
+	Receipts        []ipfs.BlockModel
+	StateNodes      []StateNode
+	StorageNodes    []StorageNode
 }
 
 // Height satisfies the StreamedIPLDs interface

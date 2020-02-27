@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ipfs/go-block-format"
@@ -58,9 +59,13 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
 	}
 	log.Debug("fetching iplds")
-	iplds := IPLDs{}
-	iplds.BlockNumber = cidWrapper.BlockNumber
 	var err error
+	iplds := IPLDs{}
+	iplds.TotalDifficulty, ok = new(big.Int).SetString(cidWrapper.Header.TotalDifficulty, 10)
+	if !ok {
+		return nil, errors.New("eth fetcher: unable to set total difficulty")
+	}
+	iplds.BlockNumber = cidWrapper.BlockNumber
 	iplds.Header, err = f.FetchHeader(cidWrapper.Header)
 	if err != nil {
 		return nil, err

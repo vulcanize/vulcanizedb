@@ -64,7 +64,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	if err != nil {
 		return nil, err
 	}
-	reward := common2.CalcEthBlockReward(ipldPayload.Block, ipldPayload.Receipts)
+	reward := common2.CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
 	header := HeaderModel{
 		CID:             headerCid,
 		ParentHash:      ipldPayload.Block.ParentHash().String(),

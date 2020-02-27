@@ -41,8 +41,8 @@ type ConvertedPayload struct {
 }
 
 // Height satisfies the StreamedIPLDs interface
-func (i ConvertedPayload) Height() int64 {
-	return i.BlockPayload.BlockHeight
+func (cp ConvertedPayload) Height() int64 {
+	return cp.BlockPayload.BlockHeight
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres

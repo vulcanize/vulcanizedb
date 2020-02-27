@@ -51,7 +51,8 @@ var (
 	mockCIDWrapper    = &eth.CIDWrapper{
 		BlockNumber: big.NewInt(9000),
 		Header: eth.HeaderModel{
-			CID: mockHeaderBlock.Cid().String(),
+			TotalDifficulty: "1337",
+			CID:             mockHeaderBlock.Cid().String(),
 		},
 		Uncles: []eth.UncleModel{
 			{
@@ -104,6 +105,7 @@ var _ = Describe("Fetcher", func() {
 			Expect(err).ToNot(HaveOccurred())
 			iplds, ok := i.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
+			Expect(iplds.TotalDifficulty).To(Equal(big.NewInt(1337)))
 			Expect(iplds.BlockNumber).To(Equal(mockCIDWrapper.BlockNumber))
 			Expect(iplds.Header).To(Equal(ipfs.BlockModel{
 				Data: mockHeaderBlock.RawData(),

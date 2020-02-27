@@ -17,20 +17,25 @@
 package eth
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"io/ioutil"
+
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/sirupsen/logrus"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/watcher/shared"
 )
 
 var (
-	vacuumThreshold int64 = 5000 // dont know how to decided what this should be set to
+	vacuumThreshold int64 = 5000
 )
 
 // Repository is the underlying struct for satisfying the shared.Repository interface for eth
 type Repository struct {
+	cidIndexer       *eth.CIDIndexer
+	converter        *WatcherConverter
 	db               *postgres.DB
 	triggerFunctions []string
 	deleteCalls      int64
@@ -39,6 +44,8 @@ type Repository struct {
 // NewRepository returns a new eth.Repository that satisfies the shared.Repository interface
 func NewRepository(db *postgres.DB, triggerFunctions []string) shared.Repository {
 	return &Repository{
+		cidIndexer:       eth.NewCIDIndexer(db),
+		converter:        NewWatcherConverter(params.MainnetChainConfig),
 		db:               db,
 		triggerFunctions: triggerFunctions,
 		deleteCalls:      0,
@@ -46,9 +53,25 @@ func NewRepository(db *postgres.DB, triggerFunctions []string) shared.Repository
 }
 
 // LoadTriggers is used to initialize Postgres trigger function
-// this needs to be called after the wasm functions these triggers invoke have been instantiated
+// this needs to be called after the wasm functions these triggers invoke have been instantiated in Postgres
 func (r *Repository) LoadTriggers() error {
-	panic("implement me")
+	// TODO: enable loading of triggers from IPFS
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	for _, funcPath := range r.triggerFunctions {
+		sqlFile, err := ioutil.ReadFile(funcPath)
+		if err != nil {
+			return err
+		}
+		sqlString := string(sqlFile)
+		if _, err := tx.Exec(sqlString); err != nil {
+			return err
+		}
+
+	}
+	return tx.Commit()
 }
 
 // QueueData puts super node payload data into the db queue
@@ -59,14 +82,14 @@ func (r *Repository) QueueData(payload super_node.SubscriptionPayload) error {
 	return err
 }
 
-// GetQueueData grabs a chunk super node payload data from the queue table so that it can
-// be forwarded to the ready table
-// this is used to make sure we enter data into the ready table in sequential order
+// GetQueueData grabs payload data from the queue table so that it can
+// be forwarded to the ready tables
+// this is used to make sure we enter data into the tables that triggers act on in sequential order
 // even if we receive data out-of-order
 // it returns the new index
 // delete the data it retrieves so as to clear the queue
+// periodically vacuum's the table to free up space from the deleted rows
 func (r *Repository) GetQueueData(height int64) (super_node.SubscriptionPayload, int64, error) {
-	r.deleteCalls++
 	pgStr := `DELETE FROM eth.queued_data
 			WHERE height = $1
 			RETURNING *`
@@ -74,13 +97,15 @@ func (r *Repository) GetQueueData(height int64) (super_node.SubscriptionPayload,
 	if err := r.db.Get(&res, pgStr, height); err != nil {
 		return super_node.SubscriptionPayload{}, height, err
 	}
+	// If the delete get query succeeded, increment deleteCalls and height and prep payload to return
+	r.deleteCalls++
+	height++
 	payload := super_node.SubscriptionPayload{
 		Data:   res.Data,
 		Height: res.Height,
 		Flag:   super_node.EmptyFlag,
 	}
-	height++
-	// Periodically clean up space in the queue table
+	// Periodically clean up space in the queued data table
 	if r.deleteCalls >= vacuumThreshold {
 		_, err := r.db.Exec(`VACUUM ANALYZE eth.queued_data`)
 		if err != nil {
@@ -91,31 +116,77 @@ func (r *Repository) GetQueueData(height int64) (super_node.SubscriptionPayload,
 	return payload, height, nil
 }
 
-// ReadyData puts super node payload data in the tables ready for processing by trigger functions
+// ReadyData puts data in the tables ready for processing by trigger functions
 func (r *Repository) ReadyData(payload super_node.SubscriptionPayload) error {
-	panic("implement me")
+	var ethIPLDs eth.IPLDs
+	if err := rlp.DecodeBytes(payload.Data, &ethIPLDs); err != nil {
+		return err
+	}
+	if err := r.readyIPLDs(ethIPLDs); err != nil {
+		return err
+	}
+	cids, err := r.converter.Convert(ethIPLDs)
+	if err != nil {
+		return err
+	}
+	// Use indexer to persist all of the cid meta data
+	// trigger functions will act on these tables
+	return r.cidIndexer.Index(cids)
 }
 
-func (r *Repository) readyHeader(header *types.Header) error {
-	panic("implement me")
-}
-
-func (r *Repository) readyUncle(uncle *types.Header) error {
-	panic("implement me")
-}
-
-func (r *Repository) readyTxs(transactions types.Transactions) error {
-	panic("implement me")
-}
-
-func (r *Repository) readyRcts(receipts types.Receipts) error {
-	panic("implement me")
-}
-
-func (r *Repository) readyState(stateNodes map[common.Address][]byte) error {
-	panic("implement me")
-}
-
-func (r *Repository) readyStorage(storageNodes map[common.Address]map[common.Address][]byte) error {
-	panic("implement me")
+// readyIPLDs adds IPLDs directly to the Postgres `blocks` table, rather than going through an IPFS node
+func (r *Repository) readyIPLDs(ethIPLDs eth.IPLDs) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	pgStr := `INSERT INTO blocks (key, data) VALUES ($1, $2) 
+			ON CONFLICT (key) DO UPDATE SET (data) = ($2)`
+	if _, err := tx.Exec(pgStr, ethIPLDs.Header.CID, ethIPLDs.Header.Data); err != nil {
+		if err := tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+		return err
+	}
+	for _, uncle := range ethIPLDs.Uncles {
+		if _, err := tx.Exec(pgStr, uncle.CID, uncle.Data); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
+			return err
+		}
+	}
+	for _, trx := range ethIPLDs.Transactions {
+		if _, err := tx.Exec(pgStr, trx.CID, trx.Data); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
+			return err
+		}
+	}
+	for _, rct := range ethIPLDs.Receipts {
+		if _, err := tx.Exec(pgStr, rct.CID, rct.Data); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
+			return err
+		}
+	}
+	for _, state := range ethIPLDs.StateNodes {
+		if _, err := tx.Exec(pgStr, state.IPLD.CID, state.IPLD.Data); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
+			return err
+		}
+	}
+	for _, storage := range ethIPLDs.StorageNodes {
+		if _, err := tx.Exec(pgStr, storage.IPLD.CID, storage.IPLD.Data); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
+			return err
+		}
+	}
+	return nil
 }

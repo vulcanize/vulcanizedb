@@ -53,10 +53,8 @@ type Service struct {
 	QuitChan    chan bool
 
 	// Indexes
-	// use atomic operations on these ONLY
 	payloadIndex *int64
-	endingIndex  *int64
-	backFilling  *int32 // 0 => not backfilling; 1 => backfilling
+	endingIndex  int64
 }
 
 // NewWatcher returns a new Service which satisfies the Watcher interface
@@ -100,13 +98,7 @@ func (s *Service) Watch(wg *sync.WaitGroup) error {
 		return err
 	}
 	atomic.StoreInt64(s.payloadIndex, s.WatcherConfig.SubscriptionConfig.StartingBlock().Int64())
-	atomic.StoreInt64(s.endingIndex, s.WatcherConfig.SubscriptionConfig.EndingBlock().Int64()) // less than 0 => never end
-	backFilling := s.WatcherConfig.SubscriptionConfig.HistoricalData()
-	if backFilling {
-		atomic.StoreInt32(s.backFilling, 1)
-	} else {
-		atomic.StoreInt32(s.backFilling, 0)
-	}
+	s.endingIndex = s.WatcherConfig.SubscriptionConfig.EndingBlock().Int64() // less than 0 => never end
 	backFillOnly := s.WatcherConfig.SubscriptionConfig.HistoricalDataOnly()
 	if backFillOnly { // we are only processing historical data => handle single contiguous stream
 		s.backFillOnlyQueuing(wg, sub)
@@ -123,7 +115,7 @@ func (s *Service) Watch(wg *sync.WaitGroup) error {
 // NOTE: maybe we should push everything to the wait queue, otherwise the index could be shifted as we retrieve data from it
 func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscription) {
 	wg.Add(1)
-	// this goroutine is responsible for allocating incoming data to the ready or wait queue
+	// This goroutine is responsible for allocating incoming data to the ready or wait queue
 	// depending on if it is at the current index or not
 	forwardQuit := make(chan bool)
 	go func() {
@@ -141,8 +133,14 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 					if err := s.Repository.ReadyData(payload); err != nil {
 						logrus.Error(err)
 					}
-					atomic.AddInt64(s.payloadIndex, 1)
-				} else { // otherwise add it to the wait queue
+					// Increment the current index and if we have exceeded our ending height shut down the watcher
+					if atomic.AddInt64(s.payloadIndex, 1) > s.endingIndex {
+						logrus.Info("Watcher has reached ending block height, shutting down")
+						forwardQuit <- true
+						wg.Done()
+						return
+					}
+				} else { // Otherwise add it to the wait queue
 					if err := s.Repository.QueueData(payload); err != nil {
 						logrus.Error(err)
 					}
@@ -158,27 +156,29 @@ func (s *Service) combinedQueuing(wg *sync.WaitGroup, sub *rpc.ClientSubscriptio
 		}
 	}()
 	ticker := time.NewTicker(5 * time.Second)
-	// this goroutine is responsible for moving data from the wait queue to the ready queue
+	// This goroutine is responsible for moving data from the wait queue to the ready queue
 	// preserving the correct order and alignment with the current index
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				// retrieve queued data, in order, and forward it to the ready queue
-				index := atomic.LoadInt64(s.payloadIndex)
-				queueData, newIndex, err := s.Repository.GetQueueData(index)
+				// Retrieve queued data, in order, and forward it to the ready queue
+				queueData, newIndex, err := s.Repository.GetQueueData(atomic.LoadInt64(s.payloadIndex))
 				if err != nil {
 					logrus.Error(err)
 					continue
 				}
 				atomic.StoreInt64(s.payloadIndex, newIndex)
+				if atomic.LoadInt64(s.payloadIndex) > s.endingIndex {
+					s.QuitChan <- true
+				}
 				if err := s.Repository.ReadyData(queueData); err != nil {
 					logrus.Error(err)
 				}
 			case <-forwardQuit:
 				return
 			default:
-				// do nothing, wait til next tick
+				// Do nothing, wait til next tick
 			}
 		}
 	}()

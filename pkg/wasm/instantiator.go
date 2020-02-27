@@ -41,6 +41,7 @@ func NewWASMInstantiator(db *postgres.DB, instances []WasmFunction) *Instantiato
 
 // Instantiate is used to load the WASM functions into Postgres
 func (i *Instantiator) Instantiate() error {
+	// TODO: enable instantiation of WASM functions from IPFS
 	tx, err := i.db.Beginx()
 	if err != nil {
 		return err

@@ -76,10 +76,10 @@ func staticRewardByBlockNumber(blockNumber int64) *big.Int {
 	return staticBlockReward
 }
 
-func CalcEthBlockReward(block *types.Block, receipts types.Receipts) *big.Int {
-	staticBlockReward := staticRewardByBlockNumber(block.Number().Int64())
-	transactionFees := calcEthTransactionFees(block, receipts)
-	uncleInclusionRewards := calcEthUncleInclusionRewards(block, block.Uncles())
+func CalcEthBlockReward(header *types.Header, uncles []*types.Header, txs types.Transactions, receipts types.Receipts) *big.Int {
+	staticBlockReward := staticRewardByBlockNumber(header.Number.Int64())
+	transactionFees := calcEthTransactionFees(txs, receipts)
+	uncleInclusionRewards := calcEthUncleInclusionRewards(header, uncles)
 	tmp := transactionFees.Add(transactionFees, uncleInclusionRewards)
 	return tmp.Add(tmp, staticBlockReward)
 }
@@ -94,9 +94,9 @@ func CalcUncleMinerReward(blockNumber, uncleBlockNumber int64) *big.Int {
 	return rewardDiv8.Mul(rewardDiv8, uncleBlockPlus8MinusMainBlock)
 }
 
-func calcEthTransactionFees(block *types.Block, receipts types.Receipts) *big.Int {
+func calcEthTransactionFees(txs types.Transactions, receipts types.Receipts) *big.Int {
 	transactionFees := new(big.Int)
-	for i, transaction := range block.Transactions() {
+	for i, transaction := range txs {
 		receipt := receipts[i]
 		gasPrice := big.NewInt(transaction.GasPrice().Int64())
 		gasUsed := big.NewInt(int64(receipt.GasUsed))
@@ -106,10 +106,10 @@ func calcEthTransactionFees(block *types.Block, receipts types.Receipts) *big.In
 	return transactionFees
 }
 
-func calcEthUncleInclusionRewards(block *types.Block, uncles []*types.Header) *big.Int {
+func calcEthUncleInclusionRewards(header *types.Header, uncles []*types.Header) *big.Int {
 	uncleInclusionRewards := new(big.Int)
 	for range uncles {
-		staticBlockReward := staticRewardByBlockNumber(block.Number().Int64())
+		staticBlockReward := staticRewardByBlockNumber(header.Number.Int64())
 		staticBlockReward.Div(staticBlockReward, big.NewInt(32))
 		uncleInclusionRewards.Add(uncleInclusionRewards, staticBlockReward)
 	}
