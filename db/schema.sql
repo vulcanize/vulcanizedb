@@ -524,11 +524,11 @@ ALTER TABLE ONLY public.goose_db_version
 
 
 --
--- Name: headers headers_block_number_hash_eth_node_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: headers headers_block_number_eth_node_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.headers
-    ADD CONSTRAINT headers_block_number_hash_eth_node_id_key UNIQUE (block_number, hash, eth_node_id);
+    ADD CONSTRAINT headers_block_number_eth_node_id_key UNIQUE (block_number, eth_node_id);
 
 
 --

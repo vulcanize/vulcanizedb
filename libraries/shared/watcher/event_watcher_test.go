@@ -18,6 +18,7 @@ package watcher_test
 
 import (
 	"errors"
+	"io"
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -121,6 +122,14 @@ var _ = Describe("Event Watcher", func() {
 
 		It("does not treat absence of unchecked headers as an unexpected error", func() {
 			extractor.ExtractLogsErrors = []error{logs.ErrNoUncheckedHeaders, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+		})
+
+		It("does not treat an io.ErrUnexpectedEOF error from the node as an unexpected error", func() {
+			extractor.ExtractLogsErrors = []error{io.ErrUnexpectedEOF, errExecuteClosed}
 
 			err := eventWatcher.Execute(constants.HeaderUnchecked)
 

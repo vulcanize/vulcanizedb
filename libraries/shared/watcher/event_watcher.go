@@ -17,6 +17,7 @@
 package watcher
 
 import (
+	"io"
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -92,14 +93,16 @@ func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecuti
 
 func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExecution, errs chan error, quitChan chan bool) {
 	call := func() error { return watcher.LogExtractor.ExtractLogs(recheckHeaders) }
-	watcher.withRetry(call, watcher.ExpectedExtractorError, "extracting", errs, quitChan)
+	// io.ErrUnexpectedEOF errors are sometimes returned from fetching logs at the head of the chain when fetching from an uncle or fork block
+	expectedErrors := []error{watcher.ExpectedExtractorError, io.ErrUnexpectedEOF}
+	watcher.withRetry(call, expectedErrors, "extracting", errs, quitChan)
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error, quitChan chan bool) {
-	watcher.withRetry(watcher.LogDelegator.DelegateLogs, watcher.ExpectedDelegatorError, "delegating", errs, quitChan)
+	watcher.withRetry(watcher.LogDelegator.DelegateLogs, []error{watcher.ExpectedDelegatorError}, "delegating", errs, quitChan)
 }
 
-func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, operation string, errs chan error, quitChan chan bool) {
+func (watcher *EventWatcher) withRetry(call func() error, expectedErrors []error, operation string, errs chan error, quitChan chan bool) {
 	defer close(errs)
 	consecutiveUnexpectedErrCount := 0
 	for {
@@ -111,9 +114,8 @@ func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, ope
 			if err == nil {
 				consecutiveUnexpectedErrCount = 0
 			} else {
-				if err != expectedErr {
+				if isUnexpectedError(err, expectedErrors) {
 					consecutiveUnexpectedErrCount++
-					logrus.Errorf("error %s logs: %s", operation, err.Error())
 					if consecutiveUnexpectedErrCount > watcher.MaxConsecutiveUnexpectedErrs {
 						errs <- err
 						return
@@ -123,4 +125,14 @@ func (watcher *EventWatcher) withRetry(call func() error, expectedErr error, ope
 			}
 		}
 	}
+}
+
+func isUnexpectedError(currentError error, expectedErrors []error) bool {
+	for _, expectedError := range expectedErrors {
+		if currentError == expectedError {
+			return false
+		}
+	}
+
+	return true
 }

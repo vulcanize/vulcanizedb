@@ -27,7 +27,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/makerdao/vulcanizedb/pkg/core"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/test_config"
 )
@@ -37,7 +36,7 @@ var _ = Describe("Block header repository", func() {
 		rawHeader []byte
 		err       error
 		timestamp string
-		db        *postgres.DB
+		db        = test_config.NewTestDB(test_config.NewTestNode())
 		repo      repositories.HeaderRepository
 		header    core.Header
 	)
@@ -46,8 +45,6 @@ var _ = Describe("Block header repository", func() {
 		rawHeader, err = json.Marshal(types.Header{})
 		Expect(err).NotTo(HaveOccurred())
 		timestamp = big.NewInt(123456789).String()
-
-		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		repo = repositories.NewHeaderRepository(db)
 		header = core.Header{
@@ -127,6 +124,27 @@ var _ = Describe("Block header repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbHeader.Hash).To(Equal(headerTwo.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(headerTwo.Raw))
+		})
+
+		It("does not duplicate headers with different hashes in concurrent inserts", func() {
+			_, err = repo.InternalInsertHeader(header)
+			Expect(err).NotTo(HaveOccurred())
+
+			headerTwo := core.Header{
+				BlockNumber: header.BlockNumber,
+				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
+				Raw:         rawHeader,
+				Timestamp:   timestamp,
+			}
+
+			_, err = repo.InternalInsertHeader(headerTwo)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+
+			var dbHeaders []core.Header
+			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(dbHeaders)).To(Equal(1))
 		})
 
 		It("does not replace header if node id is different", func() {
