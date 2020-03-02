@@ -1,0 +1,48 @@
+version: '3.2'
+
+services:
+  db:
+    image: postgres:10.12-alpine
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "vulcanize_public"
+      POSTGRES_PASSWORD: "password"
+    volumes:
+    - vulcanizedb_db_data:/var/lib/postgresql/data
+    expose:
+    - "5432"
+    ports:
+    - "127.0.0.1:8079:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  supernode:
+    depends_on:
+     - db
+    build:
+      context: ./../../
+      cache_from:
+        - alpine:latest
+        - golang:1.12.4
+      dockerfile: ./dockerfiles/super_node/Dockerfile
+      args:
+        CONFIG_FILE: ./environments/superNode.toml
+    environment:
+      IPFS_INIT: "true"
+      VDB_PG_NAME: "vulcanize_public"
+      VDB_PG_HOSTNAME: "db"
+      VDB_PG_PORT: 5432
+      VDB_PG_USER: "postgres"
+      VDB_PG_PASSWORD: "password"
+    ports:
+    - "127.0.0.1:8080:8080"
+    - "127.0.0.1:8081:8081"
+    - "127.0.0.1:8082:8082"
+    - "127.0.0.1:8083:8083"
+
+volumes:
+  vulcanizedb_db_data:
+

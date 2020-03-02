@@ -45,14 +45,10 @@ fi
 
 # If IPFS initialization was successful
 if [[ $? -eq 0 ]]; then
-    # Wait until block synchronisation has begun
-    echo "Waiting for block synchronization to begin"
-    ( tail -f -n0 log.txt & ) | grep -q "Block synchronisation started" # this blocks til we see "Block synchronisation started"
-    # And then spin up the syncPublishScreenAndServe Vulcanizedb service
-    echo "Beginning the syncPublishScreenAndServe vulcanizedb process"
-    ./vulcanizedb superNode --config=config.toml 2>&1 | tee -a log.txt &
+    echo "Beginning the vulcanizedb super node process"
+    ./vulcanizedb superNode --config=config.toml 2>&1 | tee -a vulcanizedb.log &
 else
-    echo "Could not initialize state-diffing Geth."
+    echo "Could not initialize IPFS."
     exit
 fi
 
@@ -64,4 +60,4 @@ else
     exit
 fi
 
-wait
+tail -f vulcanizedb.log
