@@ -56,6 +56,6 @@ func getStorageAt(blockNumber int64) error {
 		return fmt.Errorf("SubCommand %v: no storage transformers found in the given config", SubCommand)
 	}
 
-	loader := backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, blockNumber)
+	loader := backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, blockNumber, blockNumber)
 	return loader.Run()
 }

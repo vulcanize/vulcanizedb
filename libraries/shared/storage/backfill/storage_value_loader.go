@@ -16,14 +16,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, blockNumber int64) StorageValueLoader {
+func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, startingBlock, endingBlock int64) StorageValueLoader {
 	return StorageValueLoader{
 		bc:              bc,
 		db:              db,
 		HeaderRepo:      repositories.NewHeaderRepository(db),
 		StorageDiffRepo: storage2.NewDiffRepository(db),
 		initializers:    initializers,
-		blockNumber:     blockNumber,
+		startingBlock:   startingBlock,
+		endingBlock:     endingBlock,
 	}
 }
 
@@ -33,7 +34,8 @@ type StorageValueLoader struct {
 	HeaderRepo      datastore.HeaderRepository
 	StorageDiffRepo storage2.DiffRepository
 	initializers    []storage.TransformerInitializer
-	blockNumber     int64
+	startingBlock   int64
+	endingBlock     int64
 }
 
 func (r *StorageValueLoader) Run() error {
@@ -41,24 +43,26 @@ func (r *StorageValueLoader) Run() error {
 	if getKeysErr != nil {
 		return getKeysErr
 	}
-	header, getHeaderErr := r.HeaderRepo.GetHeader(r.blockNumber)
-	if getHeaderErr != nil {
-		return getHeaderErr
+	headers, getHeadersErr := r.HeaderRepo.GetHeadersInRange(r.startingBlock, r.endingBlock)
+	if getHeadersErr != nil {
+		return getHeadersErr
 	}
 
-	for address, keys := range addressToKeys {
-		persistStorageErr := r.getAndPersistStorageValues(address, keys, r.blockNumber, header.Hash)
-		if persistStorageErr != nil {
-			return persistStorageErr
+	for _, header := range headers {
+		for address, keys := range addressToKeys {
+			persistStorageErr := r.getAndPersistStorageValues(address, keys, header.BlockNumber, header.Hash)
+			if persistStorageErr != nil {
+				return persistStorageErr
+			}
 		}
 	}
-	logrus.Infof("Persisted storage values for %v addresses.", len(addressToKeys))
+	logrus.Infof("Finished persisting storage values for %v addresses from block %v to %v.", len(addressToKeys), r.startingBlock, r.endingBlock)
 
 	return nil
 }
 
 func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash, error) {
-	addressToKeys := make(map[common.Address][]common.Hash)
+	addressToKeys := make(map[common.Address][]common.Hash, len(r.initializers))
 	for _, i := range r.initializers {
 		transformer := i(r.db)
 		keysLookup := transformer.GetStorageKeysLookup()
@@ -75,12 +79,13 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 }
 
 func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
-	logrus.Infof(
-		"Getting and persisting %v storage values. Address: %v HashedAddress: %v",
-		len(keys), address.Hex(), crypto.Keccak256Hash(address[:]).Hex())
 	blockNumberBigInt := big.NewInt(blockNumber)
 	keccakOfAddress := crypto.Keccak256Hash(address[:])
-	logrus.Infof("Getting and persisting %v storage keys for address: %v, keccak hash of address: %v", len(keys), address.Hex(), keccakOfAddress.Hex())
+	logrus.WithFields(logrus.Fields{
+		"Address":       address.Hex(),
+		"HashedAddress": keccakOfAddress.Hex(),
+		"BlockNumber":   blockNumber,
+	}).Infof("Getting and persisting %v storage values", len(keys))
 	for _, key := range keys {
 		value, getStorageErr := r.bc.GetStorageAt(address, key, blockNumberBigInt)
 		if getStorageErr != nil {

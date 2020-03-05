@@ -373,6 +373,38 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
+	Describe("Getting headers in range", func() {
+		var blockTwo int64
+
+		BeforeEach(func() {
+			_, headerErrOne := repo.CreateOrUpdateHeader(header)
+			Expect(headerErrOne).NotTo(HaveOccurred())
+			blockTwo = header.BlockNumber + 1
+			headerTwo := core.Header{
+				BlockNumber: blockTwo,
+				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
+				Raw:         rawHeader,
+				Timestamp:   header.Timestamp,
+			}
+			_, headerErrTwo := repo.CreateOrUpdateHeader(headerTwo)
+			Expect(headerErrTwo).NotTo(HaveOccurred())
+		})
+
+		It("returns all headers in block range", func() {
+			dbHeaders, err := repo.GetHeadersInRange(header.BlockNumber, blockTwo)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(dbHeaders)).To(Equal(2))
+		})
+
+		It("does not return header outside of block range", func() {
+			dbHeaders, err := repo.GetHeadersInRange(header.BlockNumber, header.BlockNumber)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(dbHeaders)).To(Equal(1))
+		})
+	})
+
 	Describe("Getting missing headers", func() {
 		It("returns block numbers for headers not in the database", func() {
 			_, createOneErr := repo.CreateOrUpdateHeader(fakes.GetFakeHeader(1))

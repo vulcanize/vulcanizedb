@@ -41,6 +41,7 @@ type HeaderRepository interface {
 	CreateOrUpdateHeader(header core.Header) (int64, error)
 	CreateTransactions(headerID int64, transactions []core.TransactionModel) error
 	GetHeader(blockNumber int64) (core.Header, error)
+	GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error)
 }
 

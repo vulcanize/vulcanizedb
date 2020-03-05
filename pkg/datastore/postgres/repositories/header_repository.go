@@ -82,6 +82,13 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 	return header, err
 }
 
+func (repository HeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
+	var headers []core.Header
+	err := repository.database.Select(&headers, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number BETWEEN $1 AND $2 AND eth_node_id = $3`,
+		startingBlock, endingBlock, repository.database.NodeID)
+	return headers, err
+}
+
 func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	numbers := make([]int64, 0)
 	err := repository.database.Select(&numbers,
