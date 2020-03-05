@@ -383,7 +383,7 @@ var _ = Describe("Block header repository", func() {
 			headerTwo := core.Header{
 				BlockNumber: blockTwo,
 				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
-				Raw:         rawHeader,
+				Raw:         header.Raw,
 				Timestamp:   header.Timestamp,
 			}
 			_, headerErrTwo := repo.CreateOrUpdateHeader(headerTwo)

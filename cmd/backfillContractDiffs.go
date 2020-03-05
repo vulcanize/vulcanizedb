@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/backfill"
 	"github.com/makerdao/vulcanizedb/utils"
@@ -11,33 +12,35 @@ import (
 )
 
 var (
-	backfillContractDiffsAddress     string
-	backfillContractDiffsBlockNumber int64
-	backfillContractDiffsAddressFlag = "all-contract-values-address"
-	backfillContractDiffsBlockFlag   = "all-contract-values-block-number"
+	backfillContractDiffsAddress          string
+	backfillContractDiffsStartBlockNumber int64
+	backfillContractDiffsEndBlockNumber   int64
+	backfillContractDiffsAddressFlag      = "all-contract-values-address"
+	backfillContractDiffsStartBlockFlag   = "all-contract-values-start-block"
+	backfillContractDiffsEndBlockFlag     = "all-contract-values-end-block"
 )
 
 var backfillContractDiffsCmd = &cobra.Command{
 	Use:   "backfillContractDiffs",
-	Short: "Backfills all diffs for the given contract starting at the given block.",
-	Long: fmt.Sprintf(`Backfills diffs belonging to the given contract starting at the given block.
+	Short: "Backfills all diffs for the given contract, starting at the given start-block, and optionally ending at the given end-block.",
+	Long: fmt.Sprintf(`Backfills all diffs for the given contract, starting at the given start-block, and optionally ending at the given end-block.
 
-Use: ./vulcanizedb backfillContractDiffs --config=<config.toml> --%s=<block number> --%s=<address>`, backfillContractDiffsBlockFlag, backfillContractDiffsAddressFlag),
+Use: ./vulcanizedb backfillContractDiffs --config=<config.toml> --%s=<address> --%s=<block number> [ --%s=<block number> ]`, backfillContractDiffsAddressFlag, backfillContractDiffsStartBlockFlag, backfillContractDiffsEndBlockFlag),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		SubCommand = cmd.CalledAs()
 		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
-		LogWithCommand.Infof("Backfilling diffs for contract %d", backfillContractDiffsBlockNumber)
+		LogWithCommand.Infof("Backfilling diffs for contract %v", backfillContractDiffsAddress)
 
 		if backfillContractDiffsAddress == "" {
 			return fmt.Errorf("SubCommand %v: %s argument is required and no value was given", SubCommand, backfillContractDiffsAddressFlag)
 		}
 
-		validationErr := validateBlockNumberArg(backfillContractDiffsBlockNumber, backfillContractDiffsBlockFlag)
+		validationErr := validateBlockNumberArg(backfillContractDiffsStartBlockNumber, backfillContractDiffsStartBlockFlag)
 		if validationErr != nil {
 			return validationErr
 		}
 
-		backfillDiffsErr := backfillContractDiffs(backfillContractDiffsAddress, backfillContractDiffsBlockNumber)
+		backfillDiffsErr := backfillContractDiffs(backfillContractDiffsAddress, backfillContractDiffsStartBlockNumber, backfillContractDiffsEndBlockNumber)
 		if backfillDiffsErr != nil {
 			return fmt.Errorf("SubCommand %v: Failed to backfill diffs for contract %v. Err: %v", SubCommand, backfillContractDiffsAddress, backfillDiffsErr)
 		}
@@ -46,12 +49,13 @@ Use: ./vulcanizedb backfillContractDiffs --config=<config.toml> --%s=<block numb
 }
 
 func init() {
-	backfillContractDiffsCmd.Flags().StringP(backfillContractDiffsAddressFlag, "a", "", "address whose diffs will be backfilled")
-	backfillContractDiffsCmd.Flags().Int64VarP(&backfillContractDiffsBlockNumber, backfillContractDiffsBlockFlag, "b", -1, "block number at which to start backfilling diffs for the given contract")
+	backfillContractDiffsCmd.Flags().StringVarP(&backfillContractDiffsAddress, backfillContractDiffsAddressFlag, "a", "", "address whose diffs will be backfilled")
+	backfillContractDiffsCmd.Flags().Int64VarP(&backfillContractDiffsStartBlockNumber, backfillContractDiffsStartBlockFlag, "s", -1, "block number at which to start backfilling diffs for the given contract")
+	backfillContractDiffsCmd.Flags().Int64VarP(&backfillContractDiffsEndBlockNumber, backfillContractDiffsEndBlockFlag, "e", -1, "optional block number at which to stop backfilling diffs for the given contract (defaults to latest block)")
 	rootCmd.AddCommand(backfillContractDiffsCmd)
 }
 
-func backfillContractDiffs(address string, startingBlock int64) error {
+func backfillContractDiffs(address string, startingBlock, endingBlock int64) error {
 	blockChain := getBlockChain()
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 	_, storageInitializers, _, exportTransformersErr := exportTransformers()
@@ -63,9 +67,12 @@ func backfillContractDiffs(address string, startingBlock int64) error {
 		return fmt.Errorf("SubCommand %v: no storage transformers found in the given config", SubCommand)
 	}
 
-	latestBlock, latestBlockErr := blockChain.LastBlock()
-	if latestBlockErr != nil {
-		return fmt.Errorf("SubCommand %v: error getting latest block: %v", SubCommand, latestBlockErr)
+	if endingBlock == -1 {
+		latestBlock, latestBlockErr := blockChain.LastBlock()
+		if latestBlockErr != nil {
+			return fmt.Errorf("SubCommand %v: error getting latest block: %v", SubCommand, latestBlockErr)
+		}
+		endingBlock = latestBlock.Int64()
 	}
 
 	filteredInitializers, filterErr := filterByAddress(address, storageInitializers)
@@ -73,13 +80,13 @@ func backfillContractDiffs(address string, startingBlock int64) error {
 		return filterErr
 	}
 
-	loader := backfill.NewStorageValueLoader(blockChain, &db, filteredInitializers, startingBlock, latestBlock.Int64())
+	loader := backfill.NewStorageValueLoader(blockChain, &db, filteredInitializers, startingBlock, endingBlock)
 	return loader.Run()
 }
 
 func filterByAddress(address string, initializers []storage.TransformerInitializer) ([]storage.TransformerInitializer, error) {
 	for _, initializer := range initializers {
-		if initializer(nil).GetContractAddress().Hex() == address {
+		if initializer(nil).GetContractAddress() == common.HexToAddress(address) {
 			return []storage.TransformerInitializer{initializer}, nil
 		}
 	}
