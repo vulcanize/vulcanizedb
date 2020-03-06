@@ -156,29 +156,29 @@ var _ = Describe("Checked Headers repository", func() {
 
 	Describe("UncheckedHeaders", func() {
 		var (
-			headerRepository      datastore.HeaderRepository
-			startingBlockNumber   int64
-			endingBlockNumber     int64
-			endingBlockNumberID   int64
-			middleBlockNumber     int64
-			middleBlockNumberID   int64
-			outOfRangeBlockNumber int64
-			blockNumbers          []int64
-			headerIDs             []int64
-			err                   error
-			uncheckedCheckCount   = int64(1)
-			recheckCheckCount     = int64(2)
+			headerRepository datastore.HeaderRepository
+			firstBlock,
+			secondBlock,
+			thirdBlock,
+			lastBlock,
+			secondHeaderID,
+			thirdHeaderID int64
+			blockNumbers        []int64
+			headerIDs           []int64
+			err                 error
+			uncheckedCheckCount = int64(1)
+			recheckCheckCount   = int64(2)
 		)
 
 		BeforeEach(func() {
 			headerRepository = repositories.NewHeaderRepository(db)
 
-			startingBlockNumber = rand.Int63()
-			middleBlockNumber = startingBlockNumber + 10
-			endingBlockNumber = startingBlockNumber + 20
-			outOfRangeBlockNumber = startingBlockNumber + 30
+			lastBlock = rand.Int63()
+			thirdBlock = lastBlock - 15
+			secondBlock = lastBlock - (15 + 30)
+			firstBlock = lastBlock - (15 + 30 + 45)
 
-			blockNumbers = []int64{startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber}
+			blockNumbers = []int64{firstBlock, secondBlock, thirdBlock, lastBlock}
 
 			headerIDs = []int64{}
 			for _, n := range blockNumbers {
@@ -186,53 +186,81 @@ var _ = Describe("Checked Headers repository", func() {
 				headerIDs = append(headerIDs, headerID)
 				Expect(err).NotTo(HaveOccurred())
 			}
-			middleBlockNumberID = headerIDs[1]
-			endingBlockNumberID = headerIDs[2]
+			secondHeaderID = headerIDs[1]
+			thirdHeaderID = headerIDs[2]
 		})
 
 		Describe("when ending block is specified", func() {
 			It("excludes headers that are out of range", func() {
-				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, thirdBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
-				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
-				Expect(headerBlockNumbers).NotTo(ContainElement(outOfRangeBlockNumber))
+				Expect(headerBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock))
+				Expect(headerBlockNumbers).NotTo(ContainElement(lastBlock))
 			})
 
 			It("excludes headers that have been checked more than the check count", func() {
-				_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, middleBlockNumberID)
+				_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, secondHeaderID)
 				Expect(err).NotTo(HaveOccurred())
 
-				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, thirdBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
-				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, endingBlockNumber))
-				Expect(headerBlockNumbers).NotTo(ContainElement(middleBlockNumber))
+				Expect(headerBlockNumbers).To(ConsistOf(firstBlock, thirdBlock))
+				Expect(headerBlockNumbers).NotTo(ContainElement(secondBlock))
 			})
 
 			Describe("when header has already been checked", func() {
-				It("does not exclude header with block number > 15 back from latest", func() {
-					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, middleBlockNumberID)
+				It("includes header with block number > 15 back from latest with check count of 1", func() {
+					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, thirdHeaderID)
 					Expect(err).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, lastBlock, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
-					Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
+					Expect(headerBlockNumbers).To(ContainElement(thirdBlock))
 				})
 
-				It("excludes header with block number < 15 back from latest", func() {
-					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, endingBlockNumberID)
-					Expect(err).NotTo(HaveOccurred())
+				It("excludes header with block number < 15 back from latest with check count of 1", func() {
+					excludedHeader := fakes.GetFakeHeader(thirdBlock + 1)
+					excludedHeaderID, createHeaderErr := headerRepository.CreateOrUpdateHeader(excludedHeader)
+					Expect(createHeaderErr).NotTo(HaveOccurred())
+					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, excludedHeaderID)
+					Expect(updateHeaderErr).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, lastBlock, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
-					Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber))
+					Expect(headerBlockNumbers).NotTo(ContainElement(excludedHeader.BlockNumber))
+				})
+
+				It("includes header with block number > 45 back from latest with check count of 2", func() {
+					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, secondHeaderID)
+					Expect(err).NotTo(HaveOccurred())
+
+					headers, err := repo.UncheckedHeaders(firstBlock, lastBlock, recheckCheckCount)
+					Expect(err).NotTo(HaveOccurred())
+
+					headerBlockNumbers := getBlockNumbers(headers)
+					Expect(headerBlockNumbers).To(ContainElement(secondBlock))
+				})
+
+				It("excludes header with block number < 45 back from latest with check count of 2", func() {
+					excludedHeader := fakes.GetFakeHeader(secondBlock + 1)
+					excludedHeaderID, createHeaderErr := headerRepository.CreateOrUpdateHeader(excludedHeader)
+					Expect(createHeaderErr).NotTo(HaveOccurred())
+					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 2 WHERE id = $1`, excludedHeaderID)
+					Expect(updateHeaderErr).NotTo(HaveOccurred())
+
+					headers, err := repo.UncheckedHeaders(firstBlock, lastBlock, 3)
+					Expect(err).NotTo(HaveOccurred())
+
+					headerBlockNumbers := getBlockNumbers(headers)
+					Expect(headerBlockNumbers).NotTo(ContainElement(excludedHeader.BlockNumber))
 				})
 			})
 
@@ -245,15 +273,15 @@ var _ = Describe("Checked Headers repository", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				nodeOneMissingHeaders, err := repo.UncheckedHeaders(startingBlockNumber, endingBlockNumber, uncheckedCheckCount)
+				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, thirdBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeOneHeaderBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
-				Expect(nodeOneHeaderBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber))
+				Expect(nodeOneHeaderBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock))
 
-				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(startingBlockNumber, endingBlockNumber+10, uncheckedCheckCount)
+				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(firstBlock, thirdBlock+10, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeTwoHeaderBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
-				Expect(nodeTwoHeaderBlockNumbers).To(ConsistOf(startingBlockNumber+10, middleBlockNumber+10, endingBlockNumber+10))
+				Expect(nodeTwoHeaderBlockNumbers).To(ConsistOf(firstBlock+10, secondBlock+10, thirdBlock+10))
 			})
 		})
 
@@ -261,46 +289,74 @@ var _ = Describe("Checked Headers repository", func() {
 			var endingBlock = int64(-1)
 
 			It("includes all non-checked headers when ending block is -1 ", func() {
-				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
-				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
+				Expect(headerBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock, lastBlock))
 			})
 
 			It("excludes headers that have been checked more than the check count", func() {
 				_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, headerIDs[1])
 				Expect(err).NotTo(HaveOccurred())
 
-				headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
-				Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
-				Expect(headerBlockNumbers).NotTo(ContainElement(middleBlockNumber))
+				Expect(headerBlockNumbers).To(ConsistOf(firstBlock, thirdBlock, lastBlock))
+				Expect(headerBlockNumbers).NotTo(ContainElement(secondBlock))
 			})
 
 			Describe("when header has already been checked", func() {
-				It("does not exclude header with block number > 15 back from latest", func() {
-					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, middleBlockNumberID)
+				It("includes header with block number > 15 back from latest with check count of 1", func() {
+					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, thirdHeaderID)
 					Expect(err).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
-					Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
+					Expect(headerBlockNumbers).To(ContainElement(thirdBlock))
 				})
 
-				It("excludes header with block number < 15 back from latest", func() {
-					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, endingBlockNumberID)
-					Expect(err).NotTo(HaveOccurred())
+				It("excludes header with block number < 15 back from latest with check count of 1", func() {
+					excludedHeader := fakes.GetFakeHeader(thirdBlock + 1)
+					excludedHeaderID, createHeaderErr := headerRepository.CreateOrUpdateHeader(excludedHeader)
+					Expect(createHeaderErr).NotTo(HaveOccurred())
+					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, excludedHeaderID)
+					Expect(updateHeaderErr).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
-					Expect(headerBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, outOfRangeBlockNumber))
+					Expect(headerBlockNumbers).NotTo(ContainElement(excludedHeader.BlockNumber))
+				})
+
+				It("includes header with block number > 45 back from latest with check count of 2", func() {
+					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, secondHeaderID)
+					Expect(err).NotTo(HaveOccurred())
+
+					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
+					Expect(err).NotTo(HaveOccurred())
+
+					headerBlockNumbers := getBlockNumbers(headers)
+					Expect(headerBlockNumbers).To(ContainElement(secondBlock))
+				})
+
+				It("excludes header with block number < 45 back from latest with check count of 2", func() {
+					excludedHeader := fakes.GetFakeHeader(secondBlock + 1)
+					excludedHeaderID, createHeaderErr := headerRepository.CreateOrUpdateHeader(excludedHeader)
+					Expect(createHeaderErr).NotTo(HaveOccurred())
+					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 2 WHERE id = $1`, excludedHeaderID)
+					Expect(updateHeaderErr).NotTo(HaveOccurred())
+
+					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, 3)
+					Expect(err).NotTo(HaveOccurred())
+
+					headerBlockNumbers := getBlockNumbers(headers)
+					Expect(headerBlockNumbers).NotTo(ContainElement(excludedHeader.BlockNumber))
 				})
 			})
 
@@ -313,15 +369,15 @@ var _ = Describe("Checked Headers repository", func() {
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				nodeOneMissingHeaders, err := repo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
+				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeOneBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
-				Expect(nodeOneBlockNumbers).To(ConsistOf(startingBlockNumber, middleBlockNumber, endingBlockNumber, outOfRangeBlockNumber))
+				Expect(nodeOneBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock, lastBlock))
 
-				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(startingBlockNumber, endingBlock, uncheckedCheckCount)
+				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeTwoBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
-				Expect(nodeTwoBlockNumbers).To(ConsistOf(startingBlockNumber+10, middleBlockNumber+10, endingBlockNumber+10, outOfRangeBlockNumber+10))
+				Expect(nodeTwoBlockNumbers).To(ConsistOf(firstBlock+10, secondBlock+10, thirdBlock+10, lastBlock+10))
 			})
 		})
 	})

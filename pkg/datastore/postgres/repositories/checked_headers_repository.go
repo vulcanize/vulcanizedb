@@ -54,10 +54,10 @@ func (repo CheckedHeadersRepository) MarkSingleHeaderUnchecked(blockNumber int64
 // Return header if check_count  < passed checkCount
 func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endingBlockNumber, checkCount int64) ([]core.Header, error) {
 	var (
-		result        []core.Header
-		query         string
-		err           error
-		recheckOffset = 15
+		result                  []core.Header
+		query                   string
+		err                     error
+		recheckOffsetMultiplier = 15
 	)
 
 	if endingBlockNumber == -1 {
@@ -67,9 +67,9 @@ func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endin
 			           AND block_number >= $1
 			           AND eth_node_id = $3)
 			   OR (check_count < $2
-			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - $4)
+			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - ($4 * check_count * (check_count + 1) / 2))
 			           AND eth_node_id = $3)`
-		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.NodeID, recheckOffset)
+		err = repo.db.Select(&result, query, startingBlockNumber, checkCount, repo.db.NodeID, recheckOffsetMultiplier)
 	} else {
 		query = `SELECT id, block_number, hash
 			FROM public.headers
@@ -80,9 +80,9 @@ func (repo CheckedHeadersRepository) UncheckedHeaders(startingBlockNumber, endin
 			   OR (check_count < $3
 			           AND block_number >= $1
 			           AND block_number <= $2
-			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - $5)
+			           AND block_number <= ((SELECT MAX(block_number) FROM public.headers) - ($5 * (check_count * (check_count + 1) / 2)))
 			           AND eth_node_id = $4)`
-		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.NodeID, recheckOffset)
+		err = repo.db.Select(&result, query, startingBlockNumber, endingBlockNumber, checkCount, repo.db.NodeID, recheckOffsetMultiplier)
 	}
 
 	return result, err
