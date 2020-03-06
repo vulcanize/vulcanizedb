@@ -77,13 +77,12 @@ var _ = Describe("Block header repository", func() {
 			Expect(ethNodeId).To(Equal(db.NodeID))
 		})
 
-		It("returns valid header exists error if attempting duplicate headers", func() {
+		It("does not duplicate headers", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+			Expect(err).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
 			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
@@ -92,12 +91,11 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("does not duplicate headers in concurrent insert", func() {
-			_, err = repo.InternalInsertHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = repo.InternalInsertHeader(header)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+			_, err = repo.CreateOrUpdateHeader(header)
+			Expect(err).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
 			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
@@ -127,7 +125,7 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("does not duplicate headers with different hashes in concurrent inserts", func() {
-			_, err = repo.InternalInsertHeader(header)
+			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 
 			headerTwo := core.Header{
@@ -137,9 +135,8 @@ var _ = Describe("Block header repository", func() {
 				Timestamp:   timestamp,
 			}
 
-			_, err = repo.InternalInsertHeader(headerTwo)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(repositories.ErrValidHeaderExists))
+			_, err = repo.CreateOrUpdateHeader(headerTwo)
+			Expect(err).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
 			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
@@ -147,7 +144,7 @@ var _ = Describe("Block header repository", func() {
 			Expect(len(dbHeaders)).To(Equal(1))
 		})
 
-		It("does not replace header if node id is different", func() {
+		It("replaces header if hash is different (even from different node)", func() {
 			_, err = repo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
 			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
@@ -166,41 +163,8 @@ var _ = Describe("Block header repository", func() {
 			var dbHeaders []core.Header
 			err = dbTwo.Select(&dbHeaders, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(dbHeaders)).To(Equal(2))
-		})
-
-		It("only replaces header with matching node id", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
-
-			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
-
-			repoTwo := repositories.NewHeaderRepository(dbTwo)
-			headerTwo := core.Header{
-				BlockNumber: header.BlockNumber,
-				Hash:        common.BytesToHash([]byte{5, 4, 3, 2, 1}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
-			headerThree := core.Header{
-				BlockNumber: header.BlockNumber,
-				Hash:        common.BytesToHash([]byte{1, 1, 1, 1, 1}).Hex(),
-				Raw:         rawHeader,
-				Timestamp:   timestamp,
-			}
-
-			_, err = repoTwo.CreateOrUpdateHeader(headerThree)
-
-			Expect(err).NotTo(HaveOccurred())
-			var dbHeaders []core.Header
-			err = dbTwo.Select(&dbHeaders, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(dbHeaders)).To(Equal(2))
-			Expect(dbHeaders[0].Hash).To(Or(Equal(header.Hash), Equal(headerThree.Hash)))
-			Expect(dbHeaders[1].Hash).To(Or(Equal(header.Hash), Equal(headerThree.Hash)))
-			Expect(dbHeaders[0].Raw).To(Or(MatchJSON(header.Raw), MatchJSON(headerThree.Raw)))
-			Expect(dbHeaders[1].Raw).To(Or(MatchJSON(header.Raw), MatchJSON(headerThree.Raw)))
+			Expect(len(dbHeaders)).To(Equal(1))
+			Expect(dbHeaders[0].Hash).To(Equal(headerTwo.Hash))
 		})
 	})
 

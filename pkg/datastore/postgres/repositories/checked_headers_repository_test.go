@@ -264,7 +264,7 @@ var _ = Describe("Checked Headers repository", func() {
 				})
 			})
 
-			It("only returns headers associated with the current node", func() {
+			It("only returns headers associated with any node", func() {
 				dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 				headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 				repoTwo := repositories.NewCheckedHeadersRepository(dbTwo)
@@ -272,24 +272,23 @@ var _ = Describe("Checked Headers repository", func() {
 					_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n + 10))
 					Expect(err).NotTo(HaveOccurred())
 				}
+				allHeaders := []int64{firstBlock, firstBlock + 10, secondBlock, secondBlock + 10, thirdBlock, thirdBlock + 10}
 
-				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, thirdBlock, uncheckedCheckCount)
+				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, thirdBlock+10, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeOneHeaderBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
-				Expect(nodeOneHeaderBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock))
+				Expect(nodeOneHeaderBlockNumbers).To(ConsistOf(allHeaders))
 
 				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(firstBlock, thirdBlock+10, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeTwoHeaderBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
-				Expect(nodeTwoHeaderBlockNumbers).To(ConsistOf(firstBlock+10, secondBlock+10, thirdBlock+10))
+				Expect(nodeTwoHeaderBlockNumbers).To(ConsistOf(allHeaders))
 			})
 		})
 
 		Describe("when ending block is -1", func() {
-			var endingBlock = int64(-1)
-
 			It("includes all non-checked headers when ending block is -1 ", func() {
-				headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, -1, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
@@ -300,7 +299,7 @@ var _ = Describe("Checked Headers repository", func() {
 				_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, headerIDs[1])
 				Expect(err).NotTo(HaveOccurred())
 
-				headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
+				headers, err := repo.UncheckedHeaders(firstBlock, -1, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 
 				headerBlockNumbers := getBlockNumbers(headers)
@@ -313,7 +312,7 @@ var _ = Describe("Checked Headers repository", func() {
 					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, thirdHeaderID)
 					Expect(err).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, -1, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
@@ -327,7 +326,7 @@ var _ = Describe("Checked Headers repository", func() {
 					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, excludedHeaderID)
 					Expect(updateHeaderErr).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, -1, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
@@ -338,7 +337,7 @@ var _ = Describe("Checked Headers repository", func() {
 					_, err = db.Exec(`UPDATE public.headers SET check_count = 1 WHERE id = $1`, secondHeaderID)
 					Expect(err).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, recheckCheckCount)
+					headers, err := repo.UncheckedHeaders(firstBlock, -1, recheckCheckCount)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
@@ -352,7 +351,7 @@ var _ = Describe("Checked Headers repository", func() {
 					_, updateHeaderErr := db.Exec(`UPDATE public.headers SET check_count = 2 WHERE id = $1`, excludedHeaderID)
 					Expect(updateHeaderErr).NotTo(HaveOccurred())
 
-					headers, err := repo.UncheckedHeaders(firstBlock, endingBlock, 3)
+					headers, err := repo.UncheckedHeaders(firstBlock, -1, 3)
 					Expect(err).NotTo(HaveOccurred())
 
 					headerBlockNumbers := getBlockNumbers(headers)
@@ -360,7 +359,7 @@ var _ = Describe("Checked Headers repository", func() {
 				})
 			})
 
-			It("only returns headers associated with the current node", func() {
+			It("returns headers associated with any node", func() {
 				dbTwo := test_config.NewTestDB(core.Node{ID: "second"})
 				headerRepositoryTwo := repositories.NewHeaderRepository(dbTwo)
 				repoTwo := repositories.NewCheckedHeadersRepository(dbTwo)
@@ -368,16 +367,17 @@ var _ = Describe("Checked Headers repository", func() {
 					_, err = headerRepositoryTwo.CreateOrUpdateHeader(fakes.GetFakeHeader(n + 10))
 					Expect(err).NotTo(HaveOccurred())
 				}
+				allHeaders := []int64{firstBlock, firstBlock + 10, secondBlock, secondBlock + 10, thirdBlock, thirdBlock + 10, lastBlock, lastBlock + 10}
 
-				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
+				nodeOneMissingHeaders, err := repo.UncheckedHeaders(firstBlock, -1, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeOneBlockNumbers := getBlockNumbers(nodeOneMissingHeaders)
-				Expect(nodeOneBlockNumbers).To(ConsistOf(firstBlock, secondBlock, thirdBlock, lastBlock))
+				Expect(nodeOneBlockNumbers).To(ConsistOf(allHeaders))
 
-				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(firstBlock, endingBlock, uncheckedCheckCount)
+				nodeTwoMissingHeaders, err := repoTwo.UncheckedHeaders(firstBlock, -1, uncheckedCheckCount)
 				Expect(err).NotTo(HaveOccurred())
 				nodeTwoBlockNumbers := getBlockNumbers(nodeTwoMissingHeaders)
-				Expect(nodeTwoBlockNumbers).To(ConsistOf(firstBlock+10, secondBlock+10, thirdBlock+10, lastBlock+10))
+				Expect(nodeTwoBlockNumbers).To(ConsistOf(allHeaders))
 			})
 		})
 	})
