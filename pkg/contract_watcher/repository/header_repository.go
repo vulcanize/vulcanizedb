@@ -171,18 +171,16 @@ func (r *headerRepository) MissingHeaders(startingBlockNumber, endingBlockNumber
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
-				AND headers.eth_node_id = $2
 				ORDER BY headers.block_number`
-		err = r.db.Select(&result, query, startingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber)
 	} else {
 		query = `SELECT headers.id, headers.block_number, headers.hash FROM headers
 				LEFT JOIN checked_headers on headers.id = header_id
 				WHERE (header_id ISNULL OR checked_headers.` + id + `=0)
 				AND headers.block_number >= $1
 				AND headers.block_number <= $2
-				AND headers.eth_node_id = $3
 				ORDER BY headers.block_number`
-		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber)
 	}
 	return continuousHeaders(result), err
 }
@@ -200,17 +198,15 @@ func (r *headerRepository) MissingHeadersForAll(startingBlockNumber, endingBlock
 	}
 	if endingBlockNumber == -1 {
 		endStr := `) AND headers.block_number >= $1
-				  AND headers.eth_node_id = $2
 				  ORDER BY headers.block_number`
 		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber)
 	} else {
 		endStr := `) AND headers.block_number >= $1
 				  AND headers.block_number <= $2
-				  AND headers.eth_node_id = $3
 				  ORDER BY headers.block_number`
 		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber)
 	}
 	return continuousHeaders(result), err
 }
@@ -233,17 +229,15 @@ func (r *headerRepository) MissingMethodsCheckedEventsIntersection(startingBlock
 	baseQuery = baseQuery[:len(baseQuery)-5] + `) `
 	if endingBlockNumber == -1 {
 		endStr := `AND headers.block_number >= $1
-				  AND headers.eth_node_id = $2
 				  ORDER BY headers.block_number`
 		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber)
 	} else {
 		endStr := `AND headers.block_number >= $1
 				  AND headers.block_number <= $2
-				  AND headers.eth_node_id = $3
 				  ORDER BY headers.block_number`
 		query = baseQuery + endStr
-		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber, r.db.NodeID)
+		err = r.db.Select(&result, query, startingBlockNumber, endingBlockNumber)
 	}
 	return continuousHeaders(result), err
 }

@@ -24,19 +24,19 @@ CREATE FUNCTION public.get_or_create_header(block_number bigint, hash character 
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    matching_header_id INTEGER := (
+    matching_header_id    INTEGER := (
         SELECT id
         FROM public.headers
         WHERE headers.block_number = get_or_create_header.block_number
-        AND headers.hash = get_or_create_header.hash
-        );
+          AND headers.hash = get_or_create_header.hash
+    );
     nonmatching_header_id INTEGER := (
         SELECT id
         FROM public.headers
         WHERE headers.block_number = get_or_create_header.block_number
-        AND headers.hash != get_or_create_header.hash
-        );
-    inserted_header_id INTEGER;
+          AND headers.hash != get_or_create_header.hash
+    );
+    inserted_header_id    INTEGER;
 BEGIN
     IF matching_header_id != 0 THEN
         RETURN matching_header_id;
@@ -44,15 +44,16 @@ BEGIN
 
     IF nonmatching_header_id != 0 THEN
         DELETE FROM public.headers WHERE id = nonmatching_header_id;
-    end if;
+    END IF;
 
     INSERT INTO public.headers (hash, block_number, raw, block_timestamp, eth_node_id)
-        VALUES (get_or_create_header.hash, get_or_create_header.block_number, get_or_create_header.raw, get_or_create_header.block_timestamp, get_or_create_header.eth_node_id)
-        RETURNING id INTO inserted_header_id;
+    VALUES (get_or_create_header.hash, get_or_create_header.block_number, get_or_create_header.raw,
+            get_or_create_header.block_timestamp, get_or_create_header.eth_node_id)
+    RETURNING id INTO inserted_header_id;
 
     RETURN inserted_header_id;
 END
-    $$;
+$$;
 
 
 --

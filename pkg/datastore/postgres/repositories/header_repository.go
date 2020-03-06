@@ -77,8 +77,8 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
-		blockNumber, repository.database.NodeID)
+	err := repository.database.Get(&header,
+		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1`, blockNumber)
 	return header, err
 }
 
@@ -87,22 +87,14 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	err := repository.database.Select(&numbers,
 		`SELECT series.block_number
 			FROM (SELECT generate_series($1::INT, $2::INT) AS block_number) AS series
-			LEFT OUTER JOIN (SELECT block_number FROM headers
-				WHERE eth_node_id = $3) AS synced
+			LEFT OUTER JOIN (SELECT block_number FROM public.headers) AS synced
 			USING (block_number)
 			WHERE  synced.block_number IS NULL`,
-		startingBlockNumber, endingBlockNumber, repository.database.NodeID)
+		startingBlockNumber, endingBlockNumber)
 	if err != nil {
-		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
-			startingBlockNumber, endingBlockNumber, repository.database.NodeID)
+		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v",
+			startingBlockNumber, endingBlockNumber)
 		return []int64{}, err
 	}
 	return numbers, nil
-}
-
-func (repository HeaderRepository) getHeaderHash(header core.Header) (string, error) {
-	var hash string
-	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
-		header.BlockNumber, repository.database.NodeID)
-	return hash, err
 }

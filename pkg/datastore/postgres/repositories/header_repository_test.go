@@ -17,24 +17,21 @@
 package repositories_test
 
 import (
-	"database/sql"
 	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/test_config"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Block header repository", func() {
 	var (
 		rawHeader []byte
-		err       error
 		timestamp string
 		db        = test_config.NewTestDB(test_config.NewTestNode())
 		repo      repositories.HeaderRepository
@@ -42,8 +39,9 @@ var _ = Describe("Block header repository", func() {
 	)
 
 	BeforeEach(func() {
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
+		var jsonErr error
+		rawHeader, jsonErr = json.Marshal(types.Header{})
+		Expect(jsonErr).NotTo(HaveOccurred())
 		timestamp = big.NewInt(123456789).String()
 		test_config.CleanTestDB(db)
 		repo = repositories.NewHeaderRepository(db)
@@ -57,11 +55,11 @@ var _ = Describe("Block header repository", func() {
 
 	Describe("creating or updating a header", func() {
 		It("adds a header", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createErr := repo.CreateOrUpdateHeader(header)
+			Expect(createErr).NotTo(HaveOccurred())
 			var dbHeader core.Header
-			err = db.Get(&dbHeader, `SELECT block_number, hash, raw, block_timestamp FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := db.Get(&dbHeader, `SELECT block_number, hash, raw, block_timestamp FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(dbHeader.BlockNumber).To(Equal(header.BlockNumber))
 			Expect(dbHeader.Hash).To(Equal(header.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(header.Raw))
@@ -69,43 +67,30 @@ var _ = Describe("Block header repository", func() {
 		})
 
 		It("adds node data to header", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createErr := repo.CreateOrUpdateHeader(header)
+			Expect(createErr).NotTo(HaveOccurred())
 			var ethNodeId int64
-			err = db.Get(&ethNodeId, `SELECT eth_node_id FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := db.Get(&ethNodeId, `SELECT eth_node_id FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(ethNodeId).To(Equal(db.NodeID))
 		})
 
 		It("does not duplicate headers", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createOneErr := repo.CreateOrUpdateHeader(header)
+			Expect(createOneErr).NotTo(HaveOccurred())
 
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
-
-			var dbHeaders []core.Header
-			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(len(dbHeaders)).To(Equal(1))
-		})
-
-		It("does not duplicate headers in concurrent insert", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createTwoErr := repo.CreateOrUpdateHeader(header)
+			Expect(createTwoErr).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
-			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(len(dbHeaders)).To(Equal(1))
 		})
 
 		It("replaces header if hash is different", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createOneErr := repo.CreateOrUpdateHeader(header)
+			Expect(createOneErr).NotTo(HaveOccurred())
 
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
@@ -114,19 +99,19 @@ var _ = Describe("Block header repository", func() {
 				Timestamp:   timestamp,
 			}
 
-			_, err = repo.CreateOrUpdateHeader(headerTwo)
+			_, createTwoErr := repo.CreateOrUpdateHeader(headerTwo)
 
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createTwoErr).NotTo(HaveOccurred())
 			var dbHeader core.Header
-			err = db.Get(&dbHeader, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := db.Get(&dbHeader, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(dbHeader.Hash).To(Equal(headerTwo.Hash))
 			Expect(dbHeader.Raw).To(MatchJSON(headerTwo.Raw))
 		})
 
 		It("does not duplicate headers with different hashes in concurrent inserts", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createOneErr := repo.CreateOrUpdateHeader(header)
+			Expect(createOneErr).NotTo(HaveOccurred())
 
 			headerTwo := core.Header{
 				BlockNumber: header.BlockNumber,
@@ -135,18 +120,18 @@ var _ = Describe("Block header repository", func() {
 				Timestamp:   timestamp,
 			}
 
-			_, err = repo.CreateOrUpdateHeader(headerTwo)
-			Expect(err).NotTo(HaveOccurred())
+			_, createTwoErr := repo.CreateOrUpdateHeader(headerTwo)
+			Expect(createTwoErr).NotTo(HaveOccurred())
 
 			var dbHeaders []core.Header
-			err = db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := db.Select(&dbHeaders, `SELECT block_number, hash, raw FROM public.headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(len(dbHeaders)).To(Equal(1))
 		})
 
 		It("replaces header if hash is different (even from different node)", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createOneErr := repo.CreateOrUpdateHeader(header)
+			Expect(createOneErr).NotTo(HaveOccurred())
 			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
@@ -157,12 +142,12 @@ var _ = Describe("Block header repository", func() {
 				Timestamp:   timestamp,
 			}
 
-			_, err = repoTwo.CreateOrUpdateHeader(headerTwo)
+			_, createTwoErr := repoTwo.CreateOrUpdateHeader(headerTwo)
 
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createTwoErr).NotTo(HaveOccurred())
 			var dbHeaders []core.Header
-			err = dbTwo.Select(&dbHeaders, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
-			Expect(err).NotTo(HaveOccurred())
+			readErr := dbTwo.Select(&dbHeaders, `SELECT block_number, hash, raw FROM headers WHERE block_number = $1`, header.BlockNumber)
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(len(dbHeaders)).To(Equal(1))
 			Expect(dbHeaders[0].Hash).To(Equal(headerTwo.Hash))
 		})
@@ -288,10 +273,10 @@ var _ = Describe("Block header repository", func() {
 
 		It("adds transactions", func() {
 			var dbTransactions []core.TransactionModel
-			err = db.Select(&dbTransactions,
+			readErr := db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
 				FROM public.transactions WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(dbTransactions).To(ConsistOf(transactions))
 		})
 
@@ -300,10 +285,10 @@ var _ = Describe("Block header repository", func() {
 			Expect(insertTwoErr).NotTo(HaveOccurred())
 
 			var dbTransactions []core.TransactionModel
-			err = db.Select(&dbTransactions,
+			readErr := db.Select(&dbTransactions,
 				`SELECT hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value"
 				FROM public.transactions WHERE header_id = $1`, headerID)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(readErr).NotTo(HaveOccurred())
 			Expect(len(dbTransactions)).To(Equal(2))
 		})
 	})
@@ -382,8 +367,8 @@ var _ = Describe("Block header repository", func() {
 
 	Describe("Getting a header", func() {
 		It("returns header if it exists", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+			_, createErr := repo.CreateOrUpdateHeader(header)
+			Expect(createErr).NotTo(HaveOccurred())
 
 			dbHeader, err := repo.GetHeader(header.BlockNumber)
 
@@ -395,42 +380,42 @@ var _ = Describe("Block header repository", func() {
 			Expect(dbHeader.Timestamp).To(Equal(header.Timestamp))
 		})
 
-		It("does not return header for a different node id", func() {
-			_, err = repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
+		It("returns header from any node", func() {
+			_, createErr := repo.CreateOrUpdateHeader(header)
+			Expect(createErr).NotTo(HaveOccurred())
 
 			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
-			_, err = repoTwo.GetHeader(header.BlockNumber)
+			result, readErr := repoTwo.GetHeader(header.BlockNumber)
 
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(sql.ErrNoRows))
+			Expect(readErr).NotTo(HaveOccurred())
+			Expect(result.Raw).To(MatchJSON(header.Raw))
 		})
 	})
 
 	Describe("Getting missing headers", func() {
 		It("returns block numbers for headers not in the database", func() {
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+			_, createOneErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createOneErr).NotTo(HaveOccurred())
 
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+			_, createTwoErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createTwoErr).NotTo(HaveOccurred())
 
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+			_, createThreeErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createThreeErr).NotTo(HaveOccurred())
 
 			missingBlockNumbers, err := repo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
@@ -438,27 +423,27 @@ var _ = Describe("Block header repository", func() {
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
 		})
 
-		It("does not count headers created by a different node id", func() {
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+		It("treats headers created by _any_ node as not missing", func() {
+			_, createOneErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 1,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createOneErr).NotTo(HaveOccurred())
 
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+			_, createTwoErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 3,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createTwoErr).NotTo(HaveOccurred())
 
-			_, err = repo.CreateOrUpdateHeader(core.Header{
+			_, createThreeErr := repo.CreateOrUpdateHeader(core.Header{
 				BlockNumber: 5,
 				Raw:         rawHeader,
 				Timestamp:   timestamp,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(createThreeErr).NotTo(HaveOccurred())
 
 			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
@@ -466,7 +451,7 @@ var _ = Describe("Block header repository", func() {
 			missingBlockNumbers, err := repoTwo.MissingBlockNumbers(1, 5)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(missingBlockNumbers).To(ConsistOf([]int64{1, 2, 3, 4, 5}))
+			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
 		})
 	})
 })
