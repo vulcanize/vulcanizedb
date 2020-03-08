@@ -128,7 +128,7 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData()
 				if err != nil {
-					log.Error("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.chain.String(), err)
+					log.Errorf("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.chain.String(), err)
 					continue
 				}
 				for _, gap := range gaps {
