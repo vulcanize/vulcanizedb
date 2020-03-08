@@ -210,7 +210,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 			case payload := <-sap.PayloadChan:
 				ipldPayload, err := sap.Converter.Convert(payload)
 				if err != nil {
-					log.Error(err)
+					log.Errorf("super node conversion error for chain %s: %v", sap.chain.String(), err)
 					continue
 				}
 				// If we have a ScreenAndServe process running, forward the iplds to it
@@ -221,7 +221,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 				// Forward the payload to the publishAndIndex workers
 				publishAndIndexPayload <- ipldPayload
 			case err := <-sub.Err():
-				log.Error(err)
+				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
 			case <-sap.QuitChan:
 				log.Infof("quiting %s SyncAndPublish process", sap.chain.String())
 				wg.Done()
@@ -242,11 +242,11 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 			case payload := <-publishAndIndexPayload:
 				cidPayload, err := sap.Publisher.Publish(payload)
 				if err != nil {
-					log.Errorf("worker %d error: %v", id, err)
+					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
 					continue
 				}
 				if err := sap.Indexer.Index(cidPayload); err != nil {
-					log.Errorf("worker %d error: %v", id, err)
+					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
 				}
 			}
 		}
@@ -283,7 +283,7 @@ func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 		// Retrieve the subscription parameters for this subscription type
 		subConfig, ok := sap.SubscriptionTypes[ty]
 		if !ok {
-			log.Errorf("%s subscription configuration for subscription type %s not available", sap.chain.String(), ty.Hex())
+			log.Errorf("super node %s subscription configuration for subscription type %s not available", sap.chain.String(), ty.Hex())
 			sap.closeType(ty)
 			continue
 		}
@@ -295,13 +295,13 @@ func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 		}
 		response, err := sap.Filterer.Filter(subConfig, payload)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("super node filtering error for chain %s: %v", sap.chain.String(), err)
 			sap.closeType(ty)
 			continue
 		}
 		responseRLP, err := rlp.EncodeToBytes(response)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("super node rlp encoding error for chain %s: %v", sap.chain.String(), err)
 			continue
 		}
 		for id, sub := range subs {
@@ -352,7 +352,7 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
 	if params.HistoricalData() || params.HistoricalDataOnly() {
 		if err := sap.sendHistoricalData(subscription, id, params); err != nil {
-			sendNonBlockingErr(subscription, err)
+			sendNonBlockingErr(subscription, fmt.Errorf("super node subscriber backfill error for chain %s: %v", sap.chain.String(), err))
 			sendNonBlockingQuit(subscription)
 			return
 		}
@@ -386,7 +386,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 		for i := startingBlock; i <= endingBlock; i++ {
 			cidWrappers, empty, err := sap.Retriever.Retrieve(params, i)
 			if err != nil {
-				sendNonBlockingErr(sub, fmt.Errorf("%s CID Retrieval error at block %d\r%s", sap.chain.String(), i, err.Error()))
+				sendNonBlockingErr(sub, fmt.Errorf("super node %s CID Retrieval error at block %d\r%s", sap.chain.String(), i, err.Error()))
 				continue
 			}
 			if empty {
@@ -395,7 +395,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 			for _, cids := range cidWrappers {
 				response, err := sap.IPLDFetcher.Fetch(cids)
 				if err != nil {
-					sendNonBlockingErr(sub, fmt.Errorf("%s IPLD Fetching error at block %d\r%s", sap.chain.String(), i, err.Error()))
+					sendNonBlockingErr(sub, fmt.Errorf("super node %s IPLD Fetching error at block %d\r%s", sap.chain.String(), i, err.Error()))
 					continue
 				}
 				responseRLP, err := rlp.EncodeToBytes(response)

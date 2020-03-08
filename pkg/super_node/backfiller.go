@@ -119,7 +119,7 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 				log.Infof("searching for gaps in the %s super node database", bfs.chain.String())
 				startingBlock, err := bfs.Retriever.RetrieveFirstBlockNumber()
 				if err != nil {
-					log.Error(err)
+					log.Errorf("super node db backfill RetrieveFirstBlockNumber error for chain %s: %v", bfs.chain.String(), err)
 					continue
 				}
 				if startingBlock != 0 {
@@ -128,7 +128,7 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData()
 				if err != nil {
-					log.Error(err)
+					log.Error("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.chain.String(), err)
 					continue
 				}
 				for _, gap := range gaps {
@@ -153,7 +153,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 	for {
 		select {
 		case err := <-errChan:
-			log.Error(err)
+			log.Errorf("super node db backfill error for chain %s: %v", bfs.chain.String(), err)
 		case <-done:
 			log.Infof("finished filling in %s gap from %d to %d", bfs.chain.String(), startingBlock, endingBlock)
 			return nil
@@ -165,7 +165,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
 func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
 	if endingBlock < startingBlock {
-		return fmt.Errorf("%s backfill: ending block number needs to be greater than starting block number", bfs.chain.String())
+		return fmt.Errorf("super node %s db backfill: ending block number needs to be greater than starting block number", bfs.chain.String())
 	}
 	//
 	// break the range up into bins of smaller ranges
