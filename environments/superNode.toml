@@ -6,7 +6,7 @@
         name     = "vulcanize_public"
         hostname = "localhost"
         port     = 5432
-        user     = "ec2-user"
+        user     = "vdbm"
 
     [superNode.ethereum.sync]
         on = true
@@ -29,7 +29,7 @@
          name     = "vulcanize_public"
          hostname = "localhost"
          port     = 5432
-         user     = "ec2-user"
+         user     = "vdbm"
 
     [superNode.bitcoin.sync]
          on = true

@@ -3,24 +3,26 @@
 
 # Exit if the variable tests fail
 set -e
+set +x
 
 # Check the database variables are set
-test $VDB_PG_NAME
-test $VDB_PG_HOSTNAME
-test $VDB_PG_PORT
-test $VDB_PG_USER
+test $DATABASE_HOSTNAME
+test $DATABASE_NAME
+test $DATABASE_PORT
+test $DATABASE_USER
+test $DATABASE_PASSWORD
 test $IPFS_INIT
 set +e
 
 # Export our database variables so that the IPFS Postgres plugin can use them
-export IPFS_PGHOST=$VDB_PG_HOSTNAME
-export IPFS_PGUSER=$VDB_PG_USER
-export IPFS_PGDATABASE=$VDB_PG_NAME
-export IPFS_PGPORT=$VDB_PG_PORT
-export IPFS_PGPASSWORD=$VDB_PG_PASSWORD
+export IPFS_PGHOST=$DATABASE_HOSTNAME
+export IPFS_PGUSER=$DATABASE_USER
+export IPFS_PGDATABASE=$DATABASE_NAME
+export IPFS_PGPORT=$DATABASE_PORT
+export IPFS_PGPASSWORD=$DATABASE_PASSWORD
 
 # Construct the connection string for postgres
-VDB_PG_CONNECT=postgresql://$VDB_PG_USER:$VDB_PG_PASSWORD@$VDB_PG_HOSTNAME:$VDB_PG_PORT/$VDB_PG_NAME?sslmode=disable
+VDB_PG_CONNECT=postgresql://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOSTNAME:$DATABASE_PORT/$DATABASE_NAME?sslmode=disable
 
 # Run the DB migrations
 echo "Connecting with: $VDB_PG_CONNECT"
