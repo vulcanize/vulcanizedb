@@ -50,7 +50,7 @@ func GetFakeHeader(blockNumber int64) core.Header {
 
 func GetFakeHeaderWithTimestamp(timestamp, blockNumber int64) core.Header {
 	return core.Header{
-		Hash:        FakeHash.String(),
+		Hash:        "0x" + RandomString(64),
 		BlockNumber: blockNumber,
 		Raw:         rawFakeHeader,
 		Timestamp:   strconv.FormatInt(timestamp, 10),

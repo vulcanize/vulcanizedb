@@ -36,13 +36,21 @@ DECLARE
         WHERE headers.block_number = get_or_create_header.block_number
           AND headers.hash != get_or_create_header.hash
     );
+    max_block_number      BIGINT  := (
+        SELECT MAX(headers.block_number)
+        FROM public.headers
+    );
     inserted_header_id    INTEGER;
 BEGIN
     IF matching_header_id != 0 THEN
         RETURN matching_header_id;
     END IF;
 
-    IF nonmatching_header_id != 0 THEN
+    IF nonmatching_header_id != 0 AND block_number <= max_block_number - 15 THEN
+        RETURN nonmatching_header_id;
+    END IF;
+
+    IF nonmatching_header_id != 0 AND block_number > max_block_number - 15 THEN
         DELETE FROM public.headers WHERE id = nonmatching_header_id;
     END IF;
 
