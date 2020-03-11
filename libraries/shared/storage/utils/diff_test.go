@@ -67,7 +67,7 @@ var _ = Describe("Storage row parsing", func() {
 
 	Describe("FromGethStateDiff", func() {
 		var (
-			accountDiff = statediff.AccountDiff{Key: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
+			accountDiff = statediff.AccountDiff{LeafKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
 			stateDiff   = &statediff.StateDiff{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
@@ -80,19 +80,20 @@ var _ = Describe("Storage row parsing", func() {
 			Expect(encodeErr).NotTo(HaveOccurred())
 
 			storageDiff := statediff.StorageDiff{
-				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: storageValueRlp,
+				LeafKey:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				NodeValue: storageValueRlp,
+				NodeType:  statediff.Leaf,
 			}
 
 			result, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedAddress := common.BytesToHash(accountDiff.Key)
+			expectedAddress := common.BytesToHash(accountDiff.LeafKey)
 			Expect(result.HashedAddress).To(Equal(expectedAddress))
 			Expect(result.BlockHash).To(Equal(fakes.FakeHash))
 			expectedBlockHeight := int(stateDiff.BlockNumber.Int64())
 			Expect(result.BlockHeight).To(Equal(expectedBlockHeight))
-			expectedStorageKey := common.BytesToHash(storageDiff.Key)
+			expectedStorageKey := common.BytesToHash(storageDiff.LeafKey)
 			Expect(result.StorageKey).To(Equal(expectedStorageKey))
 			expectedStorageValue := common.BytesToHash(storageValueBytes)
 			Expect(result.StorageValue).To(Equal(expectedStorageValue))
@@ -104,8 +105,9 @@ var _ = Describe("Storage row parsing", func() {
 			Expect(encodeErr).NotTo(HaveOccurred())
 
 			storageDiff := statediff.StorageDiff{
-				Key:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				Value: storageValueRlp,
+				LeafKey:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				NodeValue: storageValueRlp,
+				NodeType:  statediff.Leaf,
 			}
 
 			result, err := utils.FromGethStateDiff(accountDiff, stateDiff, storageDiff)

@@ -59,16 +59,16 @@ func FromParityCsvRow(csvRow []string) (StorageDiffInput, error) {
 
 func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiffInput, error) {
 	var decodedValue []byte
-	err := rlp.DecodeBytes(storage.Value, &decodedValue)
+	err := rlp.DecodeBytes(storage.NodeValue, &decodedValue)
 	if err != nil {
 		return StorageDiffInput{}, err
 	}
 
 	return StorageDiffInput{
-		HashedAddress: common.BytesToHash(account.Key),
+		HashedAddress: common.BytesToHash(account.LeafKey),
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
-		StorageKey:    common.BytesToHash(storage.Key),
+		StorageKey:    common.BytesToHash(storage.LeafKey),
 		StorageValue:  common.BytesToHash(decodedValue),
 	}, nil
 }

@@ -150,16 +150,16 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 	for i, stateIPLD := range ethIPLDs.StateNodes {
 		cids.StateNodeCIDs[i] = eth.StateNodeModel{
 			CID:      stateIPLD.IPLD.CID,
-			Leaf:     stateIPLD.Leaf,
-			StateKey: stateIPLD.StateTrieKey.String(),
+			NodeType: eth.ResolveFromNodeType(stateIPLD.Type),
+			StateKey: stateIPLD.StateLeafKey.String(),
 		}
 	}
 	// Storage data
 	for _, storageIPLD := range ethIPLDs.StorageNodes {
-		cids.StorageNodeCIDs[storageIPLD.StateTrieKey] = append(cids.StorageNodeCIDs[storageIPLD.StateTrieKey], eth.StorageNodeModel{
+		cids.StorageNodeCIDs[storageIPLD.StateLeafKey] = append(cids.StorageNodeCIDs[storageIPLD.StateLeafKey], eth.StorageNodeModel{
 			CID:        storageIPLD.IPLD.CID,
-			Leaf:       storageIPLD.Leaf,
-			StorageKey: storageIPLD.StorageTrieKey.String(),
+			NodeType:   eth.ResolveFromNodeType(storageIPLD.Type),
+			StorageKey: storageIPLD.StorageLeafKey.String(),
 		})
 	}
 	return cids, nil

@@ -67,8 +67,9 @@ type ReceiptModel struct {
 type StateNodeModel struct {
 	ID       int64  `db:"id"`
 	HeaderID int64  `db:"header_id"`
+	Path     []byte `db:"state_path"`
 	StateKey string `db:"state_key"`
-	Leaf     bool   `db:"leaf"`
+	NodeType int    `db:"node_type"`
 	CID      string `db:"cid"`
 }
 
@@ -76,8 +77,9 @@ type StateNodeModel struct {
 type StorageNodeModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
+	Path       []byte `db:"storage_path"`
 	StorageKey string `db:"storage_key"`
-	Leaf       bool   `db:"leaf"`
+	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
 }
 
@@ -85,8 +87,9 @@ type StorageNodeModel struct {
 type StorageNodeWithStateKeyModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
+	Path       []byte `db:"storage_path"`
 	StateKey   string `db:"state_key"`
 	StorageKey string `db:"storage_key"`
-	Leaf       bool   `db:"leaf"`
+	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
 }

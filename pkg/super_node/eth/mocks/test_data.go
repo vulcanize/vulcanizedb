@@ -21,12 +21,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"math/big"
-	rand2 "math/rand"
-
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-
-	"github.com/multiformats/go-multihash"
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -35,9 +29,13 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/ethereum/go-ethereum/statediff/testhelpers"
 	"github.com/ipfs/go-block-format"
+	"github.com/multiformats/go-multihash"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	eth2 "github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
@@ -79,11 +77,10 @@ var (
 	Trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(1), multihash.KECCAK_256)
 	Rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(0), multihash.KECCAK_256)
 	Rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(1), multihash.KECCAK_256)
-	State1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ValueBytes, multihash.KECCAK_256)
-	State2CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, AnotherValueBytes, multihash.KECCAK_256)
-	StorageCID, _ = ipld.RawdataToCid(ipld.MEthStorageTrie, StorageValue, multihash.KECCAK_256)
-
-	MockTrxMeta = []eth.TxModel{
+	State1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ContractLeafNode, multihash.KECCAK_256)
+	State2CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, AccountLeafNode, multihash.KECCAK_256)
+	StorageCID, _ = ipld.RawdataToCid(ipld.MEthStorageTrie, StorageLeafNode, multihash.KECCAK_256)
+	MockTrxMeta   = []eth.TxModel{
 		{
 			CID:    "", // This is empty until we go to publish to ipfs
 			Src:    senderAddr.Hex(),
@@ -161,51 +158,71 @@ var (
 	}
 
 	// statediff data
-	CodeHash            = common.Hex2Bytes("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-	NonceValue          = rand2.Uint64()
-	anotherNonceValue   = rand2.Uint64()
-	BalanceValue        = rand2.Int63()
-	anotherBalanceValue = rand2.Int63()
-	ContractRoot        = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-	StoragePath         = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470").Bytes()
-	StorageKey          = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
-	StorageValue        = common.Hex2Bytes("0x03")
-	storage             = []statediff.StorageDiff{{
-		Key:   StorageKey,
-		Value: StorageValue,
-		Path:  StoragePath,
-		Proof: [][]byte{},
-		Leaf:  true,
-	}}
-	emptyStorage           = make([]statediff.StorageDiff, 0)
-	ContractLeafKey        = crypto.Keccak256Hash(Address.Bytes())
-	AnotherContractLeafKey = crypto.Keccak256Hash(AnotherAddress.Bytes())
-	testAccount            = state.Account{
-		Nonce:    NonceValue,
-		Balance:  big.NewInt(BalanceValue),
-		Root:     ContractRoot,
-		CodeHash: CodeHash,
-	}
-	anotherTestAccount = state.Account{
-		Nonce:    anotherNonceValue,
-		Balance:  big.NewInt(anotherBalanceValue),
-		Root:     common.HexToHash("0x"),
-		CodeHash: nil,
-	}
-	ValueBytes, _        = rlp.EncodeToBytes(testAccount)
-	AnotherValueBytes, _ = rlp.EncodeToBytes(anotherTestAccount)
-	CreatedAccountDiffs  = []statediff.AccountDiff{
+	storageLocation    = common.HexToHash("0")
+	StorageLeafKey     = crypto.Keccak256Hash(storageLocation[:]).Bytes()
+	StorageValue       = common.Hex2Bytes("01")
+	StoragePartialPath = common.Hex2Bytes("20290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563")
+	StorageLeafNode, _ = rlp.EncodeToBytes([]interface{}{
+		StoragePartialPath,
+		StorageValue,
+	})
+
+	nonce1             = uint64(1)
+	contractRoot       = "0x821e2556a290c86405f8160a2d662042a431ba456b9db265c79bb837c04be5f0"
+	contractCodeHash   = common.HexToHash("0x753f98a8d4328b15636e46f66f2cb4bc860100aa17967cc145fcd17d1d4710ea")
+	contractPathHash   = crypto.Keccak256Hash([]byte{'\x06'})
+	ContractAddress    = common.HexToAddress("0x703c4b2bD70c169f5717101CaeE543299Fc946C7")
+	ContractLeafKey    = testhelpers.AddressToLeafKey(ContractAddress)
+	ContractAccount, _ = rlp.EncodeToBytes(state.Account{
+		Nonce:    nonce1,
+		Balance:  big.NewInt(0),
+		CodeHash: contractCodeHash.Bytes(),
+		Root:     common.HexToHash(contractRoot),
+	})
+	ContractPartialPath = common.Hex2Bytes("3114658a74d9cc9f7acf2c5cd696c3494d7c344d78bfec3add0d91ec4e8d1c45")
+	ContractLeafNode, _ = rlp.EncodeToBytes([]interface{}{
+		ContractPartialPath,
+		ContractAccount,
+	})
+
+	nonce0          = uint64(0)
+	accountRoot     = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+	accountCodeHash = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+	AccountAddresss = common.HexToAddress("0x0D3ab14BBaD3D99F4203bd7a11aCB94882050E7e")
+	AccountLeafKey  = testhelpers.Account2LeafKey
+	Account, _      = rlp.EncodeToBytes(state.Account{
+		Nonce:    nonce0,
+		Balance:  big.NewInt(1000),
+		CodeHash: accountCodeHash.Bytes(),
+		Root:     common.HexToHash(accountRoot),
+	})
+	AccountPartialPath = common.Hex2Bytes("3957f3e2f04a0764c3a0491b175f69926da61efbcc8f61fa1455fd2d2b4cdd45")
+	AccountLeafNode, _ = rlp.EncodeToBytes([]interface{}{
+		AccountPartialPath,
+		Account,
+	})
+
+	CreatedAccountDiffs = []statediff.AccountDiff{
 		{
-			Key:     ContractLeafKey.Bytes(),
-			Value:   ValueBytes,
-			Storage: storage,
-			Leaf:    true,
+			Path:      []byte{'\x06'},
+			NodeType:  statediff.Leaf,
+			LeafKey:   ContractLeafKey,
+			NodeValue: ContractLeafNode,
+			Storage: []statediff.StorageDiff{
+				{
+					Path:      []byte{},
+					NodeType:  statediff.Leaf,
+					LeafKey:   StorageLeafKey,
+					NodeValue: StorageLeafNode,
+				},
+			},
 		},
 		{
-			Key:     AnotherContractLeafKey.Bytes(),
-			Value:   AnotherValueBytes,
-			Storage: emptyStorage,
-			Leaf:    true,
+			Path:      []byte{'\x0c'},
+			NodeType:  statediff.Leaf,
+			LeafKey:   AccountLeafKey,
+			NodeValue: AccountLeafNode,
+			Storage:   []statediff.StorageDiff{},
 		},
 	}
 
@@ -217,34 +234,39 @@ var (
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 	MockStateNodes        = []eth.TrieNode{
 		{
-			Key:   ContractLeafKey,
-			Value: ValueBytes,
-			Leaf:  true,
+			LeafKey: common.BytesToHash(ContractLeafKey),
+			Path:    []byte{'\x06'},
+			Value:   ContractLeafNode,
+			Type:    statediff.Leaf,
 		},
 		{
-			Key:   AnotherContractLeafKey,
-			Value: AnotherValueBytes,
-			Leaf:  true,
+			LeafKey: common.BytesToHash(AccountLeafKey),
+			Path:    []byte{'\x0c'},
+			Value:   AccountLeafNode,
+			Type:    statediff.Leaf,
 		},
 	}
 	MockStateMetaPostPublish = []eth.StateNodeModel{
 		{
 			CID:      State1CID.String(),
-			Leaf:     true,
-			StateKey: ContractLeafKey.String(),
+			Path:     []byte{'\x06'},
+			NodeType: 2,
+			StateKey: common.BytesToHash(ContractLeafKey).Hex(),
 		},
 		{
 			CID:      State2CID.String(),
-			Leaf:     true,
-			StateKey: AnotherContractLeafKey.String(),
+			Path:     []byte{'\x0c'},
+			NodeType: 2,
+			StateKey: common.BytesToHash(AccountLeafKey).Hex(),
 		},
 	}
 	MockStorageNodes = map[common.Hash][]eth.TrieNode{
-		ContractLeafKey: {
+		contractPathHash: {
 			{
-				Key:   common.BytesToHash(StorageKey),
-				Value: StorageValue,
-				Leaf:  true,
+				LeafKey: common.BytesToHash(StorageLeafKey),
+				Value:   StorageLeafNode,
+				Type:    statediff.Leaf,
+				Path:    []byte{},
 			},
 		},
 	}
@@ -284,11 +306,12 @@ var (
 		},
 		StateNodeCIDs: MockStateMetaPostPublish,
 		StorageNodeCIDs: map[common.Hash][]eth.StorageNodeModel{
-			ContractLeafKey: {
+			contractPathHash: {
 				{
 					CID:        StorageCID.String(),
-					StorageKey: "0x0000000000000000000000000000000000000000000000000000000000000001",
-					Leaf:       true,
+					Path:       []byte{},
+					StorageKey: common.BytesToHash(StorageLeafKey).Hex(),
+					NodeType:   2,
 				},
 			},
 		},
@@ -310,10 +333,11 @@ var (
 		StateNodes:   MockStateMetaPostPublish,
 		StorageNodes: []eth.StorageNodeWithStateKeyModel{
 			{
+				Path:       []byte{},
 				CID:        StorageCID.String(),
-				Leaf:       true,
-				StateKey:   ContractLeafKey.Hex(),
-				StorageKey: "0x0000000000000000000000000000000000000000000000000000000000000001",
+				NodeType:   2,
+				StateKey:   common.BytesToHash(ContractLeafKey).Hex(),
+				StorageKey: common.BytesToHash(StorageLeafKey).Hex(),
 			},
 		},
 	}
@@ -323,9 +347,9 @@ var (
 	Trx2IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(1), Trx2CID)
 	Rct1IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(0), Rct1CID)
 	Rct2IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(1), Rct2CID)
-	State1IPLD, _  = blocks.NewBlockWithCid(ValueBytes, State1CID)
-	State2IPLD, _  = blocks.NewBlockWithCid(AnotherValueBytes, State2CID)
-	StorageIPLD, _ = blocks.NewBlockWithCid(StorageValue, StorageCID)
+	State1IPLD, _  = blocks.NewBlockWithCid(ContractLeafNode, State1CID)
+	State2IPLD, _  = blocks.NewBlockWithCid(AccountLeafNode, State2CID)
+	StorageIPLD, _ = blocks.NewBlockWithCid(StorageLeafNode, StorageCID)
 
 	MockIPLDs = eth.IPLDs{
 		BlockNumber: big.NewInt(1),
@@ -355,31 +379,34 @@ var (
 		},
 		StateNodes: []eth2.StateNode{
 			{
-				StateTrieKey: ContractLeafKey,
-				Leaf:         true,
+				StateLeafKey: common.BytesToHash(ContractLeafKey),
+				Type:         statediff.Leaf,
 				IPLD: ipfs.BlockModel{
 					Data: State1IPLD.RawData(),
 					CID:  State1IPLD.Cid().String(),
 				},
+				Path: []byte{'\x06'},
 			},
 			{
-				StateTrieKey: AnotherContractLeafKey,
-				Leaf:         true,
+				StateLeafKey: common.BytesToHash(AccountLeafKey),
+				Type:         statediff.Leaf,
 				IPLD: ipfs.BlockModel{
 					Data: State2IPLD.RawData(),
 					CID:  State2IPLD.Cid().String(),
 				},
+				Path: []byte{'\x0c'},
 			},
 		},
 		StorageNodes: []eth2.StorageNode{
 			{
-				StateTrieKey:   ContractLeafKey,
-				StorageTrieKey: common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"),
-				Leaf:           true,
+				StateLeafKey:   common.BytesToHash(ContractLeafKey),
+				StorageLeafKey: common.BytesToHash(StorageLeafKey),
+				Type:           statediff.Leaf,
 				IPLD: ipfs.BlockModel{
 					Data: StorageIPLD.RawData(),
 					CID:  StorageIPLD.Cid().String(),
 				},
+				Path: []byte{},
 			},
 		},
 	}

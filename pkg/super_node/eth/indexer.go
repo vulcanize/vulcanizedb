@@ -19,6 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -129,14 +131,14 @@ func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID in
 func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
 	for _, stateCID := range payload.StateNodeCIDs {
 		var stateID int64
-		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_key, cid, leaf) VALUES ($1, $2, $3, $4)
-									ON CONFLICT (header_id, state_key) DO UPDATE SET (cid, leaf) = ($3, $4)
+		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_key, cid, node_type) = ($2, $3, $5)
 									RETURNING id`,
-			headerID, stateCID.StateKey, stateCID.CID, stateCID.Leaf).Scan(&stateID)
+			headerID, stateCID.StateKey, stateCID.CID, stateCID.Path, stateCID.NodeType).Scan(&stateID)
 		if err != nil {
 			return err
 		}
-		for _, storageCID := range payload.StorageNodeCIDs[common.HexToHash(stateCID.StateKey)] {
+		for _, storageCID := range payload.StorageNodeCIDs[crypto.Keccak256Hash(stateCID.Path)] {
 			if err := in.indexStorageCID(tx, storageCID, stateID); err != nil {
 				return err
 			}
@@ -146,8 +148,8 @@ func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload,
 }
 
 func (in *CIDIndexer) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeModel, stateID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_key, cid, leaf) VALUES ($1, $2, $3, $4) 
-								   ON CONFLICT (state_id, storage_key) DO UPDATE SET (cid, leaf) = ($3, $4)`,
-		stateID, storageCID.StorageKey, storageCID.CID, storageCID.Leaf)
+	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
+								   ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_key, cid, node_type) = ($2, $3, $5)`,
+		stateID, storageCID.StorageKey, storageCID.CID, storageCID.Path, storageCID.NodeType)
 	return err
 }

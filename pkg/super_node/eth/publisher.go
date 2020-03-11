@@ -185,9 +185,10 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 			return nil, err
 		}
 		stateNodeCids = append(stateNodeCids, StateNodeModel{
-			StateKey: node.Key.String(),
+			Path:     node.Path,
+			StateKey: node.LeafKey.String(),
 			CID:      cids[0],
-			Leaf:     node.Leaf,
+			NodeType: ResolveFromNodeType(node.Type),
 		})
 	}
 	return stateNodeCids, nil
@@ -195,18 +196,19 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 
 func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]TrieNode) (map[common.Hash][]StorageNodeModel, error) {
 	storageLeafCids := make(map[common.Hash][]StorageNodeModel)
-	for addrKey, storageTrie := range storageNodes {
-		storageLeafCids[addrKey] = make([]StorageNodeModel, 0, len(storageTrie))
+	for pathHash, storageTrie := range storageNodes {
+		storageLeafCids[pathHash] = make([]StorageNodeModel, 0, len(storageTrie))
 		for _, node := range storageTrie {
 			cids, err := pub.StoragePutter.DagPut(node.Value)
 			if err != nil {
 				return nil, err
 			}
-			// Map storage node cids to their state key hashes
-			storageLeafCids[addrKey] = append(storageLeafCids[addrKey], StorageNodeModel{
-				StorageKey: node.Key.Hex(),
+			// Map storage node cids to their path hashes
+			storageLeafCids[pathHash] = append(storageLeafCids[pathHash], StorageNodeModel{
+				Path:       node.Path,
+				StorageKey: node.LeafKey.Hex(),
 				CID:        cids[0],
-				Leaf:       node.Leaf,
+				NodeType:   ResolveFromNodeType(node.Type),
 			})
 		}
 	}

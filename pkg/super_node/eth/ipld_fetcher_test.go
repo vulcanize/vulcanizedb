@@ -20,13 +20,13 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/ipfs/go-block-format"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 )
@@ -71,18 +71,18 @@ var (
 		},
 		StateNodes: []eth.StateNodeModel{{
 			CID:      mockStateBlock.Cid().String(),
-			Leaf:     true,
+			NodeType: 2,
 			StateKey: "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 		}},
 		StorageNodes: []eth.StorageNodeWithStateKeyModel{{
 			CID:        mockStorageBlock1.Cid().String(),
-			Leaf:       true,
+			NodeType:   2,
 			StateKey:   "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 			StorageKey: "0000000000000000000000000000000000000000000000000000000000000001",
 		},
 			{
 				CID:        mockStorageBlock2.Cid().String(),
-				Leaf:       true,
+				NodeType:   2,
 				StateKey:   "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 				StorageKey: "0000000000000000000000000000000000000000000000000000000000000002",
 			}},
@@ -127,23 +127,23 @@ var _ = Describe("Fetcher", func() {
 				CID:  mockReceiptBlock.Cid().String(),
 			}))
 			Expect(len(iplds.StateNodes)).To(Equal(1))
-			Expect(iplds.StateNodes[0].StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
-			Expect(iplds.StateNodes[0].Leaf).To(BeTrue())
+			Expect(iplds.StateNodes[0].StateLeafKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
+			Expect(iplds.StateNodes[0].Type).To(Equal(statediff.Leaf))
 			Expect(iplds.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
 				Data: mockStateBlock.RawData(),
 				CID:  mockStateBlock.Cid().String(),
 			}))
 			Expect(len(iplds.StorageNodes)).To(Equal(2))
 			for _, storage := range iplds.StorageNodes {
-				Expect(storage.Leaf).To(BeTrue())
-				Expect(storage.StateTrieKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
-				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()) {
+				Expect(storage.Type).To(Equal(statediff.Leaf))
+				Expect(storage.StateLeafKey).To(Equal(common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")))
+				if bytes.Equal(storage.StorageLeafKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()) {
 					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
 						Data: mockStorageBlock1.RawData(),
 						CID:  mockStorageBlock1.Cid().String(),
 					}))
 				}
-				if bytes.Equal(storage.StorageTrieKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002").Bytes()) {
+				if bytes.Equal(storage.StorageLeafKey.Bytes(), common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002").Bytes()) {
 					Expect(storage.IPLD).To(Equal(ipfs.BlockModel{
 						Data: mockStorageBlock2.RawData(),
 						CID:  mockStorageBlock2.Cid().String(),

@@ -19,6 +19,8 @@ package eth
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/statediff"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -45,9 +47,10 @@ func (i ConvertedPayload) Height() int64 {
 
 // Trie struct used to flag node as leaf or not
 type TrieNode struct {
-	Key   common.Hash
-	Value []byte
-	Leaf  bool
+	Path    []byte
+	LeafKey common.Hash
+	Value   []byte
+	Type    statediff.NodeType
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
@@ -94,14 +97,16 @@ func (i IPLDs) Height() int64 {
 }
 
 type StateNode struct {
-	StateTrieKey common.Hash
+	Type         statediff.NodeType
+	StateLeafKey common.Hash
+	Path         []byte
 	IPLD         ipfs.BlockModel
-	Leaf         bool
 }
 
 type StorageNode struct {
-	StateTrieKey   common.Hash
-	StorageTrieKey common.Hash
+	Type           statediff.NodeType
+	StateLeafKey   common.Hash
+	StorageLeafKey common.Hash
+	Path           []byte
 	IPLD           ipfs.BlockModel
-	Leaf           bool
 }

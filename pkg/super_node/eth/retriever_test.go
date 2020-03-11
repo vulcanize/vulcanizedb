@@ -19,6 +19,8 @@ package eth_test
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -196,7 +198,7 @@ var (
 			Off: true,
 		},
 		StateFilter: eth.StateFilter{
-			Addresses: []string{mocks.Address.Hex()},
+			Addresses: []string{mocks.AccountAddresss.Hex()},
 		},
 		StorageFilter: eth.StorageFilter{
 			Off: true,
@@ -247,12 +249,14 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
 				if stateNode.CID == mocks.State1CID.String() {
-					Expect(stateNode.StateKey).To(Equal(mocks.ContractLeafKey.Hex()))
-					Expect(stateNode.Leaf).To(Equal(true))
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.ContractLeafKey).Hex()))
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.Path).To(Equal([]byte{'\x06'}))
 				}
 				if stateNode.CID == mocks.State2CID.String() {
-					Expect(stateNode.StateKey).To(Equal(mocks.AnotherContractLeafKey.Hex()))
-					Expect(stateNode.Leaf).To(Equal(true))
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.AccountLeafKey).Hex()))
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.Path).To(Equal([]byte{'\x0c'}))
 				}
 			}
 			Expect(len(cidWrapper.StorageNodes)).To(Equal(1))
@@ -384,9 +388,10 @@ var _ = Describe("Retriever", func() {
 			Expect(cidWrapper7.StateNodes[0]).To(Equal(eth.StateNodeModel{
 				ID:       cidWrapper7.StateNodes[0].ID,
 				HeaderID: cidWrapper7.StateNodes[0].HeaderID,
-				Leaf:     true,
-				StateKey: mocks.ContractLeafKey.Hex(),
-				CID:      mocks.State1CID.String(),
+				NodeType: 2,
+				StateKey: common.BytesToHash(mocks.AccountLeafKey).Hex(),
+				CID:      mocks.State2CID.String(),
+				Path:     []byte{'\x0c'},
 			}))
 
 			_, empty, err = retriever.Retrieve(rctTopicsAndContractFilterFail, 1)

@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/statediff"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -66,10 +68,7 @@ func (s *ResponseFilterer) Filter(filter shared.SubscriptionSettings, payload sh
 		if err := s.filerReceipts(ethFilters.ReceiptFilter, response, ethPayload, filterTxs); err != nil {
 			return IPLDs{}, err
 		}
-		if err := s.filterState(ethFilters.StateFilter, response, ethPayload); err != nil {
-			return IPLDs{}, err
-		}
-		if err := s.filterStorage(ethFilters.StorageFilter, response, ethPayload); err != nil {
+		if err := s.filterStateAndStorage(ethFilters.StateFilter, ethFilters.StorageFilter, response, ethPayload); err != nil {
 			return IPLDs{}, err
 		}
 		response.BlockNumber = ethPayload.Block.Number()
@@ -255,27 +254,56 @@ func slicesShareString(slice1, slice2 []string) int {
 	return 0
 }
 
-func (s *ResponseFilterer) filterState(stateFilter StateFilter, response *IPLDs, payload ConvertedPayload) error {
-	if !stateFilter.Off {
-		response.StateNodes = make([]StateNode, 0, len(payload.StateNodes))
-		keyFilters := make([]common.Hash, len(stateFilter.Addresses))
-		for i, addr := range stateFilter.Addresses {
-			keyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
+// filterStateAndStorage filters state and storage nodes into the response according to the provided filters
+func (s *ResponseFilterer) filterStateAndStorage(stateFilter StateFilter, storageFilter StorageFilter, response *IPLDs, payload ConvertedPayload) error {
+	response.StateNodes = make([]StateNode, 0, len(payload.StateNodes))
+	response.StorageNodes = make([]StorageNode, 0)
+	stateAddressFilters := make([]common.Hash, len(stateFilter.Addresses))
+	for i, addr := range stateFilter.Addresses {
+		stateAddressFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
+	}
+	storageAddressFilters := make([]common.Hash, len(storageFilter.Addresses))
+	for i, addr := range storageFilter.Addresses {
+		storageAddressFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
+	}
+	storageKeyFilters := make([]common.Hash, len(storageFilter.StorageKeys))
+	for i, store := range storageFilter.StorageKeys {
+		storageKeyFilters[i] = common.HexToHash(store)
+	}
+	for _, stateNode := range payload.StateNodes {
+		if !stateFilter.Off && checkNodeKeys(stateAddressFilters, stateNode.LeafKey) {
+			if stateNode.Type == statediff.Leaf || stateFilter.IntermediateNodes {
+				cid, err := ipld.RawdataToCid(ipld.MEthStateTrie, stateNode.Value, multihash.KECCAK_256)
+				if err != nil {
+					return err
+				}
+				response.StateNodes = append(response.StateNodes, StateNode{
+					StateLeafKey: stateNode.LeafKey,
+					Path:         stateNode.Path,
+					IPLD: ipfs.BlockModel{
+						Data: stateNode.Value,
+						CID:  cid.String(),
+					},
+					Type: stateNode.Type,
+				})
+			}
 		}
-		for _, stateNode := range payload.StateNodes {
-			if checkNodeKeys(keyFilters, stateNode.Key) {
-				if stateNode.Leaf || stateFilter.IntermediateNodes {
-					cid, err := ipld.RawdataToCid(ipld.MEthStateTrie, stateNode.Value, multihash.KECCAK_256)
+		if !storageFilter.Off && checkNodeKeys(storageAddressFilters, stateNode.LeafKey) {
+			for _, storageNode := range payload.StorageNodes[crypto.Keccak256Hash(stateNode.Path)] {
+				if checkNodeKeys(storageKeyFilters, storageNode.LeafKey) {
+					cid, err := ipld.RawdataToCid(ipld.MEthStorageTrie, storageNode.Value, multihash.KECCAK_256)
 					if err != nil {
 						return err
 					}
-					response.StateNodes = append(response.StateNodes, StateNode{
-						StateTrieKey: stateNode.Key,
+					response.StorageNodes = append(response.StorageNodes, StorageNode{
+						StateLeafKey:   stateNode.LeafKey,
+						StorageLeafKey: storageNode.LeafKey,
 						IPLD: ipfs.BlockModel{
-							Data: stateNode.Value,
+							Data: storageNode.Value,
 							CID:  cid.String(),
 						},
-						Leaf: stateNode.Leaf,
+						Type: storageNode.Type,
+						Path: storageNode.Path,
 					})
 				}
 			}
@@ -295,40 +323,4 @@ func checkNodeKeys(wantedKeys []common.Hash, actualKey common.Hash) bool {
 		}
 	}
 	return false
-}
-
-func (s *ResponseFilterer) filterStorage(storageFilter StorageFilter, response *IPLDs, payload ConvertedPayload) error {
-	if !storageFilter.Off {
-		response.StorageNodes = make([]StorageNode, 0)
-		stateKeyFilters := make([]common.Hash, len(storageFilter.Addresses))
-		for i, addr := range storageFilter.Addresses {
-			stateKeyFilters[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes())
-		}
-		storageKeyFilters := make([]common.Hash, len(storageFilter.StorageKeys))
-		for i, store := range storageFilter.StorageKeys {
-			storageKeyFilters[i] = common.HexToHash(store)
-		}
-		for stateKey, storageNodes := range payload.StorageNodes {
-			if checkNodeKeys(stateKeyFilters, stateKey) {
-				for _, storageNode := range storageNodes {
-					if checkNodeKeys(storageKeyFilters, storageNode.Key) {
-						cid, err := ipld.RawdataToCid(ipld.MEthStorageTrie, storageNode.Value, multihash.KECCAK_256)
-						if err != nil {
-							return err
-						}
-						response.StorageNodes = append(response.StorageNodes, StorageNode{
-							StateTrieKey:   stateKey,
-							StorageTrieKey: storageNode.Key,
-							IPLD: ipfs.BlockModel{
-								Data: storageNode.Value,
-								CID:  cid.String(),
-							},
-							Leaf: storageNode.Leaf,
-						})
-					}
-				}
-			}
-		}
-	}
-	return nil
 }

@@ -139,12 +139,12 @@ func streamEthSubscription() {
 					continue
 				}
 				fmt.Printf("Account for key %s, and root %s, with balance %s\n",
-					stateNode.StateTrieKey.Hex(), acct.Root.Hex(), acct.Balance.String())
+					stateNode.StateLeafKey.Hex(), acct.Root.Hex(), acct.Balance.String())
 				fmt.Printf("state account: %+v\n", acct)
 			}
 			for _, storageNode := range ethData.StorageNodes {
-				fmt.Printf("Storage for state key %s ", storageNode.StateTrieKey.Hex())
-				fmt.Printf("with storage key %s\n", storageNode.StorageTrieKey.Hex())
+				fmt.Printf("Storage for state key %s ", storageNode.StateLeafKey.Hex())
+				fmt.Printf("with storage key %s\n", storageNode.StorageLeafKey.Hex())
 				var i []interface{}
 				err := rlp.DecodeBytes(storageNode.IPLD.Data, &i)
 				if err != nil {
@@ -158,7 +158,7 @@ func streamEthSubscription() {
 						continue
 					}
 					fmt.Printf("Storage leaf key: %s, and value hash: %s\n",
-						storageNode.StorageTrieKey.Hex(), common.BytesToHash(valueBytes).Hex())
+						storageNode.StorageLeafKey.Hex(), common.BytesToHash(valueBytes).Hex())
 				}
 			}
 		case err = <-sub.Err():

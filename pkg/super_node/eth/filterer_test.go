@@ -17,11 +17,13 @@
 package eth_test
 
 import (
-	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"bytes"
 
+	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
@@ -54,17 +56,17 @@ var _ = Describe("Filterer", func() {
 			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
 			Expect(len(iplds.StateNodes)).To(Equal(2))
 			for _, stateNode := range iplds.StateNodes {
-				Expect(stateNode.Leaf).To(BeTrue())
-				if stateNode.StateTrieKey == mocks.ContractLeafKey {
-					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
-						Data: mocks.State1IPLD.RawData(),
-						CID:  mocks.State1IPLD.Cid().String(),
-					}))
-				}
-				if stateNode.StateTrieKey == mocks.AnotherContractLeafKey {
+				Expect(stateNode.Type).To(Equal(statediff.Leaf))
+				if bytes.Equal(stateNode.StateLeafKey.Bytes(), mocks.AccountLeafKey) {
 					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
 						Data: mocks.State2IPLD.RawData(),
 						CID:  mocks.State2IPLD.Cid().String(),
+					}))
+				}
+				if bytes.Equal(stateNode.StateLeafKey.Bytes(), mocks.ContractLeafKey) {
+					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mocks.State1IPLD.RawData(),
+						CID:  mocks.State1IPLD.Cid().String(),
 					}))
 				}
 			}
@@ -180,10 +182,10 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds7.StorageNodes)).To(Equal(0))
 			Expect(len(iplds7.Receipts)).To(Equal(0))
 			Expect(len(iplds7.StateNodes)).To(Equal(1))
-			Expect(iplds7.StateNodes[0].StateTrieKey).To(Equal(mocks.ContractLeafKey))
+			Expect(iplds7.StateNodes[0].StateLeafKey.Bytes()).To(Equal(mocks.AccountLeafKey))
 			Expect(iplds7.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
-				Data: mocks.State1IPLD.RawData(),
-				CID:  mocks.State1IPLD.Cid().String(),
+				Data: mocks.State2IPLD.RawData(),
+				CID:  mocks.State2IPLD.Cid().String(),
 			}))
 
 			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockConvertedPayload)

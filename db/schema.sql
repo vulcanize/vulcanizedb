@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 10.10
--- Dumped by pg_dump version 12.1
+-- Dumped by pg_dump version 10.10
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -30,7 +30,23 @@ CREATE SCHEMA btc;
 CREATE SCHEMA eth;
 
 
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
 SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: header_cids; Type: TABLE; Schema: btc; Owner: -
@@ -46,6 +62,13 @@ CREATE TABLE btc.header_cids (
     bits bigint NOT NULL,
     node_id integer NOT NULL
 );
+
+
+--
+-- Name: TABLE header_cids; Type: COMMENT; Schema: btc; Owner: -
+--
+
+COMMENT ON TABLE btc.header_cids IS '@name BtcHeaderCids';
 
 
 --
@@ -77,6 +100,13 @@ CREATE TABLE btc.queue_data (
     data bytea NOT NULL,
     height bigint NOT NULL
 );
+
+
+--
+-- Name: TABLE queue_data; Type: COMMENT; Schema: btc; Owner: -
+--
+
+COMMENT ON TABLE btc.queue_data IS '@name BtcQueueData';
 
 
 --
@@ -112,6 +142,13 @@ CREATE TABLE btc.transaction_cids (
     segwit boolean NOT NULL,
     witness_hash character varying(66)
 );
+
+
+--
+-- Name: TABLE transaction_cids; Type: COMMENT; Schema: btc; Owner: -
+--
+
+COMMENT ON TABLE btc.transaction_cids IS '@name BtcTransactionCids';
 
 
 --
@@ -222,6 +259,13 @@ CREATE TABLE eth.header_cids (
 
 
 --
+-- Name: TABLE header_cids; Type: COMMENT; Schema: eth; Owner: -
+--
+
+COMMENT ON TABLE eth.header_cids IS '@name EthHeaderCids';
+
+
+--
 -- Name: header_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
 --
 
@@ -250,6 +294,13 @@ CREATE TABLE eth.queue_data (
     data bytea NOT NULL,
     height bigint NOT NULL
 );
+
+
+--
+-- Name: TABLE queue_data; Type: COMMENT; Schema: eth; Owner: -
+--
+
+COMMENT ON TABLE eth.queue_data IS '@name EthQueueData';
 
 
 --
@@ -315,9 +366,10 @@ ALTER SEQUENCE eth.receipt_cids_id_seq OWNED BY eth.receipt_cids.id;
 CREATE TABLE eth.state_cids (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    state_key character varying(66) NOT NULL,
-    leaf boolean NOT NULL,
-    cid text NOT NULL
+    state_key character varying(66),
+    cid text NOT NULL,
+    state_path bytea,
+    node_type integer NOT NULL
 );
 
 
@@ -348,9 +400,10 @@ ALTER SEQUENCE eth.state_cids_id_seq OWNED BY eth.state_cids.id;
 CREATE TABLE eth.storage_cids (
     id integer NOT NULL,
     state_id integer NOT NULL,
-    storage_key character varying(66) NOT NULL,
-    leaf boolean NOT NULL,
-    cid text NOT NULL
+    storage_key character varying(66),
+    cid text NOT NULL,
+    storage_path bytea,
+    node_type integer NOT NULL
 );
 
 
@@ -387,6 +440,13 @@ CREATE TABLE eth.transaction_cids (
     dst character varying(66) NOT NULL,
     src character varying(66) NOT NULL
 );
+
+
+--
+-- Name: TABLE transaction_cids; Type: COMMENT; Schema: eth; Owner: -
+--
+
+COMMENT ON TABLE eth.transaction_cids IS '@name EthTransactionCids';
 
 
 --
@@ -711,6 +771,13 @@ CREATE TABLE public.nodes (
     network_id character varying,
     node_id character varying(128)
 );
+
+
+--
+-- Name: TABLE nodes; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.nodes IS '@name NodeIDs';
 
 
 --
@@ -1110,11 +1177,11 @@ ALTER TABLE ONLY eth.receipt_cids
 
 
 --
--- Name: state_cids state_cids_header_id_state_key_key; Type: CONSTRAINT; Schema: eth; Owner: -
+-- Name: state_cids state_cids_header_id_state_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.state_cids
-    ADD CONSTRAINT state_cids_header_id_state_key_key UNIQUE (header_id, state_key);
+    ADD CONSTRAINT state_cids_header_id_state_path_key UNIQUE (header_id, state_path);
 
 
 --
@@ -1134,11 +1201,11 @@ ALTER TABLE ONLY eth.storage_cids
 
 
 --
--- Name: storage_cids storage_cids_state_id_storage_key_key; Type: CONSTRAINT; Schema: eth; Owner: -
+-- Name: storage_cids storage_cids_state_id_storage_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.storage_cids
-    ADD CONSTRAINT storage_cids_state_id_storage_key_key UNIQUE (state_id, storage_key);
+    ADD CONSTRAINT storage_cids_state_id_storage_path_key UNIQUE (state_id, storage_path);
 
 
 --

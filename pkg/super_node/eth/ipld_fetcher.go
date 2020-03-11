@@ -216,8 +216,9 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 				Data: state.RawData(),
 				CID:  state.Cid().String(),
 			},
-			StateTrieKey: common.HexToHash(stateNode.StateKey),
-			Leaf:         stateNode.Leaf,
+			StateLeafKey: common.HexToHash(stateNode.StateKey),
+			Type:         ResolveToNodeType(stateNode.NodeType),
+			Path:         stateNode.Path,
 		}
 	}
 	return stateNodes, nil
@@ -246,9 +247,10 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]Stora
 				Data: storage.RawData(),
 				CID:  storage.Cid().String(),
 			},
-			StateTrieKey:   common.HexToHash(storageNode.StateKey),
-			StorageTrieKey: common.HexToHash(storageNode.StorageKey),
-			Leaf:           storageNode.Leaf,
+			StateLeafKey:   common.HexToHash(storageNode.StateKey),
+			StorageLeafKey: common.HexToHash(storageNode.StorageKey),
+			Type:           ResolveToNodeType(storageNode.NodeType),
+			Path:           storageNode.Path,
 		}
 	}
 	return storageNodes, nil

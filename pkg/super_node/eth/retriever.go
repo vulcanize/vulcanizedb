@@ -391,7 +391,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 	log.Debug("retrieving state cids for header id ", headerID)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.id, state_cids.header_id,
-			state_cids.state_key, state_cids.leaf, state_cids.cid
+			state_cids.state_key, state_cids.node_type, state_cids.cid, state_cids.state_path
 			FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.id = $1`
 	args = append(args, headerID)
@@ -405,7 +405,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 		args = append(args, pq.Array(keys))
 	}
 	if !stateFilter.IntermediateNodes {
-		pgStr += ` AND state_cids.leaf = TRUE`
+		pgStr += ` AND state_cids.node_type = 2`
 	}
 	stateNodeCIDs := make([]StateNodeModel, 0)
 	return stateNodeCIDs, tx.Select(&stateNodeCIDs, pgStr, args...)
@@ -416,7 +416,8 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 	log.Debug("retrieving storage cids for header id ", headerID)
 	args := make([]interface{}, 0, 3)
 	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_key,
- 			storage_cids.leaf, storage_cids.cid, state_cids.state_key FROM eth.storage_cids, eth.state_cids, eth.header_cids
+ 			storage_cids.node_type, storage_cids.cid, storage_cids.storage_path, state_cids.state_key
+ 			FROM eth.storage_cids, eth.state_cids, eth.header_cids
 			WHERE storage_cids.state_id = state_cids.id 
 			AND state_cids.header_id = header_cids.id
 			AND header_cids.id = $1`
@@ -437,7 +438,7 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 		args = append(args, pq.Array(storageFilter.StorageKeys))
 	}
 	if !storageFilter.IntermediateNodes {
-		pgStr += ` AND storage_cids.leaf = TRUE`
+		pgStr += ` AND storage_cids.node_type = 2`
 	}
 	storageNodeCIDs := make([]StorageNodeWithStateKeyModel, 0)
 	return storageNodeCIDs, tx.Select(&storageNodeCIDs, pgStr, args...)

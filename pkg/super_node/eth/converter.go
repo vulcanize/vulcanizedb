@@ -21,6 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
@@ -123,47 +124,53 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		return nil, err
 	}
 	for _, createdAccount := range stateDiff.CreatedAccounts {
-		hashKey := common.BytesToHash(createdAccount.Key)
+		statePathHash := crypto.Keccak256Hash(createdAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: createdAccount.Value,
-			Leaf:  createdAccount.Leaf,
+			Path:    createdAccount.Path,
+			Value:   createdAccount.NodeValue,
+			Type:    createdAccount.NodeType,
+			LeafKey: common.BytesToHash(createdAccount.LeafKey),
 		})
 		for _, storageDiff := range createdAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}
 	for _, deletedAccount := range stateDiff.DeletedAccounts {
-		hashKey := common.BytesToHash(deletedAccount.Key)
+		statePathHash := crypto.Keccak256Hash(deletedAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: deletedAccount.Value,
-			Leaf:  deletedAccount.Leaf,
+			Path:    deletedAccount.Path,
+			Value:   deletedAccount.NodeValue,
+			Type:    deletedAccount.NodeType,
+			LeafKey: common.BytesToHash(deletedAccount.LeafKey),
 		})
 		for _, storageDiff := range deletedAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}
 	for _, updatedAccount := range stateDiff.UpdatedAccounts {
-		hashKey := common.BytesToHash(updatedAccount.Key)
+		statePathHash := crypto.Keccak256Hash(updatedAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: updatedAccount.Value,
-			Leaf:  updatedAccount.Leaf,
+			Path:    updatedAccount.Path,
+			Value:   updatedAccount.NodeValue,
+			Type:    updatedAccount.NodeType,
+			LeafKey: common.BytesToHash(updatedAccount.LeafKey),
 		})
 		for _, storageDiff := range updatedAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}

@@ -41,22 +41,24 @@ var (
 	SmallStorageValue       = common.Hex2Bytes("03")
 	SmallStorageValueRlp, _ = rlp.EncodeToBytes(SmallStorageValue)
 	storageWithSmallValue   = []statediff.StorageDiff{{
-		Key:   StorageKey,
-		Value: SmallStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
+		LeafKey:   StorageKey,
+		NodeValue: SmallStorageValueRlp,
+		NodeType:  statediff.Leaf,
+		Path:      StoragePath,
 	}}
 	LargeStorageValue       = common.Hex2Bytes("00191b53778c567b14b50ba0000")
 	LargeStorageValueRlp, _ = rlp.EncodeToBytes(LargeStorageValue)
 	storageWithLargeValue   = []statediff.StorageDiff{{
-		Key:   StorageKey,
-		Value: LargeStorageValueRlp,
-		Path:  StoragePath,
-		Proof: [][]byte{},
+		LeafKey:   StorageKey,
+		NodeValue: LargeStorageValueRlp,
+		Path:      StoragePath,
+		NodeType:  statediff.Leaf,
 	}}
 	StorageWithBadValue = statediff.StorageDiff{
-		Key:   StorageKey,
-		Value: []byte{0, 1, 2},
+		LeafKey:   StorageKey,
+		NodeValue: []byte{0, 1, 2},
+		NodeType:  statediff.Leaf,
+		Path:      StoragePath,
 		// this storage value will fail to be decoded as an RLP with the following error message:
 		// "input contains more than one value"
 	}
@@ -74,27 +76,27 @@ var (
 	valueBytes, _       = rlp.EncodeToBytes(testAccount)
 	CreatedAccountDiffs = []statediff.AccountDiff{
 		{
-			Key:     ContractLeafKey.Bytes(),
-			Value:   valueBytes,
-			Storage: storageWithSmallValue,
+			LeafKey:   ContractLeafKey.Bytes(),
+			NodeValue: valueBytes,
+			Storage:   storageWithSmallValue,
 		},
 	}
 
 	UpdatedAccountDiffs = []statediff.AccountDiff{{
-		Key:     AnotherContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storageWithLargeValue,
+		LeafKey:   AnotherContractLeafKey.Bytes(),
+		NodeValue: valueBytes,
+		Storage:   storageWithLargeValue,
 	}}
 	UpdatedAccountDiffs2 = []statediff.AccountDiff{{
-		Key:     AnotherContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storageWithSmallValue,
+		LeafKey:   AnotherContractLeafKey.Bytes(),
+		NodeValue: valueBytes,
+		Storage:   storageWithSmallValue,
 	}}
 
 	DeletedAccountDiffs = []statediff.AccountDiff{{
-		Key:     AnotherContractLeafKey.Bytes(),
-		Value:   valueBytes,
-		Storage: storageWithSmallValue,
+		LeafKey:   AnotherContractLeafKey.Bytes(),
+		NodeValue: valueBytes,
+		Storage:   storageWithSmallValue,
 	}}
 
 	MockStateDiff = statediff.StateDiff{
