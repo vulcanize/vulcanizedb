@@ -19,16 +19,15 @@ package fakes
 import (
 	"context"
 	"errors"
-	"github.com/ethereum/go-ethereum/statediff"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
-	. "github.com/onsi/gomega"
-
+	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth/client"
+	. "github.com/onsi/gomega"
 )
 
 type MockRpcClient struct {
@@ -43,7 +42,7 @@ type MockRpcClient struct {
 	passedContext       context.Context
 	passedMethod        string
 	passedResult        interface{}
-	passedBatch         []client.BatchElem
+	passedBatch         []core.BatchElem
 	passedNamespace     string
 	passedPayloadChan   chan statediff.Payload
 	passedSubscribeArgs []interface{}
@@ -57,57 +56,57 @@ func NewMockRpcClient() *MockRpcClient {
 	return &MockRpcClient{}
 }
 
-func (client *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
-	client.passedNamespace = namespace
+func (c *MockRpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (core.Subscription, error) {
+	c.passedNamespace = namespace
 
 	passedPayloadChan, ok := payloadChan.(chan statediff.Payload)
 	if !ok {
 		return nil, errors.New("passed in channel is not of the correct type")
 	}
-	client.passedPayloadChan = passedPayloadChan
+	c.passedPayloadChan = passedPayloadChan
 
 	for _, arg := range args {
-		client.passedSubscribeArgs = append(client.passedSubscribeArgs, arg)
+		c.passedSubscribeArgs = append(c.passedSubscribeArgs, arg)
 	}
 
 	subscription := rpc.ClientSubscription{}
-	return &subscription, nil
+	return client.Subscription{RpcSubscription: &subscription}, nil
 }
 
-func (client *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
-	Expect(client.passedNamespace).To(Equal(namespace))
-	Expect(client.passedPayloadChan).To(Equal(payloadChan))
-	Expect(client.passedSubscribeArgs).To(Equal(args))
+func (c *MockRpcClient) AssertSubscribeCalledWith(namespace string, payloadChan chan statediff.Payload, args []interface{}) {
+	Expect(c.passedNamespace).To(Equal(namespace))
+	Expect(c.passedPayloadChan).To(Equal(payloadChan))
+	Expect(c.passedSubscribeArgs).To(Equal(args))
 }
 
-func (client *MockRpcClient) SetIpcPath(ipcPath string) {
-	client.ipcPath = ipcPath
+func (c *MockRpcClient) SetIpcPath(ipcPath string) {
+	c.ipcPath = ipcPath
 }
 
-func (client *MockRpcClient) BatchCall(batch []client.BatchElem) error {
-	client.passedBatch = batch
-	client.passedMethod = batch[0].Method
-	client.lengthOfBatch = len(batch)
+func (c *MockRpcClient) BatchCall(batch []core.BatchElem) error {
+	c.passedBatch = batch
+	c.passedMethod = batch[0].Method
+	c.lengthOfBatch = len(batch)
 
 	for _, batchElem := range batch {
-		client.passedContext = context.Background()
-		client.passedResult = &batchElem.Result
-		client.passedMethod = batchElem.Method
+		c.passedContext = context.Background()
+		c.passedResult = &batchElem.Result
+		c.passedMethod = batchElem.Method
 		if p, ok := batchElem.Result.(*types.Header); ok {
 			*p = types.Header{Number: big.NewInt(100)}
 		}
 		if p, ok := batchElem.Result.(*core.POAHeader); ok {
-			*p = client.returnPOAHeader
+			*p = c.returnPOAHeader
 		}
 	}
 
 	return nil
 }
 
-func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	client.passedContext = ctx
-	client.passedResult = result
-	client.passedMethod = method
+func (c *MockRpcClient) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	c.passedContext = ctx
+	c.passedResult = result
+	c.passedMethod = method
 	switch method {
 	case "eth_getBlockByNumber":
 		if p, ok := result.(*types.Header); ok {
@@ -115,61 +114,61 @@ func (client *MockRpcClient) CallContext(ctx context.Context, result interface{}
 		}
 		if p, ok := result.(*core.POAHeader); ok {
 
-			*p = client.returnPOAHeader
+			*p = c.returnPOAHeader
 		}
-		if client.callContextErr != nil {
-			return client.callContextErr
+		if c.callContextErr != nil {
+			return c.callContextErr
 		}
 	case "parity_versionInfo":
 		if p, ok := result.(*core.ParityNodeInfo); ok {
-			*p = client.ParityNodeInfo
+			*p = c.ParityNodeInfo
 		}
 	case "parity_enode":
 		if p, ok := result.(*string); ok {
-			*p = client.ParityEnode
+			*p = c.ParityEnode
 		}
 	case "net_version":
 		if p, ok := result.(*string); ok {
-			*p = client.NetworkID
+			*p = c.NetworkID
 		}
 	case "web3_clientVersion":
 		if p, ok := result.(*string); ok {
-			*p = client.ClientVersion
+			*p = c.ClientVersion
 		}
 	}
 	return nil
 }
 
-func (client *MockRpcClient) IpcPath() string {
-	return client.ipcPath
+func (c *MockRpcClient) IpcPath() string {
+	return c.ipcPath
 }
 
-func (client *MockRpcClient) SetCallContextErr(err error) {
-	client.callContextErr = err
+func (c *MockRpcClient) SetCallContextErr(err error) {
+	c.callContextErr = err
 }
 
-func (client *MockRpcClient) SetReturnPOAHeader(header core.POAHeader) {
-	client.returnPOAHeader = header
+func (c *MockRpcClient) SetReturnPOAHeader(header core.POAHeader) {
+	c.returnPOAHeader = header
 }
 
-func (client *MockRpcClient) SetReturnPOWHeaders(headers []*types.Header) {
-	client.returnPOWHeaders = headers
+func (c *MockRpcClient) SetReturnPOWHeaders(headers []*types.Header) {
+	c.returnPOWHeaders = headers
 }
 
-func (client *MockRpcClient) SetReturnPOAHeaders(headers []core.POAHeader) {
-	client.returnPOAHeaders = headers
+func (c *MockRpcClient) SetReturnPOAHeaders(headers []core.POAHeader) {
+	c.returnPOAHeaders = headers
 }
 
-func (client *MockRpcClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
-	Expect(client.passedContext).To(Equal(ctx))
-	Expect(client.passedResult).To(BeAssignableToTypeOf(result))
-	Expect(client.passedMethod).To(Equal(method))
+func (c *MockRpcClient) AssertCallContextCalledWith(ctx context.Context, result interface{}, method string) {
+	Expect(c.passedContext).To(Equal(ctx))
+	Expect(c.passedResult).To(BeAssignableToTypeOf(result))
+	Expect(c.passedMethod).To(Equal(method))
 }
 
-func (client *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch int) {
-	Expect(client.lengthOfBatch).To(Equal(lengthOfBatch))
-	for _, batch := range client.passedBatch {
+func (c *MockRpcClient) AssertBatchCalledWith(method string, lengthOfBatch int) {
+	Expect(c.lengthOfBatch).To(Equal(lengthOfBatch))
+	for _, batch := range c.passedBatch {
 		Expect(batch.Method).To(Equal(method))
 	}
-	Expect(client.passedMethod).To(Equal(method))
+	Expect(c.passedMethod).To(Equal(method))
 }

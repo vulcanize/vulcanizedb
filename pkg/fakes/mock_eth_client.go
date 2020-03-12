@@ -23,8 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/makerdao/vulcanizedb/pkg/eth/client"
-
+	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/gomega"
 )
 
@@ -55,7 +54,7 @@ type MockEthClient struct {
 	storageAtBlock              *big.Int
 	storageAtError              error
 	err                         error
-	passedBatch                 []client.BatchElem
+	passedBatch                 []core.BatchElem
 	passedMethod                string
 	transactionSenderErr        error
 	transactionReceiptErr       error
@@ -135,7 +134,7 @@ func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.Call
 	return client.callContractReturnBytes, client.callContractErr
 }
 
-func (client *MockEthClient) BatchCall(batch []client.BatchElem) error {
+func (client *MockEthClient) BatchCall(batch []core.BatchElem) error {
 	client.passedBatch = batch
 	client.passedMethod = batch[0].Method
 

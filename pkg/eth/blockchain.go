@@ -26,7 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/pkg/core"
-	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 	"github.com/makerdao/vulcanizedb/pkg/eth/converters"
 	"golang.org/x/net/context"
 )
@@ -77,11 +76,11 @@ func (blockChain *BlockChain) GetHeadersByNumbers(blockNumbers []int64) (header 
 
 func (blockChain *BlockChain) GetTransactions(transactionHashes []common.Hash) ([]core.TransactionModel, error) {
 	numTransactions := len(transactionHashes)
-	var batch []client.BatchElem
+	var batch []core.BatchElem
 	transactions := make([]core.RpcTransaction, numTransactions)
 
 	for index, transactionHash := range transactionHashes {
-		batchElem := client.BatchElem{
+		batchElem := core.BatchElem{
 			Method: "eth_getTransactionByHash",
 			Result: &transactions[index],
 			Args:   []interface{}{transactionHash},
@@ -143,7 +142,7 @@ func (blockChain *BlockChain) getPOAHeader(blockNumber int64) (header core.Heade
 
 func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []core.Header, err error) {
 
-	var batch []client.BatchElem
+	var batch []core.BatchElem
 	var POAHeaders [MAX_BATCH_SIZE]core.POAHeader
 	includeTransactions := false
 
@@ -155,7 +154,7 @@ func (blockChain *BlockChain) getPOAHeaders(blockNumbers []int64) (headers []cor
 
 		blockNumberArg := hexutil.EncodeBig(big.NewInt(blockNumber))
 
-		batchElem := client.BatchElem{
+		batchElem := core.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Result: &POAHeaders[index],
 			Args:   []interface{}{blockNumberArg, includeTransactions},
@@ -205,7 +204,7 @@ func (blockChain *BlockChain) getPOWHeader(blockNumber int64) (header core.Heade
 }
 
 func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []core.Header, err error) {
-	var batch []client.BatchElem
+	var batch []core.BatchElem
 	var POWHeaders [MAX_BATCH_SIZE]types.Header
 	includeTransactions := false
 
@@ -217,7 +216,7 @@ func (blockChain *BlockChain) getPOWHeaders(blockNumbers []int64) (headers []cor
 
 		blockNumberArg := hexutil.EncodeBig(big.NewInt(blockNumber))
 
-		batchElem := client.BatchElem{
+		batchElem := core.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Result: &POWHeaders[index],
 			Args:   []interface{}{blockNumberArg, includeTransactions},

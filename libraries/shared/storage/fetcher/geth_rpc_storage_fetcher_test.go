@@ -17,8 +17,8 @@ package fetcher_test
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
+	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
@@ -27,49 +27,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type MockStoragediffStreamer struct {
-	subscribeError    error
-	PassedPayloadChan chan statediff.Payload
-	streamPayloads    []statediff.Payload
-}
-
-func (streamer *MockStoragediffStreamer) Stream(statediffPayloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
-	clientSubscription := rpc.ClientSubscription{}
-	streamer.PassedPayloadChan = statediffPayloadChan
-
-	go func() {
-		for _, payload := range streamer.streamPayloads {
-			streamer.PassedPayloadChan <- payload
-		}
-	}()
-
-	return &clientSubscription, streamer.subscribeError
-}
-
-func (streamer *MockStoragediffStreamer) SetSubscribeError(err error) {
-	streamer.subscribeError = err
-}
-
-func (streamer *MockStoragediffStreamer) SetPayloads(payloads []statediff.Payload) {
-	streamer.streamPayloads = payloads
-}
-
 var _ = Describe("Geth RPC Storage Fetcher", func() {
-	var streamer MockStoragediffStreamer
+	var streamer *mocks.MockStoragediffStreamer
 	var statediffPayloadChan chan statediff.Payload
 	var statediffFetcher fetcher.GethRpcStorageFetcher
 	var storagediffChan chan types.RawDiff
+	var subscription *fakes.MockSubscription
 	var errorChan chan error
 
 	BeforeEach(func() {
-		streamer = MockStoragediffStreamer{}
+		subscription = &fakes.MockSubscription{Errs: make(chan error)}
+		streamer = &mocks.MockStoragediffStreamer{ClientSubscription: subscription}
 		statediffPayloadChan = make(chan statediff.Payload, 1)
-		statediffFetcher = fetcher.NewGethRpcStorageFetcher(&streamer, statediffPayloadChan)
+		statediffFetcher = fetcher.NewGethRpcStorageFetcher(streamer, statediffPayloadChan)
 		storagediffChan = make(chan types.RawDiff)
 		errorChan = make(chan error)
 	})
 
-	It("adds errors to error channel if the RPC subscription fails and panics", func(done Done) {
+	It("adds errors to errors channel if the streamer fails to subscribe", func(done Done) {
 		streamer.SetSubscribeError(fakes.FakeError)
 
 		go func() {
@@ -78,6 +53,15 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			}
 			Expect(failedSub).To(Panic())
 		}()
+
+		Expect(<-errorChan).To(MatchError(fakes.FakeError))
+		close(done)
+	})
+
+	It("adds error to errors channel if the subscription fails", func(done Done) {
+		go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+		subscription.Errs <- fakes.FakeError
 
 		Expect(<-errorChan).To(MatchError(fakes.FakeError))
 		close(done)

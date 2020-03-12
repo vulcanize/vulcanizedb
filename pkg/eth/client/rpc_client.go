@@ -22,18 +22,12 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/makerdao/vulcanizedb/pkg/core"
 )
 
 type RpcClient struct {
 	client  *rpc.Client
 	ipcPath string
-}
-
-type BatchElem struct {
-	Method string
-	Args   []interface{}
-	Result interface{}
-	Error  error
 }
 
 func NewRpcClient(client *rpc.Client, ipcPath string) RpcClient {
@@ -58,7 +52,7 @@ func (client RpcClient) IpcPath() string {
 	return client.ipcPath
 }
 
-func (client RpcClient) BatchCall(batch []BatchElem) error {
+func (client RpcClient) BatchCall(batch []core.BatchElem) error {
 	var rpcBatch []rpc.BatchElem
 	for _, batchElem := range batch {
 		var newBatchElem = rpc.BatchElem{
@@ -75,7 +69,7 @@ func (client RpcClient) BatchCall(batch []BatchElem) error {
 
 // Subscribe subscribes to an rpc "namespace_subscribe" subscription with the given channel
 // The first argument needs to be the method we wish to invoke
-func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (core.Subscription, error) {
 	chanVal := reflect.ValueOf(payloadChan)
 	if chanVal.Kind() != reflect.Chan || chanVal.Type().ChanDir()&reflect.SendDir == 0 {
 		return nil, errors.New("second argument to Subscribe must be a writable channel")
@@ -83,5 +77,6 @@ func (client RpcClient) Subscribe(namespace string, payloadChan interface{}, arg
 	if chanVal.IsNil() {
 		return nil, errors.New("channel given to Subscribe must not be nil")
 	}
-	return client.client.Subscribe(context.Background(), namespace, payloadChan, args...)
+	rpcSubscription, err := client.client.Subscribe(context.Background(), namespace, payloadChan, args...)
+	return Subscription{RpcSubscription: rpcSubscription}, err
 }

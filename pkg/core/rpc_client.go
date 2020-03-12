@@ -18,14 +18,11 @@ package core
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/rpc"
-
-	"github.com/makerdao/vulcanizedb/pkg/eth/client"
 )
 
 type RpcClient interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
-	BatchCall(batch []client.BatchElem) error
+	BatchCall(batch []BatchElem) error
 	IpcPath() string
-	Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error)
+	Subscribe(namespace string, payloadChan interface{}, args ...interface{}) (Subscription, error)
 }
