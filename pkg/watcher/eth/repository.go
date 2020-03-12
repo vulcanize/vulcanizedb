@@ -82,13 +82,11 @@ func (r *Repository) QueueData(payload super_node.SubscriptionPayload) error {
 	return err
 }
 
-// GetQueueData grabs payload data from the queue table so that it can
-// be forwarded to the ready tables
-// this is used to make sure we enter data into the tables that triggers act on in sequential order
-// even if we receive data out-of-order
-// it returns the new index
-// delete the data it retrieves so as to clear the queue
-// periodically vacuum's the table to free up space from the deleted rows
+// GetQueueData grabs payload data from the queue table so that it can be readied
+// Used ensure we enter data into the tables that triggers act on in sequential order, even if we receive data out-of-order
+// Returns the queued data, the new index, and err
+// Deletes from the queue the data it retrieves
+// Periodically vacuum's the table to free up space from the deleted rows
 func (r *Repository) GetQueueData(height int64) (super_node.SubscriptionPayload, int64, error) {
 	pgStr := `DELETE FROM eth.queued_data
 			WHERE height = $1

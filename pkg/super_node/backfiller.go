@@ -30,7 +30,7 @@ import (
 
 const (
 	DefaultMaxBatchSize   uint64 = 100
-	defaultMaxBatchNumber int64  = 10
+	DefaultMaxBatchNumber int64  = 10
 )
 
 // BackFillInterface for filling in gaps in the super node
@@ -146,8 +146,7 @@ func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
 	log.Infof("going to fill in %s gap from %d to %d", bfs.chain.String(), startingBlock, endingBlock)
 	errChan := make(chan error)
 	done := make(chan bool)
-	err := bfs.backFill(startingBlock, endingBlock, errChan, done)
-	if err != nil {
+	if err := bfs.backFill(startingBlock, endingBlock, errChan, done); err != nil {
 		return err
 	}
 	for {
@@ -184,7 +183,7 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 		for _, blockHeights := range blockRangeBins {
 			// if we have reached our limit of active goroutines
 			// wait for one to finish before starting the next
-			if atomic.AddInt64(&activeCount, 1) > defaultMaxBatchNumber {
+			if atomic.AddInt64(&activeCount, 1) > DefaultMaxBatchNumber {
 				// this blocks until a process signals it has finished
 				<-forwardDone
 			}

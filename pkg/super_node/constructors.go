@@ -166,3 +166,14 @@ func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc
 		return rpc.API{}, fmt.Errorf("invalid chain %s for public api constructor", chain.String())
 	}
 }
+
+// NewCleaner constructs a Cleaner for the provided chain type
+func NewCleaner(chain shared.ChainType, db *postgres.DB) (shared.Cleaner, error) {
+	switch chain {
+	case shared.Ethereum:
+		return eth.NewCleaner(db), nil
+	// TODO: support BTC
+	default:
+		return nil, fmt.Errorf("invalid chain %s for publisher constructor", chain.String())
+	}
+}

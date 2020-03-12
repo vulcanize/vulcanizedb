@@ -74,6 +74,11 @@ type DagPutter interface {
 	DagPut(raw interface{}) ([]string, error)
 }
 
+// Cleaner is for cleaning out data from the cache within the given ranges
+type Cleaner interface {
+	Clean(rngs [][2]uint64, t DataType) error
+}
+
 // SubscriptionSettings is the interface every subscription filter type needs to satisfy, no matter the chain
 // Further specifics of the underlying filter type depend on the internal needs of the types
 // which satisfy the ResponseFilterer and CIDRetriever interfaces for a specific chain

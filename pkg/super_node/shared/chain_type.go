@@ -25,7 +25,7 @@ import (
 type ChainType int
 
 const (
-	Unknown ChainType = iota
+	UnknownChain ChainType = iota
 	Ethereum
 	Bitcoin
 	Omni
@@ -66,6 +66,6 @@ func NewChainType(name string) (ChainType, error) {
 	case "omni":
 		return Omni, nil
 	default:
-		return Unknown, errors.New("invalid name for chain")
+		return UnknownChain, errors.New("invalid name for chain")
 	}
 }
