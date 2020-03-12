@@ -105,7 +105,6 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	default:
 		return fmt.Errorf("eth cleaner unrecognized type: %s", t.String())
 	}
-	return nil
 }
 
 func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
