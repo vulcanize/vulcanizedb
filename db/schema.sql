@@ -17,6 +17,54 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: get_or_create_header(bigint, character varying, jsonb, numeric, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_or_create_header(block_number bigint, hash character varying, raw jsonb, block_timestamp numeric, eth_node_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    matching_header_id    INTEGER := (
+        SELECT id
+        FROM public.headers
+        WHERE headers.block_number = get_or_create_header.block_number
+          AND headers.hash = get_or_create_header.hash
+    );
+    nonmatching_header_id INTEGER := (
+        SELECT id
+        FROM public.headers
+        WHERE headers.block_number = get_or_create_header.block_number
+          AND headers.hash != get_or_create_header.hash
+    );
+    max_block_number      BIGINT  := (
+        SELECT MAX(headers.block_number)
+        FROM public.headers
+    );
+    inserted_header_id    INTEGER;
+BEGIN
+    IF matching_header_id != 0 THEN
+        RETURN matching_header_id;
+    END IF;
+
+    IF nonmatching_header_id != 0 AND block_number <= max_block_number - 15 THEN
+        RETURN nonmatching_header_id;
+    END IF;
+
+    IF nonmatching_header_id != 0 AND block_number > max_block_number - 15 THEN
+        DELETE FROM public.headers WHERE id = nonmatching_header_id;
+    END IF;
+
+    INSERT INTO public.headers (hash, block_number, raw, block_timestamp, eth_node_id)
+    VALUES (get_or_create_header.hash, get_or_create_header.block_number, get_or_create_header.raw,
+            get_or_create_header.block_timestamp, get_or_create_header.eth_node_id)
+    RETURNING id INTO inserted_header_id;
+
+    RETURN inserted_header_id;
+END
+$$;
+
+
+--
 -- Name: set_header_updated(); Type: FUNCTION; Schema: public; Owner: -
 --
 

@@ -17,7 +17,6 @@
 package repositories
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/jmoiron/sqlx"
@@ -37,18 +36,10 @@ func NewHeaderRepository(database *postgres.DB) HeaderRepository {
 }
 
 func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
-	hash, err := repository.getHeaderHash(header)
-	if err != nil {
-		if headerDoesNotExist(err) {
-			return repository.InternalInsertHeader(header)
-		}
-		logrus.Error("CreateOrUpdateHeader: error getting header hash: ", err)
-		return 0, err
-	}
-	if headerMustBeReplaced(hash, header) {
-		return repository.replaceHeader(header)
-	}
-	return 0, ErrValidHeaderExists
+	var headerID int64
+	err := repository.database.QueryRowx("SELECT * FROM public.get_or_create_header($1, $2, $3, $4, $5)",
+		header.BlockNumber, header.Hash, header.Raw, header.Timestamp, repository.database.NodeID).Scan(&headerID)
+	return headerID, err
 }
 
 func (repository HeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
@@ -86,8 +77,8 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 
 func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
-		blockNumber, repository.database.NodeID)
+	err := repository.database.Get(&header,
+		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1`, blockNumber)
 	return header, err
 }
 
@@ -96,59 +87,14 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	err := repository.database.Select(&numbers,
 		`SELECT series.block_number
 			FROM (SELECT generate_series($1::INT, $2::INT) AS block_number) AS series
-			LEFT OUTER JOIN (SELECT block_number FROM headers
-				WHERE eth_node_id = $3) AS synced
+			LEFT OUTER JOIN (SELECT block_number FROM public.headers) AS synced
 			USING (block_number)
 			WHERE  synced.block_number IS NULL`,
-		startingBlockNumber, endingBlockNumber, repository.database.NodeID)
+		startingBlockNumber, endingBlockNumber)
 	if err != nil {
-		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v for node %v",
-			startingBlockNumber, endingBlockNumber, repository.database.NodeID)
+		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v",
+			startingBlockNumber, endingBlockNumber)
 		return []int64{}, err
 	}
 	return numbers, nil
-}
-
-func headerMustBeReplaced(hash string, header core.Header) bool {
-	return hash != header.Hash
-}
-
-func headerDoesNotExist(err error) bool {
-	return err == sql.ErrNoRows
-}
-
-func (repository HeaderRepository) getHeaderHash(header core.Header) (string, error) {
-	var hash string
-	err := repository.database.Get(&hash, `SELECT hash FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
-		header.BlockNumber, repository.database.NodeID)
-	return hash, err
-}
-
-// Function is public so we can test insert being called for the same header
-// Can happen when concurrent processes are inserting headers
-// Otherwise should not occur since only called in CreateOrUpdateHeader
-func (repository HeaderRepository) InternalInsertHeader(header core.Header) (int64, error) {
-	var headerId int64
-	row := repository.database.QueryRowx(
-		`INSERT INTO public.headers (block_number, hash, block_timestamp, raw, eth_node_id)
-		VALUES ($1, $2, $3::NUMERIC, $4, $5) ON CONFLICT DO NOTHING RETURNING id`,
-		header.BlockNumber, header.Hash, header.Timestamp, header.Raw, repository.database.NodeID)
-	err := row.Scan(&headerId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, ErrValidHeaderExists
-		}
-		logrus.Error("InternalInsertHeader: error inserting header: ", err)
-	}
-	return headerId, err
-}
-
-func (repository HeaderRepository) replaceHeader(header core.Header) (int64, error) {
-	_, err := repository.database.Exec(`DELETE FROM headers WHERE block_number = $1 AND eth_node_id = $2`,
-		header.BlockNumber, repository.database.NodeID)
-	if err != nil {
-		logrus.Error("replaceHeader: error deleting headers: ", err)
-		return 0, err
-	}
-	return repository.InternalInsertHeader(header)
 }
