@@ -15,21 +15,20 @@
 package streamer
 
 import (
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/sirupsen/logrus"
 )
 
 type Streamer interface {
-	Stream(chan statediff.Payload) (*rpc.ClientSubscription, error)
+	Stream(chan statediff.Payload) (core.Subscription, error)
 }
 
 type StateDiffStreamer struct {
 	client core.RpcClient
 }
 
-func (streamer *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+func (streamer *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (core.Subscription, error) {
 	logrus.Info("streaming diffs from geth")
 	return streamer.client.Subscribe("statediff", payloadChan, "stream")
 }

@@ -46,31 +46,37 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 	logrus.Info("Successfully created a geth client subscription: ", clientSubscription)
 
 	for {
-		diff := <-ethStatediffPayloadChan
-		logrus.Trace("received a statediff")
-		stateDiff := new(statediff.StateDiff)
-		decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
-		logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
-		if decodeErr != nil {
-			logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
-			errs <- decodeErr
-		}
+		select {
+		case err := <-clientSubscription.Err():
+			logrus.Errorf("error with client subscription: %s", err.Error())
+			errs <- err
+		case diff := <-ethStatediffPayloadChan:
+			logrus.Trace("received a statediff")
+			stateDiff := new(statediff.StateDiff)
+			decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
+			logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
+			if decodeErr != nil {
+				logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
+				errs <- decodeErr
+			}
 
-		accounts := getAccountsFromDiff(*stateDiff)
-		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
-		for _, account := range accounts {
-			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
-			for _, accountStorage := range account.Storage {
-				diff, formatErr := types.FromGethStateDiff(account, stateDiff, accountStorage)
-				logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
-					diff.HashedAddress.Hex(), diff.BlockHeight, diff.StorageKey.Hex(), diff.StorageValue.Hex())
-				if formatErr != nil {
-					errs <- formatErr
+			accounts := getAccountsFromDiff(*stateDiff)
+			logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
+			for _, account := range accounts {
+				logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
+				for _, accountStorage := range account.Storage {
+					diff, formatErr := types.FromGethStateDiff(account, stateDiff, accountStorage)
+					logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
+						diff.HashedAddress.Hex(), diff.BlockHeight, diff.StorageKey.Hex(), diff.StorageValue.Hex())
+					if formatErr != nil {
+						errs <- formatErr
+					}
+
+					out <- diff
 				}
-
-				out <- diff
 			}
 		}
+
 	}
 }
 

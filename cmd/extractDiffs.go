@@ -19,6 +19,8 @@ var extractDiffsCmd = &cobra.Command{
 	Configure which with the STORAGEDIFFS_SOURCE flag. Received diffs are
 	written to public.storage_diff.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		extractDiffs()
 	},
 }
