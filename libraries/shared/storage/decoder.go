@@ -32,6 +32,8 @@ func Decode(diff types.PersistedDiff, metadata types.ValueMetadata) (interface{}
 	switch metadata.Type {
 	case types.Uint256:
 		return decodeInteger(diff.StorageValue.Bytes()), nil
+	case types.Uint32:
+		return decodeInteger(diff.StorageValue.Bytes()), nil
 	case types.Uint48:
 		return decodeInteger(diff.StorageValue.Bytes()), nil
 	case types.Uint128:

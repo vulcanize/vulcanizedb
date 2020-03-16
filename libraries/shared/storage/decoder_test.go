@@ -49,6 +49,17 @@ var _ = Describe("Storage decoder", func() {
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
+	It("decodes uint32", func() {
+		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000532")
+		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
+		metadata := types.ValueMetadata{Type: types.Uint32}
+
+		result, err := storage.Decode(diff, metadata)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
+	})
+
 	It("decodes uint48", func() {
 		fakeInt := common.HexToHash("0000000000000000000000000000000000000000000000000000000000000123")
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
