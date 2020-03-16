@@ -50,6 +50,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 		logrus.Trace("received a statediff")
 		stateDiff := new(statediff.StateDiff)
 		decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
+		logrus.Tracef("received a statediff from block: %v", stateDiff.BlockNumber)
 		if decodeErr != nil {
 			logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
 			errs <- decodeErr
@@ -61,11 +62,8 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 			for _, accountStorage := range account.Storage {
 				diff, formatErr := types.FromGethStateDiff(account, stateDiff, accountStorage)
-				logrus.Trace("adding storage diff to out channel",
-					"keccak of address: ", diff.HashedAddress.Hex(),
-					"block height: ", diff.BlockHeight,
-					"storage key: ", diff.StorageKey.Hex(),
-					"storage value: ", diff.StorageValue.Hex())
+				logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
+					diff.HashedAddress.Hex(), diff.BlockHeight, diff.StorageKey.Hex(), diff.StorageValue.Hex())
 				if formatErr != nil {
 					errs <- formatErr
 				}
