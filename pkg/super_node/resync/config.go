@@ -17,9 +17,21 @@
 package resync
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/spf13/viper"
+
 	"github.com/vulcanize/vulcanizedb/pkg/config"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	"github.com/vulcanize/vulcanizedb/utils"
 )
 
 // Config holds the parameters needed to perform a resync
@@ -34,6 +46,7 @@ type Config struct {
 	IPFSPath string
 
 	HTTPClient interface{} // Note this client is expected to support the retrieval of the specified data type(s)
+	NodeInfo   core.Node   // Info for the associated node
 	Ranges     [][2]uint64 // The block height ranges to resync
 	BatchSize  uint64      // BatchSize for the resync http calls (client has to support batch sizing)
 
@@ -41,6 +54,78 @@ type Config struct {
 }
 
 // NewReSyncConfig fills and returns a resync config from toml parameters
-func NewReSyncConfig() (Config, error) {
-	panic("implement me")
+func NewReSyncConfig() (*Config, error) {
+	c := new(Config)
+	var err error
+	ipfsPath := viper.GetString("superNode.ipfsPath")
+	if ipfsPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		ipfsPath = filepath.Join(home, ".ipfs")
+	}
+	c.IPFSPath = ipfsPath
+	c.DBConfig = config.Database{
+		Name:     viper.GetString("database.name"),
+		Hostname: viper.GetString("database.hostname"),
+		Port:     viper.GetInt("database.port"),
+		User:     viper.GetString("database.user"),
+		Password: viper.GetString("database.password"),
+	}
+	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
+	resyncType := viper.GetString("resync.type")
+	c.ResyncType, err = shared.GenerateResyncTypeFromString(resyncType)
+	if err != nil {
+		return nil, err
+	}
+	chain := viper.GetString("resync.chain")
+	c.Chain, err = shared.NewChainType(chain)
+	if err != nil {
+		return nil, err
+	}
+	if ok, err := shared.SupportedResyncType(c.ResyncType, c.Chain); !ok {
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("chain type %s does not support data type %s", c.Chain.String(), c.ResyncType.String())
+	}
+	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
+
+	switch c.Chain {
+	case shared.Ethereum:
+		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(viper.GetString("ethereum.node.httpPath"))
+		if err != nil {
+			return nil, err
+		}
+	case shared.Bitcoin:
+		c.NodeInfo = core.Node{
+			ID:           viper.GetString("bitcoin.node.nodeID"),
+			ClientName:   viper.GetString("bitcoin.node.clientName"),
+			GenesisBlock: viper.GetString("bitcoin.node.genesisBlock"),
+			NetworkID:    viper.GetString("bitcoin.node.networkID"),
+		}
+		// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
+		c.HTTPClient = &rpcclient.ConnConfig{
+			Host:         viper.GetString("bitcoin.node.httpPath"),
+			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+			DisableTLS:   true, // Bitcoin core does not provide TLS by default
+			Pass:         viper.GetString("bitcoin.node.pass"),
+			User:         viper.GetString("bitcoin.node.user"),
+		}
+	}
+	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+	c.DB = &db
+	c.Quit = make(chan bool)
+	return c, nil
+}
+
+func getEthNodeAndClient(path string) (core.Node, interface{}, error) {
+	rawRPCClient, err := rpc.Dial(path)
+	if err != nil {
+		return core.Node{}, nil, err
+	}
+	rpcClient := client.NewRPCClient(rawRPCClient, path)
+	vdbNode := node.MakeNode(rpcClient)
+	return vdbNode, rpcClient, nil
 }

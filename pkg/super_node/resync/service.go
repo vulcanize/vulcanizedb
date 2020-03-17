@@ -59,7 +59,7 @@ type Service struct {
 }
 
 // NewResyncService creates and returns a resync service from the provided settings
-func NewResyncService(settings Config) (Resync, error) {
+func NewResyncService(settings *Config) (Resync, error) {
 	publisher, err := super_node.NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
