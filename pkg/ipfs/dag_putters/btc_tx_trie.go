@@ -25,21 +25,21 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
 
-type EthReceiptDagPutter struct {
+type BtcTxTrieDagPutter struct {
 	adder *ipfs.IPFS
 }
 
-func NewEthReceiptDagPutter(adder *ipfs.IPFS) *EthReceiptDagPutter {
-	return &EthReceiptDagPutter{adder: adder}
+func NewBtcTxTrieDagPutter(adder *ipfs.IPFS) *BtcTxTrieDagPutter {
+	return &BtcTxTrieDagPutter{adder: adder}
 }
 
-func (erdp *EthReceiptDagPutter) DagPut(n node.Node) (string, error) {
-	receipt, ok := n.(*ipld.EthReceipt)
+func (etdp *BtcTxTrieDagPutter) DagPut(n node.Node) (string, error) {
+	txTrieNode, ok := n.(*ipld.BtcTxTrie)
 	if !ok {
-		return "", fmt.Errorf("EthReceiptDagPutter expected input type %T got type %T", &ipld.EthReceipt{}, n)
+		return "", fmt.Errorf("BtcTxTrieDagPutter expected input type %T got %T", &ipld.BtcTxTrie{}, n)
 	}
-	if err := erdp.adder.Add(receipt); err != nil {
+	if err := etdp.adder.Add(txTrieNode); err != nil {
 		return "", err
 	}
-	return receipt.Cid().String(), nil
+	return txTrieNode.Cid().String(), nil
 }

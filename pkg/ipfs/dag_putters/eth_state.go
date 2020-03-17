@@ -19,6 +19,8 @@ package dag_putters
 import (
 	"fmt"
 
+	node "github.com/ipfs/go-ipld-format"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -31,13 +33,13 @@ func NewEthStateDagPutter(adder *ipfs.IPFS) *EthStateDagPutter {
 	return &EthStateDagPutter{adder: adder}
 }
 
-func (erdp *EthStateDagPutter) DagPut(raw interface{}) ([]string, error) {
-	stateNode, ok := raw.(*ipld.EthStateTrie)
+func (erdp *EthStateDagPutter) DagPut(n node.Node) (string, error) {
+	stateNode, ok := n.(*ipld.EthStateTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthStateDagPutter expected input type %T got %T", &ipld.EthStateTrie{}, raw)
+		return "", fmt.Errorf("EthStateDagPutter expected input type %T got %T", &ipld.EthStateTrie{}, n)
 	}
 	if err := erdp.adder.Add(stateNode); err != nil {
-		return nil, err
+		return "", err
 	}
-	return []string{stateNode.Cid().String()}, nil
+	return stateNode.Cid().String(), nil
 }

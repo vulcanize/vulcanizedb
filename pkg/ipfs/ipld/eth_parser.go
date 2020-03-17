@@ -21,35 +21,35 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	mh "github.com/multiformats/go-multihash"
 )
 
-// FromBlock takes a block and processes it
+// FromBlockAndReceipts takes a block and processes it
 // to return it a set of IPLD nodes for further processing.
-func FromBlock(block *types.Block, receipts []*types.Receipt) (*EthHeader, []*EthTx, []*EthTxTrie, []*EthReceipt, []*EthRctTrie, error) {
-	// process the eth-header object
-	headerRawData := getRLP(block.Header())
-	cid, err := RawdataToCid(MEthHeader, headerRawData, mh.KECCAK_256)
+func FromBlockAndReceipts(block *types.Block, receipts []*types.Receipt) (*EthHeader, []*EthHeader, []*EthTx, []*EthTxTrie, []*EthReceipt, []*EthRctTrie, error) {
+	// Process the header
+	headerNode, err := NewEthHeader(block.Header())
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
-	ethHeader := &EthHeader{
-		Header:  block.Header(),
-		cid:     cid,
-		rawdata: headerRawData,
+	// Process the uncles
+	uncleNodes := make([]*EthHeader, len(block.Uncles()))
+	for i, uncle := range block.Uncles() {
+		uncleNode, err := NewEthHeader(uncle)
+		if err != nil {
+			return nil, nil, nil, nil, nil, nil, err
+		}
+		uncleNodes[i] = uncleNode
 	}
-
-	// Process the found eth-tx objects
+	// Process the txs
 	ethTxNodes, ethTxTrieNodes, err := processTransactions(block.Transactions(),
 		block.Header().TxHash[:])
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
-	// process the eth-rct objects
+	// Process the receipts
 	ethRctNodes, ethRctTrieNodes, err := processReceipts(receipts,
 		block.Header().ReceiptHash[:])
-
-	return ethHeader, ethTxNodes, ethTxTrieNodes, ethRctNodes, ethRctTrieNodes, nil
+	return headerNode, uncleNodes, ethTxNodes, ethTxTrieNodes, ethRctNodes, ethRctTrieNodes, err
 }
 
 // processTransactions will take the found transactions in a parsed block body

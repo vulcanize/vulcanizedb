@@ -19,39 +19,35 @@ package mocks
 import (
 	"errors"
 
+	node "github.com/ipfs/go-ipld-format"
+
 	"github.com/ethereum/go-ethereum/common"
 )
 
 // DagPutter is a mock for testing the ipfs publisher
 type DagPutter struct {
-	CIDsToReturn []string
-	PassedRaw    interface{}
-	ErrToReturn  error
+	PassedNode  node.Node
+	ErrToReturn error
 }
 
 // DagPut returns the pre-loaded CIDs or error
-func (dp *DagPutter) DagPut(raw interface{}) ([]string, error) {
-	dp.PassedRaw = raw
-	return dp.CIDsToReturn, dp.ErrToReturn
+func (dp *DagPutter) DagPut(n node.Node) (string, error) {
+	dp.PassedNode = n
+	return n.Cid().String(), dp.ErrToReturn
 }
 
 // MappedDagPutter is a mock for testing the ipfs publisher
 type MappedDagPutter struct {
-	CIDsToReturn map[common.Hash][]string
-	PassedRaw    interface{}
+	CIDsToReturn map[common.Hash]string
+	PassedNode   node.Node
 	ErrToReturn  error
 }
 
 // DagPut returns the pre-loaded CIDs or error
-func (mdp *MappedDagPutter) DagPut(raw interface{}) ([]string, error) {
-	mdp.PassedRaw = raw
+func (mdp *MappedDagPutter) DagPut(n node.Node) (string, error) {
 	if mdp.CIDsToReturn == nil {
-		return nil, errors.New("mapped dag putter needs to be initialized with a map of cids to return")
+		return "", errors.New("mapped dag putter needs to be initialized with a map of cids to return")
 	}
-	by, ok := raw.([]byte)
-	if !ok {
-		return nil, errors.New("mapped dag putters can only dag put []byte values")
-	}
-	hash := common.BytesToHash(by)
+	hash := common.BytesToHash(n.RawData())
 	return mdp.CIDsToReturn[hash], nil
 }

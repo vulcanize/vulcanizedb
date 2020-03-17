@@ -19,6 +19,8 @@ package dag_putters
 import (
 	"fmt"
 
+	node "github.com/ipfs/go-ipld-format"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -31,13 +33,13 @@ func NewEthBlockHeaderDagPutter(adder *ipfs.IPFS) *EthHeaderDagPutter {
 	return &EthHeaderDagPutter{adder: adder}
 }
 
-func (bhdp *EthHeaderDagPutter) DagPut(raw interface{}) ([]string, error) {
-	header, ok := raw.(*ipld.EthHeader)
+func (bhdp *EthHeaderDagPutter) DagPut(n node.Node) (string, error) {
+	header, ok := n.(*ipld.EthHeader)
 	if !ok {
-		return nil, fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &ipld.EthHeader{}, raw)
+		return "", fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &ipld.EthHeader{}, n)
 	}
 	if err := bhdp.adder.Add(header); err != nil {
-		return nil, err
+		return "", err
 	}
-	return []string{header.Cid().String()}, nil
+	return header.Cid().String(), nil
 }

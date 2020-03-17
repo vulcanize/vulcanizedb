@@ -19,6 +19,8 @@ package dag_putters
 import (
 	"fmt"
 
+	node "github.com/ipfs/go-ipld-format"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -31,13 +33,13 @@ func NewEthStorageDagPutter(adder *ipfs.IPFS) *EthStorageDagPutter {
 	return &EthStorageDagPutter{adder: adder}
 }
 
-func (erdp *EthStorageDagPutter) DagPut(raw interface{}) ([]string, error) {
-	storageNode, ok := raw.(*ipld.EthStorageTrie)
+func (erdp *EthStorageDagPutter) DagPut(n node.Node) (string, error) {
+	storageNode, ok := n.(*ipld.EthStorageTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthStorageDagPutter expected input type %T got %T", &ipld.EthStorageTrie{}, raw)
+		return "", fmt.Errorf("EthStorageDagPutter expected input type %T got %T", &ipld.EthStorageTrie{}, n)
 	}
 	if err := erdp.adder.Add(storageNode); err != nil {
-		return nil, err
+		return "", err
 	}
-	return []string{storageNode.Cid().String()}, nil
+	return storageNode.Cid().String(), nil
 }

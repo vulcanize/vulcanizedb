@@ -19,6 +19,8 @@ package dag_putters
 import (
 	"fmt"
 
+	node "github.com/ipfs/go-ipld-format"
+
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -31,17 +33,13 @@ func NewEthRctTrieDagPutter(adder *ipfs.IPFS) *EthRctTrieDagPutter {
 	return &EthRctTrieDagPutter{adder: adder}
 }
 
-func (etdp *EthRctTrieDagPutter) DagPut(raw interface{}) ([]string, error) {
-	rctTrieNodes, ok := raw.([]*ipld.EthRctTrie)
+func (etdp *EthRctTrieDagPutter) DagPut(n node.Node) (string, error) {
+	rctTrieNode, ok := n.(*ipld.EthRctTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthRctTrieDagPutter expected input type %T got %T", []*ipld.EthRctTrie{}, raw)
+		return "", fmt.Errorf("EthRctTrieDagPutter expected input type %T got %T", &ipld.EthRctTrie{}, n)
 	}
-	cids := make([]string, len(rctTrieNodes))
-	for i, rctNode := range rctTrieNodes {
-		if err := etdp.adder.Add(rctNode); err != nil {
-			return nil, err
-		}
-		cids[i] = rctNode.Cid().String()
+	if err := etdp.adder.Add(rctTrieNode); err != nil {
+		return "", err
 	}
-	return cids, nil
+	return rctTrieNode.Cid().String(), nil
 }

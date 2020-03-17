@@ -17,22 +17,20 @@
 package btc
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/dag_putters"
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // IPLDPublisher satisfies the IPLDPublisher for ethereum
 type IPLDPublisher struct {
-	HeaderPutter      shared.DagPutter
-	TransactionPutter shared.DagPutter
+	HeaderPutter          shared.DagPutter
+	TransactionPutter     shared.DagPutter
+	TransactionTriePutter shared.DagPutter
 }
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
@@ -42,8 +40,9 @@ func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 		return nil, err
 	}
 	return &IPLDPublisher{
-		HeaderPutter:      dag_putters.NewBtcHeaderDagPutter(node),
-		TransactionPutter: dag_putters.NewBtcTxDagPutter(node),
+		HeaderPutter:          dag_putters.NewBtcHeaderDagPutter(node),
+		TransactionPutter:     dag_putters.NewBtcTxDagPutter(node),
+		TransactionTriePutter: dag_putters.NewBtcTxTrieDagPutter(node),
 	}, nil
 }
 
@@ -53,8 +52,13 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	if !ok {
 		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", &ConvertedPayload{}, payload)
 	}
+	// Generate nodes
+	headerNode, txNodes, txTrieNodes, err := ipld.FromHeaderAndTxs(ipldPayload.Header, ipldPayload.Txs)
+	if err != nil {
+		return nil, err
+	}
 	// Process and publish headers
-	headerCid, err := pub.publishHeader(ipldPayload.Header)
+	headerCid, err := pub.publishHeader(headerNode)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +71,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		Bits:        ipldPayload.Header.Bits,
 	}
 	// Process and publish transactions
-	transactionCids, err := pub.publishTransactions(ipldPayload.Txs, ipldPayload.TxMetaData)
+	transactionCids, err := pub.publishTransactions(txNodes, txTrieNodes, ipldPayload.TxMetaData)
 	if err != nil {
 		return nil, err
 	}
@@ -78,25 +82,22 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	}, nil
 }
 
-func (pub *IPLDPublisher) publishHeader(header *wire.BlockHeader) (string, error) {
-	cids, err := pub.HeaderPutter.DagPut(header)
+func (pub *IPLDPublisher) publishHeader(header *ipld.BtcHeader) (string, error) {
+	cid, err := pub.HeaderPutter.DagPut(header)
 	if err != nil {
 		return "", err
 	}
-	return cids[0], nil
+	return cid, nil
 }
 
-func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMeta []TxModelWithInsAndOuts) ([]TxModelWithInsAndOuts, error) {
-	transactionCids, err := pub.TransactionPutter.DagPut(transactions)
-	if err != nil {
-		return nil, err
-	}
-	if len(transactionCids) != len(trxMeta) {
-		return nil, errors.New("expected one CID for each transaction")
-	}
-	mappedTrxCids := make([]TxModelWithInsAndOuts, len(transactionCids))
-	for i, cid := range transactionCids {
-		mappedTrxCids[i] = TxModelWithInsAndOuts{
+func (pub *IPLDPublisher) publishTransactions(transactions []*ipld.BtcTx, txTrie []*ipld.BtcTxTrie, trxMeta []TxModelWithInsAndOuts) ([]TxModelWithInsAndOuts, error) {
+	txCids := make([]TxModelWithInsAndOuts, len(transactions))
+	for i, tx := range transactions {
+		cid, err := pub.TransactionPutter.DagPut(tx)
+		if err != nil {
+			return nil, err
+		}
+		txCids[i] = TxModelWithInsAndOuts{
 			CID:         cid,
 			Index:       trxMeta[i].Index,
 			TxHash:      trxMeta[i].TxHash,
@@ -106,5 +107,11 @@ func (pub *IPLDPublisher) publishTransactions(transactions []*btcutil.Tx, trxMet
 			TxOutputs:   trxMeta[i].TxOutputs,
 		}
 	}
-	return mappedTrxCids, nil
+	for _, txNode := range txTrie {
+		// We don't do anything with the tx trie cids atm
+		if _, err := pub.TransactionTriePutter.DagPut(txNode); err != nil {
+			return nil, err
+		}
+	}
+	return txCids, nil
 }

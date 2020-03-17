@@ -132,6 +132,9 @@ func (lt *localTrie) add(idx int, rawdata []byte) {
 		panic(err)
 	}
 	lt.keys = append(lt.keys, key)
+	if err := lt.db.Put(key, rawdata); err != nil {
+		panic(err)
+	}
 	lt.trie.Update(key, rawdata)
 }
 
