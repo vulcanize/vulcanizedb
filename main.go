@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/vulcanize/vulcanizedb/cmd"
 	"os"
+
+	"github.com/vulcanize/vulcanizedb/cmd"
 
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	logrus.SetFormatter(&logrus.JSONFormatter{
-		PrettyPrint: true,
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
 	})
 	file, err := os.OpenFile("vulcanizedb.log",
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

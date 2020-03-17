@@ -5,4 +5,4 @@ RUN npm install -g postgraphile-plugin-connection-filter
 RUN npm install -g @graphile/pg-pubsub
 
 EXPOSE 5000
-ENTRYPOINT ["postgraphile", "-n", "0.0.0.0"]
+ENTRYPOINT ["postgraphile"]

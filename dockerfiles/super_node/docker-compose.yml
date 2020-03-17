@@ -78,8 +78,8 @@ services:
               "--subscriptions",
               "--simple-subscriptions",
               "--connection", $DATABASE_URL,
-              "--host", "0.0.0.0",
               "--port", "5000",
+              "-n", "0.0.0.0"
               "--schema", "public,btc,eth"
               "--append-plugins", "postgraphile-plugin-connection-filter"]
 
