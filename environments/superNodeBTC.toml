@@ -1,0 +1,28 @@
+[database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port     = 5432
+    user     = "vdbm"
+
+[superNode]
+    chain = "bitcoin"
+    ipfsPath = "/root/.ipfs"
+    server = true
+    ipcPath = "/root/.vulcanize/btc/vulcanize.ipc"
+    wsPath = "127.0.0.1:8082"
+    httpPath = "127.0.0.1:8083"
+    sync = true
+    workers = 1
+    backFill = true
+    frequency = 15
+    batchSize = 50
+
+[bitcoin]
+    wsPath  = "127.0.0.1:8332"
+    httpPath = "127.0.0.1:8332"
+    pass = "password"
+    user = "username"
+    nodeID = "ocd0"
+    clientName = "Omnicore"
+    genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+    networkID = "0xD9B4BEF9"

@@ -1,0 +1,22 @@
+[database]
+    name     = "vulcanize_public"
+    hostname = "localhost"
+    port     = 5432
+    user     = "vdbm"
+
+[superNode]
+    chain = "ethereum"
+    ipfsPath = "/root/.ipfs"
+    server = true
+    ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
+    wsPath = "127.0.0.1:8080"
+    httpPath = "127.0.0.1:8081"
+    sync = true
+    workers = 1
+    backFill = true
+    frequency = 15
+    batchSize = 50
+
+[ethereum]
+    wsPath  = "ws://127.0.0.1:8546"
+    httpPath = "http://127.0.0.1:8545"
