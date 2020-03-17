@@ -57,7 +57,7 @@ type Config struct {
 func NewReSyncConfig() (*Config, error) {
 	c := new(Config)
 	var err error
-	ipfsPath := viper.GetString("superNode.ipfsPath")
+	ipfsPath := viper.GetString("resync.ipfsPath")
 	if ipfsPath == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -94,24 +94,24 @@ func NewReSyncConfig() (*Config, error) {
 
 	switch c.Chain {
 	case shared.Ethereum:
-		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(viper.GetString("ethereum.node.httpPath"))
+		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(viper.GetString("ethereum.httpPath"))
 		if err != nil {
 			return nil, err
 		}
 	case shared.Bitcoin:
 		c.NodeInfo = core.Node{
-			ID:           viper.GetString("bitcoin.node.nodeID"),
-			ClientName:   viper.GetString("bitcoin.node.clientName"),
-			GenesisBlock: viper.GetString("bitcoin.node.genesisBlock"),
-			NetworkID:    viper.GetString("bitcoin.node.networkID"),
+			ID:           viper.GetString("bitcoin.nodeID"),
+			ClientName:   viper.GetString("bitcoin.clientName"),
+			GenesisBlock: viper.GetString("bitcoin.genesisBlock"),
+			NetworkID:    viper.GetString("bitcoin.networkID"),
 		}
 		// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
 		c.HTTPClient = &rpcclient.ConnConfig{
-			Host:         viper.GetString("bitcoin.node.httpPath"),
+			Host:         viper.GetString("bitcoin.httpPath"),
 			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
 			DisableTLS:   true, // Bitcoin core does not provide TLS by default
-			Pass:         viper.GetString("bitcoin.node.pass"),
-			User:         viper.GetString("bitcoin.node.user"),
+			Pass:         viper.GetString("bitcoin.pass"),
+			User:         viper.GetString("bitcoin.user"),
 		}
 	}
 	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)

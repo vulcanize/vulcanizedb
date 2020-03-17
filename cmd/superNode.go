@@ -54,7 +54,7 @@ func init() {
 }
 
 func superNode() {
-	superNodeConfigs, err := super_node.NewSuperNodeConfigs()
+	superNodeConfig, err := super_node.NewSuperNodeConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
@@ -62,31 +62,29 @@ func superNode() {
 		logWithCommand.Fatal(err)
 	}
 	wg := &sync.WaitGroup{}
-	for _, superNodeConfig := range superNodeConfigs {
-		superNode, err := super_node.NewSuperNode(superNodeConfig)
+	superNode, err := super_node.NewSuperNode(superNodeConfig)
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+	var forwardPayloadChan chan shared.ConvertedData
+	if superNodeConfig.Serve {
+		forwardPayloadChan = make(chan shared.ConvertedData, super_node.PayloadChanBufferSize)
+		superNode.FilterAndServe(wg, forwardPayloadChan)
+		if err := startServers(superNode, superNodeConfig); err != nil {
+			logWithCommand.Fatal(err)
+		}
+	}
+	if superNodeConfig.Sync {
+		if err := superNode.ProcessData(wg, forwardPayloadChan); err != nil {
+			logWithCommand.Fatal(err)
+		}
+	}
+	if superNodeConfig.BackFill {
+		backFiller, err := super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
-		var forwardPayloadChan chan shared.ConvertedData
-		if superNodeConfig.Serve {
-			forwardPayloadChan = make(chan shared.ConvertedData, super_node.PayloadChanBufferSize)
-			superNode.FilterAndServe(wg, forwardPayloadChan)
-			if err := startServers(superNode, superNodeConfig); err != nil {
-				logWithCommand.Fatal(err)
-			}
-		}
-		if superNodeConfig.Sync {
-			if err := superNode.ProcessData(wg, forwardPayloadChan); err != nil {
-				logWithCommand.Fatal(err)
-			}
-		}
-		if superNodeConfig.BackFill {
-			backFiller, err := super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
-			if err != nil {
-				logWithCommand.Fatal(err)
-			}
-			backFiller.FillGapsInSuperNode(wg)
-		}
+		backFiller.FillGapsInSuperNode(wg)
 	}
 	wg.Wait()
 }

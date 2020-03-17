@@ -34,8 +34,6 @@ ARG USER
 ARG CONFIG_FILE
 ARG EXPOSE_PORT_1
 ARG EXPOSE_PORT_2
-ARG EXPOSE_PORT_3
-ARG EXPOSE_PORT_4
 
 RUN adduser -Du 5000 $USER
 WORKDIR /app
@@ -57,7 +55,5 @@ COPY --from=builder /go/src/github.com/ipfs/go-ipfs/ipfs ipfs
 
 EXPOSE $EXPOSE_PORT_1
 EXPOSE $EXPOSE_PORT_2
-EXPOSE $EXPOSE_PORT_3
-EXPOSE $EXPOSE_PORT_4
 
 CMD ["./startup_script.sh"]

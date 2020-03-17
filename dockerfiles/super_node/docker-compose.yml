@@ -2,6 +2,7 @@ version: '3.2'
 
 services:
   db:
+    restart: always
     image: postgres:10.12-alpine
     environment:
       POSTGRES_USER: "postgres"
@@ -13,13 +14,8 @@ services:
     - "5432"
     ports:
     - "127.0.0.1:8079:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
 
-  supernode:
+  btc:
     depends_on:
      - db
     build:
@@ -29,7 +25,29 @@ services:
         - golang:1.12.4
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
-        CONFIG_FILE: ./environments/superNode.toml
+        CONFIG_FILE: ./environments/superNodeBTC.toml
+    environment:
+      IPFS_INIT: "true"
+      VDB_PG_NAME: "vulcanize_public"
+      VDB_PG_HOSTNAME: "db"
+      VDB_PG_PORT: 5432
+      VDB_PG_USER: "postgres"
+      VDB_PG_PASSWORD: "password"
+    ports:
+    - "127.0.0.1:8082:8082"
+    - "127.0.0.1:8083:8083"
+
+  eth:
+    depends_on:
+    - db
+    build:
+      context: ./../../
+      cache_from:
+      - alpine:latest
+      - golang:1.12.4
+      dockerfile: ./dockerfiles/super_node/Dockerfile
+      args:
+        CONFIG_FILE: ./environments/superNodeETH.toml
     environment:
       IPFS_INIT: "true"
       VDB_PG_NAME: "vulcanize_public"
@@ -40,9 +58,30 @@ services:
     ports:
     - "127.0.0.1:8080:8080"
     - "127.0.0.1:8081:8081"
-    - "127.0.0.1:8082:8082"
-    - "127.0.0.1:8083:8083"
+
+  graphql:
+    restart: always
+    depends_on:
+      - db
+    build:
+      context: ./../../
+      cache_from:
+      - node:alpine
+      dockerfile: ./dockerfiles/postgraphile/Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/vulcanize_public
+    expose:
+      - "5000"
+    ports:
+      - "127.0.0.1:5000:5000"
+    command: ["--plugins", "@graphile/pg-pubsub",
+              "--subscriptions",
+              "--simple-subscriptions",
+              "--connection", $DATABASE_URL,
+              "--host", "0.0.0.0",
+              "--port", "5000",
+              "--schema", "public,btc,eth"
+              "--append-plugins", "postgraphile-plugin-connection-filter"]
 
 volumes:
   vulcanizedb_db_data:
-
