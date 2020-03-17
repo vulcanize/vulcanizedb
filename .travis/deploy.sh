@@ -38,7 +38,7 @@ docker build -f dockerfiles/reset_header_check_count/Dockerfile . -t makerdao/vd
 message LOGGING INTO DOCKERHUB
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USER" --password-stdin
 
-# publish 
+# publish
 message PUSHING HEADER-SYNC
 docker push makerdao/vdb-headersync:$TAG
 
