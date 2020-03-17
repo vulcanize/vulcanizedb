@@ -19,8 +19,6 @@ package dag_putters
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -34,20 +32,16 @@ func NewBtcTxDagPutter(adder *ipfs.IPFS) *BtcTxDagPutter {
 }
 
 func (etdp *BtcTxDagPutter) DagPut(raw interface{}) ([]string, error) {
-	transactions, ok := raw.([]*btcutil.Tx)
+	transactions, ok := raw.([]*ipld.BtcTx)
 	if !ok {
-		return nil, fmt.Errorf("BtcTxDagPutter expected input type %T got %T", []*btcutil.Tx{}, raw)
+		return nil, fmt.Errorf("BtcTxDagPutter expected input type %T got %T", []*ipld.BtcTx{}, raw)
 	}
 	cids := make([]string, len(transactions))
 	for i, transaction := range transactions {
-		node, err := ipld.NewBtcTx(transaction.MsgTx())
-		if err != nil {
+		if err := etdp.adder.Add(transaction); err != nil {
 			return nil, err
 		}
-		if err := etdp.adder.Add(node); err != nil {
-			return nil, err
-		}
-		cids[i] = node.Cid().String()
+		cids[i] = transaction.Cid().String()
 	}
 	return cids, nil
 }

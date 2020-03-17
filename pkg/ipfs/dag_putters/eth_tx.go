@@ -19,8 +19,6 @@ package dag_putters
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -34,20 +32,16 @@ func NewEthTxsDagPutter(adder *ipfs.IPFS) *EthTxsDagPutter {
 }
 
 func (etdp *EthTxsDagPutter) DagPut(raw interface{}) ([]string, error) {
-	transactions, ok := raw.(types.Transactions)
+	transactions, ok := raw.([]*ipld.EthTx)
 	if !ok {
-		return nil, fmt.Errorf("EthTxsDagPutter expected input type %T got %T", types.Transactions{}, raw)
+		return nil, fmt.Errorf("EthTxsDagPutter expected input type %T got %T", []*ipld.EthTx{}, raw)
 	}
 	cids := make([]string, len(transactions))
 	for i, transaction := range transactions {
-		node, err := ipld.NewEthTx(transaction)
-		if err != nil {
+		if err := etdp.adder.Add(transaction); err != nil {
 			return nil, err
 		}
-		if err := etdp.adder.Add(node); err != nil {
-			return nil, err
-		}
-		cids[i] = node.Cid().String()
+		cids[i] = transaction.Cid().String()
 	}
 	return cids, nil
 }

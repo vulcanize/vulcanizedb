@@ -32,16 +32,12 @@ func NewEthStorageDagPutter(adder *ipfs.IPFS) *EthStorageDagPutter {
 }
 
 func (erdp *EthStorageDagPutter) DagPut(raw interface{}) ([]string, error) {
-	storageNodeRLP, ok := raw.([]byte)
+	storageNode, ok := raw.(*ipld.EthStorageTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthStorageDagPutter expected input type %T got %T", []byte{}, raw)
+		return nil, fmt.Errorf("EthStorageDagPutter expected input type %T got %T", &ipld.EthStorageTrie{}, raw)
 	}
-	node, err := ipld.FromStorageTrieRLP(storageNodeRLP)
-	if err != nil {
+	if err := erdp.adder.Add(storageNode); err != nil {
 		return nil, err
 	}
-	if err := erdp.adder.Add(node); err != nil {
-		return nil, err
-	}
-	return []string{node.Cid().String()}, nil
+	return []string{storageNode.Cid().String()}, nil
 }

@@ -21,14 +21,15 @@ import (
 
 	"github.com/ipfs/go-cid"
 	node "github.com/ipfs/go-ipld-format"
-	mh "github.com/multiformats/go-multihash"
+	"github.com/multiformats/go-multihash"
+
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // EthStateTrie (eth-state-trie, codec 0x96), represents
-// a node from the state trie in ethereum.
+// a node from the satte trie in ethereum.
 type EthStateTrie struct {
-	cid     cid.Cid
-	rawdata []byte
+	*TrieNode
 }
 
 // Static (compile time) check that EthStateTrie satisfies the node.Node interface.
@@ -38,16 +39,51 @@ var _ node.Node = (*EthStateTrie)(nil)
   INPUT
 */
 
-// FromStateTrieRLP takes the RLP bytes of an ethereum
+// FromStateTrieRLP takes the RLP representation of an ethereum
 // state trie node to return it as an IPLD node for further processing.
-func FromStateTrieRLP(stateNodeRLP []byte) (*EthStateTrie, error) {
-	c, err := RawdataToCid(MEthStateTrie, stateNodeRLP, mh.KECCAK_256)
+func FromStateTrieRLP(raw []byte) (*EthStateTrie, error) {
+	c, err := RawdataToCid(MEthStateTrie, raw, multihash.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}
-	return &EthStateTrie{
-		cid:     c,
-		rawdata: stateNodeRLP,
+	// Let's run the whole mile and process the nodeKind and
+	// its elements, in case somebody would need this function
+	// to parse an RLP element from the filesystem
+	return DecodeEthStateTrie(c, raw)
+}
+
+/*
+  OUTPUT
+*/
+
+// DecodeEthStateTrie returns an EthStateTrie object from its cid and rawdata.
+func DecodeEthStateTrie(c cid.Cid, b []byte) (*EthStateTrie, error) {
+	tn, err := decodeTrieNode(c, b, decodeEthStateTrieLeaf)
+	if err != nil {
+		return nil, err
+	}
+	return &EthStateTrie{TrieNode: tn}, nil
+}
+
+// decodeEthStateTrieLeaf parses a eth-tx-trie leaf
+// from decoded RLP elements
+func decodeEthStateTrieLeaf(i []interface{}) ([]interface{}, error) {
+	var account EthAccount
+	err := rlp.DecodeBytes(i[1].([]byte), &account)
+	if err != nil {
+		return nil, err
+	}
+	c, err := RawdataToCid(MEthAccountSnapshot, i[1].([]byte), multihash.KECCAK_256)
+	if err != nil {
+		return nil, err
+	}
+	return []interface{}{
+		i[0].([]byte),
+		&EthAccountSnapshot{
+			EthAccount: &account,
+			cid:        c,
+			rawdata:    i[1].([]byte),
+		},
 	}, nil
 }
 
@@ -68,35 +104,6 @@ func (st *EthStateTrie) Cid() cid.Cid {
 // String is a helper for output
 func (st *EthStateTrie) String() string {
 	return fmt.Sprintf("<EthereumStateTrie %s>", st.cid)
-}
-
-// Copy will go away. It is here to comply with the Node interface.
-func (*EthStateTrie) Copy() node.Node {
-	panic("implement me")
-}
-
-func (*EthStateTrie) Links() []*node.Link {
-	panic("implement me")
-}
-
-func (*EthStateTrie) Resolve(path []string) (interface{}, []string, error) {
-	panic("implement me")
-}
-
-func (*EthStateTrie) ResolveLink(path []string) (*node.Link, []string, error) {
-	panic("implement me")
-}
-
-func (*EthStateTrie) Size() (uint64, error) {
-	panic("implement me")
-}
-
-func (*EthStateTrie) Stat() (*node.NodeStat, error) {
-	panic("implement me")
-}
-
-func (*EthStateTrie) Tree(path string, depth int) []string {
-	panic("implement me")
 }
 
 // Loggable returns in a map the type of IPLD Link.

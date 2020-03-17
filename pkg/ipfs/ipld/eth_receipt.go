@@ -60,6 +60,24 @@ func NewReceipt(receipt *types.Receipt) (*EthReceipt, error) {
 }
 
 /*
+ OUTPUT
+*/
+
+// DecodeEthReceipt takes a cid and its raw binary data
+// from IPFS and returns an EthTx object for further processing.
+func DecodeEthReceipt(c cid.Cid, b []byte) (*EthReceipt, error) {
+	var r *types.Receipt
+	if err := rlp.DecodeBytes(b, r); err != nil {
+		return nil, err
+	}
+	return &EthReceipt{
+		Receipt: r,
+		cid:     c,
+		rawdata: b,
+	}, nil
+}
+
+/*
   Block INTERFACE
 */
 

@@ -19,8 +19,6 @@ package dag_putters
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -34,20 +32,16 @@ func NewEthReceiptDagPutter(adder *ipfs.IPFS) *EthReceiptDagPutter {
 }
 
 func (erdp *EthReceiptDagPutter) DagPut(raw interface{}) ([]string, error) {
-	receipts, ok := raw.(types.Receipts)
+	receipts, ok := raw.([]*ipld.EthReceipt)
 	if !ok {
-		return nil, fmt.Errorf("EthReceiptDagPutter expected input type %T got type %T", types.Receipts{}, raw)
+		return nil, fmt.Errorf("EthReceiptDagPutter expected input type %T got type %T", []*ipld.EthReceipt{}, raw)
 	}
 	cids := make([]string, len(receipts))
 	for i, receipt := range receipts {
-		node, err := ipld.NewReceipt(receipt)
-		if err != nil {
+		if err := erdp.adder.Add(receipt); err != nil {
 			return nil, err
 		}
-		if err := erdp.adder.Add(node); err != nil {
-			return nil, err
-		}
-		cids[i] = node.Cid().String()
+		cids[i] = receipt.Cid().String()
 	}
 	return cids, nil
 }

@@ -32,16 +32,12 @@ func NewEthStateDagPutter(adder *ipfs.IPFS) *EthStateDagPutter {
 }
 
 func (erdp *EthStateDagPutter) DagPut(raw interface{}) ([]string, error) {
-	stateNodeRLP, ok := raw.([]byte)
+	stateNode, ok := raw.(*ipld.EthStateTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthStateDagPutter expected input type %T got %T", []byte{}, raw)
+		return nil, fmt.Errorf("EthStateDagPutter expected input type %T got %T", &ipld.EthStateTrie{}, raw)
 	}
-	node, err := ipld.FromStateTrieRLP(stateNodeRLP)
-	if err != nil {
+	if err := erdp.adder.Add(stateNode); err != nil {
 		return nil, err
 	}
-	if err := erdp.adder.Add(node); err != nil {
-		return nil, err
-	}
-	return []string{node.Cid().String()}, nil
+	return []string{stateNode.Cid().String()}, nil
 }

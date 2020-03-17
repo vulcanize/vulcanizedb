@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ipfs/go-cid"
@@ -57,6 +56,24 @@ func NewEthHeader(header *types.Header) (*EthHeader, error) {
 		Header:  header,
 		cid:     c,
 		rawdata: headerRLP,
+	}, nil
+}
+
+/*
+ OUTPUT
+*/
+
+// DecodeEthHeader takes a cid and its raw binary data
+// from IPFS and returns an EthTx object for further processing.
+func DecodeEthHeader(c cid.Cid, b []byte) (*EthHeader, error) {
+	var h *types.Header
+	if err := rlp.DecodeBytes(b, h); err != nil {
+		return nil, err
+	}
+	return &EthHeader{
+		Header:  h,
+		cid:     c,
+		rawdata: b,
 	}, nil
 }
 
@@ -236,39 +253,4 @@ func (b *EthHeader) MarshalJSON() ([]byte, error) {
 		"uncles":     commonHashToCid(MEthHeaderList, b.UncleHash),
 	}
 	return json.Marshal(out)
-}
-
-// objJSONBlock defines the output of the JSON RPC API for either
-// "eth_BlockByHash" or "eth_BlockByHeader".
-type objJSONBlock struct {
-	Result objJSONBlockResult `json:"result"`
-}
-
-// objJSONBLockResult is the  nested struct that takes
-// the contents of the JSON field "result".
-type objJSONBlockResult struct {
-	types.Header           // Use its fields and unmarshaler
-	*objJSONBlockResultExt // Add these fields to the parsing
-}
-
-// objJSONBLockResultExt facilitates the composition
-// of the field "result", adding to the
-// `types.Header` fields, both ommers (their hashes) and transactions.
-type objJSONBlockResultExt struct {
-	OmmerHashes  []common.Hash        `json:"uncles"`
-	Transactions []*types.Transaction `json:"transactions"`
-}
-
-// UnmarshalJSON overrides the function types.Header.UnmarshalJSON, allowing us
-// to parse the fields of Header, plus ommer hashes and transactions.
-// (yes, ommer hashes. You will need to "eth_getUncleCountByBlockHash" per each ommer)
-func (o *objJSONBlockResult) UnmarshalJSON(input []byte) error {
-	err := o.Header.UnmarshalJSON(input)
-	if err != nil {
-		return err
-	}
-
-	o.objJSONBlockResultExt = &objJSONBlockResultExt{}
-	err = json.Unmarshal(input, o.objJSONBlockResultExt)
-	return err
 }

@@ -23,21 +23,25 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
 
-type EthHeaderDagPutter struct {
+type EthTxTrieDagPutter struct {
 	adder *ipfs.IPFS
 }
 
-func NewEthBlockHeaderDagPutter(adder *ipfs.IPFS) *EthHeaderDagPutter {
-	return &EthHeaderDagPutter{adder: adder}
+func NewEthTxTrieDagPutter(adder *ipfs.IPFS) *EthTxTrieDagPutter {
+	return &EthTxTrieDagPutter{adder: adder}
 }
 
-func (bhdp *EthHeaderDagPutter) DagPut(raw interface{}) ([]string, error) {
-	header, ok := raw.(*ipld.EthHeader)
+func (etdp *EthTxTrieDagPutter) DagPut(raw interface{}) ([]string, error) {
+	txTrieNodes, ok := raw.([]*ipld.EthTxTrie)
 	if !ok {
-		return nil, fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &ipld.EthHeader{}, raw)
+		return nil, fmt.Errorf("EthTxTrieDagPutter expected input type %T got %T", []*ipld.EthTxTrie{}, raw)
 	}
-	if err := bhdp.adder.Add(header); err != nil {
-		return nil, err
+	cids := make([]string, len(txTrieNodes))
+	for i, txNode := range txTrieNodes {
+		if err := etdp.adder.Add(txNode); err != nil {
+			return nil, err
+		}
+		cids[i] = txNode.Cid().String()
 	}
-	return []string{header.Cid().String()}, nil
+	return cids, nil
 }

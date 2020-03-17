@@ -19,8 +19,6 @@ package dag_putters
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcd/wire"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 )
@@ -34,16 +32,12 @@ func NewBtcHeaderDagPutter(adder *ipfs.IPFS) *BtcHeaderDagPutter {
 }
 
 func (bhdp *BtcHeaderDagPutter) DagPut(raw interface{}) ([]string, error) {
-	header, ok := raw.(*wire.BlockHeader)
+	header, ok := raw.(*ipld.BtcHeader)
 	if !ok {
-		return nil, fmt.Errorf("BtcHeaderDagPutter expected input type %T got %T", &wire.BlockHeader{}, raw)
+		return nil, fmt.Errorf("BtcHeaderDagPutter expected input type %T got %T", &ipld.BtcHeader{}, raw)
 	}
-	node, err := ipld.NewBtcHeader(header)
-	if err != nil {
+	if err := bhdp.adder.Add(header); err != nil {
 		return nil, err
 	}
-	if err := bhdp.adder.Add(node); err != nil {
-		return nil, err
-	}
-	return []string{node.Cid().String()}, nil
+	return []string{header.Cid().String()}, nil
 }
