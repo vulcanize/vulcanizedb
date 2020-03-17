@@ -28,6 +28,7 @@ const (
 	UnknownDataType DataType = iota - 1
 	Full
 	Headers
+	Uncles
 	Transactions
 	Receipts
 	State
@@ -41,6 +42,8 @@ func (r DataType) String() string {
 		return "full"
 	case Headers:
 		return "headers"
+	case Uncles:
+		return "uncles"
 	case Transactions:
 		return "transactions"
 	case Receipts:
@@ -61,6 +64,8 @@ func GenerateResyncTypeFromString(str string) (DataType, error) {
 		return Full, nil
 	case "headers", "header", "h":
 		return Headers, nil
+	case "uncles", "u":
+		return Uncles, nil
 	case "transactions", "transaction", "trxs", "txs", "trx", "tx", "t":
 		return Transactions, nil
 	case "receipts", "receipt", "rcts", "rct", "r":
@@ -74,21 +79,66 @@ func GenerateResyncTypeFromString(str string) (DataType, error) {
 	}
 }
 
-func SupportedResyncType(d DataType) bool {
-	switch d {
-	case Full:
-		return true
-	case Headers:
-		return false
-	case Transactions:
-		return false
-	case Receipts:
-		return false
-	case State:
-		return false
-	case Storage:
-		return false
+func SupportedResyncType(d DataType, c ChainType) (bool, error) {
+	switch c {
+	case Ethereum:
+		switch d {
+		case Full:
+			return true, nil
+		case Headers:
+			return true, nil
+		case Uncles:
+			return true, nil
+		case Transactions:
+			return true, nil
+		case Receipts:
+			return true, nil
+		case State:
+			return true, nil
+		case Storage:
+			return true, nil
+		default:
+			return true, nil
+		}
+	case Bitcoin:
+		switch d {
+		case Full:
+			return true, nil
+		case Headers:
+			return true, nil
+		case Uncles:
+			return false, nil
+		case Transactions:
+			return true, nil
+		case Receipts:
+			return false, nil
+		case State:
+			return false, nil
+		case Storage:
+			return false, nil
+		default:
+			return false, nil
+		}
+	case Omni:
+		switch d {
+		case Full:
+			return false, nil
+		case Headers:
+			return false, nil
+		case Uncles:
+			return false, nil
+		case Transactions:
+			return false, nil
+		case Receipts:
+			return false, nil
+		case State:
+			return false, nil
+		case Storage:
+			return false, nil
+		default:
+			return false, nil
+		}
 	default:
-		return false
+		return false, fmt.Errorf("unrecognized chain type %s", c.String())
 	}
 }

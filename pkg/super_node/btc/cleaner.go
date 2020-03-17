@@ -57,16 +57,8 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 
 func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	switch t {
-	case shared.Full:
+	case shared.Full, shared.Headers:
 		return c.cleanFull(tx, rng)
-	case shared.Headers:
-		if err := c.cleanTransactionIPLDs(tx, rng); err != nil {
-			return err
-		}
-		if err := c.cleanHeaderIPLDs(tx, rng); err != nil {
-			return err
-		}
-		return c.cleanHeaderMetaData(tx, rng)
 	case shared.Transactions:
 		if err := c.cleanTransactionIPLDs(tx, rng); err != nil {
 			return err
@@ -78,21 +70,13 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 }
 
 func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
-	// Clear all of the indexed iplds
-	pgStr := `DELETE FROM public.blocks A
-			USING btc.transaction_cids B, btc.header_cids C
-			WHERE (A.key = B.cid OR A.key = C.cid)
-			AND B.header_id = C.id
-			AND C.block_number BETWEEN $1 AND $2`
-	_, err := tx.Exec(pgStr, rng[0], rng[1])
-	if err != nil {
+	if err := c.cleanTransactionIPLDs(tx, rng); err != nil {
 		return err
 	}
-	// Clear all the header_cids, this will cascade delete the rest of the index metadata
-	pgStr = `DELETE FROM eth.header_cids
-			WHERE block_number BETWEEN $1 AND $2`
-	_, err = tx.Exec(pgStr, rng[0], rng[1])
-	return err
+	if err := c.cleanHeaderIPLDs(tx, rng); err != nil {
+		return err
+	}
+	return c.cleanHeaderMetaData(tx, rng)
 }
 
 func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {

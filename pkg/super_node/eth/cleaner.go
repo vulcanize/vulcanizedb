@@ -57,25 +57,13 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 
 func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	switch t {
-	case shared.Full:
+	case shared.Full, shared.Headers:
 		return c.cleanFull(tx, rng)
-	case shared.Headers:
-		if err := c.cleanStorageIPLDs(tx, rng); err != nil {
+	case shared.Uncles:
+		if err := c.cleanUncleIPLDs(tx, rng); err != nil {
 			return err
 		}
-		if err := c.cleanStateIPLDs(tx, rng); err != nil {
-			return err
-		}
-		if err := c.cleanReceiptIPLDs(tx, rng); err != nil {
-			return err
-		}
-		if err := c.cleanTransactionIPLDs(tx, rng); err != nil {
-			return err
-		}
-		if err := c.cleanHeaderIPLDs(tx, rng); err != nil {
-			return err
-		}
-		return c.cleanHeaderMetaData(tx, rng)
+		return c.cleanUncleMetaData(tx, rng)
 	case shared.Transactions:
 		if err := c.cleanReceiptIPLDs(tx, rng); err != nil {
 			return err
@@ -108,24 +96,25 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 }
 
 func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
-	// Clear all of the indexed iplds
-	pgStr := `DELETE FROM public.blocks A
-			USING eth.storage_cids B, eth.state_cids C, eth.receipt_cids D, eth.transaction_cids E, eth.header_cids F
-			WHERE (A.key = B.cid OR A.key = C.cid OR A.key = D.cid OR A.key = E.cid OR A.key = F.cid)
-			AND B.state_id = C.id
-			AND C.header_id = F.id
-			AND D.tx_id = E.id
-			AND E.header_id = F.id
-			AND F.block_number BETWEEN $1 AND $2`
-	_, err := tx.Exec(pgStr, rng[0], rng[1])
-	if err != nil {
+	if err := c.cleanStorageIPLDs(tx, rng); err != nil {
 		return err
 	}
-	// Clear all the header_cids, this will cascade delete the rest of the index metadata
-	pgStr = `DELETE FROM eth.header_cids
-			WHERE block_number BETWEEN $1 AND $2`
-	_, err = tx.Exec(pgStr, rng[0], rng[1])
-	return err
+	if err := c.cleanStateIPLDs(tx, rng); err != nil {
+		return err
+	}
+	if err := c.cleanReceiptIPLDs(tx, rng); err != nil {
+		return err
+	}
+	if err := c.cleanTransactionIPLDs(tx, rng); err != nil {
+		return err
+	}
+	if err := c.cleanUncleIPLDs(tx, rng); err != nil {
+		return err
+	}
+	if err := c.cleanHeaderIPLDs(tx, rng); err != nil {
+		return err
+	}
+	return c.cleanHeaderMetaData(tx, rng)
 }
 
 func (c *Cleaner) cleanStorageIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
@@ -153,7 +142,7 @@ func (c *Cleaner) cleanStateIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM public.blocks A
 			USING eth.state_cids B, eth.header_cids C
 			WHERE A.key = B.cid
-			AND B.header_cid = C.id
+			AND B.header_id = C.id
 			AND C.block_number BETWEEN $1 AND $2`
 	_, err := tx.Exec(pgStr, rng[0], rng[1])
 	return err
@@ -201,6 +190,25 @@ func (c *Cleaner) cleanTransactionIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
 
 func (c *Cleaner) cleanTransactionMetaData(tx *sqlx.Tx, rng [2]uint64) error {
 	pgStr := `DELETE FROM eth.transaction_cids A
+			USING eth.header_cids B
+			WHERE A.header_id = B.id
+			AND B.block_number BETWEEN $1 AND $2`
+	_, err := tx.Exec(pgStr, rng[0], rng[1])
+	return err
+}
+
+func (c *Cleaner) cleanUncleIPLDs(tx *sqlx.Tx, rng [2]uint64) error {
+	pgStr := `DELETE FROM public.blocks A
+			USING eth.uncle_cids B, eth.header_cids C
+			WHERE A.key = B.cid
+			AND B.header_id = C.id
+			AND C.block_number BETWEEN $1 AND $2`
+	_, err := tx.Exec(pgStr, rng[0], rng[1])
+	return err
+}
+
+func (c *Cleaner) cleanUncleMetaData(tx *sqlx.Tx, rng [2]uint64) error {
+	pgStr := `DELETE FROM eth.uncle_cids A
 			USING eth.header_cids B
 			WHERE A.header_id = B.id
 			AND B.block_number BETWEEN $1 AND $2`
