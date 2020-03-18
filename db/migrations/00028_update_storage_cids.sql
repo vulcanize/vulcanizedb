@@ -6,7 +6,7 @@ ALTER TABLE eth.storage_cids
 DROP COLUMN leaf;
 
 ALTER TABLE eth.storage_cids
-ADD COLUMN node_type INTEGER NOT NULL;
+ADD COLUMN node_type INTEGER;
 
 ALTER TABLE eth.storage_cids
 ALTER COLUMN storage_key DROP NOT NULL;

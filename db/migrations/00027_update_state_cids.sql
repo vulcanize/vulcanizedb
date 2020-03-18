@@ -6,7 +6,7 @@ ALTER TABLE eth.state_cids
 DROP COLUMN leaf;
 
 ALTER TABLE eth.state_cids
-ADD COLUMN node_type INTEGER NOT NULL;
+ADD COLUMN node_type INTEGER;
 
 ALTER TABLE eth.state_cids
 ALTER COLUMN state_key DROP NOT NULL;
