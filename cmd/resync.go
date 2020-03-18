@@ -16,8 +16,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -56,5 +54,5 @@ func rsyncCmdCommand() {
 	if err := rService.Resync(); err != nil {
 		logWithCommand.Fatal(err)
 	}
-	fmt.Printf("%s %s resync finished", rConfig.Chain.String(), rConfig.ResyncType.String())
+	logWithCommand.Infof("%s %s resync finished", rConfig.Chain.String(), rConfig.ResyncType.String())
 }

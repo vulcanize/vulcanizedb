@@ -18,11 +18,11 @@ services:
   migrations:
     restart: on-failure
     depends_on:
-      - db
+     - db
     build:
       context: ./../../
       cache_from:
-       - alpine:latest
+        - alpine:latest
       dockerfile: ./dockerfiles/migrations/Dockerfile
       args:
         USER: "vdbm"
@@ -33,68 +33,20 @@ services:
       DATABASE_USER: "vdbm"
       DATABASE_PASSWORD: "password"
 
-  btc:
-    depends_on:
-      - db
-      - migrations
-    build:
-      context: ./../../
-      cache_from:
-       - alpine:latest
-       - golang:1.12.4
-      dockerfile: ./dockerfiles/super_node/Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/superNodeBTC.toml
-    environment:
-      IPFS_INIT: "true"
-      DATABASE_NAME: "vulcanize_public"
-      DATABASE_HOSTNAME: "db"
-      DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
-      DATABASE_PASSWORD: "password"
-    ports:
-     - "127.0.0.1:8082:8082"
-     - "127.0.0.1:8083:8083"
-
-  eth:
-    depends_on:
-      - db
-      - migrations
-    build:
-      context: ./../../
-      cache_from:
-       - alpine:latest
-       - golang:1.12.4
-      dockerfile: ./dockerfiles/super_node/Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/superNodeETH.toml
-    environment:
-      IPFS_INIT: "true"
-      DATABASE_NAME: "vulcanize_public"
-      DATABASE_HOSTNAME: "db"
-      DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
-      DATABASE_PASSWORD: "password"
-    ports:
-     - "127.0.0.1:8080:8080"
-     - "127.0.0.1:8081:8081"
-
   graphql:
     restart: always
     depends_on:
-      - db
-      - migrations
+     - db
+     - migrations
     build:
       context: ./../../
       cache_from:
-      - node:alpine
+       - node:alpine
       dockerfile: ./dockerfiles/postgraphile/Dockerfile
     expose:
-      - "5000"
+     - "5000"
     ports:
-      - "127.0.0.1:5000:5000"
+     - "127.0.0.1:5000:5000"
     command: ["--plugins", "@graphile/pg-pubsub",
               "--subscriptions",
               "--simple-subscriptions",

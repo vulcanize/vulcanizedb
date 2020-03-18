@@ -21,28 +21,13 @@ export IPFS_PGDATABASE=$DATABASE_NAME
 export IPFS_PGPORT=$DATABASE_PORT
 export IPFS_PGPASSWORD=$DATABASE_PASSWORD
 
-# Construct the connection string for postgres
-VDB_PG_CONNECT=postgresql://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOSTNAME:$DATABASE_PORT/$DATABASE_NAME?sslmode=disable
-
-# Run the DB migrations
-echo "Connecting with: $VDB_PG_CONNECT"
-echo "Running database migrations"
-./goose -dir migrations/vulcanizedb postgres "$VDB_PG_CONNECT" up
-
-
-# If the db migrations ran without err
-if [[ $? -eq 0 ]]; then
-    # and IPFS_INIT is true
-    if [[ "$IPFS_INIT" = true ]] ; then
-        # initialize PG-IPFS
-        echo "Initializing Postgres-IPFS profile"
-        ./ipfs init --profile=postgresds
-    else
-        echo "IPFS profile already initialized, skipping initialization"
-    fi
+# If IPFS_INIT is true
+if [[ "$IPFS_INIT" = true ]] ; then
+    # initialize PG-IPFS
+    echo "Initializing Postgres-IPFS profile"
+    ./ipfs init --profile=postgresds
 else
-    echo "Could not run migrations. Are the database details correct?"
-    exit
+    echo "IPFS profile already initialized, skipping initialization"
 fi
 
 # If IPFS initialization was successful
@@ -51,7 +36,7 @@ if [[ $? -eq 0 ]]; then
     ./vulcanizedb superNode --config=config.toml 2>&1 | tee -a vulcanizedb.log &
 else
     echo "Could not initialize IPFS."
-    exit
+    exit 1
 fi
 
 # If Vulcanizedb startup was successful
@@ -59,7 +44,7 @@ if [ $? -eq 0 ]; then
     echo "Super node successfully booted"
 else
     echo "Could not start vulcanizedb super node process. Is the config file correct?"
-    exit
+    exit 1
 fi
 
 tail -f vulcanizedb.log
