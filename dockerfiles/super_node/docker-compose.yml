@@ -28,11 +28,11 @@ services:
         CONFIG_FILE: ./environments/superNodeBTC.toml
     environment:
       IPFS_INIT: "true"
-      VDB_PG_NAME: "vulcanize_public"
-      VDB_PG_HOSTNAME: "db"
-      VDB_PG_PORT: 5432
-      VDB_PG_USER: "postgres"
-      VDB_PG_PASSWORD: "password"
+      DATABASE_NAME: "vulcanize_public"
+      DATABASE_HOSTNAME: "db"
+      DATABASE_PORT: 5432
+      DATABASE_USER: "postgres"
+      DATABASE_PASSWORD: "password"
     ports:
     - "127.0.0.1:8082:8082"
     - "127.0.0.1:8083:8083"
@@ -50,11 +50,11 @@ services:
         CONFIG_FILE: ./environments/superNodeETH.toml
     environment:
       IPFS_INIT: "true"
-      VDB_PG_NAME: "vulcanize_public"
-      VDB_PG_HOSTNAME: "db"
-      VDB_PG_PORT: 5432
-      VDB_PG_USER: "postgres"
-      VDB_PG_PASSWORD: "password"
+      DATABASE_NAME: "vulcanize_public"
+      DATABASE_HOSTNAME: "db"
+      DATABASE_PORT: 5432
+      DATABASE_USER: "postgres"
+      DATABASE_PASSWORD: "password"
     ports:
     - "127.0.0.1:8080:8080"
     - "127.0.0.1:8081:8081"
@@ -68,8 +68,6 @@ services:
       cache_from:
       - node:alpine
       dockerfile: ./dockerfiles/postgraphile/Dockerfile
-    environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/vulcanize_public
     expose:
       - "5000"
     ports:
@@ -77,10 +75,10 @@ services:
     command: ["--plugins", "@graphile/pg-pubsub",
               "--subscriptions",
               "--simple-subscriptions",
-              "--connection", $DATABASE_URL,
+              "--connection", "postgres://postgres:password@db:5432/vulcanize_public",
               "--port", "5000",
-              "-n", "0.0.0.0"
-              "--schema", "public,btc,eth"
+              "-n", "0.0.0.0",
+              "--schema", "public,btc,eth",
               "--append-plugins", "postgraphile-plugin-connection-filter"]
 
 volumes:

@@ -48,7 +48,7 @@ fi
 # If IPFS initialization was successful
 if [[ $? -eq 0 ]]; then
     echo "Beginning the vulcanizedb super node process"
-    ./vulcanizedb superNode --config=config.toml 2>&1 | tee -a vulcanizedb.log &
+    ./vulcanizedb resync --config=config.toml 2>&1 | tee -a vulcanizedb.log &
 else
     echo "Could not initialize IPFS."
     exit
@@ -56,9 +56,9 @@ fi
 
 # If Vulcanizedb startup was successful
 if [ $? -eq 0 ]; then
-    echo "Super node successfully booted"
+    echo "Resync successfully booted"
 else
-    echo "Could not start vulcanizedb super node process. Is the config file correct?"
+    echo "Could not start vulcanizedb resync process. Is the config file correct?"
     exit
 fi
 
