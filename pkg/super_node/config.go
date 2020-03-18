@@ -17,6 +17,7 @@
 package super_node
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -53,10 +54,11 @@ type Config struct {
 	WSClient interface{}
 	NodeInfo core.Node
 	// Backfiller params
-	BackFill   bool
-	HTTPClient interface{}
-	Frequency  time.Duration
-	BatchSize  uint64
+	BackFill    bool
+	HTTPClient  interface{}
+	Frequency   time.Duration
+	BatchSize   uint64
+	BatchNumber uint64
 }
 
 // NewSuperNodeConfig is used to initialize a SuperNode config from a .toml file
@@ -90,7 +92,7 @@ func NewSuperNodeConfig() (*Config, error) {
 		c.Workers = workers
 		switch c.Chain {
 		case shared.Ethereum:
-			c.NodeInfo, c.WSClient, err = getEthNodeAndClient(viper.GetString("ethereum.wsPath"))
+			c.NodeInfo, c.WSClient, err = getEthNodeAndClient(fmt.Sprintf("ws://%s", viper.GetString("ethereum.wsPath")))
 			if err != nil {
 				return nil, err
 			}
@@ -116,7 +118,7 @@ func NewSuperNodeConfig() (*Config, error) {
 	if c.Serve {
 		wsPath := viper.GetString("superNode.wsPath")
 		if wsPath == "" {
-			wsPath = "ws://127.0.0.1:8546"
+			wsPath = "127.0.0.1:8080"
 		}
 		c.WSEndpoint = wsPath
 		ipcPath := viper.GetString("superNode.ipcPath")
@@ -130,7 +132,7 @@ func NewSuperNodeConfig() (*Config, error) {
 		c.IPCEndpoint = ipcPath
 		httpPath := viper.GetString("superNode.httpPath")
 		if httpPath == "" {
-			httpPath = "http://127.0.0.1:8545"
+			httpPath = "127.0.0.1:8081"
 		}
 		c.HTTPEndpoint = httpPath
 	}
@@ -162,7 +164,7 @@ func (sn *Config) BackFillFields(chain string) error {
 	var err error
 	switch sn.Chain {
 	case shared.Ethereum:
-		_, httpClient, err = getEthNodeAndClient(viper.GetString("ethereum.httpPath"))
+		_, httpClient, err = getEthNodeAndClient(fmt.Sprintf("http://%s", viper.GetString("ethereum.httpPath")))
 		if err != nil {
 			return err
 		}
@@ -185,6 +187,7 @@ func (sn *Config) BackFillFields(chain string) error {
 	}
 	sn.Frequency = frequency
 	sn.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
+	sn.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
 	return nil
 }
 

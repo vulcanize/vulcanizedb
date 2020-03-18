@@ -45,10 +45,11 @@ type Config struct {
 	DBConfig config.Database
 	IPFSPath string
 
-	HTTPClient interface{} // Note this client is expected to support the retrieval of the specified data type(s)
-	NodeInfo   core.Node   // Info for the associated node
-	Ranges     [][2]uint64 // The block height ranges to resync
-	BatchSize  uint64      // BatchSize for the resync http calls (client has to support batch sizing)
+	HTTPClient  interface{} // Note this client is expected to support the retrieval of the specified data type(s)
+	NodeInfo    core.Node   // Info for the associated node
+	Ranges      [][2]uint64 // The block height ranges to resync
+	BatchSize   uint64      // BatchSize for the resync http calls (client has to support batch sizing)
+	BatchNumber uint64
 
 	Quit chan bool // Channel for shutting down
 }
@@ -57,6 +58,9 @@ type Config struct {
 func NewReSyncConfig() (*Config, error) {
 	c := new(Config)
 	var err error
+	start := uint64(viper.GetInt64("resync.start"))
+	stop := uint64(viper.GetInt64("resync.stop"))
+	c.Ranges = [][2]uint64{{start, stop}}
 	ipfsPath := viper.GetString("resync.ipfsPath")
 	if ipfsPath == "" {
 		home, err := os.UserHomeDir()
@@ -90,11 +94,10 @@ func NewReSyncConfig() (*Config, error) {
 		}
 		return nil, fmt.Errorf("chain type %s does not support data type %s", c.Chain.String(), c.ResyncType.String())
 	}
-	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
 
 	switch c.Chain {
 	case shared.Ethereum:
-		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(viper.GetString("ethereum.httpPath"))
+		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(fmt.Sprintf("http://%s", viper.GetString("ethereum.httpPath")))
 		if err != nil {
 			return nil, err
 		}
@@ -117,6 +120,8 @@ func NewReSyncConfig() (*Config, error) {
 	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
 	c.DB = &db
 	c.Quit = make(chan bool)
+	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
+	c.BatchNumber = uint64(viper.GetInt64("resync.batchNumber"))
 	return c, nil
 }
 

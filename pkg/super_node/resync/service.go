@@ -46,6 +46,8 @@ type Service struct {
 	Cleaner shared.Cleaner
 	// Size of batch fetches
 	BatchSize uint64
+	// Number of goroutines
+	BatchNumber int64
 	// Channel for receiving quit signal
 	QuitChan chan bool
 	// Chain type
@@ -88,6 +90,10 @@ func NewResyncService(settings *Config) (Resync, error) {
 	if batchSize == 0 {
 		batchSize = super_node.DefaultMaxBatchSize
 	}
+	batchNumber := int64(settings.BatchNumber)
+	if batchNumber == 0 {
+		batchNumber = super_node.DefaultMaxBatchNumber
+	}
 	return &Service{
 		Indexer:       indexer,
 		Converter:     converter,
@@ -96,6 +102,7 @@ func NewResyncService(settings *Config) (Resync, error) {
 		Fetcher:       fetcher,
 		Cleaner:       cleaner,
 		BatchSize:     batchSize,
+		BatchNumber:   int64(batchNumber),
 		QuitChan:      settings.Quit,
 		chain:         settings.Chain,
 		ranges:        settings.Ranges,
@@ -107,36 +114,19 @@ func NewResyncService(settings *Config) (Resync, error) {
 func (rs *Service) Resync() error {
 	if rs.clearOldCache {
 		if err := rs.Cleaner.Clean(rs.ranges, rs.data); err != nil {
-			return fmt.Errorf("%s resync %s data cleaning error: %v", rs.chain.String(), rs.data.String(), err)
+			return fmt.Errorf("%s %s data resync cleaning error: %v", rs.chain.String(), rs.data.String(), err)
 		}
 	}
 	for _, rng := range rs.ranges {
 		if err := rs.resync(rng[0], rng[1]); err != nil {
-			return fmt.Errorf("%s resync %s data sync initialization error: %v", rs.chain.String(), rs.data.String(), err)
+			return fmt.Errorf("%s %s data resync initialization error: %v", rs.chain.String(), rs.data.String(), err)
 		}
 	}
 	return nil
 }
 
 func (rs *Service) resync(startingBlock, endingBlock uint64) error {
-	logrus.Infof("resyncing %s %s data from %d to %d", rs.chain.String(), rs.data.String(), startingBlock, endingBlock)
-	errChan := make(chan error)
-	done := make(chan bool)
-	if err := rs.refill(startingBlock, endingBlock, errChan, done); err != nil {
-		return err
-	}
-	for {
-		select {
-		case err := <-errChan:
-			logrus.Errorf("%s resync %s data sync error: %v", rs.chain.String(), rs.data.String(), err)
-		case <-done:
-			logrus.Infof("finished %s %s resync from %d to %d", rs.chain.String(), rs.data.String(), startingBlock, endingBlock)
-			return nil
-		}
-	}
-}
-
-func (rs *Service) refill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
+	logrus.Infof("resyncing %s data from %d to %d", rs.chain.String(), startingBlock, endingBlock)
 	if endingBlock < startingBlock {
 		return fmt.Errorf("%s resync range ending block number needs to be greater than the starting block number", rs.chain.String())
 	}
@@ -148,7 +138,7 @@ func (rs *Service) refill(startingBlock, endingBlock uint64, errChan chan error,
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
-	processingDone := make(chan [2]uint64)
+	processingDone := make(chan bool)
 	forwardDone := make(chan bool)
 
 	// for each block range bin spin up a goroutine to batch fetch and process state diffs for that range
@@ -156,59 +146,52 @@ func (rs *Service) refill(startingBlock, endingBlock uint64, errChan chan error,
 		for _, blockHeights := range blockRangeBins {
 			// if we have reached our limit of active goroutines
 			// wait for one to finish before starting the next
-			if atomic.AddInt64(&activeCount, 1) > super_node.DefaultMaxBatchNumber {
+			if atomic.AddInt64(&activeCount, 1) > rs.BatchNumber {
 				// this blocks until a process signals it has finished
 				<-forwardDone
 			}
 			go func(blockHeights []uint64) {
 				payloads, err := rs.Fetcher.FetchAt(blockHeights)
 				if err != nil {
-					errChan <- err
+					logrus.Errorf("%s resync fetcher error: %s", rs.chain.String(), err.Error())
 				}
 				for _, payload := range payloads {
 					ipldPayload, err := rs.Converter.Convert(payload)
 					if err != nil {
-						errChan <- err
-						continue
+						logrus.Errorf("%s resync converter error: %s", rs.chain.String(), err.Error())
 					}
 					cidPayload, err := rs.Publisher.Publish(ipldPayload)
 					if err != nil {
-						errChan <- err
-						continue
+						logrus.Errorf("%s resync publisher error: %s", rs.chain.String(), err.Error())
 					}
 					if err := rs.Indexer.Index(cidPayload); err != nil {
-						errChan <- err
+						logrus.Errorf("%s resync indexer error: %s", rs.chain.String(), err.Error())
 					}
 				}
 				// when this goroutine is done, send out a signal
-				processingDone <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
+				logrus.Infof("finished %s resync section from %d to %d", rs.chain.String(), blockHeights[0], blockHeights[len(blockHeights)-1])
+				processingDone <- true
 			}(blockHeights)
 		}
 	}()
 
-	// goroutine that listens on the processingDone chan
-	// keeps track of the number of processing goroutines that have finished
+	// listen on the processingDone chan and
+	// keep track of the number of processing goroutines that have finished
 	// when they have all finished, sends the final signal out
-	go func() {
-		goroutinesFinished := 0
-		for {
+	goroutinesFinished := 0
+	for {
+		select {
+		case <-processingDone:
+			atomic.AddInt64(&activeCount, -1)
 			select {
-			case doneWithHeights := <-processingDone:
-				atomic.AddInt64(&activeCount, -1)
-				select {
-				// if we are waiting for a process to finish, signal that one has
-				case forwardDone <- true:
-				default:
-				}
-				logrus.Infof("finished %s resync sub-bin from %d to %d", rs.chain.String(), doneWithHeights[0], doneWithHeights[1])
-				goroutinesFinished++
-				if goroutinesFinished >= len(blockRangeBins) {
-					done <- true
-					return
-				}
+			// if we are waiting for a process to finish, signal that one has
+			case forwardDone <- true:
+			default:
+			}
+			goroutinesFinished++
+			if goroutinesFinished >= len(blockRangeBins) {
+				return nil
 			}
 		}
-	}()
-
-	return nil
+	}
 }

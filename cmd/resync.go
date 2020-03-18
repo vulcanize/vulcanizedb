@@ -18,7 +18,10 @@ package cmd
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/resync"
 )
 
@@ -28,13 +31,22 @@ var resyncCmd = &cobra.Command{
 	Short: "Resync historical data",
 	Long:  `Use this command to fill in sections of missing data in the super node`,
 	Run: func(cmd *cobra.Command, args []string) {
+		subCommand = cmd.CalledAs()
+		logWithCommand = *log.WithField("SubCommand", subCommand)
 		rsyncCmdCommand()
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(resyncCmd)
 }
 
 func rsyncCmdCommand() {
 	rConfig, err := resync.NewReSyncConfig()
 	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+	if err := ipfs.InitIPFSPlugins(); err != nil {
 		logWithCommand.Fatal(err)
 	}
 	rService, err := resync.NewResyncService(rConfig)
@@ -45,8 +57,4 @@ func rsyncCmdCommand() {
 		logWithCommand.Fatal(err)
 	}
 	fmt.Printf("%s %s resync finished", rConfig.Chain.String(), rConfig.ResyncType.String())
-}
-
-func init() {
-	rootCmd.AddCommand(resyncCmd)
 }

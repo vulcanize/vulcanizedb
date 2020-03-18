@@ -172,8 +172,9 @@ func NewCleaner(chain shared.ChainType, db *postgres.DB) (shared.Cleaner, error)
 	switch chain {
 	case shared.Ethereum:
 		return eth.NewCleaner(db), nil
-	// TODO: support BTC
+	case shared.Bitcoin:
+		return btc.NewCleaner(db), nil
 	default:
-		return nil, fmt.Errorf("invalid chain %s for publisher constructor", chain.String())
+		return nil, fmt.Errorf("invalid chain %s for cleaner constructor", chain.String())
 	}
 }

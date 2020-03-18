@@ -67,6 +67,7 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
@@ -121,6 +122,7 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}
@@ -169,6 +171,7 @@ var _ = Describe("BackFiller", func() {
 				Retriever:         mockRetriever,
 				GapCheckFrequency: time.Second * 2,
 				BatchSize:         super_node.DefaultMaxBatchSize,
+				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
 			}
 			wg := &sync.WaitGroup{}

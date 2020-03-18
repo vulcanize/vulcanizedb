@@ -4,20 +4,15 @@
     port     = 5432
     user     = "vdbm"
 
-[superNode]
+[resync]
     chain = "ethereum"
+    type = "state"
+    clearOldCache = true
     ipfsPath = "/root/.ipfs"
-    server = true
-    ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
-    wsPath = "127.0.0.1:8081"
-    httpPath = "127.0.0.1:8082"
-    sync = true
-    workers = 1
-    backFill = true
-    frequency = 15
     batchSize = 5
     batchNumber = 50
+    start = 0
+    stop = 0
 
 [ethereum]
-    wsPath  = "127.0.0.1:8546"
     httpPath = "127.0.0.1:8545"
