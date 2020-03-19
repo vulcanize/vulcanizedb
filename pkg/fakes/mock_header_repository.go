@@ -26,6 +26,7 @@ type MockHeaderRepository struct {
 	createOrUpdateHeaderErr                error
 	createOrUpdateHeaderPassedBlockNumbers []int64
 	createOrUpdateHeaderReturnID           int64
+	AllHeaders                             []core.Header
 	CreateTransactionsCalled               bool
 	CreateTransactionsError                error
 	GetHeaderError                         error
@@ -34,6 +35,8 @@ type MockHeaderRepository struct {
 	missingBlockNumbers                    []int64
 	headerExists                           bool
 	GetHeaderPassedBlockNumber             int64
+	GetHeadersInRangeStartingBlock         int64
+	GetHeadersInRangeEndingBlock           int64
 }
 
 func NewMockHeaderRepository() *MockHeaderRepository {
@@ -70,6 +73,12 @@ func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Heade
 		BlockNumber: blockNumber,
 		Hash:        repository.GetHeaderReturnHash,
 	}, repository.GetHeaderError
+}
+
+func (repository *MockHeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
+	repository.GetHeadersInRangeStartingBlock = startingBlock
+	repository.GetHeadersInRangeEndingBlock = endingBlock
+	return repository.AllHeaders, repository.GetHeaderError
 }
 
 func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
