@@ -18,6 +18,8 @@ package cmd
 import (
 	"sync"
 
+	"github.com/spf13/viper"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -47,10 +49,6 @@ and fill in gaps in the data
 		logWithCommand = *log.WithField("SubCommand", subCommand)
 		superNode()
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(superNodeCmd)
 }
 
 func superNode() {
@@ -100,4 +98,62 @@ func startServers(superNode super_node.SuperNode, settings *super_node.Config) e
 	}
 	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
 	return err
+}
+
+func init() {
+	rootCmd.AddCommand(superNodeCmd)
+
+	// flags
+	superNodeCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
+
+	superNodeCmd.PersistentFlags().String("supernode-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
+	superNodeCmd.PersistentFlags().Bool("supernode-server", false, "turn vdb server on or off")
+	superNodeCmd.PersistentFlags().String("supernode-ws-path", "", "vdb server ws path")
+	superNodeCmd.PersistentFlags().String("supernode-http-path", "", "vdb server http path")
+	superNodeCmd.PersistentFlags().String("supernode-ipc-path", "", "vdb server ipc path")
+	superNodeCmd.PersistentFlags().Bool("supernode-sync", false, "turn vdb sync on or off")
+	superNodeCmd.PersistentFlags().Int("supernode-workers", 0, "how many worker goroutines to publish and index data")
+	superNodeCmd.PersistentFlags().Bool("supernode-back-fill", false, "turn vdb backfill on or off")
+	superNodeCmd.PersistentFlags().Int("supernode-frequency", 0, "how often (in seconds) the backfill process checks for gaps")
+	superNodeCmd.PersistentFlags().Int("supernode-batch-size", 0, "data fetching batch size")
+	superNodeCmd.PersistentFlags().Int("supernode-batch-number", 0, "how many goroutines to fetch data concurrently")
+
+	superNodeCmd.PersistentFlags().String("btc-ws-path", "", "ws url for bitcoin node")
+	superNodeCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
+	superNodeCmd.PersistentFlags().String("btc-password", "", "password for btc node")
+	superNodeCmd.PersistentFlags().String("btc-username", "", "username for btc node")
+	superNodeCmd.PersistentFlags().String("btc-node-id", "", "btc node id")
+	superNodeCmd.PersistentFlags().String("btc-client-name", "", "btc client name")
+	superNodeCmd.PersistentFlags().String("btc-genesis-block", "", "btc genesis block hash")
+	superNodeCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
+
+	superNodeCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
+	superNodeCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
+
+	// and their bindings
+	viper.BindPFlag("ipfs.path", superNodeCmd.PersistentFlags().Lookup("ipfs-path"))
+
+	viper.BindPFlag("superNode.chain", superNodeCmd.PersistentFlags().Lookup("supernode-chain"))
+	viper.BindPFlag("superNode.server", superNodeCmd.PersistentFlags().Lookup("supernode-server"))
+	viper.BindPFlag("superNode.wsPath", superNodeCmd.PersistentFlags().Lookup("supernode-ws-path"))
+	viper.BindPFlag("superNode.httpPath", superNodeCmd.PersistentFlags().Lookup("supernode-http-path"))
+	viper.BindPFlag("superNode.ipcPath", superNodeCmd.PersistentFlags().Lookup("supernode-ipc-path"))
+	viper.BindPFlag("superNode.sync", superNodeCmd.PersistentFlags().Lookup("supernode-sync"))
+	viper.BindPFlag("superNode.workers", superNodeCmd.PersistentFlags().Lookup("supernode-workers"))
+	viper.BindPFlag("superNode.backFill", superNodeCmd.PersistentFlags().Lookup("supernode-back-fill"))
+	viper.BindPFlag("superNode.frequency", superNodeCmd.PersistentFlags().Lookup("supernode-frequency"))
+	viper.BindPFlag("superNode.batchSize", superNodeCmd.PersistentFlags().Lookup("supernode-batch-size"))
+	viper.BindPFlag("superNode.batchNumber", superNodeCmd.PersistentFlags().Lookup("supernode-batch-number"))
+
+	viper.BindPFlag("bitcoin.wsPath", superNodeCmd.PersistentFlags().Lookup("btc-ws-path"))
+	viper.BindPFlag("bitcoin.httpPath", superNodeCmd.PersistentFlags().Lookup("btc-http-path"))
+	viper.BindPFlag("bitcoin.pass", superNodeCmd.PersistentFlags().Lookup("btc-password"))
+	viper.BindPFlag("bitcoin.user", superNodeCmd.PersistentFlags().Lookup("btc-username"))
+	viper.BindPFlag("bitcoin.nodeID", superNodeCmd.PersistentFlags().Lookup("btc-node-id"))
+	viper.BindPFlag("bitcoin.clientName", superNodeCmd.PersistentFlags().Lookup("btc-client-name"))
+	viper.BindPFlag("bitcoin.genesisBlock", superNodeCmd.PersistentFlags().Lookup("btc-genesis-block"))
+	viper.BindPFlag("bitcoin.networkID", superNodeCmd.PersistentFlags().Lookup("btc-network-id"))
+
+	viper.BindPFlag("ethereum.wsPath", superNodeCmd.PersistentFlags().Lookup("eth-ws-path"))
+	viper.BindPFlag("ethereum.httpPath", superNodeCmd.PersistentFlags().Lookup("eth-http-path"))
 }

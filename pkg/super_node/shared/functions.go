@@ -20,7 +20,6 @@ import (
 	"bytes"
 
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
 

@@ -1,23 +1,35 @@
 [database]
-    name     = "vulcanize_public"
-    hostname = "localhost"
-    port     = 5432
-    user     = "vdbm"
+    name     = "vulcanize_public" # $DATABASE_NAME
+    hostname = "localhost" # &DATABASE_HOSTNAME
+    port     = 5432 # $DATABASE_PORT
+    user     = "vdbm" # $DATABASE_USER
+    password = "" # $DATABASE_PASSWORD
+
+[ipfs]
+    path = "/root/.ipfs" # $IPFS_PATH
+
+[resync]
+    chain = "ethereum" # $RESYNC_CHAIN
+    type = "state" # $RESYNC_TYPE
+    start = 0 # $RESYNC_START
+    stop = 0 # $RESYNC_STOP
+    batchSize = 5 # $RESYNC_BATCH_SIZE
+    batchNumber = 50 # $RESYNC_BATCH_NUMBER
+    clearOldCache = true # $RESYNC_CLEAR_OLD_CACHE
 
 [superNode]
-    chain = "ethereum"
-    ipfsPath = "/root/.ipfs"
-    server = true
-    ipcPath = "/root/.vulcanize/eth/vulcanize.ipc"
-    wsPath = "127.0.0.1:8081"
-    httpPath = "127.0.0.1:8082"
-    sync = true
-    workers = 1
-    backFill = true
-    frequency = 15
-    batchSize = 5
-    batchNumber = 50
+    chain = "ethereum" # $SUPERNODE_CHAIN
+    server = true # $SUPERNODE_SERVER
+    ipcPath = "/root/.vulcanize/eth/vulcanize.ipc" # $SUPERNODE_IPC_PATH
+    wsPath = "127.0.0.1:8081" # $SUPERNODE_WS_PATH
+    httpPath = "127.0.0.1:8082" # $SUPERNODE_HTTP_PATH
+    sync = true # $SUPERNODE_SYNC
+    workers = 1 # $SUPERNODE_WORKERS
+    backFill = true # $SUPERNODE_BACKFILL
+    frequency = 15 # $SUPERNODE_FREQUENCY
+    batchSize = 5 # $SUPERNODE_BATCH_SIZE
+    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
 
 [ethereum]
-    wsPath  = "127.0.0.1:8546"
-    httpPath = "127.0.0.1:8545"
+    wsPath  = "127.0.0.1:8546" # $ETH_WS_PATH
+    httpPath = "127.0.0.1:8545" # $ETH_HTTP_PATH

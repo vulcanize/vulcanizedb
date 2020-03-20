@@ -16,7 +16,20 @@
 
 package config
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/spf13/viper"
+)
+
+// Env variables
+const (
+	DATABASE_NAME     = "DATABASE_NAME"
+	DATABASE_HOSTNAME = "DATABASE_HOSTNAME"
+	DATABASE_PORT     = "DATABASE_PORT"
+	DATABASE_USER     = "DATABASE_USER"
+	DATABASE_PASSWORD = "DATABASE_PASSWORD"
+)
 
 type Database struct {
 	Hostname string
@@ -36,4 +49,17 @@ func DbConnectionString(dbConfig Database) string {
 			dbConfig.User, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
 	}
 	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+}
+
+func (d *Database) Init() {
+	viper.BindEnv("database.name", DATABASE_NAME)
+	viper.BindEnv("database.hostname", DATABASE_HOSTNAME)
+	viper.BindEnv("database.port", DATABASE_PORT)
+	viper.BindEnv("database.user", DATABASE_USER)
+	viper.BindEnv("database.password", DATABASE_PASSWORD)
+	d.Name = viper.GetString("database.name")
+	d.Hostname = viper.GetString("database.hostname")
+	d.Port = viper.GetInt("database.port")
+	d.User = viper.GetString("database.user")
+	d.Password = viper.GetString("database.password")
 }

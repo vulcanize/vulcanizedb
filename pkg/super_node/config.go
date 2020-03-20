@@ -22,17 +22,28 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 	"github.com/vulcanize/vulcanizedb/utils"
+)
+
+// Env variables
+const (
+	SUPERNODE_CHAIN        = "SUPERNODE_CHAIN"
+	SUPERNODE_SYNC         = "SUPERNODE_SYNC"
+	SUPERNODE_WORKERS      = "SUPERNODE_WORKERS"
+	SUPERNODE_SERVER       = "SUPERNODE_SERVER"
+	SUPERNODE_WS_PATH      = "SUPERNODE_WS_PATH"
+	SUPERNODE_IPC_PATH     = "SUPERNODE_IPC_PATH"
+	SUPERNODE_HTTP_PATH    = "SUPERNODE_HTTP_PATH"
+	SUPERNODE_BACKFILL     = "SUPERNODE_BACKFILL"
+	SUPERNODE_FREQUENCY    = "SUPERNODE_FREQUENCY"
+	SUPERNODE_BATCH_SIZE   = "SUPERNODE_BATCH_SIZE"
+	SUPERNODE_BATCH_NUMBER = "SUPERNODE_BATCH_NUMBER"
 )
 
 // Config struct
@@ -67,21 +78,27 @@ func NewSuperNodeConfig() (*Config, error) {
 	c := new(Config)
 	var err error
 
+	viper.BindEnv("superNode.chain", SUPERNODE_CHAIN)
+	viper.BindEnv("superNode.sync", SUPERNODE_SYNC)
+	viper.BindEnv("superNode.workers", SUPERNODE_WORKERS)
+	viper.BindEnv("ethereum.wsPath", shared.ETH_WS_PATH)
+	viper.BindEnv("bitcoin.wsPath", shared.BTC_WS_PATH)
+	viper.BindEnv("superNode.server", SUPERNODE_SERVER)
+	viper.BindEnv("superNode.wsPath", SUPERNODE_WS_PATH)
+	viper.BindEnv("superNode.ipcPath", SUPERNODE_IPC_PATH)
+	viper.BindEnv("superNode.httpPath", SUPERNODE_HTTP_PATH)
+	viper.BindEnv("superNode.backFill", SUPERNODE_BACKFILL)
+
 	chain := viper.GetString("superNode.chain")
 	c.Chain, err = shared.NewChainType(chain)
 	if err != nil {
 		return nil, err
 	}
 
-	ipfsPath := viper.GetString("superNode.ipfsPath")
-	if ipfsPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
+	c.IPFSPath, err = shared.GetIPFSPath()
+	if err != nil {
+		return nil, err
 	}
-	c.IPFSPath = ipfsPath
 
 	c.Sync = viper.GetBool("superNode.sync")
 	if c.Sync {
@@ -92,25 +109,14 @@ func NewSuperNodeConfig() (*Config, error) {
 		c.Workers = workers
 		switch c.Chain {
 		case shared.Ethereum:
-			c.NodeInfo, c.WSClient, err = getEthNodeAndClient(fmt.Sprintf("ws://%s", viper.GetString("ethereum.wsPath")))
+			ethWS := viper.GetString("ethereum.wsPath")
+			c.NodeInfo, c.WSClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("ws://%s", ethWS))
 			if err != nil {
 				return nil, err
 			}
 		case shared.Bitcoin:
-			c.NodeInfo = core.Node{
-				ID:           viper.GetString("bitcoin.nodeID"),
-				ClientName:   viper.GetString("bitcoin.clientName"),
-				GenesisBlock: viper.GetString("bitcoin.genesisBlock"),
-				NetworkID:    viper.GetString("bitcoin.networkID"),
-			}
-			// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
-			c.WSClient = &rpcclient.ConnConfig{
-				Host:         viper.GetString("bitcoin.wsPath"),
-				HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
-				DisableTLS:   true, // Bitcoin core does not provide TLS by default
-				Pass:         viper.GetString("bitcoin.pass"),
-				User:         viper.GetString("bitcoin.user"),
-			}
+			btcWS := viper.GetString("bitcoin.wsPath")
+			c.NodeInfo, c.WSClient = shared.GetBtcNodeAndClient(btcWS)
 		}
 	}
 
@@ -137,47 +143,43 @@ func NewSuperNodeConfig() (*Config, error) {
 		c.HTTPEndpoint = httpPath
 	}
 
-	c.DBConfig = config.Database{
-		Name:     viper.GetString("database.name"),
-		Hostname: viper.GetString("database.hostname"),
-		Port:     viper.GetInt("database.port"),
-		User:     viper.GetString("database.user"),
-		Password: viper.GetString("database.password"),
-	}
-
-	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
-	c.DB = &db
-	c.Quit = make(chan bool)
-	if viper.GetBool("superNode.backFill") {
-		if err := c.BackFillFields(chain); err != nil {
+	c.BackFill = viper.GetBool("superNode.backFill")
+	if c.BackFill {
+		if err := c.BackFillFields(); err != nil {
 			return nil, err
 		}
 	}
+
+	c.DBConfig.Init()
+	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+	c.DB = &db
+	c.Quit = make(chan bool)
 
 	return c, nil
 }
 
 // BackFillFields is used to fill in the BackFill fields of the config
-func (sn *Config) BackFillFields(chain string) error {
-	sn.BackFill = true
-	var httpClient interface{}
+func (c *Config) BackFillFields() error {
 	var err error
-	switch sn.Chain {
+
+	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
+	viper.BindEnv("bitcoin.httpPath", shared.BTC_HTTP_PATH)
+	viper.BindEnv("superNode.frequency", SUPERNODE_FREQUENCY)
+	viper.BindEnv("superNode.batchSize", SUPERNODE_BATCH_SIZE)
+	viper.BindEnv("superNode.batchNumber", SUPERNODE_BATCH_NUMBER)
+
+	switch c.Chain {
 	case shared.Ethereum:
-		_, httpClient, err = getEthNodeAndClient(fmt.Sprintf("http://%s", viper.GetString("ethereum.httpPath")))
+		ethHTTP := viper.GetString("ethereum.httpPath")
+		c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
 		if err != nil {
 			return err
 		}
 	case shared.Bitcoin:
-		httpClient = &rpcclient.ConnConfig{
-			Host:         viper.GetString("bitcoin.httpPath"),
-			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
-			DisableTLS:   true, // Bitcoin core does not provide TLS by default
-			Pass:         viper.GetString("bitcoin.pass"),
-			User:         viper.GetString("bitcoin.user"),
-		}
+		btcHTTP := viper.GetString("bitcoin.httpPath")
+		c.NodeInfo, c.HTTPClient = shared.GetBtcNodeAndClient(btcHTTP)
 	}
-	sn.HTTPClient = httpClient
+
 	freq := viper.GetInt("superNode.frequency")
 	var frequency time.Duration
 	if freq <= 0 {
@@ -185,18 +187,8 @@ func (sn *Config) BackFillFields(chain string) error {
 	} else {
 		frequency = time.Second * time.Duration(freq)
 	}
-	sn.Frequency = frequency
-	sn.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
-	sn.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
+	c.Frequency = frequency
+	c.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
+	c.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
 	return nil
-}
-
-func getEthNodeAndClient(path string) (core.Node, interface{}, error) {
-	rawRPCClient, err := rpc.Dial(path)
-	if err != nil {
-		return core.Node{}, nil, err
-	}
-	rpcClient := client.NewRPCClient(rawRPCClient, path)
-	vdbNode := node.MakeNode(rpcClient)
-	return vdbNode, rpcClient, nil
 }

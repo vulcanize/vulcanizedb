@@ -1,29 +1,41 @@
 [database]
-    name     = "vulcanize_public"
-    hostname = "localhost"
-    port     = 5432
-    user     = "vdbm"
+    name     = "vulcanize_public" # $DATABASE_NAME
+    hostname = "localhost" # &DATABASE_HOSTNAME
+    port     = 5432 # $DATABASE_PORT
+    user     = "vdbm" # $DATABASE_USER
+    password = "" # $DATABASE_PASSWORD
+
+[ipfs]
+    path = "/root/.ipfs" # $IPFS_PATH
+
+[resync]
+    chain = "bitcoin" # $RESYNC_CHAIN
+    type = "full" # $RESYNC_TYPE
+    start = 0 # $RESYNC_START
+    stop = 0 # $RESYNC_STOP
+    batchSize = 1 # $RESYNC_BATCH_SIZE
+    batchNumber = 50 # $RESYNC_BATCH_NUMBER
+    clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
 
 [superNode]
-    chain = "bitcoin"
-    ipfsPath = "/root/.ipfs"
-    server = true
-    ipcPath = "/root/.vulcanize/btc/vulcanize.ipc"
-    wsPath = "127.0.0.1:8082"
-    httpPath = "127.0.0.1:8083"
-    sync = true
-    workers = 1
-    backFill = true
-    frequency = 45
-    batchSize = 1
-    batchNumber = 50
+    chain = "bitcoin" # $SUPERNODE_CHAIN
+    server = true # $SUPERNODE_SERVER
+    ipcPath = "/root/.vulcanize/btc/vulcanize.ipc" # $SUPERNODE_IPC_PATH
+    wsPath = "127.0.0.1:8082" # $SUPERNODE_WS_PATH
+    httpPath = "127.0.0.1:8083" # $SUPERNODE_HTTP_PATH
+    sync = true # $SUPERNODE_SYNC
+    workers = 1 # $SUPERNODE_WORKERS
+    backFill = true # $SUPERNODE_BACKFILL
+    frequency = 45 # $SUPERNODE_FREQUENCY
+    batchSize = 1 # $SUPERNODE_BATCH_SIZE
+    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
 
 [bitcoin]
-    wsPath  = "127.0.0.1:8332"
-    httpPath = "127.0.0.1:8332"
-    pass = "password"
-    user = "username"
-    nodeID = "ocd0"
-    clientName = "Omnicore"
-    genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-    networkID = "0xD9B4BEF9"
+    wsPath  = "127.0.0.1:8332" # $BTC_WS_PATH
+    httpPath = "127.0.0.1:8332" # $BTC_HTTP_PATH
+    pass = "password" # $BTC_NODE_PASSWORD
+    user = "username" # $BTC_NODE_USER
+    nodeID = "ocd0" # $BTC_NODE_ID
+    clientName = "Omnicore" # $BTC_CLIENT_NAME
+    genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f" # $BTC_GENESIS_BLOCK
+    networkID = "0xD9B4BEF9" # $BTC_NETWORK_ID

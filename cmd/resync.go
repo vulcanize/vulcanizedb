@@ -18,6 +18,7 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/resync"
@@ -33,10 +34,6 @@ var resyncCmd = &cobra.Command{
 		logWithCommand = *log.WithField("SubCommand", subCommand)
 		rsyncCmdCommand()
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(resyncCmd)
 }
 
 func rsyncCmdCommand() {
@@ -55,4 +52,50 @@ func rsyncCmdCommand() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("%s %s resync finished", rConfig.Chain.String(), rConfig.ResyncType.String())
+}
+
+func init() {
+	rootCmd.AddCommand(resyncCmd)
+
+	// flags
+	resyncCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
+
+	resyncCmd.PersistentFlags().String("resync-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")
+	resyncCmd.PersistentFlags().String("resync-type", "", "which type of data to resync")
+	resyncCmd.PersistentFlags().Int("resync-start", 0, "block height to start resync")
+	resyncCmd.PersistentFlags().Int("resync-stop", 0, "block height to stop resync")
+	resyncCmd.PersistentFlags().Int("resync-batch-size", 0, "data fetching batch size")
+	resyncCmd.PersistentFlags().Int("resync-batch-number", 0, "how many goroutines to fetch data concurrently")
+	resyncCmd.PersistentFlags().Bool("resync-clear-old", false, "if true, clear out old data of the provided type within the resync range before resyncing")
+
+	resyncCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
+	resyncCmd.PersistentFlags().String("btc-password", "", "password for btc node")
+	resyncCmd.PersistentFlags().String("btc-username", "", "username for btc node")
+	resyncCmd.PersistentFlags().String("btc-node-id", "", "btc node id")
+	resyncCmd.PersistentFlags().String("btc-client-name", "", "btc client name")
+	resyncCmd.PersistentFlags().String("btc-genesis-block", "", "btc genesis block hash")
+	resyncCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
+
+	resyncCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
+
+	// and their bindings
+	viper.BindPFlag("ipfs.path", resyncCmd.PersistentFlags().Lookup("ipfs-path"))
+
+	viper.BindPFlag("resync.chain", resyncCmd.PersistentFlags().Lookup("resync-chain"))
+	viper.BindPFlag("resync.type", resyncCmd.PersistentFlags().Lookup("resync-type"))
+	viper.BindPFlag("resync.start", resyncCmd.PersistentFlags().Lookup("resync-start"))
+	viper.BindPFlag("resync.stop", resyncCmd.PersistentFlags().Lookup("resync-stop"))
+	viper.BindPFlag("resync.batchSize", resyncCmd.PersistentFlags().Lookup("resync-batch-size"))
+	viper.BindPFlag("resync.batchNumber", resyncCmd.PersistentFlags().Lookup("resync-batch-number"))
+	viper.BindPFlag("resync.clearOldCache", resyncCmd.PersistentFlags().Lookup("resync-clear-old"))
+
+	viper.BindPFlag("bitcoin.httpPath", resyncCmd.PersistentFlags().Lookup("btc-http-path"))
+	viper.BindPFlag("bitcoin.pass", resyncCmd.PersistentFlags().Lookup("btc-password"))
+	viper.BindPFlag("bitcoin.user", resyncCmd.PersistentFlags().Lookup("btc-username"))
+	viper.BindPFlag("bitcoin.nodeID", resyncCmd.PersistentFlags().Lookup("btc-node-id"))
+	viper.BindPFlag("bitcoin.clientName", resyncCmd.PersistentFlags().Lookup("btc-client-name"))
+	viper.BindPFlag("bitcoin.genesisBlock", resyncCmd.PersistentFlags().Lookup("btc-genesis-block"))
+	viper.BindPFlag("bitcoin.networkID", resyncCmd.PersistentFlags().Lookup("btc-network-id"))
+
+	viper.BindPFlag("ethereum.httpPath", resyncCmd.PersistentFlags().Lookup("eth-http-path"))
 }

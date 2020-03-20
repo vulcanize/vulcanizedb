@@ -18,20 +18,25 @@ package resync
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/config"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 	"github.com/vulcanize/vulcanizedb/utils"
+)
+
+// Env variables
+const (
+	RESYNC_CHAIN           = "RESYNC_CHAIN"
+	RESYNC_START           = "RESYNC_START"
+	RESYNC_STOP            = "RESYNC_STOP"
+	RESYNC_BATCH_SIZE      = "RESYNC_BATCH_SIZE"
+	RESYNC_BATCH_NUMBER    = "RESYNC_BATCH_NUMBER"
+	RESYNC_CLEAR_OLD_CACHE = "RESYNC_CLEAR_OLD_CACHE"
+	RESYNC_TYPE            = "RESYNC_TYPE"
 )
 
 // Config holds the parameters needed to perform a resync
@@ -58,26 +63,26 @@ type Config struct {
 func NewReSyncConfig() (*Config, error) {
 	c := new(Config)
 	var err error
+
+	viper.BindEnv("resync.start", RESYNC_START)
+	viper.BindEnv("resync.stop", RESYNC_STOP)
+	viper.BindEnv("resync.clearOldCache", RESYNC_CLEAR_OLD_CACHE)
+	viper.BindEnv("resync.type", RESYNC_TYPE)
+	viper.BindEnv("resync.chain", RESYNC_CHAIN)
+	viper.BindEnv("ethereum.httpPath", shared.ETH_HTTP_PATH)
+	viper.BindEnv("bitcoin.httpPath", shared.BTC_HTTP_PATH)
+	viper.BindEnv("resync.batchSize", RESYNC_BATCH_SIZE)
+	viper.BindEnv("resync.batchNumber", RESYNC_BATCH_NUMBER)
+
 	start := uint64(viper.GetInt64("resync.start"))
 	stop := uint64(viper.GetInt64("resync.stop"))
 	c.Ranges = [][2]uint64{{start, stop}}
-	ipfsPath := viper.GetString("resync.ipfsPath")
-	if ipfsPath == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		ipfsPath = filepath.Join(home, ".ipfs")
-	}
-	c.IPFSPath = ipfsPath
-	c.DBConfig = config.Database{
-		Name:     viper.GetString("database.name"),
-		Hostname: viper.GetString("database.hostname"),
-		Port:     viper.GetInt("database.port"),
-		User:     viper.GetString("database.user"),
-		Password: viper.GetString("database.password"),
-	}
 	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
+
+	c.IPFSPath, err = shared.GetIPFSPath()
+	if err != nil {
+		return nil, err
+	}
 	resyncType := viper.GetString("resync.type")
 	c.ResyncType, err = shared.GenerateResyncTypeFromString(resyncType)
 	if err != nil {
@@ -97,40 +102,22 @@ func NewReSyncConfig() (*Config, error) {
 
 	switch c.Chain {
 	case shared.Ethereum:
-		c.NodeInfo, c.HTTPClient, err = getEthNodeAndClient(fmt.Sprintf("http://%s", viper.GetString("ethereum.httpPath")))
+		ethHTTP := viper.GetString("ethereum.httpPath")
+		c.NodeInfo, c.HTTPClient, err = shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
 		if err != nil {
 			return nil, err
 		}
 	case shared.Bitcoin:
-		c.NodeInfo = core.Node{
-			ID:           viper.GetString("bitcoin.nodeID"),
-			ClientName:   viper.GetString("bitcoin.clientName"),
-			GenesisBlock: viper.GetString("bitcoin.genesisBlock"),
-			NetworkID:    viper.GetString("bitcoin.networkID"),
-		}
-		// For bitcoin we load in node info from the config because there is no RPC endpoint to retrieve this from the node
-		c.HTTPClient = &rpcclient.ConnConfig{
-			Host:         viper.GetString("bitcoin.httpPath"),
-			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
-			DisableTLS:   true, // Bitcoin core does not provide TLS by default
-			Pass:         viper.GetString("bitcoin.pass"),
-			User:         viper.GetString("bitcoin.user"),
-		}
+		btcHTTP := viper.GetString("bitcoin.httpPath")
+		c.NodeInfo, c.HTTPClient = shared.GetBtcNodeAndClient(btcHTTP)
 	}
+
+	c.DBConfig.Init()
 	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
 	c.DB = &db
+
 	c.Quit = make(chan bool)
 	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
 	c.BatchNumber = uint64(viper.GetInt64("resync.batchNumber"))
 	return c, nil
-}
-
-func getEthNodeAndClient(path string) (core.Node, interface{}, error) {
-	rawRPCClient, err := rpc.Dial(path)
-	if err != nil {
-		return core.Node{}, nil, err
-	}
-	rpcClient := client.NewRPCClient(rawRPCClient, path)
-	vdbNode := node.MakeNode(rpcClient)
-	return vdbNode, rpcClient, nil
 }
