@@ -19,8 +19,13 @@ package eth
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/statediff"
 
 	common2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
@@ -82,6 +87,12 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		BlockHash:       ipldPayload.Block.Hash().String(),
 		TotalDifficulty: ipldPayload.TotalDifficulty.String(),
 		Reward:          reward.String(),
+		Bloom:           ipldPayload.Block.Bloom().Bytes(),
+		StateRoot:       ipldPayload.Block.Root().String(),
+		RctRoot:         ipldPayload.Block.ReceiptHash().String(),
+		TxRoot:          ipldPayload.Block.TxHash().String(),
+		UncleRoot:       ipldPayload.Block.UncleHash().String(),
+		Timestamp:       ipldPayload.Block.Time(),
 	}
 
 	// Process and publish uncles
@@ -113,7 +124,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 	}
 
 	// Process and publish state leafs
-	stateNodeCids, err := pub.publishStateNodes(ipldPayload.StateNodes)
+	stateNodeCids, stateAccounts, err := pub.publishStateNodes(ipldPayload.StateNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +143,7 @@ func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForI
 		ReceiptCIDs:     receiptsCids,
 		StateNodeCIDs:   stateNodeCids,
 		StorageNodeCIDs: storageNodeCids,
+		StateAccounts:   stateAccounts,
 	}, nil
 }
 
@@ -193,16 +205,17 @@ func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTr
 	return rctCids, nil
 }
 
-func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, error) {
+func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, map[common.Hash]StateAccountModel, error) {
 	stateNodeCids := make([]StateNodeModel, 0, len(stateNodes))
+	stateAccounts := make(map[common.Hash]StateAccountModel)
 	for _, stateNode := range stateNodes {
 		node, err := ipld.FromStateTrieRLP(stateNode.Value)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		cid, err := pub.StatePutter.DagPut(node)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		stateNodeCids = append(stateNodeCids, StateNodeModel{
 			Path:     stateNode.Path,
@@ -210,8 +223,30 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 			CID:      cid,
 			NodeType: ResolveFromNodeType(stateNode.Type),
 		})
+		// If we have a leaf, decode the account to extract additional metadata for indexing
+		if stateNode.Type == statediff.Leaf {
+			var i []interface{}
+			if err := rlp.DecodeBytes(stateNode.Value, &i); err != nil {
+				return nil, nil, err
+			}
+			if len(i) != 2 {
+				return nil, nil, fmt.Errorf("IPLDPublisher expected state leaf node rlp to decode into two elements")
+			}
+			var account state.Account
+			if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
+				return nil, nil, err
+			}
+			// Map state account to the state path hash
+			statePathHash := crypto.Keccak256Hash(stateNode.Path)
+			stateAccounts[statePathHash] = StateAccountModel{
+				Balance:     account.Balance.String(),
+				Nonce:       account.Nonce,
+				CodeHash:    account.CodeHash,
+				StorageRoot: account.Root.String(),
+			}
+		}
 	}
-	return stateNodeCids, nil
+	return stateNodeCids, stateAccounts, nil
 }
 
 func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]TrieNode) (map[common.Hash][]StorageNodeModel, error) {
@@ -227,7 +262,7 @@ func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]Tri
 			if err != nil {
 				return nil, err
 			}
-			// Map storage node cids to their path hashes
+			// Map storage node cids to the state path hash
 			storageLeafCids[pathHash] = append(storageLeafCids[pathHash], StorageNodeModel{
 				Path:       storageNode.Path,
 				StorageKey: storageNode.LeafKey.Hex(),

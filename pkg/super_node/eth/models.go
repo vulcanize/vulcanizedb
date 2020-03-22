@@ -28,6 +28,12 @@ type HeaderModel struct {
 	TotalDifficulty string `db:"td"`
 	NodeID          int64  `db:"node_id"`
 	Reward          string `db:"reward"`
+	StateRoot       string `db:"state_root"`
+	UncleRoot       string `db:"uncle_root"`
+	TxRoot          string `db:"tx_root"`
+	RctRoot         string `db:"receipt_root"`
+	Bloom           []byte `db:"bloom"`
+	Timestamp       uint64 `db:"timestamp"`
 }
 
 // UncleModel is the db model for eth.uncle_cids
@@ -92,4 +98,14 @@ type StorageNodeWithStateKeyModel struct {
 	StorageKey string `db:"storage_key"`
 	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+}
+
+// StateAccountModel is a db model for an eth state account (decoded value of state leaf node)
+type StateAccountModel struct {
+	ID          int64  `db:"id"`
+	StateID     int64  `db:"state_id"`
+	Balance     string `db:"balance"`
+	Nonce       uint64 `db:"nonce"`
+	CodeHash    []byte `db:"code_hash"`
+	StorageRoot string `db:"storage_root"`
 }

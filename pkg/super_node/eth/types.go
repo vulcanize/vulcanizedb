@@ -62,6 +62,7 @@ type CIDPayload struct {
 	TransactionCIDs []TxModel
 	ReceiptCIDs     map[common.Hash]ReceiptModel
 	StateNodeCIDs   []StateNodeModel
+	StateAccounts   map[common.Hash]StateAccountModel
 	StorageNodeCIDs map[common.Hash][]StorageNodeModel
 }
 

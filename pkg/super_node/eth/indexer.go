@@ -88,10 +88,12 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward) VALUES ($1, $2, $3, $4, $5, $6, $7)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward) = ($3, $4, $5, $6, $7)
+	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp) 
+								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp) = ($3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID, header.Reward).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID, header.Reward, header.StateRoot, header.TxRoot,
+		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp).Scan(&headerID)
 	return headerID, err
 }
 
@@ -138,13 +140,29 @@ func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload,
 		if err != nil {
 			return err
 		}
-		for _, storageCID := range payload.StorageNodeCIDs[crypto.Keccak256Hash(stateCID.Path)] {
-			if err := in.indexStorageCID(tx, storageCID, stateID); err != nil {
-				return err
+		// If we have a state leaf node, index the associated account and storage nodes
+		if stateCID.NodeType == 2 {
+			pathKey := crypto.Keccak256Hash(stateCID.Path)
+			for _, storageCID := range payload.StorageNodeCIDs[pathKey] {
+				if err := in.indexStorageCID(tx, storageCID, stateID); err != nil {
+					return err
+				}
+			}
+			if stateAccount, ok := payload.StateAccounts[pathKey]; ok {
+				if err := in.indexStateAccount(tx, stateAccount, stateID); err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
+}
+
+func (in *CIDIndexer) indexStateAccount(tx *sqlx.Tx, stateAccount StateAccountModel, stateID int64) error {
+	_, err := tx.Exec(`INSERT INTO eth.state_accounts (state_id, balance, nonce, code_hash, storage_root) VALUES ($1, $2, $3, $4, $5)
+								ON CONFLICT (state_id) DO UPDATE SET (balance, nonce, code_hash, storage_root) = ($2, $3, $4, $5)`,
+		stateID, stateAccount.Balance, stateAccount.Nonce, stateAccount.CodeHash, stateAccount.StorageRoot)
+	return err
 }
 
 func (in *CIDIndexer) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeModel, stateID int64) error {

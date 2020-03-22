@@ -72,6 +72,13 @@ COMMENT ON TABLE btc.header_cids IS '@name BtcHeaderCids';
 
 
 --
+-- Name: COLUMN header_cids.node_id; Type: COMMENT; Schema: btc; Owner: -
+--
+
+COMMENT ON COLUMN btc.header_cids.node_id IS '@name BtcNodeID';
+
+
+--
 -- Name: header_cids_id_seq; Type: SEQUENCE; Schema: btc; Owner: -
 --
 
@@ -254,7 +261,13 @@ CREATE TABLE eth.header_cids (
     cid text NOT NULL,
     td numeric NOT NULL,
     node_id integer NOT NULL,
-    reward numeric NOT NULL
+    reward numeric NOT NULL,
+    state_root character varying(66),
+    tx_root character varying(66),
+    receipt_root character varying(66),
+    uncle_root character varying(66),
+    bloom bytea,
+    "timestamp" numeric
 );
 
 
@@ -263,6 +276,13 @@ CREATE TABLE eth.header_cids (
 --
 
 COMMENT ON TABLE eth.header_cids IS '@name EthHeaderCids';
+
+
+--
+-- Name: COLUMN header_cids.node_id; Type: COMMENT; Schema: eth; Owner: -
+--
+
+COMMENT ON COLUMN eth.header_cids.node_id IS '@name EthNodeID';
 
 
 --
@@ -360,6 +380,40 @@ ALTER SEQUENCE eth.receipt_cids_id_seq OWNED BY eth.receipt_cids.id;
 
 
 --
+-- Name: state_accounts; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.state_accounts (
+    id integer NOT NULL,
+    state_id integer NOT NULL,
+    balance numeric NOT NULL,
+    nonce integer NOT NULL,
+    code_hash bytea NOT NULL,
+    storage_root character varying(66) NOT NULL
+);
+
+
+--
+-- Name: state_accounts_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.state_accounts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: state_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.state_accounts_id_seq OWNED BY eth.state_accounts.id;
+
+
+--
 -- Name: state_cids; Type: TABLE; Schema: eth; Owner: -
 --
 
@@ -369,7 +423,7 @@ CREATE TABLE eth.state_cids (
     state_key character varying(66),
     cid text NOT NULL,
     state_path bytea,
-    node_type integer NOT NULL
+    node_type integer
 );
 
 
@@ -403,7 +457,7 @@ CREATE TABLE eth.storage_cids (
     storage_key character varying(66),
     cid text NOT NULL,
     storage_path bytea,
-    node_type integer NOT NULL
+    node_type integer
 );
 
 
@@ -741,6 +795,20 @@ CREATE TABLE public.headers (
 
 
 --
+-- Name: TABLE headers; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.headers IS '@name EthHeaders';
+
+
+--
+-- Name: COLUMN headers.node_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.headers.node_id IS '@name EthNodeID';
+
+
+--
 -- Name: headers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -777,7 +845,14 @@ CREATE TABLE public.nodes (
 -- Name: TABLE nodes; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.nodes IS '@name NodeIDs';
+COMMENT ON TABLE public.nodes IS '@name NodeInfo';
+
+
+--
+-- Name: COLUMN nodes.node_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.nodes.node_id IS '@name ChainNodeID';
 
 
 --
@@ -949,6 +1024,13 @@ ALTER TABLE ONLY eth.queue_data ALTER COLUMN id SET DEFAULT nextval('eth.queue_d
 --
 
 ALTER TABLE ONLY eth.receipt_cids ALTER COLUMN id SET DEFAULT nextval('eth.receipt_cids_id_seq'::regclass);
+
+
+--
+-- Name: state_accounts id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_accounts ALTER COLUMN id SET DEFAULT nextval('eth.state_accounts_id_seq'::regclass);
 
 
 --
@@ -1174,6 +1256,22 @@ ALTER TABLE ONLY eth.queue_data
 
 ALTER TABLE ONLY eth.receipt_cids
     ADD CONSTRAINT receipt_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: state_accounts state_accounts_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_accounts
+    ADD CONSTRAINT state_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: state_accounts state_accounts_state_id_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_accounts
+    ADD CONSTRAINT state_accounts_state_id_key UNIQUE (state_id);
 
 
 --
@@ -1496,6 +1594,14 @@ ALTER TABLE ONLY eth.header_cids
 
 ALTER TABLE ONLY eth.receipt_cids
     ADD CONSTRAINT receipt_cids_tx_id_fkey FOREIGN KEY (tx_id) REFERENCES eth.transaction_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: state_accounts state_accounts_state_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_accounts
+    ADD CONSTRAINT state_accounts_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_cids(id) ON DELETE CASCADE;
 
 
 --
