@@ -213,6 +213,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 					log.Errorf("super node conversion error for chain %s: %v", sap.chain.String(), err)
 					continue
 				}
+				log.Infof("processing %s data streamed at head height %d", sap.chain.String(), ipldPayload.Height())
 				// If we have a ScreenAndServe process running, forward the iplds to it
 				select {
 				case screenAndServePayload <- ipldPayload:
