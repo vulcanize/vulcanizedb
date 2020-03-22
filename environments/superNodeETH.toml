@@ -6,7 +6,7 @@
     password = "" # $DATABASE_PASSWORD
 
 [ipfs]
-    path = "/root/.ipfs" # $IPFS_PATH
+    path = "/root/.eth/.ipfs" # $IPFS_PATH
 
 [resync]
     chain = "ethereum" # $RESYNC_CHAIN

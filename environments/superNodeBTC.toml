@@ -6,7 +6,7 @@
     password = "" # $DATABASE_PASSWORD
 
 [ipfs]
-    path = "/root/.ipfs" # $IPFS_PATH
+    path = "/root/.btc/.ipfs" # $IPFS_PATH
 
 [resync]
     chain = "bitcoin" # $RESYNC_CHAIN
