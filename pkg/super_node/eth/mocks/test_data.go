@@ -188,6 +188,7 @@ var (
 	nonce0          = uint64(0)
 	accountRoot     = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 	accountCodeHash = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+	accountPathHash = crypto.Keccak256Hash([]byte{'\x0c'})
 	AccountAddresss = common.HexToAddress("0x0D3ab14BBaD3D99F4203bd7a11aCB94882050E7e")
 	AccountLeafKey  = testhelpers.Account2LeafKey
 	Account, _      = rlp.EncodeToBytes(state.Account{
@@ -297,6 +298,12 @@ var (
 			ParentHash:      MockBlock.ParentHash().String(),
 			TotalDifficulty: MockBlock.Difficulty().String(),
 			Reward:          "5000000000000000000",
+			StateRoot:       MockBlock.Root().String(),
+			RctRoot:         MockBlock.ReceiptHash().String(),
+			TxRoot:          MockBlock.TxHash().String(),
+			UncleRoot:       MockBlock.UncleHash().String(),
+			Bloom:           MockBlock.Bloom().Bytes(),
+			Timestamp:       MockBlock.Time(),
 		},
 		UncleCIDs:       []eth2.UncleModel{},
 		TransactionCIDs: MockTrxMetaPostPublsh,
@@ -315,6 +322,20 @@ var (
 				},
 			},
 		},
+		StateAccounts: map[common.Hash]eth.StateAccountModel{
+			contractPathHash: {
+				Balance:     big.NewInt(0).String(),
+				Nonce:       nonce1,
+				CodeHash:    contractCodeHash.Bytes(),
+				StorageRoot: common.HexToHash(contractRoot).String(),
+			},
+			accountPathHash: {
+				Balance:     big.NewInt(1000).String(),
+				Nonce:       nonce0,
+				CodeHash:    accountCodeHash.Bytes(),
+				StorageRoot: common.HexToHash(accountRoot).String(),
+			},
+		},
 	}
 
 	MockCIDWrapper = &eth.CIDWrapper{
@@ -326,6 +347,12 @@ var (
 			CID:             HeaderCID.String(),
 			TotalDifficulty: MockBlock.Difficulty().String(),
 			Reward:          "5000000000000000000",
+			StateRoot:       MockBlock.Root().String(),
+			RctRoot:         MockBlock.ReceiptHash().String(),
+			TxRoot:          MockBlock.TxHash().String(),
+			UncleRoot:       MockBlock.UncleHash().String(),
+			Bloom:           MockBlock.Bloom().Bytes(),
+			Timestamp:       MockBlock.Time(),
 		},
 		Transactions: MockTrxMetaPostPublsh,
 		Receipts:     MockRctMetaPostPublish,
