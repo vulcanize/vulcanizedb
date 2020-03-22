@@ -56,8 +56,7 @@ func decodeTrieNode(c cid.Cid, b []byte,
 		err                  error
 	)
 
-	err = rlp.DecodeBytes(b, &i)
-	if err != nil {
+	if err = rlp.DecodeBytes(b, &i); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +139,12 @@ func parseTrieNodeBranch(i []interface{}, codec uint64) ([]interface{}, error) {
 	var out []interface{}
 
 	for _, vi := range i {
-		v := vi.([]byte)
+		v, ok := vi.([]byte)
+		// Sometimes this throws "panic: interface conversion: interface {} is []interface {}, not []uint8"
+		// Figure out why, and if it is okay to continue
+		if !ok {
+			continue
+		}
 
 		switch len(v) {
 		case 0:
