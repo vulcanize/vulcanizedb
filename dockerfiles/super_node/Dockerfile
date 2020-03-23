@@ -44,6 +44,7 @@ USER $USER
 # note: using $USER is merged, but not in the stable release yet
 COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/$CONFIG_FILE config.toml
 COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node/startup_script.sh .
+COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node/entrypoint.sh .
 
 
 # keep binaries immutable
@@ -51,9 +52,8 @@ COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/vulcanizedb vulcani
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations migrations/vulcanizedb
 COPY --from=builder /go/src/github.com/ipfs/go-ipfs/ipfs ipfs
-# XXX dir is already writeable RUN touch vulcanizedb.log
 
 EXPOSE $EXPOSE_PORT_1
 EXPOSE $EXPOSE_PORT_2
 
-CMD ["./startup_script.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
