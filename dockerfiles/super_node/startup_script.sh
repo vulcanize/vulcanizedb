@@ -49,19 +49,17 @@ fi
 
 # If IPFS initialization was successful
 if [[ $? -eq 0 ]]; then
-    echo "Beginning the vulcanizedb super node process"
-    ./vulcanizedb ${VDB_COMMAND} --config=config.toml 2>&1 | tee -a vulcanizedb.log &
+    echo "Running the VulcanizeDB process"
+    ./vulcanizedb ${VDB_COMMAND} --config=config.toml
 else
     echo "Could not initialize IPFS."
     exit 1
 fi
 
-# If Vulcanizedb startup was successful
+# If VulcanizeDB process was successful
 if [ $? -eq 0 ]; then
-    echo "Super node successfully booted"
+    echo "VulcanizeDB process ran successfully"
 else
-    echo "Could not start vulcanizedb super node process. Is the config file correct?"
+    echo "Could not start VulcanizeDB process. Is the config file correct?"
     exit 1
 fi
-
-tail -f vulcanizedb.log

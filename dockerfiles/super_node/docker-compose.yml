@@ -65,28 +65,6 @@ services:
      - "127.0.0.1:8080:8080"
      - "127.0.0.1:8081:8081"
 
-  resync:
-    depends_on:
-    - db
-    build:
-      context: ./../../
-      cache_from:
-      - alpine:latest
-      - golang:1.12.4
-      dockerfile: ./dockerfiles/super_node/Dockerfile
-      args:
-        USER: "vdbm"
-        CONFIG_FILE: ./environments/superNodeETH.toml
-    environment:
-      VDB_COMMAND: "resync"
-      IPFS_INIT: "true"
-      IPFS_PATH: "/root/.eth_resync/.ipfs"
-      DATABASE_NAME: "vulcanize_public"
-      DATABASE_HOSTNAME: "db"
-      DATABASE_PORT: 5432
-      DATABASE_USER: "vdbm"
-      DATABASE_PASSWORD: "password"
-
   graphql:
     restart: always
     depends_on:
