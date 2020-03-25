@@ -51,6 +51,7 @@ COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/d
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/vulcanizedb vulcanizedb
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations migrations/vulcanizedb
+COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/environments environments
 COPY --from=builder /go/src/github.com/ipfs/go-ipfs/ipfs ipfs
 
 EXPOSE $EXPOSE_PORT_1
