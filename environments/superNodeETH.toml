@@ -6,7 +6,7 @@
     password = "" # $DATABASE_PASSWORD
 
 [ipfs]
-    path = "/root/.eth/.ipfs" # $IPFS_PATH
+    path = "~/.ipfs" # $IPFS_PATH
 
 [resync]
     chain = "ethereum" # $RESYNC_CHAIN
@@ -20,7 +20,7 @@
 [superNode]
     chain = "ethereum" # $SUPERNODE_CHAIN
     server = true # $SUPERNODE_SERVER
-    ipcPath = "/root/.vulcanize/eth/vulcanize.ipc" # $SUPERNODE_IPC_PATH
+    ipcPath = "~/.vulcanize/vulcanize.ipc" # $SUPERNODE_IPC_PATH
     wsPath = "127.0.0.1:8081" # $SUPERNODE_WS_PATH
     httpPath = "127.0.0.1:8082" # $SUPERNODE_HTTP_PATH
     sync = true # $SUPERNODE_SYNC

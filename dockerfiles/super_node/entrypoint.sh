@@ -14,7 +14,7 @@ set +x
 #test $DATABASE_PASSWORD
 #test $IPFS_INIT
 #test $IPFS_PATH
-VDB_COMMAND=${VARIABLE:-headerSync}
+VDB_COMMAND=${VDB_COMMAND:-superNode}
 set +e
 
 # Construct the connection string for postgres
@@ -39,7 +39,7 @@ export IPFS_PGPORT=$DATABASE_PORT
 export IPFS_PGPASSWORD=$DATABASE_PASSWORD
 
 
-if [ ! -d "~/.ipfs" ]; then
+if [ ! -d "$HOME/.ipfs" ]; then
   # initialize PG-IPFS
   echo "Initializing Postgres-IPFS profile"
   ./ipfs init --profile=postgresds
@@ -51,11 +51,14 @@ if [ ! -d "~/.ipfs" ]; then
   fi
 fi
 
-echo "Beginning the vulcanizedb super node process"
-DEFAULT_OPTIONS="--config=config.toml"
-VDB_FULL_CL=${VARIABLE:-$DEFAULT_OPTIONS}
-# XXX stdout, not logfile
-./vulcanizedb ${VDB_COMMAND} $VDB_FULL_CL
+
+echo "Beginning the vulcanizedb process"
+VDB_CONFIG_FILE=${VDB_CONFIG_FILE:-config.toml}
+DEFAULT_OPTIONS="--config=$VDB_CONFIG_FILE"
+VDB_FULL_CL=${VDB_FULL_CL:-$VDB_COMMAND $DEFAULT_OPTIONS}
+echo running: ./vulcanizedb $VDB_FULL_CL $@
+
+./vulcanizedb $VDB_FULL_CL $@
 rv=$?
 
 if [ $rv != 0 ]; then
