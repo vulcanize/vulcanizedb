@@ -45,6 +45,7 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 		return err
 	}
 	for _, rng := range rngs {
+		logrus.Infof("eth db cleaner cleaning up block range %d to %d", rng[0], rng[1])
 		if err := c.clean(tx, rng, t); err != nil {
 			if err := tx.Rollback(); err != nil {
 				logrus.Error(err)
@@ -52,7 +53,11 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 			return err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	logrus.Infof("eth db cleaner vacuum analyzing cleaned tables to free up space from deleted rows")
+	return c.vacuumAnalyze(t)
 }
 
 func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
@@ -93,6 +98,91 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	default:
 		return fmt.Errorf("eth cleaner unrecognized type: %s", t.String())
 	}
+}
+
+func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
+	switch t {
+	case shared.Full, shared.Headers:
+		return c.vacuumFull()
+	case shared.Uncles:
+		return c.vacuumUncles()
+	case shared.Transactions:
+		if err := c.vacuumTxs(); err != nil {
+			return err
+		}
+		return c.vacuumRcts()
+	case shared.Receipts:
+		return c.vacuumRcts()
+	case shared.State:
+		if err := c.vacuumState(); err != nil {
+			return err
+		}
+		if err := c.vacuumAccounts(); err != nil {
+			return err
+		}
+		return c.vacuumStorage()
+	case shared.Storage:
+		return c.vacuumStorage()
+	default:
+		return fmt.Errorf("eth cleaner unrecognized type: %s", t.String())
+	}
+}
+
+func (c *Cleaner) vacuumFull() error {
+	if err := c.vacuumHeaders(); err != nil {
+		return err
+	}
+	if err := c.vacuumUncles(); err != nil {
+		return err
+	}
+	if err := c.vacuumTxs(); err != nil {
+		return err
+	}
+	if err := c.vacuumRcts(); err != nil {
+		return err
+	}
+	if err := c.vacuumState(); err != nil {
+		return err
+	}
+	if err := c.vacuumAccounts(); err != nil {
+		return err
+	}
+	return c.vacuumStorage()
+}
+
+func (c *Cleaner) vacuumHeaders() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.header_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumUncles() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.uncle_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumTxs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.transaction_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumRcts() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.receipt_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumState() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.state_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumAccounts() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.state_accounts`)
+	return err
+}
+
+func (c *Cleaner) vacuumStorage() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE eth.storage_cids`)
+	return err
 }
 
 func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {

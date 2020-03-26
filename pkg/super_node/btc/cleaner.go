@@ -45,6 +45,7 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 		return err
 	}
 	for _, rng := range rngs {
+		logrus.Infof("btc db cleaner cleaning up block range %d to %d", rng[0], rng[1])
 		if err := c.clean(tx, rng, t); err != nil {
 			if err := tx.Rollback(); err != nil {
 				logrus.Error(err)
@@ -52,7 +53,11 @@ func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 			return err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	logrus.Infof("btc db cleaner vacuum analyzing cleaned tables to free up space from deleted rows")
+	return c.vacuumAnalyze(t)
 }
 
 func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
@@ -67,6 +72,52 @@ func (c *Cleaner) clean(tx *sqlx.Tx, rng [2]uint64, t shared.DataType) error {
 	default:
 		return fmt.Errorf("btc cleaner unrecognized type: %s", t.String())
 	}
+}
+
+func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
+	switch t {
+	case shared.Full, shared.Headers:
+		if err := c.vacuumHeaders(); err != nil {
+			return err
+		}
+		if err := c.vacuumTxs(); err != nil {
+			return err
+		}
+		if err := c.vacuumTxInputs(); err != nil {
+			return err
+		}
+		return c.vacuumTxOutputs()
+	case shared.Transactions:
+		if err := c.vacuumTxs(); err != nil {
+			return err
+		}
+		if err := c.vacuumTxInputs(); err != nil {
+			return err
+		}
+		return c.vacuumTxOutputs()
+	default:
+		return fmt.Errorf("btc cleaner unrecognized type: %s", t.String())
+	}
+}
+
+func (c *Cleaner) vacuumHeaders() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE btc.header_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumTxs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE btc.transaction_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumTxInputs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE btc.tx_inputs`)
+	return err
+}
+
+func (c *Cleaner) vacuumTxOutputs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE btc.tx_outputs`)
+	return err
 }
 
 func (c *Cleaner) cleanFull(tx *sqlx.Tx, rng [2]uint64) error {
