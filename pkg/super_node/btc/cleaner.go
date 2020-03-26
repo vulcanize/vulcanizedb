@@ -86,7 +86,9 @@ func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
 		if err := c.vacuumTxInputs(); err != nil {
 			return err
 		}
-		return c.vacuumTxOutputs()
+		if err := c.vacuumTxOutputs(); err != nil {
+			return err
+		}
 	case shared.Transactions:
 		if err := c.vacuumTxs(); err != nil {
 			return err
@@ -94,10 +96,13 @@ func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
 		if err := c.vacuumTxInputs(); err != nil {
 			return err
 		}
-		return c.vacuumTxOutputs()
+		if err := c.vacuumTxOutputs(); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("btc cleaner unrecognized type: %s", t.String())
 	}
+	return c.vacuumIPLDs()
 }
 
 func (c *Cleaner) vacuumHeaders() error {
@@ -117,6 +122,11 @@ func (c *Cleaner) vacuumTxInputs() error {
 
 func (c *Cleaner) vacuumTxOutputs() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE btc.tx_outputs`)
+	return err
+}
+
+func (c *Cleaner) vacuumIPLDs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE public.blocks`)
 	return err
 }
 

@@ -105,14 +105,20 @@ func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
 	case shared.Full, shared.Headers:
 		return c.vacuumFull()
 	case shared.Uncles:
-		return c.vacuumUncles()
+		if err := c.vacuumUncles(); err != nil {
+			return err
+		}
 	case shared.Transactions:
 		if err := c.vacuumTxs(); err != nil {
 			return err
 		}
-		return c.vacuumRcts()
+		if err := c.vacuumRcts(); err != nil {
+			return err
+		}
 	case shared.Receipts:
-		return c.vacuumRcts()
+		if err := c.vacuumRcts(); err != nil {
+			return err
+		}
 	case shared.State:
 		if err := c.vacuumState(); err != nil {
 			return err
@@ -120,12 +126,17 @@ func (c *Cleaner) vacuumAnalyze(t shared.DataType) error {
 		if err := c.vacuumAccounts(); err != nil {
 			return err
 		}
-		return c.vacuumStorage()
+		if err := c.vacuumStorage(); err != nil {
+			return err
+		}
 	case shared.Storage:
-		return c.vacuumStorage()
+		if err := c.vacuumStorage(); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("eth cleaner unrecognized type: %s", t.String())
 	}
+	return c.vacuumIPLDs()
 }
 
 func (c *Cleaner) vacuumFull() error {
@@ -182,6 +193,11 @@ func (c *Cleaner) vacuumAccounts() error {
 
 func (c *Cleaner) vacuumStorage() error {
 	_, err := c.db.Exec(`VACUUM ANALYZE eth.storage_cids`)
+	return err
+}
+
+func (c *Cleaner) vacuumIPLDs() error {
+	_, err := c.db.Exec(`VACUUM ANALYZE public.blocks`)
 	return err
 }
 
