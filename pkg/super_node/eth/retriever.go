@@ -391,7 +391,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 	log.Debug("retrieving state cids for header id ", headerID)
 	args := make([]interface{}, 0, 2)
 	pgStr := `SELECT state_cids.id, state_cids.header_id,
-			state_cids.state_key, state_cids.node_type, state_cids.cid, state_cids.state_path
+			state_cids.state_leaf_key, state_cids.node_type, state_cids.cid, state_cids.state_path
 			FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 			WHERE header_cids.id = $1`
 	args = append(args, headerID)
@@ -401,7 +401,7 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 		for i, addr := range stateFilter.Addresses {
 			keys[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes()).String()
 		}
-		pgStr += ` AND state_cids.state_key = ANY($2::VARCHAR(66)[])`
+		pgStr += ` AND state_cids.state_leaf_key = ANY($2::VARCHAR(66)[])`
 		args = append(args, pq.Array(keys))
 	}
 	if !stateFilter.IntermediateNodes {
@@ -415,8 +415,8 @@ func (ecr *CIDRetriever) RetrieveStateCIDs(tx *sqlx.Tx, stateFilter StateFilter,
 func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageFilter, headerID int64) ([]StorageNodeWithStateKeyModel, error) {
 	log.Debug("retrieving storage cids for header id ", headerID)
 	args := make([]interface{}, 0, 3)
-	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_key,
- 			storage_cids.node_type, storage_cids.cid, storage_cids.storage_path, state_cids.state_key
+	pgStr := `SELECT storage_cids.id, storage_cids.state_id, storage_cids.storage_leaf_key,
+ 			storage_cids.node_type, storage_cids.cid, storage_cids.storage_path, state_cids.state_leaf_key
  			FROM eth.storage_cids, eth.state_cids, eth.header_cids
 			WHERE storage_cids.state_id = state_cids.id 
 			AND state_cids.header_id = header_cids.id
@@ -429,12 +429,12 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 		for i, addr := range storageFilter.Addresses {
 			keys[i] = crypto.Keccak256Hash(common.HexToAddress(addr).Bytes()).String()
 		}
-		pgStr += fmt.Sprintf(` AND state_cids.state_key = ANY($%d::VARCHAR(66)[])`, id)
+		pgStr += fmt.Sprintf(` AND state_cids.state_leaf_key = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(keys))
 		id++
 	}
 	if len(storageFilter.StorageKeys) > 0 {
-		pgStr += fmt.Sprintf(` AND storage_cids.storage_key = ANY($%d::VARCHAR(66)[])`, id)
+		pgStr += fmt.Sprintf(` AND storage_cids.storage_leaf_key = ANY($%d::VARCHAR(66)[])`, id)
 		args = append(args, pq.Array(storageFilter.StorageKeys))
 	}
 	if !storageFilter.IntermediateNodes {

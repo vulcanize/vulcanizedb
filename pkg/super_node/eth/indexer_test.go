@@ -84,7 +84,7 @@ var _ = Describe("Indexer", func() {
 			Expect(shared.ListContainsString(rcts, mocks.Rct2CID.String())).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]eth.StateNodeModel, 0)
-			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.node_type, state_cids.state_path, state_cids.header_id
+			pgStr = `SELECT state_cids.cid, state_cids.state_leaf_key, state_cids.node_type, state_cids.state_path, state_cids.header_id
 				FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 				WHERE header_cids.block_number = $1`
 			err = db.Select(&stateNodes, pgStr, 1)
@@ -104,7 +104,7 @@ var _ = Describe("Indexer", func() {
 			}
 			// check that storage nodes were properly indexed
 			storageNodes := make([]eth.StorageNodeWithStateKeyModel, 0)
-			pgStr = `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key, storage_cids.node_type, storage_cids.storage_path 
+			pgStr = `SELECT storage_cids.cid, state_cids.state_leaf_key, storage_cids.storage_leaf_key, storage_cids.node_type, storage_cids.storage_path 
 				FROM eth.storage_cids, eth.state_cids, eth.header_cids
 				WHERE storage_cids.state_id = state_cids.id 
 				AND state_cids.header_id = header_cids.id

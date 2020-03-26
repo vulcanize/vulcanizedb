@@ -420,7 +420,7 @@ ALTER SEQUENCE eth.state_accounts_id_seq OWNED BY eth.state_accounts.id;
 CREATE TABLE eth.state_cids (
     id integer NOT NULL,
     header_id integer NOT NULL,
-    state_key character varying(66),
+    state_leaf_key character varying(66),
     cid text NOT NULL,
     state_path bytea,
     node_type integer
@@ -454,7 +454,7 @@ ALTER SEQUENCE eth.state_cids_id_seq OWNED BY eth.state_cids.id;
 CREATE TABLE eth.storage_cids (
     id integer NOT NULL,
     state_id integer NOT NULL,
-    storage_key character varying(66),
+    storage_leaf_key character varying(66),
     cid text NOT NULL,
     storage_path bytea,
     node_type integer

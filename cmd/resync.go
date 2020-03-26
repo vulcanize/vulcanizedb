@@ -66,7 +66,7 @@ func init() {
 	resyncCmd.PersistentFlags().Int("resync-stop", 0, "block height to stop resync")
 	resyncCmd.PersistentFlags().Int("resync-batch-size", 0, "data fetching batch size")
 	resyncCmd.PersistentFlags().Int("resync-batch-number", 0, "how many goroutines to fetch data concurrently")
-	resyncCmd.PersistentFlags().Bool("resync-clear-old", false, "if true, clear out old data of the provided type within the resync range before resyncing")
+	resyncCmd.PersistentFlags().Bool("resync-clear-old-cache", false, "if true, clear out old data of the provided type within the resync range before resyncing")
 
 	resyncCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
 	resyncCmd.PersistentFlags().String("btc-password", "", "password for btc node")
@@ -87,7 +87,7 @@ func init() {
 	viper.BindPFlag("resync.stop", resyncCmd.PersistentFlags().Lookup("resync-stop"))
 	viper.BindPFlag("resync.batchSize", resyncCmd.PersistentFlags().Lookup("resync-batch-size"))
 	viper.BindPFlag("resync.batchNumber", resyncCmd.PersistentFlags().Lookup("resync-batch-number"))
-	viper.BindPFlag("resync.clearOldCache", resyncCmd.PersistentFlags().Lookup("resync-clear-old"))
+	viper.BindPFlag("resync.clearOldCache", resyncCmd.PersistentFlags().Lookup("resync-clear-old-cache"))
 
 	viper.BindPFlag("bitcoin.httpPath", resyncCmd.PersistentFlags().Lookup("btc-http-path"))
 	viper.BindPFlag("bitcoin.pass", resyncCmd.PersistentFlags().Lookup("btc-password"))

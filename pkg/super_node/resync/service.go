@@ -113,6 +113,7 @@ func NewResyncService(settings *Config) (Resync, error) {
 
 func (rs *Service) Resync() error {
 	if rs.clearOldCache {
+		logrus.Infof("cleaning out old data from Postgres")
 		if err := rs.Cleaner.Clean(rs.ranges, rs.data); err != nil {
 			return fmt.Errorf("%s %s data resync cleaning error: %v", rs.chain.String(), rs.data.String(), err)
 		}

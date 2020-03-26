@@ -30,6 +30,10 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 )
 
+var (
+	nullHash = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
+)
+
 // Indexer satisfies the Indexer interface for ethereum
 type CIDIndexer struct {
 	db *postgres.DB
@@ -133,10 +137,14 @@ func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID in
 func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload, headerID int64) error {
 	for _, stateCID := range payload.StateNodeCIDs {
 		var stateID int64
-		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_key, cid, node_type) = ($2, $3, $5)
+		var stateKey string
+		if stateCID.StateKey != nullHash.String() {
+			stateKey = stateCID.StateKey
+		}
+		err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
 									RETURNING id`,
-			headerID, stateCID.StateKey, stateCID.CID, stateCID.Path, stateCID.NodeType).Scan(&stateID)
+			headerID, stateKey, stateCID.CID, stateCID.Path, stateCID.NodeType).Scan(&stateID)
 		if err != nil {
 			return err
 		}
@@ -166,8 +174,12 @@ func (in *CIDIndexer) indexStateAccount(tx *sqlx.Tx, stateAccount StateAccountMo
 }
 
 func (in *CIDIndexer) indexStorageCID(tx *sqlx.Tx, storageCID StorageNodeModel, stateID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
-								   ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_key, cid, node_type) = ($2, $3, $5)`,
-		stateID, storageCID.StorageKey, storageCID.CID, storageCID.Path, storageCID.NodeType)
+	var storageKey string
+	if storageCID.StorageKey != nullHash.String() {
+		storageKey = storageCID.StorageKey
+	}
+	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_leaf_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
+								   ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_leaf_key, cid, node_type) = ($2, $3, $5)`,
+		stateID, storageKey, storageCID.CID, storageCID.Path, storageCID.NodeType)
 	return err
 }
