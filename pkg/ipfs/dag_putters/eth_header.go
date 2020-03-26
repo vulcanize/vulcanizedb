@@ -18,6 +18,7 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
 	node "github.com/ipfs/go-ipld-format"
 
@@ -38,7 +39,7 @@ func (bhdp *EthHeaderDagPutter) DagPut(n node.Node) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &ipld.EthHeader{}, n)
 	}
-	if err := bhdp.adder.Add(header); err != nil {
+	if err := bhdp.adder.Add(header); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
 		return "", err
 	}
 	return header.Cid().String(), nil

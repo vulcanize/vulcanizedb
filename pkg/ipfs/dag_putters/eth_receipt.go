@@ -18,6 +18,7 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
 	node "github.com/ipfs/go-ipld-format"
 
@@ -38,7 +39,7 @@ func (erdp *EthReceiptDagPutter) DagPut(n node.Node) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("EthReceiptDagPutter expected input type %T got type %T", &ipld.EthReceipt{}, n)
 	}
-	if err := erdp.adder.Add(receipt); err != nil {
+	if err := erdp.adder.Add(receipt); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
 		return "", err
 	}
 	return receipt.Cid().String(), nil

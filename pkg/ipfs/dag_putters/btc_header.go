@@ -18,11 +18,16 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
 	node "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
+)
+
+var (
+	duplicateKeyErrorString = "pq: duplicate key value violates unique constraint"
 )
 
 type BtcHeaderDagPutter struct {
@@ -38,7 +43,7 @@ func (bhdp *BtcHeaderDagPutter) DagPut(n node.Node) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("BtcHeaderDagPutter expected input type %T got %T", &ipld.BtcHeader{}, n)
 	}
-	if err := bhdp.adder.Add(header); err != nil {
+	if err := bhdp.adder.Add(header); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
 		return "", err
 	}
 	return header.Cid().String(), nil

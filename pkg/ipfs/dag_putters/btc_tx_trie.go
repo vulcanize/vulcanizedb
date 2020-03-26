@@ -18,6 +18,7 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
 	node "github.com/ipfs/go-ipld-format"
 
@@ -38,7 +39,7 @@ func (etdp *BtcTxTrieDagPutter) DagPut(n node.Node) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("BtcTxTrieDagPutter expected input type %T got %T", &ipld.BtcTxTrie{}, n)
 	}
-	if err := etdp.adder.Add(txTrieNode); err != nil {
+	if err := etdp.adder.Add(txTrieNode); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
 		return "", err
 	}
 	return txTrieNode.Cid().String(), nil
