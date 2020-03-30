@@ -74,7 +74,7 @@ func headerSync() {
 	ticker := time.NewTicker(pollingInterval)
 	defer ticker.Stop()
 	blockChain := getBlockChain()
-	validateArgs(blockChain)
+	validateHeaderSyncArgs(blockChain)
 	db := utils.LoadPostgres(databaseConfig, blockChain.Node())
 
 	headerRepository := repositories.NewHeaderRepository(&db)
@@ -99,10 +99,10 @@ func headerSync() {
 	}
 }
 
-func validateArgs(blockChain *eth.BlockChain) {
+func validateHeaderSyncArgs(blockChain *eth.BlockChain) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		LogWithCommand.Errorf("validateArgs: Error getting last block: %s", err.Error())
+		LogWithCommand.Errorf("validateHeaderSyncArgs: Error getting last block: %s", err.Error())
 		return
 	}
 	lastBlockNumber := lastBlock.Int64()
