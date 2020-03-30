@@ -22,7 +22,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -37,27 +36,8 @@ const (
 	PayloadChanBufferSize = 20000
 )
 
-// SuperNode is the top level interface for streaming, converting to IPLDs, publishing,
-// and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
-// This service is compatible with the Ethereum service interface (node.Service)
-type SuperNode interface {
-	// APIs(), Protocols(), Start() and Stop()
-	node.Service
-	// Data processing event loop
-	ProcessData(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.ConvertedData) error
-	// Pub-Sub handling event loop
-	FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData)
-	// Method to subscribe to the service
-	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
-	// Method to unsubscribe from the service
-	Unsubscribe(id rpc.ID)
-	// Method to access the node info for the service
-	Node() *core.Node
-	// Method to access chain type
-	Chain() shared.ChainType
-}
-
 // Service is the underlying struct for the super node
+// Satisfies the shared.SuperNode interface
 type Service struct {
 	// Used to sync access to the Subscriptions
 	sync.Mutex
@@ -79,10 +59,12 @@ type Service struct {
 	PayloadChan chan shared.RawChainData
 	// Used to signal shutdown of the service
 	QuitChan chan bool
-	// A mapping of rpc.IDs to their subscription channels, mapped to their subscription type (hash of the StreamFilters)
-	Subscriptions map[common.Hash]map[rpc.ID]Subscription
+	// Holds all of the client subscriptions to filtered IPLD data
+	IPLDSubscriptions map[common.Hash]map[rpc.ID]shared.Subscription
 	// A mapping of subscription params hash to the corresponding subscription params
-	SubscriptionTypes map[common.Hash]shared.SubscriptionSettings
+	IPLDSubscriptionTypes map[common.Hash]shared.SubscriptionSettings
+	// Holds all the client subscriptions to raw chain data
+	RawSubscriptions map[rpc.ID]shared.Subscription
 	// Info for the Geth node that this super node is working with
 	NodeInfo *core.Node
 	// Number of publishAndIndex workers
@@ -96,7 +78,7 @@ type Service struct {
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
-func NewSuperNode(settings *Config) (SuperNode, error) {
+func NewSuperNode(settings *Config) (shared.SuperNode, error) {
 	sn := new(Service)
 	var err error
 	// If we are syncing, initialize the needed interfaces
@@ -134,8 +116,9 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		}
 	}
 	sn.QuitChan = settings.Quit
-	sn.Subscriptions = make(map[common.Hash]map[rpc.ID]Subscription)
-	sn.SubscriptionTypes = make(map[common.Hash]shared.SubscriptionSettings)
+	sn.IPLDSubscriptions = make(map[common.Hash]map[rpc.ID]shared.Subscription)
+	sn.IPLDSubscriptionTypes = make(map[common.Hash]shared.SubscriptionSettings)
+	sn.RawSubscriptions = make(map[rpc.ID]shared.Subscription)
 	sn.WorkerPoolSize = settings.Workers
 	sn.NodeInfo = &settings.NodeInfo
 	sn.ipfsPath = settings.IPFSPath
@@ -190,7 +173,7 @@ func (sap *Service) APIs() []rpc.API {
 // It forwards the converted data to the publishAndIndex process(es) it spins up
 // If forwards the converted data to a ScreenAndServe process if it there is one listening on the passed screenAndServePayload channel
 // This continues on no matter if or how many subscribers there are
-func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<- shared.ConvertedData) error {
+func (sap *Service) ProcessData(wg *sync.WaitGroup, ipldServer chan<- shared.ConvertedData, rawServer chan<- shared.RawChainData) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -208,15 +191,20 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 		for {
 			select {
 			case payload := <-sap.PayloadChan:
+				// If we are serving raw chain data, forward to that routine
+				select {
+				case rawServer <- payload:
+				default:
+				}
 				ipldPayload, err := sap.Converter.Convert(payload)
 				if err != nil {
 					log.Errorf("super node conversion error for chain %s: %v", sap.chain.String(), err)
 					continue
 				}
 				log.Infof("processing %s data streamed at head height %d", sap.chain.String(), ipldPayload.Height())
-				// If we have a ScreenAndServe process running, forward the iplds to it
+				// If we are serving processed IPLD payloads, forward to that routine
 				select {
-				case screenAndServePayload <- ipldPayload:
+				case ipldServer <- ipldPayload:
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
@@ -259,13 +247,13 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 // It filters and sends this data to any subscribers to the service
 // This process can be stood up alone, without an screenAndServePayload attached to a SyncAndConvert process
 // and it will hang on the WaitGroup indefinitely, allowing the Service to serve historical data requests only
-func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData) {
-	wg.Add(1)
+func (sap *Service) FilterAndServe(wg *sync.WaitGroup, ipldPayload <-chan shared.ConvertedData, rawPayload <-chan shared.RawChainData) {
+	wg.Add(2)
 	go func() {
 		for {
 			select {
-			case payload := <-screenAndServePayload:
-				sap.filterAndServe(payload)
+			case payload := <-ipldPayload:
+				sap.filterAndServeIPLDs(payload)
 			case <-sap.QuitChan:
 				log.Infof("quiting %s ScreenAndServe process", sap.chain.String())
 				wg.Done()
@@ -273,16 +261,32 @@ func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-c
 			}
 		}
 	}()
+	go func() {
+		for {
+			select {
+			case payload := <-rawPayload:
+			case <-sap.QuitChan:
+			}
+		}
+	}()
 	log.Infof("%s FilterAndServe goroutine successfully spun up", sap.chain.String())
 }
 
-// filterAndServe filters the payload according to each subscription type and sends to the subscriptions
-func (sap *Service) filterAndServe(payload shared.ConvertedData) {
+func (sap *Service) serveRawData(payload shared.RawChainData) {
+	sap.Lock()
+	for _, sub := range sap.RawSubscriptions {
+		sub <
+	}
+	sap.Unlock()
+}
+
+// filterAndServeIPLDs filters the IPLD payload according to each subscription type and sends to the subscriptions
+func (sap *Service) filterAndServeIPLDs(payload shared.ConvertedData) {
 	log.Debugf("Sending %s payload to subscriptions", sap.chain.String())
 	sap.Lock()
-	for ty, subs := range sap.Subscriptions {
+	for ty, subs := range sap.IPLDSubscriptions {
 		// Retrieve the subscription parameters for this subscription type
-		subConfig, ok := sap.SubscriptionTypes[ty]
+		subConfig, ok := sap.IPLDSubscriptionTypes[ty]
 		if !ok {
 			log.Errorf("super node %s subscription configuration for subscription type %s not available", sap.chain.String(), ty.Hex())
 			sap.closeType(ty)
@@ -307,7 +311,7 @@ func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 		}
 		for id, sub := range subs {
 			select {
-			case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
+			case sub.PayloadChan <- shared.SubscriptionPayload{Data: responseRLP, Err: "", Flag: shared.EmptyFlag, Height: response.Height()}:
 				log.Debugf("sending super node %s payload to subscription %s", sap.chain.String(), id)
 			default:
 				log.Infof("unable to send %s payload to subscription %s; channel has no receiver", sap.chain.String(), id)
@@ -317,11 +321,11 @@ func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 	sap.Unlock()
 }
 
-// Subscribe is used by the API to remotely subscribe to the service loop
+// SubscribeIPLDs is used by the API to remotely subscribe to the service loop
 // The params must be rlp serializable and satisfy the SubscriptionSettings() interface
-func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings) {
+func (sap *Service) SubscribeIPLDs(id rpc.ID, sub chan<- shared.SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings) {
 	log.Infof("New %s subscription %s", sap.chain.String(), id)
-	subscription := Subscription{
+	subscription := shared.Subscription{
 		ID:          id,
 		PayloadChan: sub,
 		QuitChan:    quitChan,
@@ -342,11 +346,11 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 	if !params.HistoricalDataOnly() {
 		// Add subscriber
 		sap.Lock()
-		if sap.Subscriptions[subscriptionType] == nil {
-			sap.Subscriptions[subscriptionType] = make(map[rpc.ID]Subscription)
+		if sap.IPLDSubscriptions[subscriptionType] == nil {
+			sap.IPLDSubscriptions[subscriptionType] = make(map[rpc.ID]shared.Subscription)
 		}
-		sap.Subscriptions[subscriptionType][id] = subscription
-		sap.SubscriptionTypes[subscriptionType] = params
+		sap.IPLDSubscriptions[subscriptionType][id] = subscription
+		sap.IPLDSubscriptionTypes[subscriptionType] = params
 		sap.Unlock()
 	}
 	// If the subscription requests a backfill, use the Postgres index to lookup and retrieve historical data
@@ -360,8 +364,20 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 	}
 }
 
+func (sap *Service) SubscribeRawData(id rpc.ID, sub chan<- shared.SubscriptionPayload, quitChan chan<- bool) {
+	subscription := shared.Subscription{
+		ID:          id,
+		PayloadChan: sub,
+		QuitChan:    quitChan,
+	}
+	sap.Lock()
+	sap.RawSubscriptions[id] = subscription
+	sap.Unlock()
+}
+
 // sendHistoricalData sends historical data to the requesting subscription
-func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params shared.SubscriptionSettings) error {
+// TODO: move this to a "backend"
+func (sap *Service) sendHistoricalData(sub shared.Subscription, id rpc.ID, params shared.SubscriptionSettings) error {
 	log.Infof("Sending %s historical data to subscription %s", sap.chain.String(), id)
 	// Retrieve cached CIDs relevant to this subscriber
 	var endingBlock int64
@@ -405,7 +421,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 					continue
 				}
 				select {
-				case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
+				case sub.PayloadChan <- shared.SubscriptionPayload{Data: responseRLP, Err: "", Flag: shared.EmptyFlag, Height: response.Height()}:
 					log.Debugf("sending super node historical data payload to %s subscription %s", sap.chain.String(), id)
 				default:
 					log.Infof("unable to send back-fill payload to %s subscription %s; channel has no receiver", sap.chain.String(), id)
@@ -414,7 +430,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 		}
 		// when we are done backfilling send an empty payload signifying so in the msg
 		select {
-		case sub.PayloadChan <- SubscriptionPayload{Data: nil, Err: "", Flag: BackFillCompleteFlag}:
+		case sub.PayloadChan <- shared.SubscriptionPayload{Data: nil, Err: "", Flag: shared.BackFillCompleteFlag}:
 			log.Debugf("sending backfill completion notice to %s subscription %s", sap.chain.String(), id)
 		default:
 			log.Infof("unable to send backfill completion notice to %s subscription %s", sap.chain.String(), id)
@@ -427,14 +443,17 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 func (sap *Service) Unsubscribe(id rpc.ID) {
 	log.Infof("Unsubscribing %s from the %s super node service", id, sap.chain.String())
 	sap.Lock()
-	for ty := range sap.Subscriptions {
-		delete(sap.Subscriptions[ty], id)
-		if len(sap.Subscriptions[ty]) == 0 {
+	// Delete IPLD subscriptions for this ID
+	for ty := range sap.IPLDSubscriptions {
+		delete(sap.IPLDSubscriptions[ty], id)
+		if len(sap.IPLDSubscriptions[ty]) == 0 {
 			// If we removed the last subscription of this type, remove the subscription type outright
-			delete(sap.Subscriptions, ty)
-			delete(sap.SubscriptionTypes, ty)
+			delete(sap.IPLDSubscriptions, ty)
+			delete(sap.IPLDSubscriptionTypes, ty)
 		}
 	}
+	// Delete raw subscription for this ID
+	delete(sap.RawSubscriptions, id)
 	sap.Unlock()
 }
 
@@ -476,12 +495,12 @@ func (sap *Service) Chain() shared.ChainType {
 // close needs to be called with subscription access locked
 func (sap *Service) close() {
 	log.Infof("Closing all %s subscriptions", sap.chain.String())
-	for subType, subs := range sap.Subscriptions {
+	for subType, subs := range sap.IPLDSubscriptions {
 		for _, sub := range subs {
 			sendNonBlockingQuit(sub)
 		}
-		delete(sap.Subscriptions, subType)
-		delete(sap.SubscriptionTypes, subType)
+		delete(sap.IPLDSubscriptions, subType)
+		delete(sap.IPLDSubscriptionTypes, subType)
 	}
 }
 
@@ -489,10 +508,10 @@ func (sap *Service) close() {
 // closeType needs to be called with subscription access locked
 func (sap *Service) closeType(subType common.Hash) {
 	log.Infof("Closing all %s subscriptions of type %s", sap.chain.String(), subType.String())
-	subs := sap.Subscriptions[subType]
+	subs := sap.IPLDSubscriptions[subType]
 	for _, sub := range subs {
 		sendNonBlockingQuit(sub)
 	}
-	delete(sap.Subscriptions, subType)
-	delete(sap.SubscriptionTypes, subType)
+	delete(sap.IPLDSubscriptions, subType)
+	delete(sap.IPLDSubscriptionTypes, subType)
 }

@@ -38,17 +38,18 @@ const APIVersion = "0.0.1"
 
 // PublicSuperNodeAPI is the public api for the super node
 type PublicSuperNodeAPI struct {
-	sn SuperNode
+	sn shared.SuperNode
 }
 
 // NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
-func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
+func NewPublicSuperNodeAPI(superNodeInterface shared.SuperNode) *PublicSuperNodeAPI {
 	return &PublicSuperNodeAPI{
 		sn: superNodeInterface,
 	}
 }
 
 // Stream is the public method to setup a subscription that fires off super node payloads as they are processed
+// and additionally can handle backfilling of historical data
 func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc.Subscription, error) {
 	var params shared.SubscriptionSettings
 	switch api.sn.Chain() {
@@ -78,9 +79,9 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*r
 
 	go func() {
 		// subscribe to events from the SyncPublishScreenAndServe service
-		payloadChannel := make(chan SubscriptionPayload, PayloadChanBufferSize)
+		payloadChannel := make(chan shared.SubscriptionPayload, PayloadChanBufferSize)
 		quitChan := make(chan bool, 1)
-		go api.sn.Subscribe(rpcSub.ID, payloadChannel, quitChan, params)
+		go api.sn.SubscribeIPLDs(rpcSub.ID, payloadChannel, quitChan, params)
 
 		// loop and await payloads and relay them to the subscriber using notifier
 		for {

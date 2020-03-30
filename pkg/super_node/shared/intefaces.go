@@ -18,9 +18,36 @@ package shared
 
 import (
 	"math/big"
+	"sync"
 
-	node "github.com/ipfs/go-ipld-format"
+	"github.com/ethereum/go-ethereum/node"
+	"github.com/ethereum/go-ethereum/rpc"
+	ipld "github.com/ipfs/go-ipld-format"
+
+	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 )
+
+// SuperNode is the top level interface for streaming, converting to IPLDs, publishing,
+// and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
+// This service is compatible with the Ethereum service interface (node.Service)
+type SuperNode interface {
+	// APIs(), Protocols(), Start() and Stop()
+	node.Service
+	// Data processing event loop
+	ProcessData(wg *sync.WaitGroup, ipldServer chan<- ConvertedData, rawServer chan<- RawChainData) error
+	// Pub-Sub handling event loop
+	FilterAndServe(wg *sync.WaitGroup, ipdlPayload <-chan ConvertedData, rawPayload <-chan RawChainData)
+	// Method to subscribe to filtered IPLD data from the service
+	SubscribeIPLDs(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params SubscriptionSettings)
+	// Method to subscribe to raw chain data from the service
+	SubscribeRawData(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool)
+	// Method to unsubscribe from the service
+	Unsubscribe(id rpc.ID)
+	// Method to access the node info for the service
+	Node() *core.Node
+	// Method to access chain type
+	Chain() ChainType
+}
 
 // PayloadStreamer streams chain-specific payloads to the provided channel
 type PayloadStreamer interface {
@@ -73,7 +100,7 @@ type ClientSubscription interface {
 
 // DagPutter is a general interface for a dag putter
 type DagPutter interface {
-	DagPut(n node.Node) (string, error)
+	DagPut(n ipld.Node) (string, error)
 }
 
 // Cleaner is for cleaning out data from the cache within the given ranges
