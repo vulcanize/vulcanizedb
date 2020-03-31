@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"math/rand"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
@@ -76,6 +77,101 @@ var _ = Describe("Storage diffs repository", func() {
 			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))
+		})
+	})
+
+	Describe("CreateBackFilledStorageValue", func() {
+		It("creates a storage diff", func() {
+			createErr := repo.CreateBackFilledStorageValue(fakeStorageDiff)
+
+			Expect(createErr).NotTo(HaveOccurred())
+			var persisted types.PersistedDiff
+			getErr := db.Get(&persisted, `SELECT * FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(persisted.HashedAddress).To(Equal(fakeStorageDiff.HashedAddress))
+			Expect(persisted.BlockHash).To(Equal(fakeStorageDiff.BlockHash))
+			Expect(persisted.BlockHeight).To(Equal(fakeStorageDiff.BlockHeight))
+			Expect(persisted.StorageKey).To(Equal(fakeStorageDiff.StorageKey))
+			Expect(persisted.StorageValue).To(Equal(fakeStorageDiff.StorageValue))
+		})
+
+		It("marks diff as back-filled", func() {
+			createErr := repo.CreateBackFilledStorageValue(fakeStorageDiff)
+
+			Expect(createErr).NotTo(HaveOccurred())
+			var fromBackfill bool
+			checkedErr := db.Get(&fromBackfill, `SELECT from_backfill FROM public.storage_diff`)
+			Expect(checkedErr).NotTo(HaveOccurred())
+			Expect(fromBackfill).To(BeTrue())
+		})
+
+		It("does not duplicate storage values in the same block", func() {
+			_, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			createTwoErr := repo.CreateBackFilledStorageValue(fakeStorageDiff)
+			Expect(createTwoErr).NotTo(HaveOccurred())
+
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(1))
+		})
+
+		It("does not duplicate storage values across subsequent blocks", func() {
+			_, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			duplicateDiff := fakeStorageDiff
+			duplicateDiff.BlockHeight = fakeStorageDiff.BlockHeight + 1
+			createTwoErr := repo.CreateBackFilledStorageValue(duplicateDiff)
+			Expect(createTwoErr).NotTo(HaveOccurred())
+
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(1))
+		})
+
+		It("inserts zero-valued storage if there's a previous diff", func() {
+			_, createOneErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createOneErr).NotTo(HaveOccurred())
+			emptyStorageValue := fakeStorageDiff
+			emptyStorageValue.StorageValue = common.HexToHash("0x0")
+
+			createTwoErr := repo.CreateBackFilledStorageValue(emptyStorageValue)
+
+			Expect(createTwoErr).NotTo(HaveOccurred())
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(2))
+		})
+
+		It("does not insert zero-valued storage if there's no previous diff", func() {
+			emptyStorageValue := fakeStorageDiff
+			emptyStorageValue.StorageValue = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
+
+			createErr := repo.CreateBackFilledStorageValue(emptyStorageValue)
+
+			Expect(createErr).NotTo(HaveOccurred())
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(BeZero())
+		})
+
+		It("does not insert zero-valued storage derived from bytes if there's no previous diff", func() {
+			emptyStorageValue := fakeStorageDiff
+			emptyStorageValue.StorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+
+			createErr := repo.CreateBackFilledStorageValue(emptyStorageValue)
+
+			Expect(createErr).NotTo(HaveOccurred())
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+
 		})
 	})
 
@@ -167,21 +263,6 @@ var _ = Describe("Storage diffs repository", func() {
 			checkedErr := db.Get(&checked, `SELECT checked FROM public.storage_diff WHERE id = $1`, fakePersistedDiff.ID)
 			Expect(checkedErr).NotTo(HaveOccurred())
 			Expect(checked).To(BeTrue())
-		})
-	})
-
-	Describe("MarkFromBackfill", func() {
-		It("marks a diff as from_backfill", func() {
-			id, createErr := repo.CreateStorageDiff(fakeStorageDiff)
-			Expect(createErr).NotTo(HaveOccurred())
-
-			err := repo.MarkFromBackfill(id)
-
-			Expect(err).NotTo(HaveOccurred())
-			var fromBackfill bool
-			checkedErr := db.Get(&fromBackfill, `SELECT from_backfill FROM public.storage_diff WHERE id = $1`, id)
-			Expect(checkedErr).NotTo(HaveOccurred())
-			Expect(fromBackfill).To(BeTrue())
 		})
 	})
 })

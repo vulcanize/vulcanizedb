@@ -176,30 +176,17 @@ var _ = Describe("StorageValueLoader", func() {
 			StorageValue:  valueTwo,
 		}
 
-		Expect(diffRepo.CreatePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
+		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
 	})
 
 	It("ignores sql.ErrNoRows error for duplicate diffs", func() {
-		diffRepo.CreateReturnError = sql.ErrNoRows
+		diffRepo.CreateBackFilledStorageValueReturnError = sql.ErrNoRows
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 	})
 
 	It("returns an error if inserting a diff fails", func() {
-		diffRepo.CreateReturnError = fakes.FakeError
-		runnerErr := runner.Run()
-		Expect(runnerErr).To(HaveOccurred())
-		Expect(runnerErr).To(Equal(fakes.FakeError))
-	})
-
-	It("sets the diff a from_backfill", func() {
-		runnerErr := runner.Run()
-		Expect(runnerErr).NotTo(HaveOccurred())
-		Expect(diffRepo.MarkFromBackfillCalled).To(BeTrue())
-	})
-
-	It("returns an error if setting the diff as from_backfill fails", func() {
-		diffRepo.MarkFromBackfillError = fakes.FakeError
+		diffRepo.CreateBackFilledStorageValueReturnError = fakes.FakeError
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))

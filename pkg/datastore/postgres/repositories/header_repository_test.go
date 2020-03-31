@@ -390,11 +390,12 @@ var _ = Describe("Block header repository", func() {
 			Expect(headerErrTwo).NotTo(HaveOccurred())
 		})
 
-		It("returns all headers in block range", func() {
+		It("returns all headers in range in ascending order", func() {
 			dbHeaders, err := repo.GetHeadersInRange(header.BlockNumber, blockTwo)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(len(dbHeaders)).To(Equal(2))
+			Expect(dbHeaders[0].BlockNumber).To(Equal(header.BlockNumber))
 		})
 
 		It("does not return header outside of block range", func() {

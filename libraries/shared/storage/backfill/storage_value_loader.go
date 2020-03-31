@@ -99,17 +99,12 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 			StorageValue:  common.BytesToHash(value),
 		}
 
-		diffId, createDiffErr := r.StorageDiffRepo.CreateStorageDiff(diff)
+		createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
 		if createDiffErr != nil {
 			if createDiffErr == sql.ErrNoRows {
 				return nil
 			}
 			return createDiffErr
-		}
-
-		markFromBackfillErr := r.StorageDiffRepo.MarkFromBackfill(diffId)
-		if markFromBackfillErr != nil {
-			return markFromBackfillErr
 		}
 	}
 	return nil

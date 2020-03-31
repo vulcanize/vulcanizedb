@@ -78,6 +78,7 @@ func backfillStorage() error {
 		loader = backfill.NewStorageValueLoader(blockChain, &db, storageInitializers, backfillStorageStartBlockNumber, backfillStorageEndBlockNumber)
 	}
 
+	LogWithCommand.Infof("Back-filling storage for blocks %d-%d", backfillStorageStartBlockNumber, backfillStorageEndBlockNumber)
 	return loader.Run()
 }
 
