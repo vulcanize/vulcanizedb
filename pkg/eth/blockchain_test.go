@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/eth"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
@@ -213,6 +214,31 @@ var _ = Describe("Geth blockchain", func() {
 			_, err := blockChain.GetStorageAt(account, key, blockNumber)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(fakes.FakeError))
+		})
+	})
+
+	Describe("getting batched storage at a given block", func() {
+		var (
+			account     = fakes.FakeAddress
+			blockNumber = big.NewInt(rand.Int63())
+		)
+
+		It("fetches storage for each key", func() {
+			_, err := blockChain.BatchGetStorageAt(account, []common.Hash{{}, {}}, blockNumber)
+			Expect(err).NotTo(HaveOccurred())
+
+			mockRpcClient.AssertBatchCalledWith("eth_getStorageAt", 2)
+		})
+
+		It("returns mapping of key to value", func() {
+			fakeKey := test_data.FakeHash()
+			fakeStorageValue := test_data.FakeHash().Bytes()
+			mockRpcClient.StorageValueToReturn = fakeStorageValue
+
+			result, err := blockChain.BatchGetStorageAt(account, []common.Hash{fakeKey}, blockNumber)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(map[common.Hash][]byte{fakeKey: fakeStorageValue}))
 		})
 	})
 })

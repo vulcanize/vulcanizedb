@@ -46,6 +46,8 @@ type MockBlockChain struct {
 	lastBlock                          *big.Int
 	node                               core.Node
 	Transactions                       []core.TransactionModel
+	BatchGetStorageAtCalls             []BatchGetStorageAtCall
+	BatchGetStorageAtError             error
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -128,6 +130,27 @@ func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key commo
 
 	storageToReturn := blockChain.storageValuesToReturn[account][blockNumber.Int64()]
 	return storageToReturn, blockChain.GetStorageAtError
+}
+
+type BatchGetStorageAtCall struct {
+	Account     common.Address
+	Keys        []common.Hash
+	BlockNumber *big.Int
+}
+
+// TODO: update mock for specific batch call (don't reuse getstorageat vars)
+func (blockChain *MockBlockChain) BatchGetStorageAt(account common.Address, keys []common.Hash, blockNumber *big.Int) (map[common.Hash][]byte, error) {
+	var storageToReturn = make(map[common.Hash][]byte)
+	for _, key := range keys {
+		blockChain.BatchGetStorageAtCalls = append(blockChain.BatchGetStorageAtCalls, BatchGetStorageAtCall{
+			Account:     account,
+			Keys:        keys,
+			BlockNumber: blockNumber,
+		})
+		storageToReturn[key] = blockChain.storageValuesToReturn[account][blockNumber.Int64()]
+	}
+
+	return storageToReturn, blockChain.BatchGetStorageAtError
 }
 
 func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
