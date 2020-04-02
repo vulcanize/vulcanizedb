@@ -395,6 +395,7 @@ var (
 			UncleRoot:       MockBlock.UncleHash().String(),
 			Bloom:           MockBlock.Bloom().Bytes(),
 			Timestamp:       MockBlock.Time(),
+			TimesValidated:  1,
 		},
 		Transactions: MockTrxMetaPostPublsh,
 		Receipts:     MockRctMetaPostPublish,

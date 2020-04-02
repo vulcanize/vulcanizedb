@@ -90,12 +90,12 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
 	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp) 
-								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp) = ($3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated)
+								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated) = ($3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, eth.header_cids.times_validated + 1)
 								RETURNING id`,
 		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID, header.Reward, header.StateRoot, header.TxRoot,
-		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp).Scan(&headerID)
+		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp, 1).Scan(&headerID)
 	return headerID, err
 }
 
