@@ -54,9 +54,9 @@ type TxFilter struct {
 type ReceiptFilter struct {
 	Off bool
 	// TODO: change this so that we filter for receipts first and we always return the corresponding transaction
-	MatchTxs  bool // turn on to retrieve receipts that pair with retrieved transactions
-	Contracts []string
-	Topics    [][]string
+	MatchTxs     bool     // turn on to retrieve receipts that pair with retrieved transactions
+	LogAddresses []string // receipt contains logs from the provided addresses
+	Topics       [][]string
 }
 
 // StateFilter contains filter settings for state
@@ -103,10 +103,10 @@ func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 	topics[2] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic2s")
 	topics[3] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic3s")
 	sc.ReceiptFilter = ReceiptFilter{
-		Off:       viper.GetBool("superNode.ethSubscription.receiptFilter.off"),
-		MatchTxs:  viper.GetBool("superNode.ethSubscription.receiptFilter.matchTxs"),
-		Contracts: viper.GetStringSlice("superNode.ethSubscription.receiptFilter.contracts"),
-		Topics:    topics,
+		Off:          viper.GetBool("superNode.ethSubscription.receiptFilter.off"),
+		MatchTxs:     viper.GetBool("superNode.ethSubscription.receiptFilter.matchTxs"),
+		LogAddresses: viper.GetStringSlice("superNode.ethSubscription.receiptFilter.contracts"),
+		Topics:       topics,
 	}
 	// Below defaults to two false, and a slice of length 0
 	// Which means we get all state leafs by default, but no intermediate nodes

@@ -188,12 +188,13 @@ func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTr
 			return nil, err
 		}
 		rctCids[rct.TxHash] = ReceiptModel{
-			CID:      cid,
-			Contract: receiptMeta[i].Contract,
-			Topic0s:  receiptMeta[i].Topic0s,
-			Topic1s:  receiptMeta[i].Topic1s,
-			Topic2s:  receiptMeta[i].Topic2s,
-			Topic3s:  receiptMeta[i].Topic3s,
+			CID:          cid,
+			Contract:     receiptMeta[i].Contract,
+			Topic0s:      receiptMeta[i].Topic0s,
+			Topic1s:      receiptMeta[i].Topic1s,
+			Topic2s:      receiptMeta[i].Topic2s,
+			Topic3s:      receiptMeta[i].Topic3s,
+			LogContracts: receiptMeta[i].LogContracts,
 		}
 	}
 	for _, rctNode := range receiptTrie {

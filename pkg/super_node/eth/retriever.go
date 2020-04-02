@@ -216,17 +216,17 @@ func (ecr *CIDRetriever) RetrieveRctCIDsByHeaderID(tx *sqlx.Tx, rctFilter Receip
 	args := make([]interface{}, 0, 4)
 	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
  			receipt_cids.contract, receipt_cids.topic0s, receipt_cids.topic1s,
-			receipt_cids.topic2s, receipt_cids.topic3s
+			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
 			AND transaction_cids.header_id = header_cids.id
 			AND header_cids.id = $1`
 	id := 2
 	args = append(args, headerID)
-	if len(rctFilter.Contracts) > 0 {
-		// Filter on contract addresses if there are any
-		pgStr += fmt.Sprintf(` AND ((receipt_cids.contract = ANY($%d::VARCHAR(66)[])`, id)
-		args = append(args, pq.Array(rctFilter.Contracts))
+	if len(rctFilter.LogAddresses) > 0 {
+		// Filter on log contract addresses if there are any
+		pgStr += fmt.Sprintf(` AND ((receipt_cids.log_contracts && $%d::VARCHAR(66)[]`, id)
+		args = append(args, pq.Array(rctFilter.LogAddresses))
 		id++
 		// Filter on topics if there are any
 		if hasTopics(rctFilter.Topics) {
@@ -296,7 +296,7 @@ func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, b
 	args := make([]interface{}, 0, 5)
 	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
  			receipt_cids.contract, receipt_cids.topic0s, receipt_cids.topic1s,
-			receipt_cids.topic2s, receipt_cids.topic3s
+			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
 			WHERE receipt_cids.tx_id = transaction_cids.id 
 			AND transaction_cids.header_id = header_cids.id`
@@ -311,10 +311,10 @@ func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, b
 		args = append(args, blockHash.String())
 		id++
 	}
-	if len(rctFilter.Contracts) > 0 {
-		// Filter on contract addresses if there are any
-		pgStr += fmt.Sprintf(` AND ((receipt_cids.contract = ANY($%d::VARCHAR(66)[])`, id)
-		args = append(args, pq.Array(rctFilter.Contracts))
+	if len(rctFilter.LogAddresses) > 0 {
+		// Filter on log contract addresses if there are any
+		pgStr += fmt.Sprintf(` AND ((receipt_cids.log_contracts && $%d::VARCHAR(66)[]`, id)
+		args = append(args, pq.Array(rctFilter.LogAddresses))
 		id++
 		// Filter on topics if there are any
 		if hasTopics(rctFilter.Topics) {
@@ -588,7 +588,7 @@ func (ecr *CIDRetriever) RetrieveReceiptCIDsByTxIDs(tx *sqlx.Tx, txIDs []int64) 
 	log.Debugf("retrieving receipt cids for tx ids %v", txIDs)
 	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
  			receipt_cids.contract, receipt_cids.topic0s, receipt_cids.topic1s,
-			receipt_cids.topic2s, receipt_cids.topic3s
+			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
 			FROM eth.receipt_cids, eth.transaction_cids
 			WHERE tx_id = ANY($1::INTEGER[])
 			AND receipt_cids.tx_id = transaction_cids.id

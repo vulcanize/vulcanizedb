@@ -72,8 +72,8 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			return nil, err
 		}
 		txMeta := TxModel{
-			Dst:    shared.HandleNullAddr(trx.To()),
-			Src:    shared.HandleNullAddr(&from),
+			Dst:    shared.HandleNullAddrPointer(trx.To()),
+			Src:    shared.HandleNullAddr(from),
 			TxHash: trx.Hash().String(),
 			Index:  int64(i),
 		}
@@ -90,28 +90,27 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 	if err := receipts.DeriveFields(pc.chainConfig, block.Hash(), block.NumberU64(), block.Transactions()); err != nil {
 		return nil, err
 	}
-	for i, receipt := range receipts {
-		// If the transaction for this receipt has a "to" address, the above DeriveFields() fails to assign it to the receipt's ContractAddress
-		// If it doesn't have a "to" address, it correctly derives it and assigns it to to the receipt's ContractAddress
-		// Weird, right?
-		if transactions[i].To() != nil {
-			receipt.ContractAddress = *transactions[i].To()
-		}
+	for _, receipt := range receipts {
 		// Extract topic and contract data from the receipt for indexing
 		topicSets := make([][]string, 4)
+		mappedContracts := make(map[string]bool) // use map to avoid duplicate addresses
 		for _, log := range receipt.Logs {
-			for i := range topicSets {
-				if i < len(log.Topics) {
-					topicSets[i] = append(topicSets[i], log.Topics[i].Hex())
-				}
+			for i, topic := range log.Topics {
+				topicSets[i] = append(topicSets[i], topic.Hex())
 			}
+			mappedContracts[log.Address.String()] = true
+		}
+		logContracts := make([]string, 0, len(mappedContracts))
+		for addr := range mappedContracts {
+			logContracts = append(logContracts, addr)
 		}
 		rctMeta := ReceiptModel{
-			Topic0s:  topicSets[0],
-			Topic1s:  topicSets[1],
-			Topic2s:  topicSets[2],
-			Topic3s:  topicSets[3],
-			Contract: receipt.ContractAddress.Hex(),
+			Topic0s:      topicSets[0],
+			Topic1s:      topicSets[1],
+			Topic2s:      topicSets[2],
+			Topic3s:      topicSets[3],
+			Contract:     shared.HandleNullAddr(receipt.ContractAddress),
+			LogContracts: logContracts,
 		}
 		// receipt and rctMeta will have same indexes
 		convertedPayload.Receipts = append(convertedPayload.Receipts, receipt)

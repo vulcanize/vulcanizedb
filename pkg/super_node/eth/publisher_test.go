@@ -55,10 +55,12 @@ var _ = Describe("Publisher", func() {
 			mockTrxDagPutter.CIDsToReturn = map[common.Hash]string{
 				common.BytesToHash(mocks.Trx1IPLD.RawData()): mocks.Trx1CID.String(),
 				common.BytesToHash(mocks.Trx2IPLD.RawData()): mocks.Trx2CID.String(),
+				common.BytesToHash(mocks.Trx3IPLD.RawData()): mocks.Trx3CID.String(),
 			}
 			mockRctDagPutter.CIDsToReturn = map[common.Hash]string{
 				common.BytesToHash(mocks.Rct1IPLD.RawData()): mocks.Rct1CID.String(),
 				common.BytesToHash(mocks.Rct2IPLD.RawData()): mocks.Rct2CID.String(),
+				common.BytesToHash(mocks.Rct3IPLD.RawData()): mocks.Rct3CID.String(),
 			}
 			mockStateDagPutter.CIDsToReturn = map[common.Hash]string{
 				common.BytesToHash(mocks.State1IPLD.RawData()): mocks.State1CID.String(),
@@ -86,12 +88,14 @@ var _ = Describe("Publisher", func() {
 			Expect(cidPayload.HeaderCID.Reward).To(Equal(mocks.MockCIDPayload.HeaderCID.Reward))
 			Expect(cidPayload.UncleCIDs).To(Equal(mocks.MockCIDPayload.UncleCIDs))
 			Expect(cidPayload.HeaderCID).To(Equal(mocks.MockCIDPayload.HeaderCID))
-			Expect(len(cidPayload.TransactionCIDs)).To(Equal(2))
+			Expect(len(cidPayload.TransactionCIDs)).To(Equal(3))
 			Expect(cidPayload.TransactionCIDs[0]).To(Equal(mocks.MockCIDPayload.TransactionCIDs[0]))
 			Expect(cidPayload.TransactionCIDs[1]).To(Equal(mocks.MockCIDPayload.TransactionCIDs[1]))
-			Expect(len(cidPayload.ReceiptCIDs)).To(Equal(2))
+			Expect(cidPayload.TransactionCIDs[2]).To(Equal(mocks.MockCIDPayload.TransactionCIDs[2]))
+			Expect(len(cidPayload.ReceiptCIDs)).To(Equal(3))
 			Expect(cidPayload.ReceiptCIDs[mocks.MockTransactions[0].Hash()]).To(Equal(mocks.MockCIDPayload.ReceiptCIDs[mocks.MockTransactions[0].Hash()]))
 			Expect(cidPayload.ReceiptCIDs[mocks.MockTransactions[1].Hash()]).To(Equal(mocks.MockCIDPayload.ReceiptCIDs[mocks.MockTransactions[1].Hash()]))
+			Expect(cidPayload.ReceiptCIDs[mocks.MockTransactions[2].Hash()]).To(Equal(mocks.MockCIDPayload.ReceiptCIDs[mocks.MockTransactions[2].Hash()]))
 			Expect(len(cidPayload.StateNodeCIDs)).To(Equal(2))
 			Expect(cidPayload.StateNodeCIDs[0]).To(Equal(mocks.MockCIDPayload.StateNodeCIDs[0]))
 			Expect(cidPayload.StateNodeCIDs[1]).To(Equal(mocks.MockCIDPayload.StateNodeCIDs[1]))

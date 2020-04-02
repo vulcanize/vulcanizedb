@@ -53,63 +53,83 @@ var (
 		Difficulty:  big.NewInt(5000000),
 		Extra:       []byte{},
 	}
-	MockTransactions, MockReceipts, senderAddr = createTransactionsAndReceipts()
+	MockTransactions, MockReceipts, SenderAddr = createTransactionsAndReceipts()
 	ReceiptsRlp, _                             = rlp.EncodeToBytes(MockReceipts)
 	MockBlock                                  = types.NewBlock(&MockHeader, MockTransactions, nil, MockReceipts)
 	MockBlockRlp, _                            = rlp.EncodeToBytes(MockBlock)
 	MockHeaderRlp, _                           = rlp.EncodeToBytes(MockBlock.Header())
 	Address                                    = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
 	AnotherAddress                             = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
+	ContractAddress                            = crypto.CreateAddress(SenderAddr, MockTransactions[2].Nonce())
+	NullAddr                                   = common.HexToAddress("0x0000000000000000000000000000000000000000")
 	mockTopic11                                = common.HexToHash("0x04")
 	mockTopic12                                = common.HexToHash("0x06")
 	mockTopic21                                = common.HexToHash("0x05")
 	mockTopic22                                = common.HexToHash("0x07")
 	MockLog1                                   = &types.Log{
-		Topics: []common.Hash{mockTopic11, mockTopic12},
-		Data:   []byte{},
+		Address: Address,
+		Topics:  []common.Hash{mockTopic11, mockTopic12},
+		Data:    []byte{},
 	}
 	MockLog2 = &types.Log{
-		Topics: []common.Hash{mockTopic21, mockTopic22},
-		Data:   []byte{},
+		Address: AnotherAddress,
+		Topics:  []common.Hash{mockTopic21, mockTopic22},
+		Data:    []byte{},
 	}
 	HeaderCID, _  = ipld.RawdataToCid(ipld.MEthHeader, MockHeaderRlp, multihash.KECCAK_256)
 	Trx1CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(0), multihash.KECCAK_256)
 	Trx2CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(1), multihash.KECCAK_256)
+	Trx3CID, _    = ipld.RawdataToCid(ipld.MEthTx, MockTransactions.GetRlp(2), multihash.KECCAK_256)
 	Rct1CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(0), multihash.KECCAK_256)
 	Rct2CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(1), multihash.KECCAK_256)
+	Rct3CID, _    = ipld.RawdataToCid(ipld.MEthTxReceipt, MockReceipts.GetRlp(2), multihash.KECCAK_256)
 	State1CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, ContractLeafNode, multihash.KECCAK_256)
 	State2CID, _  = ipld.RawdataToCid(ipld.MEthStateTrie, AccountLeafNode, multihash.KECCAK_256)
 	StorageCID, _ = ipld.RawdataToCid(ipld.MEthStorageTrie, StorageLeafNode, multihash.KECCAK_256)
 	MockTrxMeta   = []eth.TxModel{
 		{
 			CID:    "", // This is empty until we go to publish to ipfs
-			Src:    senderAddr.Hex(),
+			Src:    SenderAddr.Hex(),
 			Dst:    Address.String(),
 			Index:  0,
 			TxHash: MockTransactions[0].Hash().String(),
 		},
 		{
 			CID:    "",
-			Src:    senderAddr.Hex(),
+			Src:    SenderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
 			Index:  1,
 			TxHash: MockTransactions[1].Hash().String(),
+		},
+		{
+			CID:    "",
+			Src:    SenderAddr.Hex(),
+			Dst:    "",
+			Index:  2,
+			TxHash: MockTransactions[2].Hash().String(),
 		},
 	}
 	MockTrxMetaPostPublsh = []eth.TxModel{
 		{
 			CID:    Trx1CID.String(), // This is empty until we go to publish to ipfs
-			Src:    senderAddr.Hex(),
+			Src:    SenderAddr.Hex(),
 			Dst:    Address.String(),
 			Index:  0,
 			TxHash: MockTransactions[0].Hash().String(),
 		},
 		{
 			CID:    Trx2CID.String(),
-			Src:    senderAddr.Hex(),
+			Src:    SenderAddr.Hex(),
 			Dst:    AnotherAddress.String(),
 			Index:  1,
 			TxHash: MockTransactions[1].Hash().String(),
+		},
+		{
+			CID:    Trx3CID.String(),
+			Src:    SenderAddr.Hex(),
+			Dst:    "",
+			Index:  2,
+			TxHash: MockTransactions[2].Hash().String(),
 		},
 	}
 	MockRctMeta = []eth.ReceiptModel{
@@ -121,7 +141,10 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
-			Contract: Address.String(),
+			Contract: "",
+			LogContracts: []string{
+				Address.String(),
+			},
 		},
 		{
 			CID: "",
@@ -131,7 +154,15 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
-			Contract: AnotherAddress.String(),
+			Contract: "",
+			LogContracts: []string{
+				AnotherAddress.String(),
+			},
+		},
+		{
+			CID:          "",
+			Contract:     ContractAddress.String(),
+			LogContracts: []string{},
 		},
 	}
 	MockRctMetaPostPublish = []eth.ReceiptModel{
@@ -143,7 +174,10 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
-			Contract: Address.String(),
+			Contract: "",
+			LogContracts: []string{
+				Address.String(),
+			},
 		},
 		{
 			CID: Rct2CID.String(),
@@ -153,7 +187,15 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
-			Contract: AnotherAddress.String(),
+			Contract: "",
+			LogContracts: []string{
+				AnotherAddress.String(),
+			},
+		},
+		{
+			CID:          Rct3CID.String(),
+			Contract:     ContractAddress.String(),
+			LogContracts: []string{},
 		},
 	}
 
@@ -171,7 +213,6 @@ var (
 	contractRoot       = "0x821e2556a290c86405f8160a2d662042a431ba456b9db265c79bb837c04be5f0"
 	contractCodeHash   = common.HexToHash("0x753f98a8d4328b15636e46f66f2cb4bc860100aa17967cc145fcd17d1d4710ea")
 	contractPathHash   = crypto.Keccak256Hash([]byte{'\x06'})
-	ContractAddress    = common.HexToAddress("0x703c4b2bD70c169f5717101CaeE543299Fc946C7")
 	ContractLeafKey    = testhelpers.AddressToLeafKey(ContractAddress)
 	ContractAccount, _ = rlp.EncodeToBytes(state.Account{
 		Nonce:    nonce1,
@@ -310,6 +351,7 @@ var (
 		ReceiptCIDs: map[common.Hash]eth.ReceiptModel{
 			MockTransactions[0].Hash(): MockRctMetaPostPublish[0],
 			MockTransactions[1].Hash(): MockRctMetaPostPublish[1],
+			MockTransactions[2].Hash(): MockRctMetaPostPublish[2],
 		},
 		StateNodeCIDs: MockStateMetaPostPublish,
 		StorageNodeCIDs: map[common.Hash][]eth.StorageNodeModel{
@@ -372,8 +414,10 @@ var (
 	HeaderIPLD, _  = blocks.NewBlockWithCid(MockHeaderRlp, HeaderCID)
 	Trx1IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(0), Trx1CID)
 	Trx2IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(1), Trx2CID)
+	Trx3IPLD, _    = blocks.NewBlockWithCid(MockTransactions.GetRlp(2), Trx3CID)
 	Rct1IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(0), Rct1CID)
 	Rct2IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(1), Rct2CID)
+	Rct3IPLD, _    = blocks.NewBlockWithCid(MockReceipts.GetRlp(2), Rct3CID)
 	State1IPLD, _  = blocks.NewBlockWithCid(ContractLeafNode, State1CID)
 	State2IPLD, _  = blocks.NewBlockWithCid(AccountLeafNode, State2CID)
 	StorageIPLD, _ = blocks.NewBlockWithCid(StorageLeafNode, StorageCID)
@@ -393,6 +437,10 @@ var (
 				Data: Trx2IPLD.RawData(),
 				CID:  Trx2IPLD.Cid().String(),
 			},
+			{
+				Data: Trx3IPLD.RawData(),
+				CID:  Trx3IPLD.Cid().String(),
+			},
 		},
 		Receipts: []ipfs.BlockModel{
 			{
@@ -402,6 +450,10 @@ var (
 			{
 				Data: Rct2IPLD.RawData(),
 				CID:  Rct2IPLD.Cid().String(),
+			},
+			{
+				Data: Rct3IPLD.RawData(),
+				CID:  Rct3IPLD.Cid().String(),
 			},
 		},
 		StateNodes: []eth2.StateNode{
@@ -444,6 +496,7 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	// make transactions
 	trx1 := types.NewTransaction(0, Address, big.NewInt(1000), 50, big.NewInt(100), []byte{})
 	trx2 := types.NewTransaction(1, AnotherAddress, big.NewInt(2000), 100, big.NewInt(200), []byte{})
+	trx3 := types.NewContractCreation(2, big.NewInt(1500), 75, big.NewInt(150), []byte{0, 1, 2, 3, 4, 5})
 	transactionSigner := types.MakeSigner(params.MainnetChainConfig, BlockNumber)
 	mockCurve := elliptic.P256()
 	mockPrvKey, err := ecdsa.GenerateKey(mockCurve, rand.Reader)
@@ -458,7 +511,11 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	if err != nil {
 		log.Fatal(err)
 	}
-	senderAddr, err := types.Sender(transactionSigner, signedTrx1) // same for both trx
+	signedTrx3, err := types.SignTx(trx3, transactionSigner, mockPrvKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	SenderAddr, err := types.Sender(transactionSigner, signedTrx1) // same for both trx
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -469,5 +526,8 @@ func createTransactionsAndReceipts() (types.Transactions, types.Receipts, common
 	mockReceipt2 := types.NewReceipt(common.HexToHash("0x1").Bytes(), false, 100)
 	mockReceipt2.Logs = []*types.Log{MockLog2}
 	mockReceipt2.TxHash = signedTrx2.Hash()
-	return types.Transactions{signedTrx1, signedTrx2}, types.Receipts{mockReceipt1, mockReceipt2}, senderAddr
+	mockReceipt3 := types.NewReceipt(common.HexToHash("0x2").Bytes(), false, 75)
+	mockReceipt3.Logs = []*types.Log{}
+	mockReceipt3.TxHash = signedTrx3.Hash()
+	return types.Transactions{signedTrx1, signedTrx2, signedTrx3}, types.Receipts{mockReceipt1, mockReceipt2, mockReceipt3}, SenderAddr
 }
