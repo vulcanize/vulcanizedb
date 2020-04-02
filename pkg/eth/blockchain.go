@@ -131,10 +131,6 @@ func (blockChain *BlockChain) BatchGetStorageAt(account common.Address, keys []c
 	return result, nil
 }
 
-func (blockChain *BlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	return blockChain.ethClient.StorageAt(context.Background(), account, key, blockNumber)
-}
-
 func (blockChain *BlockChain) Node() core.Node {
 	return blockChain.node
 }

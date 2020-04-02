@@ -48,11 +48,6 @@ type MockEthClient struct {
 	filterLogsPassedQuery       ethereum.FilterQuery
 	filterLogsReturnLogs        []types.Log
 	transactionReceipts         map[string]*types.Receipt
-	storageAtCtx                context.Context
-	storageAtAccount            common.Address
-	storageAtKey                common.Hash
-	storageAtBlock              *big.Int
-	storageAtError              error
 	err                         error
 	passedBatch                 []core.BatchElem
 	passedMethod                string
@@ -60,9 +55,6 @@ type MockEthClient struct {
 	transactionReceiptErr       error
 	passedAddress               common.Address
 	passedBlockNumber           *big.Int
-	balanceToReturn             *big.Int
-	balanceAtErr                error
-	passedbalanceAtContext      context.Context
 }
 
 func NewMockEthClient() *MockEthClient {
@@ -119,14 +111,6 @@ func (client *MockEthClient) SetTransactionSenderErr(err error) {
 	client.transactionSenderErr = err
 }
 
-func (client *MockEthClient) SetBalanceAtErr(err error) {
-	client.balanceAtErr = err
-}
-
-func (client *MockEthClient) SetBalanceAt(balance *big.Int) {
-	client.balanceToReturn = balance
-}
-
 func (client *MockEthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	client.callContractPassedContext = ctx
 	client.callContractPassedMsg = msg
@@ -175,32 +159,6 @@ func (client *MockEthClient) TransactionReceipt(ctx context.Context, txHash comm
 	return &types.Receipt{GasUsed: uint64(0)}, client.transactionReceiptErr
 }
 
-func (client *MockEthClient) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
-	client.passedbalanceAtContext = ctx
-	client.passedAddress = account
-	client.passedBlockNumber = blockNumber
-	return client.balanceToReturn, client.balanceAtErr
-}
-
-func (client *MockEthClient) StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	client.storageAtCtx = ctx
-	client.storageAtAccount = account
-	client.storageAtKey = key
-	client.storageAtBlock = blockNumber
-	return []byte{}, client.storageAtError
-}
-
-func (client *MockEthClient) SetStorageAtError(err error) {
-	client.storageAtError = err
-}
-
-func (client *MockEthClient) AssertStorageAtCalledWith(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) {
-	Expect(client.storageAtCtx).To(Equal(ctx))
-	Expect(client.storageAtAccount).To(Equal(account))
-	Expect(client.storageAtKey).To(Equal(key))
-	Expect(client.storageAtBlock).To(Equal(blockNumber))
-}
-
 func (client *MockEthClient) AssertCallContractCalledWith(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) {
 	Expect(client.callContractPassedContext).To(Equal(ctx))
 	Expect(client.callContractPassedMsg).To(Equal(msg))
@@ -228,10 +186,4 @@ func (client *MockEthClient) AssertFilterLogsCalledWith(ctx context.Context, q e
 
 func (client *MockEthClient) AssertBatchCalledWith(method string) {
 	Expect(client.passedMethod).To(Equal(method))
-}
-
-func (client *MockEthClient) AssertBalanceAtCalled(ctx context.Context, account common.Address, blockNumber *big.Int) {
-	Expect(client.passedbalanceAtContext).To(Equal(ctx))
-	Expect(client.passedAddress).To(Equal(account))
-	Expect(client.passedBlockNumber).To(Equal(blockNumber))
 }

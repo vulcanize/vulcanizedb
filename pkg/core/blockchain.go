@@ -31,7 +31,6 @@ type BlockChain interface {
 	GetHeadersByNumbers(blockNumbers []int64) ([]Header, error)
 	GetTransactions(transactionHashes []common.Hash) ([]TransactionModel, error)
 	LastBlock() (*big.Int, error)
-	GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
 	BatchGetStorageAt(account common.Address, keys []common.Hash, blockNumber *big.Int) (map[common.Hash][]byte, error)
 	Node() Node
 }

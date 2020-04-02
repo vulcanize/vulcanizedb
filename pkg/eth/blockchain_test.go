@@ -194,29 +194,6 @@ var _ = Describe("Geth blockchain", func() {
 		})
 	})
 
-	Describe("getting storage at the given block", func() {
-		var (
-			account     = fakes.FakeAddress
-			key         = fakes.FakeHash
-			blockNumber = big.NewInt(rand.Int63())
-		)
-
-		It("fetches the storage at the given key, contract and block", func() {
-			_, err := blockChain.GetStorageAt(account, key, blockNumber)
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient.AssertStorageAtCalledWith(context.Background(), account, key, blockNumber)
-		})
-
-		It("returns an error if the call to the eth client fails", func() {
-			mockClient.SetStorageAtError(fakes.FakeError)
-
-			_, err := blockChain.GetStorageAt(account, key, blockNumber)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(Equal(fakes.FakeError))
-		})
-	})
-
 	Describe("getting batched storage at a given block", func() {
 		var (
 			account     = fakes.FakeAddress
