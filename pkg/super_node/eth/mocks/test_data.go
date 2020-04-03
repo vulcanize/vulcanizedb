@@ -61,7 +61,7 @@ var (
 	Address                                    = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476592")
 	AnotherAddress                             = common.HexToAddress("0xaE9BEa628c4Ce503DcFD7E305CaB4e29E7476593")
 	ContractAddress                            = crypto.CreateAddress(SenderAddr, MockTransactions[2].Nonce())
-	NullAddr                                   = common.HexToAddress("0x0000000000000000000000000000000000000000")
+	ContractHash                               = crypto.Keccak256Hash(ContractAddress.Bytes()).String()
 	mockTopic11                                = common.HexToHash("0x04")
 	mockTopic12                                = common.HexToHash("0x06")
 	mockTopic21                                = common.HexToHash("0x05")
@@ -141,7 +141,7 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
-			Contract: "",
+			ContractHash: "",
 			LogContracts: []string{
 				Address.String(),
 			},
@@ -154,14 +154,14 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
-			Contract: "",
+			ContractHash: "",
 			LogContracts: []string{
 				AnotherAddress.String(),
 			},
 		},
 		{
 			CID:          "",
-			Contract:     ContractAddress.String(),
+			ContractHash: ContractHash,
 			LogContracts: []string{},
 		},
 	}
@@ -174,7 +174,7 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
-			Contract: "",
+			ContractHash: "",
 			LogContracts: []string{
 				Address.String(),
 			},
@@ -187,14 +187,14 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
-			Contract: "",
+			ContractHash: "",
 			LogContracts: []string{
 				AnotherAddress.String(),
 			},
 		},
 		{
 			CID:          Rct3CID.String(),
-			Contract:     ContractAddress.String(),
+			ContractHash: ContractHash,
 			LogContracts: []string{},
 		},
 	}

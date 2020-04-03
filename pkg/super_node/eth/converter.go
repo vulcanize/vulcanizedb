@@ -104,12 +104,17 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		for addr := range mappedContracts {
 			logContracts = append(logContracts, addr)
 		}
+		contract := shared.HandleNullAddr(receipt.ContractAddress)
+		var contractHash string
+		if contract != "" {
+			contractHash = crypto.Keccak256Hash(common.HexToAddress(contract).Bytes()).String()
+		}
 		rctMeta := ReceiptModel{
 			Topic0s:      topicSets[0],
 			Topic1s:      topicSets[1],
 			Topic2s:      topicSets[2],
 			Topic3s:      topicSets[3],
-			Contract:     shared.HandleNullAddr(receipt.ContractAddress),
+			ContractHash: contractHash,
 			LogContracts: logContracts,
 		}
 		// receipt and rctMeta will have same indexes

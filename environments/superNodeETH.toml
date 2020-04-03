@@ -16,6 +16,7 @@
     batchSize = 5 # $RESYNC_BATCH_SIZE
     batchNumber = 50 # $RESYNC_BATCH_NUMBER
     clearOldCache = true # $RESYNC_CLEAR_OLD_CACHE
+    resetValidation = true # $RESYNC_RESET_VALIDATION
 
 [superNode]
     chain = "ethereum" # $SUPERNODE_CHAIN

@@ -89,12 +89,12 @@ var (
 	rct2Contract   = common.HexToAddress("0x010c")
 	receiptModels1 = map[common.Hash]eth2.ReceiptModel{
 		tx1Hash: {
-			CID:      rct1CID,
-			Contract: rct1Contract.String(),
+			CID:          rct1CID,
+			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 		tx2Hash: {
-			CID:      rct2CID,
-			Contract: rct2Contract.String(),
+			CID:          rct2CID,
+			ContractHash: crypto.Keccak256Hash(rct2Contract.Bytes()).String(),
 		},
 	}
 
@@ -170,8 +170,8 @@ var (
 	rct3CID        = "mockRct3CID"
 	receiptModels2 = map[common.Hash]eth2.ReceiptModel{
 		tx3Hash: {
-			CID:      rct3CID,
-			Contract: rct1Contract.String(),
+			CID:          rct3CID,
+			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 	}
 

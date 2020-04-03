@@ -18,6 +18,7 @@ package eth
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -127,6 +128,11 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 		for addr := range mappedContracts {
 			logContracts = append(logContracts, addr)
 		}
+		contract := shared.HandleNullAddr(receipt.ContractAddress)
+		var contractHash string
+		if contract != "" {
+			contractHash = crypto.Keccak256Hash(common.Hex2Bytes(contract)).String()
+		}
 		// Rct data
 		cids.ReceiptCIDs[matchedTx.Hash()] = eth.ReceiptModel{
 			CID:          ethIPLDs.Receipts[i].CID,
@@ -134,7 +140,7 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 			Topic1s:      topicSets[1],
 			Topic2s:      topicSets[2],
 			Topic3s:      topicSets[3],
-			Contract:     receipt.ContractAddress.Hex(),
+			ContractHash: contractHash,
 			LogContracts: logContracts,
 		}
 	}
