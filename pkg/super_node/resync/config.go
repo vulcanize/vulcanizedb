@@ -30,20 +30,22 @@ import (
 
 // Env variables
 const (
-	RESYNC_CHAIN           = "RESYNC_CHAIN"
-	RESYNC_START           = "RESYNC_START"
-	RESYNC_STOP            = "RESYNC_STOP"
-	RESYNC_BATCH_SIZE      = "RESYNC_BATCH_SIZE"
-	RESYNC_BATCH_NUMBER    = "RESYNC_BATCH_NUMBER"
-	RESYNC_CLEAR_OLD_CACHE = "RESYNC_CLEAR_OLD_CACHE"
-	RESYNC_TYPE            = "RESYNC_TYPE"
+	RESYNC_CHAIN            = "RESYNC_CHAIN"
+	RESYNC_START            = "RESYNC_START"
+	RESYNC_STOP             = "RESYNC_STOP"
+	RESYNC_BATCH_SIZE       = "RESYNC_BATCH_SIZE"
+	RESYNC_BATCH_NUMBER     = "RESYNC_BATCH_NUMBER"
+	RESYNC_CLEAR_OLD_CACHE  = "RESYNC_CLEAR_OLD_CACHE"
+	RESYNC_TYPE             = "RESYNC_TYPE"
+	RESYNC_RESET_VALIDATION = "RESYNC_RESET_VALIDATION"
 )
 
 // Config holds the parameters needed to perform a resync
 type Config struct {
-	Chain         shared.ChainType // The type of resync to perform
-	ResyncType    shared.DataType  // The type of data to resync
-	ClearOldCache bool             // Resync will first clear all the data within the range
+	Chain           shared.ChainType // The type of resync to perform
+	ResyncType      shared.DataType  // The type of data to resync
+	ClearOldCache   bool             // Resync will first clear all the data within the range
+	ResetValidation bool             // If true, resync will reset the validation level to 0 for the given range
 
 	// DB info
 	DB       *postgres.DB
@@ -73,11 +75,13 @@ func NewReSyncConfig() (*Config, error) {
 	viper.BindEnv("bitcoin.httpPath", shared.BTC_HTTP_PATH)
 	viper.BindEnv("resync.batchSize", RESYNC_BATCH_SIZE)
 	viper.BindEnv("resync.batchNumber", RESYNC_BATCH_NUMBER)
+	viper.BindEnv("resync.resetValidation", RESYNC_RESET_VALIDATION)
 
 	start := uint64(viper.GetInt64("resync.start"))
 	stop := uint64(viper.GetInt64("resync.stop"))
 	c.Ranges = [][2]uint64{{start, stop}}
 	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
+	c.ResetValidation = viper.GetBool("resync.resetValidation")
 
 	c.IPFSPath, err = shared.GetIPFSPath()
 	if err != nil {

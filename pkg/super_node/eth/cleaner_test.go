@@ -611,4 +611,58 @@ var _ = Describe("Cleaner", func() {
 			Expect(blocksCount).To(Equal(12))
 		})
 	})
+
+	Describe("ResetValidation", func() {
+		BeforeEach(func() {
+			err := repo.Index(mockCIDPayload1)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(mockCIDPayload2)
+			Expect(err).ToNot(HaveOccurred())
+
+			var validationTimes []int
+			pgStr := `SELECT times_validated FROM eth.header_cids`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(1))
+			Expect(validationTimes[1]).To(Equal(1))
+
+			err = repo.Index(mockCIDPayload1)
+			Expect(err).ToNot(HaveOccurred())
+
+			validationTimes = []int{}
+			pgStr = `SELECT times_validated FROM eth.header_cids ORDER BY block_number`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(2))
+			Expect(validationTimes[1]).To(Equal(1))
+		})
+		AfterEach(func() {
+			eth.TearDownDB(db)
+		})
+		It("Resets the validation level", func() {
+			err := cleaner.ResetValidation(rngs)
+			Expect(err).ToNot(HaveOccurred())
+
+			var validationTimes []int
+			pgStr := `SELECT times_validated FROM eth.header_cids`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(0))
+			Expect(validationTimes[1]).To(Equal(0))
+
+			err = repo.Index(mockCIDPayload2)
+			Expect(err).ToNot(HaveOccurred())
+
+			validationTimes = []int{}
+			pgStr = `SELECT times_validated FROM eth.header_cids ORDER BY block_number`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(0))
+			Expect(validationTimes[1]).To(Equal(1))
+		})
+	})
 })

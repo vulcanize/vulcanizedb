@@ -38,6 +38,24 @@ func NewCleaner(db *postgres.DB) *Cleaner {
 	}
 }
 
+// ResetValidation resets the validation level to 0 to enable revalidation
+func (c *Cleaner) ResetValidation(rngs [][2]uint64) error {
+	tx, err := c.db.Beginx()
+	if err != nil {
+		return err
+	}
+	for _, rng := range rngs {
+		logrus.Infof("eth db cleaner resetting validation level to 0 for block range %d to %d", rng[0], rng[1])
+		pgStr := `UPDATE eth.header_cids
+				SET times_validated = 0
+				WHERE block_number BETWEEN $1 AND $2`
+		if _, err := tx.Exec(pgStr, rng[0], rng[1]); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 // Clean removes the specified data from the db within the provided block range
 func (c *Cleaner) Clean(rngs [][2]uint64, t shared.DataType) error {
 	tx, err := c.db.Beginx()

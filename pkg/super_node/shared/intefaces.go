@@ -79,6 +79,7 @@ type DagPutter interface {
 // Cleaner is for cleaning out data from the cache within the given ranges
 type Cleaner interface {
 	Clean(rngs [][2]uint64, t DataType) error
+	ResetValidation(rngs [][2]uint64) error
 }
 
 // SubscriptionSettings is the interface every subscription filter type needs to satisfy, no matter the chain
