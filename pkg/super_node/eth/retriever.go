@@ -214,7 +214,7 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 func (ecr *CIDRetriever) RetrieveRctCIDsByHeaderID(tx *sqlx.Tx, rctFilter ReceiptFilter, headerID int64, trxIds []int64) ([]ReceiptModel, error) {
 	log.Debug("retrieving receipt cids for header id ", headerID)
 	args := make([]interface{}, 0, 4)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
  			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
@@ -294,7 +294,7 @@ func (ecr *CIDRetriever) RetrieveRctCIDsByHeaderID(tx *sqlx.Tx, rctFilter Receip
 func (ecr *CIDRetriever) RetrieveRctCIDs(tx *sqlx.Tx, rctFilter ReceiptFilter, blockNumber int64, blockHash *common.Hash, trxIds []int64) ([]ReceiptModel, error) {
 	log.Debug("retrieving receipt cids for block ", blockNumber)
 	args := make([]interface{}, 0, 5)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
  			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
  			FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
@@ -614,7 +614,7 @@ func (ecr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) (
 // RetrieveReceiptCIDsByTxIDs retrieves receipt CIDs by their associated tx IDs
 func (ecr *CIDRetriever) RetrieveReceiptCIDsByTxIDs(tx *sqlx.Tx, txIDs []int64) ([]ReceiptModel, error) {
 	log.Debugf("retrieving receipt cids for tx ids %v", txIDs)
-	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid,
+	pgStr := `SELECT receipt_cids.id, receipt_cids.tx_id, receipt_cids.cid, receipt_cids.contract,
  			receipt_cids.contract_hash, receipt_cids.topic0s, receipt_cids.topic1s,
 			receipt_cids.topic2s, receipt_cids.topic3s, receipt_cids.log_contracts
 			FROM eth.receipt_cids, eth.transaction_cids

@@ -353,12 +353,13 @@ CREATE TABLE eth.receipt_cids (
     id integer NOT NULL,
     tx_id integer NOT NULL,
     cid text NOT NULL,
-    contract_hash character varying(66),
+    contract character varying(66),
     topic0s character varying(66)[],
     topic1s character varying(66)[],
     topic2s character varying(66)[],
     topic3s character varying(66)[],
-    log_contracts character varying(66)[]
+    log_contracts character varying(66)[],
+    contract_hash character varying(66)
 );
 
 

@@ -114,6 +114,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			Topic1s:      topicSets[1],
 			Topic2s:      topicSets[2],
 			Topic3s:      topicSets[3],
+			Contract:     contract,
 			ContractHash: contractHash,
 			LogContracts: logContracts,
 		}

@@ -141,6 +141,7 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
+			Contract:     "",
 			ContractHash: "",
 			LogContracts: []string{
 				Address.String(),
@@ -154,6 +155,7 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
+			Contract:     "",
 			ContractHash: "",
 			LogContracts: []string{
 				AnotherAddress.String(),
@@ -161,6 +163,7 @@ var (
 		},
 		{
 			CID:          "",
+			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
 		},
@@ -174,6 +177,7 @@ var (
 			Topic1s: []string{
 				mockTopic12.String(),
 			},
+			Contract:     "",
 			ContractHash: "",
 			LogContracts: []string{
 				Address.String(),
@@ -187,6 +191,7 @@ var (
 			Topic1s: []string{
 				mockTopic22.String(),
 			},
+			Contract:     "",
 			ContractHash: "",
 			LogContracts: []string{
 				AnotherAddress.String(),
@@ -194,6 +199,7 @@ var (
 		},
 		{
 			CID:          Rct3CID.String(),
+			Contract:     ContractAddress.String(),
 			ContractHash: ContractHash,
 			LogContracts: []string{},
 		},

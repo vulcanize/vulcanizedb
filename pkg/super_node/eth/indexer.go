@@ -127,9 +127,9 @@ func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPa
 }
 
 func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.receipt_cids (tx_id, cid, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-							  ON CONFLICT (tx_id) DO UPDATE SET (cid, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) = ($2, $3, $4, $5, $6, $7, $8)`,
-		txID, cidMeta.CID, cidMeta.ContractHash, cidMeta.Topic0s, cidMeta.Topic1s, cidMeta.Topic2s, cidMeta.Topic3s, cidMeta.LogContracts)
+	_, err := tx.Exec(`INSERT INTO eth.receipt_cids (tx_id, cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+							  ON CONFLICT (tx_id) DO UPDATE SET (cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) = ($2, $3, $4, $5, $6, $7, $8, $9)`,
+		txID, cidMeta.CID, cidMeta.Contract, cidMeta.ContractHash, cidMeta.Topic0s, cidMeta.Topic1s, cidMeta.Topic2s, cidMeta.Topic3s, cidMeta.LogContracts)
 	return err
 }
 

@@ -189,6 +189,7 @@ func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTr
 		}
 		rctCids[rct.TxHash] = ReceiptModel{
 			CID:          cid,
+			Contract:     receiptMeta[i].Contract,
 			ContractHash: receiptMeta[i].ContractHash,
 			Topic0s:      receiptMeta[i].Topic0s,
 			Topic1s:      receiptMeta[i].Topic1s,
