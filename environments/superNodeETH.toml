@@ -13,8 +13,8 @@
     type = "state" # $RESYNC_TYPE
     start = 0 # $RESYNC_START
     stop = 0 # $RESYNC_STOP
-    batchSize = 5 # $RESYNC_BATCH_SIZE
-    batchNumber = 50 # $RESYNC_BATCH_NUMBER
+    batchSize = 10 # $RESYNC_BATCH_SIZE
+    batchNumber = 100 # $RESYNC_BATCH_NUMBER
     clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
     resetValidation = true # $RESYNC_RESET_VALIDATION
 
