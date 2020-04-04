@@ -445,7 +445,8 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 }
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
-func (ecr *CIDRetriever) RetrieveGapsInData() ([]shared.Gap, error) {
+// it finds the union of heights where no data exists and where the times_validated is lower than the validation level
+func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
 	pgStr := `SELECT header_cids.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM eth.header_cids
 				LEFT JOIN eth.header_cids r on eth.header_cids.block_number = r.block_number - 1
 				LEFT JOIN eth.header_cids fr on eth.header_cids.block_number < fr.block_number
@@ -455,18 +456,45 @@ func (ecr *CIDRetriever) RetrieveGapsInData() ([]shared.Gap, error) {
 		Start uint64 `db:"start"`
 		Stop  uint64 `db:"stop"`
 	}, 0)
-	err := ecr.db.Select(&results, pgStr)
-	if err != nil {
+	if err := ecr.db.Select(&results, pgStr); err != nil {
 		return nil, err
 	}
-	gaps := make([]shared.Gap, len(results))
+	emptyGaps := make([]shared.Gap, len(results))
 	for i, res := range results {
-		gaps[i] = shared.Gap{
+		emptyGaps[i] = shared.Gap{
 			Start: res.Start,
 			Stop:  res.Stop,
 		}
 	}
-	return gaps, nil
+
+	// Find sections of blocks where we are below the validation level
+	// There will be no overlap between these "gaps" and the ones above
+	pgStr = `SELECT block_number FROM eth.header_cids
+			WHERE times_validated < $1
+			ORDER BY block_number`
+	var heights []uint64
+	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil {
+		return nil, err
+	}
+	if len(heights) == 0 {
+		return emptyGaps, nil
+	}
+	validationGaps := make([]shared.Gap, 0)
+	start := heights[0]
+	lastHeight := start
+	for _, height := range heights[1:] {
+		if height == lastHeight+1 {
+			lastHeight = height
+			continue
+		}
+		validationGaps = append(validationGaps, shared.Gap{
+			Start: start,
+			Stop:  lastHeight,
+		})
+		start = height
+		lastHeight = start
+	}
+	return append(emptyGaps, validationGaps...), nil
 }
 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash

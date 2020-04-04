@@ -484,7 +484,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(0))
 		})
@@ -494,9 +494,27 @@ var _ = Describe("Retriever", func() {
 			payload.HeaderCID.BlockNumber = "5"
 			err := repo.Index(&payload)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(0))
+		})
+
+		It("Can handle single block gaps", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.HeaderCID.BlockNumber = "2"
+			payload2 := payload1
+			payload2.HeaderCID.BlockNumber = "4"
+			err := repo.Index(mocks.MockCIDPayload)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload1)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload2)
+			Expect(err).ToNot(HaveOccurred())
+			gaps, err := retriever.RetrieveGapsInData(1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(1))
+			Expect(gaps[0].Start).To(Equal(uint64(3)))
+			Expect(gaps[0].Stop).To(Equal(uint64(3)))
 		})
 
 		It("Finds gap between two entries", func() {
@@ -508,7 +526,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(1))
 			Expect(gaps[0].Start).To(Equal(uint64(6)))
@@ -540,7 +558,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload6)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(3))
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())

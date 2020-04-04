@@ -33,17 +33,18 @@ import (
 
 // Env variables
 const (
-	SUPERNODE_CHAIN        = "SUPERNODE_CHAIN"
-	SUPERNODE_SYNC         = "SUPERNODE_SYNC"
-	SUPERNODE_WORKERS      = "SUPERNODE_WORKERS"
-	SUPERNODE_SERVER       = "SUPERNODE_SERVER"
-	SUPERNODE_WS_PATH      = "SUPERNODE_WS_PATH"
-	SUPERNODE_IPC_PATH     = "SUPERNODE_IPC_PATH"
-	SUPERNODE_HTTP_PATH    = "SUPERNODE_HTTP_PATH"
-	SUPERNODE_BACKFILL     = "SUPERNODE_BACKFILL"
-	SUPERNODE_FREQUENCY    = "SUPERNODE_FREQUENCY"
-	SUPERNODE_BATCH_SIZE   = "SUPERNODE_BATCH_SIZE"
-	SUPERNODE_BATCH_NUMBER = "SUPERNODE_BATCH_NUMBER"
+	SUPERNODE_CHAIN            = "SUPERNODE_CHAIN"
+	SUPERNODE_SYNC             = "SUPERNODE_SYNC"
+	SUPERNODE_WORKERS          = "SUPERNODE_WORKERS"
+	SUPERNODE_SERVER           = "SUPERNODE_SERVER"
+	SUPERNODE_WS_PATH          = "SUPERNODE_WS_PATH"
+	SUPERNODE_IPC_PATH         = "SUPERNODE_IPC_PATH"
+	SUPERNODE_HTTP_PATH        = "SUPERNODE_HTTP_PATH"
+	SUPERNODE_BACKFILL         = "SUPERNODE_BACKFILL"
+	SUPERNODE_FREQUENCY        = "SUPERNODE_FREQUENCY"
+	SUPERNODE_BATCH_SIZE       = "SUPERNODE_BATCH_SIZE"
+	SUPERNODE_BATCH_NUMBER     = "SUPERNODE_BATCH_NUMBER"
+	SUPERNODE_VALIDATION_LEVEL = "SUPERNODE_VALIDATION_LEVEL"
 )
 
 // Config struct
@@ -65,11 +66,12 @@ type Config struct {
 	WSClient interface{}
 	NodeInfo core.Node
 	// Backfiller params
-	BackFill    bool
-	HTTPClient  interface{}
-	Frequency   time.Duration
-	BatchSize   uint64
-	BatchNumber uint64
+	BackFill        bool
+	HTTPClient      interface{}
+	Frequency       time.Duration
+	BatchSize       uint64
+	BatchNumber     uint64
+	ValidationLevel int
 }
 
 // NewSuperNodeConfig is used to initialize a SuperNode config from a .toml file
@@ -167,6 +169,7 @@ func (c *Config) BackFillFields() error {
 	viper.BindEnv("superNode.frequency", SUPERNODE_FREQUENCY)
 	viper.BindEnv("superNode.batchSize", SUPERNODE_BATCH_SIZE)
 	viper.BindEnv("superNode.batchNumber", SUPERNODE_BATCH_NUMBER)
+	viper.BindEnv("superNode.validationLevel", SUPERNODE_VALIDATION_LEVEL)
 
 	switch c.Chain {
 	case shared.Ethereum:
@@ -190,5 +193,6 @@ func (c *Config) BackFillFields() error {
 	c.Frequency = frequency
 	c.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
 	c.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
+	c.ValidationLevel = viper.GetInt("superNode.validationLevel")
 	return nil
 }
