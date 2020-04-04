@@ -58,8 +58,13 @@ DEFAULT_OPTIONS="--config=$VDB_CONFIG_FILE"
 VDB_FULL_CL=${VDB_FULL_CL:-$VDB_COMMAND $DEFAULT_OPTIONS}
 echo running: ./vulcanizedb $VDB_FULL_CL $@
 
-# XXX need to lose the env vars
-./vulcanizedb $@
+vdb_args="$@"
+# default is to use the config passed by the build arg
+if [[ -z "$vdb_args" ]];
+  vdb_args="--config=config.toml"
+fi
+
+./vulcanizedb $vdb_args
 rv=$?
 
 if [ $rv != 0 ]; then
