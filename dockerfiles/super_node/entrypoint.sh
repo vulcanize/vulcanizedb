@@ -58,7 +58,8 @@ DEFAULT_OPTIONS="--config=$VDB_CONFIG_FILE"
 VDB_FULL_CL=${VDB_FULL_CL:-$VDB_COMMAND $DEFAULT_OPTIONS}
 echo running: ./vulcanizedb $VDB_FULL_CL $@
 
-./vulcanizedb $VDB_FULL_CL $@
+# XXX need to lose the env vars
+./vulcanizedb $@
 rv=$?
 
 if [ $rv != 0 ]; then
