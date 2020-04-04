@@ -32,7 +32,7 @@ var _ = Describe("Converter", func() {
 			converter := eth.NewPayloadConverter(params.MainnetChainConfig)
 			payload, err := converter.Convert(mocks.MockStateDiffPayload)
 			Expect(err).ToNot(HaveOccurred())
-			convertedPayload, ok := payload.(eth.IPLDPayload)
+			convertedPayload, ok := payload.(eth.ConvertedPayload)
 			Expect(ok).To(BeTrue())
 			Expect(convertedPayload.Block.Number().String()).To(Equal(mocks.BlockNumber.String()))
 			Expect(convertedPayload.Block.Hash().String()).To(Equal(mocks.MockBlock.Hash().String()))

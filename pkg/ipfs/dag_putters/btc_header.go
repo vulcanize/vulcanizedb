@@ -18,11 +18,16 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/btcsuite/btcd/wire"
+	node "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
+)
+
+var (
+	duplicateKeyErrorString = "pq: duplicate key value violates unique constraint"
 )
 
 type BtcHeaderDagPutter struct {
@@ -33,17 +38,13 @@ func NewBtcHeaderDagPutter(adder *ipfs.IPFS) *BtcHeaderDagPutter {
 	return &BtcHeaderDagPutter{adder: adder}
 }
 
-func (bhdp *BtcHeaderDagPutter) DagPut(raw interface{}) ([]string, error) {
-	header, ok := raw.(*wire.BlockHeader)
+func (bhdp *BtcHeaderDagPutter) DagPut(n node.Node) (string, error) {
+	header, ok := n.(*ipld.BtcHeader)
 	if !ok {
-		return nil, fmt.Errorf("BtcHeaderDagPutter expected input type %T got %T", &wire.BlockHeader{}, raw)
+		return "", fmt.Errorf("BtcHeaderDagPutter expected input type %T got %T", &ipld.BtcHeader{}, n)
 	}
-	node, err := ipld.NewBtcHeader(header)
-	if err != nil {
-		return nil, err
+	if err := bhdp.adder.Add(header); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
+		return "", err
 	}
-	if err := bhdp.adder.Add(node); err != nil {
-		return nil, err
-	}
-	return []string{node.Cid().String()}, nil
+	return header.Cid().String(), nil
 }

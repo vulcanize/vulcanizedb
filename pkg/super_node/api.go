@@ -19,12 +19,15 @@ package super_node
 import (
 	"context"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
+	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // APIName is the namespace used for the state diffing service API
@@ -46,7 +49,24 @@ func NewPublicSuperNodeAPI(superNodeInterface SuperNode) *PublicSuperNodeAPI {
 }
 
 // Stream is the public method to setup a subscription that fires off super node payloads as they are processed
-func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params shared.SubscriptionSettings) (*rpc.Subscription, error) {
+func (api *PublicSuperNodeAPI) Stream(ctx context.Context, rlpParams []byte) (*rpc.Subscription, error) {
+	var params shared.SubscriptionSettings
+	switch api.sn.Chain() {
+	case shared.Ethereum:
+		var ethParams eth.SubscriptionSettings
+		if err := rlp.DecodeBytes(rlpParams, &ethParams); err != nil {
+			return nil, err
+		}
+		params = &ethParams
+	case shared.Bitcoin:
+		var btcParams btc.SubscriptionSettings
+		if err := rlp.DecodeBytes(rlpParams, &btcParams); err != nil {
+			return nil, err
+		}
+		params = &btcParams
+	default:
+		panic("SuperNode is not configured for a specific chain type")
+	}
 	// ensure that the RPC connection supports subscriptions
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
@@ -85,6 +105,41 @@ func (api *PublicSuperNodeAPI) Stream(ctx context.Context, params shared.Subscri
 }
 
 // Node is a public rpc method to allow transformers to fetch the node info for the super node
-func (api *PublicSuperNodeAPI) Node() core.Node {
+// NOTE: this is the node info for the node that the super node is syncing from, not the node info for the super node itself
+func (api *PublicSuperNodeAPI) Node() *core.Node {
 	return api.sn.Node()
+}
+
+// Chain returns the chain type that this super node instance supports
+func (api *PublicSuperNodeAPI) Chain() shared.ChainType {
+	return api.sn.Chain()
+}
+
+// Struct for holding super node meta data
+type InfoAPI struct{}
+
+// NewPublicSuperNodeAPI creates a new PublicSuperNodeAPI with the provided underlying SyncPublishScreenAndServe process
+func NewInfoAPI() *InfoAPI {
+	return &InfoAPI{}
+}
+
+// Modules returns modules supported by this api
+func (iapi *InfoAPI) Modules() map[string]string {
+	return map[string]string{
+		"vdb": "Stream",
+	}
+}
+
+// NodeInfo gathers and returns a collection of metadata for the super node
+func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
+	return &p2p.NodeInfo{
+		// TODO: formalize this
+		ID:   "vulcanizeDB",
+		Name: "superNode",
+	}
+}
+
+// Version returns the version of the super node
+func (iapi *InfoAPI) Version() string {
+	return VersionWithMeta
 }

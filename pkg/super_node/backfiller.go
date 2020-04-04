@@ -17,7 +17,7 @@
 package super_node
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,13 +30,13 @@ import (
 
 const (
 	DefaultMaxBatchSize   uint64 = 100
-	defaultMaxBatchNumber int64  = 10
+	DefaultMaxBatchNumber int64  = 50
 )
 
 // BackFillInterface for filling in gaps in the super node
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
-	FillGaps(wg *sync.WaitGroup)
+	FillGapsInSuperNode(wg *sync.WaitGroup)
 }
 
 // BackFillService for filling in gaps in the super node
@@ -52,17 +52,21 @@ type BackFillService struct {
 	// Interface for fetching payloads over at historical blocks; over http
 	Fetcher shared.PayloadFetcher
 	// Channel for forwarding backfill payloads to the ScreenAndServe process
-	ScreenAndServeChan chan shared.StreamedIPLDs
+	ScreenAndServeChan chan shared.ConvertedData
 	// Check frequency
 	GapCheckFrequency time.Duration
 	// Size of batch fetches
 	BatchSize uint64
+	// Number of goroutines
+	BatchNumber int64
 	// Channel for receiving quit signal
 	QuitChan chan bool
+	// Chain type
+	chain shared.ChainType
 }
 
 // NewBackFillService returns a new BackFillInterface
-func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan chan shared.StreamedIPLDs) (BackFillInterface, error) {
+func NewBackFillService(settings *Config, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
 	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath)
 	if err != nil {
 		return nil, err
@@ -87,6 +91,10 @@ func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan cha
 	if batchSize == 0 {
 		batchSize = DefaultMaxBatchSize
 	}
+	batchNumber := int64(settings.BatchNumber)
+	if batchNumber == 0 {
+		batchNumber = DefaultMaxBatchNumber
+	}
 	return &BackFillService{
 		Indexer:            indexer,
 		Converter:          converter,
@@ -95,14 +103,15 @@ func NewBackFillService(settings *shared.SuperNodeConfig, screenAndServeChan cha
 		Fetcher:            fetcher,
 		GapCheckFrequency:  settings.Frequency,
 		BatchSize:          batchSize,
+		BatchNumber:        int64(batchNumber),
 		ScreenAndServeChan: screenAndServeChan,
 		QuitChan:           settings.Quit,
+		chain:              settings.Chain,
 	}, nil
 }
 
-// FillGaps periodically checks for and fills in gaps in the super node db
-// this requires a core.RpcClient that is pointed at an archival node with the StateDiffAt method exposed
-func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup) {
+// FillGapsInSuperNode periodically checks for and fills in gaps in the super node db
+func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
 	wg.Add(1)
 
@@ -110,60 +119,44 @@ func (bfs *BackFillService) FillGaps(wg *sync.WaitGroup) {
 		for {
 			select {
 			case <-bfs.QuitChan:
-				log.Info("quiting FillGaps process")
+				log.Infof("quiting %s FillGapsInSuperNode process", bfs.chain.String())
 				wg.Done()
 				return
 			case <-ticker.C:
-				log.Info("searching for gaps in the super node database")
+				log.Infof("searching for gaps in the %s super node database", bfs.chain.String())
 				startingBlock, err := bfs.Retriever.RetrieveFirstBlockNumber()
 				if err != nil {
-					log.Error(err)
+					log.Errorf("super node db backfill RetrieveFirstBlockNumber error for chain %s: %v", bfs.chain.String(), err)
 					continue
 				}
 				if startingBlock != 0 {
-					log.Info("found gap at the beginning of the sync")
-					bfs.fillGaps(0, uint64(startingBlock-1))
+					log.Infof("found gap at the beginning of the %s sync", bfs.chain.String())
+					if err := bfs.backFill(0, uint64(startingBlock-1)); err != nil {
+						log.Error(err)
+					}
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData()
 				if err != nil {
-					log.Error(err)
+					log.Errorf("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.chain.String(), err)
 					continue
 				}
 				for _, gap := range gaps {
-					if err := bfs.fillGaps(gap.Start, gap.Stop); err != nil {
+					if err := bfs.backFill(gap.Start, gap.Stop); err != nil {
 						log.Error(err)
 					}
 				}
 			}
 		}
 	}()
-	log.Info("fillGaps goroutine successfully spun up")
-}
-
-func (bfs *BackFillService) fillGaps(startingBlock, endingBlock uint64) error {
-	log.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
-	errChan := make(chan error)
-	done := make(chan bool)
-	err := bfs.backFill(startingBlock, endingBlock, errChan, done)
-	if err != nil {
-		return err
-	}
-	for {
-		select {
-		case err := <-errChan:
-			log.Error(err)
-		case <-done:
-			log.Infof("finished filling in gap from %d to %d", startingBlock, endingBlock)
-			return nil
-		}
-	}
+	log.Infof("%s fillGaps goroutine successfully spun up", bfs.chain.String())
 }
 
 // backFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
 // It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
-func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan chan error, done chan bool) error {
+func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64) error {
+	log.Infof("filling in %s gap from %d to %d", bfs.chain.String(), startingBlock, endingBlock)
 	if endingBlock < startingBlock {
-		return errors.New("backfill: ending block number needs to be greater than starting block number")
+		return fmt.Errorf("super node %s db backfill: ending block number needs to be greater than starting block number", bfs.chain.String())
 	}
 	//
 	// break the range up into bins of smaller ranges
@@ -174,28 +167,27 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
 	var activeCount int64
 	// channel for processing goroutines to signal when they are done
-	processingDone := make(chan [2]uint64)
+	processingDone := make(chan bool)
 	forwardDone := make(chan bool)
 
-	// for each block range bin spin up a goroutine to batch fetch and process state diffs for that range
+	// for each block range bin spin up a goroutine to batch fetch and process data for that range
 	go func() {
 		for _, blockHeights := range blockRangeBins {
 			// if we have reached our limit of active goroutines
 			// wait for one to finish before starting the next
-			if atomic.AddInt64(&activeCount, 1) > defaultMaxBatchNumber {
+			if atomic.AddInt64(&activeCount, 1) > bfs.BatchNumber {
 				// this blocks until a process signals it has finished
 				<-forwardDone
 			}
 			go func(blockHeights []uint64) {
 				payloads, err := bfs.Fetcher.FetchAt(blockHeights)
 				if err != nil {
-					errChan <- err
+					log.Errorf("%s super node historical data fetcher error: %s", bfs.chain.String(), err.Error())
 				}
 				for _, payload := range payloads {
 					ipldPayload, err := bfs.Converter.Convert(payload)
 					if err != nil {
-						errChan <- err
-						continue
+						log.Errorf("%s super node historical data converter error: %s", bfs.chain.String(), err.Error())
 					}
 					// If there is a ScreenAndServe process listening, forward payload to it
 					select {
@@ -204,42 +196,36 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64, errChan 
 					}
 					cidPayload, err := bfs.Publisher.Publish(ipldPayload)
 					if err != nil {
-						errChan <- err
-						continue
+						log.Errorf("%s super node historical data publisher error: %s", bfs.chain.String(), err.Error())
 					}
 					if err := bfs.Indexer.Index(cidPayload); err != nil {
-						errChan <- err
+						log.Errorf("%s super node historical data indexer error: %s", bfs.chain.String(), err.Error())
 					}
 				}
 				// when this goroutine is done, send out a signal
-				processingDone <- [2]uint64{blockHeights[0], blockHeights[len(blockHeights)-1]}
+				log.Infof("finished filling in %s gap from %d to %d", bfs.chain.String(), blockHeights[0], blockHeights[len(blockHeights)-1])
+				processingDone <- true
 			}(blockHeights)
 		}
 	}()
 
-	// goroutine that listens on the processingDone chan
+	// listen on the processingDone chan
 	// keeps track of the number of processing goroutines that have finished
-	// when they have all finished, sends the final signal out
-	go func() {
-		goroutinesFinished := 0
-		for {
+	// when they have all finished, return
+	goroutinesFinished := 0
+	for {
+		select {
+		case <-processingDone:
+			atomic.AddInt64(&activeCount, -1)
 			select {
-			case doneWithHeights := <-processingDone:
-				atomic.AddInt64(&activeCount, -1)
-				select {
-				// if we are waiting for a process to finish, signal that one has
-				case forwardDone <- true:
-				default:
-				}
-				log.Infof("finished filling in gap sub-bin from %d to %d", doneWithHeights[0], doneWithHeights[1])
-				goroutinesFinished++
-				if goroutinesFinished >= len(blockRangeBins) {
-					done <- true
-					return
-				}
+			// if we are waiting for a process to finish, signal that one has
+			case forwardDone <- true:
+			default:
+			}
+			goroutinesFinished++
+			if goroutinesFinished >= len(blockRangeBins) {
+				return nil
 			}
 		}
-	}()
-
-	return nil
+	}
 }

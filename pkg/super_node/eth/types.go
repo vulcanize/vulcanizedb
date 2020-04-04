@@ -17,18 +17,20 @@
 package eth
 
 import (
-	"encoding/json"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/statediff"
+
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ipfs/go-block-format"
 )
 
-// IPLDPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
+// ConvertedPayload is a custom type which packages raw ETH data for publishing to IPFS and filtering to subscribers
 // Returned by PayloadConverter
 // Passed to IPLDPublisher and ResponseFilterer
-type IPLDPayload struct {
+type ConvertedPayload struct {
 	TotalDifficulty *big.Int
 	Block           *types.Block
 	TxMetaData      []TxModel
@@ -38,11 +40,17 @@ type IPLDPayload struct {
 	StorageNodes    map[common.Hash][]TrieNode
 }
 
+// Height satisfies the StreamedIPLDs interface
+func (i ConvertedPayload) Height() int64 {
+	return i.Block.Number().Int64()
+}
+
 // Trie struct used to flag node as leaf or not
 type TrieNode struct {
-	Key   common.Hash
-	Value []byte
-	Leaf  bool
+	Path    []byte
+	LeafKey common.Hash
+	Value   []byte
+	Type    statediff.NodeType
 }
 
 // CIDPayload is a struct to hold all the CIDs and their associated meta data for indexing in Postgres
@@ -54,6 +62,7 @@ type CIDPayload struct {
 	TransactionCIDs []TxModel
 	ReceiptCIDs     map[common.Hash]ReceiptModel
 	StateNodeCIDs   []StateNodeModel
+	StateAccounts   map[common.Hash]StateAccountModel
 	StorageNodeCIDs map[common.Hash][]StorageNodeModel
 }
 
@@ -62,7 +71,7 @@ type CIDPayload struct {
 // Passed to IPLDFetcher
 type CIDWrapper struct {
 	BlockNumber  *big.Int
-	Headers      []HeaderModel
+	Header       HeaderModel
 	Uncles       []UncleModel
 	Transactions []TxModel
 	Receipts     []ReceiptModel
@@ -70,49 +79,35 @@ type CIDWrapper struct {
 	StorageNodes []StorageNodeWithStateKeyModel
 }
 
-// IPLDWrapper is used to package raw IPLD block data fetched from IPFS
-// Returned by IPLDFetcher
-// Passed to IPLDResolver
-type IPLDWrapper struct {
-	BlockNumber  *big.Int
-	Headers      []blocks.Block
-	Uncles       []blocks.Block
-	Transactions []blocks.Block
-	Receipts     []blocks.Block
-	StateNodes   map[common.Hash]blocks.Block
-	StorageNodes map[common.Hash]map[common.Hash]blocks.Block
+// IPLDs is used to package raw IPLD block data fetched from IPFS and returned by the server
+// Returned by IPLDFetcher and ResponseFilterer
+type IPLDs struct {
+	BlockNumber     *big.Int
+	TotalDifficulty *big.Int
+	Header          ipfs.BlockModel
+	Uncles          []ipfs.BlockModel
+	Transactions    []ipfs.BlockModel
+	Receipts        []ipfs.BlockModel
+	StateNodes      []StateNode
+	StorageNodes    []StorageNode
 }
 
-// StreamResponse holds the data streamed from the super node eth service to the requesting clients
-// Returned by IPLDResolver and ResponseFilterer
-// Passed to client subscriptions
-type StreamResponse struct {
-	BlockNumber     *big.Int                               `json:"blockNumber"`
-	HeadersRlp      [][]byte                               `json:"headersRlp"`
-	UnclesRlp       [][]byte                               `json:"unclesRlp"`
-	TransactionsRlp [][]byte                               `json:"transactionsRlp"`
-	ReceiptsRlp     [][]byte                               `json:"receiptsRlp"`
-	StateNodesRlp   map[common.Hash][]byte                 `json:"stateNodesRlp"`
-	StorageNodesRlp map[common.Hash]map[common.Hash][]byte `json:"storageNodesRlp"`
-
-	encoded []byte
-	err     error
+// Height satisfies the StreamedIPLDs interface
+func (i IPLDs) Height() int64 {
+	return i.BlockNumber.Int64()
 }
 
-func (sr *StreamResponse) ensureEncoded() {
-	if sr.encoded == nil && sr.err == nil {
-		sr.encoded, sr.err = json.Marshal(sr)
-	}
+type StateNode struct {
+	Type         statediff.NodeType
+	StateLeafKey common.Hash
+	Path         []byte
+	IPLD         ipfs.BlockModel
 }
 
-// Length to implement Encoder interface for StateDiff
-func (sr *StreamResponse) Length() int {
-	sr.ensureEncoded()
-	return len(sr.encoded)
-}
-
-// Encode to implement Encoder interface for StateDiff
-func (sr *StreamResponse) Encode() ([]byte, error) {
-	sr.ensureEncoded()
-	return sr.encoded, sr.err
+type StorageNode struct {
+	Type           statediff.NodeType
+	StateLeafKey   common.Hash
+	StorageLeafKey common.Hash
+	Path           []byte
+	IPLD           ipfs.BlockModel
 }

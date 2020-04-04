@@ -17,7 +17,13 @@
 package ipld
 
 import (
+	"bytes"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 )
@@ -40,9 +46,9 @@ const (
 	MBitcoinTx          = 0xb1
 )
 
-// rawdataToCid takes the desired codec and a slice of bytes
+// RawdataToCid takes the desired codec and a slice of bytes
 // and returns the proper cid of the object.
-func rawdataToCid(codec uint64, rawdata []byte, multiHash uint64) (cid.Cid, error) {
+func RawdataToCid(codec uint64, rawdata []byte, multiHash uint64) (cid.Cid, error) {
 	c, err := cid.Prefix{
 		Codec:    codec,
 		Version:  1,
@@ -86,4 +92,60 @@ func sha256ToCid(codec uint64, h []byte) cid.Cid {
 	}
 
 	return cid.NewCidV1(codec, hash)
+}
+
+// getRLP encodes the given object to RLP returning its bytes.
+func getRLP(object interface{}) []byte {
+	buf := new(bytes.Buffer)
+	if err := rlp.Encode(buf, object); err != nil {
+		panic(err)
+	}
+
+	return buf.Bytes()
+}
+
+// localTrie wraps a go-ethereum trie and its underlying memory db.
+// It contributes to the creation of the trie node objects.
+type localTrie struct {
+	keys [][]byte
+	db   ethdb.Database
+	trie *trie.Trie
+}
+
+// newLocalTrie initializes and returns a localTrie object
+func newLocalTrie() *localTrie {
+	var err error
+	lt := &localTrie{}
+	lt.db = rawdb.NewMemoryDatabase()
+	lt.trie, err = trie.New(common.Hash{}, trie.NewDatabase(lt.db))
+	if err != nil {
+		panic(err)
+	}
+	return lt
+}
+
+// add receives the index of an object and its rawdata value
+// and includes it into the localTrie
+func (lt *localTrie) add(idx int, rawdata []byte) {
+	key, err := rlp.EncodeToBytes(uint(idx))
+	if err != nil {
+		panic(err)
+	}
+	lt.keys = append(lt.keys, key)
+	if err := lt.db.Put(key, rawdata); err != nil {
+		panic(err)
+	}
+	lt.trie.Update(key, rawdata)
+}
+
+// rootHash returns the computed trie root.
+// Useful for sanity checks on parsed data.
+func (lt *localTrie) rootHash() []byte {
+	return lt.trie.Hash().Bytes()
+}
+
+// getKeys returns the stored keys of the memory database
+// of the localTrie for further processing.
+func (lt *localTrie) getKeys() [][]byte {
+	return lt.keys
 }

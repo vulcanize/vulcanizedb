@@ -18,8 +18,9 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	node "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
@@ -33,17 +34,13 @@ func NewEthBlockHeaderDagPutter(adder *ipfs.IPFS) *EthHeaderDagPutter {
 	return &EthHeaderDagPutter{adder: adder}
 }
 
-func (bhdp *EthHeaderDagPutter) DagPut(raw interface{}) ([]string, error) {
-	header, ok := raw.(*types.Header)
+func (bhdp *EthHeaderDagPutter) DagPut(n node.Node) (string, error) {
+	header, ok := n.(*ipld.EthHeader)
 	if !ok {
-		return nil, fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &types.Header{}, raw)
+		return "", fmt.Errorf("EthHeaderDagPutter expected input type %T got %T", &ipld.EthHeader{}, n)
 	}
-	node, err := ipld.NewEthHeader(header)
-	if err != nil {
-		return nil, err
+	if err := bhdp.adder.Add(header); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
+		return "", err
 	}
-	if err := bhdp.adder.Add(node); err != nil {
-		return nil, err
-	}
-	return []string{node.Cid().String()}, nil
+	return header.Cid().String(), nil
 }

@@ -41,12 +41,9 @@ var (
 	databaseConfig       config.Database
 	genConfig            config.Plugin
 	ipc                  string
-	levelDbPath          string
 	queueRecheckInterval time.Duration
 	startingBlockNumber  int64
 	storageDiffsPath     string
-	syncAll              bool
-	endingBlockNumber    int64
 	recheckHeadersArg    bool
 	subCommand           string
 	logWithCommand       log.Entry
@@ -81,7 +78,6 @@ func initFuncs(cmd *cobra.Command, args []string) {
 
 func setViperConfigs() {
 	ipc = viper.GetString("client.ipcpath")
-	levelDbPath = viper.GetString("client.leveldbpath")
 	storageDiffsPath = viper.GetString("filesystem.storageDiffsPath")
 	storageDiffsSource = viper.GetString("storageDiffs.source")
 	databaseConfig = config.Database{
@@ -114,6 +110,7 @@ func init() {
 	viper.AutomaticEnv()
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file location")
+	rootCmd.PersistentFlags().String("logfile", "", "file path for logging")
 	rootCmd.PersistentFlags().String("database-name", "vulcanize_public", "database name")
 	rootCmd.PersistentFlags().Int("database-port", 5432, "database port")
 	rootCmd.PersistentFlags().String("database-hostname", "localhost", "database hostname")
@@ -126,6 +123,7 @@ func init() {
 	rootCmd.PersistentFlags().String("exporter-name", "exporter", "name of exporter plugin")
 	rootCmd.PersistentFlags().String("log-level", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 
+	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
 	viper.BindPFlag("database.name", rootCmd.PersistentFlags().Lookup("database-name"))
 	viper.BindPFlag("database.port", rootCmd.PersistentFlags().Lookup("database-port"))
 	viper.BindPFlag("database.hostname", rootCmd.PersistentFlags().Lookup("database-hostname"))

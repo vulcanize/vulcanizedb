@@ -68,16 +68,16 @@ func (ps *HTTPPayloadStreamer) Stream(payloadChan chan shared.RawChainData) (sha
 				if bytes.Equal(blockHashBytes, ps.lastHash) {
 					continue
 				}
-				ps.lastHash = blockHashBytes
 				block, err := client.GetBlock(blockHash)
 				if err != nil {
 					errChan <- err
 					continue
 				}
+				ps.lastHash = blockHashBytes
 				payloadChan <- BlockPayload{
-					Header: &block.Header,
-					Height: height,
-					Txs:    msgTxsToUtilTxs(block.Transactions),
+					Header:      &block.Header,
+					BlockHeight: height,
+					Txs:         msgTxsToUtilTxs(block.Transactions),
 				}
 			default:
 			}

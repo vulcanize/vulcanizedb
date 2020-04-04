@@ -29,7 +29,7 @@ import (
 )
 
 type EthReceipt struct {
-	*types.ReceiptForStorage
+	*types.Receipt
 
 	rawdata []byte
 	cid     cid.Cid
@@ -43,19 +43,37 @@ var _ node.Node = (*EthReceipt)(nil)
 */
 
 // NewReceipt converts a types.ReceiptForStorage to an EthReceipt IPLD node
-func NewReceipt(receipt *types.ReceiptForStorage) (*EthReceipt, error) {
+func NewReceipt(receipt *types.Receipt) (*EthReceipt, error) {
 	receiptRLP, err := rlp.EncodeToBytes(receipt)
 	if err != nil {
 		return nil, err
 	}
-	c, err := rawdataToCid(MEthTxReceipt, receiptRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthTxReceipt, receiptRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}
 	return &EthReceipt{
-		ReceiptForStorage: receipt,
-		cid:               c,
-		rawdata:           receiptRLP,
+		Receipt: receipt,
+		cid:     c,
+		rawdata: receiptRLP,
+	}, nil
+}
+
+/*
+ OUTPUT
+*/
+
+// DecodeEthReceipt takes a cid and its raw binary data
+// from IPFS and returns an EthTx object for further processing.
+func DecodeEthReceipt(c cid.Cid, b []byte) (*EthReceipt, error) {
+	var r *types.Receipt
+	if err := rlp.DecodeBytes(b, r); err != nil {
+		return nil, err
+	}
+	return &EthReceipt{
+		Receipt: r,
+		cid:     c,
+		rawdata: b,
 	}, nil
 }
 
@@ -158,7 +176,7 @@ func (r *EthReceipt) Stat() (*node.NodeStat, error) {
 
 // Size will go away. It is here to comply with the interface.
 func (r *EthReceipt) Size() (uint64, error) {
-	return strconv.ParseUint((*types.Receipt)(r.ReceiptForStorage).Size().String(), 10, 64)
+	return strconv.ParseUint(r.Receipt.Size().String(), 10, 64)
 }
 
 /*

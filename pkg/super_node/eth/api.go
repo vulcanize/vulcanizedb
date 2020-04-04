@@ -20,13 +20,14 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ipfs/go-block-format"
 )
 
 // APIName is the namespace for the super node's eth api
@@ -48,7 +49,7 @@ func NewPublicEthAPI(b *Backend) *PublicEthAPI {
 
 // BlockNumber returns the block number of the chain head.
 func (pea *PublicEthAPI) BlockNumber() hexutil.Uint64 {
-	number, _ := pea.b.retriever.RetrieveLastBlockNumber()
+	number, _ := pea.b.Retriever.RetrieveLastBlockNumber()
 	return hexutil.Uint64(number)
 }
 
@@ -64,6 +65,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	topicStrSets := make([][]string, 4)
 	for i, topicSet := range crit.Topics {
 		if i > 3 {
+			// don't allow more than 4 topics
 			break
 		}
 		for _, topic := range topicSet {
@@ -74,20 +76,20 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 		Contracts: addrStrs,
 		Topics:    topicStrSets,
 	}
-	tx, err := pea.b.db.Beginx()
+	tx, err := pea.b.DB.Beginx()
 	if err != nil {
 		return nil, err
 	}
 	// If we have a blockhash to filter on, fire off single retrieval query
 	if crit.BlockHash != nil {
-		rctCIDs, err := pea.b.retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
+		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
 		if err != nil {
 			return nil, err
 		}
 		if err := tx.Commit(); err != nil {
 			return nil, err
 		}
-		rctIPLDs, err := pea.b.fetcher.FetchRcts(rctCIDs)
+		rctIPLDs, err := pea.b.Fetcher.FetchRcts(rctCIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -98,14 +100,14 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	startingBlock := crit.FromBlock
 	endingBlock := crit.ToBlock
 	if startingBlock == nil {
-		startingBlockInt, err := pea.b.retriever.RetrieveFirstBlockNumber()
+		startingBlockInt, err := pea.b.Retriever.RetrieveFirstBlockNumber()
 		if err != nil {
 			return nil, err
 		}
 		startingBlock = big.NewInt(startingBlockInt)
 	}
 	if endingBlock == nil {
-		endingBlockInt, err := pea.b.retriever.RetrieveLastBlockNumber()
+		endingBlockInt, err := pea.b.Retriever.RetrieveLastBlockNumber()
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +117,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	end := endingBlock.Int64()
 	allRctCIDs := make([]ReceiptModel, 0)
 	for i := start; i <= end; i++ {
-		rctCIDs, err := pea.b.retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
+		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +126,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	rctIPLDs, err := pea.b.fetcher.FetchRcts(allRctCIDs)
+	rctIPLDs, err := pea.b.Fetcher.FetchRcts(allRctCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -174,19 +176,19 @@ func (pea *PublicEthAPI) GetTransactionByHash(ctx context.Context, hash common.H
 		return nil, err
 	}
 	if tx != nil {
-		return newRPCTransaction(tx, blockHash, blockNumber, index), nil
+		return NewRPCTransaction(tx, blockHash, blockNumber, index), nil
 	}
 	// Transaction unknown, return as such
 	return nil, nil
 }
 
 // extractLogsOfInterest returns logs from the receipt IPLD
-func extractLogsOfInterest(rctIPLDs []blocks.Block, wantedTopics [][]string) ([]*types.Log, error) {
+func extractLogsOfInterest(rctIPLDs []ipfs.BlockModel, wantedTopics [][]string) ([]*types.Log, error) {
 	var logs []*types.Log
 	for _, rctIPLD := range rctIPLDs {
-		rctRLP := rctIPLD.RawData()
+		rctRLP := rctIPLD
 		var rct types.Receipt
-		if err := rlp.DecodeBytes(rctRLP, &rct); err != nil {
+		if err := rlp.DecodeBytes(rctRLP.Data, &rct); err != nil {
 			return nil, err
 		}
 		for _, log := range rct.Logs {
@@ -201,7 +203,7 @@ func extractLogsOfInterest(rctIPLDs []blocks.Block, wantedTopics [][]string) ([]
 // returns true if the log matches on the filter
 func wantedLog(wantedTopics [][]string, actualTopics []common.Hash) bool {
 	// actualTopics will always have length <= 4
-	// wantedTopics will always have length == 4
+	// wantedTopics will always have length 4
 	matches := 0
 	for i, actualTopic := range actualTopics {
 		// If we have topics in this filter slot, count as a match if the actualTopic matches one of the ones in this filter slot
@@ -292,7 +294,7 @@ func RPCMarshalBlock(block *types.Block, inclTx bool, fullTx bool) (map[string]i
 		}
 		if fullTx {
 			formatTx = func(tx *types.Transaction) (interface{}, error) {
-				return newRPCTransactionFromBlockHash(block, tx.Hash()), nil
+				return NewRPCTransactionFromBlockHash(block, tx.Hash()), nil
 			}
 		}
 		txs := block.Transactions()
@@ -315,8 +317,8 @@ func RPCMarshalBlock(block *types.Block, inclTx bool, fullTx bool) (map[string]i
 	return fields, nil
 }
 
-// newRPCTransactionFromBlockHash returns a transaction that will serialize to the RPC representation.
-func newRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransaction {
+// NewRPCTransactionFromBlockHash returns a transaction that will serialize to the RPC representation.
+func NewRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransaction {
 	for idx, tx := range b.Transactions() {
 		if tx.Hash() == hash {
 			return newRPCTransactionFromBlockIndex(b, uint64(idx))
@@ -331,7 +333,7 @@ func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransacti
 	if index >= uint64(len(txs)) {
 		return nil
 	}
-	return newRPCTransaction(txs[index], b.Hash(), b.NumberU64(), index)
+	return NewRPCTransaction(txs[index], b.Hash(), b.NumberU64(), index)
 }
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
@@ -352,9 +354,9 @@ type RPCTransaction struct {
 	S                *hexutil.Big    `json:"s"`
 }
 
-// newRPCTransaction returns a transaction that will serialize to the RPC
+// NewRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
+func NewRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
 	var signer types.Signer = types.FrontierSigner{}
 	if tx.Protected() {
 		signer = types.NewEIP155Signer(tx.ChainId())
@@ -367,7 +369,7 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		Gas:      hexutil.Uint64(tx.Gas()),
 		GasPrice: (*hexutil.Big)(tx.GasPrice()),
 		Hash:     tx.Hash(),
-		Input:    hexutil.Bytes(tx.Data()),
+		Input:    hexutil.Bytes(tx.Data()), // somehow this is ending up `nil`
 		Nonce:    hexutil.Uint64(tx.Nonce()),
 		To:       tx.To(),
 		Value:    (*hexutil.Big)(tx.Value()),

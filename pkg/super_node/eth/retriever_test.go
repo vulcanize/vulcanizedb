@@ -19,6 +19,8 @@ package eth_test
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -196,7 +198,7 @@ var (
 			Off: true,
 		},
 		StateFilter: eth.StateFilter{
-			Addresses: []string{mocks.Address.Hex()},
+			Addresses: []string{mocks.AccountAddresss.Hex()},
 		},
 		StorageFilter: eth.StorageFilter{
 			Off: true,
@@ -230,14 +232,14 @@ var _ = Describe("Retriever", func() {
 			cids, empty, err := retriever.Retrieve(openFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper, ok := cids.(*eth.CIDWrapper)
+			Expect(len(cids)).To(Equal(1))
+			cidWrapper, ok := cids[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper.Headers)).To(Equal(1))
-			expectedHeaderCIDs := mocks.MockCIDWrapper.Headers
-			expectedHeaderCIDs[0].ID = cidWrapper.Headers[0].ID
-			expectedHeaderCIDs[0].NodeID = cidWrapper.Headers[0].NodeID
-			Expect(cidWrapper.Headers).To(Equal(expectedHeaderCIDs))
+			expectedHeaderCID := mocks.MockCIDWrapper.Header
+			expectedHeaderCID.ID = cidWrapper.Header.ID
+			expectedHeaderCID.NodeID = cidWrapper.Header.NodeID
+			Expect(cidWrapper.Header).To(Equal(expectedHeaderCID))
 			Expect(len(cidWrapper.Transactions)).To(Equal(2))
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0].CID)).To(BeTrue())
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1].CID)).To(BeTrue())
@@ -246,13 +248,15 @@ var _ = Describe("Retriever", func() {
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1].CID)).To(BeTrue())
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
-				if stateNode.CID == "mockStateCID1" {
-					Expect(stateNode.StateKey).To(Equal(mocks.ContractLeafKey.Hex()))
-					Expect(stateNode.Leaf).To(Equal(true))
+				if stateNode.CID == mocks.State1CID.String() {
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.ContractLeafKey).Hex()))
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.Path).To(Equal([]byte{'\x06'}))
 				}
-				if stateNode.CID == "mockStateCID2" {
-					Expect(stateNode.StateKey).To(Equal(mocks.AnotherContractLeafKey.Hex()))
-					Expect(stateNode.Leaf).To(Equal(true))
+				if stateNode.CID == mocks.State2CID.String() {
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.AccountLeafKey).Hex()))
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.Path).To(Equal([]byte{'\x0c'}))
 				}
 			}
 			Expect(len(cidWrapper.StorageNodes)).To(Equal(1))
@@ -266,10 +270,11 @@ var _ = Describe("Retriever", func() {
 			cids1, empty, err := retriever.Retrieve(rctContractFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper1, ok := cids1.(*eth.CIDWrapper)
+			Expect(len(cids1)).To(Equal(1))
+			cidWrapper1, ok := cids1[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper1.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper1.Headers)).To(Equal(0))
+			Expect(cidWrapper1.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper1.Transactions)).To(Equal(0))
 			Expect(len(cidWrapper1.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper1.StorageNodes)).To(Equal(0))
@@ -282,10 +287,11 @@ var _ = Describe("Retriever", func() {
 			cids2, empty, err := retriever.Retrieve(rctTopicsFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper2, ok := cids2.(*eth.CIDWrapper)
+			Expect(len(cids2)).To(Equal(1))
+			cidWrapper2, ok := cids2[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper2.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper2.Headers)).To(Equal(0))
+			Expect(cidWrapper2.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper2.Transactions)).To(Equal(0))
 			Expect(len(cidWrapper2.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper2.StorageNodes)).To(Equal(0))
@@ -298,10 +304,11 @@ var _ = Describe("Retriever", func() {
 			cids3, empty, err := retriever.Retrieve(rctTopicsAndContractFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper3, ok := cids3.(*eth.CIDWrapper)
+			Expect(len(cids3)).To(Equal(1))
+			cidWrapper3, ok := cids3[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper3.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper3.Headers)).To(Equal(0))
+			Expect(cidWrapper3.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper3.Transactions)).To(Equal(0))
 			Expect(len(cidWrapper3.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper3.StorageNodes)).To(Equal(0))
@@ -314,10 +321,11 @@ var _ = Describe("Retriever", func() {
 			cids4, empty, err := retriever.Retrieve(rctContractsAndTopicFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper4, ok := cids4.(*eth.CIDWrapper)
+			Expect(len(cids4)).To(Equal(1))
+			cidWrapper4, ok := cids4[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper4.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper4.Headers)).To(Equal(0))
+			Expect(cidWrapper4.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper4.Transactions)).To(Equal(0))
 			Expect(len(cidWrapper4.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper4.StorageNodes)).To(Equal(0))
@@ -330,26 +338,28 @@ var _ = Describe("Retriever", func() {
 			cids5, empty, err := retriever.Retrieve(rctsForAllCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper5, ok := cids5.(*eth.CIDWrapper)
+			Expect(len(cids5)).To(Equal(1))
+			cidWrapper5, ok := cids5[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper5.Headers)).To(Equal(0))
+			Expect(cidWrapper5.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
-			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, "mockTrxCID1")).To(BeTrue())
-			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, "mockTrxCID2")).To(BeTrue())
+			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx1CID.String())).To(BeTrue())
+			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx2CID.String())).To(BeTrue())
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
-			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, "mockRctCID1")).To(BeTrue())
-			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, "mockRctCID2")).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct1CID.String())).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct2CID.String())).To(BeTrue())
 
 			cids6, empty, err := retriever.Retrieve(rctsForSelectCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper6, ok := cids6.(*eth.CIDWrapper)
+			Expect(len(cids6)).To(Equal(1))
+			cidWrapper6, ok := cids6[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper6.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper6.Headers)).To(Equal(0))
+			Expect(cidWrapper6.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper6.Transactions)).To(Equal(1))
 			expectedTxCID := mocks.MockCIDWrapper.Transactions[1]
 			expectedTxCID.ID = cidWrapper6.Transactions[0].ID
@@ -366,10 +376,11 @@ var _ = Describe("Retriever", func() {
 			cids7, empty, err := retriever.Retrieve(stateFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
-			cidWrapper7, ok := cids7.(*eth.CIDWrapper)
+			Expect(len(cids7)).To(Equal(1))
+			cidWrapper7, ok := cids7[0].(*eth.CIDWrapper)
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper7.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
-			Expect(len(cidWrapper7.Headers)).To(Equal(0))
+			Expect(cidWrapper7.Header).To(Equal(eth.HeaderModel{}))
 			Expect(len(cidWrapper7.Transactions)).To(Equal(0))
 			Expect(len(cidWrapper7.Receipts)).To(Equal(0))
 			Expect(len(cidWrapper7.StorageNodes)).To(Equal(0))
@@ -377,9 +388,10 @@ var _ = Describe("Retriever", func() {
 			Expect(cidWrapper7.StateNodes[0]).To(Equal(eth.StateNodeModel{
 				ID:       cidWrapper7.StateNodes[0].ID,
 				HeaderID: cidWrapper7.StateNodes[0].HeaderID,
-				Leaf:     true,
-				StateKey: mocks.ContractLeafKey.Hex(),
-				CID:      "mockStateCID1",
+				NodeType: 2,
+				StateKey: common.BytesToHash(mocks.AccountLeafKey).Hex(),
+				CID:      mocks.State2CID.String(),
+				Path:     []byte{'\x0c'},
 			}))
 
 			_, empty, err = retriever.Retrieve(rctTopicsAndContractFilterFail, 1)

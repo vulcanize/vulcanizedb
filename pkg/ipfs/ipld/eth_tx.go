@@ -50,7 +50,7 @@ func NewEthTx(tx *types.Transaction) (*EthTx, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := rawdataToCid(MEthTx, txRLP, mh.KECCAK_256)
+	c, err := RawdataToCid(MEthTx, txRLP, mh.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}

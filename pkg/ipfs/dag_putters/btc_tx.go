@@ -18,8 +18,9 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/btcsuite/btcutil"
+	node "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
@@ -33,21 +34,13 @@ func NewBtcTxDagPutter(adder *ipfs.IPFS) *BtcTxDagPutter {
 	return &BtcTxDagPutter{adder: adder}
 }
 
-func (etdp *BtcTxDagPutter) DagPut(raw interface{}) ([]string, error) {
-	transactions, ok := raw.([]*btcutil.Tx)
+func (etdp *BtcTxDagPutter) DagPut(n node.Node) (string, error) {
+	transaction, ok := n.(*ipld.BtcTx)
 	if !ok {
-		return nil, fmt.Errorf("BtcTxDagPutter expected input type %T got %T", []*btcutil.Tx{}, raw)
+		return "", fmt.Errorf("BtcTxDagPutter expected input type %T got %T", &ipld.BtcTx{}, n)
 	}
-	cids := make([]string, len(transactions))
-	for i, transaction := range transactions {
-		node, err := ipld.NewBtcTx(transaction.MsgTx())
-		if err != nil {
-			return nil, err
-		}
-		if err := etdp.adder.Add(node); err != nil {
-			return nil, err
-		}
-		cids[i] = node.Cid().String()
+	if err := etdp.adder.Add(transaction); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
+		return "", err
 	}
-	return cids, nil
+	return transaction.Cid().String(), nil
 }

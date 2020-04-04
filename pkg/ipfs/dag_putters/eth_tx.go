@@ -18,8 +18,9 @@ package dag_putters
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	node "github.com/ipfs/go-ipld-format"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
@@ -33,21 +34,13 @@ func NewEthTxsDagPutter(adder *ipfs.IPFS) *EthTxsDagPutter {
 	return &EthTxsDagPutter{adder: adder}
 }
 
-func (etdp *EthTxsDagPutter) DagPut(raw interface{}) ([]string, error) {
-	transactions, ok := raw.(types.Transactions)
+func (etdp *EthTxsDagPutter) DagPut(n node.Node) (string, error) {
+	transaction, ok := n.(*ipld.EthTx)
 	if !ok {
-		return nil, fmt.Errorf("EthTxsDagPutter expected input type %T got %T", types.Transactions{}, raw)
+		return "", fmt.Errorf("EthTxsDagPutter expected input type %T got %T", &ipld.EthTx{}, n)
 	}
-	cids := make([]string, len(transactions))
-	for i, transaction := range transactions {
-		node, err := ipld.NewEthTx(transaction)
-		if err != nil {
-			return nil, err
-		}
-		if err := etdp.adder.Add(node); err != nil {
-			return nil, err
-		}
-		cids[i] = node.Cid().String()
+	if err := etdp.adder.Add(transaction); err != nil && !strings.Contains(err.Error(), duplicateKeyErrorString) {
+		return "", err
 	}
-	return cids, nil
+	return transaction.Cid().String(), nil
 }

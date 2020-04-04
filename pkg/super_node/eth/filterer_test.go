@@ -19,165 +19,186 @@ package eth_test
 import (
 	"bytes"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var (
-	filterer                  *eth.ResponseFilterer
-	expectedRctForStorageRLP1 []byte
-	expectedRctForStorageRLP2 []byte
+	filterer *eth.ResponseFilterer
 )
 
 var _ = Describe("Filterer", func() {
 	Describe("FilterResponse", func() {
 		BeforeEach(func() {
 			filterer = eth.NewResponseFilterer()
-			expectedRctForStorageRLP1 = getReceiptForStorageRLP(mocks.MockReceipts, 0)
-			expectedRctForStorageRLP2 = getReceiptForStorageRLP(mocks.MockReceipts, 1)
 		})
 
 		It("Transcribes all the data from the IPLDPayload into the StreamPayload if given an open filter", func() {
-			payload, err := filterer.Filter(openFilter, mocks.MockIPLDPayload)
+			payload, err := filterer.Filter(openFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload, ok := payload.(eth.StreamResponse)
+			iplds, ok := payload.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(superNodePayload.HeadersRlp).To(Equal(mocks.MockSeedNodePayload.HeadersRlp))
-			var unclesRlp [][]byte
-			Expect(superNodePayload.UnclesRlp).To(Equal(unclesRlp))
-			Expect(len(superNodePayload.TransactionsRlp)).To(Equal(2))
-			Expect(shared.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
-			Expect(shared.ListContainsBytes(superNodePayload.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
-			Expect(len(superNodePayload.ReceiptsRlp)).To(Equal(2))
-			Expect(shared.ListContainsBytes(superNodePayload.ReceiptsRlp, expectedRctForStorageRLP1)).To(BeTrue())
-			Expect(shared.ListContainsBytes(superNodePayload.ReceiptsRlp, expectedRctForStorageRLP2)).To(BeTrue())
-			Expect(len(superNodePayload.StateNodesRlp)).To(Equal(2))
-			Expect(superNodePayload.StateNodesRlp[mocks.ContractLeafKey]).To(Equal(mocks.ValueBytes))
-			Expect(superNodePayload.StateNodesRlp[mocks.AnotherContractLeafKey]).To(Equal(mocks.AnotherValueBytes))
-			Expect(superNodePayload.StorageNodesRlp).To(Equal(mocks.MockSeedNodePayload.StorageNodesRlp))
+			Expect(iplds.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds.Header).To(Equal(mocks.MockIPLDs.Header))
+			var expectedEmptyUncles []ipfs.BlockModel
+			Expect(iplds.Uncles).To(Equal(expectedEmptyUncles))
+			Expect(len(iplds.Transactions)).To(Equal(2))
+			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(len(iplds.Receipts)).To(Equal(2))
+			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
+			Expect(len(iplds.StateNodes)).To(Equal(2))
+			for _, stateNode := range iplds.StateNodes {
+				Expect(stateNode.Type).To(Equal(statediff.Leaf))
+				if bytes.Equal(stateNode.StateLeafKey.Bytes(), mocks.AccountLeafKey) {
+					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mocks.State2IPLD.RawData(),
+						CID:  mocks.State2IPLD.Cid().String(),
+					}))
+				}
+				if bytes.Equal(stateNode.StateLeafKey.Bytes(), mocks.ContractLeafKey) {
+					Expect(stateNode.IPLD).To(Equal(ipfs.BlockModel{
+						Data: mocks.State1IPLD.RawData(),
+						CID:  mocks.State1IPLD.Cid().String(),
+					}))
+				}
+			}
+			Expect(iplds.StorageNodes).To(Equal(mocks.MockIPLDs.StorageNodes))
 		})
 
 		It("Applies filters from the provided config.Subscription", func() {
-			payload1, err := filterer.Filter(rctContractFilter, mocks.MockIPLDPayload)
+			payload1, err := filterer.Filter(rctContractFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload1, ok := payload1.(eth.StreamResponse)
+			iplds1, ok := payload1.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload1.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload1.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload1.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload1.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload1.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload1.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload1.ReceiptsRlp)).To(Equal(1))
-			Expect(superNodePayload1.ReceiptsRlp[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds1.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds1.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds1.Uncles)).To(Equal(0))
+			Expect(len(iplds1.Transactions)).To(Equal(0))
+			Expect(len(iplds1.StorageNodes)).To(Equal(0))
+			Expect(len(iplds1.StateNodes)).To(Equal(0))
+			Expect(len(iplds1.Receipts)).To(Equal(1))
+			Expect(iplds1.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
-			payload2, err := filterer.Filter(rctTopicsFilter, mocks.MockIPLDPayload)
+			payload2, err := filterer.Filter(rctTopicsFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload2, ok := payload2.(eth.StreamResponse)
+			iplds2, ok := payload2.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload2.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload2.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload2.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload2.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload2.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload2.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload2.ReceiptsRlp)).To(Equal(1))
-			Expect(superNodePayload2.ReceiptsRlp[0]).To(Equal(expectedRctForStorageRLP1))
+			Expect(iplds2.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds2.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds2.Uncles)).To(Equal(0))
+			Expect(len(iplds2.Transactions)).To(Equal(0))
+			Expect(len(iplds2.StorageNodes)).To(Equal(0))
+			Expect(len(iplds2.StateNodes)).To(Equal(0))
+			Expect(len(iplds2.Receipts)).To(Equal(1))
+			Expect(iplds2.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct1IPLD.RawData(),
+				CID:  mocks.Rct1IPLD.Cid().String(),
+			}))
 
-			payload3, err := filterer.Filter(rctTopicsAndContractFilter, mocks.MockIPLDPayload)
+			payload3, err := filterer.Filter(rctTopicsAndContractFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload3, ok := payload3.(eth.StreamResponse)
+			iplds3, ok := payload3.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload3.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload3.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload3.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload3.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload3.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload3.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload3.ReceiptsRlp)).To(Equal(1))
-			Expect(superNodePayload3.ReceiptsRlp[0]).To(Equal(expectedRctForStorageRLP1))
+			Expect(iplds3.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds3.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds3.Uncles)).To(Equal(0))
+			Expect(len(iplds3.Transactions)).To(Equal(0))
+			Expect(len(iplds3.StorageNodes)).To(Equal(0))
+			Expect(len(iplds3.StateNodes)).To(Equal(0))
+			Expect(len(iplds3.Receipts)).To(Equal(1))
+			Expect(iplds3.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct1IPLD.RawData(),
+				CID:  mocks.Rct1IPLD.Cid().String(),
+			}))
 
-			payload4, err := filterer.Filter(rctContractsAndTopicFilter, mocks.MockIPLDPayload)
+			payload4, err := filterer.Filter(rctContractsAndTopicFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload4, ok := payload4.(eth.StreamResponse)
+			iplds4, ok := payload4.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload4.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload4.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload4.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload4.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload4.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload4.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload4.ReceiptsRlp)).To(Equal(1))
-			Expect(superNodePayload4.ReceiptsRlp[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds4.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds4.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds4.Uncles)).To(Equal(0))
+			Expect(len(iplds4.Transactions)).To(Equal(0))
+			Expect(len(iplds4.StorageNodes)).To(Equal(0))
+			Expect(len(iplds4.StateNodes)).To(Equal(0))
+			Expect(len(iplds4.Receipts)).To(Equal(1))
+			Expect(iplds4.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
-			payload5, err := filterer.Filter(rctsForAllCollectedTrxs, mocks.MockIPLDPayload)
+			payload5, err := filterer.Filter(rctsForAllCollectedTrxs, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload5, ok := payload5.(eth.StreamResponse)
+			iplds5, ok := payload5.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload5.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload5.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload5.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload5.TransactionsRlp)).To(Equal(2))
-			Expect(shared.ListContainsBytes(superNodePayload5.TransactionsRlp, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
-			Expect(shared.ListContainsBytes(superNodePayload5.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
-			Expect(len(superNodePayload5.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload5.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload5.ReceiptsRlp)).To(Equal(2))
-			Expect(shared.ListContainsBytes(superNodePayload5.ReceiptsRlp, expectedRctForStorageRLP1)).To(BeTrue())
-			Expect(shared.ListContainsBytes(superNodePayload5.ReceiptsRlp, expectedRctForStorageRLP2)).To(BeTrue())
+			Expect(iplds5.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds5.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds5.Uncles)).To(Equal(0))
+			Expect(len(iplds5.Transactions)).To(Equal(2))
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(len(iplds5.StorageNodes)).To(Equal(0))
+			Expect(len(iplds5.StateNodes)).To(Equal(0))
+			Expect(len(iplds5.Receipts)).To(Equal(2))
+			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
 
-			payload6, err := filterer.Filter(rctsForSelectCollectedTrxs, mocks.MockIPLDPayload)
+			payload6, err := filterer.Filter(rctsForSelectCollectedTrxs, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload6, ok := payload6.(eth.StreamResponse)
+			iplds6, ok := payload6.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload6.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload6.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload6.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload6.TransactionsRlp)).To(Equal(1))
-			Expect(shared.ListContainsBytes(superNodePayload5.TransactionsRlp, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
-			Expect(len(superNodePayload6.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload6.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload6.ReceiptsRlp)).To(Equal(1))
-			Expect(superNodePayload4.ReceiptsRlp[0]).To(Equal(expectedRctForStorageRLP2))
+			Expect(iplds6.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds6.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds6.Uncles)).To(Equal(0))
+			Expect(len(iplds6.Transactions)).To(Equal(1))
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(len(iplds6.StorageNodes)).To(Equal(0))
+			Expect(len(iplds6.StateNodes)).To(Equal(0))
+			Expect(len(iplds6.Receipts)).To(Equal(1))
+			Expect(iplds4.Receipts[0]).To(Equal(ipfs.BlockModel{
+				Data: mocks.Rct2IPLD.RawData(),
+				CID:  mocks.Rct2IPLD.Cid().String(),
+			}))
 
-			payload7, err := filterer.Filter(stateFilter, mocks.MockIPLDPayload)
+			payload7, err := filterer.Filter(stateFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload7, ok := payload7.(eth.StreamResponse)
+			iplds7, ok := payload7.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload7.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload7.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload7.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload7.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload7.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload7.ReceiptsRlp)).To(Equal(0))
-			Expect(len(superNodePayload7.StateNodesRlp)).To(Equal(1))
-			Expect(superNodePayload7.StateNodesRlp[mocks.ContractLeafKey]).To(Equal(mocks.ValueBytes))
+			Expect(iplds7.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds7.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds7.Uncles)).To(Equal(0))
+			Expect(len(iplds7.Transactions)).To(Equal(0))
+			Expect(len(iplds7.StorageNodes)).To(Equal(0))
+			Expect(len(iplds7.Receipts)).To(Equal(0))
+			Expect(len(iplds7.StateNodes)).To(Equal(1))
+			Expect(iplds7.StateNodes[0].StateLeafKey.Bytes()).To(Equal(mocks.AccountLeafKey))
+			Expect(iplds7.StateNodes[0].IPLD).To(Equal(ipfs.BlockModel{
+				Data: mocks.State2IPLD.RawData(),
+				CID:  mocks.State2IPLD.Cid().String(),
+			}))
 
-			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockIPLDPayload)
+			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
-			superNodePayload8, ok := payload8.(eth.StreamResponse)
+			iplds8, ok := payload8.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
-			Expect(superNodePayload8.BlockNumber.Int64()).To(Equal(mocks.MockSeedNodePayload.BlockNumber.Int64()))
-			Expect(len(superNodePayload8.HeadersRlp)).To(Equal(0))
-			Expect(len(superNodePayload8.UnclesRlp)).To(Equal(0))
-			Expect(len(superNodePayload8.TransactionsRlp)).To(Equal(0))
-			Expect(len(superNodePayload8.StorageNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload8.StateNodesRlp)).To(Equal(0))
-			Expect(len(superNodePayload8.ReceiptsRlp)).To(Equal(0))
+			Expect(iplds8.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
+			Expect(iplds8.Header).To(Equal(ipfs.BlockModel{}))
+			Expect(len(iplds8.Uncles)).To(Equal(0))
+			Expect(len(iplds8.Transactions)).To(Equal(0))
+			Expect(len(iplds8.StorageNodes)).To(Equal(0))
+			Expect(len(iplds8.StateNodes)).To(Equal(0))
+			Expect(len(iplds8.Receipts)).To(Equal(0))
 		})
 	})
 })
-
-func getReceiptForStorageRLP(receipts types.Receipts, i int) []byte {
-	receiptForStorage := (*types.ReceiptForStorage)(receipts[i])
-	receiptBuffer := new(bytes.Buffer)
-	err := receiptForStorage.EncodeRLP(receiptBuffer)
-	Expect(err).ToNot(HaveOccurred())
-	return receiptBuffer.Bytes()
-}

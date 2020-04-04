@@ -17,7 +17,6 @@
 package eth
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/spf13/viper"
@@ -53,7 +52,8 @@ type TxFilter struct {
 
 // ReceiptFilter contains filter settings for receipts
 type ReceiptFilter struct {
-	Off       bool
+	Off bool
+	// TODO: change this so that we filter for receipts first and we always return the corresponding transaction
 	MatchTxs  bool // turn on to retrieve receipts that pair with retrieved transactions
 	Contracts []string
 	Topics    [][]string
@@ -70,7 +70,7 @@ type StateFilter struct {
 type StorageFilter struct {
 	Off               bool
 	Addresses         []string
-	StorageKeys       []string
+	StorageKeys       []string // need to be the hashs key themselves not slot position
 	IntermediateNodes bool
 }
 
@@ -96,13 +96,12 @@ func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
 		Src: viper.GetStringSlice("superNode.ethSubscription.txFilter.src"),
 		Dst: viper.GetStringSlice("superNode.ethSubscription.txFilter.dst"),
 	}
-	// Below defaults to false and one slice of length 0
-	// Which means we get all receipts by default
-	t := viper.Get("superNode.ethSubscription.receiptFilter.topics")
-	topics, ok := t.([][]string)
-	if !ok {
-		return nil, errors.New("superNode.ethSubscription.receiptFilter.topics needs to be a slice of string slices")
-	}
+	// By default all of the topic slices will be empty => match on any/all topics
+	topics := make([][]string, 4)
+	topics[0] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic0s")
+	topics[1] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic1s")
+	topics[2] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic2s")
+	topics[3] = viper.GetStringSlice("superNode.ethSubscription.receiptFilter.topic3s")
 	sc.ReceiptFilter = ReceiptFilter{
 		Off:       viper.GetBool("superNode.ethSubscription.receiptFilter.off"),
 		MatchTxs:  viper.GetBool("superNode.ethSubscription.receiptFilter.matchTxs"),

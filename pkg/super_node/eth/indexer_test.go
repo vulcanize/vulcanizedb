@@ -17,6 +17,7 @@
 package eth_test
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -45,18 +46,22 @@ var _ = Describe("Indexer", func() {
 		It("Indexes CIDs and related metadata into vulcanizedb", func() {
 			err = repo.Index(mocks.MockCIDPayload)
 			Expect(err).ToNot(HaveOccurred())
-			pgStr := `SELECT cid, td FROM eth.header_cids
+			pgStr := `SELECT cid, td, reward, id
+				FROM eth.header_cids
 				WHERE block_number = $1`
 			// check header was properly indexed
 			type res struct {
-				CID string
-				TD  string
+				CID    string
+				TD     string
+				Reward string
+				ID     int
 			}
 			headers := new(res)
 			err = db.QueryRowx(pgStr, 1).StructScan(headers)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(headers.CID).To(Equal("mockHeaderCID"))
-			Expect(headers.TD).To(Equal("1337"))
+			Expect(headers.CID).To(Equal(mocks.HeaderCID.String()))
+			Expect(headers.TD).To(Equal(mocks.MockBlock.Difficulty().String()))
+			Expect(headers.Reward).To(Equal("5000000000000000000"))
 			// check trxs were properly indexed
 			trxs := make([]string, 0)
 			pgStr = `SELECT transaction_cids.cid FROM eth.transaction_cids INNER JOIN eth.header_cids ON (transaction_cids.header_id = header_cids.id)
@@ -64,8 +69,8 @@ var _ = Describe("Indexer", func() {
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(trxs)).To(Equal(2))
-			Expect(shared.ListContainsString(trxs, "mockTrxCID1")).To(BeTrue())
-			Expect(shared.ListContainsString(trxs, "mockTrxCID2")).To(BeTrue())
+			Expect(shared.ListContainsString(trxs, mocks.Trx1CID.String())).To(BeTrue())
+			Expect(shared.ListContainsString(trxs, mocks.Trx2CID.String())).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
 			pgStr = `SELECT receipt_cids.cid FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
@@ -75,28 +80,32 @@ var _ = Describe("Indexer", func() {
 			err = db.Select(&rcts, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(rcts)).To(Equal(2))
-			Expect(shared.ListContainsString(rcts, "mockRctCID1")).To(BeTrue())
-			Expect(shared.ListContainsString(rcts, "mockRctCID2")).To(BeTrue())
+			Expect(shared.ListContainsString(rcts, mocks.Rct1CID.String())).To(BeTrue())
+			Expect(shared.ListContainsString(rcts, mocks.Rct2CID.String())).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]eth.StateNodeModel, 0)
-			pgStr = `SELECT state_cids.cid, state_cids.state_key, state_cids.leaf FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
+			pgStr = `SELECT state_cids.cid, state_cids.state_leaf_key, state_cids.node_type, state_cids.state_path, state_cids.header_id
+				FROM eth.state_cids INNER JOIN eth.header_cids ON (state_cids.header_id = header_cids.id)
 				WHERE header_cids.block_number = $1`
 			err = db.Select(&stateNodes, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(stateNodes)).To(Equal(2))
 			for _, stateNode := range stateNodes {
-				if stateNode.CID == "mockStateCID1" {
-					Expect(stateNode.Leaf).To(Equal(true))
-					Expect(stateNode.StateKey).To(Equal(mocks.ContractLeafKey.Hex()))
+				if stateNode.CID == mocks.State1CID.String() {
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.ContractLeafKey).Hex()))
+					Expect(stateNode.Path).To(Equal([]byte{'\x06'}))
 				}
-				if stateNode.CID == "mockStateCID2" {
-					Expect(stateNode.Leaf).To(Equal(true))
-					Expect(stateNode.StateKey).To(Equal(mocks.AnotherContractLeafKey.Hex()))
+				if stateNode.CID == mocks.State2CID.String() {
+					Expect(stateNode.NodeType).To(Equal(2))
+					Expect(stateNode.StateKey).To(Equal(common.BytesToHash(mocks.AccountLeafKey).Hex()))
+					Expect(stateNode.Path).To(Equal([]byte{'\x0c'}))
 				}
 			}
 			// check that storage nodes were properly indexed
 			storageNodes := make([]eth.StorageNodeWithStateKeyModel, 0)
-			pgStr = `SELECT storage_cids.cid, state_cids.state_key, storage_cids.storage_key, storage_cids.leaf FROM eth.storage_cids, eth.state_cids, eth.header_cids
+			pgStr = `SELECT storage_cids.cid, state_cids.state_leaf_key, storage_cids.storage_leaf_key, storage_cids.node_type, storage_cids.storage_path 
+				FROM eth.storage_cids, eth.state_cids, eth.header_cids
 				WHERE storage_cids.state_id = state_cids.id 
 				AND state_cids.header_id = header_cids.id
 				AND header_cids.block_number = $1`
@@ -104,10 +113,11 @@ var _ = Describe("Indexer", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(storageNodes)).To(Equal(1))
 			Expect(storageNodes[0]).To(Equal(eth.StorageNodeWithStateKeyModel{
-				CID:        "mockStorageCID",
-				Leaf:       true,
-				StorageKey: "0x0000000000000000000000000000000000000000000000000000000000000001",
-				StateKey:   mocks.ContractLeafKey.Hex(),
+				CID:        mocks.StorageCID.String(),
+				NodeType:   2,
+				StorageKey: common.BytesToHash(mocks.StorageLeafKey).Hex(),
+				StateKey:   common.BytesToHash(mocks.ContractLeafKey).Hex(),
+				Path:       []byte{},
 			}))
 		})
 	})

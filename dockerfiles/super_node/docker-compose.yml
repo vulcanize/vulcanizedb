@@ -1,0 +1,91 @@
+version: '3.2'
+
+services:
+  db:
+    restart: always
+    image: postgres:10.12-alpine
+    environment:
+      POSTGRES_USER: "vdbm"
+      POSTGRES_DB: "vulcanize_public"
+      POSTGRES_PASSWORD: "password"
+    volumes:
+     - vulcanizedb_db_data:/var/lib/postgresql/data
+    expose:
+     - "5432"
+    ports:
+     - "127.0.0.1:8079:5432"
+
+  btc:
+    depends_on:
+      - db
+    build:
+      context: ./../../
+      cache_from:
+       - alpine:latest
+       - golang:1.12.4
+      dockerfile: ./dockerfiles/super_node/Dockerfile
+      args:
+        USER: "vdbm"
+        CONFIG_FILE: ./environments/superNodeBTC.toml
+    environment:
+      VDB_COMMAND: "superNode"
+      IPFS_INIT: "true"
+      IPFS_PATH: "/root/.btc/.ipfs"
+      DATABASE_NAME: "vulcanize_public"
+      DATABASE_HOSTNAME: "db"
+      DATABASE_PORT: 5432
+      DATABASE_USER: "vdbm"
+      DATABASE_PASSWORD: "password"
+    ports:
+     - "127.0.0.1:8082:8082"
+     - "127.0.0.1:8083:8083"
+
+  eth:
+    depends_on:
+      - db
+    build:
+      context: ./../../
+      cache_from:
+       - alpine:latest
+       - golang:1.12.4
+      dockerfile: ./dockerfiles/super_node/Dockerfile
+      args:
+        USER: "vdbm"
+        CONFIG_FILE: ./environments/superNodeETH.toml
+    environment:
+      VDB_COMMAND: "superNode"
+      IPFS_INIT: "true"
+      IPFS_PATH: "/root/.eth/.ipfs"
+      DATABASE_NAME: "vulcanize_public"
+      DATABASE_HOSTNAME: "db"
+      DATABASE_PORT: 5432
+      DATABASE_USER: "vdbm"
+      DATABASE_PASSWORD: "password"
+    ports:
+     - "127.0.0.1:8080:8080"
+     - "127.0.0.1:8081:8081"
+
+  graphql:
+    restart: always
+    depends_on:
+      - db
+    build:
+      context: ./../../
+      cache_from:
+      - node:alpine
+      dockerfile: ./dockerfiles/postgraphile/Dockerfile
+    expose:
+      - "5000"
+    ports:
+      - "127.0.0.1:5000:5000"
+    command: ["--plugins", "@graphile/pg-pubsub",
+              "--subscriptions",
+              "--simple-subscriptions",
+              "--connection", "postgres://vdbm:password@db:5432/vulcanize_public",
+              "--port", "5000",
+              "-n", "0.0.0.0",
+              "--schema", "public,btc,eth",
+              "--append-plugins", "postgraphile-plugin-connection-filter"]
+
+volumes:
+  vulcanizedb_db_data:

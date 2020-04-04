@@ -21,14 +21,13 @@ import (
 
 	"github.com/ipfs/go-cid"
 	node "github.com/ipfs/go-ipld-format"
-	mh "github.com/multiformats/go-multihash"
+	"github.com/multiformats/go-multihash"
 )
 
 // EthStorageTrie (eth-storage-trie, codec 0x98), represents
 // a node from the storage trie in ethereum.
 type EthStorageTrie struct {
-	cid     cid.Cid
-	rawdata []byte
+	*TrieNode
 }
 
 // Static (compile time) check that EthStorageTrie satisfies the node.Node interface.
@@ -38,16 +37,39 @@ var _ node.Node = (*EthStorageTrie)(nil)
   INPUT
 */
 
-// FromStorageTrieRLP takes the RLP bytes of an ethereum
+// FromStorageTrieRLP takes the RLP representation of an ethereum
 // storage trie node to return it as an IPLD node for further processing.
-func FromStorageTrieRLP(storageNodeRLP []byte) (*EthStorageTrie, error) {
-	c, err := rawdataToCid(MEthStorageTrie, storageNodeRLP, mh.KECCAK_256)
+func FromStorageTrieRLP(raw []byte) (*EthStorageTrie, error) {
+	c, err := RawdataToCid(MEthStorageTrie, raw, multihash.KECCAK_256)
 	if err != nil {
 		return nil, err
 	}
-	return &EthStorageTrie{
-		cid:     c,
-		rawdata: storageNodeRLP,
+
+	// Let's run the whole mile and process the nodeKind and
+	// its elements, in case somebody would need this function
+	// to parse an RLP element from the filesystem
+	return DecodeEthStorageTrie(c, raw)
+}
+
+/*
+  OUTPUT
+*/
+
+// DecodeEthStorageTrie returns an EthStorageTrie object from its cid and rawdata.
+func DecodeEthStorageTrie(c cid.Cid, b []byte) (*EthStorageTrie, error) {
+	tn, err := decodeTrieNode(c, b, decodeEthStorageTrieLeaf)
+	if err != nil {
+		return nil, err
+	}
+	return &EthStorageTrie{TrieNode: tn}, nil
+}
+
+// decodeEthStorageTrieLeaf parses a eth-tx-trie leaf
+// from decoded RLP elements
+func decodeEthStorageTrieLeaf(i []interface{}) ([]interface{}, error) {
+	return []interface{}{
+		i[0].([]byte),
+		i[1].([]byte),
 	}, nil
 }
 
@@ -68,35 +90,6 @@ func (st *EthStorageTrie) Cid() cid.Cid {
 // String is a helper for output
 func (st *EthStorageTrie) String() string {
 	return fmt.Sprintf("<EthereumStorageTrie %s>", st.cid)
-}
-
-// Copy will go away. It is here to comply with the Node interface.
-func (*EthStorageTrie) Copy() node.Node {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) Links() []*node.Link {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) Resolve(path []string) (interface{}, []string, error) {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) ResolveLink(path []string) (*node.Link, []string, error) {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) Size() (uint64, error) {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) Stat() (*node.NodeStat, error) {
-	panic("implement me")
-}
-
-func (*EthStorageTrie) Tree(path string, depth int) []string {
-	panic("implement me")
 }
 
 // Loggable returns in a map the type of IPLD Link.

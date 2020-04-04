@@ -7,6 +7,7 @@ CREATE TABLE eth.header_cids (
   cid                   TEXT NOT NULL,
   td                    NUMERIC NOT NULL,
   node_id               INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+  reward                NUMERIC NOT NULL,
   UNIQUE (block_number, block_hash)
 );
 

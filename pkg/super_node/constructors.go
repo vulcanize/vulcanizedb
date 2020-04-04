@@ -148,18 +148,6 @@ func NewIPLDPublisher(chain shared.ChainType, ipfsPath string) (shared.IPLDPubli
 	}
 }
 
-// NewIPLDResolver constructs an IPLDResolver for the provided chain type
-func NewIPLDResolver(chain shared.ChainType) (shared.IPLDResolver, error) {
-	switch chain {
-	case shared.Ethereum:
-		return eth.NewIPLDResolver(), nil
-	case shared.Bitcoin:
-		return btc.NewIPLDResolver(), nil
-	default:
-		return nil, fmt.Errorf("invalid chain %s for resolver constructor", chain.String())
-	}
-}
-
 // NewPublicAPI constructs a PublicAPI for the provided chain type
 func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc.API, error) {
 	switch chain {
@@ -176,5 +164,17 @@ func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc
 		}, nil
 	default:
 		return rpc.API{}, fmt.Errorf("invalid chain %s for public api constructor", chain.String())
+	}
+}
+
+// NewCleaner constructs a Cleaner for the provided chain type
+func NewCleaner(chain shared.ChainType, db *postgres.DB) (shared.Cleaner, error) {
+	switch chain {
+	case shared.Ethereum:
+		return eth.NewCleaner(db), nil
+	case shared.Bitcoin:
+		return btc.NewCleaner(db), nil
+	default:
+		return nil, fmt.Errorf("invalid chain %s for cleaner constructor", chain.String())
 	}
 }

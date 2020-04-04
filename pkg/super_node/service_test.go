@@ -51,7 +51,7 @@ var _ = Describe("Service", func() {
 				ReturnErr: nil,
 			}
 			mockConverter := &mocks.PayloadConverter{
-				ReturnIPLDPayload: mocks.MockIPLDPayload,
+				ReturnIPLDPayload: mocks.MockConvertedPayload,
 				ReturnErr:         nil,
 			}
 			processor := &super_node.Service{
@@ -63,7 +63,7 @@ var _ = Describe("Service", func() {
 				QuitChan:       quitChan,
 				WorkerPoolSize: 1,
 			}
-			err := processor.SyncAndPublish(wg, nil)
+			err := processor.ProcessData(wg, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			quitChan <- true
@@ -71,7 +71,7 @@ var _ = Describe("Service", func() {
 			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
 			Expect(len(mockCidIndexer.PassedCIDPayload)).To(Equal(1))
 			Expect(mockCidIndexer.PassedCIDPayload[0]).To(Equal(mocks.MockCIDPayload))
-			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockIPLDPayload))
+			Expect(mockPublisher.PassedIPLDPayload).To(Equal(mocks.MockConvertedPayload))
 			Expect(mockStreamer.PassedPayloadChan).To(Equal(payloadChan))
 		})
 	})

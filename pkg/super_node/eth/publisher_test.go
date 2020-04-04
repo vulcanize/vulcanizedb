@@ -27,48 +27,63 @@ import (
 )
 
 var (
-	mockHeaderDagPutter  *mocks2.DagPutter
-	mockTrxDagPutter     *mocks2.DagPutter
-	mockRctDagPutter     *mocks2.DagPutter
+	mockHeaderDagPutter  *mocks2.MappedDagPutter
+	mockTrxDagPutter     *mocks2.MappedDagPutter
+	mockTrxTrieDagPutter *mocks2.DagPutter
+	mockRctDagPutter     *mocks2.MappedDagPutter
+	mockRctTrieDagPutter *mocks2.DagPutter
 	mockStateDagPutter   *mocks2.MappedDagPutter
-	mockStorageDagPutter *mocks2.DagPutter
+	mockStorageDagPutter *mocks2.MappedDagPutter
 )
 
 var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
-		mockHeaderDagPutter = new(mocks2.DagPutter)
-		mockTrxDagPutter = new(mocks2.DagPutter)
-		mockRctDagPutter = new(mocks2.DagPutter)
+		mockHeaderDagPutter = new(mocks2.MappedDagPutter)
+		mockTrxDagPutter = new(mocks2.MappedDagPutter)
+		mockTrxTrieDagPutter = new(mocks2.DagPutter)
+		mockRctDagPutter = new(mocks2.MappedDagPutter)
+		mockRctTrieDagPutter = new(mocks2.DagPutter)
 		mockStateDagPutter = new(mocks2.MappedDagPutter)
-		mockStorageDagPutter = new(mocks2.DagPutter)
+		mockStorageDagPutter = new(mocks2.MappedDagPutter)
 	})
 
 	Describe("Publish", func() {
 		It("Publishes the passed IPLDPayload objects to IPFS and returns a CIDPayload for indexing", func() {
-			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
-			mockTrxDagPutter.CIDsToReturn = []string{"mockTrxCID1", "mockTrxCID2"}
-			mockRctDagPutter.CIDsToReturn = []string{"mockRctCID1", "mockRctCID2"}
-			val1 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[0].Value)
-			val2 := common.BytesToHash(mocks.MockIPLDPayload.StateNodes[1].Value)
-			mockStateDagPutter.CIDsToReturn = map[common.Hash][]string{
-				val1: {"mockStateCID1"},
-				val2: {"mockStateCID2"},
+			mockHeaderDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(mocks.HeaderIPLD.RawData()): mocks.HeaderCID.String(),
 			}
-			mockStorageDagPutter.CIDsToReturn = []string{"mockStorageCID"}
+			mockTrxDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(mocks.Trx1IPLD.RawData()): mocks.Trx1CID.String(),
+				common.BytesToHash(mocks.Trx2IPLD.RawData()): mocks.Trx2CID.String(),
+			}
+			mockRctDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(mocks.Rct1IPLD.RawData()): mocks.Rct1CID.String(),
+				common.BytesToHash(mocks.Rct2IPLD.RawData()): mocks.Rct2CID.String(),
+			}
+			mockStateDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(mocks.State1IPLD.RawData()): mocks.State1CID.String(),
+				common.BytesToHash(mocks.State2IPLD.RawData()): mocks.State2CID.String(),
+			}
+			mockStorageDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(mocks.StorageIPLD.RawData()): mocks.StorageCID.String(),
+			}
 			publisher := eth.IPLDPublisher{
-				HeaderPutter:      mockHeaderDagPutter,
-				TransactionPutter: mockTrxDagPutter,
-				ReceiptPutter:     mockRctDagPutter,
-				StatePutter:       mockStateDagPutter,
-				StoragePutter:     mockStorageDagPutter,
+				HeaderPutter:          mockHeaderDagPutter,
+				TransactionPutter:     mockTrxDagPutter,
+				TransactionTriePutter: mockTrxTrieDagPutter,
+				ReceiptPutter:         mockRctDagPutter,
+				ReceiptTriePutter:     mockRctTrieDagPutter,
+				StatePutter:           mockStateDagPutter,
+				StoragePutter:         mockStorageDagPutter,
 			}
-			payload, err := publisher.Publish(mocks.MockIPLDPayload)
+			payload, err := publisher.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			cidPayload, ok := payload.(*eth.CIDPayload)
 			Expect(ok).To(BeTrue())
-			Expect(cidPayload.HeaderCID.TotalDifficulty).To(Equal(mocks.MockIPLDPayload.TotalDifficulty.String()))
+			Expect(cidPayload.HeaderCID.TotalDifficulty).To(Equal(mocks.MockConvertedPayload.TotalDifficulty.String()))
 			Expect(cidPayload.HeaderCID.BlockNumber).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockNumber))
 			Expect(cidPayload.HeaderCID.BlockHash).To(Equal(mocks.MockCIDPayload.HeaderCID.BlockHash))
+			Expect(cidPayload.HeaderCID.Reward).To(Equal(mocks.MockCIDPayload.HeaderCID.Reward))
 			Expect(cidPayload.UncleCIDs).To(Equal(mocks.MockCIDPayload.UncleCIDs))
 			Expect(cidPayload.HeaderCID).To(Equal(mocks.MockCIDPayload.HeaderCID))
 			Expect(len(cidPayload.TransactionCIDs)).To(Equal(2))

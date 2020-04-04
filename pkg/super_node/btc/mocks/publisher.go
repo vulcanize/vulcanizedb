@@ -26,16 +26,16 @@ import (
 
 // IPLDPublisher is the underlying struct for the Publisher interface
 type IPLDPublisher struct {
-	PassedIPLDPayload btc.IPLDPayload
+	PassedIPLDPayload btc.ConvertedPayload
 	ReturnCIDPayload  *btc.CIDPayload
 	ReturnErr         error
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
-	ipldPayload, ok := payload.(btc.IPLDPayload)
+func (pub *IPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(btc.ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("publish expected payload type %T got %T", &btc.IPLDPayload{}, payload)
+		return nil, fmt.Errorf("publish expected payload type %T got %T", &btc.ConvertedPayload{}, payload)
 	}
 	pub.PassedIPLDPayload = ipldPayload
 	return pub.ReturnCIDPayload, pub.ReturnErr
@@ -43,17 +43,17 @@ func (pub *IPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForI
 
 // IterativeIPLDPublisher is the underlying struct for the Publisher interface; used in testing
 type IterativeIPLDPublisher struct {
-	PassedIPLDPayload []btc.IPLDPayload
+	PassedIPLDPayload []btc.ConvertedPayload
 	ReturnCIDPayload  []*btc.CIDPayload
 	ReturnErr         error
 	iteration         int
 }
 
 // Publish publishes an IPLDPayload to IPFS and returns the corresponding CIDPayload
-func (pub *IterativeIPLDPublisher) Publish(payload shared.StreamedIPLDs) (shared.CIDsForIndexing, error) {
-	ipldPayload, ok := payload.(btc.IPLDPayload)
+func (pub *IterativeIPLDPublisher) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
+	ipldPayload, ok := payload.(btc.ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("publish expected payload type %T got %T", &btc.IPLDPayload{}, payload)
+		return nil, fmt.Errorf("publish expected payload type %T got %T", &btc.ConvertedPayload{}, payload)
 	}
 	pub.PassedIPLDPayload = append(pub.PassedIPLDPayload, ipldPayload)
 	if len(pub.ReturnCIDPayload) < pub.iteration+1 {

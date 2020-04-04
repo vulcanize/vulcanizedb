@@ -22,15 +22,9 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
-// ISuperNodeStreamer is the interface for streaming SuperNodePayloads from a vulcanizeDB super node
-type ISuperNodeStreamer interface {
-	Stream(payloadChan chan super_node.SubscriptionPayload, params shared.SubscriptionSettings) (*rpc.ClientSubscription, error)
-}
-
-// SuperNodeStreamer is the underlying struct for the ISuperNodeStreamer interface
+// SuperNodeStreamer is the underlying struct for the shared.SuperNodeStreamer interface
 type SuperNodeStreamer struct {
 	Client core.RPCClient
 }
@@ -43,6 +37,6 @@ func NewSuperNodeStreamer(client core.RPCClient) *SuperNodeStreamer {
 }
 
 // Stream is the main loop for subscribing to data from a vulcanizedb super node
-func (sds *SuperNodeStreamer) Stream(payloadChan chan super_node.SubscriptionPayload, params shared.SubscriptionSettings) (*rpc.ClientSubscription, error) {
-	return sds.Client.Subscribe("vdb", payloadChan, "stream", params)
+func (sds *SuperNodeStreamer) Stream(payloadChan chan super_node.SubscriptionPayload, rlpParams []byte) (*rpc.ClientSubscription, error) {
+	return sds.Client.Subscribe("vdb", payloadChan, "stream", rlpParams)
 }

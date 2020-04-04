@@ -17,6 +17,9 @@
 package btc_test
 
 import (
+	"bytes"
+
+	"github.com/ethereum/go-ethereum/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -26,25 +29,47 @@ import (
 )
 
 var (
-	mockHeaderDagPutter *mocks2.DagPutter
-	mockTrxDagPutter    *mocks2.DagPutter
+	mockHeaderDagPutter  *mocks2.MappedDagPutter
+	mockTrxDagPutter     *mocks2.MappedDagPutter
+	mockTrxTrieDagPutter *mocks2.DagPutter
 )
 
 var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
-		mockHeaderDagPutter = new(mocks2.DagPutter)
-		mockTrxDagPutter = new(mocks2.DagPutter)
+		mockHeaderDagPutter = new(mocks2.MappedDagPutter)
+		mockTrxDagPutter = new(mocks2.MappedDagPutter)
+		mockTrxTrieDagPutter = new(mocks2.DagPutter)
 	})
 
 	Describe("Publish", func() {
 		It("Publishes the passed IPLDPayload objects to IPFS and returns a CIDPayload for indexing", func() {
-			mockHeaderDagPutter.CIDsToReturn = []string{"mockHeaderCID"}
-			mockTrxDagPutter.CIDsToReturn = []string{"mockTrxCID1", "mockTrxCID2", "mockTrxCID3"}
-			publisher := btc.IPLDPublisher{
-				HeaderPutter:      mockHeaderDagPutter,
-				TransactionPutter: mockTrxDagPutter,
+			by := new(bytes.Buffer)
+			err := mocks.MockConvertedPayload.BlockPayload.Header.Serialize(by)
+			Expect(err).ToNot(HaveOccurred())
+			headerBytes := by.Bytes()
+			err = mocks.MockTransactions[0].MsgTx().Serialize(by)
+			Expect(err).ToNot(HaveOccurred())
+			tx1Bytes := by.Bytes()
+			err = mocks.MockTransactions[1].MsgTx().Serialize(by)
+			Expect(err).ToNot(HaveOccurred())
+			tx2Bytes := by.Bytes()
+			err = mocks.MockTransactions[2].MsgTx().Serialize(by)
+			Expect(err).ToNot(HaveOccurred())
+			tx3Bytes := by.Bytes()
+			mockHeaderDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(headerBytes): "mockHeaderCID",
 			}
-			payload, err := publisher.Publish(mocks.MockIPLDPayload)
+			mockTrxDagPutter.CIDsToReturn = map[common.Hash]string{
+				common.BytesToHash(tx1Bytes): "mockTrxCID1",
+				common.BytesToHash(tx2Bytes): "mockTrxCID2",
+				common.BytesToHash(tx3Bytes): "mockTrxCID3",
+			}
+			publisher := btc.IPLDPublisher{
+				HeaderPutter:          mockHeaderDagPutter,
+				TransactionPutter:     mockTrxDagPutter,
+				TransactionTriePutter: mockTrxTrieDagPutter,
+			}
+			payload, err := publisher.Publish(mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			cidPayload, ok := payload.(*btc.CIDPayload)
 			Expect(ok).To(BeTrue())

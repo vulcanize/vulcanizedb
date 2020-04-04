@@ -1,0 +1,7 @@
+CREATE OR REPLACE FUNCTION transfer_trigger() RETURNS trigger AS
+$BODY$
+BEGIN
+  SELECT *
+
+END;
+$BODY$

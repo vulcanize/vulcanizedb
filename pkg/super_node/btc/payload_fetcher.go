@@ -55,9 +55,9 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChain
 			return nil, err
 		}
 		blockPayloads[i] = BlockPayload{
-			Height: int64(height),
-			Header: &block.Header,
-			Txs:    msgTxsToUtilTxs(block.Transactions),
+			BlockHeight: int64(height),
+			Header:      &block.Header,
+			Txs:         msgTxsToUtilTxs(block.Transactions),
 		}
 	}
 	return blockPayloads, nil

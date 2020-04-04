@@ -229,9 +229,9 @@ var (
 		btcutil.NewTx(MockBlock.Transactions[2]),
 	}
 	MockBlockPayload = btc.BlockPayload{
-		Header: &MockBlock.Header,
-		Txs:    MockTransactions,
-		Height: MockBlockHeight,
+		Header:      &MockBlock.Header,
+		Txs:         MockTransactions,
+		BlockHeight: MockBlockHeight,
 	}
 	sClass1, addresses1, numOfSigs1, _ = txscript.ExtractPkScriptAddrs([]byte{
 		0x41, // OP_DATA_65
@@ -677,7 +677,7 @@ var (
 		Timestamp:   MockBlock.Header.Timestamp.UnixNano(),
 		Bits:        MockBlock.Header.Bits,
 	}
-	MockIPLDPayload = btc.IPLDPayload{
+	MockConvertedPayload = btc.ConvertedPayload{
 		BlockPayload: MockBlockPayload,
 		TxMetaData:   MockTxsMetaData,
 	}

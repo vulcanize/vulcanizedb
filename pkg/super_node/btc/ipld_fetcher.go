@@ -21,14 +21,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var (
@@ -52,16 +51,16 @@ func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
 }
 
 // Fetch is the exported method for fetching and returning all the IPLDS specified in the CIDWrapper
-func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.FetchedIPLDs, error) {
+func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error) {
 	cidWrapper, ok := cids.(*CIDWrapper)
 	if !ok {
 		return nil, fmt.Errorf("btc fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
 	}
 	log.Debug("fetching iplds")
-	iplds := new(IPLDWrapper)
+	iplds := IPLDs{}
 	iplds.BlockNumber = cidWrapper.BlockNumber
 	var err error
-	iplds.Headers, err = f.FetchHeaders(cidWrapper.Headers)
+	iplds.Header, err = f.FetchHeader(cidWrapper.Header)
 	if err != nil {
 		return nil, err
 	}
@@ -73,43 +72,48 @@ func (f *IPLDFetcher) Fetch(cids shared.CIDsForFetching) (shared.FetchedIPLDs, e
 }
 
 // FetchHeaders fetches headers
-// It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchHeaders(cids []HeaderModel) ([]blocks.Block, error) {
-	log.Debug("fetching header iplds")
-	headerCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
-		dc, err := cid.Decode(c.CID)
-		if err != nil {
-			return nil, err
-		}
-		headerCids = append(headerCids, dc)
+// It uses the f.fetch method
+func (f *IPLDFetcher) FetchHeader(c HeaderModel) (ipfs.BlockModel, error) {
+	log.Debug("fetching header ipld")
+	dc, err := cid.Decode(c.CID)
+	if err != nil {
+		return ipfs.BlockModel{}, err
 	}
-	headers := f.fetchBatch(headerCids)
-	if len(headers) != len(headerCids) {
-		log.Errorf("ipfs fetcher: number of header blocks returned (%d) does not match number expected (%d)", len(headers), len(headerCids))
-		return headers, errUnexpectedNumberOfIPLDs
+	header, err := f.fetch(dc)
+	if err != nil {
+		return ipfs.BlockModel{}, err
 	}
-	return headers, nil
+	return ipfs.BlockModel{
+		Data: header.RawData(),
+		CID:  header.Cid().String(),
+	}, nil
 }
 
 // FetchTrxs fetches transactions
 // It uses the f.fetchBatch method
-func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]blocks.Block, error) {
+func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching transaction iplds")
-	trxCids := make([]cid.Cid, 0, len(cids))
-	for _, c := range cids {
+	trxCids := make([]cid.Cid, len(cids))
+	for i, c := range cids {
 		dc, err := cid.Decode(c.CID)
 		if err != nil {
 			return nil, err
 		}
-		trxCids = append(trxCids, dc)
+		trxCids[i] = dc
 	}
 	trxs := f.fetchBatch(trxCids)
-	if len(trxs) != len(trxCids) {
-		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
-		return trxs, errUnexpectedNumberOfIPLDs
+	trxIPLDs := make([]ipfs.BlockModel, len(trxs))
+	for i, trx := range trxs {
+		trxIPLDs[i] = ipfs.BlockModel{
+			Data: trx.RawData(),
+			CID:  trx.Cid().String(),
+		}
 	}
-	return trxs, nil
+	if len(trxIPLDs) != len(trxCids) {
+		log.Errorf("ipfs fetcher: number of transaction blocks returned (%d) does not match number expected (%d)", len(trxs), len(trxCids))
+		return trxIPLDs, errUnexpectedNumberOfIPLDs
+	}
+	return trxIPLDs, nil
 }
 
 // fetch is used to fetch a single cid

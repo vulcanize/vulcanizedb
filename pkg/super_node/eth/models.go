@@ -27,6 +27,13 @@ type HeaderModel struct {
 	CID             string `db:"cid"`
 	TotalDifficulty string `db:"td"`
 	NodeID          int64  `db:"node_id"`
+	Reward          string `db:"reward"`
+	StateRoot       string `db:"state_root"`
+	UncleRoot       string `db:"uncle_root"`
+	TxRoot          string `db:"tx_root"`
+	RctRoot         string `db:"receipt_root"`
+	Bloom           []byte `db:"bloom"`
+	Timestamp       uint64 `db:"timestamp"`
 }
 
 // UncleModel is the db model for eth.uncle_cids
@@ -36,6 +43,7 @@ type UncleModel struct {
 	BlockHash  string `db:"block_hash"`
 	ParentHash string `db:"parent_hash"`
 	CID        string `db:"cid"`
+	Reward     string `db:"reward"`
 }
 
 // TxModel is the db model for eth.transaction_cids
@@ -65,8 +73,9 @@ type ReceiptModel struct {
 type StateNodeModel struct {
 	ID       int64  `db:"id"`
 	HeaderID int64  `db:"header_id"`
-	StateKey string `db:"state_key"`
-	Leaf     bool   `db:"leaf"`
+	Path     []byte `db:"state_path"`
+	StateKey string `db:"state_leaf_key"`
+	NodeType int    `db:"node_type"`
 	CID      string `db:"cid"`
 }
 
@@ -74,8 +83,9 @@ type StateNodeModel struct {
 type StorageNodeModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
-	StorageKey string `db:"storage_key"`
-	Leaf       bool   `db:"leaf"`
+	Path       []byte `db:"storage_path"`
+	StorageKey string `db:"storage_leaf_key"`
+	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
 }
 
@@ -83,8 +93,19 @@ type StorageNodeModel struct {
 type StorageNodeWithStateKeyModel struct {
 	ID         int64  `db:"id"`
 	StateID    int64  `db:"state_id"`
-	StateKey   string `db:"state_key"`
-	StorageKey string `db:"storage_key"`
-	Leaf       bool   `db:"leaf"`
+	Path       []byte `db:"storage_path"`
+	StateKey   string `db:"state_leaf_key"`
+	StorageKey string `db:"storage_leaf_key"`
+	NodeType   int    `db:"node_type"`
 	CID        string `db:"cid"`
+}
+
+// StateAccountModel is a db model for an eth state account (decoded value of state leaf node)
+type StateAccountModel struct {
+	ID          int64  `db:"id"`
+	StateID     int64  `db:"state_id"`
+	Balance     string `db:"balance"`
+	Nonce       uint64 `db:"nonce"`
+	CodeHash    []byte `db:"code_hash"`
+	StorageRoot string `db:"storage_root"`
 }

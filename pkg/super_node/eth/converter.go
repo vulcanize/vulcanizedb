@@ -19,13 +19,14 @@ package eth
 import (
 	"fmt"
 
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // PayloadConverter satisfies the PayloadConverter interface for ethereum
@@ -42,7 +43,7 @@ func NewPayloadConverter(chainConfig *params.ChainConfig) *PayloadConverter {
 
 // Convert method is used to convert a eth statediff.Payload to an IPLDPayload
 // Satisfies the shared.PayloadConverter interface
-func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.StreamedIPLDs, error) {
+func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.ConvertedData, error) {
 	stateDiffPayload, ok := payload.(statediff.Payload)
 	if !ok {
 		return nil, fmt.Errorf("eth converter: expected payload type %T got %T", statediff.Payload{}, payload)
@@ -53,7 +54,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		return nil, err
 	}
 	trxLen := len(block.Transactions())
-	convertedPayload := IPLDPayload{
+	convertedPayload := ConvertedPayload{
 		TotalDifficulty: stateDiffPayload.TotalDifficulty,
 		Block:           block,
 		TxMetaData:      make([]TxModel, 0, trxLen),
@@ -71,8 +72,8 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 			return nil, err
 		}
 		txMeta := TxModel{
-			Dst:    handleNullAddr(trx.To()),
-			Src:    handleNullAddr(&from),
+			Dst:    shared.HandleNullAddr(trx.To()),
+			Src:    shared.HandleNullAddr(&from),
 			TxHash: trx.Hash().String(),
 			Index:  int64(i),
 		}
@@ -123,56 +124,55 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Streame
 		return nil, err
 	}
 	for _, createdAccount := range stateDiff.CreatedAccounts {
-		hashKey := common.BytesToHash(createdAccount.Key)
+		statePathHash := crypto.Keccak256Hash(createdAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: createdAccount.Value,
-			Leaf:  createdAccount.Leaf,
+			Path:    createdAccount.Path,
+			Value:   createdAccount.NodeValue,
+			Type:    createdAccount.NodeType,
+			LeafKey: common.BytesToHash(createdAccount.LeafKey),
 		})
 		for _, storageDiff := range createdAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}
 	for _, deletedAccount := range stateDiff.DeletedAccounts {
-		hashKey := common.BytesToHash(deletedAccount.Key)
+		statePathHash := crypto.Keccak256Hash(deletedAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: deletedAccount.Value,
-			Leaf:  deletedAccount.Leaf,
+			Path:    deletedAccount.Path,
+			Value:   deletedAccount.NodeValue,
+			Type:    deletedAccount.NodeType,
+			LeafKey: common.BytesToHash(deletedAccount.LeafKey),
 		})
 		for _, storageDiff := range deletedAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}
 	for _, updatedAccount := range stateDiff.UpdatedAccounts {
-		hashKey := common.BytesToHash(updatedAccount.Key)
+		statePathHash := crypto.Keccak256Hash(updatedAccount.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Key:   hashKey,
-			Value: updatedAccount.Value,
-			Leaf:  updatedAccount.Leaf,
+			Path:    updatedAccount.Path,
+			Value:   updatedAccount.NodeValue,
+			Type:    updatedAccount.NodeType,
+			LeafKey: common.BytesToHash(updatedAccount.LeafKey),
 		})
 		for _, storageDiff := range updatedAccount.Storage {
-			convertedPayload.StorageNodes[hashKey] = append(convertedPayload.StorageNodes[hashKey], TrieNode{
-				Key:   common.BytesToHash(storageDiff.Key),
-				Value: storageDiff.Value,
-				Leaf:  storageDiff.Leaf,
+			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
+				Path:    storageDiff.Path,
+				Value:   storageDiff.NodeValue,
+				Type:    storageDiff.NodeType,
+				LeafKey: common.BytesToHash(storageDiff.LeafKey),
 			})
 		}
 	}
 	return convertedPayload, nil
-}
-
-func handleNullAddr(to *common.Address) string {
-	if to == nil {
-		return "0x0000000000000000000000000000000000000000000000000000000000000000"
-	}
-	return to.Hex()
 }

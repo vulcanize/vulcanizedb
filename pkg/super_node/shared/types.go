@@ -20,16 +20,17 @@ package shared
 type RawChainData interface{}
 
 // The concrete type underneath StreamedIPLDs should not be a pointer
-type StreamedIPLDs interface{}
+type ConvertedData interface {
+	Height() int64
+}
 
 type CIDsForIndexing interface{}
 
 type CIDsForFetching interface{}
 
-type FetchedIPLDs interface{}
-
-// The concrete type underneath StreamedIPLDs should not be a pointer
-type ServerResponse interface{}
+type IPLDs interface {
+	Height() int64
+}
 
 type Gap struct {
 	Start uint64
