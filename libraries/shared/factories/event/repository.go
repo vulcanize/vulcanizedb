@@ -19,9 +19,10 @@ package event
 import (
 	"database/sql/driver"
 	"fmt"
-	"github.com/makerdao/vulcanizedb/utils"
 	"strings"
 
+	"github.com/lib/pq"
+	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
 )
@@ -137,7 +138,7 @@ func PersistModels(models []InsertionModel, db *postgres.DB) error {
 		for _, col := range model.OrderedColumns {
 			value := model.ColumnValues[col]
 			// Check whether or not PG can accept the type of value in the model
-			okPgValue := driver.IsValue(value)
+			okPgValue := isValidValue(value)
 			if !okPgValue {
 				logrus.WithField("model", model).Errorf("PG cannot handle value of this type: %T", value)
 				return ErrUnsupportedValue(value)
@@ -165,6 +166,15 @@ func PersistModels(models []InsertionModel, db *postgres.DB) error {
 	}
 
 	return tx.Commit()
+}
+
+func isValidValue(value interface{}) bool {
+	switch value.(type) {
+	case *pq.StringArray:
+		return true
+	default:
+		return driver.IsValue(value)
+	}
 }
 
 func joinOrderedColumns(columns []ColumnName) string {
