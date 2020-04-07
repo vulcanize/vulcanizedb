@@ -27,25 +27,25 @@ import (
 )
 
 type MockBlockChain struct {
-	fetchContractDataErr               error
-	fetchContractDataPassedAbi         string
-	fetchContractDataPassedAddress     string
-	fetchContractDataPassedMethod      string
-	fetchContractDataPassedMethodArgs  []interface{}
-	fetchContractDataPassedResult      interface{}
-	fetchContractDataPassedBlockNumber int64
+	BatchGetStorageAtCalls             []BatchGetStorageAtCall
+	BatchGetStorageAtError             error
 	GetTransactionsCalled              bool
 	GetTransactionsError               error
 	GetTransactionsPassedHashes        []common.Hash
-	GetStorageAtCalls                  []GetStorageAtCall
-	GetStorageAtError                  error
-	storageValuesToReturn              map[common.Address]map[int64][]byte
+	Transactions                       []core.TransactionModel
+	fetchContractDataErr               error
+	fetchContractDataPassedAbi         string
+	fetchContractDataPassedAddress     string
+	fetchContractDataPassedBlockNumber int64
+	fetchContractDataPassedMethod      string
+	fetchContractDataPassedMethodArgs  []interface{}
+	fetchContractDataPassedResult      interface{}
+	lastBlock                          *big.Int
 	logQuery                           ethereum.FilterQuery
 	logQueryErr                        error
 	logQueryReturnLogs                 []types.Log
-	lastBlock                          *big.Int
 	node                               core.Node
-	Transactions                       []core.TransactionModel
+	storageValuesToReturn              map[common.Address]map[int64][]byte
 }
 
 func NewMockBlockChain() *MockBlockChain {
@@ -113,25 +113,24 @@ func (blockChain *MockBlockChain) LastBlock() (*big.Int, error) {
 	return blockChain.lastBlock, nil
 }
 
-type GetStorageAtCall struct {
+type BatchGetStorageAtCall struct {
 	Account     common.Address
-	Key         common.Hash
+	Keys        []common.Hash
 	BlockNumber *big.Int
 }
 
-func (blockChain *MockBlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	blockChain.GetStorageAtCalls = append(blockChain.GetStorageAtCalls, GetStorageAtCall{
-		Account:     account,
-		Key:         key,
-		BlockNumber: blockNumber,
-	})
+func (blockChain *MockBlockChain) BatchGetStorageAt(account common.Address, keys []common.Hash, blockNumber *big.Int) (map[common.Hash][]byte, error) {
+	var storageToReturn = make(map[common.Hash][]byte)
+	for _, key := range keys {
+		blockChain.BatchGetStorageAtCalls = append(blockChain.BatchGetStorageAtCalls, BatchGetStorageAtCall{
+			Account:     account,
+			Keys:        keys,
+			BlockNumber: blockNumber,
+		})
+		storageToReturn[key] = blockChain.storageValuesToReturn[account][blockNumber.Int64()]
+	}
 
-	storageToReturn := blockChain.storageValuesToReturn[account][blockNumber.Int64()]
-	return storageToReturn, blockChain.GetStorageAtError
-}
-
-func (blockChain *MockBlockChain) SetGetStorageAtError(err error) {
-	blockChain.GetStorageAtError = err
+	return storageToReturn, blockChain.BatchGetStorageAtError
 }
 
 func (blockChain *MockBlockChain) SetStorageValuesToReturn(blockNumber int64, address common.Address, value []byte) {

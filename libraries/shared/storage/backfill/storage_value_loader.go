@@ -78,38 +78,33 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 	return addressToKeys, nil
 }
 
-func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHash string) error {
+func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, keys []common.Hash, blockNumber int64, headerHashStr string) error {
 	blockNumberBigInt := big.NewInt(blockNumber)
+	blockHash := common.HexToHash(headerHashStr)
 	keccakOfAddress := crypto.Keccak256Hash(address[:])
 	logrus.WithFields(logrus.Fields{
 		"Address":       address.Hex(),
 		"HashedAddress": keccakOfAddress.Hex(),
 		"BlockNumber":   blockNumber,
 	}).Infof("Getting and persisting %v storage values", len(keys))
-	for _, key := range keys {
-		value, getStorageErr := r.bc.GetStorageAt(address, key, blockNumberBigInt)
-		if getStorageErr != nil {
-			return getStorageErr
-		}
+	storageValues, getStorageValuesErr := r.bc.BatchGetStorageAt(address, keys, blockNumberBigInt)
+	if getStorageValuesErr != nil {
+		return getStorageValuesErr
+	}
+	for storageKey, storageValue := range storageValues {
 		diff := types.RawDiff{
 			HashedAddress: keccakOfAddress,
-			BlockHash:     common.HexToHash(headerHash),
+			BlockHash:     blockHash,
 			BlockHeight:   int(blockNumber),
-			StorageKey:    key,
-			StorageValue:  common.BytesToHash(value),
+			StorageKey:    storageKey,
+			StorageValue:  common.BytesToHash(storageValue),
 		}
-
-		diffId, createDiffErr := r.StorageDiffRepo.CreateStorageDiff(diff)
+		createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
 		if createDiffErr != nil {
 			if createDiffErr == sql.ErrNoRows {
 				return nil
 			}
 			return createDiffErr
-		}
-
-		markFromBackfillErr := r.StorageDiffRepo.MarkFromBackfill(diffId)
-		if markFromBackfillErr != nil {
-			return markFromBackfillErr
 		}
 	}
 	return nil

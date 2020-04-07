@@ -28,9 +28,9 @@ var ErrDuplicateDiff = sql.ErrNoRows
 
 type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
+	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
 	GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool)
 	MarkChecked(id int64) error
-	MarkFromBackfill(id int64) error
 }
 
 type diffRepository struct {
@@ -53,6 +53,13 @@ func (repository diffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64
 		return 0, ErrDuplicateDiff
 	}
 	return storageDiffID, err
+}
+
+func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawDiff) error {
+	_, err := repository.db.Exec(`SELECT * FROM public.create_back_filled_diff($1, $2, $3, $4, $5)`,
+		rawDiff.BlockHeight, rawDiff.BlockHash.Bytes(), rawDiff.HashedAddress.Bytes(),
+		rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes())
+	return err
 }
 
 func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
@@ -90,10 +97,5 @@ func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, err
 
 func (repository diffRepository) MarkChecked(id int64) error {
 	_, err := repository.db.Exec(`UPDATE public.storage_diff SET checked = true WHERE id = $1`, id)
-	return err
-}
-
-func (repository diffRepository) MarkFromBackfill(id int64) error {
-	_, err := repository.db.Exec(`UPDATE public.storage_diff SET from_backfill = true WHERE id = $1`, id)
 	return err
 }

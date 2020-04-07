@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
-	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/utils"
 	"github.com/sirupsen/logrus"
 )
 

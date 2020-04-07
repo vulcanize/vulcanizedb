@@ -113,15 +113,15 @@ var _ = Describe("StorageValueLoader", func() {
 		Expect(runnerErr).To(Equal(fakes.FakeError))
 	})
 
-	It("gets the storage values for each of the transformer's keys", func() {
+	It("gets the storage values for each transformer's keys", func() {
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
 
-		Expect(bc.GetStorageAtCalls).To(ConsistOf(
-			fakes.GetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressOne, Key: keyOne},
-			fakes.GetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Key: keyTwo},
+		Expect(bc.BatchGetStorageAtCalls).To(ConsistOf(
+			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressOne, Keys: []common.Hash{keyOne}},
+			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: []common.Hash{keyTwo}},
 		))
 	})
 
@@ -137,17 +137,17 @@ var _ = Describe("StorageValueLoader", func() {
 
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
-		Expect(bc.GetStorageAtCalls).To(ContainElement(
-			fakes.GetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Key: keyTwo},
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(
+			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: []common.Hash{keyTwo}},
 		))
-		Expect(bc.GetStorageAtCalls).To(ContainElement(
-			fakes.GetStorageAtCall{BlockNumber: bigIntBlockTwo, Account: addressTwo, Key: keyTwo},
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(
+			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockTwo, Account: addressTwo, Keys: []common.Hash{keyTwo}},
 		))
 	})
 
-	It("returns an error if blockchain call to GetStorageAt fails", func() {
+	It("returns an error if blockchain call to BatchGetStorageAt fails", func() {
 		keysLookupOne.KeysToReturn = []common.Hash{keyOne}
-		bc.SetGetStorageAtError(fakes.FakeError)
+		bc.BatchGetStorageAtError = fakes.FakeError
 
 		runnerErr := runner.Run()
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
@@ -176,30 +176,17 @@ var _ = Describe("StorageValueLoader", func() {
 			StorageValue:  valueTwo,
 		}
 
-		Expect(diffRepo.CreatePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
+		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
 	})
 
 	It("ignores sql.ErrNoRows error for duplicate diffs", func() {
-		diffRepo.CreateReturnError = sql.ErrNoRows
+		diffRepo.CreateBackFilledStorageValueReturnError = sql.ErrNoRows
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 	})
 
 	It("returns an error if inserting a diff fails", func() {
-		diffRepo.CreateReturnError = fakes.FakeError
-		runnerErr := runner.Run()
-		Expect(runnerErr).To(HaveOccurred())
-		Expect(runnerErr).To(Equal(fakes.FakeError))
-	})
-
-	It("sets the diff a from_backfill", func() {
-		runnerErr := runner.Run()
-		Expect(runnerErr).NotTo(HaveOccurred())
-		Expect(diffRepo.MarkFromBackfillCalled).To(BeTrue())
-	})
-
-	It("returns an error if setting the diff as from_backfill fails", func() {
-		diffRepo.MarkFromBackfillError = fakes.FakeError
+		diffRepo.CreateBackFilledStorageValueReturnError = fakes.FakeError
 		runnerErr := runner.Run()
 		Expect(runnerErr).To(HaveOccurred())
 		Expect(runnerErr).To(Equal(fakes.FakeError))

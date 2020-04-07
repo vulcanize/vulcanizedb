@@ -81,7 +81,7 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
 
 ### Configuring a synced Ethereum node
 - To use a local Ethereum node, copy `environments/public.toml.example` to
-  `environments/public.toml` and update the `ipcPath` and `levelDbPath`.
+  `environments/public.toml` and update the `ipcPath`.
   - `ipcPath` should match the local node's IPC filepath:
       - For Geth:
         - The IPC file is called `geth.ipc`.
@@ -97,13 +97,8 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
           - Mac: `<full home path>/Library/Application\ Support/io.parity.ethereum/`
           - Linux: `<full home path>/local/share/io.parity.ethereum/`
 
-  - `levelDbPath` should match Geth's chaindata directory path.
-      - The geth LevelDB chaindata path is printed to the console when you start geth.
-      - The default location is:
-          - Mac: `<full home path>/Library/Ethereum/geth/chaindata`
-          - Linux: `<full home path>/ethereum/geth/chaindata`
-      - `levelDbPath` is irrelevant (and `coldImport` is currently unavailable) if only running parity.
-
+      - For Infura:
+        - The `ipcPath` should be the endpoint available for your project.
 
 ## Usage
 As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.

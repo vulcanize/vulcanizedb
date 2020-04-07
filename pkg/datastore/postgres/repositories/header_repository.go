@@ -84,7 +84,8 @@ func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, er
 
 func (repository HeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
 	var headers []core.Header
-	err := repository.database.Select(&headers, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number BETWEEN $1 AND $2`,
+	err := repository.database.Select(&headers,
+		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number BETWEEN $1 AND $2 ORDER BY block_number ASC`,
 		startingBlock, endingBlock)
 	return headers, err
 }

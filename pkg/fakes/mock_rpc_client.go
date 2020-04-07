@@ -21,6 +21,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -31,25 +32,26 @@ import (
 )
 
 type MockRpcClient struct {
-	callContextErr      error
-	ClientVersion       string
-	GethNodeInfo        p2p.NodeInfo
-	ipcPath             string
-	NetworkID           string
-	nodeType            core.NodeType
-	ParityEnode         string
-	ParityNodeInfo      core.ParityNodeInfo
-	passedContext       context.Context
-	passedMethod        string
-	passedResult        interface{}
-	passedBatch         []core.BatchElem
-	passedNamespace     string
-	passedPayloadChan   chan statediff.Payload
-	passedSubscribeArgs []interface{}
-	lengthOfBatch       int
-	returnPOAHeader     core.POAHeader
-	returnPOAHeaders    []core.POAHeader
-	returnPOWHeaders    []*types.Header
+	callContextErr       error
+	ClientVersion        string
+	GethNodeInfo         p2p.NodeInfo
+	ipcPath              string
+	NetworkID            string
+	nodeType             core.NodeType
+	ParityEnode          string
+	ParityNodeInfo       core.ParityNodeInfo
+	passedContext        context.Context
+	passedMethod         string
+	passedResult         interface{}
+	passedBatch          []core.BatchElem
+	passedNamespace      string
+	passedPayloadChan    chan statediff.Payload
+	passedSubscribeArgs  []interface{}
+	lengthOfBatch        int
+	returnPOAHeader      core.POAHeader
+	returnPOAHeaders     []core.POAHeader
+	returnPOWHeaders     []*types.Header
+	StorageValueToReturn []byte
 }
 
 func NewMockRpcClient() *MockRpcClient {
@@ -97,6 +99,9 @@ func (c *MockRpcClient) BatchCall(batch []core.BatchElem) error {
 		}
 		if p, ok := batchElem.Result.(*core.POAHeader); ok {
 			*p = c.returnPOAHeader
+		}
+		if p, ok := batchElem.Result.(*hexutil.Bytes); ok {
+			*p = c.StorageValueToReturn
 		}
 	}
 

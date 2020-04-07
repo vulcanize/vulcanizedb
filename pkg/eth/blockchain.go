@@ -104,8 +104,31 @@ func (blockChain *BlockChain) LastBlock() (*big.Int, error) {
 	return block.Number, err
 }
 
-func (blockChain *BlockChain) GetStorageAt(account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
-	return blockChain.ethClient.StorageAt(context.Background(), account, key, blockNumber)
+func (blockChain *BlockChain) BatchGetStorageAt(account common.Address, keys []common.Hash, blockNumber *big.Int) (map[common.Hash][]byte, error) {
+	numStorageValues := len(keys)
+	var batch []core.BatchElem
+	storageValues := make([]hexutil.Bytes, numStorageValues)
+
+	for index, key := range keys {
+		batchElem := core.BatchElem{
+			Method: "eth_getStorageAt",
+			Args:   []interface{}{account.Hex(), key.Hex(), hexutil.EncodeBig(blockNumber)},
+			Result: &storageValues[index],
+			Error:  nil,
+		}
+		batch = append(batch, batchElem)
+	}
+
+	rpcErr := blockChain.rpcClient.BatchCall(batch)
+	if rpcErr != nil {
+		return nil, rpcErr
+	}
+
+	result := make(map[common.Hash][]byte)
+	for index, key := range keys {
+		result[key] = storageValues[index]
+	}
+	return result, nil
 }
 
 func (blockChain *BlockChain) Node() core.Node {
