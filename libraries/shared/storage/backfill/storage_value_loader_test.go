@@ -185,14 +185,14 @@ var _ = Describe("StorageValueLoader", func() {
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
-			StorageKey:    keyOne,
+			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
 			StorageValue:  valueOne,
 		}
 		expectedDiffTwo := types.RawDiff{
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
 			HashedAddress: crypto.Keccak256Hash(addressTwo[:]),
-			StorageKey:    keyTwo,
+			StorageKey:    crypto.Keccak256Hash(keyTwo.Bytes()),
 			StorageValue:  valueTwo,
 		}
 

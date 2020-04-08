@@ -100,7 +100,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 				HashedAddress: keccakOfAddress,
 				BlockHash:     blockHash,
 				BlockHeight:   int(blockNumber),
-				StorageKey:    storageKey,
+				StorageKey:    crypto.Keccak256Hash(storageKey.Bytes()),
 				StorageValue:  storageValueHash,
 			}
 			createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
