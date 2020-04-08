@@ -57,6 +57,7 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 		if refreshErr != nil {
 			return metadata, refreshErr
 		}
+		lookup.mappings = storage.AddHashedKeys(lookup.mappings)
 		metadata, ok = lookup.mappings[key]
 		if !ok {
 			return metadata, types.ErrKeyNotFound{Key: key.Hex()}
@@ -68,11 +69,7 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 func (lookup *keysLookup) refreshMappings() error {
 	var err error
 	lookup.mappings, err = lookup.loader.LoadMappings()
-	if err != nil {
-		return err
-	}
-	lookup.mappings = storage.AddHashedKeys(lookup.mappings)
-	return nil
+	return err
 }
 
 func (lookup *keysLookup) SetDB(db *postgres.DB) {

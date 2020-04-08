@@ -19,9 +19,10 @@ package storage_test
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	storage_factory "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
+	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/mocks"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
@@ -31,20 +32,21 @@ import (
 var _ = Describe("Storage keys lookup", func() {
 	var (
 		fakeMetadata = types.GetValueMetadata("name", map[types.Key]string{}, types.Uint256)
-		lookup       storage_factory.KeysLookup
+		lookup       storage.KeysLookup
 		loader       *mocks.MockStorageKeysLoader
 	)
 
 	BeforeEach(func() {
 		loader = &mocks.MockStorageKeysLoader{}
-		lookup = storage_factory.NewKeysLookup(loader)
+		lookup = storage.NewKeysLookup(loader)
 	})
 
 	Describe("Lookup", func() {
 		Describe("when key not found", func() {
 			It("refreshes keys", func() {
-				loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakes.FakeHash: fakeMetadata}
-				_, err := lookup.Lookup(fakes.FakeHash)
+				fakeKey := test_data.FakeHash()
+				loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
+				_, err := lookup.Lookup(fakeKey)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(loader.LoadMappingsCallCount).To(Equal(1))
@@ -53,7 +55,7 @@ var _ = Describe("Storage keys lookup", func() {
 			It("returns error if refreshing keys fails", func() {
 				loader.LoadMappingsError = fakes.FakeError
 
-				_, err := lookup.Lookup(fakes.FakeHash)
+				_, err := lookup.Lookup(test_data.FakeHash())
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
@@ -61,15 +63,18 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		Describe("when key found", func() {
+			var fakeKey common.Hash
+
 			BeforeEach(func() {
-				loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakes.FakeHash: fakeMetadata}
-				_, err := lookup.Lookup(fakes.FakeHash)
+				fakeKey = test_data.FakeHash()
+				loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
+				_, err := lookup.Lookup(fakeKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(loader.LoadMappingsCallCount).To(Equal(1))
 			})
 
 			It("does not refresh keys", func() {
-				_, err := lookup.Lookup(fakes.FakeHash)
+				_, err := lookup.Lookup(fakeKey)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(loader.LoadMappingsCallCount).To(Equal(1))
@@ -77,18 +82,20 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		It("returns metadata for loaded static key", func() {
-			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakes.FakeHash: fakeMetadata}
+			fakeKey := test_data.FakeHash()
+			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
 
-			metadata, err := lookup.Lookup(fakes.FakeHash)
+			metadata, err := lookup.Lookup(fakeKey)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadata).To(Equal(fakeMetadata))
 		})
 
 		It("returns metadata for hashed version of key (accommodates keys emitted from Geth)", func() {
-			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakes.FakeHash: fakeMetadata}
+			fakeKey := test_data.FakeHash()
+			loader.StorageKeyMappings = map[common.Hash]types.ValueMetadata{fakeKey: fakeMetadata}
 
-			hashedKey := common.BytesToHash(crypto.Keccak256(fakes.FakeHash.Bytes()))
+			hashedKey := common.BytesToHash(crypto.Keccak256(fakeKey.Bytes()))
 			metadata, err := lookup.Lookup(hashedKey)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -96,10 +103,11 @@ var _ = Describe("Storage keys lookup", func() {
 		})
 
 		It("returns key not found error if key not found", func() {
-			_, err := lookup.Lookup(fakes.FakeHash)
+			fakeKey := test_data.FakeHash()
+			_, err := lookup.Lookup(fakeKey)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(types.ErrKeyNotFound{Key: fakes.FakeHash.Hex()}))
+			Expect(err).To(MatchError(types.ErrKeyNotFound{Key: fakeKey.Hex()}))
 		})
 	})
 
@@ -113,11 +121,9 @@ var _ = Describe("Storage keys lookup", func() {
 
 	Describe("GetKeys", func() {
 		var (
-			mappings       = make(map[common.Hash]types.ValueMetadata)
-			keyOne         = fakes.FakeHash
-			keyTwo         = fakes.AnotherFakeHash
-			keccakedKeyOne = crypto.Keccak256Hash(keyOne[:])
-			keccakedKeyTwo = crypto.Keccak256Hash(keyTwo[:])
+			mappings = make(map[common.Hash]types.ValueMetadata)
+			keyOne   = test_data.FakeHash()
+			keyTwo   = test_data.FakeHash()
 		)
 
 		BeforeEach(func() {
@@ -133,16 +139,6 @@ var _ = Describe("Storage keys lookup", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(keys).To(ContainElement(keyOne))
 			Expect(keys).To(ContainElement(keyTwo))
-		})
-
-		It("gets the keccak hash of the loaded keys as well", func() {
-			loader.StorageKeyMappings = mappings
-
-			keys, err := lookup.GetKeys()
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(keys).To(ContainElement(keccakedKeyOne))
-			Expect(keys).To(ContainElement(keccakedKeyTwo))
 		})
 
 		It("returns an error if GetKeys fails", func() {
