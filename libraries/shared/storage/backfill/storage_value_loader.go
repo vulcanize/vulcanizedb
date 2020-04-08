@@ -16,6 +16,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+
 func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, startingBlock, endingBlock int64) StorageValueLoader {
 	return StorageValueLoader{
 		bc:              bc,
@@ -92,19 +94,22 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 		return getStorageValuesErr
 	}
 	for storageKey, storageValue := range storageValues {
-		diff := types.RawDiff{
-			HashedAddress: keccakOfAddress,
-			BlockHash:     blockHash,
-			BlockHeight:   int(blockNumber),
-			StorageKey:    storageKey,
-			StorageValue:  common.BytesToHash(storageValue),
-		}
-		createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
-		if createDiffErr != nil {
-			if createDiffErr == sql.ErrNoRows {
-				return nil
+		storageValueHash := common.BytesToHash(storageValue)
+		if storageValueHash != emptyStorageValue {
+			diff := types.RawDiff{
+				HashedAddress: keccakOfAddress,
+				BlockHash:     blockHash,
+				BlockHeight:   int(blockNumber),
+				StorageKey:    storageKey,
+				StorageValue:  storageValueHash,
 			}
-			return createDiffErr
+			createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
+			if createDiffErr != nil {
+				if createDiffErr == sql.ErrNoRows {
+					return nil
+				}
+				return createDiffErr
+			}
 		}
 	}
 	return nil
