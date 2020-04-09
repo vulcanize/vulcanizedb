@@ -21,21 +21,18 @@ import (
 
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
 )
 
 func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datastore.HeaderRepository, startingBlockNumber int64) (int, error) {
 	lastBlock, err := blockChain.LastBlock()
 	if err != nil {
-		logrus.Error("PopulateMissingHeaders: Error getting last block: ", err)
-		return 0, err
+		return 0, fmt.Errorf("error getting last block: %s", err.Error())
 	}
 
 	blockNumbers, err := headerRepository.MissingBlockNumbers(startingBlockNumber, lastBlock.Int64())
 	if err != nil {
-		logrus.Error("PopulateMissingHeaders: Error getting missing block numbers: ", err)
-		return 0, err
+		return 0, fmt.Errorf("error getting missing block numbers: %s", err.Error())
 	} else if len(blockNumbers) == 0 {
 		return 0, nil
 	}
@@ -43,8 +40,7 @@ func PopulateMissingHeaders(blockChain core.BlockChain, headerRepository datasto
 	logrus.Debug(getBlockRangeString(blockNumbers))
 	_, err = RetrieveAndUpdateHeaders(blockChain, headerRepository, blockNumbers)
 	if err != nil {
-		logrus.Error("PopulateMissingHeaders: Error getting/updating headers: ", err)
-		return 0, err
+		return 0, fmt.Errorf("error getting/updating headers: %s", err.Error())
 	}
 	return len(blockNumbers), nil
 }
@@ -54,9 +50,6 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 	for _, header := range headers {
 		_, err = headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {
-			if err == repositories.ErrValidHeaderExists {
-				continue
-			}
 			return 0, err
 		}
 	}

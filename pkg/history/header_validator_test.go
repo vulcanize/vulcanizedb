@@ -56,6 +56,6 @@ var _ = Describe("Header validator", func() {
 		validator := history.NewHeaderValidator(blockChain, headerRepository, 2)
 
 		_, err := validator.ValidateHeaders()
-		Expect(err).To(MatchError(headerRepositoryError))
+		Expect(err.Error()).To(ContainSubstring(headerRepositoryError.Error()))
 	})
 })
