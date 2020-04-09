@@ -18,6 +18,7 @@ package repositories
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/makerdao/vulcanizedb/pkg/core"
@@ -39,7 +40,10 @@ func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int
 	var headerID int64
 	err := repository.database.QueryRowx("SELECT * FROM public.get_or_create_header($1, $2, $3, $4, $5)",
 		header.BlockNumber, header.Hash, header.Raw, header.Timestamp, repository.database.NodeID).Scan(&headerID)
-	return headerID, err
+	if err != nil {
+		return headerID, fmt.Errorf("error inserting header for block %d: %s", header.BlockNumber, err.Error())
+	}
+	return headerID, nil
 }
 
 func (repository HeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {

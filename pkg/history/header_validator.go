@@ -17,9 +17,10 @@
 package history
 
 import (
+	"fmt"
+
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
-	"github.com/sirupsen/logrus"
 )
 
 type HeaderValidator struct {
@@ -39,14 +40,12 @@ func NewHeaderValidator(blockChain core.BlockChain, repository datastore.HeaderR
 func (validator HeaderValidator) ValidateHeaders() (ValidationWindow, error) {
 	window, err := MakeValidationWindow(validator.blockChain, validator.windowSize)
 	if err != nil {
-		logrus.Error("ValidateHeaders: error creating validation window: ", err)
-		return ValidationWindow{}, err
+		return ValidationWindow{}, fmt.Errorf("error creating validation window: %s", err.Error())
 	}
 	blockNumbers := MakeRange(window.LowerBound, window.UpperBound)
 	_, err = RetrieveAndUpdateHeaders(validator.blockChain, validator.headerRepository, blockNumbers)
 	if err != nil {
-		logrus.Error("ValidateHeaders: error getting/updating headers: ", err)
-		return ValidationWindow{}, err
+		return ValidationWindow{}, fmt.Errorf("error getting/updating headers: %s", err.Error())
 	}
 	return window, nil
 }
