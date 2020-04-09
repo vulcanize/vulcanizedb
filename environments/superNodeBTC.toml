@@ -16,6 +16,7 @@
     batchSize = 1 # $RESYNC_BATCH_SIZE
     batchNumber = 50 # $RESYNC_BATCH_NUMBER
     clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
+    resetValidation = true # $RESYNC_RESET_VALIDATION
 
 [superNode]
     chain = "bitcoin" # $SUPERNODE_CHAIN
@@ -29,6 +30,7 @@
     frequency = 45 # $SUPERNODE_FREQUENCY
     batchSize = 1 # $SUPERNODE_BATCH_SIZE
     batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 
 [bitcoin]
     wsPath  = "127.0.0.1:8332" # $BTC_WS_PATH

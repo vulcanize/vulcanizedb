@@ -46,7 +46,7 @@ func (mcr *CIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
 }
 
 // RetrieveGapsInData mock method
-func (mcr *CIDRetriever) RetrieveGapsInData() ([]shared.Gap, error) {
+func (mcr *CIDRetriever) RetrieveGapsInData(int) ([]shared.Gap, error) {
 	mcr.CalledTimes++
 	return mcr.GapsToRetrieve, mcr.GapsToRetrieveErr
 }

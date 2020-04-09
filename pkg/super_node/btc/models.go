@@ -20,14 +20,15 @@ import "github.com/lib/pq"
 
 // HeaderModel is the db model for btc.header_cids table
 type HeaderModel struct {
-	ID          int64  `db:"id"`
-	BlockNumber string `db:"block_number"`
-	BlockHash   string `db:"block_hash"`
-	ParentHash  string `db:"parent_hash"`
-	CID         string `db:"cid"`
-	Timestamp   int64  `db:"timestamp"`
-	Bits        uint32 `db:"bits"`
-	NodeID      int64  `db:"node_id"`
+	ID             int64  `db:"id"`
+	BlockNumber    string `db:"block_number"`
+	BlockHash      string `db:"block_hash"`
+	ParentHash     string `db:"parent_hash"`
+	CID            string `db:"cid"`
+	Timestamp      int64  `db:"timestamp"`
+	Bits           uint32 `db:"bits"`
+	NodeID         int64  `db:"node_id"`
+	TimesValidated int64  `db:"times_validated"`
 }
 
 // TxModel is the db model for btc.transaction_cids table

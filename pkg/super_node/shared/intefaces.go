@@ -57,7 +57,7 @@ type CIDRetriever interface {
 	Retrieve(filter SubscriptionSettings, blockNumber int64) ([]CIDsForFetching, bool, error)
 	RetrieveFirstBlockNumber() (int64, error)
 	RetrieveLastBlockNumber() (int64, error)
-	RetrieveGapsInData() ([]Gap, error)
+	RetrieveGapsInData(validationLevel int) ([]Gap, error)
 }
 
 // IPLDFetcher uses a CID wrapper to fetch an IPLD wrapper
@@ -79,6 +79,7 @@ type DagPutter interface {
 // Cleaner is for cleaning out data from the cache within the given ranges
 type Cleaner interface {
 	Clean(rngs [][2]uint64, t DataType) error
+	ResetValidation(rngs [][2]uint64) error
 }
 
 // SubscriptionSettings is the interface every subscription filter type needs to satisfy, no matter the chain

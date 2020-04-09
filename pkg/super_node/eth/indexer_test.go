@@ -68,9 +68,10 @@ var _ = Describe("Indexer", func() {
 				WHERE header_cids.block_number = $1`
 			err = db.Select(&trxs, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(trxs)).To(Equal(2))
+			Expect(len(trxs)).To(Equal(3))
 			Expect(shared.ListContainsString(trxs, mocks.Trx1CID.String())).To(BeTrue())
 			Expect(shared.ListContainsString(trxs, mocks.Trx2CID.String())).To(BeTrue())
+			Expect(shared.ListContainsString(trxs, mocks.Trx3CID.String())).To(BeTrue())
 			// check receipts were properly indexed
 			rcts := make([]string, 0)
 			pgStr = `SELECT receipt_cids.cid FROM eth.receipt_cids, eth.transaction_cids, eth.header_cids
@@ -79,9 +80,10 @@ var _ = Describe("Indexer", func() {
 				AND header_cids.block_number = $1`
 			err = db.Select(&rcts, pgStr, 1)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(rcts)).To(Equal(2))
+			Expect(len(rcts)).To(Equal(3))
 			Expect(shared.ListContainsString(rcts, mocks.Rct1CID.String())).To(BeTrue())
 			Expect(shared.ListContainsString(rcts, mocks.Rct2CID.String())).To(BeTrue())
+			Expect(shared.ListContainsString(rcts, mocks.Rct3CID.String())).To(BeTrue())
 			// check that state nodes were properly indexed
 			stateNodes := make([]eth.StateNodeModel, 0)
 			pgStr = `SELECT state_cids.cid, state_cids.state_leaf_key, state_cids.node_type, state_cids.state_path, state_cids.header_id

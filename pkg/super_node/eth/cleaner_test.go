@@ -89,12 +89,12 @@ var (
 	rct2Contract   = common.HexToAddress("0x010c")
 	receiptModels1 = map[common.Hash]eth2.ReceiptModel{
 		tx1Hash: {
-			CID:      rct1CID,
-			Contract: rct1Contract.String(),
+			CID:          rct1CID,
+			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 		tx2Hash: {
-			CID:      rct2CID,
-			Contract: rct2Contract.String(),
+			CID:          rct2CID,
+			ContractHash: crypto.Keccak256Hash(rct2Contract.Bytes()).String(),
 		},
 	}
 
@@ -170,8 +170,8 @@ var (
 	rct3CID        = "mockRct3CID"
 	receiptModels2 = map[common.Hash]eth2.ReceiptModel{
 		tx3Hash: {
-			CID:      rct3CID,
-			Contract: rct1Contract.String(),
+			CID:          rct3CID,
+			ContractHash: crypto.Keccak256Hash(rct1Contract.Bytes()).String(),
 		},
 	}
 
@@ -609,6 +609,60 @@ var _ = Describe("Cleaner", func() {
 			Expect(stateCount).To(Equal(3))
 			Expect(storageCount).To(Equal(0))
 			Expect(blocksCount).To(Equal(12))
+		})
+	})
+
+	Describe("ResetValidation", func() {
+		BeforeEach(func() {
+			err := repo.Index(mockCIDPayload1)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(mockCIDPayload2)
+			Expect(err).ToNot(HaveOccurred())
+
+			var validationTimes []int
+			pgStr := `SELECT times_validated FROM eth.header_cids`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(1))
+			Expect(validationTimes[1]).To(Equal(1))
+
+			err = repo.Index(mockCIDPayload1)
+			Expect(err).ToNot(HaveOccurred())
+
+			validationTimes = []int{}
+			pgStr = `SELECT times_validated FROM eth.header_cids ORDER BY block_number`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(2))
+			Expect(validationTimes[1]).To(Equal(1))
+		})
+		AfterEach(func() {
+			eth.TearDownDB(db)
+		})
+		It("Resets the validation level", func() {
+			err := cleaner.ResetValidation(rngs)
+			Expect(err).ToNot(HaveOccurred())
+
+			var validationTimes []int
+			pgStr := `SELECT times_validated FROM eth.header_cids`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(0))
+			Expect(validationTimes[1]).To(Equal(0))
+
+			err = repo.Index(mockCIDPayload2)
+			Expect(err).ToNot(HaveOccurred())
+
+			validationTimes = []int{}
+			pgStr = `SELECT times_validated FROM eth.header_cids ORDER BY block_number`
+			err = db.Select(&validationTimes, pgStr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(validationTimes)).To(Equal(2))
+			Expect(validationTimes[0]).To(Equal(0))
+			Expect(validationTimes[1]).To(Equal(1))
 		})
 	})
 })

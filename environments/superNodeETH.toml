@@ -13,9 +13,10 @@
     type = "state" # $RESYNC_TYPE
     start = 0 # $RESYNC_START
     stop = 0 # $RESYNC_STOP
-    batchSize = 5 # $RESYNC_BATCH_SIZE
-    batchNumber = 50 # $RESYNC_BATCH_NUMBER
-    clearOldCache = true # $RESYNC_CLEAR_OLD_CACHE
+    batchSize = 10 # $RESYNC_BATCH_SIZE
+    batchNumber = 100 # $RESYNC_BATCH_NUMBER
+    clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
+    resetValidation = true # $RESYNC_RESET_VALIDATION
 
 [superNode]
     chain = "ethereum" # $SUPERNODE_CHAIN
@@ -29,6 +30,7 @@
     frequency = 15 # $SUPERNODE_FREQUENCY
     batchSize = 5 # $SUPERNODE_BATCH_SIZE
     batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 
 [ethereum]
     wsPath  = "127.0.0.1:8546" # $ETH_WS_PATH

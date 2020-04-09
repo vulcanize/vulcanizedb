@@ -41,7 +41,7 @@ var (
 		StateFilter:   eth.StateFilter{},
 		StorageFilter: eth.StorageFilter{},
 	}
-	rctContractFilter = &eth.SubscriptionSettings{
+	rctAddressFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
 		HeaderFilter: eth.HeaderFilter{
@@ -51,7 +51,7 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: eth.ReceiptFilter{
-			Contracts: []string{mocks.AnotherAddress.String()},
+			LogAddresses: []string{mocks.Address.String()},
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -79,7 +79,7 @@ var (
 			Off: true,
 		},
 	}
-	rctTopicsAndContractFilter = &eth.SubscriptionSettings{
+	rctTopicsAndAddressFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
 		HeaderFilter: eth.HeaderFilter{
@@ -93,7 +93,7 @@ var (
 				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
 				{"0x0000000000000000000000000000000000000000000000000000000000000006"},
 			},
-			Contracts: []string{mocks.Address.String()},
+			LogAddresses: []string{mocks.Address.String()},
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -102,7 +102,7 @@ var (
 			Off: true,
 		},
 	}
-	rctTopicsAndContractFilterFail = &eth.SubscriptionSettings{
+	rctTopicsAndAddressFilterFail = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
 		HeaderFilter: eth.HeaderFilter{
@@ -116,7 +116,7 @@ var (
 				{"0x0000000000000000000000000000000000000000000000000000000000000004"},
 				{"0x0000000000000000000000000000000000000000000000000000000000000007"}, // This topic won't match on the mocks.Address.String() contract receipt
 			},
-			Contracts: []string{mocks.Address.String()},
+			LogAddresses: []string{mocks.Address.String()},
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -125,7 +125,7 @@ var (
 			Off: true,
 		},
 	}
-	rctContractsAndTopicFilter = &eth.SubscriptionSettings{
+	rctAddressesAndTopicFilter = &eth.SubscriptionSettings{
 		Start: big.NewInt(0),
 		End:   big.NewInt(1),
 		HeaderFilter: eth.HeaderFilter{
@@ -135,8 +135,8 @@ var (
 			Off: true,
 		},
 		ReceiptFilter: eth.ReceiptFilter{
-			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000005"}},
-			Contracts: []string{mocks.Address.String(), mocks.AnotherAddress.String()},
+			Topics:       [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000005"}},
+			LogAddresses: []string{mocks.Address.String(), mocks.AnotherAddress.String()},
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -153,9 +153,9 @@ var (
 		},
 		TxFilter: eth.TxFilter{}, // Trx filter open so we will collect all trxs, therefore we will also collect all corresponding rcts despite rct filter
 		ReceiptFilter: eth.ReceiptFilter{
-			MatchTxs:  true,
-			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
-			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
+			MatchTxs:     true,
+			Topics:       [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
+			LogAddresses: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -174,9 +174,9 @@ var (
 			Dst: []string{mocks.AnotherAddress.String()}, // We only filter for one of the trxs so we will only get the one corresponding receipt
 		},
 		ReceiptFilter: eth.ReceiptFilter{
-			MatchTxs:  true,
-			Topics:    [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
-			Contracts: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
+			MatchTxs:     true,
+			Topics:       [][]string{{"0x0000000000000000000000000000000000000000000000000000000000000006"}}, // Topic0 isn't one of the topic0s we have
+			LogAddresses: []string{"0x0000000000000000000000000000000000000002"},                             // Contract isn't one of the contracts we have
 		},
 		StateFilter: eth.StateFilter{
 			Off: true,
@@ -240,12 +240,14 @@ var _ = Describe("Retriever", func() {
 			expectedHeaderCID.ID = cidWrapper.Header.ID
 			expectedHeaderCID.NodeID = cidWrapper.Header.NodeID
 			Expect(cidWrapper.Header).To(Equal(expectedHeaderCID))
-			Expect(len(cidWrapper.Transactions)).To(Equal(2))
+			Expect(len(cidWrapper.Transactions)).To(Equal(3))
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[0].CID)).To(BeTrue())
 			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[1].CID)).To(BeTrue())
-			Expect(len(cidWrapper.Receipts)).To(Equal(2))
+			Expect(eth.TxModelsContainsCID(cidWrapper.Transactions, mocks.MockCIDWrapper.Transactions[2].CID)).To(BeTrue())
+			Expect(len(cidWrapper.Receipts)).To(Equal(3))
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[0].CID)).To(BeTrue())
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[1].CID)).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper.Receipts, mocks.MockCIDWrapper.Receipts[2].CID)).To(BeTrue())
 			Expect(len(cidWrapper.StateNodes)).To(Equal(2))
 			for _, stateNode := range cidWrapper.StateNodes {
 				if stateNode.CID == mocks.State1CID.String() {
@@ -267,7 +269,7 @@ var _ = Describe("Retriever", func() {
 		})
 
 		It("Applies filters from the provided config.Subscription", func() {
-			cids1, empty, err := retriever.Retrieve(rctContractFilter, 1)
+			cids1, empty, err := retriever.Retrieve(rctAddressFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
 			Expect(len(cids1)).To(Equal(1))
@@ -279,7 +281,7 @@ var _ = Describe("Retriever", func() {
 			Expect(len(cidWrapper1.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper1.StorageNodes)).To(Equal(0))
 			Expect(len(cidWrapper1.Receipts)).To(Equal(1))
-			expectedReceiptCID := mocks.MockCIDWrapper.Receipts[1]
+			expectedReceiptCID := mocks.MockCIDWrapper.Receipts[0]
 			expectedReceiptCID.ID = cidWrapper1.Receipts[0].ID
 			expectedReceiptCID.TxID = cidWrapper1.Receipts[0].TxID
 			Expect(cidWrapper1.Receipts[0]).To(Equal(expectedReceiptCID))
@@ -301,7 +303,7 @@ var _ = Describe("Retriever", func() {
 			expectedReceiptCID.TxID = cidWrapper2.Receipts[0].TxID
 			Expect(cidWrapper2.Receipts[0]).To(Equal(expectedReceiptCID))
 
-			cids3, empty, err := retriever.Retrieve(rctTopicsAndContractFilter, 1)
+			cids3, empty, err := retriever.Retrieve(rctTopicsAndAddressFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
 			Expect(len(cids3)).To(Equal(1))
@@ -318,7 +320,7 @@ var _ = Describe("Retriever", func() {
 			expectedReceiptCID.TxID = cidWrapper3.Receipts[0].TxID
 			Expect(cidWrapper3.Receipts[0]).To(Equal(expectedReceiptCID))
 
-			cids4, empty, err := retriever.Retrieve(rctContractsAndTopicFilter, 1)
+			cids4, empty, err := retriever.Retrieve(rctAddressesAndTopicFilter, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).ToNot(BeTrue())
 			Expect(len(cids4)).To(Equal(1))
@@ -343,14 +345,16 @@ var _ = Describe("Retriever", func() {
 			Expect(ok).To(BeTrue())
 			Expect(cidWrapper5.BlockNumber).To(Equal(mocks.MockCIDWrapper.BlockNumber))
 			Expect(cidWrapper5.Header).To(Equal(eth.HeaderModel{}))
-			Expect(len(cidWrapper5.Transactions)).To(Equal(2))
+			Expect(len(cidWrapper5.Transactions)).To(Equal(3))
 			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx1CID.String())).To(BeTrue())
 			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx2CID.String())).To(BeTrue())
+			Expect(eth.TxModelsContainsCID(cidWrapper5.Transactions, mocks.Trx3CID.String())).To(BeTrue())
 			Expect(len(cidWrapper5.StateNodes)).To(Equal(0))
 			Expect(len(cidWrapper5.StorageNodes)).To(Equal(0))
-			Expect(len(cidWrapper5.Receipts)).To(Equal(2))
+			Expect(len(cidWrapper5.Receipts)).To(Equal(3))
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct1CID.String())).To(BeTrue())
 			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct2CID.String())).To(BeTrue())
+			Expect(eth.ReceiptModelsContainsCID(cidWrapper5.Receipts, mocks.Rct3CID.String())).To(BeTrue())
 
 			cids6, empty, err := retriever.Retrieve(rctsForSelectCollectedTrxs, 1)
 			Expect(err).ToNot(HaveOccurred())
@@ -394,7 +398,7 @@ var _ = Describe("Retriever", func() {
 				Path:     []byte{'\x0c'},
 			}))
 
-			_, empty, err = retriever.Retrieve(rctTopicsAndContractFilterFail, 1)
+			_, empty, err = retriever.Retrieve(rctTopicsAndAddressFilterFail, 1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(empty).To(BeTrue())
 		})
@@ -480,7 +484,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(0))
 		})
@@ -490,9 +494,27 @@ var _ = Describe("Retriever", func() {
 			payload.HeaderCID.BlockNumber = "5"
 			err := repo.Index(&payload)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(0))
+		})
+
+		It("Can handle single block gaps", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.HeaderCID.BlockNumber = "2"
+			payload2 := payload1
+			payload2.HeaderCID.BlockNumber = "4"
+			err := repo.Index(mocks.MockCIDPayload)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload1)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload2)
+			Expect(err).ToNot(HaveOccurred())
+			gaps, err := retriever.RetrieveGapsInData(1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(1))
+			Expect(gaps[0].Start).To(Equal(uint64(3)))
+			Expect(gaps[0].Stop).To(Equal(uint64(3)))
 		})
 
 		It("Finds gap between two entries", func() {
@@ -504,7 +526,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(1))
 			Expect(gaps[0].Start).To(Equal(uint64(6)))
@@ -536,7 +558,7 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload6)
 			Expect(err).ToNot(HaveOccurred())
-			gaps, err := retriever.RetrieveGapsInData()
+			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(3))
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())

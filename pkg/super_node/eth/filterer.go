@@ -173,7 +173,7 @@ func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *
 		for i, receipt := range payload.Receipts {
 			// topics is always length 4
 			topics := [][]string{payload.ReceiptMetaData[i].Topic0s, payload.ReceiptMetaData[i].Topic1s, payload.ReceiptMetaData[i].Topic2s, payload.ReceiptMetaData[i].Topic3s}
-			if checkReceipts(receipt, receiptFilter.Topics, topics, receiptFilter.Contracts, payload.ReceiptMetaData[i].Contract, trxHashes) {
+			if checkReceipts(receipt, receiptFilter.Topics, topics, receiptFilter.LogAddresses, payload.ReceiptMetaData[i].LogContracts, trxHashes) {
 				receiptBuffer := new(bytes.Buffer)
 				if err := receipt.EncodeRLP(receiptBuffer); err != nil {
 					return err
@@ -193,9 +193,9 @@ func (s *ResponseFilterer) filerReceipts(receiptFilter ReceiptFilter, response *
 	return nil
 }
 
-func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wantedContracts []string, actualContract string, wantedTrxHashes []common.Hash) bool {
+func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wantedAddresses []string, actualAddresses []string, wantedTrxHashes []common.Hash) bool {
 	// If we aren't filtering for any topics, contracts, or corresponding trxs then all receipts are a go
-	if len(wantedTopics) == 0 && len(wantedContracts) == 0 && len(wantedTrxHashes) == 0 {
+	if len(wantedTopics) == 0 && len(wantedAddresses) == 0 && len(wantedTrxHashes) == 0 {
 		return true
 	}
 	// Keep receipts that are from watched txs
@@ -205,18 +205,20 @@ func checkReceipts(rct *types.Receipt, wantedTopics, actualTopics [][]string, wa
 		}
 	}
 	// If there are no wanted contract addresses, we keep all receipts that match the topic filter
-	if len(wantedContracts) == 0 {
+	if len(wantedAddresses) == 0 {
 		if match := filterMatch(wantedTopics, actualTopics); match == true {
 			return true
 		}
 	}
 	// If there are wanted contract addresses to filter on
-	for _, wantedAddr := range wantedContracts {
+	for _, wantedAddr := range wantedAddresses {
 		// and this is an address of interest
-		if wantedAddr == actualContract {
-			// we keep the receipt if it matches on the topic filter
-			if match := filterMatch(wantedTopics, actualTopics); match == true {
-				return true
+		for _, actualAddr := range actualAddresses {
+			if wantedAddr == actualAddr {
+				// we keep the receipt if it matches on the topic filter
+				if match := filterMatch(wantedTopics, actualTopics); match == true {
+					return true
+				}
 			}
 		}
 	}

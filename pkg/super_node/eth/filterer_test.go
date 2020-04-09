@@ -48,12 +48,14 @@ var _ = Describe("Filterer", func() {
 			Expect(iplds.Header).To(Equal(mocks.MockIPLDs.Header))
 			var expectedEmptyUncles []ipfs.BlockModel
 			Expect(iplds.Uncles).To(Equal(expectedEmptyUncles))
-			Expect(len(iplds.Transactions)).To(Equal(2))
+			Expect(len(iplds.Transactions)).To(Equal(3))
 			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
 			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
-			Expect(len(iplds.Receipts)).To(Equal(2))
+			Expect(shared.IPLDsContainBytes(iplds.Transactions, mocks.MockTransactions.GetRlp(2))).To(BeTrue())
+			Expect(len(iplds.Receipts)).To(Equal(3))
 			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
 			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds.Receipts, mocks.MockReceipts.GetRlp(2))).To(BeTrue())
 			Expect(len(iplds.StateNodes)).To(Equal(2))
 			for _, stateNode := range iplds.StateNodes {
 				Expect(stateNode.Type).To(Equal(statediff.Leaf))
@@ -74,7 +76,7 @@ var _ = Describe("Filterer", func() {
 		})
 
 		It("Applies filters from the provided config.Subscription", func() {
-			payload1, err := filterer.Filter(rctContractFilter, mocks.MockConvertedPayload)
+			payload1, err := filterer.Filter(rctAddressFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			iplds1, ok := payload1.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
@@ -86,8 +88,8 @@ var _ = Describe("Filterer", func() {
 			Expect(len(iplds1.StateNodes)).To(Equal(0))
 			Expect(len(iplds1.Receipts)).To(Equal(1))
 			Expect(iplds1.Receipts[0]).To(Equal(ipfs.BlockModel{
-				Data: mocks.Rct2IPLD.RawData(),
-				CID:  mocks.Rct2IPLD.Cid().String(),
+				Data: mocks.Rct1IPLD.RawData(),
+				CID:  mocks.Rct1IPLD.Cid().String(),
 			}))
 
 			payload2, err := filterer.Filter(rctTopicsFilter, mocks.MockConvertedPayload)
@@ -106,7 +108,7 @@ var _ = Describe("Filterer", func() {
 				CID:  mocks.Rct1IPLD.Cid().String(),
 			}))
 
-			payload3, err := filterer.Filter(rctTopicsAndContractFilter, mocks.MockConvertedPayload)
+			payload3, err := filterer.Filter(rctTopicsAndAddressFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			iplds3, ok := payload3.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
@@ -122,7 +124,7 @@ var _ = Describe("Filterer", func() {
 				CID:  mocks.Rct1IPLD.Cid().String(),
 			}))
 
-			payload4, err := filterer.Filter(rctContractsAndTopicFilter, mocks.MockConvertedPayload)
+			payload4, err := filterer.Filter(rctAddressesAndTopicFilter, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			iplds4, ok := payload4.(eth.IPLDs)
 			Expect(ok).To(BeTrue())
@@ -145,14 +147,16 @@ var _ = Describe("Filterer", func() {
 			Expect(iplds5.BlockNumber.Int64()).To(Equal(mocks.MockIPLDs.BlockNumber.Int64()))
 			Expect(iplds5.Header).To(Equal(ipfs.BlockModel{}))
 			Expect(len(iplds5.Uncles)).To(Equal(0))
-			Expect(len(iplds5.Transactions)).To(Equal(2))
+			Expect(len(iplds5.Transactions)).To(Equal(3))
 			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(0))).To(BeTrue())
 			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Transactions, mocks.MockTransactions.GetRlp(2))).To(BeTrue())
 			Expect(len(iplds5.StorageNodes)).To(Equal(0))
 			Expect(len(iplds5.StateNodes)).To(Equal(0))
-			Expect(len(iplds5.Receipts)).To(Equal(2))
+			Expect(len(iplds5.Receipts)).To(Equal(3))
 			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(0))).To(BeTrue())
 			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(1))).To(BeTrue())
+			Expect(shared.IPLDsContainBytes(iplds5.Receipts, mocks.MockReceipts.GetRlp(2))).To(BeTrue())
 
 			payload6, err := filterer.Filter(rctsForSelectCollectedTrxs, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -188,7 +192,7 @@ var _ = Describe("Filterer", func() {
 				CID:  mocks.State2IPLD.Cid().String(),
 			}))
 
-			payload8, err := filterer.Filter(rctTopicsAndContractFilterFail, mocks.MockConvertedPayload)
+			payload8, err := filterer.Filter(rctTopicsAndAddressFilterFail, mocks.MockConvertedPayload)
 			Expect(err).ToNot(HaveOccurred())
 			iplds8, ok := payload8.(eth.IPLDs)
 			Expect(ok).To(BeTrue())

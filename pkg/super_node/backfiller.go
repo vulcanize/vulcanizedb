@@ -63,6 +63,8 @@ type BackFillService struct {
 	QuitChan chan bool
 	// Chain type
 	chain shared.ChainType
+	// Headers with times_validated lower than this will be resynced
+	validationLevel int
 }
 
 // NewBackFillService returns a new BackFillInterface
@@ -107,6 +109,7 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 		ScreenAndServeChan: screenAndServeChan,
 		QuitChan:           settings.Quit,
 		chain:              settings.Chain,
+		validationLevel:    settings.ValidationLevel,
 	}, nil
 }
 
@@ -135,7 +138,7 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 						log.Error(err)
 					}
 				}
-				gaps, err := bfs.Retriever.RetrieveGapsInData()
+				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)
 				if err != nil {
 					log.Errorf("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.chain.String(), err)
 					continue
@@ -158,7 +161,6 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64) error {
 	if endingBlock < startingBlock {
 		return fmt.Errorf("super node %s db backfill: ending block number needs to be greater than starting block number", bfs.chain.String())
 	}
-	//
 	// break the range up into bins of smaller ranges
 	blockRangeBins, err := utils.GetBlockHeightBins(startingBlock, endingBlock, bfs.BatchSize)
 	if err != nil {

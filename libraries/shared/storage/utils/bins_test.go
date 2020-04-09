@@ -44,6 +44,14 @@ var _ = Describe("GetBlockHeightBins", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(len(blockRangeBins)).To(Equal(100))
 		Expect(blockRangeBins[99]).To(Equal(lastBin))
+
+		startingBlock = 1
+		endingBlock = 1
+		batchSize = 100
+		blockRangeBins, err = utils.GetBlockHeightBins(startingBlock, endingBlock, batchSize)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(len(blockRangeBins)).To(Equal(1))
+		Expect(blockRangeBins[0]).To(Equal([]uint64{1}))
 	})
 
 	It("throws an error if the starting block is higher than the ending block", func() {

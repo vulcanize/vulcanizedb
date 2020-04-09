@@ -60,7 +60,8 @@ CREATE TABLE btc.header_cids (
     cid text NOT NULL,
     "timestamp" numeric NOT NULL,
     bits bigint NOT NULL,
-    node_id integer NOT NULL
+    node_id integer NOT NULL,
+    times_validated integer DEFAULT 1 NOT NULL
 );
 
 
@@ -267,7 +268,8 @@ CREATE TABLE eth.header_cids (
     receipt_root character varying(66),
     uncle_root character varying(66),
     bloom bytea,
-    "timestamp" numeric
+    "timestamp" numeric,
+    times_validated integer DEFAULT 1 NOT NULL
 );
 
 
@@ -355,7 +357,9 @@ CREATE TABLE eth.receipt_cids (
     topic0s character varying(66)[],
     topic1s character varying(66)[],
     topic2s character varying(66)[],
-    topic3s character varying(66)[]
+    topic3s character varying(66)[],
+    log_contracts character varying(66)[],
+    contract_hash character varying(66)
 );
 
 
@@ -1256,6 +1260,14 @@ ALTER TABLE ONLY eth.queue_data
 
 ALTER TABLE ONLY eth.receipt_cids
     ADD CONSTRAINT receipt_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: receipt_cids receipt_cids_tx_id_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.receipt_cids
+    ADD CONSTRAINT receipt_cids_tx_id_key UNIQUE (tx_id);
 
 
 --

@@ -18,6 +18,7 @@ package eth
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -94,8 +95,8 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 		}
 		// Tx data
 		cids.TransactionCIDs[i] = eth.TxModel{
-			Dst:    shared.HandleNullAddr(tx.To()),
-			Src:    shared.HandleNullAddr(&from),
+			Dst:    shared.HandleNullAddrPointer(tx.To()),
+			Src:    shared.HandleNullAddr(from),
 			TxHash: tx.Hash().String(),
 			Index:  int64(i),
 			CID:    txIPLD.CID,
@@ -115,25 +116,32 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 	}
 	for i, receipt := range receipts {
 		matchedTx := transactions[i]
-		if matchedTx.To() != nil {
-			receipt.ContractAddress = *transactions[i].To()
-		}
 		topicSets := make([][]string, 4)
+		mappedContracts := make(map[string]bool) // use map to avoid duplicate addresses
 		for _, log := range receipt.Logs {
-			for i := range topicSets {
-				if i < len(log.Topics) {
-					topicSets[i] = append(topicSets[i], log.Topics[i].Hex())
-				}
+			for i, topic := range log.Topics {
+				topicSets[i] = append(topicSets[i], topic.Hex())
 			}
+			mappedContracts[log.Address.String()] = true
+		}
+		logContracts := make([]string, 0, len(mappedContracts))
+		for addr := range mappedContracts {
+			logContracts = append(logContracts, addr)
+		}
+		contract := shared.HandleNullAddr(receipt.ContractAddress)
+		var contractHash string
+		if contract != "" {
+			contractHash = crypto.Keccak256Hash(common.Hex2Bytes(contract)).String()
 		}
 		// Rct data
 		cids.ReceiptCIDs[matchedTx.Hash()] = eth.ReceiptModel{
-			CID:      ethIPLDs.Receipts[i].CID,
-			Topic0s:  topicSets[0],
-			Topic1s:  topicSets[1],
-			Topic2s:  topicSets[2],
-			Topic3s:  topicSets[3],
-			Contract: receipt.ContractAddress.Hex(),
+			CID:          ethIPLDs.Receipts[i].CID,
+			Topic0s:      topicSets[0],
+			Topic1s:      topicSets[1],
+			Topic2s:      topicSets[2],
+			Topic3s:      topicSets[3],
+			ContractHash: contractHash,
+			LogContracts: logContracts,
 		}
 	}
 	minerReward := common2.CalcEthBlockReward(&header, uncles, transactions, receipts)

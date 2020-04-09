@@ -34,6 +34,7 @@ type HeaderModel struct {
 	RctRoot         string `db:"receipt_root"`
 	Bloom           []byte `db:"bloom"`
 	Timestamp       uint64 `db:"timestamp"`
+	TimesValidated  int64  `db:"times_validated"`
 }
 
 // UncleModel is the db model for eth.uncle_cids
@@ -59,14 +60,16 @@ type TxModel struct {
 
 // ReceiptModel is the db model for eth.receipt_cids
 type ReceiptModel struct {
-	ID       int64          `db:"id"`
-	TxID     int64          `db:"tx_id"`
-	CID      string         `db:"cid"`
-	Contract string         `db:"contract"`
-	Topic0s  pq.StringArray `db:"topic0s"`
-	Topic1s  pq.StringArray `db:"topic1s"`
-	Topic2s  pq.StringArray `db:"topic2s"`
-	Topic3s  pq.StringArray `db:"topic3s"`
+	ID           int64          `db:"id"`
+	TxID         int64          `db:"tx_id"`
+	CID          string         `db:"cid"`
+	Contract     string         `db:"contract"`
+	ContractHash string         `db:"contract_hash"`
+	LogContracts pq.StringArray `db:"log_contracts"`
+	Topic0s      pq.StringArray `db:"topic0s"`
+	Topic1s      pq.StringArray `db:"topic1s"`
+	Topic2s      pq.StringArray `db:"topic2s"`
+	Topic3s      pq.StringArray `db:"topic3s"`
 }
 
 // StateNodeModel is the db model for eth.state_cids

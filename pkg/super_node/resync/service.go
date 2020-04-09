@@ -58,6 +58,8 @@ type Service struct {
 	ranges [][2]uint64
 	// Flag to turn on or off old cache destruction
 	clearOldCache bool
+	// Flag to turn on or off validation level reset
+	resetValidation bool
 }
 
 // NewResyncService creates and returns a resync service from the provided settings
@@ -95,23 +97,30 @@ func NewResyncService(settings *Config) (Resync, error) {
 		batchNumber = super_node.DefaultMaxBatchNumber
 	}
 	return &Service{
-		Indexer:       indexer,
-		Converter:     converter,
-		Publisher:     publisher,
-		Retriever:     retriever,
-		Fetcher:       fetcher,
-		Cleaner:       cleaner,
-		BatchSize:     batchSize,
-		BatchNumber:   int64(batchNumber),
-		QuitChan:      settings.Quit,
-		chain:         settings.Chain,
-		ranges:        settings.Ranges,
-		data:          settings.ResyncType,
-		clearOldCache: settings.ClearOldCache,
+		Indexer:         indexer,
+		Converter:       converter,
+		Publisher:       publisher,
+		Retriever:       retriever,
+		Fetcher:         fetcher,
+		Cleaner:         cleaner,
+		BatchSize:       batchSize,
+		BatchNumber:     int64(batchNumber),
+		QuitChan:        settings.Quit,
+		chain:           settings.Chain,
+		ranges:          settings.Ranges,
+		data:            settings.ResyncType,
+		clearOldCache:   settings.ClearOldCache,
+		resetValidation: settings.ResetValidation,
 	}, nil
 }
 
 func (rs *Service) Resync() error {
+	if rs.resetValidation {
+		logrus.Infof("resetting validation level")
+		if err := rs.Cleaner.ResetValidation(rs.ranges); err != nil {
+			return fmt.Errorf("validation reset failed: %v", err)
+		}
+	}
 	if rs.clearOldCache {
 		logrus.Infof("cleaning out old data from Postgres")
 		if err := rs.Cleaner.Clean(rs.ranges, rs.data); err != nil {
