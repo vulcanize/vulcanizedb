@@ -25,6 +25,7 @@ services:
        - golang:1.12.4
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
+        CHAIN_TYPE: "btc"
         USER: "vdbm"
         CONFIG_FILE: ./environments/superNodeBTC.toml
     environment:
@@ -50,6 +51,7 @@ services:
        - golang:1.12.4
       dockerfile: ./dockerfiles/super_node/Dockerfile
       args:
+        CHAIN_TYPE: "eth"
         USER: "vdbm"
         CONFIG_FILE: ./environments/superNodeETH.toml
     environment:

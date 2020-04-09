@@ -34,6 +34,7 @@ ARG USER
 ARG CONFIG_FILE
 ARG EXPOSE_PORT_1
 ARG EXPOSE_PORT_2
+ARG CHAIN_TYPE
 
 RUN adduser -Du 5000 $USER
 WORKDIR /app
@@ -51,6 +52,7 @@ COPY --chown=5000:5000 --from=builder /go/src/github.com/vulcanize/vulcanizedb/d
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/vulcanizedb vulcanizedb
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations migrations/vulcanizedb
+COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations/$CHAIN_TYPE migrations/vulcanizedb
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/environments environments
 COPY --from=builder /go/src/github.com/ipfs/go-ipfs/ipfs ipfs
 

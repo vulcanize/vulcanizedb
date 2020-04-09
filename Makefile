@@ -58,9 +58,14 @@ test: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" up
-	$(GOOSE) -dir db/migrations postgres "$(TEST_CONNECT_STRING)" reset
+	mkdir db/.temp
+	cp db/migrations/*.sql db/.temp
+	cp db/migrations/eth/*.sql db/.temp
+	cp db/migrations/btc/*.sql db/.temp
+	$(GOOSE) -dir db/.temp postgres "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/.temp postgres "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
+	rm -rf db/.temp
 	$(GINKGO) -r --skipPackage=integration_tests,integration
 
 .PHONY: integrationtest
@@ -69,9 +74,14 @@ integrationtest: | $(GINKGO) $(LINT)
 	go fmt ./...
 	dropdb --if-exists $(TEST_DB)
 	createdb $(TEST_DB)
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" up
-	$(GOOSE) -dir db/migrations "$(TEST_CONNECT_STRING)" reset
+	mkdir db/.temp
+	cp db/migrations/*.sql db/.temp
+	cp db/migrations/eth/*.sql db/.temp
+	cp db/migrations/btc/*.sql db/.temp
+	$(GOOSE) -dir db/.temp "$(TEST_CONNECT_STRING)" up
+	$(GOOSE) -dir db/.temp "$(TEST_CONNECT_STRING)" reset
 	make migrate NAME=$(TEST_DB)
+	rm -rf db/.temp
 	$(GINKGO) -r integration_test/
 
 build:
@@ -113,7 +123,12 @@ rollback_to: $(GOOSE) checkmigration checkdbvars
 ## Apply all migrations not already run
 .PHONY: migrate
 migrate: $(GOOSE) checkdbvars
-	$(GOOSE) -dir db/migrations postgres "$(CONNECT_STRING)" up
+	mkdir db/.tmp
+	cp db/migrations/*.sql db/.tmp
+	cp db/migrations/eth/*.sql db/.tmp
+	cp db/migrations/btc/*.sql db/.tmp
+	$(GOOSE) -dir db/.tmp postgres "$(CONNECT_STRING)" up
+	rm -rf db/.tmp
 	pg_dump -O -s $(CONNECT_STRING) > db/schema.sql
 
 ## Create a new migration file
