@@ -17,7 +17,6 @@
 package repositories
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -25,8 +24,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
 )
-
-var ErrValidHeaderExists = errors.New("valid header already exists")
 
 type HeaderRepository struct {
 	database *postgres.DB

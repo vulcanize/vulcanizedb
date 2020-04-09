@@ -21,7 +21,6 @@ import (
 
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,9 +50,6 @@ func RetrieveAndUpdateHeaders(blockChain core.BlockChain, headerRepository datas
 	for _, header := range headers {
 		_, err = headerRepository.CreateOrUpdateHeader(header)
 		if err != nil {
-			if err == repositories.ErrValidHeaderExists {
-				continue
-			}
 			return 0, err
 		}
 	}
