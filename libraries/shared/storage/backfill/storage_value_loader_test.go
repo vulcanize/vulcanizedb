@@ -142,6 +142,23 @@ var _ = Describe("StorageValueLoader", func() {
 		))
 	})
 
+	It("chunks requests to avoid 413 Request Entity Too Large reply from server", func() {
+		manyKeys := make([]common.Hash, 401)
+		for index, _ := range manyKeys {
+			manyKeys[index] = test_data.FakeHash()
+		}
+		keysLookupTwo.KeysToReturn = manyKeys
+
+		runnerErr := runner.Run()
+		Expect(runnerErr).NotTo(HaveOccurred())
+		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
+		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
+
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[0:400]}))
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[400:]}))
+
+	})
+
 	It("gets storage values from every header in block range", func() {
 		headerRepo.AllHeaders = []core.Header{
 			{BlockNumber: blockOne},

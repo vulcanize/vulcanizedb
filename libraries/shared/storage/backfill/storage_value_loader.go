@@ -16,7 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+var (
+	maxRequestSize    = 400
+	emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+)
 
 func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, startingBlock, endingBlock int64) StorageValueLoader {
 	return StorageValueLoader{
@@ -51,10 +54,12 @@ func (r *StorageValueLoader) Run() error {
 	}
 
 	for _, header := range headers {
-		for address, keys := range addressToKeys {
-			persistStorageErr := r.getAndPersistStorageValues(address, keys, header.BlockNumber, header.Hash)
-			if persistStorageErr != nil {
-				return persistStorageErr
+		for address, chunkedKeys := range addressToKeys {
+			for _, keys := range chunkedKeys {
+				persistStorageErr := r.getAndPersistStorageValues(address, keys, header.BlockNumber, header.Hash)
+				if persistStorageErr != nil {
+					return persistStorageErr
+				}
 			}
 		}
 	}
@@ -63,8 +68,8 @@ func (r *StorageValueLoader) Run() error {
 	return nil
 }
 
-func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash, error) {
-	addressToKeys := make(map[common.Address][]common.Hash, len(r.initializers))
+func (r *StorageValueLoader) getStorageKeys() (map[common.Address][][]common.Hash, error) {
+	addressToKeys := make(map[common.Address][][]common.Hash, len(r.initializers))
 	for _, i := range r.initializers {
 		transformer := i(r.db)
 		keysLookup := transformer.GetStorageKeysLookup()
@@ -72,8 +77,9 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 		if getKeysErr != nil {
 			return addressToKeys, getKeysErr
 		}
+		chunkedKeys := chunkKeys(keys)
 		address := transformer.GetContractAddress()
-		addressToKeys[address] = keys
+		addressToKeys[address] = chunkedKeys
 		logrus.Infof("Received %v storage keys for address:%v", len(keys), address.Hex())
 	}
 
@@ -113,4 +119,21 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 		}
 	}
 	return nil
+}
+
+func chunkKeys(keys []common.Hash) [][]common.Hash {
+	result := make([][]common.Hash, getNumberOfChunks(keys))
+	for index, key := range keys {
+		resultIndex := getChunkIndex(index)
+		result[resultIndex] = append(result[resultIndex], key)
+	}
+	return result
+}
+
+func getNumberOfChunks(keys []common.Hash) int {
+	return len(keys)/maxRequestSize + 1
+}
+
+func getChunkIndex(index int) int {
+	return index / maxRequestSize
 }
