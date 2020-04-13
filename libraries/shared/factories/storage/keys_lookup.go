@@ -67,9 +67,12 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 }
 
 func (lookup *keysLookup) refreshMappings() error {
-	var err error
-	lookup.mappings, err = lookup.loader.LoadMappings()
-	return err
+	newMappings, err := lookup.loader.LoadMappings()
+	if err != nil {
+		return err
+	}
+	lookup.mappings = newMappings
+	return nil
 }
 
 func (lookup *keysLookup) SetDB(db *postgres.DB) {

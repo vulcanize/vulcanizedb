@@ -28,8 +28,8 @@ var _ = Describe("StorageValueLoader", func() {
 		keyOne, keyTwo, keyThree                         common.Hash
 		valueOne, valueTwo, valueThree                   common.Hash
 		addressOne, addressTwo, addressThree             common.Address
-		blockOne, blockTwo, blockThree                   int64
-		bigIntBlockOne, bigIntBlockTwo, bigIntBlockThree *big.Int
+		blockOne, blockTwo                               int64
+		bigIntBlockOne, bigIntBlockTwo                   *big.Int
 		fakeHeader                                       core.Header
 		headerRepo                                       fakes.MockHeaderRepository
 		diffRepo                                         mocks.MockStorageDiffRepository
@@ -42,8 +42,6 @@ var _ = Describe("StorageValueLoader", func() {
 		bigIntBlockOne = big.NewInt(blockOne)
 		blockTwo = blockOne + 1
 		bigIntBlockTwo = big.NewInt(blockTwo)
-		blockThree = blockTwo + 1
-		bigIntBlockThree = big.NewInt(blockThree)
 
 		keysLookupOne = mocks.MockStorageKeysLookup{}
 		keyOne = test_data.FakeHash()
@@ -64,7 +62,7 @@ var _ = Describe("StorageValueLoader", func() {
 		addressThree = test_data.FakeAddress()
 		keysLookupThree.KeysToReturn = []common.Hash{keyThree}
 		valueThree = common.BytesToHash([]byte{})
-		bc.SetStorageValuesToReturn(blockThree, addressThree, valueThree[:])
+		bc.SetStorageValuesToReturn(blockOne, addressThree, valueThree[:])
 
 		initializerOne = storage.Transformer{
 			Address:           addressOne,
@@ -85,7 +83,7 @@ var _ = Describe("StorageValueLoader", func() {
 		}.NewTransformer
 
 		initializers = []storage.TransformerInitializer{initializerOne, initializerTwo, initializerThree}
-		runner = backfill.NewStorageValueLoader(bc, nil, initializers, blockOne, blockThree)
+		runner = backfill.NewStorageValueLoader(bc, nil, initializers, blockOne, blockTwo)
 
 		diffRepo = mocks.MockStorageDiffRepository{}
 		runner.StorageDiffRepo = &diffRepo
@@ -118,7 +116,7 @@ var _ = Describe("StorageValueLoader", func() {
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 		Expect(headerRepo.GetHeadersInRangeStartingBlock).To(Equal(blockOne))
-		Expect(headerRepo.GetHeadersInRangeEndingBlock).To(Equal(blockThree))
+		Expect(headerRepo.GetHeadersInRangeEndingBlock).To(Equal(blockTwo))
 	})
 
 	It("returns an error if a header for the given block cannot be retrieved", func() {
@@ -142,7 +140,7 @@ var _ = Describe("StorageValueLoader", func() {
 	})
 
 	It("chunks requests to avoid 413 Request Entity Too Large reply from server", func() {
-		manyKeys := make([]common.Hash, 401)
+		manyKeys := make([]common.Hash, backfill.MaxRequestSize+1)
 		for index, _ := range manyKeys {
 			manyKeys[index] = test_data.FakeHash()
 		}
@@ -153,8 +151,8 @@ var _ = Describe("StorageValueLoader", func() {
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
 
-		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[0:400]}))
-		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[400:]}))
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[0:backfill.MaxRequestSize]}))
+		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[backfill.MaxRequestSize:]}))
 
 	})
 
@@ -162,7 +160,6 @@ var _ = Describe("StorageValueLoader", func() {
 		headerRepo.AllHeaders = []core.Header{
 			{BlockNumber: blockOne},
 			{BlockNumber: blockTwo},
-			{BlockNumber: blockThree},
 		}
 
 		runnerErr := runner.Run()
@@ -175,9 +172,6 @@ var _ = Describe("StorageValueLoader", func() {
 		))
 		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(
 			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockTwo, Account: addressTwo, Keys: []common.Hash{keyTwo}},
-		))
-		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(
-			fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockThree, Account: addressThree, Keys: []common.Hash{keyThree}},
 		))
 	})
 

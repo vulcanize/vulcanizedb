@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	maxRequestSize    = 400
+	MaxRequestSize    = 400
 	emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 )
 
@@ -127,9 +127,9 @@ func chunkKeys(keys []common.Hash) [][]common.Hash {
 }
 
 func getNumberOfChunks(keys []common.Hash) int {
-	return len(keys)/maxRequestSize + 1
+	return len(keys)/MaxRequestSize + 1
 }
 
 func getChunkIndex(index int) int {
-	return index / maxRequestSize
+	return index / MaxRequestSize
 }
