@@ -27,6 +27,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	v "github.com/vulcanize/vulcanizedb/version"
 )
 
 // superNodeCmd represents the superNode command
@@ -56,6 +57,8 @@ func superNode() {
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
+	logWithCommand.Infof("vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("super node config: %+v", superNodeConfig)
 	if err := ipfs.InitIPFSPlugins(); err != nil {
 		logWithCommand.Fatal(err)
 	}

@@ -22,6 +22,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/resync"
+	v "github.com/vulcanize/vulcanizedb/version"
 )
 
 // resyncCmd represents the resync command
@@ -41,6 +42,8 @@ func rsyncCmdCommand() {
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
+	logWithCommand.Infof("vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Infof("resync config: %+v", rConfig)
 	if err := ipfs.InitIPFSPlugins(); err != nil {
 		logWithCommand.Fatal(err)
 	}

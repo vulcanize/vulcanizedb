@@ -28,6 +28,7 @@ import (
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	v "github.com/vulcanize/vulcanizedb/version"
 )
 
 // APIName is the namespace used for the state diffing service API
@@ -141,5 +142,5 @@ func (iapi *InfoAPI) NodeInfo() *p2p.NodeInfo {
 
 // Version returns the version of the super node
 func (iapi *InfoAPI) Version() string {
-	return VersionWithMeta
+	return v.VersionWithMeta
 }
