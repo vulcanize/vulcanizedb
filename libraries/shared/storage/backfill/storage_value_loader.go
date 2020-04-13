@@ -127,7 +127,11 @@ func chunkKeys(keys []common.Hash) [][]common.Hash {
 }
 
 func getNumberOfChunks(keys []common.Hash) int {
-	return len(keys)/MaxRequestSize + 1
+	keysLength := len(keys)
+	if keysLength%MaxRequestSize == 0 {
+		return keysLength / MaxRequestSize
+	}
+	return keysLength/MaxRequestSize + 1
 }
 
 func getChunkIndex(index int) int {

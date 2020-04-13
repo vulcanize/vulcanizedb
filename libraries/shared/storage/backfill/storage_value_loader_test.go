@@ -153,7 +153,18 @@ var _ = Describe("StorageValueLoader", func() {
 
 		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[0:backfill.MaxRequestSize]}))
 		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[backfill.MaxRequestSize:]}))
+	})
 
+	It("does not send request for empty chunk if keys length % max request size == 0", func() {
+		manyKeys := make([]common.Hash, backfill.MaxRequestSize)
+		for index, _ := range manyKeys {
+			manyKeys[index] = test_data.FakeHash()
+		}
+		keysLookupTwo.KeysToReturn = manyKeys
+
+		runnerErr := runner.Run()
+		Expect(runnerErr).NotTo(HaveOccurred())
+		Expect(bc.BatchGetStorageAtCalls).NotTo(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: nil}))
 	})
 
 	It("gets storage values from every header in block range", func() {
