@@ -1,7 +1,6 @@
 package backfill
 
 import (
-	"database/sql"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -111,9 +110,6 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 			}
 			createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
 			if createDiffErr != nil {
-				if createDiffErr == sql.ErrNoRows {
-					return nil
-				}
 				return createDiffErr
 			}
 		}

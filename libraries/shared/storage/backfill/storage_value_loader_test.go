@@ -1,7 +1,6 @@
 package backfill_test
 
 import (
-	"database/sql"
 	"math/big"
 	"math/rand"
 	"strings"
@@ -214,12 +213,6 @@ var _ = Describe("StorageValueLoader", func() {
 		}
 
 		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
-	})
-
-	It("ignores sql.ErrNoRows error for duplicate diffs", func() {
-		diffRepo.CreateBackFilledStorageValueReturnError = sql.ErrNoRows
-		runnerErr := runner.Run()
-		Expect(runnerErr).NotTo(HaveOccurred())
 	})
 
 	It("returns an error if inserting a diff fails", func() {
