@@ -19,6 +19,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -69,11 +70,23 @@ func Execute() {
 
 func initFuncs(cmd *cobra.Command, args []string) {
 	setViperConfigs()
-	logLvlErr := logLevel()
-	if logLvlErr != nil {
-		log.Fatal("Could not set log level: ", logLvlErr)
+	logfile := viper.GetString("logfile")
+	if logfile != "" {
+		file, err := os.OpenFile(logfile,
+			os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			log.Infof("Directing output to %s", logfile)
+			log.SetOutput(file)
+		} else {
+			log.SetOutput(os.Stdout)
+			log.Info("Failed to log to file, using default stdout")
+		}
+	} else {
+		log.SetOutput(os.Stdout)
 	}
-
+	if err := logLevel(); err != nil {
+		log.Fatal("Could not set log level: ", err)
+	}
 }
 
 func setViperConfigs() {
@@ -140,18 +153,13 @@ func init() {
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
+		if err := viper.ReadInConfig(); err == nil {
+			log.Printf("Using config file: %s", viper.ConfigFileUsed())
+		} else {
+			log.Fatal(fmt.Sprintf("Couldn't read config file: %s", err.Error()))
+		}
 	} else {
-		noConfigError := "No config file passed with --config flag"
-		fmt.Println("Error: ", noConfigError)
-		log.Fatal(noConfigError)
-	}
-
-	if err := viper.ReadInConfig(); err == nil {
-		log.Printf("Using config file: %s\n\n", viper.ConfigFileUsed())
-	} else {
-		invalidConfigError := "Couldn't read config file"
-		formattedError := fmt.Sprintf("%s: %s", invalidConfigError, err.Error())
-		log.Fatal(formattedError)
+		log.Warn("No config file passed with --config flag")
 	}
 }
 

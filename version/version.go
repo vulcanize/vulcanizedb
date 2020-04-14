@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package super_node
+package version
 
 import "fmt"
 
 const (
-	VersionMajor = 0       // Major version component of the current release
-	VersionMinor = 1       // Minor version component of the current release
-	VersionPatch = 0       // Patch version component of the current release
+	VersionMajor = 0          // Major version component of the current release
+	VersionMinor = 1          // Minor version component of the current release
+	VersionPatch = 0          // Patch version component of the current release
 	VersionMeta  = "alpha" // Version metadata to append to the version string
 )
 
@@ -38,26 +38,3 @@ var VersionWithMeta = func() string {
 	}
 	return v
 }()
-
-// ArchiveVersion holds the textual version string
-func ArchiveVersion(gitCommit string) string {
-	vsn := Version
-	if VersionMeta != "stable" {
-		vsn += "-" + VersionMeta
-	}
-	if len(gitCommit) >= 8 {
-		vsn += "-" + gitCommit[:8]
-	}
-	return vsn
-}
-
-func VersionWithCommit(gitCommit, gitDate string) string {
-	vsn := VersionWithMeta
-	if len(gitCommit) >= 8 {
-		vsn += "-" + gitCommit[:8]
-	}
-	if (VersionMeta != "stable") && (gitDate != "") {
-		vsn += "-" + gitDate
-	}
-	return vsn
-}
