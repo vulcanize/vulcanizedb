@@ -121,12 +121,12 @@ type BatchGetStorageAtCall struct {
 
 func (blockChain *MockBlockChain) BatchGetStorageAt(account common.Address, keys []common.Hash, blockNumber *big.Int) (map[common.Hash][]byte, error) {
 	var storageToReturn = make(map[common.Hash][]byte)
+	blockChain.BatchGetStorageAtCalls = append(blockChain.BatchGetStorageAtCalls, BatchGetStorageAtCall{
+		Account:     account,
+		Keys:        keys,
+		BlockNumber: blockNumber,
+	})
 	for _, key := range keys {
-		blockChain.BatchGetStorageAtCalls = append(blockChain.BatchGetStorageAtCalls, BatchGetStorageAtCall{
-			Account:     account,
-			Keys:        keys,
-			BlockNumber: blockNumber,
-		})
 		storageToReturn[key] = blockChain.storageValuesToReturn[account][blockNumber.Int64()]
 	}
 

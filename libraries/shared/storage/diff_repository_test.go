@@ -133,6 +133,21 @@ var _ = Describe("Storage diffs repository", func() {
 			Expect(count).To(Equal(1))
 		})
 
+		It("does duplicate storage value if same value only exists at a later block", func() {
+			_, createErr := repo.CreateStorageDiff(fakeStorageDiff)
+			Expect(createErr).NotTo(HaveOccurred())
+
+			duplicateDiff := fakeStorageDiff
+			duplicateDiff.BlockHeight = fakeStorageDiff.BlockHeight - 1
+			createTwoErr := repo.CreateBackFilledStorageValue(duplicateDiff)
+			Expect(createTwoErr).NotTo(HaveOccurred())
+
+			var count int
+			getErr := db.Get(&count, `SELECT count(*) FROM public.storage_diff`)
+			Expect(getErr).NotTo(HaveOccurred())
+			Expect(count).To(Equal(2))
+		})
+
 		It("inserts zero-valued storage if there's a previous diff", func() {
 			_, createOneErr := repo.CreateStorageDiff(fakeStorageDiff)
 			Expect(createOneErr).NotTo(HaveOccurred())

@@ -31,7 +31,7 @@ var topic0 = "0x" + randomString(64)
 
 var GenericTestLog = func() types.Log {
 	return types.Log{
-		Address:     fakeAddress(),
+		Address:     FakeAddress(),
 		Topics:      []common.Hash{common.HexToHash(topic0), FakeHash()},
 		Data:        hexutil.MustDecode(FakeHash().Hex()),
 		BlockNumber: uint64(startingBlockNumber),
@@ -44,14 +44,14 @@ var GenericTestLog = func() types.Log {
 
 var GenericTestConfig = event.TransformerConfig{
 	TransformerName:     "generic-test-transformer",
-	ContractAddresses:   []string{fakeAddress().Hex()},
+	ContractAddresses:   []string{FakeAddress().Hex()},
 	ContractAbi:         randomString(100),
 	Topic:               topic0,
 	StartingBlockNumber: startingBlockNumber,
 	EndingBlockNumber:   startingBlockNumber + 1,
 }
 
-func fakeAddress() common.Address {
+func FakeAddress() common.Address {
 	return common.HexToAddress("0x" + randomString(40))
 }
 

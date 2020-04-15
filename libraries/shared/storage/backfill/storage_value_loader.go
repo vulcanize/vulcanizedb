@@ -1,7 +1,6 @@
 package backfill
 
 import (
-	"database/sql"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +13,11 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	MaxRequestSize    = 400
+	emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 )
 
 func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, startingBlock, endingBlock int64) StorageValueLoader {
@@ -49,10 +53,12 @@ func (r *StorageValueLoader) Run() error {
 	}
 
 	for _, header := range headers {
-		for address, keys := range addressToKeys {
-			persistStorageErr := r.getAndPersistStorageValues(address, keys, header.BlockNumber, header.Hash)
-			if persistStorageErr != nil {
-				return persistStorageErr
+		for address, chunkedKeys := range addressToKeys {
+			for _, keys := range chunkedKeys {
+				persistStorageErr := r.getAndPersistStorageValues(address, keys, header.BlockNumber, header.Hash)
+				if persistStorageErr != nil {
+					return persistStorageErr
+				}
 			}
 		}
 	}
@@ -61,8 +67,8 @@ func (r *StorageValueLoader) Run() error {
 	return nil
 }
 
-func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash, error) {
-	addressToKeys := make(map[common.Address][]common.Hash, len(r.initializers))
+func (r *StorageValueLoader) getStorageKeys() (map[common.Address][][]common.Hash, error) {
+	addressToKeys := make(map[common.Address][][]common.Hash, len(r.initializers))
 	for _, i := range r.initializers {
 		transformer := i(r.db)
 		keysLookup := transformer.GetStorageKeysLookup()
@@ -70,8 +76,9 @@ func (r *StorageValueLoader) getStorageKeys() (map[common.Address][]common.Hash,
 		if getKeysErr != nil {
 			return addressToKeys, getKeysErr
 		}
+		chunkedKeys := chunkKeys(keys)
 		address := transformer.GetContractAddress()
-		addressToKeys[address] = keys
+		addressToKeys[address] = chunkedKeys
 		logrus.Infof("Received %v storage keys for address:%v", len(keys), address.Hex())
 	}
 
@@ -92,20 +99,41 @@ func (r *StorageValueLoader) getAndPersistStorageValues(address common.Address, 
 		return getStorageValuesErr
 	}
 	for storageKey, storageValue := range storageValues {
-		diff := types.RawDiff{
-			HashedAddress: keccakOfAddress,
-			BlockHash:     blockHash,
-			BlockHeight:   int(blockNumber),
-			StorageKey:    storageKey,
-			StorageValue:  common.BytesToHash(storageValue),
-		}
-		createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
-		if createDiffErr != nil {
-			if createDiffErr == sql.ErrNoRows {
-				return nil
+		storageValueHash := common.BytesToHash(storageValue)
+		if storageValueHash != emptyStorageValue {
+			diff := types.RawDiff{
+				HashedAddress: keccakOfAddress,
+				BlockHash:     blockHash,
+				BlockHeight:   int(blockNumber),
+				StorageKey:    crypto.Keccak256Hash(storageKey.Bytes()),
+				StorageValue:  storageValueHash,
 			}
-			return createDiffErr
+			createDiffErr := r.StorageDiffRepo.CreateBackFilledStorageValue(diff)
+			if createDiffErr != nil {
+				return createDiffErr
+			}
 		}
 	}
 	return nil
+}
+
+func chunkKeys(keys []common.Hash) [][]common.Hash {
+	result := make([][]common.Hash, getNumberOfChunks(keys))
+	for index, key := range keys {
+		resultIndex := getChunkIndex(index)
+		result[resultIndex] = append(result[resultIndex], key)
+	}
+	return result
+}
+
+func getNumberOfChunks(keys []common.Hash) int {
+	keysLength := len(keys)
+	if keysLength%MaxRequestSize == 0 {
+		return keysLength / MaxRequestSize
+	}
+	return keysLength/MaxRequestSize + 1
+}
+
+func getChunkIndex(index int) int {
+	return index / MaxRequestSize
 }
