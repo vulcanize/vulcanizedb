@@ -27,10 +27,10 @@ import (
 )
 
 type BtcTxTrieDagPutter struct {
-	adder *ipfs.IPFS
+	adder ipfs.Adder
 }
 
-func NewBtcTxTrieDagPutter(adder *ipfs.IPFS) *BtcTxTrieDagPutter {
+func NewBtcTxTrieDagPutter(adder ipfs.Adder) *BtcTxTrieDagPutter {
 	return &BtcTxTrieDagPutter{adder: adder}
 }
 

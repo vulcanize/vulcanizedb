@@ -27,10 +27,10 @@ import (
 )
 
 type EthHeaderDagPutter struct {
-	adder *ipfs.IPFS
+	adder ipfs.Adder
 }
 
-func NewEthBlockHeaderDagPutter(adder *ipfs.IPFS) *EthHeaderDagPutter {
+func NewEthBlockHeaderDagPutter(adder ipfs.Adder) *EthHeaderDagPutter {
 	return &EthHeaderDagPutter{adder: adder}
 }
 

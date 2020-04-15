@@ -31,10 +31,10 @@ var (
 )
 
 type BtcHeaderDagPutter struct {
-	adder *ipfs.IPFS
+	adder ipfs.Adder
 }
 
-func NewBtcHeaderDagPutter(adder *ipfs.IPFS) *BtcHeaderDagPutter {
+func NewBtcHeaderDagPutter(adder ipfs.Adder) *BtcHeaderDagPutter {
 	return &BtcHeaderDagPutter{adder: adder}
 }
 
