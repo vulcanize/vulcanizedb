@@ -57,7 +57,7 @@ type rawEventLog struct {
 }
 
 func (repo EventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, error) {
-	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.event_logs WHERE transformed = false`)
+	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.event_logs WHERE transformed is false`)
 	if queryErr != nil {
 		return nil, queryErr
 	}
