@@ -63,7 +63,7 @@ func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawD
 }
 
 func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
-	rows, queryErr := repository.db.Queryx(`SELECT * FROM public.storage_diff WHERE checked = false`)
+	rows, queryErr := repository.db.Queryx(`SELECT * FROM public.storage_diff WHERE checked IS false`)
 	if queryErr != nil {
 		logrus.Errorf("error getting unchecked storage diffs: %s", queryErr.Error())
 		if rows != nil {
