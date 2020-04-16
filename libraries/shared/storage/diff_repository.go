@@ -21,7 +21,6 @@ import (
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/sirupsen/logrus"
 )
 
 var ErrDuplicateDiff = sql.ErrNoRows
@@ -29,7 +28,7 @@ var ErrDuplicateDiff = sql.ErrNoRows
 type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
 	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
-	GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool)
+	GetNewDiffs() ([]types.PersistedDiff, error)
 	MarkChecked(id int64) error
 }
 
@@ -62,37 +61,10 @@ func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawD
 	return err
 }
 
-func (repository diffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
-	rows, queryErr := repository.db.Queryx(`SELECT * FROM public.storage_diff WHERE checked IS false`)
-	if queryErr != nil {
-		logrus.Errorf("error getting unchecked storage diffs: %s", queryErr.Error())
-		if rows != nil {
-			closeErr := rows.Close()
-			if closeErr != nil {
-				logrus.Errorf("error closing rows: %s", closeErr.Error())
-			}
-		}
-		errs <- queryErr
-		return
-	}
-
-	if rows != nil {
-		for rows.Next() {
-			var diff types.PersistedDiff
-			scanErr := rows.StructScan(&diff)
-			if scanErr != nil {
-				logrus.Errorf("error scanning diff: %s", scanErr.Error())
-				closeErr := rows.Close()
-				if closeErr != nil {
-					logrus.Errorf("error closing rows: %s", closeErr.Error())
-				}
-				errs <- scanErr
-			}
-			diffs <- diff
-		}
-	}
-
-	done <- true
+func (repository diffRepository) GetNewDiffs() ([]types.PersistedDiff, error) {
+	var result []types.PersistedDiff
+	err := repository.db.Select(&result, `SELECT * FROM public.storage_diff WHERE checked IS false LIMIT 500`)
+	return result, err
 }
 
 func (repository diffRepository) MarkChecked(id int64) error {

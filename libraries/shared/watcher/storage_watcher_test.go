@@ -73,7 +73,7 @@ var _ = Describe("Storage Watcher", func() {
 				ID: rand.Int63(),
 			}
 			mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{unwatchedDiff}
-			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+			mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 			err := storageWatcher.Execute()
 
@@ -105,8 +105,8 @@ var _ = Describe("Storage Watcher", func() {
 					HeaderID: rand.Int63(),
 				}
 				mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{diffWithoutHeader}
+				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 				mockHeaderRepository.GetHeaderError = errors.New("no matching header")
-				mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
 				err := storageWatcher.Execute()
 
@@ -145,7 +145,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				It("does not mark diff checked if transformer execution fails", func() {
 					mockTransformer.ExecuteErr = errors.New("execute failed")
-					mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+					mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 					err := storageWatcher.Execute()
 
@@ -157,7 +157,7 @@ var _ = Describe("Storage Watcher", func() {
 				Describe("when transformer execution succeeds", func() {
 					It("marks diff checked", func() {
 						mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{fakePersistedDiff}
-						mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+						mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 						err := storageWatcher.Execute()
 

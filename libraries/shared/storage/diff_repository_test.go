@@ -192,9 +192,6 @@ var _ = Describe("Storage diffs repository", func() {
 
 	Describe("GetNewDiffs", func() {
 		It("sends diffs that are not marked as checked", func() {
-			diffs := make(chan types.PersistedDiff)
-			errs := make(chan error)
-			done := make(chan bool)
 			fakeRawDiff := types.RawDiff{
 				HashedAddress: test_data.FakeHash(),
 				BlockHash:     test_data.FakeHash(),
@@ -212,17 +209,13 @@ var _ = Describe("Storage diffs repository", func() {
 				fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes())
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			go repo.GetNewDiffs(diffs, errs, done)
+			diffs, err := repo.GetNewDiffs()
 
-			Consistently(errs).ShouldNot(Receive())
-			Eventually(<-diffs).Should(Equal(fakePersistedDiff))
-			Eventually(<-done).Should(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(ConsistOf(fakePersistedDiff))
 		})
 
 		It("does not send diff that's marked as checked", func() {
-			diffs := make(chan types.PersistedDiff)
-			errs := make(chan error)
-			done := make(chan bool)
 			fakeRawDiff := types.RawDiff{
 				HashedAddress: test_data.FakeHash(),
 				BlockHash:     test_data.FakeHash(),
@@ -242,11 +235,10 @@ var _ = Describe("Storage diffs repository", func() {
 				fakePersistedDiff.Checked)
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			go repo.GetNewDiffs(diffs, errs, done)
+			diffs, err := repo.GetNewDiffs()
 
-			Consistently(errs).ShouldNot(Receive())
-			Consistently(diffs).ShouldNot(Receive())
-			Eventually(<-done).Should(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(BeEmpty())
 		})
 	})
 

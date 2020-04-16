@@ -39,13 +39,12 @@ func (repository *MockStorageDiffRepository) CreateBackFilledStorageValue(rawDif
 	return repository.CreateBackFilledStorageValueReturnError
 }
 
-func (repository *MockStorageDiffRepository) GetNewDiffs(diffs chan types.PersistedDiff, errs chan error, done chan bool) {
-	for _, diff := range repository.GetNewDiffsDiffs {
-		diffs <- diff
+func (repository *MockStorageDiffRepository) GetNewDiffs() ([]types.PersistedDiff, error) {
+	err := repository.GetNewDiffsErrors[0]
+	if len(repository.GetNewDiffsErrors) > 1 {
+		repository.GetNewDiffsErrors = repository.GetNewDiffsErrors[1:]
 	}
-	for _, err := range repository.GetNewDiffsErrors {
-		errs <- err
-	}
+	return repository.GetNewDiffsDiffs, err
 }
 
 func (repository *MockStorageDiffRepository) MarkChecked(id int64) error {
