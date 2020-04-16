@@ -32,6 +32,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var ResultsLimit = 500
+
 type ErrHeaderMismatch struct {
 	dbHash   string
 	diffHash string
@@ -89,21 +91,30 @@ func (watcher StorageWatcher) Execute() error {
 }
 
 func (watcher StorageWatcher) transformDiffs() error {
-	diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs()
-	if extractErr != nil {
-		return fmt.Errorf("error getting unchecked diffs: %s", extractErr.Error())
-	}
-	for _, diff := range diffs {
-		transformErr := watcher.transformDiff(diff)
-		if transformErr != nil {
-			if transformErr == sql.ErrNoRows || reflect.TypeOf(transformErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
-				logrus.Tracef("error transforming diff: %s", transformErr.Error())
-			} else {
-				logrus.Infof("error transforming diff: %s", transformErr.Error())
+	minID := 0
+	for {
+		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
+		if extractErr != nil {
+			return fmt.Errorf("error getting unchecked diffs: %s", extractErr.Error())
+		}
+		for _, diff := range diffs {
+			transformErr := watcher.transformDiff(diff)
+			if transformErr != nil {
+				if transformErr == sql.ErrNoRows || reflect.TypeOf(transformErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+					logrus.Tracef("error transforming diff: %s", transformErr.Error())
+				} else {
+					logrus.Infof("error transforming diff: %s", transformErr.Error())
+				}
 			}
 		}
+		lenDiffs := len(diffs)
+		if lenDiffs > 0 {
+			minID = int(diffs[lenDiffs-1].ID)
+		}
+		if lenDiffs < ResultsLimit {
+			return nil
+		}
 	}
-	return nil
 }
 
 func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {

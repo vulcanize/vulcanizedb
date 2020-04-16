@@ -18,6 +18,7 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -28,7 +29,7 @@ var ErrDuplicateDiff = sql.ErrNoRows
 type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
 	CreateBackFilledStorageValue(rawDiff types.RawDiff) error
-	GetNewDiffs() ([]types.PersistedDiff, error)
+	GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error)
 	MarkChecked(id int64) error
 }
 
@@ -61,9 +62,10 @@ func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawD
 	return err
 }
 
-func (repository diffRepository) GetNewDiffs() ([]types.PersistedDiff, error) {
+func (repository diffRepository) GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error) {
 	var result []types.PersistedDiff
-	err := repository.db.Select(&result, `SELECT * FROM public.storage_diff WHERE checked IS false LIMIT 500`)
+	query := fmt.Sprintf("SELECT * FROM public.storage_diff WHERE checked IS false and id > %d ORDER BY id ASC LIMIT %d", minID, limit)
+	err := repository.db.Select(&result, query)
 	return result, err
 }
 

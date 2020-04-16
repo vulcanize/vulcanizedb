@@ -26,6 +26,8 @@ type MockStorageDiffRepository struct {
 	CreatePassedRawDiffs                       []types.RawDiff
 	GetNewDiffsDiffs                           []types.PersistedDiff
 	GetNewDiffsErrors                          []error
+	GetNewDiffsPassedMinIDs                    []int
+	GetNewDiffsPassedLimits                    []int
 	MarkCheckedPassedID                        int64
 }
 
@@ -39,7 +41,9 @@ func (repository *MockStorageDiffRepository) CreateBackFilledStorageValue(rawDif
 	return repository.CreateBackFilledStorageValueReturnError
 }
 
-func (repository *MockStorageDiffRepository) GetNewDiffs() ([]types.PersistedDiff, error) {
+func (repository *MockStorageDiffRepository) GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error) {
+	repository.GetNewDiffsPassedMinIDs = append(repository.GetNewDiffsPassedMinIDs, minID)
+	repository.GetNewDiffsPassedLimits = append(repository.GetNewDiffsPassedLimits, limit)
 	err := repository.GetNewDiffsErrors[0]
 	if len(repository.GetNewDiffsErrors) > 1 {
 		repository.GetNewDiffsErrors = repository.GetNewDiffsErrors[1:]
