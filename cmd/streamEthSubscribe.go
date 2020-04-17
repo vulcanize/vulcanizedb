@@ -168,7 +168,7 @@ func streamEthSubscription() {
 }
 
 func getRPCClient() core.RPCClient {
-	vulcPath := viper.GetString("superNode.ethSubscription.path")
+	vulcPath := viper.GetString("superNode.ethSubscription.wsPath")
 	if vulcPath == "" {
 		vulcPath = "ws://127.0.0.1:8080" // default to and try the default ws url if no path is provided
 	}
