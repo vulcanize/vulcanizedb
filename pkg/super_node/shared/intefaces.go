@@ -18,8 +18,6 @@ package shared
 
 import (
 	"math/big"
-
-	node "github.com/ipfs/go-ipld-format"
 )
 
 // PayloadStreamer streams chain-specific payloads to the provided channel
@@ -69,11 +67,6 @@ type IPLDFetcher interface {
 type ClientSubscription interface {
 	Err() <-chan error
 	Unsubscribe()
-}
-
-// DagPutter is a general interface for a dag putter
-type DagPutter interface {
-	DagPut(n node.Node) (string, error)
 }
 
 // Cleaner is for cleaning out data from the cache within the given ranges

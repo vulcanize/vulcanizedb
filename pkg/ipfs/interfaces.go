@@ -14,27 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package version
+package ipfs
 
-import "fmt"
-
-const (
-	VersionMajor = 0       // Major version component of the current release
-	VersionMinor = 1       // Minor version component of the current release
-	VersionPatch = 0       // Patch version component of the current release
-	VersionMeta  = "alpha" // Version metadata to append to the version string
+import (
+	ipld "github.com/ipfs/go-ipld-format"
 )
 
-// Version holds the textual version string.
-var Version = func() string {
-	return fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionPatch)
-}()
-
-// VersionWithMeta holds the textual version string including the metadata.
-var VersionWithMeta = func() string {
-	v := Version
-	if VersionMeta != "" {
-		v += "-" + VersionMeta
-	}
-	return v
-}()
+// DagPutter is a general interface for a dag putter
+type DagPutter interface {
+	DagPut(n ipld.Node) (string, error)
+}

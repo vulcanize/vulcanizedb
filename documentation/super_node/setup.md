@@ -1,14 +1,35 @@
-## Super Node Setup
+# VulcanizeDB Super Node Setup
+Step-by-step instructions for manually setting up and running a VulcanizeDB super node.
 
-Vulcanizedb can act as an index for chain data stored on IPFS through the use of the `superNode` command. 
+Steps:
+1. [Postgres](#postgres)
+1. [Goose](#goose)
+1. [IPFS](#ipfs)
+1. [Blockchain](#blockchain)
+1. [VulcanizeDB](#vulcanizedb)
 
-### Manual Setup
+### Postgres
+A postgresDB is needed to storing all of the data in the vulcanizedb system.
+Postgres is used as the backing datastore for IPFS, and is used to index the CIDs for all of the chain data stored on IPFS.
+Follow the guides [here](https://wiki.postgresql.org/wiki/Detailed_installation_guides) for setting up Postgres.
 
-These commands work in conjunction with a [state-diffing full Geth node](https://github.com/vulcanize/go-ethereum/tree/statediffing)
-and IPFS.
+Once the Postgres server is running, we will need to make a database for vulcanizedb, e.g. `vulcanize_public`.
 
-#### IPFS
-To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs)
+`createdb vulcanize_public`
+
+For running the automated tests, also create a database named `vulcanize_testing`.
+
+`createdb vulcanize_testing`
+
+### Goose
+We use [goose](https://github.com/pressly/goose) as our migration management tool. While it is not necessary to use `goose` for manual setup, it
+is required for running the automated tests.
+
+
+### IPFS
+We use IPFS to store IPLD objects for each type of data we extract from on chain.
+
+To start, download and install [IPFS](https://github.com/vulcanize/go-ipfs):
 
 `go get github.com/ipfs/go-ipfs`
 
@@ -26,11 +47,11 @@ Start by adding the fork and switching over to it:
 
 `git checkout -b postgres_update vulcanize/postgres_update`
 
-Now install this fork of ipfs, first be sure to remove any previous installation.
+Now install this fork of ipfs, first be sure to remove any previous installation:
 
 `make install`
 
-Check that is installed properly by running
+Check that is installed properly by running:
 
 `ipfs`
 
@@ -49,7 +70,7 @@ export IPFS_PGPORT=
 export IPFS_PGPASSWORD=
 ```
 
-And then run the ipfs command
+And then run the ipfs command:
 
 `ipfs init --profile=postgresds`
 
@@ -62,10 +83,14 @@ and will ask us to enter the password, avoiding storing it to an ENV variable.
 
 Once we have initialized ipfs, that is all we need to do with it- we do not need to run a daemon during the subsequent processes (in fact, we can't).
 
-#### Geth 
-For Geth, we currently *require* a special fork, and we can set this up as follows:
+### Blockchain
+This section describes how to setup an Ethereum or Bitcoin node to serve as a data source for the super node
 
-Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch
+#### Ethereum
+For Ethereum, we currently *require* [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11). This can be setup as follows.
+Skip this steps if you already have access to a node that displays the statediffing endpoints.
+
+Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch:
 
 `go get github.com/ethereum/go-ethereum`
 
@@ -75,9 +100,9 @@ Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch
 
 `git fetch vulcanize`
 
-`git checkout -b statediffing vulcanize/statediff_at_anyblock-1.9.9`
+`git checkout -b statediffing vulcanize/statediff_at_anyblock-1.9.11`
 
-Now, install this fork of geth (make sure any old versions have been uninstalled/binaries removed first)
+Now, install this fork of geth (make sure any old versions have been uninstalled/binaries removed first):
 
 `make geth`
 
@@ -87,163 +112,49 @@ And run the output binary with statediffing turned on:
 
 `./geth --statediff --statediff.streamblock --ws --syncmode=full`
 
+Note: if you wish to access historical data (perform `backFill`) then the node will need to operate as an archival node (`--gcmode=archive`)
+
 Note: other CLI options- statediff specific ones included- can be explored with `./geth help`
 
 The output from geth should mention that it is `Starting statediff service` and block synchronization should begin shortly thereafter.
-Note that until it receives a subscriber, the statediffing process does essentially nothing. Once a subscription is received, this 
-will be indicated in the output. 
+Note that until it receives a subscriber, the statediffing process does nothing but wait for one. Once a subscription is received, this
+will be indicated in the output and node will begin processing and sending statediffs.
 
-Also in the output will be the websocket url and ipc paths that we will use to subscribe to the statediffing process.
-The default ws url is "ws://127.0.0.1:8546" and the default ipcPath- on Darwin systems only- is "Users/user/Library/Ethereum/geth.ipc"
+Also in the output will be the endpoints that we will use to interface with the node.
+The default ws url is "127.0.0.1:8546" and the default http url is "127.0.0.1:8545".
+These values will be used as the `ethereum.wsPath` and `ethereum.httpPath` in the super node config, respectively.
 
-#### Vulcanizedb
+#### Bitcoin
+For Bitcoin, the super node is able to operate entirely through the universally exposed JSON-RPC interfaces.
+This means we can use any of the standard full nodes (e.g. bitcoind, btcd) as our data source.
 
-The `superNode` command is used to initialize and run an instance of the VulcanizeDB SuperNode
+Point at a remote node or set one up locally using the instructions for [bitcoind](https://github.com/bitcoin/bitcoin) and [btcd](https://github.com/btcsuite/btcd).
 
-Usage:
+The default http url is "127.0.0.1:8332". We will use the http endpoint as both the `bitcoin.wsPath` and `bitcoin.httpPath`
+(bitcoind does not support websocket endpoints, we are currently using a "subscription" wrapper around the http endpoints)
+
+### Vulcanizedb
+Finally, we can begin the vulcanizeDB process itself.
+
+Start by downloading vulcanizedb and moving into the repo:
+
+`go get github.com/vulcanize/vulcanizedb`
+
+`cd $GOPATH/src/github.com/vulcanize/vulcanizedb`
+
+Run the db migrations against the Postgres database we created for vulcanizeDB:
+
+`goose -dir=./db/migrations postgres postgres://localhost:5432/vulcanize_public?sslmode=disable up`
+
+At this point, if we want to run the automated tests:
+
+`make test`
+`make integration_test`
+
+Then, build the vulcanizedb binary:
+
+`go build`
+
+And run the super node command with a provided [config](architecture.md/#):
 
 `./vulcanizedb superNode --config=<config_file.toml`
- 
- 
-The config file contains the parameters needed to initialize a super node with the appropriate chain(s), settings, and services
-
-The below example spins up a super node for btc and eth
-```toml
-[superNode]
-    chains = ["ethereum", "bitcoin"]
-    ipfsPath = "/Users/iannorden/.ipfs"
-
-    [superNode.ethereum.database]
-        name     = "vulcanize_demo"
-        hostname = "localhost"
-        port     = 5432
-        user     = "postgres"
-
-    [superNode.ethereum.sync]
-        on = true
-        wsPath  = "ws://127.0.0.1:8546"
-        workers = 1
-
-    [superNode.ethereum.server]
-        on = true
-        ipcPath = "/Users/iannorden/.vulcanize/eth/vulcanize.ipc"
-        wsPath = "127.0.0.1:8080"
-        httpPath = "127.0.0.1:8081"
-
-    [superNode.ethereum.backFill]
-        on = true
-        httpPath = "http://127.0.0.1:8545"
-        frequency = 15
-        batchSize = 50
-
-    [superNode.bitcoin.database]
-         name     = "vulcanize_demo"
-         hostname = "localhost"
-         port     = 5432
-         user     = "postgres"
-
-    [superNode.bitcoin.sync]
-         on = true
-         wsPath  = "127.0.0.1:8332"
-         workers = 1
-         pass = "GhhOhxL6GxteDhgzrTqj"
-         user = "ocdrpc"
-
-    [superNode.bitcoin.server]
-         on = true
-         ipcPath = "/Users/iannorden/.vulcanize/btc/vulcanize.ipc"
-         wsPath = "127.0.0.1:8082"
-         httpPath = "127.0.0.1:8083"
-
-    [superNode.bitcoin.backFill]
-         on = true
-         httpPath = "127.0.0.1:8332"
-         frequency = 15
-         batchSize = 50
-         pass = "GhhOhxL6GxteDhgzrTqj"
-         user = "ocdrpc"
-
-    [superNode.bitcoin.node]
-         nodeID = "ocd0"
-         clientName = "Omnicore"
-         genesisBlock = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-         networkID = "0xD9B4BEF9"
-```
-
-### Dockerfile Setup
-
-The below provides step-by-step directions for how to setup the super node using the provided Dockerfile on an AWS Linux AMI instance.
-Note that the instance will need sufficient memory and storage for this to work.
-
-1. Install basic dependencies 
-```
-sudo yum update
-sudo yum install -y curl gpg gcc gcc-c++ make git
-```
-
-2. Install Go 1.12
-```
-wget https://dl.google.com/go/go1.12.6.linux-amd64.tar.gz
-tar -xzf go1.12.6.linux-amd64.tar.gz
-sudo mv go /usr/local
-```
-
-3. Edit .bash_profile to export GOPATH
-```
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-```
-
-4. Install and setup Postgres
-```
-sudo yum install postgresql postgresql96-server
-sudo service postgresql96 initdb
-sudo service postgresql96 start
-sudo -u postgres createuser -s ec2-user
-sudo -u postgres createdb ec2-user
-sudo su postgres
-psql
-ALTER USER "ec2-user" WITH SUPERUSER;
-\q
-exit
-```
-
-4b. Edit hba_file to trust local connections
-```
-psql
-SHOW hba_file;
-/q
-sudo vim {PATH_TO_FILE}
-```
-
-4c. Stop and restart Postgres server to affect changes
-```
-sudo service postgresql96 stop
-sudo service postgresql96 start
-```
-
-5. Install and start Docker (exit and re-enter ec2 instance afterwards to affect changes)
-```
-sudo yum install -y docker
-sudo service  docker start
-sudo usermod -aG docker ec2-user
-```
-
-6. Fetch the repository
-```
-go get github.com/vulcanize/vulcanizedb
-cd $GOPATH/src/github.com/vulcanize/vulcanizedb
-```
-
-7. Create the db
-```
-createdb vulcanize_public
-```
-
-8. Build and run the Docker image
-```
-cd $GOPATH/src/github.com/vulcanize/vulcanizedb/dockerfiles/super_node
-docker build --build-arg CONFIG_FILE=environments/superNode.toml --build-arg EXPOSE_PORT_1=8080 --build-arg EXPOSE_PORT_2=8081 EXPOSE_PORT_3=8082 --build-arg EXPOSE_PORT_4=8083 .
-docker run --network host -e IPFS_INIT=true -e VDB_PG_NAME=vulcanize_public -e VDB_PG_HOSTNAME=localhost -e VDB_PG_PORT=5432 -e VDB_PG_USER=postgres -e VDB_PG_PASSWORD=password {IMAGE_ID}
-```
