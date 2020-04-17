@@ -192,9 +192,6 @@ var _ = Describe("Storage diffs repository", func() {
 
 	Describe("GetNewDiffs", func() {
 		It("sends diffs that are not marked as checked", func() {
-			diffs := make(chan types.PersistedDiff)
-			errs := make(chan error)
-			done := make(chan bool)
 			fakeRawDiff := types.RawDiff{
 				HashedAddress: test_data.FakeHash(),
 				BlockHash:     test_data.FakeHash(),
@@ -212,17 +209,13 @@ var _ = Describe("Storage diffs repository", func() {
 				fakeRawDiff.StorageKey.Bytes(), fakeRawDiff.StorageValue.Bytes())
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			go repo.GetNewDiffs(diffs, errs, done)
+			diffs, err := repo.GetNewDiffs(0, 1)
 
-			Consistently(errs).ShouldNot(Receive())
-			Eventually(<-diffs).Should(Equal(fakePersistedDiff))
-			Eventually(<-done).Should(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(ConsistOf(fakePersistedDiff))
 		})
 
 		It("does not send diff that's marked as checked", func() {
-			diffs := make(chan types.PersistedDiff)
-			errs := make(chan error)
-			done := make(chan bool)
 			fakeRawDiff := types.RawDiff{
 				HashedAddress: test_data.FakeHash(),
 				BlockHash:     test_data.FakeHash(),
@@ -242,11 +235,39 @@ var _ = Describe("Storage diffs repository", func() {
 				fakePersistedDiff.Checked)
 			Expect(insertErr).NotTo(HaveOccurred())
 
-			go repo.GetNewDiffs(diffs, errs, done)
+			diffs, err := repo.GetNewDiffs(0, 1)
 
-			Consistently(errs).ShouldNot(Receive())
-			Consistently(diffs).ShouldNot(Receive())
-			Eventually(<-done).Should(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diffs).To(BeEmpty())
+		})
+
+		It("enables seeking diffs with greater ID", func() {
+			blockZero := rand.Int()
+			for i := 0; i < 2; i++ {
+				fakeRawDiff := types.RawDiff{
+					HashedAddress: test_data.FakeHash(),
+					BlockHash:     test_data.FakeHash(),
+					BlockHeight:   blockZero + i,
+					StorageKey:    test_data.FakeHash(),
+					StorageValue:  test_data.FakeHash(),
+				}
+				_, insertErr := db.Exec(`INSERT INTO public.storage_diff (block_height, block_hash,
+				hashed_address, storage_key, storage_value) VALUES ($1, $2, $3, $4, $5)`, fakeRawDiff.BlockHeight,
+					fakeRawDiff.BlockHash.Bytes(), fakeRawDiff.HashedAddress.Bytes(), fakeRawDiff.StorageKey.Bytes(),
+					fakeRawDiff.StorageValue.Bytes())
+				Expect(insertErr).NotTo(HaveOccurred())
+			}
+
+			minID := 0
+			limit := 1
+			diffsOne, errOne := repo.GetNewDiffs(minID, limit)
+			Expect(errOne).NotTo(HaveOccurred())
+			Expect(len(diffsOne)).To(Equal(1))
+			nextID := int(diffsOne[0].ID)
+			diffsTwo, errTwo := repo.GetNewDiffs(nextID, limit)
+			Expect(errTwo).NotTo(HaveOccurred())
+			Expect(len(diffsTwo)).To(Equal(1))
+			Expect(int(diffsTwo[0].ID) > nextID).To(BeTrue())
 		})
 	})
 

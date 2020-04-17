@@ -65,6 +65,59 @@ var _ = Describe("Storage Watcher", func() {
 
 		})
 
+		It("fetches diffs with results limit", func() {
+			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(mockDiffsRepository.GetNewDiffsPassedLimits).To(ConsistOf(watcher.ResultsLimit))
+		})
+
+		It("fetches diffs with min ID from subsequent queries when previous query returns max results", func() {
+			var diffs []types.PersistedDiff
+			diffID := rand.Int()
+			for i := 0; i < watcher.ResultsLimit; i++ {
+				diffID = diffID + i
+				diff := types.PersistedDiff{
+					RawDiff: types.RawDiff{
+						HashedAddress: test_data.FakeHash(),
+					},
+					ID: int64(diffID),
+				}
+				diffs = append(diffs, diff)
+			}
+			mockDiffsRepository.GetNewDiffsDiffs = diffs
+			mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(0, diffID))
+		})
+
+		It("resets min ID to zero when previous query returns fewer than max results", func() {
+			var diffs []types.PersistedDiff
+			diffID := rand.Int()
+			for i := 0; i < watcher.ResultsLimit-1; i++ {
+				diffID = diffID + i
+				diff := types.PersistedDiff{
+					RawDiff: types.RawDiff{
+						HashedAddress: test_data.FakeHash(),
+					},
+					ID: int64(diffID),
+				}
+				diffs = append(diffs, diff)
+			}
+			mockDiffsRepository.GetNewDiffsDiffs = diffs
+			mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Expect(mockDiffsRepository.GetNewDiffsPassedMinIDs).To(ConsistOf(0, 0))
+		})
+
 		It("marks diff as checked if no transformer is watching its address", func() {
 			unwatchedDiff := types.PersistedDiff{
 				RawDiff: types.RawDiff{
@@ -73,7 +126,7 @@ var _ = Describe("Storage Watcher", func() {
 				ID: rand.Int63(),
 			}
 			mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{unwatchedDiff}
-			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+			mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 			err := storageWatcher.Execute()
 
@@ -105,8 +158,8 @@ var _ = Describe("Storage Watcher", func() {
 					HeaderID: rand.Int63(),
 				}
 				mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{diffWithoutHeader}
+				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 				mockHeaderRepository.GetHeaderError = errors.New("no matching header")
-				mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
 
 				err := storageWatcher.Execute()
 
@@ -145,7 +198,7 @@ var _ = Describe("Storage Watcher", func() {
 
 				It("does not mark diff checked if transformer execution fails", func() {
 					mockTransformer.ExecuteErr = errors.New("execute failed")
-					mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+					mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 					err := storageWatcher.Execute()
 
@@ -157,7 +210,7 @@ var _ = Describe("Storage Watcher", func() {
 				Describe("when transformer execution succeeds", func() {
 					It("marks diff checked", func() {
 						mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{fakePersistedDiff}
-						mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+						mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
 
 						err := storageWatcher.Execute()
 
