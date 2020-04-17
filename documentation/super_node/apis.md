@@ -9,7 +9,7 @@ The super node exposes a number of different APIs for remote access to the under
 
 
 ### Postgraphile
-The super node process all data into a Postgres DB- using PG-IPFS this includes all of the IPLD objects.
+The super node stores all processed data a Postgres DB using PG-IPFS, this includes all of the IPLD objects.
 [Postgraphile](https://www.graphile.org/postgraphile/) can be used to expose GraphQL endpoints for the Postgres tables.
 
 e.g. 
