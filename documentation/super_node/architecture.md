@@ -73,6 +73,7 @@ This set of parameters needs to be set no matter the chain type.
     frequency = 45 # $SUPERNODE_FREQUENCY
     batchSize = 1 # $SUPERNODE_BATCH_SIZE
     batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    timeout = 300 # $HTTP_TIMEOUT
     validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 ```
 
@@ -98,6 +99,10 @@ For Ethereum:
 [ethereum]
     wsPath  = "127.0.0.1:8546" # $ETH_WS_PATH
     httpPath = "127.0.0.1:8545" # $ETH_HTTP_PATH
+    nodeID = "arch1" # $ETH_NODE_ID
+    clientName = "Geth" # $ETH_CLIENT_NAME
+    genesisBlock = "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" # $ETH_GENESIS_BLOCK
+    networkID = "1" # $ETH_NETWORK_ID
 ```
 
 ## Database

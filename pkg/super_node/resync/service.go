@@ -80,7 +80,7 @@ func NewResyncService(settings *Config) (Resync, error) {
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := super_node.NewPaylaodFetcher(settings.Chain, settings.HTTPClient)
+	fetcher, err := super_node.NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
 	if err != nil {
 		return nil, err
 	}

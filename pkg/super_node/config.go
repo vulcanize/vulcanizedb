@@ -72,6 +72,7 @@ type Config struct {
 	BatchSize       uint64
 	BatchNumber     uint64
 	ValidationLevel int
+	Timeout         time.Duration // HTTP connection timeout in seconds
 }
 
 // NewSuperNodeConfig is used to initialize a SuperNode config from a .toml file
@@ -90,6 +91,13 @@ func NewSuperNodeConfig() (*Config, error) {
 	viper.BindEnv("superNode.ipcPath", SUPERNODE_IPC_PATH)
 	viper.BindEnv("superNode.httpPath", SUPERNODE_HTTP_PATH)
 	viper.BindEnv("superNode.backFill", SUPERNODE_BACKFILL)
+	viper.BindEnv("superNode.timeout", shared.HTTP_TIMEOUT)
+
+	timeout := viper.GetInt("superNode.timeout")
+	if timeout < 15 {
+		timeout = 15
+	}
+	c.Timeout = time.Second * time.Duration(timeout)
 
 	chain := viper.GetString("superNode.chain")
 	c.Chain, err = shared.NewChainType(chain)

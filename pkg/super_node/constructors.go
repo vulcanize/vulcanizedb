@@ -18,6 +18,7 @@ package super_node
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 
@@ -92,7 +93,7 @@ func NewPayloadStreamer(chain shared.ChainType, clientOrConfig interface{}) (sha
 }
 
 // NewPaylaodFetcher constructs a PayloadFetcher for the provided chain type
-func NewPaylaodFetcher(chain shared.ChainType, client interface{}) (shared.PayloadFetcher, error) {
+func NewPaylaodFetcher(chain shared.ChainType, client interface{}, timeout time.Duration) (shared.PayloadFetcher, error) {
 	switch chain {
 	case shared.Ethereum:
 		batchClient, ok := client.(eth.BatchClient)
@@ -100,7 +101,7 @@ func NewPaylaodFetcher(chain shared.ChainType, client interface{}) (shared.Paylo
 			var expectedClient eth.BatchClient
 			return nil, fmt.Errorf("ethereum payload fetcher constructor expected client type %T got %T", expectedClient, client)
 		}
-		return eth.NewPayloadFetcher(batchClient), nil
+		return eth.NewPayloadFetcher(batchClient, timeout), nil
 	case shared.Bitcoin:
 		connConfig, ok := client.(*rpcclient.ConnConfig)
 		if !ok {

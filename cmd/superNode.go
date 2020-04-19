@@ -121,6 +121,7 @@ func init() {
 	superNodeCmd.PersistentFlags().Int("supernode-batch-size", 0, "data fetching batch size")
 	superNodeCmd.PersistentFlags().Int("supernode-batch-number", 0, "how many goroutines to fetch data concurrently")
 	superNodeCmd.PersistentFlags().Int("supernode-validation-level", 0, "backfill will resync any data below this level")
+	superNodeCmd.PersistentFlags().Int("supernode-timeout", 0, "timeout used for backfill http requests")
 
 	superNodeCmd.PersistentFlags().String("btc-ws-path", "", "ws url for bitcoin node")
 	superNodeCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
@@ -133,6 +134,10 @@ func init() {
 
 	superNodeCmd.PersistentFlags().String("eth-ws-path", "", "ws url for ethereum node")
 	superNodeCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
+	superNodeCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
+	superNodeCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
+	superNodeCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
+	superNodeCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
 
 	// and their bindings
 	viper.BindPFlag("ipfs.path", superNodeCmd.PersistentFlags().Lookup("ipfs-path"))
@@ -149,6 +154,7 @@ func init() {
 	viper.BindPFlag("superNode.batchSize", superNodeCmd.PersistentFlags().Lookup("supernode-batch-size"))
 	viper.BindPFlag("superNode.batchNumber", superNodeCmd.PersistentFlags().Lookup("supernode-batch-number"))
 	viper.BindPFlag("superNode.validationLevel", superNodeCmd.PersistentFlags().Lookup("supernode-validation-level"))
+	viper.BindPFlag("superNode.timeout", superNodeCmd.PersistentFlags().Lookup("supernode-timeout"))
 
 	viper.BindPFlag("bitcoin.wsPath", superNodeCmd.PersistentFlags().Lookup("btc-ws-path"))
 	viper.BindPFlag("bitcoin.httpPath", superNodeCmd.PersistentFlags().Lookup("btc-http-path"))
@@ -161,4 +167,8 @@ func init() {
 
 	viper.BindPFlag("ethereum.wsPath", superNodeCmd.PersistentFlags().Lookup("eth-ws-path"))
 	viper.BindPFlag("ethereum.httpPath", superNodeCmd.PersistentFlags().Lookup("eth-http-path"))
+	viper.BindPFlag("ethereum.nodeID", superNodeCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", superNodeCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", superNodeCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", superNodeCmd.PersistentFlags().Lookup("eth-network-id"))
 }

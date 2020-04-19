@@ -24,17 +24,20 @@ import (
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/spf13/viper"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
-	"github.com/vulcanize/vulcanizedb/pkg/eth/node"
 )
 
 // Env variables
 const (
-	IPFS_PATH = "IPFS_PATH"
+	IPFS_PATH    = "IPFS_PATH"
+	HTTP_TIMEOUT = "HTTP_TIMEOUT"
 
-	ETH_WS_PATH   = "ETH_WS_PATH"
-	ETH_HTTP_PATH = "ETH_HTTP_PATH"
+	ETH_WS_PATH       = "ETH_WS_PATH"
+	ETH_HTTP_PATH     = "ETH_HTTP_PATH"
+	ETH_NODE_ID       = "ETH_NODE_ID"
+	ETH_CLIENT_NAME   = "ETH_CLIENT_NAME"
+	ETH_GENESIS_BLOCK = "ETH_GENESIS_BLOCK"
+	ETH_NETWORK_ID    = "ETH_NETWORK_ID"
 
 	BTC_WS_PATH       = "BTC_WS_PATH"
 	BTC_HTTP_PATH     = "BTC_HTTP_PATH"
@@ -47,14 +50,22 @@ const (
 )
 
 // GetEthNodeAndClient returns eth node info and client from path url
-func GetEthNodeAndClient(path string) (core.Node, core.RPCClient, error) {
-	rawRPCClient, err := rpc.Dial(path)
+func GetEthNodeAndClient(path string) (core.Node, *rpc.Client, error) {
+	viper.BindEnv("ethereum.nodeID", ETH_NODE_ID)
+	viper.BindEnv("ethereum.clientName", ETH_CLIENT_NAME)
+	viper.BindEnv("ethereum.genesisBlock", ETH_GENESIS_BLOCK)
+	viper.BindEnv("ethereum.networkID", ETH_NETWORK_ID)
+
+	rpcClient, err := rpc.Dial(path)
 	if err != nil {
 		return core.Node{}, nil, err
 	}
-	rpcClient := client.NewRPCClient(rawRPCClient, path)
-	vdbNode := node.MakeNode(rpcClient)
-	return vdbNode, rpcClient, nil
+	return core.Node{
+		ID:           viper.GetString("ethereum.nodeID"),
+		ClientName:   viper.GetString("ethereum.clientName"),
+		GenesisBlock: viper.GetString("ethereum.genesisBlock"),
+		NetworkID:    viper.GetString("ethereum.networkID"),
+	}, rpcClient, nil
 }
 
 // GetIPFSPath returns the ipfs path from the config or env variable

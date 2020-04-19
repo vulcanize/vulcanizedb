@@ -17,33 +17,36 @@
 package eth
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+	"time"
 
 	"github.com/ethereum/go-ethereum/statediff"
 
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
 type BatchClient interface {
-	BatchCall(batch []client.BatchElem) error
+	BatchCallContext(ctx context.Context, batch []client.BatchElem) error
 }
 
 // PayloadFetcher satisfies the PayloadFetcher interface for ethereum
 type PayloadFetcher struct {
 	// PayloadFetcher is thread-safe as long as the underlying client is thread-safe, since it has/modifies no other state
 	// http.Client is thread-safe
-	client BatchClient
+	client  BatchClient
+	timeout time.Duration
 }
 
 const method = "statediff_stateDiffAt"
 
 // NewStateDiffFetcher returns a PayloadFetcher
-func NewPayloadFetcher(bc BatchClient) *PayloadFetcher {
+func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
 	return &PayloadFetcher{
-		client: bc,
+		client:  bc,
+		timeout: timeout,
 	}
 }
 
@@ -58,14 +61,16 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChain
 			Result: new(statediff.Payload),
 		})
 	}
-	batchErr := fetcher.client.BatchCall(batch)
+	ctx, cancel := context.WithTimeout(context.Background(), fetcher.timeout)
+	defer cancel()
+	batchErr := fetcher.client.BatchCallContext(ctx, batch)
 	if batchErr != nil {
-		return nil, fmt.Errorf("PayloadFetcher err: %s", batchErr.Error())
+		return nil, fmt.Errorf("ethereum PayloadFetcher batch err for block range %d-%d: %s", blockHeights[0], blockHeights[len(blockHeights)-1], batchErr.Error())
 	}
 	results := make([]shared.RawChainData, 0, len(blockHeights))
 	for _, batchElem := range batch {
 		if batchElem.Error != nil {
-			return nil, fmt.Errorf("PayloadFetcher err: %s", batchElem.Error.Error())
+			return nil, fmt.Errorf("ethereum PayloadFetcher err at blockheight %d: %s", batchElem.Args[0].(uint64), batchElem.Error.Error())
 		}
 		payload, ok := batchElem.Result.(*statediff.Payload)
 		if ok {

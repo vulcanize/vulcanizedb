@@ -17,6 +17,7 @@
 package mocks
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -44,6 +45,27 @@ func (mc *BackFillerClient) SetReturnDiffAt(height uint64, diffPayload statediff
 
 // BatchCall mockClient method to simulate batch call to geth
 func (mc *BackFillerClient) BatchCall(batch []client.BatchElem) error {
+	if mc.MappedStateDiffAt == nil {
+		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
+	}
+	for _, batchElem := range batch {
+		if len(batchElem.Args) != 1 {
+			return errors.New("expected batch elem to contain single argument")
+		}
+		blockHeight, ok := batchElem.Args[0].(uint64)
+		if !ok {
+			return errors.New("expected batch elem argument to be a uint64")
+		}
+		err := json.Unmarshal(mc.MappedStateDiffAt[blockHeight], batchElem.Result)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// BatchCallContext mockClient method to simulate batch call to geth
+func (mc *BackFillerClient) BatchCallContext(ctx context.Context, batch []client.BatchElem) error {
 	if mc.MappedStateDiffAt == nil {
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}

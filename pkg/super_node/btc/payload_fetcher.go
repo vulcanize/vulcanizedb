@@ -17,6 +17,8 @@
 package btc
 
 import (
+	"fmt"
+
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -48,11 +50,11 @@ func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChain
 	for i, height := range blockHeights {
 		hash, err := fetcher.client.GetBlockHash(int64(height))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("bitcoin PayloadFetcher GetBlockHash err at blockheight %d: %s", height, err.Error())
 		}
 		block, err := fetcher.client.GetBlock(hash)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("bitcoin PayloadFetcher GetBlock err at blockheight %d: %s", height, err.Error())
 		}
 		blockPayloads[i] = BlockPayload{
 			BlockHeight: int64(height),

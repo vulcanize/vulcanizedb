@@ -85,7 +85,7 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 	if err != nil {
 		return nil, err
 	}
-	fetcher, err := NewPaylaodFetcher(settings.Chain, settings.HTTPClient)
+	fetcher, err := NewPaylaodFetcher(settings.Chain, settings.HTTPClient, settings.Timeout)
 	if err != nil {
 		return nil, err
 	}
