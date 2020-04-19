@@ -88,7 +88,7 @@ This section describes how to setup an Ethereum or Bitcoin node to serve as a da
 
 #### Ethereum
 For Ethereum, we currently *require* [a special fork of go-ethereum](https://github.com/vulcanize/go-ethereum/tree/statediff_at_anyblock-1.9.11). This can be setup as follows.
-Skip this steps if you already have access to a node that displays
+Skip this steps if you already have access to a node that displays the statediffing endpoints.
 
 Begin by downloading geth and switching to the vulcanize/rpc_statediffing branch:
 
