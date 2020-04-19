@@ -9,7 +9,7 @@ The super node exposes a number of different APIs for remote access to the under
 
 
 ### Postgraphile
-The super node process all data into a Postgres DB- using PG-IPFS this includes all of the IPLD objects.
+The super node stores all processed data in Postgres using PG-IPFS, this includes all of the IPLD objects.
 [Postgraphile](https://www.graphile.org/postgraphile/) can be used to expose GraphQL endpoints for the Postgres tables.
 
 e.g. 
@@ -256,7 +256,7 @@ The currently supported endpoints include:
 `eth_getBlockByHash`  
 `eth_getTransactionByHash`  
 
-Additional endpoints will be added in the near future, with the immediate goal of recapitulating the entire "eth_" set of endpoints.
+Additional endpoints will be added in the near future, with the immediate goal of recapitulating the largest set of "eth_" endpoints which can be provided as a service.
 
 #### Bitcoin JSON-RPC API:
 In the near future, the standard Bitcoin JSON-RPC interfaces will be implemented.
