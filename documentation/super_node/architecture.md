@@ -14,7 +14,7 @@ Currently the service supports complete processing of all Bitcoin and Ethereum d
 1. [IPFS Considerations](#ipfs-considerations)
 
 ## Processes
-The [super node service](../../pkg/super_node/service.go#L61) is comprised of the following interfaces:
+The [super node service](../../pkg/super_node/service.go#L61) is a watcher comprised of the following interfaces:
 
 * [Payload Fetcher](../../pkg/super_node/shared/interfaces.go#L29): Fetches raw chain data from a half-duplex endpoint (HTTP/IPC), used for historical data fetching. ([BTC](../../pkg/super_node/btc/payload_fetcher.go), [ETH](../../pkg/super_node/eth/payload_fetcher.go)).
 * [Payload Streamer](../../pkg/super_node/shared/interfaces.go#L24): Streams raw chain data from a full-duplex endpoint (WebSocket/IPC), used for syncing data at the head of the chain in real-time. ([BTC](../../pkg/super_node/btc/http_streamer.go), [ETH](../../pkg/super_node/eth/streamer.go)).
@@ -24,7 +24,6 @@ The [super node service](../../pkg/super_node/service.go#L61) is comprised of th
 * [CID Retriever](../../pkg/super_node/shared/interfaces.go#L54): Retrieves CIDs from Postgres by searching against their associated metadata, is used to lookup data to serve API requests/subscriptions. ([BTC](../../pkg/super_node/btc/retriever.go), [ETH](../../pkg/super_node/eth/retriever.go)).
 * [IPLD Fetcher](../../pkg/super_node/shared/interfaces.go#L62): Fetches the IPLDs needed to service API requests/subscriptions from IPFS using retrieved CIDS; can route through a IPFS block-exchange to search for objects that are not directly available. ([BTC](../../pkg/super_node/btc/ipld_fetcher.go), [ETH](../../pkg/super_node/eth/ipld_fetcher.go))
 * [Response Filterer](../../pkg/super_node/shared/interfaces.go#L49): Filters converted data payloads served to API subscriptions; filters according to the subscriber provided parameters. ([BTC](../../pkg/super_node/btc/filterer.go), [ETH](../../pkg/super_node/eth/filterer.go)).
-* [DB Cleaner](../../pkg/super_node/shared/interfaces.go#L73): Used to clean out cached IPFS objects, CIDs, and associated metadata. Useful for removing bad data or to introduce incompatible changes to the db schema/tables. ([BTC](../../pkg/super_node/btc/cleaner.go), [ETH](../../pkg/super_node/eth/cleaner.go)).
 * [API](https://github.com/ethereum/go-ethereum/blob/master/rpc/types.go#L31): Expose RPC methods for clients to interface with the data. Chain-specific APIs should aim to recapitulate as much of the native API as possible. ([VDB](../../pkg/super_node/api.go), [ETH](../../pkg/super_node/eth/api.go)).
 
 
