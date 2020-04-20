@@ -46,6 +46,6 @@ type HeaderRepository interface {
 }
 
 type EventLogRepository interface {
-	GetUntransformedEventLogs() ([]core.EventLog, error)
+	GetUntransformedEventLogs(minID, limit int) ([]core.EventLog, error)
 	CreateEventLogs(headerID int64, logs []types.Log) error
 }

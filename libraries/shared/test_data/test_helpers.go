@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/watcher"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
@@ -37,7 +38,8 @@ func CreateTestLog(headerID int64, db *postgres.DB) core.EventLog {
 	insertLogsErr := eventLogRepository.CreateEventLogs(headerID, []types.Log{log})
 	Expect(insertLogsErr).NotTo(HaveOccurred())
 
-	eventLogs, getLogsErr := eventLogRepository.GetUntransformedEventLogs()
+	// TODO: consider better calibrated limit depending on testing needs
+	eventLogs, getLogsErr := eventLogRepository.GetUntransformedEventLogs(0, watcher.ResultsLimit)
 	Expect(getLogsErr).NotTo(HaveOccurred())
 	for _, eventLog := range eventLogs {
 		if eventLog.Log.TxIndex == log.TxIndex {

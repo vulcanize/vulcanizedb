@@ -17,6 +17,8 @@
 package repositories
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/jmoiron/sqlx"
@@ -56,19 +58,15 @@ type rawEventLog struct {
 	Raw         []byte
 }
 
-func (repo EventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, error) {
-	rows, queryErr := repo.db.Queryx(`SELECT * FROM public.event_logs WHERE transformed is false`)
-	if queryErr != nil {
-		return nil, queryErr
+func (repo EventLogRepository) GetUntransformedEventLogs(minID, limit int) ([]core.EventLog, error) {
+	var rawLogs []rawEventLog
+	query := fmt.Sprintf("SELECT * FROM public.event_logs WHERE transformed is false AND id > %d ORDER BY id ASC LIMIT %d", minID, limit)
+	err := repo.db.Select(&rawLogs, query)
+	if err != nil {
+		return nil, err
 	}
-
 	var results []core.EventLog
-	for rows.Next() {
-		var rawLog rawEventLog
-		scanErr := rows.StructScan(&rawLog)
-		if scanErr != nil {
-			return nil, scanErr
-		}
+	for _, rawLog := range rawLogs {
 		var logTopics []common.Hash
 		for _, topic := range rawLog.Topics {
 			logTopics = append(logTopics, common.BytesToHash(topic))
@@ -96,10 +94,8 @@ func (repo EventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, err
 			Log:         reconstructedLog,
 			Transformed: rawLog.Transformed,
 		}
-		// TODO: Consider returning each result async to avoid keeping large result sets in memory
 		results = append(results, result)
 	}
-
 	return results, nil
 }
 

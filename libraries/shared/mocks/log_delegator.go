@@ -22,17 +22,19 @@ import (
 )
 
 type MockLogDelegator struct {
-	AddedTransformers []event.ITransformer
-	DelegateCallCount int
-	DelegateErrors    []error
+	AddedTransformers   []event.ITransformer
+	DelegateCallCount   int
+	DelegateErrors      []error
+	DelegatePassedLimit int
 }
 
 func (delegator *MockLogDelegator) AddTransformer(t event.ITransformer) {
 	delegator.AddedTransformers = append(delegator.AddedTransformers, t)
 }
 
-func (delegator *MockLogDelegator) DelegateLogs() error {
+func (delegator *MockLogDelegator) DelegateLogs(limit int) error {
 	delegator.DelegateCallCount++
+	delegator.DelegatePassedLimit = limit
 	if len(delegator.DelegateErrors) > 1 {
 		var delegateErrorThisRun error
 		delegateErrorThisRun, delegator.DelegateErrors = delegator.DelegateErrors[0], delegator.DelegateErrors[1:]

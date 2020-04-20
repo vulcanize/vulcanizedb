@@ -166,7 +166,7 @@ var _ = Describe("Header sync log repository", func() {
 	Describe("GetUntransformedEventLogs", func() {
 		Describe("when there are no logs", func() {
 			It("returns empty collection", func() {
-				result, err := repo.GetUntransformedEventLogs()
+				result, err := repo.GetUntransformedEventLogs(0, 1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(BeZero())
 			})
@@ -187,7 +187,7 @@ var _ = Describe("Header sync log repository", func() {
 			})
 
 			It("returns persisted logs", func() {
-				result, err := repo.GetUntransformedEventLogs()
+				result, err := repo.GetUntransformedEventLogs(0, 2)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(Equal(2))
@@ -200,7 +200,7 @@ var _ = Describe("Header sync log repository", func() {
 				_, insertErr := db.Exec(`UPDATE public.event_logs SET transformed = true WHERE tx_hash = $1`, log1.TxHash.Hex())
 				Expect(insertErr).NotTo(HaveOccurred())
 
-				result, err := repo.GetUntransformedEventLogs()
+				result, err := repo.GetUntransformedEventLogs(0, 2)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(Equal(1))
@@ -211,10 +211,24 @@ var _ = Describe("Header sync log repository", func() {
 				_, insertErr := db.Exec(`UPDATE public.event_logs SET transformed = true WHERE header_id = $1`, headerID)
 				Expect(insertErr).NotTo(HaveOccurred())
 
-				result, err := repo.GetUntransformedEventLogs()
+				result, err := repo.GetUntransformedEventLogs(0, 2)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(result)).To(BeZero())
+			})
+
+			It("enables seeking logs with greater ID", func() {
+				limit := 1
+				resultOne, errOne := repo.GetUntransformedEventLogs(0, limit)
+				Expect(errOne).NotTo(HaveOccurred())
+				Expect(len(resultOne)).To(Equal(limit))
+
+				nextMinID := int(resultOne[0].ID)
+				resultTwo, errTwo := repo.GetUntransformedEventLogs(nextMinID, limit)
+				Expect(errTwo).NotTo(HaveOccurred())
+				Expect(len(resultTwo)).To(Equal(1))
+
+				Expect(resultTwo[0].ID > resultOne[0].ID).To(BeTrue())
 			})
 		})
 	})
