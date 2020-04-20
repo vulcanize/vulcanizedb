@@ -17,10 +17,12 @@
 package eth
 
 import (
+	"context"
+
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
@@ -28,13 +30,18 @@ const (
 	PayloadChanBufferSize = 20000 // the max eth sub buffer size
 )
 
+// StreamClient is an interface for subscribing and streaming from geth
+type StreamClient interface {
+	Subscribe(ctx context.Context, namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error)
+}
+
 // PayloadStreamer satisfies the PayloadStreamer interface for ethereum
 type PayloadStreamer struct {
-	Client core.RPCClient
+	Client StreamClient
 }
 
 // NewPayloadStreamer creates a pointer to a new PayloadStreamer which satisfies the PayloadStreamer interface for ethereum
-func NewPayloadStreamer(client core.RPCClient) *PayloadStreamer {
+func NewPayloadStreamer(client StreamClient) *PayloadStreamer {
 	return &PayloadStreamer{
 		Client: client,
 	}
@@ -53,5 +60,5 @@ func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.
 			}
 		}
 	}()
-	return ps.Client.Subscribe("statediff", stateDiffChan, "stream")
+	return ps.Client.Subscribe(context.Background(), "statediff", stateDiffChan, "stream")
 }

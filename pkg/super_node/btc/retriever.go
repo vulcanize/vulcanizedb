@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+
 	"github.com/lib/pq"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -194,22 +196,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 	if len(heights) == 0 {
 		return emptyGaps, nil
 	}
-	validationGaps := make([]shared.Gap, 0)
-	start := heights[0]
-	lastHeight := start
-	for _, height := range heights[1:] {
-		if height == lastHeight+1 {
-			lastHeight = height
-			continue
-		}
-		validationGaps = append(validationGaps, shared.Gap{
-			Start: start,
-			Stop:  lastHeight,
-		})
-		start = height
-		lastHeight = start
-	}
-	return append(emptyGaps, validationGaps...), nil
+	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
 }
 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash

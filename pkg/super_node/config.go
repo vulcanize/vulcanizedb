@@ -91,13 +91,6 @@ func NewSuperNodeConfig() (*Config, error) {
 	viper.BindEnv("superNode.ipcPath", SUPERNODE_IPC_PATH)
 	viper.BindEnv("superNode.httpPath", SUPERNODE_HTTP_PATH)
 	viper.BindEnv("superNode.backFill", SUPERNODE_BACKFILL)
-	viper.BindEnv("superNode.timeout", shared.HTTP_TIMEOUT)
-
-	timeout := viper.GetInt("superNode.timeout")
-	if timeout < 15 {
-		timeout = 15
-	}
-	c.Timeout = time.Second * time.Duration(timeout)
 
 	chain := viper.GetString("superNode.chain")
 	c.Chain, err = shared.NewChainType(chain)
@@ -178,6 +171,13 @@ func (c *Config) BackFillFields() error {
 	viper.BindEnv("superNode.batchSize", SUPERNODE_BATCH_SIZE)
 	viper.BindEnv("superNode.batchNumber", SUPERNODE_BATCH_NUMBER)
 	viper.BindEnv("superNode.validationLevel", SUPERNODE_VALIDATION_LEVEL)
+	viper.BindEnv("superNode.timeout", shared.HTTP_TIMEOUT)
+
+	timeout := viper.GetInt("superNode.timeout")
+	if timeout < 15 {
+		timeout = 15
+	}
+	c.Timeout = time.Second * time.Duration(timeout)
 
 	switch c.Chain {
 	case shared.Ethereum:

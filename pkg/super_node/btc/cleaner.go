@@ -50,6 +50,9 @@ func (c *Cleaner) ResetValidation(rngs [][2]uint64) error {
 				SET times_validated = 0
 				WHERE block_number BETWEEN $1 AND $2`
 		if _, err := tx.Exec(pgStr, rng[0], rng[1]); err != nil {
+			if err := tx.Rollback(); err != nil {
+				logrus.Error(err)
+			}
 			return err
 		}
 	}

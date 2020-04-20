@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 )
@@ -65,7 +67,7 @@ func (mc *BackFillerClient) BatchCall(batch []client.BatchElem) error {
 }
 
 // BatchCallContext mockClient method to simulate batch call to geth
-func (mc *BackFillerClient) BatchCallContext(ctx context.Context, batch []client.BatchElem) error {
+func (mc *BackFillerClient) BatchCallContext(ctx context.Context, batch []rpc.BatchElem) error {
 	if mc.MappedStateDiffAt == nil {
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}

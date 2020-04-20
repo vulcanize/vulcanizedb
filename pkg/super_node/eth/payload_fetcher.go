@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/client"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 // BatchClient is an interface to a batch-fetching geth rpc client; created to allow mock insertion
 type BatchClient interface {
-	BatchCallContext(ctx context.Context, batch []client.BatchElem) error
+	BatchCallContext(ctx context.Context, batch []rpc.BatchElem) error
 }
 
 // PayloadFetcher satisfies the PayloadFetcher interface for ethereum
@@ -53,9 +53,9 @@ func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
 // FetchAt fetches the statediff payloads at the given block heights
 // Calls StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
 func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
-	batch := make([]client.BatchElem, 0)
+	batch := make([]rpc.BatchElem, 0)
 	for _, height := range blockHeights {
-		batch = append(batch, client.BatchElem{
+		batch = append(batch, rpc.BatchElem{
 			Method: method,
 			Args:   []interface{}{height},
 			Result: new(statediff.Payload),
