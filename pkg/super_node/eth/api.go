@@ -49,6 +49,16 @@ func (pea *PublicEthAPI) BlockNumber() hexutil.Uint64 {
 	return hexutil.Uint64(number)
 }
 
+// GetSlice returns a slice of state or storage nodes from a provided root to a provided path and past it to a certain depth
+//
+// https://github.com/openethereum/openethereum/issues/9857
+func (pea *PublicEthAPI) GetSlice(path string, depth int, root common.Hash, storage bool) (*GetSliceResponse, error) {
+	if storage {
+		return pea.b.GetStorageSlice(path, depth, root)
+	}
+	return pea.b.GetStateSlice(path, depth, root)
+}
+
 // GetLogs returns logs matching the given argument that are stored within the state.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
