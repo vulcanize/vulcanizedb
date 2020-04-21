@@ -18,7 +18,6 @@ package eth
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -79,55 +78,11 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	}
 	// If we have a blockhash to filter on, fire off single retrieval query
 	if crit.BlockHash != nil {
-		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
-		if err != nil {
-			return nil, err
-		}
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		rctIPLDs, err := pea.b.Fetcher.FetchRcts(rctCIDs)
-		if err != nil {
-			return nil, err
-		}
-		return extractLogsOfInterest(rctIPLDs, filter.Topics)
+		return pea.b.getLogsByHash(tx, filter, crit.BlockHash)
 	}
 	// Otherwise, create block range from criteria
 	// nil values are filled in; to request a single block have both ToBlock and FromBlock equal that number
-	startingBlock := crit.FromBlock
-	endingBlock := crit.ToBlock
-	if startingBlock == nil {
-		startingBlockInt, err := pea.b.Retriever.RetrieveFirstBlockNumber()
-		if err != nil {
-			return nil, err
-		}
-		startingBlock = big.NewInt(startingBlockInt)
-	}
-	if endingBlock == nil {
-		endingBlockInt, err := pea.b.Retriever.RetrieveLastBlockNumber()
-		if err != nil {
-			return nil, err
-		}
-		endingBlock = big.NewInt(endingBlockInt)
-	}
-	start := startingBlock.Int64()
-	end := endingBlock.Int64()
-	allRctCIDs := make([]ReceiptModel, 0)
-	for i := start; i <= end; i++ {
-		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
-		if err != nil {
-			return nil, err
-		}
-		allRctCIDs = append(allRctCIDs, rctCIDs...)
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	rctIPLDs, err := pea.b.Fetcher.FetchRcts(allRctCIDs)
-	if err != nil {
-		return nil, err
-	}
-	return extractLogsOfInterest(rctIPLDs, filter.Topics)
+	return pea.b.getLogsByBlockRange(tx, filter, crit)
 }
 
 // GetHeaderByNumber returns the requested canonical block header.

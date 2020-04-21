@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/jmoiron/sqlx"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -310,6 +313,58 @@ func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*type
 		return nil, common.Hash{}, 0, 0, err
 	}
 	return &transaction, common.HexToHash(txCIDWithHeaderInfo.BlockHash), uint64(txCIDWithHeaderInfo.BlockNumber), uint64(txCIDWithHeaderInfo.Index), nil
+}
+
+func (b *Backend) getLogsByHash(tx *sqlx.Tx, filter ReceiptFilter, blockHash *common.Hash) ([]*types.Log, error) {
+	rctCIDs, err := b.Retriever.RetrieveRctCIDs(tx, filter, 0, blockHash, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	rctIPLDs, err := b.Fetcher.FetchRcts(rctCIDs)
+	if err != nil {
+		return nil, err
+	}
+	return extractLogsOfInterest(rctIPLDs, filter.Topics)
+}
+
+func (b *Backend) getLogsByBlockRange(tx *sqlx.Tx, filter ReceiptFilter, crit ethereum.FilterQuery) ([]*types.Log, error) {
+	startingBlock := crit.FromBlock
+	endingBlock := crit.ToBlock
+	if startingBlock == nil {
+		startingBlockInt, err := b.Retriever.RetrieveFirstBlockNumber()
+		if err != nil {
+			return nil, err
+		}
+		startingBlock = big.NewInt(startingBlockInt)
+	}
+	if endingBlock == nil {
+		endingBlockInt, err := b.Retriever.RetrieveLastBlockNumber()
+		if err != nil {
+			return nil, err
+		}
+		endingBlock = big.NewInt(endingBlockInt)
+	}
+	start := startingBlock.Int64()
+	end := endingBlock.Int64()
+	allRctCIDs := make([]ReceiptModel, 0)
+	for i := start; i <= end; i++ {
+		rctCIDs, err := b.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		allRctCIDs = append(allRctCIDs, rctCIDs...)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	rctIPLDs, err := b.Fetcher.FetchRcts(allRctCIDs)
+	if err != nil {
+		return nil, err
+	}
+	return extractLogsOfInterest(rctIPLDs, filter.Topics)
 }
 
 // extractLogsOfInterest returns logs from the receipt IPLD
