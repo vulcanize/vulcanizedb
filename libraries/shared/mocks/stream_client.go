@@ -14,27 +14,31 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package version
+package mocks
 
-import "fmt"
+import (
+	"context"
 
-const (
-	VersionMajor = 0       // Major version component of the current release
-	VersionMinor = 1       // Minor version component of the current release
-	VersionPatch = 0       // Patch version component of the current release
-	VersionMeta  = "alpha" // Version metadata to append to the version string
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// Version holds the textual version string.
-var Version = func() string {
-	return fmt.Sprintf("%d.%d.%d", VersionMajor, VersionMinor, VersionPatch)
-}()
+type StreamClient struct {
+	passedContext       context.Context
+	passedResult        interface{}
+	passedNamespace     string
+	passedPayloadChan   interface{}
+	passedSubscribeArgs []interface{}
+}
 
-// VersionWithMeta holds the textual version string including the metadata.
-var VersionWithMeta = func() string {
-	v := Version
-	if VersionMeta != "" {
-		v += "-" + VersionMeta
+func (client *StreamClient) Subscribe(ctx context.Context, namespace string, payloadChan interface{}, args ...interface{}) (*rpc.ClientSubscription, error) {
+	client.passedNamespace = namespace
+	client.passedPayloadChan = payloadChan
+	client.passedContext = ctx
+
+	for _, arg := range args {
+		client.passedSubscribeArgs = append(client.passedSubscribeArgs, arg)
 	}
-	return v
-}()
+
+	subscription := rpc.ClientSubscription{}
+	return &subscription, nil
+}

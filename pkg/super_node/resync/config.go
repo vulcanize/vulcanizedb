@@ -18,6 +18,7 @@ package resync
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 
@@ -52,10 +53,11 @@ type Config struct {
 	DBConfig config.Database
 	IPFSPath string
 
-	HTTPClient  interface{} // Note this client is expected to support the retrieval of the specified data type(s)
-	NodeInfo    core.Node   // Info for the associated node
-	Ranges      [][2]uint64 // The block height ranges to resync
-	BatchSize   uint64      // BatchSize for the resync http calls (client has to support batch sizing)
+	HTTPClient  interface{}   // Note this client is expected to support the retrieval of the specified data type(s)
+	NodeInfo    core.Node     // Info for the associated node
+	Ranges      [][2]uint64   // The block height ranges to resync
+	BatchSize   uint64        // BatchSize for the resync http calls (client has to support batch sizing)
+	Timeout     time.Duration // HTTP connection timeout in seconds
 	BatchNumber uint64
 
 	Quit chan bool // Channel for shutting down
@@ -76,6 +78,13 @@ func NewReSyncConfig() (*Config, error) {
 	viper.BindEnv("resync.batchSize", RESYNC_BATCH_SIZE)
 	viper.BindEnv("resync.batchNumber", RESYNC_BATCH_NUMBER)
 	viper.BindEnv("resync.resetValidation", RESYNC_RESET_VALIDATION)
+	viper.BindEnv("resync.timeout", shared.HTTP_TIMEOUT)
+
+	timeout := viper.GetInt("resync.timeout")
+	if timeout < 15 {
+		timeout = 15
+	}
+	c.Timeout = time.Second * time.Duration(timeout)
 
 	start := uint64(viper.GetInt64("resync.start"))
 	stop := uint64(viper.GetInt64("resync.stop"))

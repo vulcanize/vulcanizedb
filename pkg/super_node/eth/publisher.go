@@ -36,13 +36,13 @@ import (
 
 // IPLDPublisher satisfies the IPLDPublisher for ethereum
 type IPLDPublisher struct {
-	HeaderPutter          shared.DagPutter
-	TransactionPutter     shared.DagPutter
-	TransactionTriePutter shared.DagPutter
-	ReceiptPutter         shared.DagPutter
-	ReceiptTriePutter     shared.DagPutter
-	StatePutter           shared.DagPutter
-	StoragePutter         shared.DagPutter
+	HeaderPutter          ipfs.DagPutter
+	TransactionPutter     ipfs.DagPutter
+	TransactionTriePutter ipfs.DagPutter
+	ReceiptPutter         ipfs.DagPutter
+	ReceiptTriePutter     ipfs.DagPutter
+	StatePutter           ipfs.DagPutter
+	StoragePutter         ipfs.DagPutter
 }
 
 // NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface

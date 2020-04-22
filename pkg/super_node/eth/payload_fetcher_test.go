@@ -17,6 +17,8 @@
 package eth_test
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/statediff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,7 +40,7 @@ var _ = Describe("StateDiffFetcher", func() {
 			Expect(setDiffAtErr1).ToNot(HaveOccurred())
 			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
 			Expect(setDiffAtErr2).ToNot(HaveOccurred())
-			stateDiffFetcher = eth.NewPayloadFetcher(mc)
+			stateDiffFetcher = eth.NewPayloadFetcher(mc, time.Second*60)
 		})
 		It("Batch calls statediff_stateDiffAt", func() {
 			blockHeights := []uint64{

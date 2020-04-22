@@ -45,7 +45,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.CIDRetriever{
-				FirstBlockNumberToReturn: 0,
+				FirstBlockNumberToReturn: 1,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 101,
@@ -69,6 +69,7 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
+				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.FillGapsInSuperNode(wg)
@@ -101,7 +102,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.CIDRetriever{
-				FirstBlockNumberToReturn: 0,
+				FirstBlockNumberToReturn: 1,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 100,
@@ -124,6 +125,7 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
+				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.FillGapsInSuperNode(wg)
@@ -173,6 +175,7 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
+				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.FillGapsInSuperNode(wg)

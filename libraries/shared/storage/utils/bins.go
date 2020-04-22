@@ -16,7 +16,11 @@
 
 package utils
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+)
 
 func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint64, error) {
 	if endingBlock < startingBlock {
@@ -42,4 +46,27 @@ func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint6
 		blockRangeBins[i] = blockRange
 	}
 	return blockRangeBins, nil
+}
+
+func MissingHeightsToGaps(heights []uint64) []shared.Gap {
+	validationGaps := make([]shared.Gap, 0)
+	start := heights[0]
+	lastHeight := start
+	for i, height := range heights[1:] {
+		if height != lastHeight+1 {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  lastHeight,
+			})
+			start = height
+		}
+		if i+2 == len(heights) {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  height,
+			})
+		}
+		lastHeight = height
+	}
+	return validationGaps
 }

@@ -1,6 +1,6 @@
 [database]
     name     = "vulcanize_public" # $DATABASE_NAME
-    hostname = "localhost" # &DATABASE_HOSTNAME
+    hostname = "localhost" # $DATABASE_HOSTNAME
     port     = 5432 # $DATABASE_PORT
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD

@@ -18,14 +18,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/fakes"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
 
 var _ = Describe("StateDiff Streamer", func() {
 	It("subscribes to the geth statediff service", func() {
-		client := &fakes.MockRPCClient{}
+		client := &mocks.StreamClient{}
 		streamer := eth.NewPayloadStreamer(client)
 		payloadChan := make(chan shared.RawChainData)
 		_, err := streamer.Stream(payloadChan)

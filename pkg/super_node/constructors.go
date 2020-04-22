@@ -18,14 +18,13 @@ package super_node
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
-
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/vulcanize/vulcanizedb/pkg/eth/core"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/btc"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
@@ -72,10 +71,9 @@ func NewCIDRetriever(chain shared.ChainType, db *postgres.DB) (shared.CIDRetriev
 func NewPayloadStreamer(chain shared.ChainType, clientOrConfig interface{}) (shared.PayloadStreamer, chan shared.RawChainData, error) {
 	switch chain {
 	case shared.Ethereum:
-		ethClient, ok := clientOrConfig.(core.RPCClient)
+		ethClient, ok := clientOrConfig.(*rpc.Client)
 		if !ok {
-			var expectedClientType core.RPCClient
-			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", expectedClientType, clientOrConfig)
+			return nil, nil, fmt.Errorf("ethereum payload streamer constructor expected client type %T got %T", &rpc.Client{}, clientOrConfig)
 		}
 		streamChan := make(chan shared.RawChainData, eth.PayloadChanBufferSize)
 		return eth.NewPayloadStreamer(ethClient), streamChan, nil
@@ -92,15 +90,14 @@ func NewPayloadStreamer(chain shared.ChainType, clientOrConfig interface{}) (sha
 }
 
 // NewPaylaodFetcher constructs a PayloadFetcher for the provided chain type
-func NewPaylaodFetcher(chain shared.ChainType, client interface{}) (shared.PayloadFetcher, error) {
+func NewPaylaodFetcher(chain shared.ChainType, client interface{}, timeout time.Duration) (shared.PayloadFetcher, error) {
 	switch chain {
 	case shared.Ethereum:
-		batchClient, ok := client.(eth.BatchClient)
+		batchClient, ok := client.(*rpc.Client)
 		if !ok {
-			var expectedClient eth.BatchClient
-			return nil, fmt.Errorf("ethereum payload fetcher constructor expected client type %T got %T", expectedClient, client)
+			return nil, fmt.Errorf("ethereum payload fetcher constructor expected client type %T got %T", &rpc.Client{}, client)
 		}
-		return eth.NewPayloadFetcher(batchClient), nil
+		return eth.NewPayloadFetcher(batchClient, timeout), nil
 	case shared.Bitcoin:
 		connConfig, ok := client.(*rpcclient.ConnConfig)
 		if !ok {

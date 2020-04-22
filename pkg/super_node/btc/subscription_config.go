@@ -52,7 +52,7 @@ type TxFilter struct {
 }
 
 // Init is used to initialize a EthSubscription struct with env variables
-func NewEthSubscriptionConfig() (*SubscriptionSettings, error) {
+func NewBtcSubscriptionConfig() (*SubscriptionSettings, error) {
 	sc := new(SubscriptionSettings)
 	// Below default to false, which means we do not backfill by default
 	sc.BackFill = viper.GetBool("superNode.btcSubscription.historicalData")

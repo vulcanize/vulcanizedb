@@ -74,7 +74,7 @@ func NewWatcherConfig() (*Config, error) {
 			return nil, err
 		}
 	case shared.Bitcoin:
-		c.SubscriptionConfig, err = btc.NewEthSubscriptionConfig()
+		c.SubscriptionConfig, err = btc.NewBtcSubscriptionConfig()
 		if err != nil {
 			return nil, err
 		}

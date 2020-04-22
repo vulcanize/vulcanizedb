@@ -544,8 +544,16 @@ var _ = Describe("Retriever", func() {
 			payload4.HeaderCID.BlockNumber = "101"
 			payload5 := payload4
 			payload5.HeaderCID.BlockNumber = "102"
-			payload6 := payload5
-			payload6.HeaderCID.BlockNumber = "1000"
+			payload6 := payload4
+			payload6.HeaderCID.BlockNumber = "103"
+			payload7 := payload4
+			payload7.HeaderCID.BlockNumber = "104"
+			payload8 := payload4
+			payload8.HeaderCID.BlockNumber = "105"
+			payload9 := payload4
+			payload9.HeaderCID.BlockNumber = "106"
+			payload10 := payload5
+			payload10.HeaderCID.BlockNumber = "1000"
 			err := repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
@@ -558,11 +566,76 @@ var _ = Describe("Retriever", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload6)
 			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload7)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload8)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload9)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload10)
+			Expect(err).ToNot(HaveOccurred())
+
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(3))
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())
-			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 103, Stop: 999})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 107, Stop: 999})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 1001, Stop: 1010100})).To(BeTrue())
+		})
+
+		It("Finds validation level gaps", func() {
+			payload1 := *mocks.MockCIDPayload
+			payload1.HeaderCID.BlockNumber = "1010101"
+			payload2 := payload1
+			payload2.HeaderCID.BlockNumber = "5"
+			payload3 := payload2
+			payload3.HeaderCID.BlockNumber = "100"
+			payload4 := payload3
+			payload4.HeaderCID.BlockNumber = "101"
+			payload5 := payload4
+			payload5.HeaderCID.BlockNumber = "102"
+			payload6 := payload4
+			payload6.HeaderCID.BlockNumber = "103"
+			payload7 := payload4
+			payload7.HeaderCID.BlockNumber = "104"
+			payload8 := payload4
+			payload8.HeaderCID.BlockNumber = "105"
+			payload9 := payload4
+			payload9.HeaderCID.BlockNumber = "106"
+			payload10 := payload5
+			payload10.HeaderCID.BlockNumber = "1000"
+			err := repo.Index(&payload1)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload2)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload3)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload4)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload5)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload6)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload7)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload8)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload9)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload10)
+			Expect(err).ToNot(HaveOccurred())
+
+			cleaner := eth.NewCleaner(db)
+			err = cleaner.ResetValidation([][2]uint64{{101, 102}, {104, 104}})
+			Expect(err).ToNot(HaveOccurred())
+
+			gaps, err := retriever.RetrieveGapsInData(1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(gaps)).To(Equal(5))
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 101, Stop: 102})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 104, Stop: 104})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 107, Stop: 999})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 1001, Stop: 1010100})).To(BeTrue())
 		})
 	})

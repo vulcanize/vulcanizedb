@@ -71,6 +71,7 @@ func init() {
 	resyncCmd.PersistentFlags().Int("resync-batch-number", 0, "how many goroutines to fetch data concurrently")
 	resyncCmd.PersistentFlags().Bool("resync-clear-old-cache", false, "if true, clear out old data of the provided type within the resync range before resyncing")
 	resyncCmd.PersistentFlags().Bool("resync-reset-validation", false, "if true, reset times_validated to 0")
+	resyncCmd.PersistentFlags().Int("resync-timeout", 15, "timeout used for resync http requests")
 
 	resyncCmd.PersistentFlags().String("btc-http-path", "", "http url for bitcoin node")
 	resyncCmd.PersistentFlags().String("btc-password", "", "password for btc node")
@@ -81,6 +82,10 @@ func init() {
 	resyncCmd.PersistentFlags().String("btc-network-id", "", "btc network id")
 
 	resyncCmd.PersistentFlags().String("eth-http-path", "", "http url for ethereum node")
+	resyncCmd.PersistentFlags().String("eth-node-id", "", "eth node id")
+	resyncCmd.PersistentFlags().String("eth-client-name", "", "eth client name")
+	resyncCmd.PersistentFlags().String("eth-genesis-block", "", "eth genesis block hash")
+	resyncCmd.PersistentFlags().String("eth-network-id", "", "eth network id")
 
 	// and their bindings
 	viper.BindPFlag("ipfs.path", resyncCmd.PersistentFlags().Lookup("ipfs-path"))
@@ -93,6 +98,7 @@ func init() {
 	viper.BindPFlag("resync.batchNumber", resyncCmd.PersistentFlags().Lookup("resync-batch-number"))
 	viper.BindPFlag("resync.clearOldCache", resyncCmd.PersistentFlags().Lookup("resync-clear-old-cache"))
 	viper.BindPFlag("resync.resetValidation", resyncCmd.PersistentFlags().Lookup("resync-reset-validation"))
+	viper.BindPFlag("resync.timeout", resyncCmd.PersistentFlags().Lookup("resync-timeout"))
 
 	viper.BindPFlag("bitcoin.httpPath", resyncCmd.PersistentFlags().Lookup("btc-http-path"))
 	viper.BindPFlag("bitcoin.pass", resyncCmd.PersistentFlags().Lookup("btc-password"))
@@ -103,4 +109,8 @@ func init() {
 	viper.BindPFlag("bitcoin.networkID", resyncCmd.PersistentFlags().Lookup("btc-network-id"))
 
 	viper.BindPFlag("ethereum.httpPath", resyncCmd.PersistentFlags().Lookup("eth-http-path"))
+	viper.BindPFlag("ethereum.nodeID", resyncCmd.PersistentFlags().Lookup("eth-node-id"))
+	viper.BindPFlag("ethereum.clientName", resyncCmd.PersistentFlags().Lookup("eth-client-name"))
+	viper.BindPFlag("ethereum.genesisBlock", resyncCmd.PersistentFlags().Lookup("eth-genesis-block"))
+	viper.BindPFlag("ethereum.networkID", resyncCmd.PersistentFlags().Lookup("eth-network-id"))
 }
