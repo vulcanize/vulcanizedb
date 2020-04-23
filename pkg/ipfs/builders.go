@@ -19,6 +19,8 @@ package ipfs
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/plugin/loader"
@@ -42,6 +44,7 @@ func InitIPFSPlugins() error {
 
 // InitIPFSBlockService is used to configure and return a BlockService using an ipfs repo path (e.g. ~/.ipfs)
 func InitIPFSBlockService(ipfsPath string) (blockservice.BlockService, error) {
+	logrus.Info("initializing IPFS block service interface")
 	r, openErr := fsrepo.Open(ipfsPath)
 	if openErr != nil {
 		return nil, openErr
@@ -68,6 +71,7 @@ func (ipfs IPFS) Add(node ipld.Node) error {
 }
 
 func InitIPFSNode(repoPath string) (*IPFS, error) {
+	logrus.Info("initializing IPFS node interface")
 	r, err := fsrepo.Open(repoPath)
 	if err != nil {
 		return nil, err
