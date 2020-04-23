@@ -19,6 +19,9 @@ package shared
 import (
 	"bytes"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
@@ -68,4 +71,11 @@ func HandleNullAddr(to common.Address) string {
 		return ""
 	}
 	return to.Hex()
+}
+
+// Rollback sql transaction and log any error
+func Rollback(tx *sqlx.Tx) {
+	if err := tx.Rollback(); err != nil {
+		logrus.Error(err)
+	}
 }

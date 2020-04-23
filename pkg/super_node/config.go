@@ -52,6 +52,7 @@ type Config struct {
 	// Ubiquitous fields
 	Chain    shared.ChainType
 	IPFSPath string
+	IPFSMode shared.IPFSMode
 	DB       *postgres.DB
 	DBConfig config.Database
 	Quit     chan bool
@@ -98,9 +99,15 @@ func NewSuperNodeConfig() (*Config, error) {
 		return nil, err
 	}
 
-	c.IPFSPath, err = shared.GetIPFSPath()
+	c.IPFSMode, err = shared.GetIPFSMode()
 	if err != nil {
 		return nil, err
+	}
+	if c.IPFSMode == shared.LocalInterface || c.IPFSMode == shared.RemoteClient {
+		c.IPFSPath, err = shared.GetIPFSPath()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c.Sync = viper.GetBool("superNode.sync")
