@@ -80,7 +80,7 @@ var _ = Describe("Log delegator", func() {
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		It("returns logs.ErrNoLogs if no logs returned", func() {
+		It("returns logs.ErrNoLogs if no logs returned on initial call", func() {
 			delegator := newDelegator(&fakes.MockEventLogRepository{})
 			delegator.AddTransformer(&mocks.MockEventTransformer{})
 
@@ -90,17 +90,26 @@ var _ = Describe("Log delegator", func() {
 			Expect(err).To(MatchError(logs.ErrNoLogs))
 		})
 
-		It("returns nil for error if repository returns fewer logs than limit", func() {
+		It("returns nil for error fewer logs than limit successfully delegated", func() {
+			fakeTransformer := &mocks.MockEventTransformer{}
+			config := mocks.FakeTransformerConfig
+			fakeTransformer.SetTransformerConfig(config)
+			fakeGethLog := types.Log{
+				Address: common.HexToAddress(config.ContractAddresses[0]),
+				Topics:  []common.Hash{common.HexToHash(config.Topic)},
+			}
+			fakeEventLogs := []core.EventLog{{Log: fakeGethLog}}
 			mockLogRepository := &fakes.MockEventLogRepository{}
-			mockLogRepository.ReturnLogs = []core.EventLog{{}}
+			mockLogRepository.ReturnLogs = fakeEventLogs
 			delegator := newDelegator(mockLogRepository)
-			delegator.AddTransformer(&mocks.MockEventTransformer{})
+			delegator.AddTransformer(fakeTransformer)
 
 			limitGreaterThanUntransformedLogs := 2
 			err := delegator.DelegateLogs(limitGreaterThanUntransformedLogs)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(mockLogRepository.GetCalled).To(BeTrue())
+			Expect(fakeTransformer.ExecuteWasCalled).To(BeTrue())
+			Expect(fakeTransformer.PassedLogs).To(Equal(fakeEventLogs))
 		})
 
 		It("repeats logs lookup with minID from last result when repository returns maximum number of logs", func() {
@@ -118,7 +127,7 @@ var _ = Describe("Log delegator", func() {
 			Expect(mockLogRepository.PassedLimits).To(ConsistOf(limit, limit))
 		})
 
-		It("delegates chunked logs to transformers", func() {
+		It("returns logs.ErrNoLogs if no logs returned on subsequent call", func() {
 			fakeTransformer := &mocks.MockEventTransformer{}
 			config := mocks.FakeTransformerConfig
 			fakeTransformer.SetTransformerConfig(config)
