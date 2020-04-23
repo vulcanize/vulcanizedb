@@ -72,7 +72,7 @@ var _ = Describe("BackFiller", func() {
 				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGapsInSuperNode(wg)
+			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))
@@ -128,7 +128,7 @@ var _ = Describe("BackFiller", func() {
 				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGapsInSuperNode(wg)
+			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(1))
@@ -178,7 +178,7 @@ var _ = Describe("BackFiller", func() {
 				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
-			backfiller.FillGapsInSuperNode(wg)
+			backfiller.BackFill(wg)
 			time.Sleep(time.Second * 3)
 			quitChan <- true
 			Expect(len(mockCidRepo.PassedCIDPayload)).To(Equal(2))

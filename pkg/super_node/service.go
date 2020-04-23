@@ -38,15 +38,15 @@ const (
 )
 
 // SuperNode is the top level interface for streaming, converting to IPLDs, publishing,
-// and indexing all Ethereum data; screening this data; and serving it up to subscribed clients
+// and indexing all chain data; screening this data; and serving it up to subscribed clients
 // This service is compatible with the Ethereum service interface (node.Service)
 type SuperNode interface {
 	// APIs(), Protocols(), Start() and Stop()
 	node.Service
 	// Data processing event loop
-	ProcessData(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.ConvertedData) error
+	Sync(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.ConvertedData) error
 	// Pub-Sub handling event loop
-	FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData)
+	Serve(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData)
 	// Method to subscribe to the service
 	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
 	// Method to unsubscribe from the service
@@ -186,11 +186,11 @@ func (sap *Service) APIs() []rpc.API {
 	return append(apis, chainAPI)
 }
 
-// ProcessData streams incoming raw chain data and converts it for further processing
+// Sync streams incoming raw chain data and converts it for further processing
 // It forwards the converted data to the publishAndIndex process(es) it spins up
 // If forwards the converted data to a ScreenAndServe process if it there is one listening on the passed screenAndServePayload channel
 // This continues on no matter if or how many subscribers there are
-func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<- shared.ConvertedData) error {
+func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared.ConvertedData) error {
 	sub, err := sap.Streamer.Stream(sap.PayloadChan)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 					log.Errorf("super node conversion error for chain %s: %v", sap.chain.String(), err)
 					continue
 				}
-				log.Infof("processing %s data streamed at head height %d", sap.chain.String(), ipldPayload.Height())
+				log.Infof("%s data streamed at head height %d", sap.chain.String(), ipldPayload.Height())
 				// If we have a ScreenAndServe process running, forward the iplds to it
 				select {
 				case screenAndServePayload <- ipldPayload:
@@ -230,7 +230,7 @@ func (sap *Service) ProcessData(wg *sync.WaitGroup, screenAndServePayload chan<-
 			}
 		}
 	}()
-	log.Infof("%s ProcessData goroutine successfully spun up", sap.chain.String())
+	log.Infof("%s Sync goroutine successfully spun up", sap.chain.String())
 	return nil
 }
 
@@ -241,11 +241,13 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 		for {
 			select {
 			case payload := <-publishAndIndexPayload:
+				log.Debugf("publishing %s data streamed at head height %d", sap.chain.String(), payload.Height())
 				cidPayload, err := sap.Publisher.Publish(payload)
 				if err != nil {
 					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
 					continue
 				}
+				log.Debugf("indexing %s data streamed at head height %d", sap.chain.String(), payload.Height())
 				if err := sap.Indexer.Index(cidPayload); err != nil {
 					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
 				}
@@ -255,11 +257,11 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 	log.Debugf("%s publishAndIndex goroutine successfully spun up", sap.chain.String())
 }
 
-// FilterAndServe listens for incoming converter data off the screenAndServePayload from the SyncAndConvert process
+// Serve listens for incoming converter data off the screenAndServePayload from the SyncAndConvert process
 // It filters and sends this data to any subscribers to the service
 // This process can be stood up alone, without an screenAndServePayload attached to a SyncAndConvert process
 // and it will hang on the WaitGroup indefinitely, allowing the Service to serve historical data requests only
-func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData) {
+func (sap *Service) Serve(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData) {
 	wg.Add(1)
 	go func() {
 		for {
@@ -273,7 +275,7 @@ func (sap *Service) FilterAndServe(wg *sync.WaitGroup, screenAndServePayload <-c
 			}
 		}
 	}()
-	log.Infof("%s FilterAndServe goroutine successfully spun up", sap.chain.String())
+	log.Infof("%s Serve goroutine successfully spun up", sap.chain.String())
 }
 
 // filterAndServe filters the payload according to each subscription type and sends to the subscriptions
@@ -444,10 +446,10 @@ func (sap *Service) Start(*p2p.Server) error {
 	log.Infof("Starting %s super node service", sap.chain.String())
 	wg := new(sync.WaitGroup)
 	payloadChan := make(chan shared.ConvertedData, PayloadChanBufferSize)
-	if err := sap.ProcessData(wg, payloadChan); err != nil {
+	if err := sap.Sync(wg, payloadChan); err != nil {
 		return err
 	}
-	sap.FilterAndServe(wg, payloadChan)
+	sap.Serve(wg, payloadChan)
 	return nil
 }
 

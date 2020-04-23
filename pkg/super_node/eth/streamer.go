@@ -51,7 +51,7 @@ func NewPayloadStreamer(client StreamClient) *PayloadStreamer {
 // Satisfies the shared.PayloadStreamer interface
 func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.ClientSubscription, error) {
 	stateDiffChan := make(chan statediff.Payload, PayloadChanBufferSize)
-	logrus.Info("streaming diffs from geth")
+	logrus.Debug("streaming diffs from geth")
 	go func() {
 		for {
 			select {

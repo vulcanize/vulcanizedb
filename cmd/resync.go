@@ -38,19 +38,22 @@ var resyncCmd = &cobra.Command{
 }
 
 func rsyncCmdCommand() {
+	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Debug("loading super node configuration variables")
 	rConfig, err := resync.NewReSyncConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	logWithCommand.Infof("vdb version: %s", v.VersionWithMeta)
 	logWithCommand.Infof("resync config: %+v", rConfig)
 	if err := ipfs.InitIPFSPlugins(); err != nil {
 		logWithCommand.Fatal(err)
 	}
+	logWithCommand.Debug("initializing new resync service")
 	rService, err := resync.NewResyncService(rConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
+	logWithCommand.Info("starting up resync process")
 	if err := rService.Resync(); err != nil {
 		logWithCommand.Fatal(err)
 	}
