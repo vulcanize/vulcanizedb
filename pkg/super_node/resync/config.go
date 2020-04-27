@@ -52,6 +52,7 @@ type Config struct {
 	DB       *postgres.DB
 	DBConfig config.Database
 	IPFSPath string
+	IPFSMode shared.IPFSMode
 
 	HTTPClient  interface{}   // Note this client is expected to support the retrieval of the specified data type(s)
 	NodeInfo    core.Node     // Info for the associated node
@@ -92,9 +93,15 @@ func NewReSyncConfig() (*Config, error) {
 	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
 	c.ResetValidation = viper.GetBool("resync.resetValidation")
 
-	c.IPFSPath, err = shared.GetIPFSPath()
+	c.IPFSMode, err = shared.GetIPFSMode()
 	if err != nil {
 		return nil, err
+	}
+	if c.IPFSMode == shared.LocalInterface || c.IPFSMode == shared.RemoteClient {
+		c.IPFSPath, err = shared.GetIPFSPath()
+		if err != nil {
+			return nil, err
+		}
 	}
 	resyncType := viper.GetString("resync.type")
 	c.ResyncType, err = shared.GenerateResyncTypeFromString(resyncType)
