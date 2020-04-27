@@ -64,11 +64,11 @@ type Service struct {
 
 // NewResyncService creates and returns a resync service from the provided settings
 func NewResyncService(settings *Config) (Resync, error) {
-	publisher, err := super_node.NewIPLDPublisher(settings.Chain, settings.IPFSPath)
+	publisher, err := super_node.NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	indexer, err := super_node.NewCIDIndexer(settings.Chain, settings.DB)
+	indexer, err := super_node.NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
