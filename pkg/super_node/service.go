@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	PayloadChanBufferSize = 20000
+	PayloadChanBufferSize = 2000
 )
 
 // SuperNode is the top level interface for streaming, converting to IPLDs, publishing,
@@ -220,6 +220,13 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
+				// this channel acts as a ring buffer
+				select {
+				case publishAndIndexPayload <- ipldPayload:
+				default:
+					<-publishAndIndexPayload
+					publishAndIndexPayload <- ipldPayload
+				}
 				publishAndIndexPayload <- ipldPayload
 			case err := <-sub.Err():
 				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
