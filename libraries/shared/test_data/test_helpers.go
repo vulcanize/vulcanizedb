@@ -13,19 +13,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Create a header sync log to reference in an event, returning inserted header sync log
+// Create an event log to reference in an event, returning inserted event log
 func CreateTestLog(headerID int64, db *postgres.DB) core.EventLog {
 	txHash := getRandomHash()
 	log := types.Log{
 		Address:     common.Address{},
-		Topics:      nil,
-		Data:        nil,
 		BlockNumber: 0,
 		TxHash:      txHash,
 		TxIndex:     uint(rand.Int31()),
 		BlockHash:   common.Hash{},
 		Index:       0,
-		Removed:     false,
 	}
 
 	tx := getFakeTransactionFromHash(txHash)
@@ -37,14 +34,21 @@ func CreateTestLog(headerID int64, db *postgres.DB) core.EventLog {
 	insertLogsErr := eventLogRepository.CreateEventLogs(headerID, []types.Log{log})
 	Expect(insertLogsErr).NotTo(HaveOccurred())
 
-	eventLogs, getLogsErr := eventLogRepository.GetUntransformedEventLogs()
-	Expect(getLogsErr).NotTo(HaveOccurred())
-	for _, eventLog := range eventLogs {
-		if eventLog.Log.TxIndex == log.TxIndex {
-			return eventLog
-		}
+	type persistedEventLog struct {
+		ID          int64
+		HeaderID    int64 `db:"header_id"`
+		Transformed bool
 	}
-	panic("couldn't find inserted test log")
+	var eventLog persistedEventLog
+	getLogErr := db.Get(&eventLog, `SELECT id, header_id, transformed FROM public.event_logs WHERE tx_hash = $1`, log.TxHash.Hex())
+	Expect(getLogErr).NotTo(HaveOccurred())
+	result := core.EventLog{
+		ID:          eventLog.ID,
+		HeaderID:    eventLog.HeaderID,
+		Log:         log,
+		Transformed: eventLog.Transformed,
+	}
+	return result
 }
 
 func getFakeTransactionFromHash(txHash common.Hash) core.TransactionModel {

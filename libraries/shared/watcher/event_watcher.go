@@ -99,7 +99,8 @@ func (watcher *EventWatcher) extractLogs(recheckHeaders constants.TransformerExe
 }
 
 func (watcher *EventWatcher) delegateLogs(errs chan error, quitChan chan bool) {
-	watcher.withRetry(watcher.LogDelegator.DelegateLogs, []error{watcher.ExpectedDelegatorError}, "delegating", errs, quitChan)
+	call := func() error { return watcher.LogDelegator.DelegateLogs(ResultsLimit) }
+	watcher.withRetry(call, []error{watcher.ExpectedDelegatorError}, "delegating", errs, quitChan)
 }
 
 func (watcher *EventWatcher) withRetry(call func() error, expectedErrors []error, operation string, errs chan error, quitChan chan bool) {

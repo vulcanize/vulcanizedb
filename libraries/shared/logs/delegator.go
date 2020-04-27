@@ -34,7 +34,7 @@ var (
 
 type ILogDelegator interface {
 	AddTransformer(t event.ITransformer)
-	DelegateLogs() error
+	DelegateLogs(limit int) error
 }
 
 type LogDelegator struct {
@@ -55,28 +55,37 @@ func (delegator *LogDelegator) AddTransformer(t event.ITransformer) {
 	delegator.Chunker.AddConfig(t.GetConfig())
 }
 
-func (delegator *LogDelegator) DelegateLogs() error {
+func (delegator *LogDelegator) DelegateLogs(limit int) error {
 	if len(delegator.Transformers) < 1 {
 		return ErrNoTransformers
 	}
 
-	persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedEventLogs()
-	if fetchErr != nil {
-		logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
-		return fetchErr
-	}
+	minID := 0
+	for {
+		persistedLogs, fetchErr := delegator.LogRepository.GetUntransformedEventLogs(minID, limit)
+		if fetchErr != nil {
+			logrus.Errorf("error loading logs from db: %s", fetchErr.Error())
+			return fetchErr
+		}
 
-	if len(persistedLogs) < 1 {
-		return ErrNoLogs
-	}
+		lenPersistedLogs := len(persistedLogs)
 
-	transformErr := delegator.delegateLogs(persistedLogs)
-	if transformErr != nil {
-		logrus.Errorf("error transforming logs: %s", transformErr)
-		return transformErr
-	}
+		if lenPersistedLogs < 1 {
+			return ErrNoLogs
+		} else {
+			minID = int(persistedLogs[lenPersistedLogs-1].ID)
+		}
 
-	return nil
+		transformErr := delegator.delegateLogs(persistedLogs)
+		if transformErr != nil {
+			logrus.Errorf("error transforming logs: %s", transformErr)
+			return transformErr
+		}
+
+		if lenPersistedLogs < limit {
+			return nil
+		}
+	}
 }
 
 func (delegator *LogDelegator) delegateLogs(logs []core.EventLog) error {

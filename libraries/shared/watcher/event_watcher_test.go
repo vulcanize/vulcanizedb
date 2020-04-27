@@ -162,6 +162,15 @@ var _ = Describe("Event Watcher", func() {
 			Expect(delegator.DelegateCallCount > 0).To(BeTrue())
 		})
 
+		It("passes results limit to delegator", func() {
+			delegator.DelegateErrors = []error{nil, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Expect(delegator.DelegatePassedLimit).To(Equal(watcher.ResultsLimit))
+		})
+
 		It("returns error if delegating logs fails", func() {
 			delegator.DelegateErrors = []error{fakes.FakeError}
 

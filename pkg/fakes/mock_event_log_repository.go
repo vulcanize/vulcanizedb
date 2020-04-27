@@ -25,14 +25,30 @@ type MockEventLogRepository struct {
 	CreateError    error
 	GetCalled      bool
 	GetError       error
+	PassedMinIDs   []int
+	PassedLimits   []int
 	PassedHeaderID int64
 	PassedLogs     []types.Log
 	ReturnLogs     []core.EventLog
 }
 
-func (repository *MockEventLogRepository) GetUntransformedEventLogs() ([]core.EventLog, error) {
+func (repository *MockEventLogRepository) GetUntransformedEventLogs(minID, limit int) ([]core.EventLog, error) {
 	repository.GetCalled = true
-	return repository.ReturnLogs, repository.GetError
+	repository.PassedMinIDs = append(repository.PassedMinIDs, minID)
+	repository.PassedLimits = append(repository.PassedLimits, limit)
+
+	var returnLogs []core.EventLog
+	if limit >= len(repository.ReturnLogs) {
+		returnLogs = repository.ReturnLogs
+		repository.ReturnLogs = []core.EventLog{}
+	} else {
+		for i := 0; i < limit; i++ {
+			returnLogs = append(returnLogs, repository.ReturnLogs[i])
+		}
+		repository.ReturnLogs = repository.ReturnLogs[limit:]
+	}
+
+	return returnLogs, repository.GetError
 }
 
 func (repository *MockEventLogRepository) CreateEventLogs(headerID int64, logs []types.Log) error {
