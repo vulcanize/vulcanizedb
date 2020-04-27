@@ -109,11 +109,11 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath)
+		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
-		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.DB)
+		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +227,6 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 					<-publishAndIndexPayload
 					publishAndIndexPayload <- ipldPayload
 				}
-				publishAndIndexPayload <- ipldPayload
 			case err := <-sub.Err():
 				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
 			case <-sap.QuitChan:
@@ -250,11 +249,11 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 			case payload := <-publishAndIndexPayload:
 				cidPayload, err := sap.Publisher.Publish(payload)
 				if err != nil {
-					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
+					log.Errorf("super node publishAndIndex worker %d publishing error for chain %s: %v", id, sap.chain.String(), err)
 					continue
 				}
 				if err := sap.Indexer.Index(cidPayload); err != nil {
-					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
+					log.Errorf("super node publishAndIndex worker %d indexing error for chain %s: %v", id, sap.chain.String(), err)
 				}
 			}
 		}

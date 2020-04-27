@@ -44,12 +44,27 @@ func NewResponseFilterer(chain shared.ChainType) (shared.ResponseFilterer, error
 }
 
 // NewCIDIndexer constructs a CIDIndexer for the provided chain type
-func NewCIDIndexer(chain shared.ChainType, db *postgres.DB) (shared.CIDIndexer, error) {
+func NewCIDIndexer(chain shared.ChainType, db *postgres.DB, ipfsMode shared.IPFSMode) (shared.CIDIndexer, error) {
 	switch chain {
 	case shared.Ethereum:
-		return eth.NewCIDIndexer(db), nil
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			return eth.NewCIDIndexer(db), nil
+		case shared.DirectPostgres:
+			return eth.NewIPLDPublisherAndIndexer(db), nil
+		default:
+			return nil, fmt.Errorf("ethereum CIDIndexer unexpected ipfs mode %s", ipfsMode.String())
+		}
 	case shared.Bitcoin:
-		return btc.NewCIDIndexer(db), nil
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			return btc.NewCIDIndexer(db), nil
+		case shared.DirectPostgres:
+			// TODO
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("bitcoin CIDIndexer unexpected ipfs mode %s", ipfsMode.String())
+		}
 	default:
 		return nil, fmt.Errorf("invalid chain %s for indexer constructor", chain.String())
 	}
@@ -134,12 +149,42 @@ func NewIPLDFetcher(chain shared.ChainType, ipfsPath string) (shared.IPLDFetcher
 }
 
 // NewIPLDPublisher constructs an IPLDPublisher for the provided chain type
-func NewIPLDPublisher(chain shared.ChainType, ipfsPath string) (shared.IPLDPublisher, error) {
+func NewIPLDPublisher(chain shared.ChainType, arg interface{}, ipfsMode shared.IPFSMode) (shared.IPLDPublisher, error) {
 	switch chain {
 	case shared.Ethereum:
-		return eth.NewIPLDPublisher(ipfsPath)
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			ipfsPath, ok := arg.(string)
+			if !ok {
+				var s string
+				return nil, fmt.Errorf("ethereum IPLDPublisher expected argument type %T got %T", s, arg)
+			}
+			return eth.NewIPLDPublisher(ipfsPath)
+		case shared.DirectPostgres:
+			db, ok := arg.(*postgres.DB)
+			if !ok {
+				var pgdb *postgres.DB
+				return nil, fmt.Errorf("ethereum IPLDPublisher expected argument type %T got %T", pgdb, arg)
+			}
+			return eth.NewIPLDPublisherAndIndexer(db), nil
+		default:
+			return nil, fmt.Errorf("ethereum IPLDPublisher unexpected ipfs mode %s", ipfsMode.String())
+		}
 	case shared.Bitcoin:
-		return btc.NewIPLDPublisher(ipfsPath)
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			ipfsPath, ok := arg.(string)
+			if !ok {
+				var s string
+				return nil, fmt.Errorf("bitcoin IPLDPublisher expected argument type %T got %T", s, arg)
+			}
+			return btc.NewIPLDPublisher(ipfsPath)
+		case shared.DirectPostgres:
+			// TODO
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("bitcoin IPLDPublisher unexpected ipfs mode %s", ipfsMode.String())
+		}
 	default:
 		return nil, fmt.Errorf("invalid chain %s for publisher constructor", chain.String())
 	}
