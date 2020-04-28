@@ -1,6 +1,7 @@
 package backfill
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,18 +18,20 @@ import (
 
 var (
 	MaxRequestSize    = 400
+	ErrNoTransformers = errors.New("storage value loader initialized without transformers")
 	emptyStorageValue = common.BytesToHash([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 )
 
 func NewStorageValueLoader(bc core.BlockChain, db *postgres.DB, initializers []storage.TransformerInitializer, startingBlock, endingBlock int64) StorageValueLoader {
 	return StorageValueLoader{
-		bc:              bc,
-		db:              db,
-		HeaderRepo:      repositories.NewHeaderRepository(db),
-		StorageDiffRepo: storage2.NewDiffRepository(db),
-		initializers:    initializers,
-		startingBlock:   startingBlock,
-		endingBlock:     endingBlock,
+		bc:               bc,
+		db:               db,
+		HeaderRepo:       repositories.NewHeaderRepository(db),
+		StorageDiffRepo:  storage2.NewDiffRepository(db),
+		storageByAddress: make(map[common.Address]chunksOfKeysToValues, len(initializers)),
+		initializers:     initializers,
+		startingBlock:    startingBlock,
+		endingBlock:      endingBlock,
 	}
 }
 
@@ -37,19 +40,21 @@ type storageValue = common.Hash
 type chunksOfKeysToValues = []map[storageKey]storageValue
 
 type StorageValueLoader struct {
-	bc                      core.BlockChain
-	db                      *postgres.DB
-	HeaderRepo              datastore.HeaderRepository
-	StorageDiffRepo         storage2.DiffRepository
-	addressesToKeysToValues map[common.Address]chunksOfKeysToValues
-	initializers            []storage.TransformerInitializer
-	startingBlock           int64
-	endingBlock             int64
+	bc               core.BlockChain
+	db               *postgres.DB
+	HeaderRepo       datastore.HeaderRepository
+	StorageDiffRepo  storage2.DiffRepository
+	storageByAddress map[common.Address]chunksOfKeysToValues
+	initializers     []storage.TransformerInitializer
+	startingBlock    int64
+	endingBlock      int64
 }
 
 func (r *StorageValueLoader) Run() error {
-	r.addressesToKeysToValues = make(map[common.Address]chunksOfKeysToValues, len(r.initializers))
-	getKeysErr := r.setStorageKeys()
+	if r.storageByAddress == nil {
+		return ErrNoTransformers
+	}
+	getKeysErr := r.addKeysToStorageByAddress()
 	if getKeysErr != nil {
 		return getKeysErr
 	}
@@ -65,12 +70,12 @@ func (r *StorageValueLoader) Run() error {
 		}
 
 	}
-	logrus.Infof("Finished persisting storage values for %v addresses from block %v to %v.", len(r.addressesToKeysToValues), r.startingBlock, r.endingBlock)
+	logrus.Infof("Finished persisting storage values for %v addresses from block %v to %v.", len(r.storageByAddress), r.startingBlock, r.endingBlock)
 
 	return nil
 }
 
-func (r *StorageValueLoader) setStorageKeys() error {
+func (r *StorageValueLoader) addKeysToStorageByAddress() error {
 	for _, i := range r.initializers {
 		transformer := i(r.db)
 		keysLookup := transformer.GetStorageKeysLookup()
@@ -82,10 +87,10 @@ func (r *StorageValueLoader) setStorageKeys() error {
 		chunkedKeys := chunkKeys(keys)
 		for chunkIndex, chunk := range chunkedKeys {
 			nextChunkOfKeysToValues := make(map[storageKey]storageValue, len(chunk))
-			r.addressesToKeysToValues[address] = append(r.addressesToKeysToValues[address], nextChunkOfKeysToValues)
+			r.storageByAddress[address] = append(r.storageByAddress[address], nextChunkOfKeysToValues)
 			for _, key := range chunk {
 				// set default initial value to empty
-				r.addressesToKeysToValues[address][chunkIndex][key] = emptyStorageValue
+				r.storageByAddress[address][chunkIndex][key] = emptyStorageValue
 			}
 		}
 		logrus.Infof("Received %v storage keys for address:%v", len(keys), address.Hex())
@@ -98,7 +103,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 	blockNumberBigInt := big.NewInt(blockNumber)
 	blockHash := common.HexToHash(headerHashStr)
 
-	for address, chunkedKeysToValues := range r.addressesToKeysToValues {
+	for address, chunkedKeysToValues := range r.storageByAddress {
 		keccakOfAddress := crypto.Keccak256Hash(address[:])
 		for chunkIndex, currentKeysToValues := range chunkedKeysToValues {
 			var keys []storageKey
@@ -130,7 +135,7 @@ func (r *StorageValueLoader) getAndPersistStorageValues(blockNumber int64, heade
 					if createDiffErr != nil {
 						return createDiffErr
 					}
-					r.addressesToKeysToValues[address][chunkIndex][key] = newValueHash
+					r.storageByAddress[address][chunkIndex][key] = newValueHash
 				}
 			}
 		}

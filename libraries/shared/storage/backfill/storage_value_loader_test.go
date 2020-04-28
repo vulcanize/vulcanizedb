@@ -94,6 +94,15 @@ var _ = Describe("StorageValueLoader", func() {
 		runner.HeaderRepo = &headerRepo
 	})
 
+	It("returns error if loader initialized without transformers", func() {
+		runner = backfill.StorageValueLoader{}
+
+		err := runner.Run()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(backfill.ErrNoTransformers))
+	})
+
 	It("gets the storage keys for each transformer", func() {
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
