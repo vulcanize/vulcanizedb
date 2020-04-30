@@ -32,6 +32,7 @@ require (
 	github.com/ipfs/go-ipfs-blockstore v0.0.1
 	github.com/ipfs/go-ipfs-cmds v0.1.1 // indirect
 	github.com/ipfs/go-ipfs-config v0.0.3 // indirect
+	github.com/ipfs/go-ipfs-ds-help v0.0.1
 	github.com/ipfs/go-ipfs-exchange-interface v0.0.1
 	github.com/ipfs/go-ipld-cbor v0.0.3 // indirect
 	github.com/ipfs/go-ipld-format v0.0.2

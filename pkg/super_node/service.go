@@ -109,7 +109,7 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.IPFSMode)
+		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}

@@ -19,15 +19,10 @@ package eth
 import (
 	"fmt"
 
-	"github.com/ipfs/go-ipfs-blockstore"
-
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"github.com/ipfs/go-cid"
-	"github.com/ipfs/go-ipfs-ds-help"
 	"github.com/jmoiron/sqlx"
 
 	common2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
@@ -40,13 +35,13 @@ import (
 // It interfaces directly with the public.blocks table of PG-IPFS rather than going through an ipfs intermediary
 // It publishes and indexes IPLDs together in a single sqlx.Tx
 type IPLDPublisherAndIndexer struct {
-	db *postgres.DB
+	indexer *CIDIndexer
 }
 
 // NewIPLDPublisherAndIndexer creates a pointer to a new IPLDPublisherAndIndexer which satisfies the IPLDPublisher interface
 func NewIPLDPublisherAndIndexer(db *postgres.DB) *IPLDPublisherAndIndexer {
 	return &IPLDPublisherAndIndexer{
-		db: db,
+		indexer: NewCIDIndexer(db),
 	}
 }
 
@@ -63,27 +58,27 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	}
 
 	// Begin new db tx
-	tx, err := pub.db.Beginx()
+	tx, err := pub.indexer.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
 
 	// Publish trie nodes
 	for _, node := range txTrieNodes {
-		if err := pub.publishIPLD(tx, node); err != nil {
+		if err := shared.PublishIPLD(tx, node); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 	for _, node := range rctTrieNodes {
-		if err := pub.publishIPLD(tx, node); err != nil {
+		if err := shared.PublishIPLD(tx, node); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 
 	// Publish and index header
-	if err := pub.publishIPLD(tx, headerNode); err != nil {
+	if err := shared.PublishIPLD(tx, headerNode); err != nil {
 		shared.Rollback(tx)
 		return nil, err
 	}
@@ -102,7 +97,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 		UncleRoot:       ipldPayload.Block.UncleHash().String(),
 		Timestamp:       ipldPayload.Block.Time(),
 	}
-	headerID, err := pub.indexHeader(tx, header)
+	headerID, err := pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
 		shared.Rollback(tx)
 		return nil, err
@@ -110,7 +105,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 
 	// Publish and index uncles
 	for _, uncleNode := range uncleNodes {
-		if err := pub.publishIPLD(tx, uncleNode); err != nil {
+		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
@@ -121,7 +116,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 			BlockHash:  uncleNode.Hash().String(),
 			Reward:     uncleReward.String(),
 		}
-		if err := pub.indexUncle(tx, uncle, headerID); err != nil {
+		if err := pub.indexer.indexUncleCID(tx, uncle, headerID); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
@@ -129,25 +124,25 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 
 	// Publish and index txs and receipts
 	for i, txNode := range txNodes {
-		if err := pub.publishIPLD(tx, txNode); err != nil {
+		if err := shared.PublishIPLD(tx, txNode); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
 		rctNode := rctNodes[i]
-		if err := pub.publishIPLD(tx, rctNode); err != nil {
+		if err := shared.PublishIPLD(tx, rctNode); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
-		txID, err := pub.indexTx(tx, txModel, headerID)
+		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
 		rctModel := ipldPayload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
-		if err := pub.indexRct(tx, rctModel, txID); err != nil {
+		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
 			shared.Rollback(tx)
 			return nil, err
 		}
@@ -170,7 +165,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 		if err != nil {
 			return err
 		}
-		if err := pub.publishIPLD(tx, stateIPLD); err != nil {
+		if err := shared.PublishIPLD(tx, stateIPLD); err != nil {
 			shared.Rollback(tx)
 			return err
 		}
@@ -180,7 +175,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 			CID:      stateIPLD.Cid().String(),
 			NodeType: ResolveFromNodeType(stateNode.Type),
 		}
-		stateID, err := pub.indexState(tx, stateModel, headerID)
+		stateID, err := pub.indexer.indexStateCID(tx, stateModel, headerID)
 		if err != nil {
 			return err
 		}
@@ -203,7 +198,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 				CodeHash:    account.CodeHash,
 				StorageRoot: account.Root.String(),
 			}
-			if err := pub.indexAccount(tx, accountModel, stateID); err != nil {
+			if err := pub.indexer.indexStateAccount(tx, accountModel, stateID); err != nil {
 				return err
 			}
 			statePathHash := crypto.Keccak256Hash(stateNode.Path)
@@ -212,7 +207,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 				if err != nil {
 					return err
 				}
-				if err := pub.publishIPLD(tx, storageIPLD); err != nil {
+				if err := shared.PublishIPLD(tx, storageIPLD); err != nil {
 					return err
 				}
 				storageModel := StorageNodeModel{
@@ -221,7 +216,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 					CID:        storageIPLD.Cid().String(),
 					NodeType:   ResolveFromNodeType(storageNode.Type),
 				}
-				if err := pub.indexStorage(tx, storageModel, stateID); err != nil {
+				if err := pub.indexer.indexStorageCID(tx, storageModel, stateID); err != nil {
 					return err
 				}
 			}
@@ -233,87 +228,4 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 // Index satisfies the shared.CIDIndexer interface
 func (pub *IPLDPublisherAndIndexer) Index(cids shared.CIDsForIndexing) error {
 	return nil
-}
-
-type ipldBase interface {
-	Cid() cid.Cid
-	RawData() []byte
-}
-
-func (pub *IPLDPublisherAndIndexer) publishIPLD(tx *sqlx.Tx, i ipldBase) error {
-	dbKey := dshelp.CidToDsKey(i.Cid())
-	prefixedKey := blockstore.BlockPrefix.String() + dbKey.String()
-	raw := i.RawData()
-	_, err := tx.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, prefixedKey, raw)
-	return err
-}
-
-func (pub *IPLDPublisherAndIndexer) generateAndPublishBlockIPLDs(tx *sqlx.Tx, body *types.Block, receipts types.Receipts) (*ipld.EthHeader,
-	[]*ipld.EthHeader, []*ipld.EthTx, []*ipld.EthTxTrie, []*ipld.EthReceipt, []*ipld.EthRctTrie, error) {
-	return ipld.FromBlockAndReceipts(body, receipts)
-}
-
-func (pub *IPLDPublisherAndIndexer) indexHeader(tx *sqlx.Tx, header HeaderModel) (int64, error) {
-	var headerID int64
-	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated)
-								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated) = ($3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, eth.header_cids.times_validated + 1)
-								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, pub.db.NodeID, header.Reward, header.StateRoot, header.TxRoot,
-		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp, 1).Scan(&headerID)
-	return headerID, err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexUncle(tx *sqlx.Tx, uncle UncleModel, headerID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.uncle_cids (block_hash, header_id, parent_hash, cid, reward) VALUES ($1, $2, $3, $4, $5)
-								ON CONFLICT (header_id, block_hash) DO UPDATE SET (parent_hash, cid, reward) = ($3, $4, $5)`,
-		uncle.BlockHash, headerID, uncle.ParentHash, uncle.CID, uncle.Reward)
-	return err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexTx(tx *sqlx.Tx, transaction TxModel, headerID int64) (int64, error) {
-	var txID int64
-	err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index) VALUES ($1, $2, $3, $4, $5, $6)
-									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index) = ($3, $4, $5, $6)
-									RETURNING id`,
-		headerID, transaction.TxHash, transaction.CID, transaction.Dst, transaction.Src, transaction.Index).Scan(&txID)
-	return txID, err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexRct(tx *sqlx.Tx, receipt ReceiptModel, txID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.receipt_cids (tx_id, cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-							  ON CONFLICT (tx_id) DO UPDATE SET (cid, contract, contract_hash, topic0s, topic1s, topic2s, topic3s, log_contracts) = ($2, $3, $4, $5, $6, $7, $8, $9)`,
-		txID, receipt.CID, receipt.Contract, receipt.ContractHash, receipt.Topic0s, receipt.Topic1s, receipt.Topic2s, receipt.Topic3s, receipt.LogContracts)
-	return err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexState(tx *sqlx.Tx, stateNode StateNodeModel, headerID int64) (int64, error) {
-	var stateID int64
-	var stateKey string
-	if stateNode.StateKey != nullHash.String() {
-		stateKey = stateNode.StateKey
-	}
-	err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
-									RETURNING id`,
-		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType).Scan(&stateID)
-	return stateID, err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexStorage(tx *sqlx.Tx, storageNode StorageNodeModel, stateID int64) error {
-	var storageKey string
-	if storageNode.StorageKey != nullHash.String() {
-		storageKey = storageNode.StorageKey
-	}
-	_, err := tx.Exec(`INSERT INTO eth.storage_cids (state_id, storage_leaf_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
-							  ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_leaf_key, cid, node_type) = ($2, $3, $5)`,
-		stateID, storageKey, storageNode.CID, storageNode.Path, storageNode.NodeType)
-	return err
-}
-
-func (pub *IPLDPublisherAndIndexer) indexAccount(tx *sqlx.Tx, account StateAccountModel, stateID int64) error {
-	_, err := tx.Exec(`INSERT INTO eth.state_accounts (state_id, balance, nonce, code_hash, storage_root) VALUES ($1, $2, $3, $4, $5)
-							  ON CONFLICT (state_id) DO UPDATE SET (balance, nonce, code_hash, storage_root) = ($2, $3, $4, $5)`,
-		stateID, account.Balance, account.Nonce, account.CodeHash, account.StorageRoot)
-	return err
 }

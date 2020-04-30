@@ -47,7 +47,7 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if err != nil {
 		return err
 	}
-	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID, in.db.NodeID)
+	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
 	if err != nil {
 		logrus.Error("btc indexer error when indexing header")
 		return err
@@ -59,13 +59,13 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	return tx.Commit()
 }
 
-func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits, node_id, times_validated)
 							VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits, node_id, times_validated) = ($3, $4, $5, $6, $7, btc.header_cids.times_validated + 1)
 							RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, nodeID, 1).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, in.db.NodeID, 1).Scan(&headerID)
 	return headerID, err
 }
 
