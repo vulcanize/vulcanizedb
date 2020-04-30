@@ -36,7 +36,7 @@ const (
 // BackFillInterface for filling in gaps in the super node
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
-	FillGapsInSuperNode(wg *sync.WaitGroup)
+	BackFill(wg *sync.WaitGroup)
 }
 
 // BackFillService for filling in gaps in the super node
@@ -113,8 +113,8 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 	}, nil
 }
 
-// FillGapsInSuperNode periodically checks for and fills in gaps in the super node db
-func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
+// BackFill periodically checks for and fills in gaps in the super node db
+func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
 	wg.Add(1)
 
@@ -151,7 +151,7 @@ func (bfs *BackFillService) FillGapsInSuperNode(wg *sync.WaitGroup) {
 			}
 		}
 	}()
-	log.Infof("%s fillGaps goroutine successfully spun up", bfs.Chain.String())
+	log.Infof("%s BackFill goroutine successfully spun up", bfs.Chain.String())
 }
 
 // backFill fetches, processes, and returns utils.StorageDiffs over a range of blocks

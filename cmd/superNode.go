@@ -53,52 +53,61 @@ and fill in gaps in the data
 }
 
 func superNode() {
+	logWithCommand.Infof("running vdb version: %s", v.VersionWithMeta)
+	logWithCommand.Debug("loading super node configuration variables")
 	superNodeConfig, err := super_node.NewSuperNodeConfig()
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	logWithCommand.Infof("vdb version: %s", v.VersionWithMeta)
 	logWithCommand.Infof("super node config: %+v", superNodeConfig)
 	if err := ipfs.InitIPFSPlugins(); err != nil {
 		logWithCommand.Fatal(err)
 	}
 	wg := &sync.WaitGroup{}
+	logWithCommand.Debug("initializing new super node service")
 	superNode, err := super_node.NewSuperNode(superNodeConfig)
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
 	var forwardPayloadChan chan shared.ConvertedData
 	if superNodeConfig.Serve {
+		logWithCommand.Info("starting up super node servers")
 		forwardPayloadChan = make(chan shared.ConvertedData, super_node.PayloadChanBufferSize)
-		superNode.FilterAndServe(wg, forwardPayloadChan)
+		superNode.Serve(wg, forwardPayloadChan)
 		if err := startServers(superNode, superNodeConfig); err != nil {
 			logWithCommand.Fatal(err)
 		}
 	}
 	if superNodeConfig.Sync {
-		if err := superNode.ProcessData(wg, forwardPayloadChan); err != nil {
+		logWithCommand.Info("starting up super node sync process")
+		if err := superNode.Sync(wg, forwardPayloadChan); err != nil {
 			logWithCommand.Fatal(err)
 		}
 	}
 	if superNodeConfig.BackFill {
+		logWithCommand.Debug("initializing new super node backfill service")
 		backFiller, err := super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
-		backFiller.FillGapsInSuperNode(wg)
+		logWithCommand.Info("starting up super node backfill process")
+		backFiller.BackFill(wg)
 	}
 	wg.Wait()
 }
 
 func startServers(superNode super_node.SuperNode, settings *super_node.Config) error {
+	logWithCommand.Debug("starting up IPC server")
 	_, _, err := rpc.StartIPCEndpoint(settings.IPCEndpoint, superNode.APIs())
 	if err != nil {
 		return err
 	}
+	logWithCommand.Debug("starting up WS server")
 	_, _, err = rpc.StartWSEndpoint(settings.WSEndpoint, superNode.APIs(), []string{"vdb"}, nil, true)
 	if err != nil {
 		return err
 	}
+	logWithCommand.Debug("starting up HTTP server")
 	_, _, err = rpc.StartHTTPEndpoint(settings.HTTPEndpoint, superNode.APIs(), []string{settings.Chain.API()}, nil, nil, rpc.HTTPTimeouts{})
 	return err
 }
@@ -106,7 +115,7 @@ func startServers(superNode super_node.SuperNode, settings *super_node.Config) e
 func init() {
 	rootCmd.AddCommand(superNodeCmd)
 
-	// flags
+	// flags for all config variables
 	superNodeCmd.PersistentFlags().String("ipfs-path", "", "ipfs repository path")
 
 	superNodeCmd.PersistentFlags().String("supernode-chain", "", "which chain to support, options are currently Ethereum or Bitcoin.")

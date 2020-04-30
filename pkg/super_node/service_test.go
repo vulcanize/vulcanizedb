@@ -31,7 +31,7 @@ import (
 )
 
 var _ = Describe("Service", func() {
-	Describe("SyncAndPublish", func() {
+	Describe("Sync", func() {
 		It("Streams statediff.Payloads, converts them to IPLDPayloads, publishes IPLDPayloads, and indexes CIDPayloads", func() {
 			wg := new(sync.WaitGroup)
 			payloadChan := make(chan shared.RawChainData, 1)
@@ -63,7 +63,7 @@ var _ = Describe("Service", func() {
 				QuitChan:       quitChan,
 				WorkerPoolSize: 1,
 			}
-			err := processor.ProcessData(wg, nil)
+			err := processor.Sync(wg, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
 			quitChan <- true
