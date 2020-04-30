@@ -17,6 +17,7 @@
 package repositories_test
 
 import (
+	"database/sql"
 	"math/big"
 	"math/rand"
 
@@ -440,6 +441,28 @@ var _ = Describe("Block header repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(missingBlockNumbers).To(ConsistOf([]int64{2, 4}))
+		})
+	})
+
+	Describe("GetMostRecentHeaderBlockNumber", func() {
+		It("gets the most recent header block number", func() {
+			_, createHeader1Err := repo.CreateOrUpdateHeader(header)
+			Expect(createHeader1Err).NotTo(HaveOccurred())
+
+			header2BlockNumber := header.BlockNumber + int64(1)
+			header2 := fakes.GetFakeHeader(header2BlockNumber)
+			_, createHeader2Err := repo.CreateOrUpdateHeader(header2)
+			Expect(createHeader2Err).NotTo(HaveOccurred())
+
+			mostRecentHeaderBlock, err := repo.GetMostRecentHeaderBlockNumber()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mostRecentHeaderBlock).To(Equal(header2BlockNumber))
+		})
+
+		It("returns an error if it fails to get the most recent header", func() {
+			_, err := repo.GetMostRecentHeaderBlockNumber()
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(sql.ErrNoRows))
 		})
 	})
 })

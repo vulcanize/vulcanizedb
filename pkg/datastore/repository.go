@@ -43,6 +43,7 @@ type HeaderRepository interface {
 	GetHeader(blockNumber int64) (core.Header, error)
 	GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error)
 	MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error)
+	GetMostRecentHeaderBlockNumber() (int64, error)
 }
 
 type EventLogRepository interface {

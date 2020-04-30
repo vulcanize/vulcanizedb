@@ -58,9 +58,10 @@ type StorageWatcher struct {
 	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
 	RetryInterval             time.Duration
 	StorageDiffRepository     storage.DiffRepository
+	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 }
 
-func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatcher {
+func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, backFromHeadOfChain int64) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]storage2.ITransformer)
@@ -70,6 +71,7 @@ func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration) StorageWatc
 		KeccakAddressTransformers: transformers,
 		RetryInterval:             retryInterval,
 		StorageDiffRepository:     storageDiffRepository,
+		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 	}
 }
 
@@ -90,8 +92,34 @@ func (watcher StorageWatcher) Execute() error {
 	}
 }
 
+func (watcher StorageWatcher) getMinDiffID() (int, error) {
+	var minID = 0
+	if watcher.DiffBlocksFromHeadOfChain != -1 {
+		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
+		if getHeaderErr != nil {
+			return 0, getHeaderErr
+		}
+		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
+		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
+		if getDiffErr != nil {
+			return 0, getDiffErr
+		}
+
+		// We are subtracting an offset from the diffID because it will be passed to GetNewDiffs which returns diffs with ids
+		// greater than id passed in (minID), and we want to make sure that this diffID here is included in that collection
+		diffOffset := int64(1)
+		minID = int(diffID - diffOffset)
+	}
+
+	return minID, nil
+}
+
 func (watcher StorageWatcher) transformDiffs() error {
-	minID := 0
+	minID, err := watcher.getMinDiffID()
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
 	for {
 		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
 		if extractErr != nil {
