@@ -29,8 +29,6 @@ services:
         CONFIG_FILE: ./environments/superNodeBTC.toml
     environment:
       VDB_COMMAND: "superNode"
-      IPFS_INIT: "true"
-      IPFS_PATH: "/root/.btc/.ipfs"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432
@@ -54,8 +52,6 @@ services:
         CONFIG_FILE: ./environments/superNodeETH.toml
     environment:
       VDB_COMMAND: "superNode"
-      IPFS_INIT: "true"
-      IPFS_PATH: "/root/.eth/.ipfs"
       DATABASE_NAME: "vulcanize_public"
       DATABASE_HOSTNAME: "db"
       DATABASE_PORT: 5432

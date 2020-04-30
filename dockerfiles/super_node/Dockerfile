@@ -1,24 +1,13 @@
-FROM golang:alpine
+FROM golang:alpine as builder
 
 RUN apk --update --no-cache add make git g++ linux-headers
 # DEBUG
 RUN apk add busybox-extras
 
-# this is probably a noob move, but I want apk from alpine for the above but need to avoid Go 1.13 below as this error still occurs https://github.com/ipfs/go-ipfs/issues/6603
-FROM golang:1.12.4 as builder
-
 # Get and build vulcanizedb
 ADD . /go/src/github.com/vulcanize/vulcanizedb
 WORKDIR /go/src/github.com/vulcanize/vulcanizedb
 RUN GO111MODULE=on GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o vulcanizedb .
-
-# Get and build vulcanize's go-ipfs fork
-RUN go get -u -d github.com/ipfs/go-ipfs
-WORKDIR /go/src/github.com/ipfs/go-ipfs
-RUN git remote add vulcanize https://github.com/vulcanize/go-ipfs.git
-RUN git fetch vulcanize
-RUN git checkout -b pg_ipfs vulcanize/postgres_update
-RUN GO111MODULE=on GCO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o ipfs ./cmd/ipfs
 
 # Build migration tool
 RUN go get -u -d github.com/pressly/goose/cmd/goose
@@ -52,7 +41,6 @@ COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/vulcanizedb vulcani
 COPY --from=builder /go/src/github.com/pressly/goose/cmd/goose/goose goose
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/db/migrations migrations/vulcanizedb
 COPY --from=builder /go/src/github.com/vulcanize/vulcanizedb/environments environments
-COPY --from=builder /go/src/github.com/ipfs/go-ipfs/ipfs ipfs
 
 EXPOSE $EXPOSE_PORT_1
 EXPOSE $EXPOSE_PORT_2
