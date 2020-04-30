@@ -167,7 +167,6 @@ func (f *IPLDFetcher) FetchTrxs(cids []TxModel) ([]ipfs.BlockModel, error) {
 
 // FetchRcts fetches receipts
 // It uses the f.fetchBatch method
-// batch fetch preserves order?
 func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([]ipfs.BlockModel, error) {
 	log.Debug("fetching receipt iplds")
 	rctCids := make([]cid.Cid, len(cids))
@@ -198,9 +197,9 @@ func (f *IPLDFetcher) FetchRcts(cids []ReceiptModel) ([]ipfs.BlockModel, error) 
 // needs to maintain the data's relation to state keys
 func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 	log.Debug("fetching state iplds")
-	stateNodes := make([]StateNode, len(cids))
-	for i, stateNode := range cids {
-		if stateNode.CID == "" || stateNode.StateKey == "" {
+	stateNodes := make([]StateNode, 0, len(cids))
+	for _, stateNode := range cids {
+		if stateNode.CID == "" {
 			continue
 		}
 		dc, err := cid.Decode(stateNode.CID)
@@ -211,7 +210,7 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		stateNodes[i] = StateNode{
+		stateNodes = append(stateNodes, StateNode{
 			IPLD: ipfs.BlockModel{
 				Data: state.RawData(),
 				CID:  state.Cid().String(),
@@ -219,7 +218,7 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 			StateLeafKey: common.HexToHash(stateNode.StateKey),
 			Type:         ResolveToNodeType(stateNode.NodeType),
 			Path:         stateNode.Path,
-		}
+		})
 	}
 	return stateNodes, nil
 }
@@ -229,9 +228,9 @@ func (f *IPLDFetcher) FetchState(cids []StateNodeModel) ([]StateNode, error) {
 // needs to maintain the data's relation to state and storage keys
 func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]StorageNode, error) {
 	log.Debug("fetching storage iplds")
-	storageNodes := make([]StorageNode, len(cids))
-	for i, storageNode := range cids {
-		if storageNode.CID == "" || storageNode.StorageKey == "" || storageNode.StateKey == "" {
+	storageNodes := make([]StorageNode, 0, len(cids))
+	for _, storageNode := range cids {
+		if storageNode.CID == "" || storageNode.StateKey == "" {
 			continue
 		}
 		dc, err := cid.Decode(storageNode.CID)
@@ -242,7 +241,7 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]Stora
 		if err != nil {
 			return nil, err
 		}
-		storageNodes[i] = StorageNode{
+		storageNodes = append(storageNodes, StorageNode{
 			IPLD: ipfs.BlockModel{
 				Data: storage.RawData(),
 				CID:  storage.Cid().String(),
@@ -251,7 +250,7 @@ func (f *IPLDFetcher) FetchStorage(cids []StorageNodeWithStateKeyModel) ([]Stora
 			StorageLeafKey: common.HexToHash(storageNode.StorageKey),
 			Type:           ResolveToNodeType(storageNode.NodeType),
 			Path:           storageNode.Path,
-		}
+		})
 	}
 	return storageNodes, nil
 }

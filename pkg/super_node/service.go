@@ -128,7 +128,7 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath)
+		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}

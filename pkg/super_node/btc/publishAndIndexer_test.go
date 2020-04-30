@@ -18,6 +18,7 @@ package btc_test
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs-blockstore"
@@ -111,6 +112,7 @@ var _ = Describe("PublishAndIndexer", func() {
 				Expect(err).ToNot(HaveOccurred())
 				mhKey := dshelp.CidToDsKey(dc)
 				prefixedKey := blockstore.BlockPrefix.String() + mhKey.String()
+				fmt.Printf("mhKey: %s\r\n", prefixedKey)
 				var data []byte
 				err = db.Get(&data, ipfsPgGet, prefixedKey)
 				Expect(err).ToNot(HaveOccurred())

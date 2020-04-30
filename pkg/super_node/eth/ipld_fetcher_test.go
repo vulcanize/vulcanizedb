@@ -89,8 +89,8 @@ var (
 	}
 )
 
-var _ = Describe("Fetcher", func() {
-	Describe("FetchCIDs", func() {
+var _ = Describe("IPLDFetcher", func() {
+	Describe("Fetch", func() {
 		BeforeEach(func() {
 			mockBlockService = new(mocks.MockIPFSBlockService)
 			err := mockBlockService.AddBlocks(mockBlocks)

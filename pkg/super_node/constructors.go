@@ -60,8 +60,7 @@ func NewCIDIndexer(chain shared.ChainType, db *postgres.DB, ipfsMode shared.IPFS
 		case shared.LocalInterface, shared.RemoteClient:
 			return btc.NewCIDIndexer(db), nil
 		case shared.DirectPostgres:
-			// TODO
-			return nil, nil
+			return eth.NewIPLDPublisherAndIndexer(db), nil
 		default:
 			return nil, fmt.Errorf("bitcoin CIDIndexer unexpected ipfs mode %s", ipfsMode.String())
 		}
@@ -137,12 +136,26 @@ func NewPayloadConverter(chain shared.ChainType) (shared.PayloadConverter, error
 }
 
 // NewIPLDFetcher constructs an IPLDFetcher for the provided chain type
-func NewIPLDFetcher(chain shared.ChainType, ipfsPath string) (shared.IPLDFetcher, error) {
+func NewIPLDFetcher(chain shared.ChainType, ipfsPath string, db *postgres.DB, ipfsMode shared.IPFSMode) (shared.IPLDFetcher, error) {
 	switch chain {
 	case shared.Ethereum:
-		return eth.NewIPLDFetcher(ipfsPath)
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			return eth.NewIPLDFetcher(ipfsPath)
+		case shared.DirectPostgres:
+			return eth.NewIPLDPGFetcher(db), nil
+		default:
+			return nil, fmt.Errorf("ethereum IPLDFetcher unexpected ipfs mode %s", ipfsMode.String())
+		}
 	case shared.Bitcoin:
-		return btc.NewIPLDFetcher(ipfsPath)
+		switch ipfsMode {
+		case shared.LocalInterface, shared.RemoteClient:
+			return btc.NewIPLDFetcher(ipfsPath)
+		case shared.DirectPostgres:
+			return btc.NewIPLDPGFetcher(db), nil
+		default:
+			return nil, fmt.Errorf("bitcoin IPLDFetcher unexpected ipfs mode %s", ipfsMode.String())
+		}
 	default:
 		return nil, fmt.Errorf("invalid chain %s for IPLD fetcher constructor", chain.String())
 	}
@@ -165,8 +178,7 @@ func NewIPLDPublisher(chain shared.ChainType, ipfsPath string, db *postgres.DB, 
 		case shared.LocalInterface, shared.RemoteClient:
 			return btc.NewIPLDPublisher(ipfsPath)
 		case shared.DirectPostgres:
-			// TODO
-			return nil, nil
+			return btc.NewIPLDPublisherAndIndexer(db), nil
 		default:
 			return nil, fmt.Errorf("bitcoin IPLDPublisher unexpected ipfs mode %s", ipfsMode.String())
 		}
