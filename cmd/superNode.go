@@ -59,8 +59,10 @@ func superNode() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("super node config: %+v", superNodeConfig)
-	if err := ipfs.InitIPFSPlugins(); err != nil {
-		logWithCommand.Fatal(err)
+	if superNodeConfig.IPFSMode == shared.LocalInterface {
+		if err := ipfs.InitIPFSPlugins(); err != nil {
+			logWithCommand.Fatal(err)
+		}
 	}
 	wg := &sync.WaitGroup{}
 	logWithCommand.Debug("initializing new super node service")
