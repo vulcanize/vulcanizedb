@@ -50,48 +50,53 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 		return nil, fmt.Errorf("eth fetcher: expected cids type %T got %T", &CIDWrapper{}, cids)
 	}
 	log.Debug("fetching iplds")
-	var err error
 	iplds := IPLDs{}
 	iplds.TotalDifficulty, ok = new(big.Int).SetString(cidWrapper.Header.TotalDifficulty, 10)
 	if !ok {
 		return nil, errors.New("eth fetcher: unable to set total difficulty")
 	}
 	iplds.BlockNumber = cidWrapper.BlockNumber
+
 	tx, err := f.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	iplds.Header, err = f.FetchHeader(tx, cidWrapper.Header)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: header fetching error: %s", err.Error())
 	}
 	iplds.Uncles, err = f.FetchUncles(tx, cidWrapper.Uncles)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: uncle fetching error: %s", err.Error())
 	}
 	iplds.Transactions, err = f.FetchTrxs(tx, cidWrapper.Transactions)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: transaction fetching error: %s", err.Error())
 	}
 	iplds.Receipts, err = f.FetchRcts(tx, cidWrapper.Receipts)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: receipt fetching error: %s", err.Error())
 	}
 	iplds.StateNodes, err = f.FetchState(tx, cidWrapper.StateNodes)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: state fetching error: %s", err.Error())
 	}
 	iplds.StorageNodes, err = f.FetchStorage(tx, cidWrapper.StorageNodes)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("eth pg fetcher: storage fetching error: %s", err.Error())
 	}
-	return iplds, tx.Commit()
+	return iplds, err
 }
 
 // FetchHeaders fetches headers

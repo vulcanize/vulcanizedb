@@ -62,24 +62,31 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
 
 	// Publish trie nodes
 	for _, node := range txTrieNodes {
 		if err := shared.PublishIPLD(tx, node); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 	for _, node := range rctTrieNodes {
 		if err := shared.PublishIPLD(tx, node); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 
 	// Publish and index header
 	if err := shared.PublishIPLD(tx, headerNode); err != nil {
-		shared.Rollback(tx)
 		return nil, err
 	}
 	reward := common2.CalcEthBlockReward(ipldPayload.Block.Header(), ipldPayload.Block.Uncles(), ipldPayload.Block.Transactions(), ipldPayload.Receipts)
@@ -99,14 +106,12 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	}
 	headerID, err := pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, err
 	}
 
 	// Publish and index uncles
 	for _, uncleNode := range uncleNodes {
 		if err := shared.PublishIPLD(tx, uncleNode); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		uncleReward := common2.CalcUncleMinerReward(ipldPayload.Block.Number().Int64(), uncleNode.Number.Int64())
@@ -117,7 +122,6 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 			Reward:     uncleReward.String(),
 		}
 		if err := pub.indexer.indexUncleCID(tx, uncle, headerID); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 	}
@@ -125,37 +129,30 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	// Publish and index txs and receipts
 	for i, txNode := range txNodes {
 		if err := shared.PublishIPLD(tx, txNode); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		rctNode := rctNodes[i]
 		if err := shared.PublishIPLD(tx, rctNode); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
 		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		rctModel := ipldPayload.ReceiptMetaData[i]
 		rctModel.CID = rctNode.Cid().String()
 		if err := pub.indexer.indexReceiptCID(tx, rctModel, txID); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 
 	// Publish and index state and storage
-	if err := pub.publishAndIndexStateAndStorage(tx, ipldPayload, headerID); err != nil {
-		shared.Rollback(tx)
-		return nil, err
-	}
+	err = pub.publishAndIndexStateAndStorage(tx, ipldPayload, headerID)
 
 	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
-	return nil, tx.Commit()
+	return nil, err // return err variable explicity so that we return the err = tx.Commit() assignment in the defer
 }
 
 func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {
@@ -166,7 +163,6 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 			return err
 		}
 		if err := shared.PublishIPLD(tx, stateIPLD); err != nil {
-			shared.Rollback(tx)
 			return err
 		}
 		stateModel := StateNodeModel{

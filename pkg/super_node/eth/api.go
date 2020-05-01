@@ -20,6 +20,8 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -34,19 +36,19 @@ const APIName = "eth"
 const APIVersion = "0.0.1"
 
 type PublicEthAPI struct {
-	b *Backend
+	B *Backend
 }
 
 // NewPublicEthAPI creates a new PublicEthAPI with the provided underlying Backend
 func NewPublicEthAPI(b *Backend) *PublicEthAPI {
 	return &PublicEthAPI{
-		b: b,
+		B: b,
 	}
 }
 
 // BlockNumber returns the block number of the chain head.
 func (pea *PublicEthAPI) BlockNumber() hexutil.Uint64 {
-	number, _ := pea.b.Retriever.RetrieveLastBlockNumber()
+	number, _ := pea.B.Retriever.RetrieveLastBlockNumber()
 	return hexutil.Uint64(number)
 }
 
@@ -73,18 +75,34 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 		LogAddresses: addrStrs,
 		Topics:       topicStrSets,
 	}
-	tx, err := pea.b.DB.Beginx()
+
+	// Begin tx
+	tx, err := pea.B.DB.Beginx()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	// If we have a blockhash to filter on, fire off single retrieval query
 	if crit.BlockHash != nil {
-		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
+		rctCIDs, err := pea.B.Retriever.RetrieveRctCIDs(tx, filter, 0, crit.BlockHash, nil)
 		if err != nil {
 			return nil, err
 		}
-		rctIPLDs, err := pea.b.Fetcher.FetchRcts(tx, rctCIDs)
+		rctIPLDs, err := pea.B.Fetcher.FetchRcts(tx, rctCIDs)
 		if err != nil {
+			return nil, err
+		}
+		if err := tx.Commit(); err != nil {
 			return nil, err
 		}
 		return extractLogsOfInterest(rctIPLDs, filter.Topics)
@@ -94,14 +112,14 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	startingBlock := crit.FromBlock
 	endingBlock := crit.ToBlock
 	if startingBlock == nil {
-		startingBlockInt, err := pea.b.Retriever.RetrieveFirstBlockNumber()
+		startingBlockInt, err := pea.B.Retriever.RetrieveFirstBlockNumber()
 		if err != nil {
 			return nil, err
 		}
 		startingBlock = big.NewInt(startingBlockInt)
 	}
 	if endingBlock == nil {
-		endingBlockInt, err := pea.b.Retriever.RetrieveLastBlockNumber()
+		endingBlockInt, err := pea.B.Retriever.RetrieveLastBlockNumber()
 		if err != nil {
 			return nil, err
 		}
@@ -111,27 +129,28 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 	end := endingBlock.Int64()
 	allRctCIDs := make([]ReceiptModel, 0)
 	for i := start; i <= end; i++ {
-		rctCIDs, err := pea.b.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
+		rctCIDs, err := pea.B.Retriever.RetrieveRctCIDs(tx, filter, i, nil, nil)
 		if err != nil {
 			return nil, err
 		}
 		allRctCIDs = append(allRctCIDs, rctCIDs...)
 	}
-	rctIPLDs, err := pea.b.Fetcher.FetchRcts(tx, allRctCIDs)
+	rctIPLDs, err := pea.B.Fetcher.FetchRcts(tx, allRctCIDs)
 	if err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return extractLogsOfInterest(rctIPLDs, filter.Topics)
+	logs, err := extractLogsOfInterest(rctIPLDs, filter.Topics)
+	return logs, err // need to return err variable so that we return the err = tx.Commit() assignment in the defer
 }
 
 // GetHeaderByNumber returns the requested canonical block header.
 // * When blockNr is -1 the chain head is returned.
 // * We cannot support pending block calls since we do not have an active miner
 func (pea *PublicEthAPI) GetHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (map[string]interface{}, error) {
-	header, err := pea.b.HeaderByNumber(ctx, number)
+	header, err := pea.B.HeaderByNumber(ctx, number)
 	if header != nil && err == nil {
 		return pea.rpcMarshalHeader(header)
 	}
@@ -144,7 +163,7 @@ func (pea *PublicEthAPI) GetHeaderByNumber(ctx context.Context, number rpc.Block
 // * When fullTx is true all transactions in the block are returned, otherwise
 //   only the transaction hash is returned.
 func (pea *PublicEthAPI) GetBlockByNumber(ctx context.Context, number rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	block, err := pea.b.BlockByNumber(ctx, number)
+	block, err := pea.B.BlockByNumber(ctx, number)
 	if block != nil && err == nil {
 		return pea.rpcMarshalBlock(block, true, fullTx)
 	}
@@ -154,7 +173,7 @@ func (pea *PublicEthAPI) GetBlockByNumber(ctx context.Context, number rpc.BlockN
 // GetBlockByHash returns the requested block. When fullTx is true all transactions in the block are returned in full
 // detail, otherwise only the transaction hash is returned.
 func (pea *PublicEthAPI) GetBlockByHash(ctx context.Context, hash common.Hash, fullTx bool) (map[string]interface{}, error) {
-	block, err := pea.b.BlockByHash(ctx, hash)
+	block, err := pea.B.BlockByHash(ctx, hash)
 	if block != nil {
 		return pea.rpcMarshalBlock(block, true, fullTx)
 	}
@@ -165,7 +184,7 @@ func (pea *PublicEthAPI) GetBlockByHash(ctx context.Context, hash common.Hash, f
 // SuperNode cannot currently handle pending/tx_pool txs
 func (pea *PublicEthAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) (*RPCTransaction, error) {
 	// Try to return an already finalized transaction
-	tx, blockHash, blockNumber, index, err := pea.b.GetTransaction(ctx, hash)
+	tx, blockHash, blockNumber, index, err := pea.B.GetTransaction(ctx, hash)
 	if err != nil {
 		return nil, err
 	}

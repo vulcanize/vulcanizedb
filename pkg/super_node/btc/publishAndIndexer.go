@@ -56,18 +56,26 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
 
 	// Publish trie nodes
 	for _, node := range txTrieNodes {
 		if err := shared.PublishIPLD(tx, node); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 	}
 
 	// Publish and index header
 	if err := shared.PublishIPLD(tx, headerNode); err != nil {
-		shared.Rollback(tx)
 		return nil, err
 	}
 	header := HeaderModel{
@@ -80,39 +88,34 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	}
 	headerID, err := pub.indexer.indexHeaderCID(tx, header)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, err
 	}
 
 	// Publish and index txs
 	for i, txNode := range txNodes {
 		if err := shared.PublishIPLD(tx, txNode); err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		txModel := ipldPayload.TxMetaData[i]
 		txModel.CID = txNode.Cid().String()
 		txID, err := pub.indexer.indexTransactionCID(tx, txModel, headerID)
 		if err != nil {
-			shared.Rollback(tx)
 			return nil, err
 		}
 		for _, input := range txModel.TxInputs {
 			if err := pub.indexer.indexTxInput(tx, input, txID); err != nil {
-				shared.Rollback(tx)
 				return nil, err
 			}
 		}
 		for _, output := range txModel.TxOutputs {
 			if err := pub.indexer.indexTxOutput(tx, output, txID); err != nil {
-				shared.Rollback(tx)
 				return nil, err
 			}
 		}
 	}
 
 	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
-	return nil, tx.Commit()
+	return nil, err
 }
 
 // Index satisfies the shared.CIDIndexer interface

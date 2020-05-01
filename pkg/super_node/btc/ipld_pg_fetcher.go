@@ -49,22 +49,31 @@ func (f *IPLDPGFetcher) Fetch(cids shared.CIDsForFetching) (shared.IPLDs, error)
 	log.Debug("fetching iplds")
 	iplds := IPLDs{}
 	iplds.BlockNumber = cidWrapper.BlockNumber
-	var err error
+
 	tx, err := f.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	iplds.Header, err = f.FetchHeader(tx, cidWrapper.Header)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("btc pg fetcher: header fetching error: %s", err.Error())
 	}
 	iplds.Transactions, err = f.FetchTrxs(tx, cidWrapper.Transactions)
 	if err != nil {
-		shared.Rollback(tx)
 		return nil, fmt.Errorf("btc pg fetcher: transaction fetching error: %s", err.Error())
 	}
-	return iplds, tx.Commit()
+	return iplds, err
 }
 
 // FetchHeaders fetches headers

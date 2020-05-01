@@ -166,7 +166,19 @@ var _ = Describe("API", func() {
 			number, err := strconv.ParseInt(mocks.MockCIDPayload.HeaderCID.BlockNumber, 10, 64)
 			Expect(err).ToNot(HaveOccurred())
 			header, err := api.GetHeaderByNumber(context.Background(), rpc.BlockNumber(number))
+			Expect(err).ToNot(HaveOccurred())
 			Expect(header).To(Equal(expectedHeader))
+		})
+
+		It("Throws an error if a header cannot be found", func() {
+			number, err := strconv.ParseInt(mocks.MockCIDPayload.HeaderCID.BlockNumber, 10, 64)
+			Expect(err).ToNot(HaveOccurred())
+			header, err := api.GetHeaderByNumber(context.Background(), rpc.BlockNumber(number+1))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("header at block %d is not available", number+1))
+			Expect(header).To(BeNil())
+			_, err = api.B.DB.Beginx()
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 

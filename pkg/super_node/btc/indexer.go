@@ -43,20 +43,33 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if !ok {
 		return fmt.Errorf("btc indexer expected cids type %T got %T", &CIDPayload{}, cids)
 	}
+
+	// Begin new db tx
 	tx, err := in.db.Beginx()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
 	if err != nil {
 		logrus.Error("btc indexer error when indexing header")
 		return err
 	}
-	if err := in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID); err != nil {
+	err = in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID)
+	if err != nil {
 		logrus.Error("btc indexer error when indexing transactions")
-		return err
 	}
-	return tx.Commit()
+	return err
 }
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {

@@ -50,42 +50,43 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if !ok {
 		return fmt.Errorf("eth indexer expected cids type %T got %T", &CIDPayload{}, cids)
 	}
+
+	// Begin new db tx
 	tx, err := in.db.Beginx()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("eth indexer error when indexing header")
 		return err
 	}
 	for _, uncle := range cidPayload.UncleCIDs {
 		if err := in.indexUncleCID(tx, uncle, headerID); err != nil {
-			if err := tx.Rollback(); err != nil {
-				log.Error(err)
-			}
 			log.Error("eth indexer error when indexing uncle")
 			return err
 		}
 	}
 	if err := in.indexTransactionAndReceiptCIDs(tx, cidPayload, headerID); err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("eth indexer error when indexing transactions and receipts")
 		return err
 	}
-	if err := in.indexStateAndStorageCIDs(tx, cidPayload, headerID); err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
+	err = in.indexStateAndStorageCIDs(tx, cidPayload, headerID)
+	if err != nil {
 		log.Error("eth indexer error when indexing state and storage nodes")
-		return err
 	}
-	return tx.Commit()
+	return err
 }
 
 func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
