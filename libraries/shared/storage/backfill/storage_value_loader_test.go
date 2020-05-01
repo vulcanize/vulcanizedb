@@ -3,7 +3,6 @@ package backfill_test
 import (
 	"math/big"
 	"math/rand"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -30,7 +29,7 @@ var _ = Describe("StorageValueLoader", func() {
 		addressOne, addressTwo, addressThree             common.Address
 		blockOne, blockTwo                               int64
 		bigIntBlockOne, bigIntBlockTwo                   *big.Int
-		fakeHeader                                       core.Header
+		blockOneHeader                                   core.Header
 		headerRepo                                       fakes.MockHeaderRepository
 		diffRepo                                         mocks.MockStorageDiffRepository
 	)
@@ -89,10 +88,19 @@ var _ = Describe("StorageValueLoader", func() {
 		runner.StorageDiffRepo = &diffRepo
 
 		headerRepo = fakes.MockHeaderRepository{}
-		fakeHeader = fakes.FakeHeader
-		fakeHeader.BlockNumber = blockOne
-		headerRepo.AllHeaders = []core.Header{fakeHeader}
+		blockOneHeader = fakes.FakeHeader
+		blockOneHeader.BlockNumber = blockOne
+		headerRepo.AllHeaders = []core.Header{blockOneHeader}
 		runner.HeaderRepo = &headerRepo
+	})
+
+	It("returns error if loader initialized without transformers", func() {
+		runner = backfill.StorageValueLoader{}
+
+		err := runner.Run()
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError(backfill.ErrNoTransformers))
 	})
 
 	It("gets the storage keys for each transformer", func() {
@@ -151,7 +159,17 @@ var _ = Describe("StorageValueLoader", func() {
 		Expect(keysLookupOne.GetKeysCalled).To(BeTrue())
 		Expect(keysLookupTwo.GetKeysCalled).To(BeTrue())
 
-		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[0:backfill.MaxRequestSize]}))
+		found := false
+		for _, call := range bc.BatchGetStorageAtCalls {
+			if len(call.Keys) == backfill.MaxRequestSize {
+				found = true
+				Expect(call.BlockNumber).To(Equal(bigIntBlockOne))
+				Expect(call.Account).To(Equal(addressTwo))
+				// Ordering of keys in mapping is non-deterministic, requiring consist of matcher for Keys field
+				Expect(call.Keys).To(ConsistOf(manyKeys[0:backfill.MaxRequestSize]))
+			}
+		}
+		Expect(found).To(BeTrue())
 		Expect(bc.BatchGetStorageAtCalls).To(ContainElement(fakes.BatchGetStorageAtCall{BlockNumber: bigIntBlockOne, Account: addressTwo, Keys: manyKeys[backfill.MaxRequestSize:]}))
 	})
 
@@ -200,8 +218,7 @@ var _ = Describe("StorageValueLoader", func() {
 		runnerErr := runner.Run()
 		Expect(runnerErr).NotTo(HaveOccurred())
 
-		trimmedHeaderHash := strings.TrimPrefix(fakeHeader.Hash, "0x")
-		headerHashBytes := common.HexToHash(trimmedHeaderHash)
+		headerHashBytes := common.HexToHash(blockOneHeader.Hash)
 		expectedDiffOne := types.RawDiff{
 			BlockHeight:   int(blockOne),
 			BlockHash:     headerHashBytes,
@@ -218,6 +235,46 @@ var _ = Describe("StorageValueLoader", func() {
 		}
 
 		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo))
+	})
+
+	It("does not attempt to persist the same value seen in a previous header", func() {
+		blockTwoHeader := fakes.GetFakeHeader(blockTwo)
+		headerRepo.AllHeaders = []core.Header{
+			blockOneHeader,
+			blockTwoHeader,
+		}
+		// new value for address one at block two
+		bc.SetStorageValuesToReturn(blockTwo, addressOne, valueTwo[:])
+		// same value for address two at block two
+		bc.SetStorageValuesToReturn(blockTwo, addressTwo, valueTwo[:])
+
+		runnerErr := runner.Run()
+		Expect(runnerErr).NotTo(HaveOccurred())
+
+		headerHashBytes := common.HexToHash(blockOneHeader.Hash)
+		expectedDiffOne := types.RawDiff{
+			BlockHeight:   int(blockOne),
+			BlockHash:     headerHashBytes,
+			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
+			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageValue:  valueOne,
+		}
+		expectedDiffTwo := types.RawDiff{
+			BlockHeight:   int(blockOne),
+			BlockHash:     headerHashBytes,
+			HashedAddress: crypto.Keccak256Hash(addressTwo[:]),
+			StorageKey:    crypto.Keccak256Hash(keyTwo.Bytes()),
+			StorageValue:  valueTwo,
+		}
+		expectedDiffThree := types.RawDiff{
+			BlockHeight:   int(blockTwo),
+			BlockHash:     common.HexToHash(blockTwoHeader.Hash),
+			HashedAddress: crypto.Keccak256Hash(addressOne[:]),
+			StorageKey:    crypto.Keccak256Hash(keyOne.Bytes()),
+			StorageValue:  valueTwo,
+		}
+
+		Expect(diffRepo.CreateBackFilledStorageValuePassedRawDiffs).To(ConsistOf(expectedDiffOne, expectedDiffTwo, expectedDiffThree))
 	})
 
 	It("returns an error if inserting a diff fails", func() {

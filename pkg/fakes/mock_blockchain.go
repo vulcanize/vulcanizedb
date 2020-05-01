@@ -134,7 +134,11 @@ func (blockChain *MockBlockChain) BatchGetStorageAt(account common.Address, keys
 }
 
 func (blockChain *MockBlockChain) SetStorageValuesToReturn(blockNumber int64, address common.Address, value []byte) {
-	blockChain.storageValuesToReturn[address] = map[int64][]byte{blockNumber: value}
+	_, ok := blockChain.storageValuesToReturn[address]
+	if !ok {
+		blockChain.storageValuesToReturn[address] = map[int64][]byte{}
+	}
+	blockChain.storageValuesToReturn[address][blockNumber] = value
 }
 
 func (blockChain *MockBlockChain) Node() core.Node {
