@@ -39,19 +39,14 @@ var (
 
 type Backend struct {
 	Retriever *CIDRetriever
-	Fetcher   *IPLDFetcher
+	Fetcher   *IPLDPGFetcher
 	DB        *postgres.DB
 }
 
-func NewEthBackend(db *postgres.DB, ipfsPath string) (*Backend, error) {
+func NewEthBackend(db *postgres.DB) (*Backend, error) {
 	r := NewCIDRetriever(db)
-	f, err := NewIPLDFetcher(ipfsPath)
-	if err != nil {
-		return nil, err
-	}
 	return &Backend{
 		Retriever: r,
-		Fetcher:   f,
 		DB:        db,
 	}, nil
 }
@@ -80,16 +75,16 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 		}
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
 	// If there are none, throw an error
 	if len(headerCids) < 1 {
 		return nil, fmt.Errorf("header at block %d is not available", number)
 	}
 	// Fetch the header IPLDs for those CIDs
-	headerIPLD, err := b.Fetcher.FetchHeader(headerCids[0])
+	headerIPLD, err := b.Fetcher.FetchHeader(tx, headerCids[0])
 	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	// Decode the first header at this block height and return it
@@ -131,14 +126,14 @@ func (b *Backend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log
 		}
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
 	if len(receiptCIDs) == 0 {
 		return nil, nil
 	}
-	receiptIPLDs, err := b.Fetcher.FetchRcts(receiptCIDs)
+	receiptIPLDs, err := b.Fetcher.FetchRcts(tx, receiptCIDs)
 	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	logs := make([][]*types.Log, len(receiptIPLDs))
@@ -172,9 +167,13 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 	if err != nil {
 		return nil, err
 	}
+	tx, err := b.DB.Beginx()
+	if err != nil {
+		return nil, err
+	}
 
 	// Fetch and decode the header IPLD
-	headerIPLD, err := b.Fetcher.FetchHeader(headerCID)
+	headerIPLD, err := b.Fetcher.FetchHeader(tx, headerCID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +182,7 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs
-	uncleIPLDs, err := b.Fetcher.FetchUncles(uncleCIDs)
+	uncleIPLDs, err := b.Fetcher.FetchUncles(tx, uncleCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +195,7 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 		uncles = append(uncles, &uncle)
 	}
 	// Fetch and decode the transaction IPLDs
-	txIPLDs, err := b.Fetcher.FetchTrxs(txCIDs)
+	txIPLDs, err := b.Fetcher.FetchTrxs(tx, txCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -209,8 +208,11 @@ func (b *Backend) BlockByNumber(ctx context.Context, blockNumber rpc.BlockNumber
 		transactions = append(transactions, &tx)
 	}
 	// Fetch and decode the receipt IPLDs
-	rctIPLDs, err := b.Fetcher.FetchRcts(rctCIDs)
+	rctIPLDs, err := b.Fetcher.FetchRcts(tx, rctCIDs)
 	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	var receipts []*types.Receipt
@@ -233,8 +235,12 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 	if err != nil {
 		return nil, err
 	}
+	tx, err := b.DB.Beginx()
+	if err != nil {
+		return nil, err
+	}
 	// Fetch and decode the header IPLD
-	headerIPLD, err := b.Fetcher.FetchHeader(headerCID)
+	headerIPLD, err := b.Fetcher.FetchHeader(tx, headerCID)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +249,7 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 		return nil, err
 	}
 	// Fetch and decode the uncle IPLDs
-	uncleIPLDs, err := b.Fetcher.FetchUncles(uncleCIDs)
+	uncleIPLDs, err := b.Fetcher.FetchUncles(tx, uncleCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +262,7 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 		uncles = append(uncles, &uncle)
 	}
 	// Fetch and decode the transaction IPLDs
-	txIPLDs, err := b.Fetcher.FetchTrxs(txCIDs)
+	txIPLDs, err := b.Fetcher.FetchTrxs(tx, txCIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -269,8 +275,11 @@ func (b *Backend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Blo
 		transactions = append(transactions, &tx)
 	}
 	// Fetch and decode the receipt IPLDs
-	rctIPLDs, err := b.Fetcher.FetchRcts(rctCIDs)
+	rctIPLDs, err := b.Fetcher.FetchRcts(tx, rctCIDs)
 	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	var receipts []*types.Receipt
@@ -301,8 +310,15 @@ func (b *Backend) GetTransaction(ctx context.Context, txHash common.Hash) (*type
 	if err := b.DB.Get(&txCIDWithHeaderInfo, pgStr, txHash.String()); err != nil {
 		return nil, common.Hash{}, 0, 0, err
 	}
-	txIPLD, err := b.Fetcher.FetchTrxs([]TxModel{{CID: txCIDWithHeaderInfo.CID}})
+	tx, err := b.DB.Beginx()
 	if err != nil {
+		return nil, common.Hash{}, 0, 0, err
+	}
+	txIPLD, err := b.Fetcher.FetchTrxs(tx, []TxModel{{CID: txCIDWithHeaderInfo.CID}})
+	if err != nil {
+		return nil, common.Hash{}, 0, 0, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, common.Hash{}, 0, 0, err
 	}
 	var transaction types.Transaction

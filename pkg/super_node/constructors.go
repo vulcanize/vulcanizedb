@@ -191,7 +191,7 @@ func NewIPLDPublisher(chain shared.ChainType, ipfsPath string, db *postgres.DB, 
 func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc.API, error) {
 	switch chain {
 	case shared.Ethereum:
-		backend, err := eth.NewEthBackend(db, ipfsPath)
+		backend, err := eth.NewEthBackend(db)
 		if err != nil {
 			return rpc.API{}, err
 		}

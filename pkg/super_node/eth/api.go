@@ -83,10 +83,7 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 		if err != nil {
 			return nil, err
 		}
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		rctIPLDs, err := pea.b.Fetcher.FetchRcts(rctCIDs)
+		rctIPLDs, err := pea.b.Fetcher.FetchRcts(tx, rctCIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -120,11 +117,11 @@ func (pea *PublicEthAPI) GetLogs(ctx context.Context, crit ethereum.FilterQuery)
 		}
 		allRctCIDs = append(allRctCIDs, rctCIDs...)
 	}
-	if err := tx.Commit(); err != nil {
+	rctIPLDs, err := pea.b.Fetcher.FetchRcts(tx, allRctCIDs)
+	if err != nil {
 		return nil, err
 	}
-	rctIPLDs, err := pea.b.Fetcher.FetchRcts(allRctCIDs)
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return extractLogsOfInterest(rctIPLDs, filter.Topics)
