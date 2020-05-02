@@ -27,6 +27,7 @@ import (
 
 	"github.com/vulcanize/vulcanizedb/libraries/shared/fetcher"
 	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	"github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 )
 
 const (
@@ -63,7 +64,7 @@ func (bf *backFiller) BackFill(startingBlock, endingBlock uint64, backFill chan 
 	logrus.Infof("going to fill in gap from %d to %d", startingBlock, endingBlock)
 
 	// break the range up into bins of smaller ranges
-	blockRangeBins, err := utils.GetBlockHeightBins(startingBlock, endingBlock, bf.batchSize)
+	blockRangeBins, err := utilities.GetBlockHeightBins(startingBlock, endingBlock, bf.batchSize)
 	if err != nil {
 		return err
 	}

@@ -82,8 +82,8 @@ func NewReSyncConfig() (*Config, error) {
 	viper.BindEnv("resync.timeout", shared.HTTP_TIMEOUT)
 
 	timeout := viper.GetInt("resync.timeout")
-	if timeout < 15 {
-		timeout = 15
+	if timeout < 5 {
+		timeout = 5
 	}
 	c.Timeout = time.Second * time.Duration(timeout)
 
@@ -104,7 +104,7 @@ func NewReSyncConfig() (*Config, error) {
 		}
 	}
 	resyncType := viper.GetString("resync.type")
-	c.ResyncType, err = shared.GenerateResyncTypeFromString(resyncType)
+	c.ResyncType, err = shared.GenerateDataTypeFromString(resyncType)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewReSyncConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if ok, err := shared.SupportedResyncType(c.ResyncType, c.Chain); !ok {
+	if ok, err := shared.SupportedDataType(c.ResyncType, c.Chain); !ok {
 		if err != nil {
 			return nil, err
 		}

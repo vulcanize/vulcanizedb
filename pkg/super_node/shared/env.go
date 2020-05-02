@@ -90,7 +90,7 @@ func GetIPFSMode() (IPFSMode, error) {
 	if ipfsMode == "" {
 		return DirectPostgres, nil
 	}
-	return NewIPLFMode(ipfsMode)
+	return NewIPFSMode(ipfsMode)
 }
 
 // GetBtcNodeAndClient returns btc node info from path url

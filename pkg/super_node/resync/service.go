@@ -22,7 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	utils "github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )

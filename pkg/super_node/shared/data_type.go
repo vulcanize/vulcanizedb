@@ -57,8 +57,8 @@ func (r DataType) String() string {
 	}
 }
 
-// GenerateResyncTypeFromString
-func GenerateResyncTypeFromString(str string) (DataType, error) {
+// GenerateDataTypeFromString
+func GenerateDataTypeFromString(str string) (DataType, error) {
 	switch strings.ToLower(str) {
 	case "full", "f":
 		return Full, nil
@@ -79,7 +79,7 @@ func GenerateResyncTypeFromString(str string) (DataType, error) {
 	}
 }
 
-func SupportedResyncType(d DataType, c ChainType) (bool, error) {
+func SupportedDataType(d DataType, c ChainType) (bool, error) {
 	switch c {
 	case Ethereum:
 		switch d {

@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package utils_test
+package utilities_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
+	utils "github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 )
 
 var _ = Describe("GetBlockHeightBins", func() {

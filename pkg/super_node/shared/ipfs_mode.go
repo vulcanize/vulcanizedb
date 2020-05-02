@@ -44,15 +44,15 @@ func (c IPFSMode) String() string {
 	}
 }
 
-func NewIPLFMode(name string) (IPFSMode, error) {
+func NewIPFSMode(name string) (IPFSMode, error) {
 	switch strings.ToLower(name) {
 	case "local", "interface", "minimal":
 		return LocalInterface, nil
 	case "remote", "client":
-		return RemoteClient, nil
+		return RemoteClient, errors.New("remote IPFS client mode is not currently supported")
 	case "postgres", "direct":
 		return DirectPostgres, nil
 	default:
-		return Unknown, errors.New("invalid name for ipfs mode")
+		return Unknown, errors.New("unrecognized name for ipfs mode")
 	}
 }

@@ -152,7 +152,7 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 	err = pub.publishAndIndexStateAndStorage(tx, ipldPayload, headerID)
 
 	// This IPLDPublisher does both publishing and indexing, we do not need to pass anything forward to the indexer
-	return nil, err // return err variable explicity so that we return the err = tx.Commit() assignment in the defer
+	return nil, err // return err variable explicitly so that we return the err = tx.Commit() assignment in the defer
 }
 
 func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {

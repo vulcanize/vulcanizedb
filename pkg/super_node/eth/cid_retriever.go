@@ -17,10 +17,9 @@
 package eth
 
 import (
+	"database/sql"
 	"fmt"
 	"math/big"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -28,6 +27,7 @@ import (
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
+	utils "github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
@@ -452,7 +452,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 		Start uint64 `db:"start"`
 		Stop  uint64 `db:"stop"`
 	}, 0)
-	if err := ecr.db.Select(&results, pgStr); err != nil {
+	if err := ecr.db.Select(&results, pgStr); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	emptyGaps := make([]shared.Gap, len(results))
@@ -469,11 +469,8 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 			WHERE times_validated < $1
 			ORDER BY block_number`
 	var heights []uint64
-	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil {
+	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}
-	if len(heights) == 0 {
-		return emptyGaps, nil
 	}
 	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
 }
