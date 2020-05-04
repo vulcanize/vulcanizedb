@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 -- Returns all of the header ids, in descending order, that are recursively validated from the provided hash
--- includes the header id for the provided hash and the id found at height = depth
+-- includes the header id for the provided hash and the id found at height = depth (so it returns depth+1 ids)
 CREATE OR REPLACE FUNCTION eth_valid_section(hash VARCHAR(66), depth INT)
         RETURNS TABLE (
             id INT
