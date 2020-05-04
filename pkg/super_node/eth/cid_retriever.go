@@ -475,6 +475,76 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
 }
 
+/*
+The above can be very expensive and hangs out large DBs with many gaps.
+TODO: Split up the queries into subranges using a WITH AS clause
+Things to keep in mind:
+1. This will add additional complexity to the layer above this, it will need to keep track of which subranges it has checked
+2. The beginning and end of a subrange must be heights at which a header exists, if the start or end of a subrange is within a gap
+that gap will not be found using this query. So we need to adjust the start and stop to the nearest headers.
+*/
+
+// RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
+// it finds the union of heights where no data exists and where the times_validated is lower than the validation level
+func (ecr *CIDRetriever) RetrieveGapsInDataSubRange(validationLevel int, rangeStart, rangeStop int64) ([]shared.Gap, error) {
+	// Find the closest height below the provided start height that has an entry
+	findStartHeight := `SELECT block_number FROM eth.header_cids 
+					WHERE block_number BETWEEN $1 AND $2
+					ORDER BY block_number DESC LIMIT 1`
+	var actualStart int64
+	if err := ecr.db.Get(&actualStart, findStartHeight, 1, rangeStart); err != nil {
+		return nil, err
+	}
+	// Find the closest height above the provided stop height that has an entry
+	latestHeight, err := ecr.RetrieveLastBlockNumber()
+	if err != nil {
+		return nil, err
+	}
+	findStopHeight := `SELECT block_number FROM eth.header_cids
+					WHERE block_number BETWEEN $1 AND $2
+					ORDER BY block_number ASC LIMIT 1`
+	var actualStop int64
+	if err := ecr.db.Get(&actualStop, findStopHeight, rangeStop, latestHeight); err != nil {
+		return nil, err
+	}
+	// Find missing header gaps in this subrange
+	pgStr := `WITH target_range AS (
+					SELECT * FROM eth.header_cids
+					WHERE block_number BETWEEN $1 AND $2
+				) SELECT target_range.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM target_range
+			  LEFT JOIN target_range r ON target_range.block_number = r.block_number - 1
+			  LEFT JOIN target_range fr ON target_range.block_number < fr.block_number                                                                                                                                    
+			  WHERE r.block_number is NULL and fr.block_number IS NOT NULL
+			  GROUP BY target_range.block_number, r.block_number`
+	results := make([]struct {
+		Start uint64 `db:"start"`
+		Stop  uint64 `db:"stop"`
+	}, 0)
+	if err := ecr.db.Select(&results, pgStr, actualStart, actualStart); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	emptyGaps := make([]shared.Gap, len(results))
+	for i, res := range results {
+		emptyGaps[i] = shared.Gap{
+			Start: res.Start,
+			Stop:  res.Stop,
+		}
+	}
+
+	// Find sections of blocks where we are below the validation level
+	// There will be no overlap between these "gaps" and the ones above
+	// TODO: account for the fact that this will return heights at which we have a "valid" header is an "invalid" one is present at the same block number
+	pgStr = `SELECT block_number FROM eth.header_cids
+			WHERE times_validated < $1
+			AND block_number BETWEEN $2 AND $3
+			ORDER BY block_number`
+	var heights []uint64
+	if err := ecr.db.Select(&heights, pgStr, validationLevel, actualStart, actualStop); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
+}
+
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash
 func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel, []UncleModel, []TxModel, []ReceiptModel, error) {
 	log.Debug("retrieving block cids for block hash ", blockHash.String())
