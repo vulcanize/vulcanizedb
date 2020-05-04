@@ -209,6 +209,18 @@ func NewPublicAPI(chain shared.ChainType, db *postgres.DB, ipfsPath string) (rpc
 	}
 }
 
+// NewValidator constructs a Validator for the provided chain type
+func NewValidator(chain shared.ChainType, db *postgres.DB) (shared.Validator, error) {
+	switch chain {
+	case shared.Ethereum:
+		return eth.NewValidator(db), nil
+	case shared.Bitcoin:
+		return btc.NewValidator(db), nil
+	default:
+		return nil, fmt.Errorf("invalid chain %s for validator constructor", chain.String())
+	}
+}
+
 // NewCleaner constructs a Cleaner for the provided chain type
 func NewCleaner(chain shared.ChainType, db *postgres.DB) (shared.Cleaner, error) {
 	switch chain {

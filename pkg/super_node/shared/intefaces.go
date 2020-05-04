@@ -75,6 +75,11 @@ type Cleaner interface {
 	ResetValidation(rngs [][2]uint64) error
 }
 
+// Validator is for validating sections of data using chain-specific procedures
+type Validator interface {
+	Validate(errChan chan error) error
+}
+
 // SubscriptionSettings is the interface every subscription filter type needs to satisfy, no matter the chain
 // Further specifics of the underlying filter type depend on the internal needs of the types
 // which satisfy the ResponseFilterer and CIDRetriever interfaces for a specific chain

@@ -45,6 +45,7 @@ const (
 	SUPERNODE_BATCH_SIZE       = "SUPERNODE_BATCH_SIZE"
 	SUPERNODE_BATCH_NUMBER     = "SUPERNODE_BATCH_NUMBER"
 	SUPERNODE_VALIDATION_LEVEL = "SUPERNODE_VALIDATION_LEVEL"
+	SUPERNODE_VALIDATOR        = "SUPERNODE_VALIDATOR"
 )
 
 // Config struct
@@ -74,6 +75,8 @@ type Config struct {
 	BatchNumber     uint64
 	ValidationLevel int
 	Timeout         time.Duration // HTTP connection timeout in seconds
+	// Validator params
+	Validate bool
 }
 
 // NewSuperNodeConfig is used to initialize a SuperNode config from a .toml file
@@ -92,6 +95,7 @@ func NewSuperNodeConfig() (*Config, error) {
 	viper.BindEnv("superNode.ipcPath", SUPERNODE_IPC_PATH)
 	viper.BindEnv("superNode.httpPath", SUPERNODE_HTTP_PATH)
 	viper.BindEnv("superNode.backFill", SUPERNODE_BACKFILL)
+	viper.BindEnv("superNode.validator", SUPERNODE_VALIDATOR)
 
 	chain := viper.GetString("superNode.chain")
 	c.Chain, err = shared.NewChainType(chain)
@@ -109,6 +113,8 @@ func NewSuperNodeConfig() (*Config, error) {
 			return nil, err
 		}
 	}
+
+	c.Validate = viper.GetBool("superNode.validator")
 
 	c.Sync = viper.GetBool("superNode.sync")
 	if c.Sync {

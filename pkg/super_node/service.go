@@ -47,6 +47,8 @@ type SuperNode interface {
 	Sync(wg *sync.WaitGroup, forwardPayloadChan chan<- shared.ConvertedData) error
 	// Pub-Sub handling event loop
 	Serve(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData)
+	// Method for validating data
+	Validate(wg *sync.WaitGroup) error
 	// Method to subscribe to the service
 	Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings)
 	// Method to unsubscribe from the service
@@ -75,6 +77,8 @@ type Service struct {
 	IPLDFetcher shared.IPLDFetcher
 	// Interface for searching and retrieving CIDs from Postgres index
 	Retriever shared.CIDRetriever
+	// Interface for validating data in the Postgres db
+	Validator shared.Validator
 	// Chan the processor uses to subscribe to payloads from the Streamer
 	PayloadChan chan shared.RawChainData
 	// Used to signal shutdown of the service
@@ -129,6 +133,13 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 			return nil, err
 		}
 		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// If we are validating, initialize the needed interface
+	if settings.Validate {
+		sn.Validator, err = NewValidator(settings.Chain, settings.DB)
 		if err != nil {
 			return nil, err
 		}
@@ -255,10 +266,36 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 				if err := sap.Indexer.Index(cidPayload); err != nil {
 					log.Errorf("super node publishAndIndex worker %d indexing error for chain %s: %v", id, sap.chain.String(), err)
 				}
+			case <-sap.QuitChan:
+				log.Infof("quiting %s publishAndIndex process", sap.chain.String())
+				return
 			}
 		}
 	}()
 	log.Debugf("%s publishAndIndex goroutine successfully spun up", sap.chain.String())
+}
+
+// Validate uses the underlying chain-specific validator to validate data after it has been added to the Postgres db
+func (sap *Service) Validate(wg *sync.WaitGroup) error {
+	validateErrs := make(chan error)
+	if err := sap.Validator.Validate(validateErrs); err != nil {
+		return err
+	}
+	wg.Add(1)
+	go func() {
+		for {
+			select {
+			case err := <-validateErrs:
+				log.Errorf("super node Validator error: %s", err.Error())
+			case <-sap.QuitChan:
+				log.Infof("quiting %s Validate process", sap.chain.String())
+				wg.Done()
+				return
+			}
+		}
+	}()
+	log.Infof("%s Validate goroutine successfully spun up", sap.chain.String())
+	return nil
 }
 
 // Serve listens for incoming converter data off the screenAndServePayload from the SyncAndConvert process
