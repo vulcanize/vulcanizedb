@@ -216,15 +216,15 @@ var (
 	})
 
 	nonce1             = uint64(1)
-	contractRoot       = "0x821e2556a290c86405f8160a2d662042a431ba456b9db265c79bb837c04be5f0"
-	contractCodeHash   = common.HexToHash("0x753f98a8d4328b15636e46f66f2cb4bc860100aa17967cc145fcd17d1d4710ea")
+	ContractRoot       = "0x821e2556a290c86405f8160a2d662042a431ba456b9db265c79bb837c04be5f0"
+	ContractCodeHash   = common.HexToHash("0x753f98a8d4328b15636e46f66f2cb4bc860100aa17967cc145fcd17d1d4710ea")
 	contractPathHash   = crypto.Keccak256Hash([]byte{'\x06'})
 	ContractLeafKey    = testhelpers.AddressToLeafKey(ContractAddress)
 	ContractAccount, _ = rlp.EncodeToBytes(state.Account{
 		Nonce:    nonce1,
 		Balance:  big.NewInt(0),
-		CodeHash: contractCodeHash.Bytes(),
-		Root:     common.HexToHash(contractRoot),
+		CodeHash: ContractCodeHash.Bytes(),
+		Root:     common.HexToHash(ContractRoot),
 	})
 	ContractPartialPath = common.Hex2Bytes("3114658a74d9cc9f7acf2c5cd696c3494d7c344d78bfec3add0d91ec4e8d1c45")
 	ContractLeafNode, _ = rlp.EncodeToBytes([]interface{}{
@@ -233,16 +233,16 @@ var (
 	})
 
 	nonce0          = uint64(0)
-	accountRoot     = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
-	accountCodeHash = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+	AccountRoot     = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+	AccountCodeHash = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
 	accountPathHash = crypto.Keccak256Hash([]byte{'\x0c'})
 	AccountAddresss = common.HexToAddress("0x0D3ab14BBaD3D99F4203bd7a11aCB94882050E7e")
 	AccountLeafKey  = testhelpers.Account2LeafKey
 	Account, _      = rlp.EncodeToBytes(state.Account{
 		Nonce:    nonce0,
 		Balance:  big.NewInt(1000),
-		CodeHash: accountCodeHash.Bytes(),
-		Root:     common.HexToHash(accountRoot),
+		CodeHash: AccountCodeHash.Bytes(),
+		Root:     common.HexToHash(AccountRoot),
 	})
 	AccountPartialPath = common.Hex2Bytes("3957f3e2f04a0764c3a0491b175f69926da61efbcc8f61fa1455fd2d2b4cdd45")
 	AccountLeafNode, _ = rlp.EncodeToBytes([]interface{}{
@@ -374,14 +374,14 @@ var (
 			contractPathHash: {
 				Balance:     big.NewInt(0).String(),
 				Nonce:       nonce1,
-				CodeHash:    contractCodeHash.Bytes(),
-				StorageRoot: common.HexToHash(contractRoot).String(),
+				CodeHash:    ContractCodeHash.Bytes(),
+				StorageRoot: common.HexToHash(ContractRoot).String(),
 			},
 			accountPathHash: {
 				Balance:     big.NewInt(1000).String(),
 				Nonce:       nonce0,
-				CodeHash:    accountCodeHash.Bytes(),
-				StorageRoot: common.HexToHash(accountRoot).String(),
+				CodeHash:    AccountCodeHash.Bytes(),
+				StorageRoot: common.HexToHash(AccountRoot).String(),
 			},
 		},
 	}

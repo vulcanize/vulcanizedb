@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/resync"
@@ -45,8 +46,10 @@ func rsyncCmdCommand() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("resync config: %+v", rConfig)
-	if err := ipfs.InitIPFSPlugins(); err != nil {
-		logWithCommand.Fatal(err)
+	if rConfig.IPFSMode == shared.LocalInterface {
+		if err := ipfs.InitIPFSPlugins(); err != nil {
+			logWithCommand.Fatal(err)
+		}
 	}
 	logWithCommand.Debug("initializing new resync service")
 	rService, err := resync.NewResyncService(rConfig)

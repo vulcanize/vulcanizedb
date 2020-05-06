@@ -50,51 +50,52 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if !ok {
 		return fmt.Errorf("eth indexer expected cids type %T got %T", &CIDPayload{}, cids)
 	}
+
+	// Begin new db tx
 	tx, err := in.db.Beginx()
 	if err != nil {
 		return err
 	}
-	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID, in.db.NodeID)
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
 		}
+	}()
+
+	headerID, err := in.indexHeaderCID(tx, cidPayload.HeaderCID)
+	if err != nil {
 		log.Error("eth indexer error when indexing header")
 		return err
 	}
 	for _, uncle := range cidPayload.UncleCIDs {
 		if err := in.indexUncleCID(tx, uncle, headerID); err != nil {
-			if err := tx.Rollback(); err != nil {
-				log.Error(err)
-			}
 			log.Error("eth indexer error when indexing uncle")
 			return err
 		}
 	}
 	if err := in.indexTransactionAndReceiptCIDs(tx, cidPayload, headerID); err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("eth indexer error when indexing transactions and receipts")
 		return err
 	}
-	if err := in.indexStateAndStorageCIDs(tx, cidPayload, headerID); err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
+	err = in.indexStateAndStorageCIDs(tx, cidPayload, headerID)
+	if err != nil {
 		log.Error("eth indexer error when indexing state and storage nodes")
-		return err
 	}
-	return tx.Commit()
+	return err
 }
 
-func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated)
 								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 								ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated) = ($3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, eth.header_cids.times_validated + 1)
 								RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, nodeID, header.Reward, header.StateRoot, header.TxRoot,
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.TotalDifficulty, in.db.NodeID, header.Reward, header.StateRoot, header.TxRoot,
 		header.RctRoot, header.UncleRoot, header.Bloom, header.Timestamp, 1).Scan(&headerID)
 	return headerID, err
 }
@@ -124,6 +125,15 @@ func (in *CIDIndexer) indexTransactionAndReceiptCIDs(tx *sqlx.Tx, payload *CIDPa
 		}
 	}
 	return nil
+}
+
+func (in *CIDIndexer) indexTransactionCID(tx *sqlx.Tx, transaction TxModel, headerID int64) (int64, error) {
+	var txID int64
+	err := tx.QueryRowx(`INSERT INTO eth.transaction_cids (header_id, tx_hash, cid, dst, src, index) VALUES ($1, $2, $3, $4, $5, $6)
+									ON CONFLICT (header_id, tx_hash) DO UPDATE SET (cid, dst, src, index) = ($3, $4, $5, $6)
+									RETURNING id`,
+		headerID, transaction.TxHash, transaction.CID, transaction.Dst, transaction.Src, transaction.Index).Scan(&txID)
+	return txID, err
 }
 
 func (in *CIDIndexer) indexReceiptCID(tx *sqlx.Tx, cidMeta ReceiptModel, txID int64) error {
@@ -163,6 +173,19 @@ func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload,
 		}
 	}
 	return nil
+}
+
+func (in *CIDIndexer) indexStateCID(tx *sqlx.Tx, stateNode StateNodeModel, headerID int64) (int64, error) {
+	var stateID int64
+	var stateKey string
+	if stateNode.StateKey != nullHash.String() {
+		stateKey = stateNode.StateKey
+	}
+	err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
+									RETURNING id`,
+		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType).Scan(&stateID)
+	return stateID, err
 }
 
 func (in *CIDIndexer) indexStateAccount(tx *sqlx.Tx, stateAccount StateAccountModel, stateID int64) error {

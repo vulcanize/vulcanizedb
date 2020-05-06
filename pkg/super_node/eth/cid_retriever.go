@@ -17,10 +17,9 @@
 package eth
 
 import (
+	"database/sql"
 	"fmt"
 	"math/big"
-
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -28,6 +27,7 @@ import (
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
+	utils "github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
@@ -65,17 +65,26 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		return nil, true, fmt.Errorf("eth retriever expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
 	log.Debug("retrieving cids")
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return nil, true, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
 
 	// Retrieve cached header CIDs at this block height
 	headers, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return nil, true, err
 	}
@@ -91,9 +100,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 				// Retrieve uncle cids for this header id
 				uncleCIDs, err := ecr.RetrieveUncleCIDsByHeaderID(tx, header.ID)
 				if err != nil {
-					if err := tx.Rollback(); err != nil {
-						log.Error(err)
-					}
 					log.Error("uncle cid retrieval error")
 					return nil, true, err
 				}
@@ -104,9 +110,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		if !streamFilter.TxFilter.Off {
 			cw.Transactions, err = ecr.RetrieveTxCIDs(tx, streamFilter.TxFilter, header.ID)
 			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					log.Error(err)
-				}
 				log.Error("transaction cid retrieval error")
 				return nil, true, err
 			}
@@ -122,9 +125,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		if !streamFilter.ReceiptFilter.Off {
 			cw.Receipts, err = ecr.RetrieveRctCIDsByHeaderID(tx, streamFilter.ReceiptFilter, header.ID, trxIds)
 			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					log.Error(err)
-				}
 				log.Error("receipt cid retrieval error")
 				return nil, true, err
 			}
@@ -136,9 +136,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		if !streamFilter.StateFilter.Off {
 			cw.StateNodes, err = ecr.RetrieveStateCIDs(tx, streamFilter.StateFilter, header.ID)
 			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					log.Error(err)
-				}
 				log.Error("state cid retrieval error")
 				return nil, true, err
 			}
@@ -150,9 +147,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		if !streamFilter.StorageFilter.Off {
 			cw.StorageNodes, err = ecr.RetrieveStorageCIDs(tx, streamFilter.StorageFilter, header.ID)
 			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					log.Error(err)
-				}
 				log.Error("storage cid retrieval error")
 				return nil, true, err
 			}
@@ -163,7 +157,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		cws[i] = cw
 	}
 
-	return cws, empty, tx.Commit()
+	return cws, empty, err
 }
 
 // RetrieveHeaderCIDs retrieves and returns all of the header cids at the provided blockheight
@@ -458,7 +452,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 		Start uint64 `db:"start"`
 		Stop  uint64 `db:"stop"`
 	}, 0)
-	if err := ecr.db.Select(&results, pgStr); err != nil {
+	if err := ecr.db.Select(&results, pgStr); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	emptyGaps := make([]shared.Gap, len(results))
@@ -475,11 +469,8 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 			WHERE times_validated < $1
 			ORDER BY block_number`
 	var heights []uint64
-	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil {
+	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}
-	if len(heights) == 0 {
-		return emptyGaps, nil
 	}
 	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
 }
@@ -487,31 +478,35 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash
 func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel, []UncleModel, []TxModel, []ReceiptModel, error) {
 	log.Debug("retrieving block cids for block hash ", blockHash.String())
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, nil, nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerCID, err := ecr.RetrieveHeaderCIDByHash(tx, blockHash)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
 	uncleCIDs, err := ecr.RetrieveUncleCIDsByHeaderID(tx, headerCID.ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("uncle cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
 	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID.ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("tx cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
@@ -521,27 +516,33 @@ func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel
 	}
 	rctCIDs, err := ecr.RetrieveReceiptCIDsByTxIDs(tx, txIDs)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("rct cid retrieval error")
-		return HeaderModel{}, nil, nil, nil, err
 	}
-	return headerCID, uncleCIDs, txCIDs, rctCIDs, tx.Commit()
+	return headerCID, uncleCIDs, txCIDs, rctCIDs, err
 }
 
 // RetrieveBlockByNumber returns all of the CIDs needed to compose an entire block, for a given block number
 func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, []UncleModel, []TxModel, []ReceiptModel, error) {
 	log.Debug("retrieving block cids for block number ", blockNumber)
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, nil, nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerCID, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
@@ -550,17 +551,11 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 	}
 	uncleCIDs, err := ecr.RetrieveUncleCIDsByHeaderID(tx, headerCID[0].ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("uncle cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
 	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID[0].ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("tx cid retrieval error")
 		return HeaderModel{}, nil, nil, nil, err
 	}
@@ -570,13 +565,9 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 	}
 	rctCIDs, err := ecr.RetrieveReceiptCIDsByTxIDs(tx, txIDs)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("rct cid retrieval error")
-		return HeaderModel{}, nil, nil, nil, err
 	}
-	return headerCID[0], uncleCIDs, txCIDs, rctCIDs, tx.Commit()
+	return headerCID[0], uncleCIDs, txCIDs, rctCIDs, err
 }
 
 // RetrieveHeaderCIDByHash returns the header for the given block hash

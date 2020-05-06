@@ -45,7 +45,7 @@ type IPLDPublisher struct {
 	StoragePutter         ipfs.DagPutter
 }
 
-// NewIPLDPublisher creates a pointer to a new Publisher which satisfies the IPLDPublisher interface
+// NewIPLDPublisher creates a pointer to a new IPLDPublisher which satisfies the IPLDPublisher interface
 func NewIPLDPublisher(ipfsPath string) (*IPLDPublisher, error) {
 	node, err := ipfs.InitIPFSNode(ipfsPath)
 	if err != nil {

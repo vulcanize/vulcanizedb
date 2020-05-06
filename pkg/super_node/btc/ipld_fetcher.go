@@ -40,6 +40,7 @@ type IPLDFetcher struct {
 }
 
 // NewIPLDFetcher creates a pointer to a new IPLDFetcher
+// It interfaces with PG-IPFS through an internalized IPFS node interface
 func NewIPLDFetcher(ipfsPath string) (*IPLDFetcher, error) {
 	blockService, err := ipfs.InitIPFSBlockService(ipfsPath)
 	if err != nil {

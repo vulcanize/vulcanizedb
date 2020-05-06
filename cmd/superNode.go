@@ -18,11 +18,10 @@ package cmd
 import (
 	"sync"
 
-	"github.com/spf13/viper"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node"
@@ -60,8 +59,10 @@ func superNode() {
 		logWithCommand.Fatal(err)
 	}
 	logWithCommand.Infof("super node config: %+v", superNodeConfig)
-	if err := ipfs.InitIPFSPlugins(); err != nil {
-		logWithCommand.Fatal(err)
+	if superNodeConfig.IPFSMode == shared.LocalInterface {
+		if err := ipfs.InitIPFSPlugins(); err != nil {
+			logWithCommand.Fatal(err)
+		}
 	}
 	wg := &sync.WaitGroup{}
 	logWithCommand.Debug("initializing new super node service")

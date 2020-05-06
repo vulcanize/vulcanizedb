@@ -43,29 +43,42 @@ func (in *CIDIndexer) Index(cids shared.CIDsForIndexing) error {
 	if !ok {
 		return fmt.Errorf("btc indexer expected cids type %T got %T", &CIDPayload{}, cids)
 	}
+
+	// Begin new db tx
 	tx, err := in.db.Beginx()
 	if err != nil {
 		return err
 	}
-	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID, in.db.NodeID)
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	headerID, err := in.indexHeaderCID(tx, cidWrapper.HeaderCID)
 	if err != nil {
 		logrus.Error("btc indexer error when indexing header")
 		return err
 	}
-	if err := in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID); err != nil {
+	err = in.indexTransactionCIDs(tx, cidWrapper.TransactionCIDs, headerID)
+	if err != nil {
 		logrus.Error("btc indexer error when indexing transactions")
-		return err
 	}
-	return tx.Commit()
+	return err
 }
 
-func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel, nodeID int64) (int64, error) {
+func (in *CIDIndexer) indexHeaderCID(tx *sqlx.Tx, header HeaderModel) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO btc.header_cids (block_number, block_hash, parent_hash, cid, timestamp, bits, node_id, times_validated)
 							VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 							ON CONFLICT (block_number, block_hash) DO UPDATE SET (parent_hash, cid, timestamp, bits, node_id, times_validated) = ($3, $4, $5, $6, $7, btc.header_cids.times_validated + 1)
 							RETURNING id`,
-		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, nodeID, 1).Scan(&headerID)
+		header.BlockNumber, header.BlockHash, header.ParentHash, header.CID, header.Timestamp, header.Bits, in.db.NodeID, 1).Scan(&headerID)
 	return headerID, err
 }
 

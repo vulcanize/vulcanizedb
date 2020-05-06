@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	PayloadChanBufferSize = 20000
+	PayloadChanBufferSize = 2000
 )
 
 // SuperNode is the top level interface for streaming, converting to IPLDs, publishing,
@@ -109,11 +109,11 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath)
+		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
-		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.DB)
+		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath)
+		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,13 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 				default:
 				}
 				// Forward the payload to the publishAndIndex workers
-				publishAndIndexPayload <- ipldPayload
+				// this channel acts as a ring buffer
+				select {
+				case publishAndIndexPayload <- ipldPayload:
+				default:
+					<-publishAndIndexPayload
+					publishAndIndexPayload <- ipldPayload
+				}
 			case err := <-sub.Err():
 				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
 			case <-sap.QuitChan:
@@ -244,12 +250,12 @@ func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared
 				log.Debugf("publishing %s data streamed at head height %d", sap.chain.String(), payload.Height())
 				cidPayload, err := sap.Publisher.Publish(payload)
 				if err != nil {
-					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
+					log.Errorf("super node publishAndIndex worker %d publishing error for chain %s: %v", id, sap.chain.String(), err)
 					continue
 				}
 				log.Debugf("indexing %s data streamed at head height %d", sap.chain.String(), payload.Height())
 				if err := sap.Indexer.Index(cidPayload); err != nil {
-					log.Errorf("super node publishAndIndex worker %d error for chain %s: %v", id, sap.chain.String(), err)
+					log.Errorf("super node publishAndIndex worker %d indexing error for chain %s: %v", id, sap.chain.String(), err)
 				}
 			}
 		}

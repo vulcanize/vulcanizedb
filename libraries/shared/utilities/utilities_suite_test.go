@@ -14,27 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package version
+package utilities_test
 
-import "fmt"
+import (
+	"io/ioutil"
+	"testing"
 
-const (
-	Major = 0       // Major version component of the current release
-	Minor = 1       // Minor version component of the current release
-	Patch = 2       // Patch version component of the current release
-	Meta  = "alpha" // Version metadata to append to the version string
+	"github.com/sirupsen/logrus"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// Version holds the textual version string.
-var Version = func() string {
-	return fmt.Sprintf("%d.%d.%d", Major, Minor, Patch)
-}()
+func TestShared(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Shared Utilities Suite")
+}
 
-// VersionWithMeta holds the textual version string including the metadata.
-var VersionWithMeta = func() string {
-	v := Version
-	if Meta != "" {
-		v += "-" + Meta
-	}
-	return v
-}()
+var _ = BeforeSuite(func() {
+	logrus.SetOutput(ioutil.Discard)
+})

@@ -30,6 +30,7 @@ import (
 // Env variables
 const (
 	IPFS_PATH    = "IPFS_PATH"
+	IPFS_MODE    = "IPFS_MODE"
 	HTTP_TIMEOUT = "HTTP_TIMEOUT"
 
 	ETH_WS_PATH       = "ETH_WS_PATH"
@@ -80,6 +81,16 @@ func GetIPFSPath() (string, error) {
 		ipfsPath = filepath.Join(home, ".ipfs")
 	}
 	return ipfsPath, nil
+}
+
+// GetIPFSMode returns the ipfs mode of operation from the config or env variable
+func GetIPFSMode() (IPFSMode, error) {
+	viper.BindEnv("ipfs.mode", IPFS_MODE)
+	ipfsMode := viper.GetString("ipfs.mode")
+	if ipfsMode == "" {
+		return DirectPostgres, nil
+	}
+	return NewIPFSMode(ipfsMode)
 }
 
 // GetBtcNodeAndClient returns btc node info from path url

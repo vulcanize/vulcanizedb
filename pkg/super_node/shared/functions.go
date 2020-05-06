@@ -19,7 +19,14 @@ package shared
 import (
 	"bytes"
 
+	"github.com/ipfs/go-cid"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ipfs/go-ipfs-blockstore"
+	"github.com/ipfs/go-ipfs-ds-help"
+	node "github.com/ipfs/go-ipld-format"
+	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs"
 )
@@ -68,4 +75,41 @@ func HandleNullAddr(to common.Address) string {
 		return ""
 	}
 	return to.Hex()
+}
+
+// Rollback sql transaction and log any error
+func Rollback(tx *sqlx.Tx) {
+	if err := tx.Rollback(); err != nil {
+		logrus.Error(err)
+	}
+}
+
+// PublishIPLD is used to insert an ipld into Postgres blockstore with the provided tx
+func PublishIPLD(tx *sqlx.Tx, i node.Node) error {
+	dbKey := dshelp.CidToDsKey(i.Cid())
+	prefixedKey := blockstore.BlockPrefix.String() + dbKey.String()
+	raw := i.RawData()
+	_, err := tx.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, prefixedKey, raw)
+	return err
+}
+
+// FetchIPLD is used to retrieve an ipld from Postgres blockstore with the provided tx
+func FetchIPLD(tx *sqlx.Tx, cid string) ([]byte, error) {
+	mhKey, err := MultihashKeyFromCIDString(cid)
+	if err != nil {
+		return nil, err
+	}
+	pgStr := `SELECT data FROM public.blocks WHERE key = $1`
+	var block []byte
+	return block, tx.Get(&block, pgStr, mhKey)
+}
+
+// MultihashKeyFromCIDString converts a cid string into a blockstore-prefixed multihash db key string
+func MultihashKeyFromCIDString(c string) (string, error) {
+	dc, err := cid.Decode(c)
+	if err != nil {
+		return "", err
+	}
+	dbKey := dshelp.CidToDsKey(dc)
+	return blockstore.BlockPrefix.String() + dbKey.String(), nil
 }

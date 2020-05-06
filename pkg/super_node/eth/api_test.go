@@ -27,12 +27,9 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/ipfs/go-block-format"
-	"github.com/ipfs/go-cid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	mocks3 "github.com/vulcanize/vulcanizedb/pkg/ipfs/mocks"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/eth/mocks"
@@ -85,44 +82,27 @@ var (
 
 var _ = Describe("API", func() {
 	var (
-		db        *postgres.DB
-		retriever *eth.CIDRetriever
-		fetcher   *eth.IPLDFetcher
-		indexer   *eth.CIDIndexer
-		backend   *eth.Backend
-		api       *eth.PublicEthAPI
+		db                *postgres.DB
+		retriever         *eth.CIDRetriever
+		fetcher           *eth.IPLDPGFetcher
+		indexAndPublisher *eth.IPLDPublisherAndIndexer
+		backend           *eth.Backend
+		api               *eth.PublicEthAPI
 	)
 	BeforeEach(func() {
 		var err error
 		db, err = shared.SetupDB()
 		Expect(err).ToNot(HaveOccurred())
 		retriever = eth.NewCIDRetriever(db)
-		blocksToReturn := map[cid.Cid]blocks.Block{
-			mocks.HeaderCID:  mocks.HeaderIPLD,
-			mocks.Trx1CID:    mocks.Trx1IPLD,
-			mocks.Trx2CID:    mocks.Trx2IPLD,
-			mocks.Trx3CID:    mocks.Trx3IPLD,
-			mocks.Rct1CID:    mocks.Rct1IPLD,
-			mocks.Rct2CID:    mocks.Rct2IPLD,
-			mocks.Rct3CID:    mocks.Rct3IPLD,
-			mocks.State1CID:  mocks.State1IPLD,
-			mocks.State2CID:  mocks.State2IPLD,
-			mocks.StorageCID: mocks.StorageIPLD,
-		}
-		mockBlockService := &mocks3.MockIPFSBlockService{
-			Blocks: blocksToReturn,
-		}
-		fetcher = &eth.IPLDFetcher{
-			BlockService: mockBlockService,
-		}
-		indexer = eth.NewCIDIndexer(db)
+		fetcher = eth.NewIPLDPGFetcher(db)
+		indexAndPublisher = eth.NewIPLDPublisherAndIndexer(db)
 		backend = &eth.Backend{
 			Retriever: retriever,
 			Fetcher:   fetcher,
 			DB:        db,
 		}
 		api = eth.NewPublicEthAPI(backend)
-		err = indexer.Index(mocks.MockCIDPayload)
+		_, err = indexAndPublisher.Publish(mocks.MockConvertedPayload)
 		Expect(err).ToNot(HaveOccurred())
 		uncles := mocks.MockBlock.Uncles()
 		uncleHashes := make([]common.Hash, len(uncles))
@@ -186,7 +166,19 @@ var _ = Describe("API", func() {
 			number, err := strconv.ParseInt(mocks.MockCIDPayload.HeaderCID.BlockNumber, 10, 64)
 			Expect(err).ToNot(HaveOccurred())
 			header, err := api.GetHeaderByNumber(context.Background(), rpc.BlockNumber(number))
+			Expect(err).ToNot(HaveOccurred())
 			Expect(header).To(Equal(expectedHeader))
+		})
+
+		It("Throws an error if a header cannot be found", func() {
+			number, err := strconv.ParseInt(mocks.MockCIDPayload.HeaderCID.BlockNumber, 10, 64)
+			Expect(err).ToNot(HaveOccurred())
+			header, err := api.GetHeaderByNumber(context.Background(), rpc.BlockNumber(number+1))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("header at block %d is not available", number+1))
+			Expect(header).To(BeNil())
+			_, err = api.B.DB.Beginx()
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 

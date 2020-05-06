@@ -52,6 +52,7 @@ type Config struct {
 	DB       *postgres.DB
 	DBConfig config.Database
 	IPFSPath string
+	IPFSMode shared.IPFSMode
 
 	HTTPClient  interface{}   // Note this client is expected to support the retrieval of the specified data type(s)
 	NodeInfo    core.Node     // Info for the associated node
@@ -81,8 +82,8 @@ func NewReSyncConfig() (*Config, error) {
 	viper.BindEnv("resync.timeout", shared.HTTP_TIMEOUT)
 
 	timeout := viper.GetInt("resync.timeout")
-	if timeout < 15 {
-		timeout = 15
+	if timeout < 5 {
+		timeout = 5
 	}
 	c.Timeout = time.Second * time.Duration(timeout)
 
@@ -92,12 +93,18 @@ func NewReSyncConfig() (*Config, error) {
 	c.ClearOldCache = viper.GetBool("resync.clearOldCache")
 	c.ResetValidation = viper.GetBool("resync.resetValidation")
 
-	c.IPFSPath, err = shared.GetIPFSPath()
+	c.IPFSMode, err = shared.GetIPFSMode()
 	if err != nil {
 		return nil, err
 	}
+	if c.IPFSMode == shared.LocalInterface || c.IPFSMode == shared.RemoteClient {
+		c.IPFSPath, err = shared.GetIPFSPath()
+		if err != nil {
+			return nil, err
+		}
+	}
 	resyncType := viper.GetString("resync.type")
-	c.ResyncType, err = shared.GenerateResyncTypeFromString(resyncType)
+	c.ResyncType, err = shared.GenerateDataTypeFromString(resyncType)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +113,7 @@ func NewReSyncConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if ok, err := shared.SupportedResyncType(c.ResyncType, c.Chain); !ok {
+	if ok, err := shared.SupportedDataType(c.ResyncType, c.Chain); !ok {
 		if err != nil {
 			return nil, err
 		}

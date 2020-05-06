@@ -17,17 +17,16 @@
 package btc
 
 import (
+	"database/sql"
 	"fmt"
 	"math/big"
 
-	"github.com/vulcanize/vulcanizedb/libraries/shared/storage/utils"
-
-	"github.com/lib/pq"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 
+	utils "github.com/vulcanize/vulcanizedb/libraries/shared/utilities"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 )
@@ -65,17 +64,26 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		return nil, true, fmt.Errorf("btc retriever expected filter type %T got %T", &SubscriptionSettings{}, filter)
 	}
 	log.Debug("retrieving cids")
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return nil, true, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
 
 	// Retrieve cached header CIDs
 	headers, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return nil, true, err
 	}
@@ -92,9 +100,6 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		if !streamFilter.TxFilter.Off {
 			cw.Transactions, err = ecr.RetrieveTxCIDs(tx, streamFilter.TxFilter, header.ID)
 			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					log.Error(err)
-				}
 				log.Error("transaction cid retrieval error")
 				return nil, true, err
 			}
@@ -105,7 +110,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		cws[i] = cw
 	}
 
-	return cws, empty, tx.Commit()
+	return cws, empty, err
 }
 
 // RetrieveHeaderCIDs retrieves and returns all of the header cids at the provided blockheight
@@ -173,7 +178,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 		Start uint64 `db:"start"`
 		Stop  uint64 `db:"stop"`
 	}, 0)
-	if err := ecr.db.Select(&results, pgStr); err != nil {
+	if err := ecr.db.Select(&results, pgStr); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	emptyGaps := make([]shared.Gap, len(results))
@@ -190,11 +195,8 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 			WHERE times_validated < $1
 			ORDER BY block_number`
 	var heights []uint64
-	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil {
+	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}
-	if len(heights) == 0 {
-		return emptyGaps, nil
 	}
 	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
 }
@@ -202,41 +204,57 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash
 func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel, []TxModel, error) {
 	log.Debug("retrieving block cids for block hash ", blockHash.String())
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerCID, err := ecr.RetrieveHeaderCIDByHash(tx, blockHash)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, err
 	}
 	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID.ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("tx cid retrieval error")
-		return HeaderModel{}, nil, err
 	}
-	return headerCID, txCIDs, tx.Commit()
+	return headerCID, txCIDs, err
 }
 
 // RetrieveBlockByNumber returns all of the CIDs needed to compose an entire block, for a given block number
 func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, []TxModel, error) {
 	log.Debug("retrieving block cids for block number ", blockNumber)
+
+	// Begin new db tx
 	tx, err := ecr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, err
 	}
+	defer func() {
+		if p := recover(); p != nil {
+			shared.Rollback(tx)
+			panic(p)
+		} else if err != nil {
+			shared.Rollback(tx)
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	headerCID, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, err
 	}
@@ -245,13 +263,9 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 	}
 	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID[0].ID)
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			log.Error(err)
-		}
 		log.Error("tx cid retrieval error")
-		return HeaderModel{}, nil, err
 	}
-	return headerCID[0], txCIDs, tx.Commit()
+	return headerCID[0], txCIDs, err
 }
 
 // RetrieveHeaderCIDByHash returns the header for the given block hash

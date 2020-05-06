@@ -16,9 +16,62 @@
 
 package utilities
 
-func NullToZero(str string) string {
-	if str == "" {
-		return "0"
+import (
+	"errors"
+
+	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
+)
+
+// GetBlockHeightBins splits a block range up into bins of block heights of the given batch size
+func GetBlockHeightBins(startingBlock, endingBlock, batchSize uint64) ([][]uint64, error) {
+	if endingBlock < startingBlock {
+		return nil, errors.New("backfill: ending block number needs to be greater than starting block number")
 	}
-	return str
+	if batchSize == 0 {
+		return nil, errors.New("backfill: batchsize needs to be greater than zero")
+	}
+	length := endingBlock - startingBlock + 1
+	numberOfBins := length / batchSize
+	remainder := length % batchSize
+	if remainder != 0 {
+		numberOfBins++
+	}
+	blockRangeBins := make([][]uint64, numberOfBins)
+	for i := range blockRangeBins {
+		nextBinStart := startingBlock + batchSize
+		blockRange := make([]uint64, 0, nextBinStart-startingBlock+1)
+		for j := startingBlock; j < nextBinStart && j <= endingBlock; j++ {
+			blockRange = append(blockRange, j)
+		}
+		startingBlock = nextBinStart
+		blockRangeBins[i] = blockRange
+	}
+	return blockRangeBins, nil
+}
+
+// MissingHeightsToGaps returns a slice of gaps from a slice of missing block heights
+func MissingHeightsToGaps(heights []uint64) []shared.Gap {
+	if len(heights) == 0 {
+		return nil
+	}
+	validationGaps := make([]shared.Gap, 0)
+	start := heights[0]
+	lastHeight := start
+	for i, height := range heights[1:] {
+		if height != lastHeight+1 {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  lastHeight,
+			})
+			start = height
+		}
+		if i+2 == len(heights) {
+			validationGaps = append(validationGaps, shared.Gap{
+				Start: start,
+				Stop:  height,
+			})
+		}
+		lastHeight = height
+	}
+	return validationGaps
 }
