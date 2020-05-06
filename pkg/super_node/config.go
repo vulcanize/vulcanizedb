@@ -53,21 +53,23 @@ type Config struct {
 	Chain    shared.ChainType
 	IPFSPath string
 	IPFSMode shared.IPFSMode
-	DB       *postgres.DB
 	DBConfig config.Database
 	Quit     chan bool
 	// Server fields
 	Serve        bool
+	ServeDBConn  *postgres.DB
 	WSEndpoint   string
 	HTTPEndpoint string
 	IPCEndpoint  string
 	// Sync params
-	Sync     bool
-	Workers  int
-	WSClient interface{}
-	NodeInfo core.Node
+	Sync       bool
+	SyncDBConn *postgres.DB
+	Workers    int
+	WSClient   interface{}
+	NodeInfo   core.Node
 	// Backfiller params
 	BackFill        bool
+	BackFillDBConn  *postgres.DB
 	HTTPClient      interface{}
 	Frequency       time.Duration
 	BatchSize       uint64
@@ -110,6 +112,8 @@ func NewSuperNodeConfig() (*Config, error) {
 		}
 	}
 
+	c.DBConfig.Init()
+
 	c.Sync = viper.GetBool("superNode.sync")
 	if c.Sync {
 		workers := viper.GetInt("superNode.workers")
@@ -128,6 +132,8 @@ func NewSuperNodeConfig() (*Config, error) {
 			btcWS := viper.GetString("bitcoin.wsPath")
 			c.NodeInfo, c.WSClient = shared.GetBtcNodeAndClient(btcWS)
 		}
+		syncDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+		c.SyncDBConn = &syncDB
 	}
 
 	c.Serve = viper.GetBool("superNode.server")
@@ -151,6 +157,8 @@ func NewSuperNodeConfig() (*Config, error) {
 			httpPath = "127.0.0.1:8081"
 		}
 		c.HTTPEndpoint = httpPath
+		serveDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+		c.ServeDBConn = &serveDB
 	}
 
 	c.BackFill = viper.GetBool("superNode.backFill")
@@ -160,9 +168,6 @@ func NewSuperNodeConfig() (*Config, error) {
 		}
 	}
 
-	c.DBConfig.Init()
-	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
-	c.DB = &db
 	c.Quit = make(chan bool)
 
 	return c, nil
@@ -209,5 +214,8 @@ func (c *Config) BackFillFields() error {
 	c.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
 	c.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
 	c.ValidationLevel = viper.GetInt("superNode.validationLevel")
+
+	backFillDB := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
+	c.BackFillDBConn = &backFillDB
 	return nil
 }

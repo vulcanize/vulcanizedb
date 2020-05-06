@@ -109,11 +109,11 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
+		sn.Publisher, err = NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.SyncDBConn, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
-		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
+		sn.Indexer, err = NewCIDIndexer(settings.Chain, settings.SyncDBConn, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
@@ -124,14 +124,15 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 	}
 	// If we are serving, initialize the needed interfaces
 	if settings.Serve {
-		sn.Retriever, err = NewCIDRetriever(settings.Chain, settings.DB)
+		sn.Retriever, err = NewCIDRetriever(settings.Chain, settings.ServeDBConn)
 		if err != nil {
 			return nil, err
 		}
-		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
+		sn.IPLDFetcher, err = NewIPLDFetcher(settings.Chain, settings.IPFSPath, settings.ServeDBConn, settings.IPFSMode)
 		if err != nil {
 			return nil, err
 		}
+		sn.db = settings.ServeDBConn
 	}
 	sn.QuitChan = settings.Quit
 	sn.Subscriptions = make(map[common.Hash]map[rpc.ID]Subscription)
@@ -140,7 +141,6 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 	sn.NodeInfo = &settings.NodeInfo
 	sn.ipfsPath = settings.IPFSPath
 	sn.chain = settings.Chain
-	sn.db = settings.DB
 	return sn, nil
 }
 

@@ -69,11 +69,11 @@ type BackFillService struct {
 
 // NewBackFillService returns a new BackFillInterface
 func NewBackFillService(settings *Config, screenAndServeChan chan shared.ConvertedData) (BackFillInterface, error) {
-	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.DB, settings.IPFSMode)
+	publisher, err := NewIPLDPublisher(settings.Chain, settings.IPFSPath, settings.BackFillDBConn, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
-	indexer, err := NewCIDIndexer(settings.Chain, settings.DB, settings.IPFSMode)
+	indexer, err := NewCIDIndexer(settings.Chain, settings.BackFillDBConn, settings.IPFSMode)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 	if err != nil {
 		return nil, err
 	}
-	retriever, err := NewCIDRetriever(settings.Chain, settings.DB)
+	retriever, err := NewCIDRetriever(settings.Chain, settings.BackFillDBConn)
 	if err != nil {
 		return nil, err
 	}

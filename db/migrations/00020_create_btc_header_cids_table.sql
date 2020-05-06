@@ -7,7 +7,7 @@ CREATE TABLE btc.header_cids (
 	cid          TEXT NOT NULL,
 	timestamp    NUMERIC NOT NULL,
 	bits         BIGINT NOT NULL,
-  node_id      INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+	node_id      INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
 	UNIQUE (block_number, block_hash)
 );
 
