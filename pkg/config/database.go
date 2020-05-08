@@ -39,16 +39,16 @@ type Database struct {
 	Port     int
 }
 
-func DbConnectionString(dbConfig Database) string {
-	if len(dbConfig.User) > 0 && len(dbConfig.Password) > 0 {
+func (d *Database) ConnectionString() string {
+	if len(d.User) > 0 && len(d.Password) > 0 {
 		return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			dbConfig.User, dbConfig.Password, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+			d.User, d.Password, d.Hostname, d.Port, d.Name)
 	}
-	if len(dbConfig.User) > 0 && len(dbConfig.Password) == 0 {
+	if len(d.User) > 0 && len(d.Password) == 0 {
 		return fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable",
-			dbConfig.User, dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+			d.User, d.Hostname, d.Port, d.Name)
 	}
-	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", dbConfig.Hostname, dbConfig.Port, dbConfig.Name)
+	return fmt.Sprintf("postgresql://%s:%d/%s?sslmode=disable", d.Hostname, d.Port, d.Name)
 }
 
 func (d *Database) Init() {

@@ -37,7 +37,8 @@ var _ = Describe("Postgres DB", func() {
 
 	It("connects to the database", func() {
 		var err error
-		pgConfig := config.DbConnectionString(test_config.DBConfig)
+		test_config.DBConfig.ConnectionString()
+		pgConfig := test_config.DBConfig.ConnectionString()
 
 		sqlxdb, err = sqlx.Connect("postgres", pgConfig)
 
@@ -53,7 +54,7 @@ var _ = Describe("Postgres DB", func() {
 		// sized int, so use string representation of big.Int
 		// and cast on insert
 
-		pgConnectString := config.DbConnectionString(test_config.DBConfig)
+		pgConnectString := test_config.DBConfig.ConnectionString()
 		db, err := sqlx.Connect("postgres", pgConnectString)
 		Expect(err).NotTo(HaveOccurred())
 
