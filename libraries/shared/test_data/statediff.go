@@ -15,15 +15,15 @@
 package test_data
 
 import (
-	"errors"
+	"math/big"
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
-	"math/big"
-	"math/rand"
 )
 
 var (
@@ -120,18 +120,5 @@ var (
 	MockStatediffPayload = statediff.Payload{
 		BlockRlp:     MockBlockRlp,
 		StateDiffRlp: MockStateDiffBytes,
-		Err:          nil,
-	}
-
-	EmptyStatediffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		Err:          nil,
-	}
-
-	ErrStatediffPayload = statediff.Payload{
-		BlockRlp:     []byte{},
-		StateDiffRlp: []byte{},
-		Err:          errors.New("mock error"),
 	}
 )

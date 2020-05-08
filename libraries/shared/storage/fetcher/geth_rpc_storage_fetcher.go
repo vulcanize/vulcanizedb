@@ -24,15 +24,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type GethPatchVersion int
+
+const (
+	OldGethPatch GethPatchVersion = iota
+	NewGethPatch
+)
+
 type GethRpcStorageFetcher struct {
 	statediffPayloadChan chan statediff.Payload
 	streamer             streamer.Streamer
+	gethVersion          GethPatchVersion
 }
 
-func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload) GethRpcStorageFetcher {
+func NewGethRpcStorageFetcher(streamer streamer.Streamer, statediffPayloadChan chan statediff.Payload, gethVersion GethPatchVersion) GethRpcStorageFetcher {
 	return GethRpcStorageFetcher{
 		statediffPayloadChan: statediffPayloadChan,
 		streamer:             streamer,
+		gethVersion:          gethVersion,
 	}
 }
 
@@ -65,7 +74,7 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 			for _, account := range accounts {
 				logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account", len(account.Storage)))
 				for _, accountStorage := range account.Storage {
-					diff, formatErr := types.FromGethStateDiff(account, stateDiff, accountStorage)
+					diff, formatErr := fetcher.formatDiff(account, stateDiff, accountStorage)
 					logrus.Tracef("adding storage diff to out channel. keccak of address: %v, block height: %v, storage key: %v, storage value: %v",
 						diff.HashedAddress.Hex(), diff.BlockHeight, diff.StorageKey.Hex(), diff.StorageValue.Hex())
 					if formatErr != nil {
@@ -77,6 +86,14 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 			}
 		}
 
+	}
+}
+
+func (fetcher GethRpcStorageFetcher) formatDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (types.RawDiff, error) {
+	if fetcher.gethVersion == OldGethPatch {
+		return types.FromOldGethStateDiff(account, stateDiff, storage)
+	} else {
+		return types.FromNewGethStateDiff(account, stateDiff, storage)
 	}
 }
 

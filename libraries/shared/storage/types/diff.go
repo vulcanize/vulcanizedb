@@ -60,7 +60,7 @@ func FromParityCsvRow(csvRow []string) (RawDiff, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
+func FromOldGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
 	var decodedRLPStorageValue []byte
 	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
 	if err != nil {
@@ -69,6 +69,22 @@ func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.State
 
 	return RawDiff{
 		HashedAddress: common.BytesToHash(account.Key),
+		BlockHash:     stateDiff.BlockHash,
+		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
+		StorageKey:    common.BytesToHash(storage.Key),
+		StorageValue:  common.BytesToHash(decodedRLPStorageValue),
+	}, nil
+}
+
+func FromNewGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (RawDiff, error) {
+	var decodedRLPStorageValue []byte
+	err := rlp.DecodeBytes(storage.Value, &decodedRLPStorageValue)
+	if err != nil {
+		return RawDiff{}, err
+	}
+
+	return RawDiff{
+		HashedAddress: crypto.Keccak256Hash(account.Key),
 		BlockHash:     stateDiff.BlockHash,
 		BlockHeight:   int(stateDiff.BlockNumber.Int64()),
 		StorageKey:    common.BytesToHash(storage.Key),
