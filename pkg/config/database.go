@@ -24,19 +24,25 @@ import (
 
 // Env variables
 const (
-	DATABASE_NAME     = "DATABASE_NAME"
-	DATABASE_HOSTNAME = "DATABASE_HOSTNAME"
-	DATABASE_PORT     = "DATABASE_PORT"
-	DATABASE_USER     = "DATABASE_USER"
-	DATABASE_PASSWORD = "DATABASE_PASSWORD"
+	DATABASE_NAME                 = "DATABASE_NAME"
+	DATABASE_HOSTNAME             = "DATABASE_HOSTNAME"
+	DATABASE_PORT                 = "DATABASE_PORT"
+	DATABASE_USER                 = "DATABASE_USER"
+	DATABASE_PASSWORD             = "DATABASE_PASSWORD"
+	DATABASE_MAX_IDLE_CONNECTIONS = "DATABASE_MAX_IDLE_CONNECTIONS"
+	DATABASE_MAX_OPEN_CONNECTIONS = "DATABASE_MAX_OPEN_CONNECTIONS"
+	DATABASE_MAX_CONN_LIFETIME    = "DATABASE_MAX_CONN_LIFETIME"
 )
 
 type Database struct {
-	Hostname string
-	Name     string
-	User     string
-	Password string
-	Port     int
+	Hostname    string
+	Name        string
+	User        string
+	Password    string
+	Port        int
+	MaxIdle     int
+	MaxOpen     int
+	MaxLifetime int
 }
 
 func DbConnectionString(dbConfig Database) string {
@@ -57,9 +63,16 @@ func (d *Database) Init() {
 	viper.BindEnv("database.port", DATABASE_PORT)
 	viper.BindEnv("database.user", DATABASE_USER)
 	viper.BindEnv("database.password", DATABASE_PASSWORD)
+	viper.BindEnv("database.maxIdle", DATABASE_MAX_IDLE_CONNECTIONS)
+	viper.BindEnv("database.maxOpen", DATABASE_MAX_OPEN_CONNECTIONS)
+	viper.BindEnv("database.maxLifetime", DATABASE_MAX_CONN_LIFETIME)
+
 	d.Name = viper.GetString("database.name")
 	d.Hostname = viper.GetString("database.hostname")
 	d.Port = viper.GetInt("database.port")
 	d.User = viper.GetString("database.user")
 	d.Password = viper.GetString("database.password")
+	d.MaxIdle = viper.GetInt("database.maxIdle")
+	d.MaxOpen = viper.GetInt("database.maxOpen")
+	d.MaxLifetime = viper.GetInt("database.maxLifetime")
 }
