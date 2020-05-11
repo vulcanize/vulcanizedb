@@ -5,16 +5,18 @@
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
-[ipfs]
-    path = "~/.ipfs" # $IPFS_PATH
+    [database.sync]
+        maxIdle = 1
+    [database.backFill]
+        maxIdle = 5
 
 [resync]
     chain = "bitcoin" # $RESYNC_CHAIN
     type = "full" # $RESYNC_TYPE
     start = 0 # $RESYNC_START
     stop = 0 # $RESYNC_STOP
-    batchSize = 1 # $RESYNC_BATCH_SIZE
-    batchNumber = 50 # $RESYNC_BATCH_NUMBER
+    batchSize = 5 # $RESYNC_BATCH_SIZE
+    batchNumber = 5 # $RESYNC_BATCH_NUMBER
     clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
     resetValidation = true # $RESYNC_RESET_VALIDATION
 
@@ -28,8 +30,8 @@
     workers = 1 # $SUPERNODE_WORKERS
     backFill = true # $SUPERNODE_BACKFILL
     frequency = 45 # $SUPERNODE_FREQUENCY
-    batchSize = 1 # $SUPERNODE_BATCH_SIZE
-    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    batchSize = 5 # $SUPERNODE_BATCH_SIZE
+    batchNumber = 5 # $SUPERNODE_BATCH_NUMBER
     validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 
 [bitcoin]
