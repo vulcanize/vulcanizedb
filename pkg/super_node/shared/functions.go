@@ -19,6 +19,8 @@ package shared
 import (
 	"bytes"
 
+	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
+
 	"github.com/ipfs/go-cid"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -112,4 +114,16 @@ func MultihashKeyFromCIDString(c string) (string, error) {
 	}
 	dbKey := dshelp.CidToDsKey(dc)
 	return blockstore.BlockPrefix.String() + dbKey.String(), nil
+}
+
+// PublishRaw derives a cid from raw bytes and provided codec and multihash type, and writes it to the db tx
+func PublishRaw(tx *sqlx.Tx, codec, mh uint64, raw []byte) (string, error) {
+	c, err := ipld.RawdataToCid(codec, raw, mh)
+	if err != nil {
+		return "", err
+	}
+	dbKey := dshelp.CidToDsKey(c)
+	prefixedKey := blockstore.BlockPrefix.String() + dbKey.String()
+	_, err = tx.Exec(`INSERT INTO public.blocks (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, prefixedKey, raw)
+	return c.String(), err
 }

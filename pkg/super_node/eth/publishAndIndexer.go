@@ -24,6 +24,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
+	"github.com/multiformats/go-multihash"
 
 	common2 "github.com/vulcanize/vulcanizedb/pkg/eth/converters/common"
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
@@ -49,7 +50,7 @@ func NewIPLDPublisherAndIndexer(db *postgres.DB) *IPLDPublisherAndIndexer {
 func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (shared.CIDsForIndexing, error) {
 	ipldPayload, ok := payload.(ConvertedPayload)
 	if !ok {
-		return nil, fmt.Errorf("eth publisher expected payload type %T got %T", ConvertedPayload{}, payload)
+		return nil, fmt.Errorf("eth IPLDPublisherAndIndexer expected payload type %T got %T", ConvertedPayload{}, payload)
 	}
 	// Generate the iplds
 	headerNode, uncleNodes, txNodes, txTrieNodes, rctNodes, rctTrieNodes, err := ipld.FromBlockAndReceipts(ipldPayload.Block, ipldPayload.Receipts)
@@ -158,31 +159,28 @@ func (pub *IPLDPublisherAndIndexer) Publish(payload shared.ConvertedData) (share
 func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload ConvertedPayload, headerID int64) error {
 	// Publish and index state and storage
 	for _, stateNode := range ipldPayload.StateNodes {
-		stateIPLD, err := ipld.FromStateTrieRLP(stateNode.Value)
+		stateCIDStr, err := shared.PublishRaw(tx, ipld.MEthStateTrie, multihash.KECCAK_256, stateNode.Value)
 		if err != nil {
-			return err
-		}
-		if err := shared.PublishIPLD(tx, stateIPLD); err != nil {
 			return err
 		}
 		stateModel := StateNodeModel{
 			Path:     stateNode.Path,
 			StateKey: stateNode.LeafKey.String(),
-			CID:      stateIPLD.Cid().String(),
+			CID:      stateCIDStr,
 			NodeType: ResolveFromNodeType(stateNode.Type),
 		}
 		stateID, err := pub.indexer.indexStateCID(tx, stateModel, headerID)
 		if err != nil {
 			return err
 		}
-		// If we have a leaf, decode and index the account data and publish and index any associated storage diffs
+		// If we have a leaf, decode and index the account data and any associated storage diffs
 		if stateNode.Type == statediff.Leaf {
 			var i []interface{}
 			if err := rlp.DecodeBytes(stateNode.Value, &i); err != nil {
 				return err
 			}
 			if len(i) != 2 {
-				return fmt.Errorf("IPLDPublisherAndIndexer expected state leaf node rlp to decode into two elements")
+				return fmt.Errorf("eth IPLDPublisherAndIndexer expected state leaf node rlp to decode into two elements")
 			}
 			var account state.Account
 			if err := rlp.DecodeBytes(i[1].([]byte), &account); err != nil {
@@ -199,17 +197,14 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 			}
 			statePathHash := crypto.Keccak256Hash(stateNode.Path)
 			for _, storageNode := range ipldPayload.StorageNodes[statePathHash] {
-				storageIPLD, err := ipld.FromStorageTrieRLP(storageNode.Value)
+				storageCIDStr, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, storageNode.Value)
 				if err != nil {
-					return err
-				}
-				if err := shared.PublishIPLD(tx, storageIPLD); err != nil {
 					return err
 				}
 				storageModel := StorageNodeModel{
 					Path:       storageNode.Path,
 					StorageKey: storageNode.LeafKey.Hex(),
-					CID:        storageIPLD.Cid().String(),
+					CID:        storageCIDStr,
 					NodeType:   ResolveFromNodeType(storageNode.Type),
 				}
 				if err := pub.indexer.indexStorageCID(tx, storageModel, stateID); err != nil {
