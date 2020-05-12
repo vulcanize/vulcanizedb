@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
@@ -39,13 +38,14 @@ func extractDiffs() {
 	var storageFetcher fetcher.IStorageFetcher
 	switch storageDiffsSource {
 	case "geth":
+		logrus.Info("Using original geth patch")
 		logrus.Debug("fetching storage diffs from geth pub sub")
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
 		payloadChan := make(chan statediff.Payload)
 		storageFetcher = fetcher.NewGethRpcStorageFetcher(&stateDiffStreamer, payloadChan, fetcher.OldGethPatch)
 	case "new-geth":
-		log.Info("Using new geth patch")
+		logrus.Info("Using new geth patch")
 		logrus.Debug("fetching storage diffs from geth pub sub")
 		rpcClient, _ := getClients()
 		stateDiffStreamer := streamer.NewStateDiffStreamer(rpcClient)
