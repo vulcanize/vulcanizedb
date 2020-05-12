@@ -138,12 +138,12 @@ func parseTrieNodeExtension(i []interface{}, codec uint64) ([]interface{}, error
 func parseTrieNodeBranch(i []interface{}, codec uint64) ([]interface{}, error) {
 	var out []interface{}
 
-	for _, vi := range i {
+	for i, vi := range i {
 		v, ok := vi.([]byte)
 		// Sometimes this throws "panic: interface conversion: interface {} is []interface {}, not []uint8"
 		// Figure out why, and if it is okay to continue
 		if !ok {
-			continue
+			return nil, fmt.Errorf("unable to decode branch node entry into []byte at position: %d value: %+v", i, vi)
 		}
 
 		switch len(v) {

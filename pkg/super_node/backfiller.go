@@ -132,7 +132,7 @@ func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 					log.Errorf("super node db backfill RetrieveFirstBlockNumber error for chain %s: %v", bfs.Chain.String(), err)
 					continue
 				}
-				if startingBlock != 0 && bfs.Chain == shared.Bitcoin || startingBlock != 1 && bfs.Chain == shared.Ethereum {
+				if startingBlock != 0 {
 					log.Infof("found gap at the beginning of the %s sync", bfs.Chain.String())
 					if err := bfs.backFill(0, uint64(startingBlock-1)); err != nil {
 						log.Error(err)
@@ -199,6 +199,7 @@ func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64) error {
 					cidPayload, err := bfs.Publisher.Publish(ipldPayload)
 					if err != nil {
 						log.Errorf("%s super node historical data publisher error: %s", bfs.Chain.String(), err.Error())
+						continue
 					}
 					if err := bfs.Indexer.Index(cidPayload); err != nil {
 						log.Errorf("%s super node historical data indexer error: %s", bfs.Chain.String(), err.Error())

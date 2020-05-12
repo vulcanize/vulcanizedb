@@ -45,7 +45,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.CIDRetriever{
-				FirstBlockNumberToReturn: 1,
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 101,
@@ -102,7 +102,7 @@ var _ = Describe("BackFiller", func() {
 				ReturnErr:         nil,
 			}
 			mockRetriever := &mocks2.CIDRetriever{
-				FirstBlockNumberToReturn: 1,
+				FirstBlockNumberToReturn: 0,
 				GapsToRetrieve: []shared.Gap{
 					{
 						Start: 100, Stop: 100,
