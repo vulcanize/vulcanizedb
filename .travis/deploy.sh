@@ -61,6 +61,9 @@ elif [ "$ENVIRONMENT" == "staging" ]; then
 
   message DEPLOYING EXTRACT-DIFFS
   aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-extract-diffs-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$STAGING_REGION.amazonaws.com --region $STAGING_REGION
+
+  message DEPLOYING EXTRACT-DIFFS-NEW-GETH
+  aws ecs update-service --cluster vdb-cluster-$ENVIRONMENT --service vdb-extract-diffs2-$ENVIRONMENT --force-new-deployment --endpoint https://ecs.$STAGING_REGION.amazonaws.com --region $STAGING_REGION
 else
    message UNKNOWN ENVIRONMENT
 fi
