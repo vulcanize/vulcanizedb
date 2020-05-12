@@ -17,9 +17,7 @@
 package super_node
 
 import (
-	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -37,6 +35,7 @@ const (
 type BackFillInterface interface {
 	// Method for the super node to periodically check for and fill in gaps in its data using an archival node
 	BackFill(wg *sync.WaitGroup)
+	Stop() error
 }
 
 // BackFillService for filling in gaps in the super node
@@ -62,7 +61,7 @@ type BackFillService struct {
 	// Channel for receiving quit signal
 	QuitChan chan bool
 	// Chain type
-	Chain shared.ChainType
+	chain shared.ChainType
 	// Headers with times_validated lower than this will be resynced
 	validationLevel int
 }
@@ -107,8 +106,8 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 		BatchSize:          batchSize,
 		BatchNumber:        int64(batchNumber),
 		ScreenAndServeChan: screenAndServeChan,
-		QuitChan:           settings.Quit,
-		Chain:              settings.Chain,
+		QuitChan:           make(chan bool),
+		chain:              settings.Chain,
 		validationLevel:    settings.ValidationLevel,
 	}, nil
 }
@@ -116,119 +115,97 @@ func NewBackFillService(settings *Config, screenAndServeChan chan shared.Convert
 // BackFill periodically checks for and fills in gaps in the super node db
 func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(bfs.GapCheckFrequency)
-	wg.Add(1)
-
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		for {
 			select {
 			case <-bfs.QuitChan:
-				log.Infof("quiting %s FillGapsInSuperNode process", bfs.Chain.String())
-				wg.Done()
+				log.Infof("quiting %s FillGapsInSuperNode process", bfs.chain.String())
 				return
 			case <-ticker.C:
-				log.Infof("searching for gaps in the %s super node database", bfs.Chain.String())
-				startingBlock, err := bfs.Retriever.RetrieveFirstBlockNumber()
-				if err != nil {
-					log.Errorf("super node db backfill RetrieveFirstBlockNumber error for chain %s: %v", bfs.Chain.String(), err)
-					continue
-				}
-				if startingBlock != 0 {
-					log.Infof("found gap at the beginning of the %s sync", bfs.Chain.String())
-					if err := bfs.backFill(0, uint64(startingBlock-1)); err != nil {
-						log.Error(err)
-					}
+				// spin up worker goroutines for this search pass
+				// we start and kill a new batch of workers for each pass
+				// so that we know each of the previous workers is done before we search for new gaps
+				heightsChan := make(chan []uint64)
+				for i := 1; i <= int(bfs.BatchNumber); i++ {
+					go bfs.backFill(wg, i, heightsChan)
 				}
 				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)
 				if err != nil {
-					log.Errorf("super node db backfill RetrieveGapsInData error for chain %s: %v", bfs.Chain.String(), err)
+					log.Errorf("%s super node db backFill RetrieveGapsInData error: %v", bfs.chain.String(), err)
 					continue
 				}
 				for _, gap := range gaps {
-					if err := bfs.backFill(gap.Start, gap.Stop); err != nil {
-						log.Error(err)
-					}
-				}
-			}
-		}
-	}()
-	log.Infof("%s BackFill goroutine successfully spun up", bfs.Chain.String())
-}
-
-// backFill fetches, processes, and returns utils.StorageDiffs over a range of blocks
-// It splits a large range up into smaller chunks, batch fetching and processing those chunks concurrently
-func (bfs *BackFillService) backFill(startingBlock, endingBlock uint64) error {
-	log.Infof("filling in %s gap from %d to %d", bfs.Chain.String(), startingBlock, endingBlock)
-	if endingBlock < startingBlock {
-		return fmt.Errorf("super node %s db backfill: ending block number needs to be greater than starting block number", bfs.Chain.String())
-	}
-	// break the range up into bins of smaller ranges
-	blockRangeBins, err := utils.GetBlockHeightBins(startingBlock, endingBlock, bfs.BatchSize)
-	if err != nil {
-		return err
-	}
-	// int64 for atomic incrementing and decrementing to track the number of active processing goroutines we have
-	var activeCount int64
-	// channel for processing goroutines to signal when they are done
-	processingDone := make(chan bool)
-	forwardDone := make(chan bool)
-
-	// for each block range bin spin up a goroutine to batch fetch and process data for that range
-	go func() {
-		for _, blockHeights := range blockRangeBins {
-			// if we have reached our limit of active goroutines
-			// wait for one to finish before starting the next
-			if atomic.AddInt64(&activeCount, 1) > bfs.BatchNumber {
-				// this blocks until a process signals it has finished
-				<-forwardDone
-			}
-			go func(blockHeights []uint64) {
-				payloads, err := bfs.Fetcher.FetchAt(blockHeights)
-				if err != nil {
-					log.Errorf("%s super node historical data fetcher error: %s", bfs.Chain.String(), err.Error())
-				}
-				for _, payload := range payloads {
-					ipldPayload, err := bfs.Converter.Convert(payload)
+					log.Infof("backFilling %s data from %d to %d", bfs.chain.String(), gap.Start, gap.Stop)
+					blockRangeBins, err := utils.GetBlockHeightBins(gap.Start, gap.Stop, bfs.BatchSize)
 					if err != nil {
-						log.Errorf("%s super node historical data converter error: %s", bfs.Chain.String(), err.Error())
-					}
-					// If there is a ScreenAndServe process listening, forward payload to it
-					select {
-					case bfs.ScreenAndServeChan <- ipldPayload:
-					default:
-					}
-					cidPayload, err := bfs.Publisher.Publish(ipldPayload)
-					if err != nil {
-						log.Errorf("%s super node historical data publisher error: %s", bfs.Chain.String(), err.Error())
+						log.Errorf("%s super node db backFill GetBlockHeightBins error: %v", bfs.chain.String(), err)
 						continue
 					}
-					if err := bfs.Indexer.Index(cidPayload); err != nil {
-						log.Errorf("%s super node historical data indexer error: %s", bfs.Chain.String(), err.Error())
+					for _, heights := range blockRangeBins {
+						select {
+						case <-bfs.QuitChan:
+							log.Infof("quiting %s BackFill process", bfs.chain.String())
+							return
+						default:
+							heightsChan <- heights
+						}
 					}
 				}
-				// when this goroutine is done, send out a signal
-				log.Infof("finished filling in %s gap from %d to %d", bfs.Chain.String(), blockHeights[0], blockHeights[len(blockHeights)-1])
-				processingDone <- true
-			}(blockHeights)
+				// send a quit signal to each worker
+				// this blocks until each worker has finished its current task and is free to receive from the quit channel
+				for i := 1; i <= int(bfs.BatchNumber); i++ {
+					bfs.QuitChan <- true
+				}
+			}
 		}
 	}()
+	log.Infof("%s BackFill goroutine successfully spun up", bfs.chain.String())
+}
 
-	// listen on the processingDone chan
-	// keeps track of the number of processing goroutines that have finished
-	// when they have all finished, return
-	goroutinesFinished := 0
+func (bfs *BackFillService) backFill(wg *sync.WaitGroup, id int, heightChan chan []uint64) {
+	wg.Add(1)
+	defer wg.Done()
 	for {
 		select {
-		case <-processingDone:
-			atomic.AddInt64(&activeCount, -1)
-			select {
-			// if we are waiting for a process to finish, signal that one has
-			case forwardDone <- true:
-			default:
+		case heights := <-heightChan:
+			log.Debugf("%s backFill worker %d processing section from %d to %d", bfs.chain.String(), id, heights[0], heights[len(heights)-1])
+			payloads, err := bfs.Fetcher.FetchAt(heights)
+			if err != nil {
+				log.Errorf("%s backFill worker %d fetcher error: %s", bfs.chain.String(), id, err.Error())
 			}
-			goroutinesFinished++
-			if goroutinesFinished >= len(blockRangeBins) {
-				return nil
+			for _, payload := range payloads {
+				ipldPayload, err := bfs.Converter.Convert(payload)
+				if err != nil {
+					log.Errorf("%s backFill worker %d converter error: %s", bfs.chain.String(), id, err.Error())
+				}
+				// If there is a ScreenAndServe process listening, forward converted payload to it
+				select {
+				case bfs.ScreenAndServeChan <- ipldPayload:
+					log.Debugf("%s backFill worker %d forwarded converted payload to server", bfs.chain.String(), id)
+				default:
+					log.Debugf("%s backFill worker %d unable to forward converted payload to server; no channel ready to receive", bfs.chain.String(), id)
+				}
+				cidPayload, err := bfs.Publisher.Publish(ipldPayload)
+				if err != nil {
+					log.Errorf("%s backFill worker %d publisher error: %s", bfs.chain.String(), id, err.Error())
+					continue
+				}
+				if err := bfs.Indexer.Index(cidPayload); err != nil {
+					log.Errorf("%s backFill worker %d indexer error: %s", bfs.chain.String(), id, err.Error())
+				}
 			}
+			log.Infof("%s backFill worker %d finished section from %d to %d", bfs.chain.String(), id, heights[0], heights[len(heights)-1])
+		case <-bfs.QuitChan:
+			log.Infof("%s backFill worker %d shutting down", bfs.chain.String(), id)
+			return
 		}
 	}
+}
+
+func (bfs *BackFillService) Stop() error {
+	log.Infof("Stopping %s backFill service", bfs.chain.String())
+	close(bfs.QuitChan)
+	return nil
 }

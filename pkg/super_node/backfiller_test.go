@@ -69,7 +69,6 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
-				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.BackFill(wg)
@@ -125,7 +124,6 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
-				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.BackFill(wg)
@@ -156,7 +154,12 @@ var _ = Describe("BackFiller", func() {
 			}
 			mockRetriever := &mocks2.CIDRetriever{
 				FirstBlockNumberToReturn: 3,
-				GapsToRetrieve:           []shared.Gap{},
+				GapsToRetrieve: []shared.Gap{
+					{
+						Start: 0,
+						Stop:  2,
+					},
+				},
 			}
 			mockFetcher := &mocks2.PayloadFetcher{
 				PayloadsToReturn: map[uint64]shared.RawChainData{
@@ -175,7 +178,6 @@ var _ = Describe("BackFiller", func() {
 				BatchSize:         super_node.DefaultMaxBatchSize,
 				BatchNumber:       super_node.DefaultMaxBatchNumber,
 				QuitChan:          quitChan,
-				Chain:             shared.Ethereum,
 			}
 			wg := &sync.WaitGroup{}
 			backfiller.BackFill(wg)

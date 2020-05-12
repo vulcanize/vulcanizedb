@@ -66,7 +66,6 @@ type Config struct {
 	IPFSPath string
 	IPFSMode shared.IPFSMode
 	DBConfig config.Database
-	Quit     chan bool
 	// Server fields
 	Serve        bool
 	ServeDBConn  *postgres.DB
@@ -181,8 +180,6 @@ func NewSuperNodeConfig() (*Config, error) {
 			return nil, err
 		}
 	}
-
-	c.Quit = make(chan bool)
 
 	return c, nil
 }

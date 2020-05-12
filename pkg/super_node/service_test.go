@@ -66,7 +66,7 @@ var _ = Describe("Service", func() {
 			err := processor.Sync(wg, nil)
 			Expect(err).ToNot(HaveOccurred())
 			time.Sleep(2 * time.Second)
-			quitChan <- true
+			close(quitChan)
 			wg.Wait()
 			Expect(mockConverter.PassedStatediffPayload).To(Equal(mocks.MockStateDiffPayload))
 			Expect(len(mockCidIndexer.PassedCIDPayload)).To(Equal(1))

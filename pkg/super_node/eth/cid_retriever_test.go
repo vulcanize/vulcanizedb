@@ -474,54 +474,64 @@ var _ = Describe("Retriever", func() {
 
 	Describe("RetrieveGapsInData", func() {
 		It("Doesn't return gaps if there are none", func() {
+			payload0 := *mocks.MockCIDPayload
+			payload0.HeaderCID.BlockNumber = "0"
 			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "2"
+			payload1.HeaderCID.BlockNumber = "1"
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "3"
-			err := repo.Index(mocks.MockCIDPayload)
+			payload2.HeaderCID.BlockNumber = "2"
+			payload3 := payload2
+			payload3.HeaderCID.BlockNumber = "3"
+			err := repo.Index(&payload0)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload3)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(0))
 		})
 
-		It("Doesn't return the gap from 0 to the earliest block", func() {
+		It("Returns the gap from 0 to the earliest block", func() {
 			payload := *mocks.MockCIDPayload
 			payload.HeaderCID.BlockNumber = "5"
 			err := repo.Index(&payload)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(gaps)).To(Equal(0))
+			Expect(len(gaps)).To(Equal(1))
+			Expect(gaps[0].Start).To(Equal(uint64(0)))
+			Expect(gaps[0].Stop).To(Equal(uint64(4)))
 		})
 
 		It("Can handle single block gaps", func() {
+			payload0 := *mocks.MockCIDPayload
+			payload0.HeaderCID.BlockNumber = "0"
 			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "2"
-			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "4"
-			err := repo.Index(mocks.MockCIDPayload)
+			payload1.HeaderCID.BlockNumber = "1"
+			payload3 := payload1
+			payload3.HeaderCID.BlockNumber = "3"
+			err := repo.Index(&payload0)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
-			err = repo.Index(&payload2)
+			err = repo.Index(&payload3)
 			Expect(err).ToNot(HaveOccurred())
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(1))
-			Expect(gaps[0].Start).To(Equal(uint64(3)))
-			Expect(gaps[0].Stop).To(Equal(uint64(3)))
+			Expect(gaps[0].Start).To(Equal(uint64(2)))
+			Expect(gaps[0].Stop).To(Equal(uint64(2)))
 		})
 
 		It("Finds gap between two entries", func() {
 			payload1 := *mocks.MockCIDPayload
 			payload1.HeaderCID.BlockNumber = "1010101"
 			payload2 := payload1
-			payload2.HeaderCID.BlockNumber = "5"
+			payload2.HeaderCID.BlockNumber = "0"
 			err := repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
@@ -529,13 +539,15 @@ var _ = Describe("Retriever", func() {
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(gaps)).To(Equal(1))
-			Expect(gaps[0].Start).To(Equal(uint64(6)))
+			Expect(gaps[0].Start).To(Equal(uint64(1)))
 			Expect(gaps[0].Stop).To(Equal(uint64(1010100)))
 		})
 
 		It("Finds gaps between multiple entries", func() {
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1010101"
+			payload := *mocks.MockCIDPayload
+			payload.HeaderCID.BlockNumber = "1010101"
+			payload1 := payload
+			payload1.HeaderCID.BlockNumber = "1"
 			payload2 := payload1
 			payload2.HeaderCID.BlockNumber = "5"
 			payload3 := payload2
@@ -554,7 +566,9 @@ var _ = Describe("Retriever", func() {
 			payload9.HeaderCID.BlockNumber = "106"
 			payload10 := payload5
 			payload10.HeaderCID.BlockNumber = "1000"
-			err := repo.Index(&payload1)
+			err := repo.Index(&payload)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
@@ -577,15 +591,19 @@ var _ = Describe("Retriever", func() {
 
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(gaps)).To(Equal(3))
+			Expect(len(gaps)).To(Equal(5))
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 0, Stop: 0})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 2, Stop: 4})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 107, Stop: 999})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 1001, Stop: 1010100})).To(BeTrue())
 		})
 
 		It("Finds validation level gaps", func() {
-			payload1 := *mocks.MockCIDPayload
-			payload1.HeaderCID.BlockNumber = "1010101"
+			payload := *mocks.MockCIDPayload
+			payload.HeaderCID.BlockNumber = "1010101"
+			payload1 := payload
+			payload1.HeaderCID.BlockNumber = "1"
 			payload2 := payload1
 			payload2.HeaderCID.BlockNumber = "5"
 			payload3 := payload2
@@ -610,7 +628,9 @@ var _ = Describe("Retriever", func() {
 			payload12.HeaderCID.BlockNumber = "109"
 			payload13 := payload5
 			payload13.HeaderCID.BlockNumber = "1000"
-			err := repo.Index(&payload1)
+			err := repo.Index(&payload)
+			Expect(err).ToNot(HaveOccurred())
+			err = repo.Index(&payload1)
 			Expect(err).ToNot(HaveOccurred())
 			err = repo.Index(&payload2)
 			Expect(err).ToNot(HaveOccurred())
@@ -643,7 +663,9 @@ var _ = Describe("Retriever", func() {
 
 			gaps, err := retriever.RetrieveGapsInData(1)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(gaps)).To(Equal(6))
+			Expect(len(gaps)).To(Equal(8))
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 0, Stop: 0})).To(BeTrue())
+			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 2, Stop: 4})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 6, Stop: 99})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 101, Stop: 102})).To(BeTrue())
 			Expect(shared.ListContainsGap(gaps, shared.Gap{Start: 104, Stop: 104})).To(BeTrue())

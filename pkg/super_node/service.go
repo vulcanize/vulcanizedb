@@ -93,6 +93,8 @@ type Service struct {
 	ipfsPath string
 	// Underlying db
 	db *postgres.DB
+	// wg for syncing serve processes
+	serveWg *sync.WaitGroup
 }
 
 // NewSuperNode creates a new super_node.Interface using an underlying super_node.Service struct
@@ -134,7 +136,7 @@ func NewSuperNode(settings *Config) (SuperNode, error) {
 		}
 		sn.db = settings.ServeDBConn
 	}
-	sn.QuitChan = settings.Quit
+	sn.QuitChan = make(chan bool)
 	sn.Subscriptions = make(map[common.Hash]map[rpc.ID]Subscription)
 	sn.SubscriptionTypes = make(map[common.Hash]shared.SubscriptionSettings)
 	sn.WorkerPoolSize = settings.Workers
@@ -195,16 +197,15 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 	if err != nil {
 		return err
 	}
-	wg.Add(1)
-
-	// Channels for forwarding data to the publishAndIndex workers
+	// spin up publishAndIndex worker goroutines
 	publishAndIndexPayload := make(chan shared.ConvertedData, PayloadChanBufferSize)
-	// publishAndIndex worker pool to handle publishing and indexing concurrently, while
-	// limiting the number of Postgres connections we can possibly open so as to prevent error
-	for i := 0; i < sap.WorkerPoolSize; i++ {
-		sap.publishAndIndex(i, publishAndIndexPayload)
+	for i := 1; i <= sap.WorkerPoolSize; i++ {
+		go sap.publishAndIndex(wg, i, publishAndIndexPayload)
+		log.Debugf("%s publishAndIndex worker %d successfully spun up", sap.chain.String(), i)
 	}
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		for {
 			select {
 			case payload := <-sap.PayloadChan:
@@ -230,8 +231,7 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 			case err := <-sub.Err():
 				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
 			case <-sap.QuitChan:
-				log.Infof("quiting %s SyncAndPublish process", sap.chain.String())
-				wg.Done()
+				log.Infof("quiting %s Sync process", sap.chain.String())
 				return
 			}
 		}
@@ -242,41 +242,44 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 
 // publishAndIndex is spun up by SyncAndConvert and receives converted chain data from that process
 // it publishes this data to IPFS and indexes their CIDs with useful metadata in Postgres
-func (sap *Service) publishAndIndex(id int, publishAndIndexPayload <-chan shared.ConvertedData) {
-	go func() {
-		for {
-			select {
-			case payload := <-publishAndIndexPayload:
-				log.Debugf("publishing %s data streamed at head height %d", sap.chain.String(), payload.Height())
-				cidPayload, err := sap.Publisher.Publish(payload)
-				if err != nil {
-					log.Errorf("super node publishAndIndex worker %d publishing error for chain %s: %v", id, sap.chain.String(), err)
-					continue
-				}
-				log.Debugf("indexing %s data streamed at head height %d", sap.chain.String(), payload.Height())
-				if err := sap.Indexer.Index(cidPayload); err != nil {
-					log.Errorf("super node publishAndIndex worker %d indexing error for chain %s: %v", id, sap.chain.String(), err)
-				}
+func (sap *Service) publishAndIndex(wg *sync.WaitGroup, id int, publishAndIndexPayload <-chan shared.ConvertedData) {
+	wg.Add(1)
+	defer wg.Done()
+	for {
+		select {
+		case payload := <-publishAndIndexPayload:
+			log.Debugf("%s super node publishAndIndex worker %d publishing data streamed at head height %d", sap.chain.String(), id, payload.Height())
+			cidPayload, err := sap.Publisher.Publish(payload)
+			if err != nil {
+				log.Errorf("%s super node publishAndIndex worker %d publishing error: %v", sap.chain.String(), id, err)
+				continue
 			}
+			log.Debugf("%s super node publishAndIndex worker %d indexing data streamed at head height %d", sap.chain.String(), id, payload.Height())
+			if err := sap.Indexer.Index(cidPayload); err != nil {
+				log.Errorf("%s super node publishAndIndex worker %d indexing error: %v", sap.chain.String(), id, err)
+			}
+		case <-sap.QuitChan:
+			log.Infof("%s super node publishAndIndex worker %d shutting down", sap.chain.String(), id)
+			return
 		}
-	}()
-	log.Debugf("%s publishAndIndex goroutine successfully spun up", sap.chain.String())
+	}
 }
 
-// Serve listens for incoming converter data off the screenAndServePayload from the SyncAndConvert process
+// Serve listens for incoming converter data off the screenAndServePayload from the Sync process
 // It filters and sends this data to any subscribers to the service
-// This process can be stood up alone, without an screenAndServePayload attached to a SyncAndConvert process
+// This process can also be stood up alone, without an screenAndServePayload attached to a Sync process
 // and it will hang on the WaitGroup indefinitely, allowing the Service to serve historical data requests only
 func (sap *Service) Serve(wg *sync.WaitGroup, screenAndServePayload <-chan shared.ConvertedData) {
-	wg.Add(1)
+	sap.serveWg = wg
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		for {
 			select {
 			case payload := <-screenAndServePayload:
 				sap.filterAndServe(payload)
 			case <-sap.QuitChan:
-				log.Infof("quiting %s ScreenAndServe process", sap.chain.String())
-				wg.Done()
+				log.Infof("quiting %s Serve process", sap.chain.String())
 				return
 			}
 		}
@@ -286,8 +289,11 @@ func (sap *Service) Serve(wg *sync.WaitGroup, screenAndServePayload <-chan share
 
 // filterAndServe filters the payload according to each subscription type and sends to the subscriptions
 func (sap *Service) filterAndServe(payload shared.ConvertedData) {
-	log.Debugf("Sending %s payload to subscriptions", sap.chain.String())
+	log.Debugf("sending %s payload to subscriptions", sap.chain.String())
 	sap.Lock()
+	sap.serveWg.Add(1)
+	defer sap.Unlock()
+	defer sap.serveWg.Done()
 	for ty, subs := range sap.Subscriptions {
 		// Retrieve the subscription parameters for this subscription type
 		subConfig, ok := sap.SubscriptionTypes[ty]
@@ -322,12 +328,13 @@ func (sap *Service) filterAndServe(payload shared.ConvertedData) {
 			}
 		}
 	}
-	sap.Unlock()
 }
 
 // Subscribe is used by the API to remotely subscribe to the service loop
 // The params must be rlp serializable and satisfy the SubscriptionSettings() interface
 func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitChan chan<- bool, params shared.SubscriptionSettings) {
+	sap.serveWg.Add(1)
+	defer sap.serveWg.Done()
 	log.Infof("New %s subscription %s", sap.chain.String(), id)
 	subscription := Subscription{
 		ID:          id,
@@ -361,7 +368,7 @@ func (sap *Service) Subscribe(id rpc.ID, sub chan<- SubscriptionPayload, quitCha
 	// Otherwise we only filter new data as it is streamed in from the state diffing geth node
 	if params.HistoricalData() || params.HistoricalDataOnly() {
 		if err := sap.sendHistoricalData(subscription, id, params); err != nil {
-			sendNonBlockingErr(subscription, fmt.Errorf("super node subscriber backfill error for chain %s: %v", sap.chain.String(), err))
+			sendNonBlockingErr(subscription, fmt.Errorf("%s super node subscriber backfill error: %v", sap.chain.String(), err))
 			sendNonBlockingQuit(subscription)
 			return
 		}
@@ -392,10 +399,18 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 	log.Debugf("%s historical data starting block: %d", sap.chain.String(), params.StartingBlock().Int64())
 	log.Debugf("%s historical data ending block: %d", sap.chain.String(), endingBlock)
 	go func() {
+		sap.serveWg.Add(1)
+		defer sap.serveWg.Done()
 		for i := startingBlock; i <= endingBlock; i++ {
+			select {
+			case <-sap.QuitChan:
+				log.Infof("%s super node historical data feed to subscription %s closed", sap.chain.String(), id)
+				return
+			default:
+			}
 			cidWrappers, empty, err := sap.Retriever.Retrieve(params, i)
 			if err != nil {
-				sendNonBlockingErr(sub, fmt.Errorf("super node %s CID Retrieval error at block %d\r%s", sap.chain.String(), i, err.Error()))
+				sendNonBlockingErr(sub, fmt.Errorf(" %s super node CID Retrieval error at block %d\r%s", sap.chain.String(), i, err.Error()))
 				continue
 			}
 			if empty {
@@ -404,7 +419,7 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 			for _, cids := range cidWrappers {
 				response, err := sap.IPLDFetcher.Fetch(cids)
 				if err != nil {
-					sendNonBlockingErr(sub, fmt.Errorf("super node %s IPLD Fetching error at block %d\r%s", sap.chain.String(), i, err.Error()))
+					sendNonBlockingErr(sub, fmt.Errorf("%s super node IPLD Fetching error at block %d\r%s", sap.chain.String(), i, err.Error()))
 					continue
 				}
 				responseRLP, err := rlp.EncodeToBytes(response)
@@ -416,16 +431,16 @@ func (sap *Service) sendHistoricalData(sub Subscription, id rpc.ID, params share
 				case sub.PayloadChan <- SubscriptionPayload{Data: responseRLP, Err: "", Flag: EmptyFlag, Height: response.Height()}:
 					log.Debugf("sending super node historical data payload to %s subscription %s", sap.chain.String(), id)
 				default:
-					log.Infof("unable to send back-fill payload to %s subscription %s; channel has no receiver", sap.chain.String(), id)
+					log.Infof("unable to send backFill payload to %s subscription %s; channel has no receiver", sap.chain.String(), id)
 				}
 			}
 		}
 		// when we are done backfilling send an empty payload signifying so in the msg
 		select {
 		case sub.PayloadChan <- SubscriptionPayload{Data: nil, Err: "", Flag: BackFillCompleteFlag}:
-			log.Debugf("sending backfill completion notice to %s subscription %s", sap.chain.String(), id)
+			log.Debugf("sending backFill completion notice to %s subscription %s", sap.chain.String(), id)
 		default:
-			log.Infof("unable to send backfill completion notice to %s subscription %s", sap.chain.String(), id)
+			log.Infof("unable to send backFill completion notice to %s subscription %s", sap.chain.String(), id)
 		}
 	}()
 	return nil

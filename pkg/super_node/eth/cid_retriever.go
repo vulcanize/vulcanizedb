@@ -443,6 +443,21 @@ func (ecr *CIDRetriever) RetrieveStorageCIDs(tx *sqlx.Tx, storageFilter StorageF
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
 // it finds the union of heights where no data exists and where the times_validated is lower than the validation level
 func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
+	log.Info("searching for gaps in the eth super node database")
+	startingBlock, err := ecr.RetrieveFirstBlockNumber()
+	if err != nil {
+		return nil, fmt.Errorf("eth CIDRetriever RetrieveFirstBlockNumber error: %v", err)
+	}
+	var initialGap []shared.Gap
+	if startingBlock != 0 {
+		stop := uint64(startingBlock - 1)
+		log.Infof("found gap at the beginning of the eth sync from 0 to %d", stop)
+		initialGap = []shared.Gap{{
+			Start: 0,
+			Stop:  stop,
+		}}
+	}
+
 	pgStr := `SELECT header_cids.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM eth.header_cids
 				LEFT JOIN eth.header_cids r on eth.header_cids.block_number = r.block_number - 1
 				LEFT JOIN eth.header_cids fr on eth.header_cids.block_number < fr.block_number
@@ -472,7 +487,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
+	return append(append(initialGap, emptyGaps...), utils.MissingHeightsToGaps(heights)...), nil
 }
 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash

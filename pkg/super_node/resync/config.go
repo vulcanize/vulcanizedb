@@ -60,8 +60,6 @@ type Config struct {
 	BatchSize   uint64        // BatchSize for the resync http calls (client has to support batch sizing)
 	Timeout     time.Duration // HTTP connection timeout in seconds
 	BatchNumber uint64
-
-	Quit chan bool // Channel for shutting down
 }
 
 // NewReSyncConfig fills and returns a resync config from toml parameters
@@ -136,7 +134,6 @@ func NewReSyncConfig() (*Config, error) {
 	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
 	c.DB = &db
 
-	c.Quit = make(chan bool)
 	c.BatchSize = uint64(viper.GetInt64("resync.batchSize"))
 	c.BatchNumber = uint64(viper.GetInt64("resync.batchNumber"))
 	return c, nil
