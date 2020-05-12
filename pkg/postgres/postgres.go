@@ -17,6 +17,8 @@
 package postgres
 
 import (
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" //postgres driver
 	"github.com/vulcanize/vulcanizedb/pkg/config"
@@ -34,6 +36,16 @@ func NewDB(databaseConfig config.Database, node core.Node) (*DB, error) {
 	db, connectErr := sqlx.Connect("postgres", connectString)
 	if connectErr != nil {
 		return &DB{}, ErrDBConnectionFailed(connectErr)
+	}
+	if databaseConfig.MaxOpen > 0 {
+		db.SetMaxOpenConns(databaseConfig.MaxOpen)
+	}
+	if databaseConfig.MaxIdle > 0 {
+		db.SetMaxIdleConns(databaseConfig.MaxIdle)
+	}
+	if databaseConfig.MaxLifetime > 0 {
+		lifetime := time.Duration(databaseConfig.MaxLifetime) * time.Second
+		db.SetConnMaxLifetime(lifetime)
 	}
 	pg := DB{DB: db, Node: node}
 	nodeErr := pg.CreateNode(&node)

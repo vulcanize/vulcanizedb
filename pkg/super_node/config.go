@@ -45,6 +45,18 @@ const (
 	SUPERNODE_BATCH_SIZE       = "SUPERNODE_BATCH_SIZE"
 	SUPERNODE_BATCH_NUMBER     = "SUPERNODE_BATCH_NUMBER"
 	SUPERNODE_VALIDATION_LEVEL = "SUPERNODE_VALIDATION_LEVEL"
+
+	SYNC_MAX_IDLE_CONNECTIONS = "SYNC_MAX_IDLE_CONNECTIONS"
+	SYNC_MAX_OPEN_CONNECTIONS = "SYNC_MAX_OPEN_CONNECTIONS"
+	SYNC_MAX_CONN_LIFETIME    = "SYNC_MAX_CONN_LIFETIME"
+
+	BACKFILL_MAX_IDLE_CONNECTIONS = "BACKFILL_MAX_IDLE_CONNECTIONS"
+	BACKFILL_MAX_OPEN_CONNECTIONS = "BACKFILL_MAX_OPEN_CONNECTIONS"
+	BACKFILL_MAX_CONN_LIFETIME    = "BACKFILL_MAX_CONN_LIFETIME"
+
+	SERVER_MAX_IDLE_CONNECTIONS = "SERVER_MAX_IDLE_CONNECTIONS"
+	SERVER_MAX_OPEN_CONNECTIONS = "SERVER_MAX_OPEN_CONNECTIONS"
+	SERVER_MAX_CONN_LIFETIME    = "SERVER_MAX_CONN_LIFETIME"
 )
 
 // Config struct
@@ -53,21 +65,23 @@ type Config struct {
 	Chain    shared.ChainType
 	IPFSPath string
 	IPFSMode shared.IPFSMode
-	DB       *postgres.DB
 	DBConfig config.Database
 	Quit     chan bool
 	// Server fields
 	Serve        bool
+	ServeDBConn  *postgres.DB
 	WSEndpoint   string
 	HTTPEndpoint string
 	IPCEndpoint  string
 	// Sync params
-	Sync     bool
-	Workers  int
-	WSClient interface{}
-	NodeInfo core.Node
+	Sync       bool
+	SyncDBConn *postgres.DB
+	Workers    int
+	WSClient   interface{}
+	NodeInfo   core.Node
 	// Backfiller params
 	BackFill        bool
+	BackFillDBConn  *postgres.DB
 	HTTPClient      interface{}
 	Frequency       time.Duration
 	BatchSize       uint64
@@ -110,6 +124,8 @@ func NewSuperNodeConfig() (*Config, error) {
 		}
 	}
 
+	c.DBConfig.Init()
+
 	c.Sync = viper.GetBool("superNode.sync")
 	if c.Sync {
 		workers := viper.GetInt("superNode.workers")
@@ -128,6 +144,9 @@ func NewSuperNodeConfig() (*Config, error) {
 			btcWS := viper.GetString("bitcoin.wsPath")
 			c.NodeInfo, c.WSClient = shared.GetBtcNodeAndClient(btcWS)
 		}
+		syncDBConn := overrideDBConnConfig(c.DBConfig, Sync)
+		syncDB := utils.LoadPostgres(syncDBConn, c.NodeInfo)
+		c.SyncDBConn = &syncDB
 	}
 
 	c.Serve = viper.GetBool("superNode.server")
@@ -151,6 +170,9 @@ func NewSuperNodeConfig() (*Config, error) {
 			httpPath = "127.0.0.1:8081"
 		}
 		c.HTTPEndpoint = httpPath
+		serveDBConn := overrideDBConnConfig(c.DBConfig, Serve)
+		serveDB := utils.LoadPostgres(serveDBConn, c.NodeInfo)
+		c.ServeDBConn = &serveDB
 	}
 
 	c.BackFill = viper.GetBool("superNode.backFill")
@@ -160,9 +182,6 @@ func NewSuperNodeConfig() (*Config, error) {
 		}
 	}
 
-	c.DBConfig.Init()
-	db := utils.LoadPostgres(c.DBConfig, c.NodeInfo)
-	c.DB = &db
 	c.Quit = make(chan bool)
 
 	return c, nil
@@ -209,5 +228,45 @@ func (c *Config) BackFillFields() error {
 	c.BatchSize = uint64(viper.GetInt64("superNode.batchSize"))
 	c.BatchNumber = uint64(viper.GetInt64("superNode.batchNumber"))
 	c.ValidationLevel = viper.GetInt("superNode.validationLevel")
+
+	backFillDBConn := overrideDBConnConfig(c.DBConfig, BackFill)
+	backFillDB := utils.LoadPostgres(backFillDBConn, c.NodeInfo)
+	c.BackFillDBConn = &backFillDB
 	return nil
+}
+
+type mode string
+
+var (
+	Sync     mode = "sync"
+	BackFill mode = "backFill"
+	Serve    mode = "serve"
+)
+
+func overrideDBConnConfig(con config.Database, m mode) config.Database {
+	switch m {
+	case Sync:
+		viper.BindEnv("database.sync.maxIdle", SYNC_MAX_IDLE_CONNECTIONS)
+		viper.BindEnv("database.sync.maxOpen", SYNC_MAX_OPEN_CONNECTIONS)
+		viper.BindEnv("database.sync.maxLifetime", SYNC_MAX_CONN_LIFETIME)
+		con.MaxIdle = viper.GetInt("database.sync.maxIdle")
+		con.MaxOpen = viper.GetInt("database.sync.maxOpen")
+		con.MaxLifetime = viper.GetInt("database.sync.maxLifetime")
+	case BackFill:
+		viper.BindEnv("database.backFill.maxIdle", BACKFILL_MAX_IDLE_CONNECTIONS)
+		viper.BindEnv("database.backFill.maxOpen", BACKFILL_MAX_OPEN_CONNECTIONS)
+		viper.BindEnv("database.backFill.maxLifetime", BACKFILL_MAX_CONN_LIFETIME)
+		con.MaxIdle = viper.GetInt("database.backFill.maxIdle")
+		con.MaxOpen = viper.GetInt("database.backFill.maxOpen")
+		con.MaxLifetime = viper.GetInt("database.backFill.maxLifetime")
+	case Serve:
+		viper.BindEnv("database.server.maxIdle", SERVER_MAX_IDLE_CONNECTIONS)
+		viper.BindEnv("database.server.maxOpen", SERVER_MAX_OPEN_CONNECTIONS)
+		viper.BindEnv("database.server.maxLifetime", SERVER_MAX_CONN_LIFETIME)
+		con.MaxIdle = viper.GetInt("database.server.maxIdle")
+		con.MaxOpen = viper.GetInt("database.server.maxOpen")
+		con.MaxLifetime = viper.GetInt("database.server.maxLifetime")
+	default:
+	}
+	return con
 }

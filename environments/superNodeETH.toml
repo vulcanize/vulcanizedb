@@ -5,8 +5,10 @@
     user     = "vdbm" # $DATABASE_USER
     password = "" # $DATABASE_PASSWORD
 
-[ipfs]
-    path = "~/.ipfs" # $IPFS_PATH
+    [database.sync]
+        maxIdle = 1
+    [database.backFill]
+        maxIdle = 5
 
 [resync]
     chain = "ethereum" # $RESYNC_CHAIN
@@ -14,9 +16,9 @@
     start = 0 # $RESYNC_START
     stop = 0 # $RESYNC_STOP
     batchSize = 5 # $RESYNC_BATCH_SIZE
-    batchNumber = 50 # $RESYNC_BATCH_NUMBER
+    batchNumber = 5 # $RESYNC_BATCH_NUMBER
     timeout = 300 # $HTTP_TIMEOUT
-    clearOldCache = false # $RESYNC_CLEAR_OLD_CACHE
+    clearOldCache = true # $RESYNC_CLEAR_OLD_CACHE
     resetValidation = true # $RESYNC_RESET_VALIDATION
 
 [superNode]
@@ -30,7 +32,7 @@
     backFill = true # $SUPERNODE_BACKFILL
     frequency = 15 # $SUPERNODE_FREQUENCY
     batchSize = 5 # $SUPERNODE_BATCH_SIZE
-    batchNumber = 50 # $SUPERNODE_BATCH_NUMBER
+    batchNumber = 5 # $SUPERNODE_BATCH_NUMBER
     timeout = 300 # $HTTP_TIMEOUT
     validationLevel = 1 # $SUPERNODE_VALIDATION_LEVEL
 
