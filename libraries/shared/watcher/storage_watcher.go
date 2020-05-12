@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -56,12 +55,11 @@ type StorageWatcher struct {
 	db                        *postgres.DB
 	HeaderRepository          datastore.HeaderRepository
 	KeccakAddressTransformers map[common.Hash]storage2.ITransformer // keccak hash of an address => transformer
-	RetryInterval             time.Duration
 	StorageDiffRepository     storage.DiffRepository
 	DiffBlocksFromHeadOfChain int64 // the number of blocks from the head of the chain where diffs should be processed
 }
 
-func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, backFromHeadOfChain int64) StorageWatcher {
+func NewStorageWatcher(db *postgres.DB, backFromHeadOfChain int64) StorageWatcher {
 	headerRepository := repositories.NewHeaderRepository(db)
 	storageDiffRepository := storage.NewDiffRepository(db)
 	transformers := make(map[common.Hash]storage2.ITransformer)
@@ -69,7 +67,6 @@ func NewStorageWatcher(db *postgres.DB, retryInterval time.Duration, backFromHea
 		db:                        db,
 		HeaderRepository:          headerRepository,
 		KeccakAddressTransformers: transformers,
-		RetryInterval:             retryInterval,
 		StorageDiffRepository:     storageDiffRepository,
 		DiffBlocksFromHeadOfChain: backFromHeadOfChain,
 	}

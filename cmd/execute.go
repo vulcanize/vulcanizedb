@@ -105,7 +105,7 @@ func executeTransformers() {
 	}
 
 	if len(ethStorageInitializers) > 0 {
-		sw := watcher.NewStorageWatcher(&db, retryInterval, diffBlockFromHeadOfChain)
+		sw := watcher.NewStorageWatcher(&db, diffBlockFromHeadOfChain)
 		sw.AddTransformers(ethStorageInitializers)
 		wg.Add(1)
 		go watchEthStorage(&sw, &wg)

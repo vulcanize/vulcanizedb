@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"errors"
 	"math/rand"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -39,7 +38,7 @@ var _ = Describe("Storage Watcher", func() {
 		It("adds transformers", func() {
 			fakeHashedAddress := types.HexToKeccak256Hash("0x12345")
 			fakeTransformer := &mocks.MockStorageTransformer{KeccakOfAddress: fakeHashedAddress}
-			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), time.Nanosecond, -1)
+			w := watcher.NewStorageWatcher(test_config.NewTestDB(test_config.NewTestNode()), -1)
 
 			w.AddTransformers([]storage.TransformerInitializer{fakeTransformer.FakeTransformerInitializer})
 
@@ -61,7 +60,6 @@ var _ = Describe("Storage Watcher", func() {
 				HeaderRepository:          mockHeaderRepository,
 				StorageDiffRepository:     mockDiffsRepository,
 				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
-				RetryInterval:             time.Nanosecond,
 				DiffBlocksFromHeadOfChain: -1,
 			}
 		})
@@ -145,7 +143,6 @@ var _ = Describe("Storage Watcher", func() {
 					HeaderRepository:          mockHeaderRepository,
 					StorageDiffRepository:     mockDiffsRepository,
 					KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
-					RetryInterval:             time.Nanosecond,
 					DiffBlocksFromHeadOfChain: numberOfBlocksFromHeadOfChain,
 				}
 				diffID := rand.Int()
