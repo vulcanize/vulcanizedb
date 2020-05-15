@@ -130,42 +130,12 @@ var _ = Describe("Log extractor", func() {
 			Expect(err).To(MatchError(fakes.FakeError))
 		})
 
-		Describe("when log has previously been checked", func() {
-			It("does not mark any headers unchecked", func() {
-				checkedLogsRepository.AlreadyWatchingLogReturn = true
-
-				err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63(), defaultEndingBlockNumber))
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(checkedHeadersRepository.MarkHeadersUncheckedCalled).To(BeFalse())
-			})
-		})
-
 		Describe("when log has not previously been checked", func() {
 			BeforeEach(func() {
 				checkedLogsRepository.AlreadyWatchingLogReturn = false
 			})
 
-			It("marks headers since transformer's starting block number as unchecked", func() {
-				blockNumber := rand.Int63()
-
-				err := extractor.AddTransformerConfig(getTransformerConfig(blockNumber, defaultEndingBlockNumber))
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(checkedHeadersRepository.MarkHeadersUncheckedCalled).To(BeTrue())
-				Expect(checkedHeadersRepository.MarkHeadersUncheckedStartingBlockNumber).To(Equal(blockNumber))
-			})
-
-			It("returns error if marking headers unchecked returns error", func() {
-				checkedHeadersRepository.MarkHeadersUncheckedReturnError = fakes.FakeError
-
-				err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63(), defaultEndingBlockNumber))
-
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(fakes.FakeError))
-			})
-
-			It("persists that tranformer's log has been checked", func() {
+			It("persists that tranformer's log is watched", func() {
 				config := getTransformerConfig(rand.Int63(), defaultEndingBlockNumber)
 
 				err := extractor.AddTransformerConfig(config)
@@ -175,7 +145,7 @@ var _ = Describe("Log extractor", func() {
 				Expect(checkedLogsRepository.MarkLogWatchedTopicZero).To(Equal(config.Topic))
 			})
 
-			It("returns error if marking logs checked returns error", func() {
+			It("returns error if marking logs watched returns error", func() {
 				checkedLogsRepository.MarkLogWatchedError = fakes.FakeError
 
 				err := extractor.AddTransformerConfig(getTransformerConfig(rand.Int63(), defaultEndingBlockNumber))
