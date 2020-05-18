@@ -18,6 +18,7 @@ package fetcher_test
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -54,32 +55,52 @@ var _ = Describe("Csv Tail Storage Fetcher", func() {
 		close(done)
 	})
 
-	It("adds parsed csv row to rows channel for storage diff", func(done Done) {
-		line := getFakeLine()
+	Describe("when establishing connection succeeds", func() {
+		AfterEach(func() {
+			err := os.Remove(fetcher.ConnectionFile)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
-		mockTailer.Lines <- line
+		It("creates file for health check when connection established", func(done Done) {
+			go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
 
-		expectedRow, err := types.FromParityCsvRow(strings.Split(line.Text, ","))
-		Expect(err).NotTo(HaveOccurred())
-		Expect(<-diffsChannel).To(Equal(expectedRow))
-		close(done)
-	})
+			Eventually(func() bool {
+				info, err := os.Stat(fetcher.ConnectionFile)
+				if os.IsNotExist(err) {
+					return false
+				}
+				return !info.IsDir()
+			}).Should(BeTrue())
+			close(done)
+		})
 
-	It("adds error to errors channel if parsing csv fails", func(done Done) {
-		line := &tail.Line{Text: "invalid"}
+		It("adds parsed csv row to rows channel for storage diff", func(done Done) {
+			line := getFakeLine()
 
-		go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
-		mockTailer.Lines <- line
+			go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
+			mockTailer.Lines <- line
 
-		Expect(<-errorsChannel).To(HaveOccurred())
-		select {
-		case <-diffsChannel:
-			Fail("value passed to rows channel on error")
-		default:
-			Succeed()
-		}
-		close(done)
+			expectedRow, err := types.FromParityCsvRow(strings.Split(line.Text, ","))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(<-diffsChannel).To(Equal(expectedRow))
+			close(done)
+		})
+
+		It("adds error to errors channel if parsing csv fails", func(done Done) {
+			line := &tail.Line{Text: "invalid"}
+
+			go storageFetcher.FetchStorageDiffs(diffsChannel, errorsChannel)
+			mockTailer.Lines <- line
+
+			Expect(<-errorsChannel).To(HaveOccurred())
+			select {
+			case <-diffsChannel:
+				Fail("value passed to rows channel on error")
+			default:
+				Succeed()
+			}
+			close(done)
+		})
 	})
 })
 

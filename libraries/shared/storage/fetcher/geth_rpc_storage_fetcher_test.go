@@ -15,6 +15,8 @@
 package fetcher_test
 
 import (
+	"os"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -29,12 +31,14 @@ import (
 )
 
 var _ = Describe("Geth RPC Storage Fetcher", func() {
-	var streamer *mocks.MockStoragediffStreamer
-	var statediffPayloadChan chan statediff.Payload
-	var statediffFetcher fetcher.GethRpcStorageFetcher
-	var storagediffChan chan types.RawDiff
-	var subscription *fakes.MockSubscription
-	var errorChan chan error
+	var (
+		streamer             *mocks.MockStoragediffStreamer
+		statediffPayloadChan chan statediff.Payload
+		statediffFetcher     fetcher.GethRpcStorageFetcher
+		storagediffChan      chan types.RawDiff
+		subscription         *fakes.MockSubscription
+		errorChan            chan error
+	)
 
 	Describe("StorageFetcher for the Old Geth Patch", func() {
 		BeforeEach(func() {
@@ -60,15 +64,6 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			close(done)
 		})
 
-		It("adds error to errors channel if the subscription fails", func(done Done) {
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			subscription.Errs <- fakes.FakeError
-
-			Expect(<-errorChan).To(MatchError(fakes.FakeError))
-			close(done)
-		})
-
 		It("streams StatediffPayloads from a Geth RPC subscription", func(done Done) {
 			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
 
@@ -80,81 +75,110 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			close(done)
 		})
 
-		It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
-			badStatediffPayload := statediff.Payload{}
-			streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+		Describe("when subscription established", func() {
+			AfterEach(func() {
+				err := os.Remove(fetcher.ConnectionFile)
+				Expect(err).NotTo(HaveOccurred())
+			})
 
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+			It("creates file for health check when connection established", func(done Done) {
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-			Expect(<-errorChan).To(MatchError("EOF"))
+				Eventually(func() bool {
+					info, err := os.Stat(fetcher.ConnectionFile)
+					if os.IsNotExist(err) {
+						return false
+					}
+					return !info.IsDir()
+				}).Should(BeTrue())
+				close(done)
+			})
 
-			close(done)
+			It("adds error to errors channel if the subscription fails", func(done Done) {
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				subscription.Errs <- fakes.FakeError
+
+				Expect(<-errorChan).To(MatchError(fakes.FakeError))
+				close(done)
+			})
+
+			It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
+				badStatediffPayload := statediff.Payload{}
+				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				Expect(<-errorChan).To(MatchError("EOF"))
+
+				close(done)
+			})
+
+			It("adds parsed statediff payloads to the out channel for the old geth patch", func(done Done) {
+				streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				height := test_data.BlockNumber
+				intHeight := int(height.Int64())
+				createdExpectedStorageDiff := types.RawDiff{
+					HashedAddress: common.BytesToHash(test_data.ContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
+				}
+				updatedExpectedStorageDiff := types.RawDiff{
+					HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
+				}
+				deletedExpectedStorageDiff := types.RawDiff{
+					HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    common.BytesToHash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
+				}
+
+				createdStateDiff := <-storagediffChan
+				updatedStateDiff := <-storagediffChan
+				deletedStateDiff := <-storagediffChan
+
+				Expect(createdStateDiff).To(Equal(createdExpectedStorageDiff))
+				Expect(updatedStateDiff).To(Equal(updatedExpectedStorageDiff))
+				Expect(deletedStateDiff).To(Equal(deletedExpectedStorageDiff))
+
+				close(done)
+			})
+
+			It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
+				accountDiffs := test_data.CreatedAccountDiffs
+				accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
+
+				stateDiff := statediff.StateDiff{
+					BlockNumber:     test_data.BlockNumber,
+					BlockHash:       common.HexToHash(test_data.BlockHash),
+					CreatedAccounts: accountDiffs,
+				}
+
+				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
+				Expect(err).NotTo(HaveOccurred())
+
+				badStatediffPayload := statediff.Payload{
+					StateDiffRlp: stateDiffRlp,
+				}
+				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				Expect(<-errorChan).To(MatchError("rlp: input contains more than one value"))
+
+				close(done)
+			})
 		})
-
-		It("adds parsed statediff payloads to the out channel for the old geth patch", func(done Done) {
-			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
-
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			height := test_data.BlockNumber
-			intHeight := int(height.Int64())
-			createdExpectedStorageDiff := types.RawDiff{
-				HashedAddress: common.BytesToHash(test_data.ContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    common.BytesToHash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
-			}
-			updatedExpectedStorageDiff := types.RawDiff{
-				HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    common.BytesToHash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
-			}
-			deletedExpectedStorageDiff := types.RawDiff{
-				HashedAddress: common.BytesToHash(test_data.AnotherContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    common.BytesToHash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
-			}
-
-			createdStateDiff := <-storagediffChan
-			updatedStateDiff := <-storagediffChan
-			deletedStateDiff := <-storagediffChan
-
-			Expect(createdStateDiff).To(Equal(createdExpectedStorageDiff))
-			Expect(updatedStateDiff).To(Equal(updatedExpectedStorageDiff))
-			Expect(deletedStateDiff).To(Equal(deletedExpectedStorageDiff))
-
-			close(done)
-		})
-		It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
-			accountDiffs := test_data.CreatedAccountDiffs
-			accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
-
-			stateDiff := statediff.StateDiff{
-				BlockNumber:     test_data.BlockNumber,
-				BlockHash:       common.HexToHash(test_data.BlockHash),
-				CreatedAccounts: accountDiffs,
-			}
-
-			stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
-			Expect(err).NotTo(HaveOccurred())
-
-			badStatediffPayload := statediff.Payload{
-				StateDiffRlp: stateDiffRlp,
-			}
-			streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
-
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			Expect(<-errorChan).To(MatchError("rlp: input contains more than one value"))
-
-			close(done)
-		})
-
 	})
 
 	Describe("StorageFetcher for the New Geth Patch", func() {
@@ -181,15 +205,6 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			close(done)
 		})
 
-		It("adds error to errors channel if the subscription fails", func(done Done) {
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			subscription.Errs <- fakes.FakeError
-
-			Expect(<-errorChan).To(MatchError(fakes.FakeError))
-			close(done)
-		})
-
 		It("streams StatediffPayloads from a Geth RPC subscription", func(done Done) {
 			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
 
@@ -201,80 +216,109 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 			close(done)
 		})
 
-		It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
-			badStatediffPayload := statediff.Payload{}
-			streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+		Describe("when subscription established", func() {
+			AfterEach(func() {
+				err := os.Remove(fetcher.ConnectionFile)
+				Expect(err).NotTo(HaveOccurred())
+			})
 
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+			It("creates file for health check when connection established", func(done Done) {
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
 
-			Expect(<-errorChan).To(MatchError("EOF"))
+				Eventually(func() bool {
+					info, err := os.Stat(fetcher.ConnectionFile)
+					if os.IsNotExist(err) {
+						return false
+					}
+					return !info.IsDir()
+				}).Should(BeTrue())
+				close(done)
+			})
 
-			close(done)
+			It("adds error to errors channel if the subscription fails", func(done Done) {
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				subscription.Errs <- fakes.FakeError
+
+				Expect(<-errorChan).To(MatchError(fakes.FakeError))
+				close(done)
+			})
+
+			It("adds errors to error channel if decoding the state diff RLP fails", func(done Done) {
+				badStatediffPayload := statediff.Payload{}
+				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				Expect(<-errorChan).To(MatchError("EOF"))
+
+				close(done)
+			})
+
+			It("adds parsed statediff payloads to the out channel for the new geth patch", func(done Done) {
+				streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				height := test_data.BlockNumber
+				intHeight := int(height.Int64())
+				expectedDiff1 := types.RawDiff{
+					HashedAddress: crypto.Keccak256Hash(test_data.ContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
+				}
+				expectedDiff2 := types.RawDiff{
+					HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
+				}
+				expectedDiff3 := types.RawDiff{
+					HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
+					BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
+					BlockHeight:   intHeight,
+					StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
+					StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
+				}
+
+				diff1 := <-storagediffChan
+				diff2 := <-storagediffChan
+				diff3 := <-storagediffChan
+
+				Expect(diff1).To(Equal(expectedDiff1))
+				Expect(diff2).To(Equal(expectedDiff2))
+				Expect(diff3).To(Equal(expectedDiff3))
+
+				close(done)
+			})
+
+			It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
+				accountDiffs := test_data.CreatedAccountDiffs
+				accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
+
+				stateDiff := statediff.StateDiff{
+					BlockNumber:     test_data.BlockNumber,
+					BlockHash:       common.HexToHash(test_data.BlockHash),
+					CreatedAccounts: accountDiffs,
+				}
+
+				stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
+				Expect(err).NotTo(HaveOccurred())
+
+				badStatediffPayload := statediff.Payload{
+					StateDiffRlp: stateDiffRlp,
+				}
+				streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
+
+				go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
+
+				Expect(<-errorChan).To(MatchError("rlp: input contains more than one value"))
+
+				close(done)
+			})
 		})
-
-		It("adds parsed statediff payloads to the out channel for the new geth patch", func(done Done) {
-			streamer.SetPayloads([]statediff.Payload{test_data.MockStatediffPayload})
-
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			height := test_data.BlockNumber
-			intHeight := int(height.Int64())
-			expectedDiff1 := types.RawDiff{
-				HashedAddress: crypto.Keccak256Hash(test_data.ContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
-			}
-			expectedDiff2 := types.RawDiff{
-				HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.LargeStorageValue),
-			}
-			expectedDiff3 := types.RawDiff{
-				HashedAddress: crypto.Keccak256Hash(test_data.AnotherContractLeafKey[:]),
-				BlockHash:     common.HexToHash("0xfa40fbe2d98d98b3363a778d52f2bcd29d6790b9b3f3cab2b167fd12d3550f73"),
-				BlockHeight:   intHeight,
-				StorageKey:    crypto.Keccak256Hash(test_data.StorageKey),
-				StorageValue:  common.BytesToHash(test_data.SmallStorageValue),
-			}
-
-			diff1 := <-storagediffChan
-			diff2 := <-storagediffChan
-			diff3 := <-storagediffChan
-
-			Expect(diff1).To(Equal(expectedDiff1))
-			Expect(diff2).To(Equal(expectedDiff2))
-			Expect(diff3).To(Equal(expectedDiff3))
-
-			close(done)
-		})
-		It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
-			accountDiffs := test_data.CreatedAccountDiffs
-			accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
-
-			stateDiff := statediff.StateDiff{
-				BlockNumber:     test_data.BlockNumber,
-				BlockHash:       common.HexToHash(test_data.BlockHash),
-				CreatedAccounts: accountDiffs,
-			}
-
-			stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
-			Expect(err).NotTo(HaveOccurred())
-
-			badStatediffPayload := statediff.Payload{
-				StateDiffRlp: stateDiffRlp,
-			}
-			streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
-
-			go statediffFetcher.FetchStorageDiffs(storagediffChan, errorChan)
-
-			Expect(<-errorChan).To(MatchError("rlp: input contains more than one value"))
-
-			close(done)
-		})
-
 	})
 })

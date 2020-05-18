@@ -16,6 +16,7 @@ package fetcher
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
@@ -53,6 +54,12 @@ func (fetcher GethRpcStorageFetcher) FetchStorageDiffs(out chan<- types.RawDiff,
 		panic(fmt.Sprintf("Error creating a geth client subscription: %v", clientSubErr))
 	}
 	logrus.Info("Successfully created a geth client subscription: ", clientSubscription)
+
+	msg := []byte("geth storage fetcher connection established\n")
+	writeErr := ioutil.WriteFile(ConnectionFile, msg, 0644)
+	if writeErr != nil {
+		errs <- writeErr
+	}
 
 	for {
 		select {
