@@ -17,12 +17,14 @@
 package fetcher
 
 import (
+	"io/ioutil"
 	"strings"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/fs"
-	"github.com/sirupsen/logrus"
 )
+
+var ConnectionFile = "/tmp/connection"
 
 type CsvTailStorageFetcher struct {
 	tailer fs.Tailer
@@ -37,7 +39,12 @@ func (storageFetcher CsvTailStorageFetcher) FetchStorageDiffs(out chan<- types.R
 	if tailErr != nil {
 		errs <- tailErr
 	}
-	logrus.Debug("fetching storage diffs...")
+	msg := []byte("csv tail storage fetcher connection established\n")
+	writeErr := ioutil.WriteFile(ConnectionFile, msg, 0644)
+	if writeErr != nil {
+		errs <- writeErr
+	}
+
 	for line := range t.Lines {
 		diff, parseErr := types.FromParityCsvRow(strings.Split(line.Text, ","))
 		if parseErr != nil {
