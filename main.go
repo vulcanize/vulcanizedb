@@ -9,9 +9,7 @@ import (
 )
 
 func main() {
-	log.SetFormatter(&log.JSONFormatter{
-		PrettyPrint: true,
-	})
+	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile("vulcanizedb.log",
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
