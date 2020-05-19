@@ -26,7 +26,7 @@ import (
 
 // Streamer is the interface for streaming a statediff subscription
 type Streamer interface {
-	Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error)
+	Stream(payloadChan chan statediff.Payload, params statediff.Params) (*rpc.ClientSubscription, error)
 }
 
 // StateDiffStreamer is the underlying struct for the StateDiffStreamer interface
@@ -42,7 +42,7 @@ func NewStateDiffStreamer(client core.RPCClient) Streamer {
 }
 
 // Stream is the main loop for subscribing to data from the Geth state diff process
-func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+func (sds *StateDiffStreamer) Stream(payloadChan chan statediff.Payload, params statediff.Params) (*rpc.ClientSubscription, error) {
 	logrus.Info("streaming diffs from geth")
-	return sds.Client.Subscribe("statediff", payloadChan, "stream")
+	return sds.Client.Subscribe("statediff", payloadChan, "stream", params)
 }

@@ -291,7 +291,7 @@ func (s *ResponseFilterer) filterStateAndStorage(stateFilter StateFilter, storag
 			}
 		}
 		if !storageFilter.Off && checkNodeKeys(storageAddressFilters, stateNode.LeafKey) {
-			for _, storageNode := range payload.StorageNodes[crypto.Keccak256Hash(stateNode.Path)] {
+			for _, storageNode := range payload.StorageNodes[common.Bytes2Hex(stateNode.Path)] {
 				if checkNodeKeys(storageKeyFilters, storageNode.LeafKey) {
 					cid, err := ipld.RawdataToCid(ipld.MEthStorageTrie, storageNode.Value, multihash.KECCAK_256)
 					if err != nil {

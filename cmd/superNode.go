@@ -72,6 +72,7 @@ func superNode() {
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
+	defer superNode.Stop()
 	var forwardPayloadChan chan shared.ConvertedData
 	if superNodeConfig.Serve {
 		logWithCommand.Info("starting up super node servers")
@@ -100,7 +101,9 @@ func superNode() {
 	shutdown := make(chan os.Signal)
 	signal.Notify(shutdown, os.Interrupt)
 	<-shutdown
-	backFiller.Stop()
+	if superNodeConfig.BackFill {
+		backFiller.Stop()
+	}
 	superNode.Stop()
 	wg.Wait()
 }

@@ -28,9 +28,14 @@ var _ = Describe("StateDiff Streamer", func() {
 		client := &fakes.MockRPCClient{}
 		streamer := streamer.NewStateDiffStreamer(client)
 		payloadChan := make(chan statediff.Payload)
-		_, err := streamer.Stream(payloadChan)
+		params := statediff.Params{
+			IncludeBlock:    true,
+			IncludeTD:       true,
+			IncludeReceipts: true,
+		}
+		_, err := streamer.Stream(payloadChan, params)
 		Expect(err).NotTo(HaveOccurred())
 
-		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream"})
+		client.AssertSubscribeCalledWith("statediff", payloadChan, []interface{}{"stream", params})
 	})
 })

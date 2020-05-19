@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -159,13 +158,13 @@ func (in *CIDIndexer) indexStateAndStorageCIDs(tx *sqlx.Tx, payload *CIDPayload,
 		}
 		// If we have a state leaf node, index the associated account and storage nodes
 		if stateCID.NodeType == 2 {
-			pathKey := crypto.Keccak256Hash(stateCID.Path)
-			for _, storageCID := range payload.StorageNodeCIDs[pathKey] {
+			statePath := common.Bytes2Hex(stateCID.Path)
+			for _, storageCID := range payload.StorageNodeCIDs[statePath] {
 				if err := in.indexStorageCID(tx, storageCID, stateID); err != nil {
 					return err
 				}
 			}
-			if stateAccount, ok := payload.StateAccounts[pathKey]; ok {
+			if stateAccount, ok := payload.StateAccounts[statePath]; ok {
 				if err := in.indexStateAccount(tx, stateAccount, stateID); err != nil {
 					return err
 				}

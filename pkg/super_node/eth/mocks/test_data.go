@@ -218,7 +218,7 @@ var (
 	nonce1             = uint64(1)
 	ContractRoot       = "0x821e2556a290c86405f8160a2d662042a431ba456b9db265c79bb837c04be5f0"
 	ContractCodeHash   = common.HexToHash("0x753f98a8d4328b15636e46f66f2cb4bc860100aa17967cc145fcd17d1d4710ea")
-	contractPathHash   = crypto.Keccak256Hash([]byte{'\x06'})
+	contractPath       = common.Bytes2Hex([]byte{'\x06'})
 	ContractLeafKey    = testhelpers.AddressToLeafKey(ContractAddress)
 	ContractAccount, _ = rlp.EncodeToBytes(state.Account{
 		Nonce:    nonce1,
@@ -235,7 +235,7 @@ var (
 	nonce0          = uint64(0)
 	AccountRoot     = "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
 	AccountCodeHash = common.HexToHash("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-	accountPathHash = crypto.Keccak256Hash([]byte{'\x0c'})
+	accountPath     = common.Bytes2Hex([]byte{'\x0c'})
 	AccountAddresss = common.HexToAddress("0x0D3ab14BBaD3D99F4203bd7a11aCB94882050E7e")
 	AccountLeafKey  = testhelpers.Account2LeafKey
 	Account, _      = rlp.EncodeToBytes(state.Account{
@@ -250,13 +250,13 @@ var (
 		Account,
 	})
 
-	CreatedAccountDiffs = []statediff.AccountDiff{
+	StateDiffs = []statediff.StateNode{
 		{
 			Path:      []byte{'\x06'},
 			NodeType:  statediff.Leaf,
 			LeafKey:   ContractLeafKey,
 			NodeValue: ContractLeafNode,
-			Storage: []statediff.StorageDiff{
+			StorageNodes: []statediff.StorageNode{
 				{
 					Path:      []byte{},
 					NodeType:  statediff.Leaf,
@@ -266,18 +266,18 @@ var (
 			},
 		},
 		{
-			Path:      []byte{'\x0c'},
-			NodeType:  statediff.Leaf,
-			LeafKey:   AccountLeafKey,
-			NodeValue: AccountLeafNode,
-			Storage:   []statediff.StorageDiff{},
+			Path:         []byte{'\x0c'},
+			NodeType:     statediff.Leaf,
+			LeafKey:      AccountLeafKey,
+			NodeValue:    AccountLeafNode,
+			StorageNodes: []statediff.StorageNode{},
 		},
 	}
 
-	MockStateDiff = statediff.StateDiff{
-		BlockNumber:     BlockNumber,
-		BlockHash:       MockBlock.Hash(),
-		CreatedAccounts: CreatedAccountDiffs,
+	MockStateDiff = statediff.StateObject{
+		BlockNumber: BlockNumber,
+		BlockHash:   MockBlock.Hash(),
+		Nodes:       StateDiffs,
 	}
 	MockStateDiffBytes, _ = rlp.EncodeToBytes(MockStateDiff)
 	MockStateNodes        = []eth.TrieNode{
@@ -308,8 +308,8 @@ var (
 			StateKey: common.BytesToHash(AccountLeafKey).Hex(),
 		},
 	}
-	MockStorageNodes = map[common.Hash][]eth.TrieNode{
-		contractPathHash: {
+	MockStorageNodes = map[string][]eth.TrieNode{
+		contractPath: {
 			{
 				LeafKey: common.BytesToHash(StorageLeafKey),
 				Value:   StorageLeafNode,
@@ -322,7 +322,7 @@ var (
 	// aggregate payloads
 	MockStateDiffPayload = statediff.Payload{
 		BlockRlp:        MockBlockRlp,
-		StateDiffRlp:    MockStateDiffBytes,
+		StateObjectRlp:  MockStateDiffBytes,
 		ReceiptsRlp:     ReceiptsRlp,
 		TotalDifficulty: MockBlock.Difficulty(),
 	}
@@ -360,8 +360,8 @@ var (
 			MockTransactions[2].Hash(): MockRctMetaPostPublish[2],
 		},
 		StateNodeCIDs: MockStateMetaPostPublish,
-		StorageNodeCIDs: map[common.Hash][]eth.StorageNodeModel{
-			contractPathHash: {
+		StorageNodeCIDs: map[string][]eth.StorageNodeModel{
+			contractPath: {
 				{
 					CID:        StorageCID.String(),
 					Path:       []byte{},
@@ -370,14 +370,14 @@ var (
 				},
 			},
 		},
-		StateAccounts: map[common.Hash]eth.StateAccountModel{
-			contractPathHash: {
+		StateAccounts: map[string]eth.StateAccountModel{
+			contractPath: {
 				Balance:     big.NewInt(0).String(),
 				Nonce:       nonce1,
 				CodeHash:    ContractCodeHash.Bytes(),
 				StorageRoot: common.HexToHash(ContractRoot).String(),
 			},
-			accountPathHash: {
+			accountPath: {
 				Balance:     big.NewInt(1000).String(),
 				Nonce:       nonce0,
 				CodeHash:    AccountCodeHash.Bytes(),

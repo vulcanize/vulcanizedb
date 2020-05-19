@@ -45,7 +45,7 @@ func NewGethRPCStorageFetcher(streamer streamer.Streamer) GethRPCStorageFetcher 
 
 func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageDiffInput, errs chan<- error) {
 	ethStatediffPayloadChan := fetcher.StatediffPayloadChan
-	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan)
+	clientSubscription, clientSubErr := fetcher.streamer.Stream(ethStatediffPayloadChan, statediff.Params{})
 	if clientSubErr != nil {
 		errs <- clientSubErr
 		panic(fmt.Sprintf("Error creating a geth client subscription: %v", clientSubErr))
@@ -55,8 +55,8 @@ func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 	for {
 		diff := <-ethStatediffPayloadChan
 		logrus.Trace("received a statediff")
-		stateDiff := new(statediff.StateDiff)
-		decodeErr := rlp.DecodeBytes(diff.StateDiffRlp, stateDiff)
+		stateDiff := new(statediff.StateObject)
+		decodeErr := rlp.DecodeBytes(diff.StateObjectRlp, stateDiff)
 		if decodeErr != nil {
 			logrus.Warn("Error decoding state diff into RLP: ", decodeErr)
 			errs <- decodeErr
@@ -65,8 +65,8 @@ func (fetcher GethRPCStorageFetcher) FetchStorageDiffs(out chan<- utils.StorageD
 		accounts := utils.GetAccountsFromDiff(*stateDiff)
 		logrus.Trace(fmt.Sprintf("iterating through %d accounts on stateDiff for block %d", len(accounts), stateDiff.BlockNumber))
 		for _, account := range accounts {
-			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.Storage), common.BytesToHash(account.LeafKey).Hex()))
-			for _, storage := range account.Storage {
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.StorageNodes), common.BytesToHash(account.LeafKey).Hex()))
+			for _, storage := range account.StorageNodes {
 				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
 				if formatErr != nil {
 					logrus.Error("failed to format utils.StorageDiff from storage with key: ", common.BytesToHash(storage.LeafKey), "from account with key: ", common.BytesToHash(account.LeafKey))

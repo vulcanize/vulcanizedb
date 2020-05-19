@@ -19,8 +19,8 @@ package eth
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
@@ -195,8 +195,7 @@ func (pub *IPLDPublisherAndIndexer) publishAndIndexStateAndStorage(tx *sqlx.Tx, 
 			if err := pub.indexer.indexStateAccount(tx, accountModel, stateID); err != nil {
 				return err
 			}
-			statePathHash := crypto.Keccak256Hash(stateNode.Path)
-			for _, storageNode := range ipldPayload.StorageNodes[statePathHash] {
+			for _, storageNode := range ipldPayload.StorageNodes[common.Bytes2Hex(stateNode.Path)] {
 				storageCIDStr, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, storageNode.Value)
 				if err != nil {
 					return err

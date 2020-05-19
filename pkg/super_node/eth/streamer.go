@@ -38,12 +38,20 @@ type StreamClient interface {
 // PayloadStreamer satisfies the PayloadStreamer interface for ethereum
 type PayloadStreamer struct {
 	Client StreamClient
+	params statediff.Params
 }
 
 // NewPayloadStreamer creates a pointer to a new PayloadStreamer which satisfies the PayloadStreamer interface for ethereum
 func NewPayloadStreamer(client StreamClient) *PayloadStreamer {
 	return &PayloadStreamer{
 		Client: client,
+		params: statediff.Params{
+			IncludeBlock:             true,
+			IncludeTD:                true,
+			IncludeReceipts:          true,
+			IntermediateStorageNodes: true,
+			IntermediateStateNodes:   true,
+		},
 	}
 }
 
@@ -60,5 +68,5 @@ func (ps *PayloadStreamer) Stream(payloadChan chan shared.RawChainData) (shared.
 			}
 		}
 	}()
-	return ps.Client.Subscribe(context.Background(), "statediff", stateDiffChan, "stream")
+	return ps.Client.Subscribe(context.Background(), "statediff", stateDiffChan, "stream", ps.params)
 }

@@ -61,7 +61,7 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 		Receipts:        make(types.Receipts, 0, trxLen),
 		ReceiptMetaData: make([]ReceiptModel, 0, trxLen),
 		StateNodes:      make([]TrieNode, 0),
-		StorageNodes:    make(map[common.Hash][]TrieNode),
+		StorageNodes:    make(map[string][]TrieNode),
 	}
 	signer := types.MakeSigner(pc.chainConfig, block.Number())
 	transactions := block.Transactions()
@@ -100,10 +100,12 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 			}
 			mappedContracts[log.Address.String()] = true
 		}
+		// These are the contracts seen in the logs
 		logContracts := make([]string, 0, len(mappedContracts))
 		for addr := range mappedContracts {
 			logContracts = append(logContracts, addr)
 		}
+		// This is the contract address if this receipt is for a contract creation tx
 		contract := shared.HandleNullAddr(receipt.ContractAddress)
 		var contractHash string
 		if contract != "" {
@@ -124,60 +126,27 @@ func (pc *PayloadConverter) Convert(payload shared.RawChainData) (shared.Convert
 	}
 
 	// Unpack state diff rlp to access fields
-	stateDiff := new(statediff.StateDiff)
-	if err := rlp.DecodeBytes(stateDiffPayload.StateDiffRlp, stateDiff); err != nil {
+	stateDiff := new(statediff.StateObject)
+	if err := rlp.DecodeBytes(stateDiffPayload.StateObjectRlp, stateDiff); err != nil {
 		return nil, err
 	}
-	for _, createdAccount := range stateDiff.CreatedAccounts {
-		statePathHash := crypto.Keccak256Hash(createdAccount.Path)
+	for _, stateNode := range stateDiff.Nodes {
+		statePath := common.Bytes2Hex(stateNode.Path)
 		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Path:    createdAccount.Path,
-			Value:   createdAccount.NodeValue,
-			Type:    createdAccount.NodeType,
-			LeafKey: common.BytesToHash(createdAccount.LeafKey),
+			Path:    stateNode.Path,
+			Value:   stateNode.NodeValue,
+			Type:    stateNode.NodeType,
+			LeafKey: common.BytesToHash(stateNode.LeafKey),
 		})
-		for _, storageDiff := range createdAccount.Storage {
-			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
-				Path:    storageDiff.Path,
-				Value:   storageDiff.NodeValue,
-				Type:    storageDiff.NodeType,
-				LeafKey: common.BytesToHash(storageDiff.LeafKey),
+		for _, storageNode := range stateNode.StorageNodes {
+			convertedPayload.StorageNodes[statePath] = append(convertedPayload.StorageNodes[statePath], TrieNode{
+				Path:    storageNode.Path,
+				Value:   storageNode.NodeValue,
+				Type:    storageNode.NodeType,
+				LeafKey: common.BytesToHash(storageNode.LeafKey),
 			})
 		}
 	}
-	for _, deletedAccount := range stateDiff.DeletedAccounts {
-		statePathHash := crypto.Keccak256Hash(deletedAccount.Path)
-		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Path:    deletedAccount.Path,
-			Value:   deletedAccount.NodeValue,
-			Type:    deletedAccount.NodeType,
-			LeafKey: common.BytesToHash(deletedAccount.LeafKey),
-		})
-		for _, storageDiff := range deletedAccount.Storage {
-			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
-				Path:    storageDiff.Path,
-				Value:   storageDiff.NodeValue,
-				Type:    storageDiff.NodeType,
-				LeafKey: common.BytesToHash(storageDiff.LeafKey),
-			})
-		}
-	}
-	for _, updatedAccount := range stateDiff.UpdatedAccounts {
-		statePathHash := crypto.Keccak256Hash(updatedAccount.Path)
-		convertedPayload.StateNodes = append(convertedPayload.StateNodes, TrieNode{
-			Path:    updatedAccount.Path,
-			Value:   updatedAccount.NodeValue,
-			Type:    updatedAccount.NodeType,
-			LeafKey: common.BytesToHash(updatedAccount.LeafKey),
-		})
-		for _, storageDiff := range updatedAccount.Storage {
-			convertedPayload.StorageNodes[statePathHash] = append(convertedPayload.StorageNodes[statePathHash], TrieNode{
-				Path:    storageDiff.Path,
-				Value:   storageDiff.NodeValue,
-				Type:    storageDiff.NodeType,
-				LeafKey: common.BytesToHash(storageDiff.LeafKey),
-			})
-		}
-	}
+
 	return convertedPayload, nil
 }

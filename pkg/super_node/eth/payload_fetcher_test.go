@@ -36,10 +36,10 @@ var _ = Describe("StateDiffFetcher", func() {
 		)
 		BeforeEach(func() {
 			mc = new(mocks.BackFillerClient)
-			setDiffAtErr1 := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
-			Expect(setDiffAtErr1).ToNot(HaveOccurred())
-			setDiffAtErr2 := mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
-			Expect(setDiffAtErr2).ToNot(HaveOccurred())
+			err := mc.SetReturnDiffAt(test_data.BlockNumber.Uint64(), test_data.MockStatediffPayload)
+			Expect(err).ToNot(HaveOccurred())
+			err = mc.SetReturnDiffAt(test_data.BlockNumber2.Uint64(), test_data.MockStatediffPayload2)
+			Expect(err).ToNot(HaveOccurred())
 			stateDiffFetcher = eth.NewPayloadFetcher(mc, time.Second*60)
 		})
 		It("Batch calls statediff_stateDiffAt", func() {
@@ -47,8 +47,8 @@ var _ = Describe("StateDiffFetcher", func() {
 				test_data.BlockNumber.Uint64(),
 				test_data.BlockNumber2.Uint64(),
 			}
-			stateDiffPayloads, fetchErr := stateDiffFetcher.FetchAt(blockHeights)
-			Expect(fetchErr).ToNot(HaveOccurred())
+			stateDiffPayloads, err := stateDiffFetcher.FetchAt(blockHeights)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(len(stateDiffPayloads)).To(Equal(2))
 			payload1, ok := stateDiffPayloads[0].(statediff.Payload)
 			Expect(ok).To(BeTrue())

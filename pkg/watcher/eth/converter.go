@@ -56,7 +56,7 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 	cids.TransactionCIDs = make([]eth.TxModel, numTxs)
 	cids.ReceiptCIDs = make(map[common.Hash]eth.ReceiptModel, numTxs)
 	cids.StateNodeCIDs = make([]eth.StateNodeModel, len(ethIPLDs.StateNodes))
-	cids.StorageNodeCIDs = make(map[common.Hash][]eth.StorageNodeModel, len(ethIPLDs.StateNodes))
+	cids.StorageNodeCIDs = make(map[string][]eth.StorageNodeModel, len(ethIPLDs.StateNodes))
 
 	// Unpack header
 	var header types.Header
@@ -164,7 +164,7 @@ func (pc *WatcherConverter) Convert(ethIPLDs eth.IPLDs) (*eth.CIDPayload, error)
 	}
 	// Storage data
 	for _, storageIPLD := range ethIPLDs.StorageNodes {
-		cids.StorageNodeCIDs[storageIPLD.StateLeafKey] = append(cids.StorageNodeCIDs[storageIPLD.StateLeafKey], eth.StorageNodeModel{
+		cids.StorageNodeCIDs[storageIPLD.StateLeafKey.Hex()] = append(cids.StorageNodeCIDs[storageIPLD.StateLeafKey.Hex()], eth.StorageNodeModel{
 			CID:        storageIPLD.IPLD.CID,
 			NodeType:   eth.ResolveFromNodeType(storageIPLD.Type),
 			StorageKey: storageIPLD.StorageLeafKey.String(),

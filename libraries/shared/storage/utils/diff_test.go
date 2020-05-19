@@ -67,8 +67,8 @@ var _ = Describe("Storage row parsing", func() {
 
 	Describe("FromGethStateDiff", func() {
 		var (
-			accountDiff = statediff.AccountDiff{LeafKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
-			stateDiff   = &statediff.StateDiff{
+			accountDiff = statediff.StateNode{LeafKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}}
+			stateDiff   = &statediff.StateObject{
 				BlockNumber: big.NewInt(rand.Int63()),
 				BlockHash:   fakes.FakeHash,
 			}
@@ -79,7 +79,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := statediff.StorageNode{
 				LeafKey:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				NodeValue: storageValueRlp,
 				NodeType:  statediff.Leaf,
@@ -104,7 +104,7 @@ var _ = Describe("Storage row parsing", func() {
 			storageValueRlp, encodeErr := rlp.EncodeToBytes(storageValueBytes)
 			Expect(encodeErr).NotTo(HaveOccurred())
 
-			storageDiff := statediff.StorageDiff{
+			storageDiff := statediff.StorageNode{
 				LeafKey:   []byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				NodeValue: storageValueRlp,
 				NodeType:  statediff.Leaf,

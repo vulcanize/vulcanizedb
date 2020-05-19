@@ -57,7 +57,7 @@ func FromParityCsvRow(csvRow []string) (StorageDiffInput, error) {
 	}, nil
 }
 
-func FromGethStateDiff(account statediff.AccountDiff, stateDiff *statediff.StateDiff, storage statediff.StorageDiff) (StorageDiffInput, error) {
+func FromGethStateDiff(account statediff.StateNode, stateDiff *statediff.StateObject, storage statediff.StorageNode) (StorageDiffInput, error) {
 	var decodedValue []byte
 	err := rlp.DecodeBytes(storage.NodeValue, &decodedValue)
 	if err != nil {
@@ -84,7 +84,6 @@ func HexToKeccak256Hash(hex string) common.Hash {
 	return crypto.Keccak256Hash(common.FromHex(hex))
 }
 
-func GetAccountsFromDiff(stateDiff statediff.StateDiff) []statediff.AccountDiff {
-	accounts := append(stateDiff.CreatedAccounts, stateDiff.UpdatedAccounts...)
-	return append(accounts, stateDiff.DeletedAccounts...)
+func GetAccountsFromDiff(stateDiff statediff.StateObject) []statediff.StateNode {
+	return stateDiff.Nodes
 }

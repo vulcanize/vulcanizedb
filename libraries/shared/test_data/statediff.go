@@ -40,7 +40,7 @@ var (
 	StorageKey              = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001").Bytes()
 	SmallStorageValue       = common.Hex2Bytes("03")
 	SmallStorageValueRlp, _ = rlp.EncodeToBytes(SmallStorageValue)
-	storageWithSmallValue   = []statediff.StorageDiff{{
+	storageWithSmallValue   = []statediff.StorageNode{{
 		LeafKey:   StorageKey,
 		NodeValue: SmallStorageValueRlp,
 		NodeType:  statediff.Leaf,
@@ -48,13 +48,13 @@ var (
 	}}
 	LargeStorageValue       = common.Hex2Bytes("00191b53778c567b14b50ba0000")
 	LargeStorageValueRlp, _ = rlp.EncodeToBytes(LargeStorageValue)
-	storageWithLargeValue   = []statediff.StorageDiff{{
+	storageWithLargeValue   = []statediff.StorageNode{{
 		LeafKey:   StorageKey,
 		NodeValue: LargeStorageValueRlp,
 		Path:      StoragePath,
 		NodeType:  statediff.Leaf,
 	}}
-	StorageWithBadValue = statediff.StorageDiff{
+	StorageWithBadValue = statediff.StorageNode{
 		LeafKey:   StorageKey,
 		NodeValue: []byte{0, 1, 2},
 		NodeType:  statediff.Leaf,
@@ -74,44 +74,40 @@ var (
 		CodeHash: CodeHash,
 	}
 	valueBytes, _       = rlp.EncodeToBytes(testAccount)
-	CreatedAccountDiffs = []statediff.AccountDiff{
+	CreatedAccountDiffs = []statediff.StateNode{
 		{
-			LeafKey:   ContractLeafKey.Bytes(),
-			NodeValue: valueBytes,
-			Storage:   storageWithSmallValue,
+			LeafKey:      ContractLeafKey.Bytes(),
+			NodeValue:    valueBytes,
+			StorageNodes: storageWithSmallValue,
 		},
 	}
 
-	UpdatedAccountDiffs = []statediff.AccountDiff{{
-		LeafKey:   AnotherContractLeafKey.Bytes(),
-		NodeValue: valueBytes,
-		Storage:   storageWithLargeValue,
+	UpdatedAccountDiffs = []statediff.StateNode{{
+		LeafKey:      AnotherContractLeafKey.Bytes(),
+		NodeValue:    valueBytes,
+		StorageNodes: storageWithLargeValue,
 	}}
-	UpdatedAccountDiffs2 = []statediff.AccountDiff{{
-		LeafKey:   AnotherContractLeafKey.Bytes(),
-		NodeValue: valueBytes,
-		Storage:   storageWithSmallValue,
-	}}
-
-	DeletedAccountDiffs = []statediff.AccountDiff{{
-		LeafKey:   AnotherContractLeafKey.Bytes(),
-		NodeValue: valueBytes,
-		Storage:   storageWithSmallValue,
+	UpdatedAccountDiffs2 = []statediff.StateNode{{
+		LeafKey:      AnotherContractLeafKey.Bytes(),
+		NodeValue:    valueBytes,
+		StorageNodes: storageWithSmallValue,
 	}}
 
-	MockStateDiff = statediff.StateDiff{
-		BlockNumber:     BlockNumber,
-		BlockHash:       common.HexToHash(BlockHash),
-		CreatedAccounts: CreatedAccountDiffs,
-		DeletedAccounts: DeletedAccountDiffs,
-		UpdatedAccounts: UpdatedAccountDiffs,
+	DeletedAccountDiffs = []statediff.StateNode{{
+		LeafKey:      AnotherContractLeafKey.Bytes(),
+		NodeValue:    valueBytes,
+		StorageNodes: storageWithSmallValue,
+	}}
+
+	MockStateDiff = statediff.StateObject{
+		BlockNumber: BlockNumber,
+		BlockHash:   common.HexToHash(BlockHash),
+		Nodes:       append(append(CreatedAccountDiffs, UpdatedAccountDiffs...), DeletedAccountDiffs...),
 	}
-	MockStateDiff2 = statediff.StateDiff{
-		BlockNumber:     BlockNumber2,
-		BlockHash:       common.HexToHash(BlockHash2),
-		CreatedAccounts: nil,
-		DeletedAccounts: nil,
-		UpdatedAccounts: UpdatedAccountDiffs2,
+	MockStateDiff2 = statediff.StateObject{
+		BlockNumber: BlockNumber2,
+		BlockHash:   common.HexToHash(BlockHash2),
+		Nodes:       UpdatedAccountDiffs2,
 	}
 	MockStateDiffBytes, _  = rlp.EncodeToBytes(MockStateDiff)
 	MockStateDiff2Bytes, _ = rlp.EncodeToBytes(MockStateDiff2)
@@ -144,12 +140,12 @@ var (
 	MockBlockRlp2, _ = rlp.EncodeToBytes(MockBlock2)
 
 	MockStatediffPayload = statediff.Payload{
-		BlockRlp:     MockBlockRlp,
-		StateDiffRlp: MockStateDiffBytes,
+		BlockRlp:       MockBlockRlp,
+		StateObjectRlp: MockStateDiffBytes,
 	}
 	MockStatediffPayload2 = statediff.Payload{
-		BlockRlp:     MockBlockRlp2,
-		StateDiffRlp: MockStateDiff2Bytes,
+		BlockRlp:       MockBlockRlp2,
+		StateObjectRlp: MockStateDiff2Bytes,
 	}
 
 	CreatedExpectedStorageDiff = utils.StorageDiffInput{
