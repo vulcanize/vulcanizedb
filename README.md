@@ -5,7 +5,6 @@
 
 > Vulcanize DB is a set of tools that make it easier for developers to write application-specific indexes and caches for dapps built on Ethereum.
 
-
 ## Table of Contents
 1. [Background](#background)
 1. [Install](#install)
@@ -15,15 +14,9 @@
 
 
 ## Background
-The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine
-complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by
-providing a suite of tools to ease the extraction and transformation of data into a more useful state, including
-allowing for exposing aggregate data from a suite of smart contracts.
+The same data structures and encodings that make Ethereum an effective and trust-less distributed virtual machine complicate data accessibility and usability for dApp developers. VulcanizeDB improves Ethereum data accessibility by providing a suite of tools to ease the extraction and transformation of data into a more useful state, including allowing for exposing aggregate data from a suite of smart contracts.
 
-VulanizeDB includes processes that sync, transform and expose data. Syncing involves
-querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to
-query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting
-data from VulcanizeDB's underlying Postgres database and making it accessible.
+VulanizeDB includes processes that sync, transform and expose data. Syncing involves querying an Ethereum node and then persisting core data into a Postgres database. Transforming focuses on using previously synced data to query for and transform log event and storage data for specifically configured smart contract addresses. Exposing data is a matter of getting data from VulcanizeDB's underlying Postgres database and making it accessible.
 
 ![VulcanizeDB Overview Diagram](documentation/diagrams/vdb-overview.png)
 
@@ -38,7 +31,7 @@ data from VulcanizeDB's underlying Postgres database and making it accessible.
  - Go 1.12+
  - Postgres 11.2
  - Ethereum Node
-   - [Go Ethereum](https://ethereum.github.io/go-ethereum/downloads/) (1.8.23+)
+   - Vulcanize currently requires a forked version of [Go Ethereum](https://github.com/makerdao/go-ethereum/) (1.8.23+) in order to store storage diffs.
    - [Parity 1.8.11+](https://github.com/paritytech/parity/releases)
 
 ### Building the project
@@ -54,14 +47,15 @@ Be sure you have enabled Go Modules (`export GO111MODULE=on`), and build the exe
 
 `make build`
 
-If you need to use a different dependency than what is currently defined in `go.mod`, it may helpful to look into [the replace directive](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive).
-This instruction enables you to point at a fork or the local filesystem for dependency resolution.
-
-If you are running into issues at this stage, ensure that `GOPATH` is defined in your shell.
-If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system.
-It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
+If you need to use a different dependency than what is currently defined in `go.mod`, it may helpful to look into [the replace directive](https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive). This instruction enables you to point at a fork or the local filesystem for dependency resolution. If you are running into issues at this stage, ensure that `GOPATH` is defined in your shell. If necessary, `GOPATH` can be set in `~/.bashrc` or `~/.bash_profile`, depending upon your system. It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
 ### Setting up the database
+
+**IMPORTANT NOTE - PLEASE READ**
+If you're using the [MakerDAO VulcanizeDB Transformers](https://github.com/makerdao/vdb-mcd-transformers) you should follow the migration instructions there, and use that repository for maintaining your database schema. If you follow these directions and _then_ add the mcd transformers, you'll need to reset your database using the migrations there.
+
+### Setting up the database for stand-alone users
+
 1. Install Postgres
 1. Create a superuser for yourself and make sure `psql --list` works without prompting for a password.
 1. `createdb vulcanize_public`
@@ -74,8 +68,7 @@ It can be additionally helpful to add `$GOPATH/bin` to your shell's `$PATH`.
 
     * See below for configuring additional environments
     
-In some cases (such as recent Ubuntu systems), it may be necessary to overcome failures of password authentication from
-localhost. To allow access on Ubuntu, set localhost connections via hostname, ipv4, and ipv6 from peer/md5 to trust in: /etc/postgresql/<version>/pg_hba.conf
+In some cases (such as recent Ubuntu systems), it may be necessary to overcome failures of password authentication from localhost. To allow access on Ubuntu, set localhost connections via hostname, ipv4, and ipv6 from peer/md5 to trust in: /etc/postgresql/<version>/pg_hba.conf
 
 (It should be noted that trusted auth should only be enabled on systems without sensitive data in them: development and local test databases)
 
@@ -101,31 +94,22 @@ localhost. To allow access on Ubuntu, set localhost connections via hostname, ip
         - The `ipcPath` should be the endpoint available for your project.
 
 ## Usage
+
 As mentioned above, VulcanizeDB's processes can be split into three categories: syncing, transforming and exposing data.
 
 ### Data syncing
-To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB.
-This is accomplished through the use of the `headerSync` command.
-This command is described in detail [here](documentation/data-syncing.md).
+
+To provide data for transformations, raw Ethereum data must first be synced into VulcanizeDB. This is accomplished through the use of the `headerSync` command. This command is described in detail [here](documentation/data-syncing.md).
 
 ### Data transformation
-Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to
-specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it
-follows that there are different ways to transform this data. We've started by categorizing this into Generic and
-Custom transformers:
+Data transformation uses the raw data that has been synced into Postgres to filter out and apply transformations to specific data of interest. Since there are different types of data that may be useful for observing smart contracts, it follows that there are different ways to transform this data. We've started by categorizing this into Generic and Custom transformers:
 
-- Generic Contract Transformer: Generic contract transformation can be done using a built-in command,
-`contractWatcher`, which transforms contract events provided the contract's ABI is available. It also
-provides some state variable coverage by automating polling of public methods, with some restrictions.
-`contractWatcher` is described further [here](documentation/generic-transformer.md).
+- Generic Contract Transformer: Generic contract transformation can be done using a built-in command, `contractWatcher`, which transforms contract events provided the contract's ABI is available. It also provides some state variable coverage by automating polling of public methods, with some restrictions. `contractWatcher` is described further [here](documentation/generic-transformer.md).
 
-- Custom Transformers: In many cases custom transformers will need to be written to provide
-more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and
-`composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write,
-build and run custom transformers as Go plugins can be found
-[here](documentation/custom-transformers.md).
+- Custom Transformers: In many cases custom transformers will need to be written to provide more comprehensive coverage of contract data. In this case we have provided the `compose`, `execute`, and `composeAndExecute` commands for running custom transformers from external repositories. Documentation on how to write, build and run custom transformers as Go plugins can be found [here](documentation/custom-transformers.md).
 
 ### Exposing the data
+
 [Postgraphile](https://www.graphile.org/postgraphile/) is used to expose GraphQL endpoints for our database schemas, this is described in detail [here](documentation/postgraphile.md).
 
 
