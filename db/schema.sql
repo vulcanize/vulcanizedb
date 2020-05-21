@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.10
--- Dumped by pg_dump version 10.10
+-- Dumped from database version 12.1
+-- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -30,23 +30,9 @@ CREATE SCHEMA btc;
 CREATE SCHEMA eth;
 
 
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
 SET default_tablespace = '';
 
-SET default_with_oids = false;
+SET default_table_access_method = heap;
 
 --
 -- Name: header_cids; Type: TABLE; Schema: btc; Owner: -
@@ -452,6 +438,40 @@ ALTER SEQUENCE eth.state_cids_id_seq OWNED BY eth.state_cids.id;
 
 
 --
+-- Name: state_trie_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.state_trie_cids (
+    id integer NOT NULL,
+    header_id integer NOT NULL,
+    state_path bytea,
+    state_leaf_key character varying(66),
+    node_type integer,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: state_trie_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.state_trie_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: state_trie_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.state_trie_cids_id_seq OWNED BY eth.state_trie_cids.id;
+
+
+--
 -- Name: storage_cids; Type: TABLE; Schema: eth; Owner: -
 --
 
@@ -483,6 +503,40 @@ CREATE SEQUENCE eth.storage_cids_id_seq
 --
 
 ALTER SEQUENCE eth.storage_cids_id_seq OWNED BY eth.storage_cids.id;
+
+
+--
+-- Name: storage_trie_cids; Type: TABLE; Schema: eth; Owner: -
+--
+
+CREATE TABLE eth.storage_trie_cids (
+    id integer NOT NULL,
+    state_id integer NOT NULL,
+    storage_path bytea,
+    storage_leaf_key character varying(66),
+    node_type integer,
+    cid text NOT NULL
+);
+
+
+--
+-- Name: storage_trie_cids_id_seq; Type: SEQUENCE; Schema: eth; Owner: -
+--
+
+CREATE SEQUENCE eth.storage_trie_cids_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: storage_trie_cids_id_seq; Type: SEQUENCE OWNED BY; Schema: eth; Owner: -
+--
+
+ALTER SEQUENCE eth.storage_trie_cids_id_seq OWNED BY eth.storage_trie_cids.id;
 
 
 --
@@ -1045,10 +1099,24 @@ ALTER TABLE ONLY eth.state_cids ALTER COLUMN id SET DEFAULT nextval('eth.state_c
 
 
 --
+-- Name: state_trie_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_trie_cids ALTER COLUMN id SET DEFAULT nextval('eth.state_trie_cids_id_seq'::regclass);
+
+
+--
 -- Name: storage_cids id; Type: DEFAULT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.storage_cids ALTER COLUMN id SET DEFAULT nextval('eth.storage_cids_id_seq'::regclass);
+
+
+--
+-- Name: storage_trie_cids id; Type: DEFAULT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_trie_cids ALTER COLUMN id SET DEFAULT nextval('eth.storage_trie_cids_id_seq'::regclass);
 
 
 --
@@ -1303,6 +1371,22 @@ ALTER TABLE ONLY eth.state_cids
 
 
 --
+-- Name: state_trie_cids state_trie_cids_header_id_state_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_trie_cids
+    ADD CONSTRAINT state_trie_cids_header_id_state_path_key UNIQUE (header_id, state_path);
+
+
+--
+-- Name: state_trie_cids state_trie_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_trie_cids
+    ADD CONSTRAINT state_trie_cids_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: storage_cids storage_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
 --
 
@@ -1316,6 +1400,22 @@ ALTER TABLE ONLY eth.storage_cids
 
 ALTER TABLE ONLY eth.storage_cids
     ADD CONSTRAINT storage_cids_state_id_storage_path_key UNIQUE (state_id, storage_path);
+
+
+--
+-- Name: storage_trie_cids storage_trie_cids_pkey; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_trie_cids
+    ADD CONSTRAINT storage_trie_cids_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: storage_trie_cids storage_trie_cids_state_id_storage_path_key; Type: CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_trie_cids
+    ADD CONSTRAINT storage_trie_cids_state_id_storage_path_key UNIQUE (state_id, storage_path);
 
 
 --
@@ -1625,11 +1725,27 @@ ALTER TABLE ONLY eth.state_cids
 
 
 --
+-- Name: state_trie_cids state_trie_cids_header_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.state_trie_cids
+    ADD CONSTRAINT state_trie_cids_header_id_fkey FOREIGN KEY (header_id) REFERENCES eth.header_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: storage_cids storage_cids_state_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
 --
 
 ALTER TABLE ONLY eth.storage_cids
     ADD CONSTRAINT storage_cids_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: storage_trie_cids storage_trie_cids_state_id_fkey; Type: FK CONSTRAINT; Schema: eth; Owner: -
+--
+
+ALTER TABLE ONLY eth.storage_trie_cids
+    ADD CONSTRAINT storage_trie_cids_state_id_fkey FOREIGN KEY (state_id) REFERENCES eth.state_trie_cids(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --
