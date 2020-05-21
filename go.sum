@@ -692,6 +692,8 @@ github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljT
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/vulcanize/go-ethereum v1.5.10-0.20200311182536-d07dc803d290 h1:uMWt+x6JhVT7GyL983weZSxv1zDBxvGlI9HNkcTnUeg=
 github.com/vulcanize/go-ethereum v1.5.10-0.20200311182536-d07dc803d290/go.mod h1:7oC0Ni6dosMv5pxMigm6s0hN8g4haJMBnqmmo0D9YfQ=
+github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.2 h1:ebv2bWocCmNKGnpHtRjSWoTpkgyEbRBb028PanH43H8=
+github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.2/go.mod h1:7oC0Ni6dosMv5pxMigm6s0hN8g4haJMBnqmmo0D9YfQ=
 github.com/vulcanize/go-ipfs v0.4.22-alpha h1:W+6njT14KWllMhABRFtPndqHw8SHCt5SqD4YX528kxM=
 github.com/vulcanize/go-ipfs v0.4.22-alpha/go.mod h1:uaekWWeoaA0A9Dv1LObOKCSh9kIzTpZ5RbKW4g5CQHE=
 github.com/vulcanize/go-ipfs-config v0.0.8-alpha h1:peaFvbEcPShF6ymOd8flqKkFz4YfcrNr/UOO7FmbWoQ=

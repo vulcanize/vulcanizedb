@@ -124,17 +124,17 @@ func (bfs *BackFillService) BackFill(wg *sync.WaitGroup) {
 				log.Infof("quiting %s FillGapsInSuperNode process", bfs.chain.String())
 				return
 			case <-ticker.C:
+				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)
+				if err != nil {
+					log.Errorf("%s super node db backFill RetrieveGapsInData error: %v", bfs.chain.String(), err)
+					continue
+				}
 				// spin up worker goroutines for this search pass
 				// we start and kill a new batch of workers for each pass
 				// so that we know each of the previous workers is done before we search for new gaps
 				heightsChan := make(chan []uint64)
 				for i := 1; i <= int(bfs.BatchNumber); i++ {
 					go bfs.backFill(wg, i, heightsChan)
-				}
-				gaps, err := bfs.Retriever.RetrieveGapsInData(bfs.validationLevel)
-				if err != nil {
-					log.Errorf("%s super node db backFill RetrieveGapsInData error: %v", bfs.chain.String(), err)
-					continue
 				}
 				for _, gap := range gaps {
 					log.Infof("backFilling %s data from %d to %d", bfs.chain.String(), gap.Start, gap.Stop)

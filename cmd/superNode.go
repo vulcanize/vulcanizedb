@@ -72,7 +72,6 @@ func superNode() {
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
-	defer superNode.Stop()
 	var forwardPayloadChan chan shared.ConvertedData
 	if superNodeConfig.Serve {
 		logWithCommand.Info("starting up super node servers")
