@@ -68,13 +68,17 @@ func (repository *MockHeaderRepository) CreateTransactions(headerID int64, trans
 	return repository.CreateTransactionsError
 }
 
-func (repository *MockHeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
+func (repository *MockHeaderRepository) GetHeaderByBlockNumber(blockNumber int64) (core.Header, error) {
 	repository.GetHeaderPassedBlockNumber = blockNumber
 	return core.Header{
 		Id:          repository.GetHeaderReturnID,
 		BlockNumber: blockNumber,
 		Hash:        repository.GetHeaderReturnHash,
 	}, repository.GetHeaderError
+}
+
+func (repository *MockHeaderRepository) GetHeaderByID(id int64) (core.Header, error) {
+	panic("implement me")
 }
 
 func (repository *MockHeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {

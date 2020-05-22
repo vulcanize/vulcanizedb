@@ -76,11 +76,17 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 	return txId, err
 }
 
-func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
+func (repository HeaderRepository) GetHeaderByBlockNumber(blockNumber int64) (core.Header, error) {
 	var header core.Header
 	err := repository.database.Get(&header,
 		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1`, blockNumber)
 	return header, err
+}
+
+func (repository HeaderRepository) GetHeaderByID(id int64) (core.Header, error) {
+	var header core.Header
+	headerErr := repository.database.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE id = $1`, id)
+	return header, headerErr
 }
 
 func (repository HeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {

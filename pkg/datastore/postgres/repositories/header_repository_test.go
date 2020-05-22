@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"math/big"
 	"math/rand"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/pkg/core"
@@ -345,12 +346,12 @@ var _ = Describe("Block header repository", func() {
 		})
 	})
 
-	Describe("Getting a header", func() {
+	Describe("Getting a header by block number", func() {
 		It("returns header if it exists", func() {
 			_, createErr := repo.CreateOrUpdateHeader(header)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			dbHeader, err := repo.GetHeader(header.BlockNumber)
+			dbHeader, err := repo.GetHeaderByBlockNumber(header.BlockNumber)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dbHeader.Id).NotTo(BeZero())
@@ -367,10 +368,37 @@ var _ = Describe("Block header repository", func() {
 			dbTwo := test_config.NewTestDB(test_config.NewTestNode())
 			repoTwo := repositories.NewHeaderRepository(dbTwo)
 
-			result, readErr := repoTwo.GetHeader(header.BlockNumber)
+			result, readErr := repoTwo.GetHeaderByBlockNumber(header.BlockNumber)
 
 			Expect(readErr).NotTo(HaveOccurred())
 			Expect(result.Raw).To(MatchJSON(header.Raw))
+		})
+	})
+
+	Describe("Getting a header by ID", func() {
+		It("returns header with associated ID", func() {
+			wantedHeader := core.Header{
+				BlockNumber: rand.Int63(),
+				Hash:        fakes.RandomString(64),
+				Raw:         nil,
+				Timestamp:   strconv.Itoa(rand.Int()),
+			}
+			var wantedHeaderID int64
+			wantedHeaderErr := db.Get(&wantedHeaderID, `
+				INSERT INTO public.headers (block_number, hash, block_timestamp, eth_node_id) VALUES ($1, $2, $3, $4)
+				RETURNING id`, wantedHeader.BlockNumber, wantedHeader.Hash, wantedHeader.Timestamp, db.NodeID)
+			Expect(wantedHeaderErr).NotTo(HaveOccurred())
+			wantedHeader.Id = wantedHeaderID
+
+			_, anotherHeaderErr := db.Exec(`INSERT INTO public.headers (block_number, hash, block_timestamp,
+                            eth_node_id) VALUES ($1, $2, $3, $4) RETURNING id`, rand.Int()-1, fakes.RandomString(64),
+				strconv.Itoa(rand.Int()), db.NodeID)
+			Expect(anotherHeaderErr).NotTo(HaveOccurred())
+
+			header, err := repo.GetHeaderByID(wantedHeaderID)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(header).To(Equal(wantedHeader))
 		})
 	})
 

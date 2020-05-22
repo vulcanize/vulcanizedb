@@ -185,7 +185,7 @@ func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (storage2
 }
 
 func (watcher StorageWatcher) getHeaderID(diff types.PersistedDiff) (int64, error) {
-	header, getHeaderErr := watcher.HeaderRepository.GetHeader(int64(diff.BlockHeight))
+	header, getHeaderErr := watcher.HeaderRepository.GetHeaderByBlockNumber(int64(diff.BlockHeight))
 	if getHeaderErr != nil {
 		return 0, getHeaderErr
 	}
