@@ -17,6 +17,7 @@
 package fakes
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/makerdao/vulcanizedb/pkg/core"
 	. "github.com/onsi/gomega"
 )
@@ -29,9 +30,11 @@ type MockHeaderRepository struct {
 	AllHeaders                             []core.Header
 	CreateTransactionsCalled               bool
 	CreateTransactionsError                error
-	GetHeaderError                         error
-	GetHeaderReturnHash                    string
-	GetHeaderReturnID                      int64
+	GetHeaderByBlockNumberError            error
+	GetHeaderByBlockNumberReturnHash       string
+	GetHeaderByBlockNumberReturnID         int64
+	GetHeaderByIDError                     error
+	GetHeaderByIDHeaderToReturn            core.Header
 	missingBlockNumbers                    []int64
 	headerExists                           bool
 	GetHeaderPassedBlockNumber             int64
@@ -45,57 +48,61 @@ func NewMockHeaderRepository() *MockHeaderRepository {
 	return &MockHeaderRepository{}
 }
 
-func (repository *MockHeaderRepository) SetCreateOrUpdateHeaderReturnID(id int64) {
-	repository.createOrUpdateHeaderReturnID = id
+func (mock *MockHeaderRepository) SetCreateOrUpdateHeaderReturnID(id int64) {
+	mock.createOrUpdateHeaderReturnID = id
 }
 
-func (repository *MockHeaderRepository) SetCreateOrUpdateHeaderReturnErr(err error) {
-	repository.createOrUpdateHeaderErr = err
+func (mock *MockHeaderRepository) SetCreateOrUpdateHeaderReturnErr(err error) {
+	mock.createOrUpdateHeaderErr = err
 }
 
-func (repository *MockHeaderRepository) SetMissingBlockNumbers(blockNumbers []int64) {
-	repository.missingBlockNumbers = blockNumbers
+func (mock *MockHeaderRepository) SetMissingBlockNumbers(blockNumbers []int64) {
+	mock.missingBlockNumbers = blockNumbers
 }
 
-func (repository *MockHeaderRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
-	repository.createOrUpdateHeaderCallCount++
-	repository.createOrUpdateHeaderPassedBlockNumbers = append(repository.createOrUpdateHeaderPassedBlockNumbers, header.BlockNumber)
-	return repository.createOrUpdateHeaderReturnID, repository.createOrUpdateHeaderErr
+func (mock *MockHeaderRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
+	mock.createOrUpdateHeaderCallCount++
+	mock.createOrUpdateHeaderPassedBlockNumbers = append(mock.createOrUpdateHeaderPassedBlockNumbers, header.BlockNumber)
+	return mock.createOrUpdateHeaderReturnID, mock.createOrUpdateHeaderErr
 }
 
-func (repository *MockHeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
-	repository.CreateTransactionsCalled = true
-	return repository.CreateTransactionsError
+func (mock *MockHeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
+	mock.CreateTransactionsCalled = true
+	return mock.CreateTransactionsError
 }
 
-func (repository *MockHeaderRepository) GetHeaderByBlockNumber(blockNumber int64) (core.Header, error) {
-	repository.GetHeaderPassedBlockNumber = blockNumber
-	return core.Header{
-		Id:          repository.GetHeaderReturnID,
-		BlockNumber: blockNumber,
-		Hash:        repository.GetHeaderReturnHash,
-	}, repository.GetHeaderError
-}
-
-func (repository *MockHeaderRepository) GetHeaderByID(id int64) (core.Header, error) {
+func (mock *MockHeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
 	panic("implement me")
 }
 
-func (repository *MockHeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
-	repository.GetHeadersInRangeStartingBlock = startingBlock
-	repository.GetHeadersInRangeEndingBlock = endingBlock
-	return repository.AllHeaders, repository.GetHeaderError
+func (mock *MockHeaderRepository) GetHeaderByBlockNumber(blockNumber int64) (core.Header, error) {
+	mock.GetHeaderPassedBlockNumber = blockNumber
+	return core.Header{
+		Id:          mock.GetHeaderByBlockNumberReturnID,
+		BlockNumber: blockNumber,
+		Hash:        mock.GetHeaderByBlockNumberReturnHash,
+	}, mock.GetHeaderByBlockNumberError
 }
 
-func (repository *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
-	return repository.missingBlockNumbers, nil
+func (mock *MockHeaderRepository) GetHeaderByID(id int64) (core.Header, error) {
+	return mock.GetHeaderByIDHeaderToReturn, mock.GetHeaderByIDError
 }
 
-func (repository *MockHeaderRepository) GetMostRecentHeaderBlockNumber() (int64, error) {
-	return repository.MostRecentHeaderBlockNumber, repository.MostRecentHeaderBlockNumberErr
+func (mock *MockHeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
+	mock.GetHeadersInRangeStartingBlock = startingBlock
+	mock.GetHeadersInRangeEndingBlock = endingBlock
+	return mock.AllHeaders, mock.GetHeaderByBlockNumberError
 }
 
-func (repository *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(times int, blockNumbers []int64) {
-	Expect(repository.createOrUpdateHeaderCallCount).To(Equal(times))
-	Expect(repository.createOrUpdateHeaderPassedBlockNumbers).To(Equal(blockNumbers))
+func (mock *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
+	return mock.missingBlockNumbers, nil
+}
+
+func (mock *MockHeaderRepository) GetMostRecentHeaderBlockNumber() (int64, error) {
+	return mock.MostRecentHeaderBlockNumber, mock.MostRecentHeaderBlockNumberErr
+}
+
+func (mock *MockHeaderRepository) AssertCreateOrUpdateHeaderCallCountAndPassedBlockNumbers(times int, blockNumbers []int64) {
+	Expect(mock.createOrUpdateHeaderCallCount).To(Equal(times))
+	Expect(mock.createOrUpdateHeaderPassedBlockNumbers).To(Equal(blockNumbers))
 }

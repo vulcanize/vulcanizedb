@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	. "github.com/onsi/gomega"
@@ -67,7 +68,7 @@ func getFakeTransactionFromHash(txHash common.Hash) core.TransactionModel {
 	}
 }
 
-func CreateMatchingTx(log types.Log, headerID int64, headerRepo repositories.HeaderRepository) {
+func CreateMatchingTx(log types.Log, headerID int64, headerRepo datastore.HeaderRepository) {
 	fakeHashTx := getFakeTransactionFromHash(log.TxHash)
 	txErr := headerRepo.CreateTransactions(headerID, []core.TransactionModel{fakeHashTx})
 	Expect(txErr).NotTo(HaveOccurred())

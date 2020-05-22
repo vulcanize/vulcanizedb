@@ -261,7 +261,7 @@ var _ = Describe("Storage Watcher", func() {
 				}
 				mockDiffsRepository.GetNewDiffsDiffs = []types.PersistedDiff{diffWithoutHeader}
 				mockDiffsRepository.GetNewDiffsErrors = []error{nil, fakes.FakeError}
-				mockHeaderRepository.GetHeaderError = errors.New("no matching header")
+				mockHeaderRepository.GetHeaderByBlockNumberError = errors.New("no matching header")
 
 				err := storageWatcher.Execute()
 
@@ -287,8 +287,8 @@ var _ = Describe("Storage Watcher", func() {
 					}
 
 					fakeHeaderID := rand.Int63()
-					mockHeaderRepository.GetHeaderReturnID = fakeHeaderID
-					mockHeaderRepository.GetHeaderReturnHash = fakeBlockHash.Hex()
+					mockHeaderRepository.GetHeaderByBlockNumberReturnID = fakeHeaderID
+					mockHeaderRepository.GetHeaderByBlockNumberReturnHash = fakeBlockHash.Hex()
 
 					fakePersistedDiff = types.PersistedDiff{
 						RawDiff:  fakeRawDiff,

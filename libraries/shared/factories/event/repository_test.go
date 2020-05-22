@@ -18,22 +18,22 @@ package event_test
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/big"
 )
 
 var _ = Describe("Repository", func() {
-	var db *postgres.DB
+	var db = test_config.NewTestDB(test_config.NewTestNode())
 
 	BeforeEach(func() {
-		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 	})
 
@@ -48,7 +48,7 @@ var _ = Describe("Repository", func() {
 
 		var (
 			headerID, logID  int64
-			headerRepository repositories.HeaderRepository
+			headerRepository datastore.HeaderRepository
 			testModel        event.InsertionModel
 		)
 

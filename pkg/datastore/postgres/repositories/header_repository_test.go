@@ -24,6 +24,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
@@ -34,7 +35,7 @@ import (
 var _ = Describe("Block header repository", func() {
 	var (
 		db     = test_config.NewTestDB(test_config.NewTestNode())
-		repo   repositories.HeaderRepository
+		repo   datastore.HeaderRepository
 		header core.Header
 	)
 
@@ -131,80 +132,6 @@ var _ = Describe("Block header repository", func() {
 			Expect(readErr).NotTo(HaveOccurred())
 			Expect(len(dbHeaderHashes)).To(Equal(1))
 			Expect(dbHeaderHashes[0]).To(Equal(headerTwo.Hash))
-		})
-	})
-
-	Describe("creating a receipt", func() {
-		It("adds a receipt in a tx", func() {
-			headerID, err := repo.CreateOrUpdateHeader(header)
-			Expect(err).NotTo(HaveOccurred())
-			fromAddress := common.HexToAddress("0x1234")
-			toAddress := common.HexToAddress("0x5678")
-			txHash := common.HexToHash("0x9876")
-			txIndex := big.NewInt(123)
-			transaction := core.TransactionModel{
-				Data:     []byte{},
-				From:     fromAddress.Hex(),
-				GasLimit: 0,
-				GasPrice: 0,
-				Hash:     txHash.Hex(),
-				Nonce:    0,
-				Raw:      []byte{},
-				To:       toAddress.Hex(),
-				TxIndex:  txIndex.Int64(),
-				Value:    "0",
-			}
-			tx, err := db.Beginx()
-			Expect(err).ToNot(HaveOccurred())
-			txId, txErr := repo.CreateTransactionInTx(tx, headerID, transaction)
-			Expect(txErr).ToNot(HaveOccurred())
-
-			contractAddr := common.HexToAddress("0x1234")
-			stateRoot := common.HexToHash("0x5678")
-			receipt := core.Receipt{
-				ContractAddress:   contractAddr.Hex(),
-				TxHash:            txHash.Hex(),
-				GasUsed:           10,
-				CumulativeGasUsed: 100,
-				StateRoot:         stateRoot.Hex(),
-				Rlp:               []byte{1, 2, 3},
-			}
-
-			receiptRepo := repositories.ReceiptRepository{}
-			_, receiptErr := receiptRepo.CreateReceiptInTx(headerID, txId, receipt, tx)
-			Expect(receiptErr).ToNot(HaveOccurred())
-			commitErr := tx.Commit()
-			Expect(commitErr).ToNot(HaveOccurred())
-
-			type idModel struct {
-				TransactionId     int64  `db:"transaction_id"`
-				ContractAddressId int64  `db:"contract_address_id"`
-				CumulativeGasUsed uint64 `db:"cumulative_gas_used"`
-				GasUsed           uint64 `db:"gas_used"`
-				StateRoot         string `db:"state_root"`
-				Status            int
-				TxHash            string `db:"tx_hash"`
-				Rlp               []byte `db:"rlp"`
-			}
-
-			var addressId int64
-			getAddressErr := db.Get(&addressId, `SELECT id FROM addresses WHERE address = $1`, contractAddr.Hex())
-			Expect(getAddressErr).NotTo(HaveOccurred())
-
-			var dbReceipt idModel
-			getReceiptErr := db.Get(&dbReceipt,
-				`SELECT transaction_id, contract_address_id, cumulative_gas_used, gas_used, state_root, status, tx_hash, rlp
-				FROM public.receipts WHERE header_id = $1`, headerID)
-			Expect(getReceiptErr).NotTo(HaveOccurred())
-
-			Expect(dbReceipt.TransactionId).To(Equal(txId))
-			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
-			Expect(dbReceipt.ContractAddressId).To(Equal(addressId))
-			Expect(dbReceipt.CumulativeGasUsed).To(Equal(uint64(100)))
-			Expect(dbReceipt.GasUsed).To(Equal(uint64(10)))
-			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
-			Expect(dbReceipt.Status).To(Equal(0))
-			Expect(dbReceipt.Rlp).To(Equal([]byte{1, 2, 3}))
 		})
 	})
 
@@ -436,7 +363,7 @@ var _ = Describe("Block header repository", func() {
 	})
 
 	Describe("Getting missing headers", func() {
-		It("returns block numbers for headers not in the database", func() {
+		It("returns block numbers for headers not in the db", func() {
 			_, createOneErr := repo.CreateOrUpdateHeader(fakes.GetFakeHeader(1))
 			Expect(createOneErr).NotTo(HaveOccurred())
 

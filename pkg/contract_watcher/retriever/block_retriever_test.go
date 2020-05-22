@@ -20,19 +20,22 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/retriever"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Block Retriever", func() {
-	var db *postgres.DB
-	var r retriever.BlockRetriever
-	var headerRepository repositories.HeaderRepository
+	var (
+		db               = test_config.NewTestDB(test_config.NewTestNode())
+		r                retriever.BlockRetriever
+		headerRepository datastore.HeaderRepository
+	)
 
 	BeforeEach(func() {
-		db, _ = test_helpers.SetupDBandBC()
+		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		r = retriever.NewBlockRetriever(db)
 	})

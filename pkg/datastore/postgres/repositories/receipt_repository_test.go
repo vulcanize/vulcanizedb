@@ -17,54 +17,41 @@
 package repositories_test
 
 import (
-	"encoding/json"
 	"math/big"
+	"math/rand"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
+	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
+	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	"github.com/makerdao/vulcanizedb/pkg/fakes"
+	"github.com/makerdao/vulcanizedb/test_config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"github.com/makerdao/vulcanizedb/pkg/core"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
-	"github.com/makerdao/vulcanizedb/test_config"
 )
 
-var _ = Describe("Header Sync Receipt Repo", func() {
+var _ = Describe("Receipt Repository", func() {
 	var (
-		rawHeader   []byte
-		err         error
-		timestamp   string
-		db          *postgres.DB
+		db          = test_config.NewTestDB(test_config.NewTestNode())
 		receiptRepo repositories.ReceiptRepository
-		headerRepo  repositories.HeaderRepository
+		headerRepo  datastore.HeaderRepository
 		header      core.Header
 	)
 
 	BeforeEach(func() {
-		rawHeader, err = json.Marshal(types.Header{})
-		Expect(err).NotTo(HaveOccurred())
-		timestamp = big.NewInt(123456789).String()
-
-		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		receiptRepo = repositories.ReceiptRepository{}
 		headerRepo = repositories.NewHeaderRepository(db)
-		header = core.Header{
-			BlockNumber: 100,
-			Hash:        common.BytesToHash([]byte{1, 2, 3, 4, 5}).Hex(),
-			Raw:         rawHeader,
-			Timestamp:   timestamp,
-		}
+		header = fakes.GetFakeHeader(rand.Int63())
 	})
+
 	Describe("creating a receipt", func() {
 		It("adds a receipt in a tx", func() {
 			headerID, err := headerRepo.CreateOrUpdateHeader(header)
 			Expect(err).NotTo(HaveOccurred())
-			fromAddress := common.HexToAddress("0x1234")
-			toAddress := common.HexToAddress("0x5678")
-			txHash := common.HexToHash("0x9876")
+			fromAddress := test_data.FakeAddress()
+			toAddress := test_data.FakeAddress()
+			txHash := test_data.FakeHash()
 			txIndex := big.NewInt(123)
 			transaction := core.TransactionModel{
 				Data:     []byte{},
@@ -83,21 +70,26 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 			txId, txErr := headerRepo.CreateTransactionInTx(tx, headerID, transaction)
 			Expect(txErr).ToNot(HaveOccurred())
 
-			contractAddr := common.HexToAddress("0x1234")
-			stateRoot := common.HexToHash("0x5678")
 			receipt := core.Receipt{
-				ContractAddress:   contractAddr.Hex(),
+				ContractAddress:   fromAddress.Hex(),
 				TxHash:            txHash.Hex(),
-				GasUsed:           10,
-				CumulativeGasUsed: 100,
-				StateRoot:         stateRoot.Hex(),
-				Rlp:               []byte{1, 2, 3},
+				GasUsed:           uint64(rand.Int31()),
+				CumulativeGasUsed: uint64(rand.Int31()),
+				StateRoot:         test_data.FakeHash().Hex(),
+				Rlp:               test_data.FakeHash().Bytes(),
 			}
 
 			_, receiptErr := receiptRepo.CreateReceiptInTx(headerID, txId, receipt, tx)
 			Expect(receiptErr).ToNot(HaveOccurred())
-			commitErr := tx.Commit()
-			Expect(commitErr).ToNot(HaveOccurred())
+			if receiptErr == nil {
+				// this hangs if called when receiptsErr != nil
+				commitErr := tx.Commit()
+				Expect(commitErr).ToNot(HaveOccurred())
+			} else {
+				// lookup on public.receipts below hangs if tx is still open
+				rollbackErr := tx.Rollback()
+				Expect(rollbackErr).NotTo(HaveOccurred())
+			}
 
 			type idModel struct {
 				TransactionId     int64  `db:"transaction_id"`
@@ -111,7 +103,7 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 			}
 
 			var addressId int64
-			getAddressErr := db.Get(&addressId, `SELECT id FROM addresses WHERE address = $1`, contractAddr.Hex())
+			getAddressErr := db.Get(&addressId, `SELECT id FROM addresses WHERE address = $1`, fromAddress.Hex())
 			Expect(getAddressErr).NotTo(HaveOccurred())
 
 			var dbReceipt idModel
@@ -123,11 +115,11 @@ var _ = Describe("Header Sync Receipt Repo", func() {
 			Expect(dbReceipt.TransactionId).To(Equal(txId))
 			Expect(dbReceipt.TxHash).To(Equal(txHash.Hex()))
 			Expect(dbReceipt.ContractAddressId).To(Equal(addressId))
-			Expect(dbReceipt.CumulativeGasUsed).To(Equal(uint64(100)))
-			Expect(dbReceipt.GasUsed).To(Equal(uint64(10)))
-			Expect(dbReceipt.StateRoot).To(Equal(stateRoot.Hex()))
+			Expect(dbReceipt.CumulativeGasUsed).To(Equal(receipt.CumulativeGasUsed))
+			Expect(dbReceipt.GasUsed).To(Equal(receipt.GasUsed))
+			Expect(dbReceipt.StateRoot).To(Equal(receipt.StateRoot))
 			Expect(dbReceipt.Status).To(Equal(0))
-			Expect(dbReceipt.Rlp).To(Equal([]byte{1, 2, 3}))
+			Expect(dbReceipt.Rlp).To(Equal(receipt.Rlp))
 		})
 	})
 })
