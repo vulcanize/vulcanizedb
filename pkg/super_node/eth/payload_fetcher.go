@@ -38,34 +38,41 @@ type PayloadFetcher struct {
 	// http.Client is thread-safe
 	client  BatchClient
 	timeout time.Duration
+	params  statediff.Params
 }
 
 const method = "statediff_stateDiffAt"
 
-// NewStateDiffFetcher returns a PayloadFetcher
+// NewPayloadFetcher returns a PayloadFetcher
 func NewPayloadFetcher(bc BatchClient, timeout time.Duration) *PayloadFetcher {
 	return &PayloadFetcher{
 		client:  bc,
 		timeout: timeout,
+		params: statediff.Params{
+			IncludeReceipts:          true,
+			IncludeTD:                true,
+			IncludeBlock:             true,
+			IntermediateStateNodes:   true,
+			IntermediateStorageNodes: true,
+		},
 	}
 }
 
 // FetchAt fetches the statediff payloads at the given block heights
-// Calls StateDiffAt(ctx context.Context, blockNumber uint64) (*Payload, error)
+// Calls StateDiffAt(ctx context.Context, blockNumber uint64, params Params) (*Payload, error)
 func (fetcher *PayloadFetcher) FetchAt(blockHeights []uint64) ([]shared.RawChainData, error) {
 	batch := make([]rpc.BatchElem, 0)
 	for _, height := range blockHeights {
 		batch = append(batch, rpc.BatchElem{
 			Method: method,
-			Args:   []interface{}{height},
+			Args:   []interface{}{height, fetcher.params},
 			Result: new(statediff.Payload),
 		})
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), fetcher.timeout)
 	defer cancel()
-	batchErr := fetcher.client.BatchCallContext(ctx, batch)
-	if batchErr != nil {
-		return nil, fmt.Errorf("ethereum PayloadFetcher batch err for block range %d-%d: %s", blockHeights[0], blockHeights[len(blockHeights)-1], batchErr.Error())
+	if err := fetcher.client.BatchCallContext(ctx, batch); err != nil {
+		return nil, fmt.Errorf("ethereum PayloadFetcher batch err for block range %d-%d: %s", blockHeights[0], blockHeights[len(blockHeights)-1], err.Error())
 	}
 	results := make([]shared.RawChainData, 0, len(blockHeights))
 	for _, batchElem := range batch {

@@ -124,8 +124,8 @@ var (
 	storageCID     = "mockStorageCID1"
 	storagePath    = []byte{'\x01'}
 	storageKey     = crypto.Keccak256Hash(common.Hex2Bytes("0x0000000000000000000000000000000000000000000000000000000000000000"))
-	storageModels1 = map[common.Hash][]eth2.StorageNodeModel{
-		crypto.Keccak256Hash(state1Path): {
+	storageModels1 = map[string][]eth2.StorageNodeModel{
+		common.Bytes2Hex(state1Path): {
 			{
 				CID:        storageCID,
 				StorageKey: storageKey.String(),

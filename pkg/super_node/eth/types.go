@@ -37,7 +37,7 @@ type ConvertedPayload struct {
 	Receipts        types.Receipts
 	ReceiptMetaData []ReceiptModel
 	StateNodes      []TrieNode
-	StorageNodes    map[common.Hash][]TrieNode
+	StorageNodes    map[string][]TrieNode
 }
 
 // Height satisfies the StreamedIPLDs interface
@@ -62,8 +62,8 @@ type CIDPayload struct {
 	TransactionCIDs []TxModel
 	ReceiptCIDs     map[common.Hash]ReceiptModel
 	StateNodeCIDs   []StateNodeModel
-	StateAccounts   map[common.Hash]StateAccountModel
-	StorageNodeCIDs map[common.Hash][]StorageNodeModel
+	StateAccounts   map[string]StateAccountModel
+	StorageNodeCIDs map[string][]StorageNodeModel
 }
 
 // CIDWrapper is used to direct fetching of IPLDs from IPFS

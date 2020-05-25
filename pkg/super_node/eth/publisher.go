@@ -22,7 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/statediff"
 
@@ -206,9 +205,9 @@ func (pub *IPLDPublisher) publishReceipts(receipts []*ipld.EthReceipt, receiptTr
 	return rctCids, nil
 }
 
-func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, map[common.Hash]StateAccountModel, error) {
+func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeModel, map[string]StateAccountModel, error) {
 	stateNodeCids := make([]StateNodeModel, 0, len(stateNodes))
-	stateAccounts := make(map[common.Hash]StateAccountModel)
+	stateAccounts := make(map[string]StateAccountModel)
 	for _, stateNode := range stateNodes {
 		node, err := ipld.FromStateTrieRLP(stateNode.Value)
 		if err != nil {
@@ -238,8 +237,8 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 				return nil, nil, err
 			}
 			// Map state account to the state path hash
-			statePathHash := crypto.Keccak256Hash(stateNode.Path)
-			stateAccounts[statePathHash] = StateAccountModel{
+			statePath := common.Bytes2Hex(stateNode.Path)
+			stateAccounts[statePath] = StateAccountModel{
 				Balance:     account.Balance.String(),
 				Nonce:       account.Nonce,
 				CodeHash:    account.CodeHash,
@@ -250,10 +249,10 @@ func (pub *IPLDPublisher) publishStateNodes(stateNodes []TrieNode) ([]StateNodeM
 	return stateNodeCids, stateAccounts, nil
 }
 
-func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]TrieNode) (map[common.Hash][]StorageNodeModel, error) {
-	storageLeafCids := make(map[common.Hash][]StorageNodeModel)
-	for pathHash, storageTrie := range storageNodes {
-		storageLeafCids[pathHash] = make([]StorageNodeModel, 0, len(storageTrie))
+func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[string][]TrieNode) (map[string][]StorageNodeModel, error) {
+	storageLeafCids := make(map[string][]StorageNodeModel)
+	for path, storageTrie := range storageNodes {
+		storageLeafCids[path] = make([]StorageNodeModel, 0, len(storageTrie))
 		for _, storageNode := range storageTrie {
 			node, err := ipld.FromStorageTrieRLP(storageNode.Value)
 			if err != nil {
@@ -264,7 +263,7 @@ func (pub *IPLDPublisher) publishStorageNodes(storageNodes map[common.Hash][]Tri
 				return nil, err
 			}
 			// Map storage node cids to the state path hash
-			storageLeafCids[pathHash] = append(storageLeafCids[pathHash], StorageNodeModel{
+			storageLeafCids[path] = append(storageLeafCids[path], StorageNodeModel{
 				Path:       storageNode.Path,
 				StorageKey: storageNode.LeafKey.Hex(),
 				CID:        cid,

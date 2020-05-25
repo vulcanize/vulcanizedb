@@ -33,13 +33,14 @@ import (
 type MockStoragediffStreamer struct {
 	subscribeError    error
 	PassedPayloadChan chan statediff.Payload
+	PassedParams      statediff.Params
 	streamPayloads    []statediff.Payload
 }
 
-func (streamer *MockStoragediffStreamer) Stream(statediffPayloadChan chan statediff.Payload) (*rpc.ClientSubscription, error) {
+func (streamer *MockStoragediffStreamer) Stream(statediffPayloadChan chan statediff.Payload, params statediff.Params) (*rpc.ClientSubscription, error) {
 	clientSubscription := rpc.ClientSubscription{}
 	streamer.PassedPayloadChan = statediffPayloadChan
-
+	streamer.PassedParams = params
 	go func() {
 		for _, payload := range streamer.streamPayloads {
 			streamer.PassedPayloadChan <- payload
@@ -148,19 +149,19 @@ var _ = Describe("Geth RPC Storage Fetcher", func() {
 
 	It("adds errors to error channel if formatting the diff as a StateDiff object fails", func(done Done) {
 		accountDiffs := test_data.CreatedAccountDiffs
-		accountDiffs[0].Storage = []statediff.StorageDiff{test_data.StorageWithBadValue}
+		accountDiffs[0].StorageNodes = []statediff.StorageNode{test_data.StorageWithBadValue}
 
-		stateDiff := statediff.StateDiff{
-			BlockNumber:     test_data.BlockNumber,
-			BlockHash:       common.HexToHash(test_data.BlockHash),
-			CreatedAccounts: accountDiffs,
+		stateDiff := statediff.StateObject{
+			BlockNumber: test_data.BlockNumber,
+			BlockHash:   common.HexToHash(test_data.BlockHash),
+			Nodes:       accountDiffs,
 		}
 
 		stateDiffRlp, err := rlp.EncodeToBytes(stateDiff)
 		Expect(err).NotTo(HaveOccurred())
 
 		badStatediffPayload := statediff.Payload{
-			StateDiffRlp: stateDiffRlp,
+			StateObjectRlp: stateDiffRlp,
 		}
 		streamer.SetPayloads([]statediff.Payload{badStatediffPayload})
 

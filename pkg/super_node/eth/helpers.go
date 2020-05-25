@@ -26,6 +26,8 @@ func ResolveFromNodeType(nodeType statediff.NodeType) int {
 		return 1
 	case statediff.Leaf:
 		return 2
+	case statediff.Removed:
+		return 3
 	default:
 		return -1
 	}
@@ -39,6 +41,8 @@ func ResolveToNodeType(nodeType int) statediff.NodeType {
 		return statediff.Extension
 	case 2:
 		return statediff.Leaf
+	case 3:
+		return statediff.Removed
 	default:
 		return statediff.Unknown
 	}

@@ -16,6 +16,8 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -85,15 +87,23 @@ func superNode() {
 			logWithCommand.Fatal(err)
 		}
 	}
+	var backFiller super_node.BackFillInterface
 	if superNodeConfig.BackFill {
 		logWithCommand.Debug("initializing new super node backfill service")
-		backFiller, err := super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
+		backFiller, err = super_node.NewBackFillService(superNodeConfig, forwardPayloadChan)
 		if err != nil {
 			logWithCommand.Fatal(err)
 		}
 		logWithCommand.Info("starting up super node backfill process")
 		backFiller.BackFill(wg)
 	}
+	shutdown := make(chan os.Signal)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown
+	if superNodeConfig.BackFill {
+		backFiller.Stop()
+	}
+	superNode.Stop()
 	wg.Wait()
 }
 

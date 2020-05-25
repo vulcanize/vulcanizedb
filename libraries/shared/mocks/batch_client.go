@@ -51,12 +51,12 @@ func (mc *BackFillerClient) BatchCall(batch []client.BatchElem) error {
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}
 	for _, batchElem := range batch {
-		if len(batchElem.Args) != 1 {
-			return errors.New("expected batch elem to contain single argument")
+		if len(batchElem.Args) < 1 {
+			return errors.New("expected batch elem to contain an argument(s)")
 		}
 		blockHeight, ok := batchElem.Args[0].(uint64)
 		if !ok {
-			return errors.New("expected batch elem argument to be a uint64")
+			return errors.New("expected first batch elem argument to be a uint64")
 		}
 		err := json.Unmarshal(mc.MappedStateDiffAt[blockHeight], batchElem.Result)
 		if err != nil {
@@ -72,12 +72,12 @@ func (mc *BackFillerClient) BatchCallContext(ctx context.Context, batch []rpc.Ba
 		return errors.New("mockclient needs to be initialized with statediff payloads and errors")
 	}
 	for _, batchElem := range batch {
-		if len(batchElem.Args) != 1 {
-			return errors.New("expected batch elem to contain single argument")
+		if len(batchElem.Args) < 1 {
+			return errors.New("expected batch elem to contain an argument(s)")
 		}
 		blockHeight, ok := batchElem.Args[0].(uint64)
 		if !ok {
-			return errors.New("expected batch elem argument to be a uint64")
+			return errors.New("expected batch elem first argument to be a uint64")
 		}
 		err := json.Unmarshal(mc.MappedStateDiffAt[blockHeight], batchElem.Result)
 		if err != nil {

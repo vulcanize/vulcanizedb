@@ -120,16 +120,16 @@ func (bf *backFiller) backFillRange(blockHeights []uint64, diffChan chan utils.S
 		errChan <- fetchErr
 	}
 	for _, payload := range payloads {
-		stateDiff := new(statediff.StateDiff)
-		stateDiffDecodeErr := rlp.DecodeBytes(payload.StateDiffRlp, stateDiff)
+		stateDiff := new(statediff.StateObject)
+		stateDiffDecodeErr := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff)
 		if stateDiffDecodeErr != nil {
 			errChan <- stateDiffDecodeErr
 			continue
 		}
 		accounts := utils.GetAccountsFromDiff(*stateDiff)
 		for _, account := range accounts {
-			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.Storage), common.BytesToHash(account.LeafKey).Hex()))
-			for _, storage := range account.Storage {
+			logrus.Trace(fmt.Sprintf("iterating through %d Storage values on account with key %s", len(account.StorageNodes), common.BytesToHash(account.LeafKey).Hex()))
+			for _, storage := range account.StorageNodes {
 				diff, formatErr := utils.FromGethStateDiff(account, stateDiff, storage)
 				if formatErr != nil {
 					logrus.Error("failed to format utils.StorageDiff from storage with key: ", common.BytesToHash(storage.LeafKey), "from account with key: ", common.BytesToHash(account.LeafKey))

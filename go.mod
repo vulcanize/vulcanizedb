@@ -98,4 +98,4 @@ replace github.com/ipfs/go-ipfs v0.4.22 => github.com/vulcanize/go-ipfs v0.4.22-
 
 replace github.com/ipfs/go-ipfs-config v0.0.3 => github.com/vulcanize/go-ipfs-config v0.0.8-alpha
 
-replace github.com/ethereum/go-ethereum v1.9.1 => github.com/vulcanize/go-ethereum v1.5.10-0.20200311182536-d07dc803d290
+replace github.com/ethereum/go-ethereum v1.9.1 => github.com/vulcanize/go-ethereum v1.9.11-statediff-0.0.2

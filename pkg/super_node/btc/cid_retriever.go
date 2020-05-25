@@ -44,21 +44,21 @@ func NewCIDRetriever(db *postgres.DB) *CIDRetriever {
 }
 
 // RetrieveFirstBlockNumber is used to retrieve the first block number in the db
-func (ecr *CIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
+func (bcr *CIDRetriever) RetrieveFirstBlockNumber() (int64, error) {
 	var blockNumber int64
-	err := ecr.db.Get(&blockNumber, "SELECT block_number FROM btc.header_cids ORDER BY block_number ASC LIMIT 1")
+	err := bcr.db.Get(&blockNumber, "SELECT block_number FROM btc.header_cids ORDER BY block_number ASC LIMIT 1")
 	return blockNumber, err
 }
 
 // RetrieveLastBlockNumber is used to retrieve the latest block number in the db
-func (ecr *CIDRetriever) RetrieveLastBlockNumber() (int64, error) {
+func (bcr *CIDRetriever) RetrieveLastBlockNumber() (int64, error) {
 	var blockNumber int64
-	err := ecr.db.Get(&blockNumber, "SELECT block_number FROM btc.header_cids ORDER BY block_number DESC LIMIT 1 ")
+	err := bcr.db.Get(&blockNumber, "SELECT block_number FROM btc.header_cids ORDER BY block_number DESC LIMIT 1 ")
 	return blockNumber, err
 }
 
 // Retrieve is used to retrieve all of the CIDs which conform to the passed StreamFilters
-func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) ([]shared.CIDsForFetching, bool, error) {
+func (bcr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumber int64) ([]shared.CIDsForFetching, bool, error) {
 	streamFilter, ok := filter.(*SubscriptionSettings)
 	if !ok {
 		return nil, true, fmt.Errorf("btc retriever expected filter type %T got %T", &SubscriptionSettings{}, filter)
@@ -66,7 +66,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 	log.Debug("retrieving cids")
 
 	// Begin new db tx
-	tx, err := ecr.db.Beginx()
+	tx, err := bcr.db.Beginx()
 	if err != nil {
 		return nil, true, err
 	}
@@ -82,7 +82,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 	}()
 
 	// Retrieve cached header CIDs
-	headers, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
+	headers, err := bcr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
 		log.Error("header cid retrieval error")
 		return nil, true, err
@@ -98,7 +98,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 		}
 		// Retrieve cached trx CIDs
 		if !streamFilter.TxFilter.Off {
-			cw.Transactions, err = ecr.RetrieveTxCIDs(tx, streamFilter.TxFilter, header.ID)
+			cw.Transactions, err = bcr.RetrieveTxCIDs(tx, streamFilter.TxFilter, header.ID)
 			if err != nil {
 				log.Error("transaction cid retrieval error")
 				return nil, true, err
@@ -114,7 +114,7 @@ func (ecr *CIDRetriever) Retrieve(filter shared.SubscriptionSettings, blockNumbe
 }
 
 // RetrieveHeaderCIDs retrieves and returns all of the header cids at the provided blockheight
-func (ecr *CIDRetriever) RetrieveHeaderCIDs(tx *sqlx.Tx, blockNumber int64) ([]HeaderModel, error) {
+func (bcr *CIDRetriever) RetrieveHeaderCIDs(tx *sqlx.Tx, blockNumber int64) ([]HeaderModel, error) {
 	log.Debug("retrieving header cids for block ", blockNumber)
 	headers := make([]HeaderModel, 0)
 	pgStr := `SELECT * FROM btc.header_cids
@@ -124,7 +124,7 @@ func (ecr *CIDRetriever) RetrieveHeaderCIDs(tx *sqlx.Tx, blockNumber int64) ([]H
 
 // RetrieveTxCIDs retrieves and returns all of the trx cids at the provided blockheight that conform to the provided filter parameters
 // also returns the ids for the returned transaction cids
-func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID int64) ([]TxModel, error) {
+func (bcr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID int64) ([]TxModel, error) {
 	log.Debug("retrieving transaction cids for header id ", headerID)
 	args := make([]interface{}, 0, 3)
 	results := make([]TxModel, 0)
@@ -168,7 +168,22 @@ func (ecr *CIDRetriever) RetrieveTxCIDs(tx *sqlx.Tx, txFilter TxFilter, headerID
 }
 
 // RetrieveGapsInData is used to find the the block numbers at which we are missing data in the db
-func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
+func (bcr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, error) {
+	log.Info("searching for gaps in the btc super node database")
+	startingBlock, err := bcr.RetrieveFirstBlockNumber()
+	if err != nil {
+		return nil, fmt.Errorf("btc CIDRetriever RetrieveFirstBlockNumber error: %v", err)
+	}
+	var initialGap []shared.Gap
+	if startingBlock != 0 {
+		stop := uint64(startingBlock - 1)
+		log.Infof("found gap at the beginning of the btc sync from 0 to %d", stop)
+		initialGap = []shared.Gap{{
+			Start: 0,
+			Stop:  stop,
+		}}
+	}
+
 	pgStr := `SELECT header_cids.block_number + 1 AS start, min(fr.block_number) - 1 AS stop FROM btc.header_cids
 				LEFT JOIN btc.header_cids r on btc.header_cids.block_number = r.block_number - 1
 				LEFT JOIN btc.header_cids fr on btc.header_cids.block_number < fr.block_number
@@ -178,7 +193,7 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 		Start uint64 `db:"start"`
 		Stop  uint64 `db:"stop"`
 	}, 0)
-	if err := ecr.db.Select(&results, pgStr); err != nil && err != sql.ErrNoRows {
+	if err := bcr.db.Select(&results, pgStr); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	emptyGaps := make([]shared.Gap, len(results))
@@ -195,18 +210,18 @@ func (ecr *CIDRetriever) RetrieveGapsInData(validationLevel int) ([]shared.Gap, 
 			WHERE times_validated < $1
 			ORDER BY block_number`
 	var heights []uint64
-	if err := ecr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
+	if err := bcr.db.Select(&heights, pgStr, validationLevel); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	return append(emptyGaps, utils.MissingHeightsToGaps(heights)...), nil
+	return append(append(initialGap, emptyGaps...), utils.MissingHeightsToGaps(heights)...), nil
 }
 
 // RetrieveBlockByHash returns all of the CIDs needed to compose an entire block, for a given block hash
-func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel, []TxModel, error) {
+func (bcr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel, []TxModel, error) {
 	log.Debug("retrieving block cids for block hash ", blockHash.String())
 
 	// Begin new db tx
-	tx, err := ecr.db.Beginx()
+	tx, err := bcr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, err
 	}
@@ -221,12 +236,12 @@ func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel
 		}
 	}()
 
-	headerCID, err := ecr.RetrieveHeaderCIDByHash(tx, blockHash)
+	headerCID, err := bcr.RetrieveHeaderCIDByHash(tx, blockHash)
 	if err != nil {
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, err
 	}
-	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID.ID)
+	txCIDs, err := bcr.RetrieveTxCIDsByHeaderID(tx, headerCID.ID)
 	if err != nil {
 		log.Error("tx cid retrieval error")
 	}
@@ -234,11 +249,11 @@ func (ecr *CIDRetriever) RetrieveBlockByHash(blockHash common.Hash) (HeaderModel
 }
 
 // RetrieveBlockByNumber returns all of the CIDs needed to compose an entire block, for a given block number
-func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, []TxModel, error) {
+func (bcr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, []TxModel, error) {
 	log.Debug("retrieving block cids for block number ", blockNumber)
 
 	// Begin new db tx
-	tx, err := ecr.db.Beginx()
+	tx, err := bcr.db.Beginx()
 	if err != nil {
 		return HeaderModel{}, nil, err
 	}
@@ -253,7 +268,7 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 		}
 	}()
 
-	headerCID, err := ecr.RetrieveHeaderCIDs(tx, blockNumber)
+	headerCID, err := bcr.RetrieveHeaderCIDs(tx, blockNumber)
 	if err != nil {
 		log.Error("header cid retrieval error")
 		return HeaderModel{}, nil, err
@@ -261,7 +276,7 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 	if len(headerCID) < 1 {
 		return HeaderModel{}, nil, fmt.Errorf("header cid retrieval error, no header CIDs found at block %d", blockNumber)
 	}
-	txCIDs, err := ecr.RetrieveTxCIDsByHeaderID(tx, headerCID[0].ID)
+	txCIDs, err := bcr.RetrieveTxCIDsByHeaderID(tx, headerCID[0].ID)
 	if err != nil {
 		log.Error("tx cid retrieval error")
 	}
@@ -269,7 +284,7 @@ func (ecr *CIDRetriever) RetrieveBlockByNumber(blockNumber int64) (HeaderModel, 
 }
 
 // RetrieveHeaderCIDByHash returns the header for the given block hash
-func (ecr *CIDRetriever) RetrieveHeaderCIDByHash(tx *sqlx.Tx, blockHash common.Hash) (HeaderModel, error) {
+func (bcr *CIDRetriever) RetrieveHeaderCIDByHash(tx *sqlx.Tx, blockHash common.Hash) (HeaderModel, error) {
 	log.Debug("retrieving header cids for block hash ", blockHash.String())
 	pgStr := `SELECT * FROM btc.header_cids
 			WHERE block_hash = $1`
@@ -278,7 +293,7 @@ func (ecr *CIDRetriever) RetrieveHeaderCIDByHash(tx *sqlx.Tx, blockHash common.H
 }
 
 // RetrieveTxCIDsByHeaderID retrieves all tx CIDs for the given header id
-func (ecr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) ([]TxModel, error) {
+func (bcr *CIDRetriever) RetrieveTxCIDsByHeaderID(tx *sqlx.Tx, headerID int64) ([]TxModel, error) {
 	log.Debug("retrieving tx cids for block id ", headerID)
 	pgStr := `SELECT * FROM btc.transaction_cids
 			WHERE header_id = $1`
