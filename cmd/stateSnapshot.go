@@ -45,16 +45,21 @@ Everything is hash-linked up to the appropriate header in eth.header_cids`,
 
 func stateSnapshot() {
 	ethHTTP := viper.GetString("ethereum.httpPath")
-	nodeInfo, httpClient, err := shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	nodeInfo, http, err := shared.GetEthNodeAndClient(fmt.Sprintf("http://%s", ethHTTP))
+	if err != nil {
+		logWithCommand.Fatal(err)
+	}
+	ethWS := viper.GetString("ethereum.wsPath")
+	_, ws, err := shared.GetEthNodeAndClient(fmt.Sprintf("ws://%s", ethWS))
 	if err != nil {
 		logWithCommand.Fatal(err)
 	}
 	dbConfig := new(config.Database)
 	dbConfig.Init()
 	db := utils.LoadPostgres(*dbConfig, nodeInfo)
-	snapshotBuilder := state.NewSnapsShotBuilder(&db, httpClient)
+	snapshotBuilder := state.NewSnapshotBuilder(&db, http, ws)
 	height := viper.GetInt("trie.height")
-	if err := snapshotBuilder.BuildSnapShotAt(uint64(height)); err != nil {
+	if err := snapshotBuilder.BuildSnapshotAt(uint64(height)); err != nil {
 		logWithCommand.Fatal(err)
 	}
 }

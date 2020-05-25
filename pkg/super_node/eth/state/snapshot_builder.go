@@ -21,13 +21,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/statediff"
 	"github.com/jmoiron/sqlx"
 	"github.com/multiformats/go-multihash"
+	"github.com/sirupsen/logrus"
 
 	"github.com/vulcanize/vulcanizedb/pkg/ipfs/ipld"
 	"github.com/vulcanize/vulcanizedb/pkg/postgres"
@@ -36,63 +38,180 @@ import (
 )
 
 var (
-	method   = "statediff_stateTrieAt"
-	nullHash = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
+	nullHash    = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
+	txSizeLimit = 1024 * 500
+	queuePutStr = "INSERT INTO eth.queued_nodes (header_id, rlp) VALUES ($1, $2)"
 )
 
-type SnapsShotBuilder struct {
-	db      *postgres.DB
-	client  *rpc.Client
-	params  statediff.Params
-	timeout time.Duration
+type SnapshotBuilder struct {
+	db       *postgres.DB
+	http, ws *rpc.Client
+	txSize   int
 }
 
-// NewSnapsShotBuilder returns a new SnapsShotBuilder
-func NewSnapsShotBuilder(db *postgres.DB, httpClient *rpc.Client) *SnapsShotBuilder {
-	return &SnapsShotBuilder{
+// NewSnapshotBuilder returns a new SnapshotBuilder
+func NewSnapshotBuilder(db *postgres.DB, http, ws *rpc.Client) *SnapshotBuilder {
+	return &SnapshotBuilder{
 		db:     db,
-		client: httpClient,
-		params: statediff.Params{
-			IncludeTD:    true,
-			IncludeBlock: true,
-		},
-		timeout: time.Minute * 10,
+		http:   http,
+		ws:     ws,
+		txSize: 0,
 	}
 }
 
 // BuildSnapShotAt creates a state snapshot at the provided height
-func (ssb *SnapsShotBuilder) BuildSnapShotAt(height uint64) error {
-	payload, err := ssb.fetch(height)
+func (ssb *SnapshotBuilder) BuildSnapshotAt(height uint64) error {
+	header, err := ssb.getHeader(height)
 	if err != nil {
 		return err
 	}
-	convertedPayload, err := convert(payload)
-	if err != nil {
-		return err
-	}
-	return ssb.publish(convertedPayload)
+	errChan := make(chan error)
+	doneChan := make(chan bool)
+	go ssb.queueStateNodes(header, errChan, doneChan)
+	<-doneChan
+	return nil
 }
 
-// calls StateTrieAt(ctx context.Context, blockNumber uint64, params Params) (*Payload, error)
-func (ssb *SnapsShotBuilder) fetch(height uint64) (*statediff.Payload, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), ssb.timeout)
+func (ssb *SnapshotBuilder) queueStateNodes(header eth.HeaderModel, errChan chan<- error, done chan bool) {
+	stateNodes := make(chan []byte, 20000)
+	ctx, cancel := context.WithCancel(context.Background())
+	sub, err := ssb.stream(ctx, stateNodes, common.HexToHash(header.BlockHash))
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	ticker := time.NewTicker(time.Second * 30)
+	tx, err := ssb.db.Beginx()
+	if err != nil {
+		logrus.Fatal(err)
+	}
 	defer cancel()
-	res := new(statediff.Payload)
-	if err := ssb.client.CallContext(ctx, res, method, height, ssb.params); err != nil {
-		return nil, fmt.Errorf("ethereum StateTrieAt err for block %d: %s", height, err.Error())
+	defer close(done)
+	for {
+		select {
+		case <-ticker.C:
+			if ssb.txSize > txSizeLimit {
+				logrus.Infof("SnapshotBuilder committing %d bytes to db", ssb.txSize)
+				if err := tx.Commit(); err != nil {
+					errChan <- err
+				}
+				logrus.Info("SnapshotBuilder beginning new tx")
+				tx, err = ssb.db.Beginx()
+				if err != nil {
+					errChan <- err
+				}
+			}
+			continue
+		case stateNode := <-stateNodes:
+			if err := ssb.queueStateNode(tx, stateNode, header.ID); err != nil {
+				errChan <- err
+			}
+			continue
+		default:
+		}
+		select {
+		case stateNode := <-stateNodes:
+			if err := ssb.queueStateNode(tx, stateNode, header.ID); err != nil {
+				errChan <- err
+			}
+		case err := <-sub.Err():
+			if err != nil {
+				logrus.Errorf("SnapshotBuilder subscription err: %s", err.Error())
+				shared.Rollback(tx)
+				return
+			}
+			logrus.Infof("SnapshotBuilder committing %d nodes to db", ssb.txSize)
+			logrus.Info("SnapshotBuilder process has completed")
+			tx.Commit()
+			return
+		}
 	}
-	return res, nil
 }
 
-func (ssb *SnapsShotBuilder) publish(payload *eth.ConvertedPayload) error {
-	headerNode, err := ipld.NewEthHeader(payload.Block.Header())
+func (ssb *SnapshotBuilder) queueStateNode(tx *sqlx.Tx, stateNodeRLP []byte, headerID int64) error {
+	ssb.txSize += len(stateNodeRLP)
+	_, err := tx.Exec(queuePutStr, headerID, stateNodeRLP)
+	return err
+}
+
+func (ssb *SnapshotBuilder) writeStateNode(tx *sqlx.Tx, stateNode statediff.StateNode, headerID int64) error {
+	stateCIDStr, err := shared.PublishRaw(tx, ipld.MEthStateTrie, multihash.KECCAK_256, stateNode.NodeValue)
 	if err != nil {
 		return err
+	}
+	stateModel := eth.StateNodeModel{
+		Path:     stateNode.Path,
+		StateKey: common.Bytes2Hex(stateNode.LeafKey),
+		CID:      stateCIDStr,
+		NodeType: eth.ResolveFromNodeType(stateNode.NodeType),
+	}
+	stateID, err := ssb.indexStateTrieCID(tx, stateModel, headerID)
+	if err != nil {
+		return err
+	}
+	ssb.txSize += 1
+	for _, storageNode := range stateNode.StorageNodes {
+		storageCIDStr, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, storageNode.NodeValue)
+		if err != nil {
+			return err
+		}
+		storageModel := eth.StorageNodeModel{
+			Path:       storageNode.Path,
+			StorageKey: common.Bytes2Hex(storageNode.LeafKey),
+			CID:        storageCIDStr,
+			NodeType:   eth.ResolveFromNodeType(storageNode.NodeType),
+		}
+		if err := ssb.indexStorageTrieCID(tx, storageModel, stateID); err != nil {
+			return err
+		}
+		ssb.txSize += 1
+	}
+	return nil
+}
+
+func (ssb *SnapshotBuilder) getHeader(height uint64) (eth.HeaderModel, error) {
+	// if we already have a unequivocally valid header in our db at this height, use it
+	header, err := ssb.retrieveHeader(height)
+	if err == nil {
+		logrus.Info("SnapshotBuilder using header found in local db")
+		return header, nil
+	}
+	// otherwise fetch the header remotely, and publish and index it locally
+	logrus.Info("SnapshotBuilder fetching remote header")
+	return ssb.fetchHeader(height)
+}
+
+func (ssb *SnapshotBuilder) retrieveHeader(height uint64) (eth.HeaderModel, error) {
+	headers := make([]eth.HeaderModel, 0)
+	pgStr := `SELECT * FROM btc.header_cids
+				WHERE block_number = $1
+				AND times_validation > 0`
+	if err := ssb.db.Select(&headers, pgStr, height); err != nil {
+		return eth.HeaderModel{}, err
+	}
+	switch len(headers) {
+	case 0:
+		return eth.HeaderModel{}, fmt.Errorf("no valid header at height %d", height)
+	case 1:
+		return headers[0], nil
+	default:
+		return eth.HeaderModel{}, fmt.Errorf("more than one valid header at height %d", height)
+	}
+}
+
+func (ssb *SnapshotBuilder) fetchHeader(height uint64) (eth.HeaderModel, error) {
+	var head *types.Header
+	err := ssb.http.CallContext(context.Background(), &head, "eth_getBlockByNumber", hexutil.EncodeUint64(height), false)
+	if err == nil && head == nil {
+		return eth.HeaderModel{}, ethereum.NotFound
+	}
+	headerNode, err := ipld.NewEthHeader(head)
+	if err != nil {
+		return eth.HeaderModel{}, err
 	}
 
 	tx, err := ssb.db.Beginx()
 	if err != nil {
-		return err
+		return eth.HeaderModel{}, err
 	}
 	defer func() {
 		if p := recover(); p != nil {
@@ -106,119 +225,40 @@ func (ssb *SnapsShotBuilder) publish(payload *eth.ConvertedPayload) error {
 	}()
 
 	if err := shared.PublishIPLD(tx, headerNode); err != nil {
-		return err
+		return eth.HeaderModel{}, err
 	}
 	header := eth.HeaderModel{
 		CID:             headerNode.Cid().String(),
-		ParentHash:      payload.Block.ParentHash().String(),
-		BlockNumber:     payload.Block.Number().String(),
-		BlockHash:       payload.Block.Hash().String(),
-		TotalDifficulty: payload.TotalDifficulty.String(),
+		ParentHash:      head.ParentHash.String(),
+		BlockNumber:     head.Number.String(),
+		BlockHash:       head.Hash().String(),
+		TotalDifficulty: "0",
 		Reward:          "0",
-		Bloom:           payload.Block.Bloom().Bytes(),
-		StateRoot:       payload.Block.Root().String(),
-		RctRoot:         payload.Block.ReceiptHash().String(),
-		TxRoot:          payload.Block.TxHash().String(),
-		UncleRoot:       payload.Block.UncleHash().String(),
-		Timestamp:       payload.Block.Time(),
+		Bloom:           head.Bloom.Bytes(),
+		StateRoot:       head.Root.String(),
+		RctRoot:         head.ReceiptHash.String(),
+		TxRoot:          head.TxHash.String(),
+		UncleRoot:       head.UncleHash.String(),
+		Timestamp:       head.Time,
 	}
 	headerID, err := ssb.indexHeaderCID(tx, header)
 	if err != nil {
-		return err
+		return eth.HeaderModel{}, err
 	}
-
-	err = ssb.publishAndIndexStateAndStorage(tx, payload, headerID)
-	return err // return err variable explicitly so that we return the err = tx.Commit() assignment in the defer
+	header.ID = headerID
+	return header, err // return err explicitly so it is assigned to in the defer
 }
 
-func (ssb *SnapsShotBuilder) publishAndIndexStateAndStorage(tx *sqlx.Tx, ipldPayload *eth.ConvertedPayload, headerID int64) error {
-	// Publish and index state and storage
-	for _, stateNode := range ipldPayload.StateNodes {
-		stateCIDStr, err := shared.PublishRaw(tx, ipld.MEthStateTrie, multihash.KECCAK_256, stateNode.Value)
-		if err != nil {
-			return err
-		}
-		stateModel := eth.StateNodeModel{
-			Path:     stateNode.Path,
-			StateKey: stateNode.LeafKey.String(),
-			CID:      stateCIDStr,
-			NodeType: eth.ResolveFromNodeType(stateNode.Type),
-		}
-		stateID, err := ssb.indexStateTrieCID(tx, stateModel, headerID)
-		if err != nil {
-			return err
-		}
-		// If we have a leaf, decode and index the account data and any associated storage diffs
-		if stateNode.Type == statediff.Leaf {
-			var i []interface{}
-			if err := rlp.DecodeBytes(stateNode.Value, &i); err != nil {
-				return err
-			}
-			if len(i) != 2 {
-				return fmt.Errorf("eth IPLDPublisherAndIndexer expected state leaf node rlp to decode into ssbo elements")
-			}
-			for _, storageNode := range ipldPayload.StorageNodes[common.Bytes2Hex(stateNode.Path)] {
-				storageCIDStr, err := shared.PublishRaw(tx, ipld.MEthStorageTrie, multihash.KECCAK_256, storageNode.Value)
-				if err != nil {
-					return err
-				}
-				storageModel := eth.StorageNodeModel{
-					Path:       storageNode.Path,
-					StorageKey: storageNode.LeafKey.Hex(),
-					CID:        storageCIDStr,
-					NodeType:   eth.ResolveFromNodeType(storageNode.Type),
-				}
-				if err := ssb.indexStorageTrieCID(tx, storageModel, stateID); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func convert(payload *statediff.Payload) (*eth.ConvertedPayload, error) {
-	block := new(types.Block)
-	if err := rlp.DecodeBytes(payload.BlockRlp, block); err != nil {
-		return nil, err
-	}
-	convertedPayload := &eth.ConvertedPayload{
-		TotalDifficulty: payload.TotalDifficulty,
-		Block:           block,
-		StateNodes:      make([]eth.TrieNode, 0),
-		StorageNodes:    make(map[string][]eth.TrieNode),
-	}
-
-	stateDiff := new(statediff.StateObject)
-	if err := rlp.DecodeBytes(payload.StateObjectRlp, stateDiff); err != nil {
-		return nil, err
-	}
-	for _, stateNode := range stateDiff.Nodes {
-		statePath := common.Bytes2Hex(stateNode.Path)
-		convertedPayload.StateNodes = append(convertedPayload.StateNodes, eth.TrieNode{
-			Path:    stateNode.Path,
-			Value:   stateNode.NodeValue,
-			Type:    stateNode.NodeType,
-			LeafKey: common.BytesToHash(stateNode.LeafKey),
-		})
-		for _, storageNode := range stateNode.StorageNodes {
-			convertedPayload.StorageNodes[statePath] = append(convertedPayload.StorageNodes[statePath], eth.TrieNode{
-				Path:    storageNode.Path,
-				Value:   storageNode.NodeValue,
-				Type:    storageNode.NodeType,
-				LeafKey: common.BytesToHash(storageNode.LeafKey),
-			})
-		}
-	}
-
-	return convertedPayload, nil
+// calls StreamTrie(ctx context.Context, hash common.Hash, done chan bool) (*rpc.Subscription, error)
+func (ssb *SnapshotBuilder) stream(ctx context.Context, stateNodes chan []byte, hash common.Hash) (shared.ClientSubscription, error) {
+	return ssb.ws.Subscribe(ctx, "statediff", stateNodes, "streamTrie", hash)
 }
 
 // header shares same table as regularly indexed headers
 // but we are careful not to overwrite anything and leave the validation level at 0
 // so that the regular processes will still collect diff data at that height
 // and fill in things we miss by this process such as tx, uncles, receipts, and miner rewards
-func (ssb *SnapsShotBuilder) indexHeaderCID(tx *sqlx.Tx, header eth.HeaderModel) (int64, error) {
+func (ssb *SnapshotBuilder) indexHeaderCID(tx *sqlx.Tx, header eth.HeaderModel) (int64, error) {
 	var headerID int64
 	err := tx.QueryRowx(`INSERT INTO eth.header_cids (block_number, block_hash, parent_hash, cid, td, node_id, reward, state_root, tx_root, receipt_root, uncle_root, bloom, timestamp, times_validated)
 								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
@@ -230,27 +270,27 @@ func (ssb *SnapsShotBuilder) indexHeaderCID(tx *sqlx.Tx, header eth.HeaderModel)
 }
 
 // we write state trie nodes collected in this fashion to a different table since they represent something different
-func (ssb *SnapsShotBuilder) indexStateTrieCID(tx *sqlx.Tx, stateNode eth.StateNodeModel, headerID int64) (int64, error) {
+func (ssb *SnapshotBuilder) indexStateTrieCID(tx *sqlx.Tx, stateNode eth.StateNodeModel, headerID int64) (int64, error) {
 	var stateID int64
 	var stateKey string
 	if stateNode.StateKey != nullHash.String() {
 		stateKey = stateNode.StateKey
 	}
-	err := tx.QueryRowx(`INSERT INTO eth.state_trie_cids (header_id, state_leaf_key, cid, state_path, node_type) VALUES ($1, $2, $3, $4, $5)
-									ON CONFLICT (header_id, state_path) DO UPDATE SET (state_leaf_key, cid, node_type) = ($2, $3, $5)
+	err := tx.QueryRowx(`INSERT INTO eth.state_cids (header_id, state_leaf_key, cid, state_path, node_type, eventual) VALUES ($1, $2, $3, $4, $5, $6)
+									ON CONFLICT (header_id, state_path) DO UPDATE SET header_id = state_cids.header_id
 									RETURNING id`,
-		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType).Scan(&stateID)
+		headerID, stateKey, stateNode.CID, stateNode.Path, stateNode.NodeType, true).Scan(&stateID)
 	return stateID, err
 }
 
 // we write storage trie nodes collected in this fashion to a different table since they represent something different
-func (ssb *SnapsShotBuilder) indexStorageTrieCID(tx *sqlx.Tx, storageCID eth.StorageNodeModel, stateID int64) error {
+func (ssb *SnapshotBuilder) indexStorageTrieCID(tx *sqlx.Tx, storageCID eth.StorageNodeModel, stateID int64) error {
 	var storageKey string
 	if storageCID.StorageKey != nullHash.String() {
 		storageKey = storageCID.StorageKey
 	}
-	_, err := tx.Exec(`INSERT INTO eth.storage_trie_cids (state_id, storage_leaf_key, cid, storage_path, node_type) VALUES ($1, $2, $3, $4, $5) 
-							  ON CONFLICT (state_id, storage_path) DO UPDATE SET (storage_leaf_key, cid, node_type) = ($2, $3, $5)`,
+	_, err := tx.Exec(`INSERT INTO eth.storage_trie_cids (state_id, storage_leaf_key, cid, storage_path, node_type, eventual) VALUES ($1, $2, $3, $4, $5, $6) 
+							  ON CONFLICT (state_id, storage_path) DO NOTHING`,
 		stateID, storageKey, storageCID.CID, storageCID.Path, storageCID.NodeType)
 	return err
 }
