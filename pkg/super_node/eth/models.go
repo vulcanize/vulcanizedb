@@ -79,6 +79,7 @@ type StateNodeModel struct {
 	Path     []byte `db:"state_path"`
 	StateKey string `db:"state_leaf_key"`
 	NodeType int    `db:"node_type"`
+	Eventual bool   `db:"eventual"`
 	CID      string `db:"cid"`
 }
 
@@ -89,6 +90,7 @@ type StorageNodeModel struct {
 	Path       []byte `db:"storage_path"`
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
+	Eventual   bool   `db:"eventual"`
 	CID        string `db:"cid"`
 }
 
@@ -100,6 +102,7 @@ type StorageNodeWithStateKeyModel struct {
 	StateKey   string `db:"state_leaf_key"`
 	StorageKey string `db:"storage_leaf_key"`
 	NodeType   int    `db:"node_type"`
+	Eventual   bool   `db:"eventual"`
 	CID        string `db:"cid"`
 }
 

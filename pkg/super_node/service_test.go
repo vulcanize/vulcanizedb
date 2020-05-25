@@ -17,6 +17,7 @@
 package super_node_test
 
 import (
+	"reflect"
 	"sync"
 	"time"
 
@@ -44,7 +45,7 @@ var _ = Describe("Service", func() {
 				ReturnErr:        nil,
 			}
 			mockStreamer := &mocks2.PayloadStreamer{
-				ReturnSub: &rpc.ClientSubscription{},
+				ReturnSub: rpc.NewClientSubscription(&rpc.Client{}, "", reflect.ValueOf(payloadChan)),
 				StreamPayloads: []shared.RawChainData{
 					mocks.MockStateDiffPayload,
 				},

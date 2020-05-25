@@ -19,11 +19,11 @@ package eth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/vulcanize/vulcanizedb/pkg/super_node/shared"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -87,19 +87,16 @@ func (b *Backend) HeaderByNumber(ctx context.Context, blockNumber rpc.BlockNumbe
 	}
 	// If there are none, throw an error
 	if len(headerCids) < 1 {
-		return nil, fmt.Errorf("header at block %d is not available", number)
+		return nil, ethereum.NotFound
 	}
 	// Fetch the header IPLDs for those CIDs
 	headerIPLD, err := b.Fetcher.FetchHeader(tx, headerCids[0])
 	if err != nil {
 		return nil, err
 	}
-	// Decode the first header at this block height and return it
-	// We throw an error in FetchHeaders() if the number of headers does not match the number of CIDs and we already
-	// confirmed the number of CIDs is greater than 0 so there is no need to bound check the slice before accessing
 	var header types.Header
 	err = rlp.DecodeBytes(headerIPLD.Data, &header)
-	return &header, err
+	return &header, err // return err explicitly so it can be assigned to in the defer
 }
 
 // GetTd retrieves and returns the total difficulty at the given block hash

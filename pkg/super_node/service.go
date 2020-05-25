@@ -229,9 +229,14 @@ func (sap *Service) Sync(wg *sync.WaitGroup, screenAndServePayload chan<- shared
 					publishAndIndexPayload <- ipldPayload
 				}
 			case err := <-sub.Err():
-				log.Errorf("super node subscription error for chain %s: %v", sap.chain.String(), err)
+				log.Infof("%s subscription closed by server", sap.chain.String())
+				if err != nil {
+					log.Errorf("error causing closure: %v", err)
+				}
+				return
 			case <-sap.QuitChan:
 				log.Infof("quiting %s Sync process", sap.chain.String())
+				go sub.Unsubscribe()
 				return
 			}
 		}
