@@ -179,10 +179,7 @@ func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConf
 		return watchingLogErr
 	}
 	if !alreadyWatchingLog {
-		uncheckHeadersErr := extractor.CheckedHeadersRepository.MarkHeadersUncheckedSince(config.StartingBlockNumber)
-		if uncheckHeadersErr != nil {
-			return uncheckHeadersErr
-		}
+		logrus.Warnf("new event log for topic 0 %s detected, back-fill may be required for already-checked headers", config.Topic)
 		markLogWatchedErr := extractor.CheckedLogsRepository.MarkLogWatched(config.ContractAddresses, config.Topic)
 		if markLogWatchedErr != nil {
 			return markLogWatchedErr

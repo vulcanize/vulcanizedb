@@ -39,12 +39,6 @@ func (repo CheckedHeadersRepository) MarkHeaderChecked(headerID int64) error {
 	return err
 }
 
-// Zero out check count for headers with block number >= startingBlockNumber
-func (repo CheckedHeadersRepository) MarkHeadersUncheckedSince(startingBlockNumber int64) error {
-	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number >= $1`, startingBlockNumber)
-	return err
-}
-
 // Zero out check count for header with the given block number
 func (repo CheckedHeadersRepository) MarkSingleHeaderUnchecked(blockNumber int64) error {
 	_, err := repo.db.Exec(`UPDATE public.headers SET check_count = 0 WHERE block_number = $1`, blockNumber)
