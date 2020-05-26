@@ -21,27 +21,29 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"github.com/makerdao/vulcanizedb/pkg/config"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/constants"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/transformer"
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("contractWatcher transformer", func() {
-	var db *postgres.DB
-	var err error
-	var blockChain core.BlockChain
-	var headerRepository repositories.HeaderRepository
-	var headerID int64
-	var ensAddr = strings.ToLower(constants.EnsContractAddress)   // 0x314159265dd8dbb310642f98f50c066173c1259b
-	var tusdAddr = strings.ToLower(constants.TusdContractAddress) // 0x8dd5fbce2f6a956c3022ba3663759011dd51e73e
+	var (
+		db               *postgres.DB
+		err              error
+		blockChain       core.BlockChain
+		headerRepository datastore.HeaderRepository
+		headerID         int64
+		ensAddr          = strings.ToLower(constants.EnsContractAddress)  // 0x314159265dd8dbb310642f98f50c066173c1259b
+		tusdAddr         = strings.ToLower(constants.TusdContractAddress) // 0x8dd5fbce2f6a956c3022ba3663759011dd51e73e
+	)
 
 	BeforeEach(func() {
 		db, blockChain = test_helpers.SetupDBandBC()

@@ -23,6 +23,7 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/helpers/test_helpers/mocks"
 	"github.com/makerdao/vulcanizedb/pkg/contract_watcher/repository"
 	"github.com/makerdao/vulcanizedb/pkg/core"
+	"github.com/makerdao/vulcanizedb/pkg/datastore"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	. "github.com/onsi/ginkgo"
@@ -32,7 +33,7 @@ import (
 var _ = Describe("Repository", func() {
 	var db *postgres.DB
 	var contractHeaderRepo repository.HeaderRepository // contract_watcher header repository
-	var coreHeaderRepo repositories.HeaderRepository   // pkg/datastore header repository
+	var coreHeaderRepo datastore.HeaderRepository      // pkg/datastore header repository
 	var eventIDs = []string{
 		"eventName_contractAddr",
 		"eventName_contractAddr2",
@@ -344,7 +345,7 @@ var _ = Describe("Repository", func() {
 	})
 })
 
-func addHeaders(coreHeaderRepo repositories.HeaderRepository) {
+func addHeaders(coreHeaderRepo datastore.HeaderRepository) {
 	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
 	Expect(err).NotTo(HaveOccurred())
 	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
@@ -353,7 +354,7 @@ func addHeaders(coreHeaderRepo repositories.HeaderRepository) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
+func addDiscontinuousHeaders(coreHeaderRepo datastore.HeaderRepository) {
 	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader1)
 	Expect(err).NotTo(HaveOccurred())
 	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader2)
@@ -362,7 +363,7 @@ func addDiscontinuousHeaders(coreHeaderRepo repositories.HeaderRepository) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func addLaterHeaders(coreHeaderRepo repositories.HeaderRepository) {
+func addLaterHeaders(coreHeaderRepo datastore.HeaderRepository) {
 	_, err := coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader3)
 	Expect(err).NotTo(HaveOccurred())
 	_, err = coreHeaderRepo.CreateOrUpdateHeader(mocks.MockHeader4)

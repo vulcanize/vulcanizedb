@@ -23,7 +23,6 @@ import (
 	"github.com/makerdao/vulcanizedb/libraries/shared/repository"
 	"github.com/makerdao/vulcanizedb/libraries/shared/test_data"
 	"github.com/makerdao/vulcanizedb/pkg/datastore"
-	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres/repositories"
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	"github.com/makerdao/vulcanizedb/test_config"
@@ -31,16 +30,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Header sync log repository", func() {
+var _ = Describe("Event log repository", func() {
 	var (
-		db               *postgres.DB
+		db               = test_config.NewTestDB(test_config.NewTestNode())
 		headerID         int64
 		repo             datastore.EventLogRepository
-		headerRepository repositories.HeaderRepository
+		headerRepository datastore.HeaderRepository
 	)
 
 	BeforeEach(func() {
-		db = test_config.NewTestDB(test_config.NewTestNode())
 		test_config.CleanTestDB(db)
 		headerRepository = repositories.NewHeaderRepository(db)
 		var headerErr error
@@ -48,11 +46,6 @@ var _ = Describe("Header sync log repository", func() {
 		Expect(headerErr).NotTo(HaveOccurred())
 
 		repo = repositories.NewEventLogRepository(db)
-	})
-
-	AfterEach(func() {
-		closeErr := db.Close()
-		Expect(closeErr).NotTo(HaveOccurred())
 	})
 
 	Describe("CreateEventLogs", func() {

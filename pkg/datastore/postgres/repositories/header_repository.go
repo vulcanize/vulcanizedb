@@ -25,40 +25,40 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type HeaderRepository struct {
-	database *postgres.DB
+type headerRepository struct {
+	db *postgres.DB
 }
 
-func NewHeaderRepository(database *postgres.DB) HeaderRepository {
-	return HeaderRepository{database: database}
+func NewHeaderRepository(database *postgres.DB) headerRepository {
+	return headerRepository{db: database}
 }
 
-func (repository HeaderRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
+func (repo headerRepository) CreateOrUpdateHeader(header core.Header) (int64, error) {
 	var headerID int64
-	err := repository.database.QueryRowx("SELECT * FROM public.get_or_create_header($1, $2, $3, $4, $5)",
-		header.BlockNumber, header.Hash, header.Raw, header.Timestamp, repository.database.NodeID).Scan(&headerID)
+	err := repo.db.QueryRowx("SELECT * FROM public.get_or_create_header($1, $2, $3, $4, $5)",
+		header.BlockNumber, header.Hash, header.Raw, header.Timestamp, repo.db.NodeID).Scan(&headerID)
 	if err != nil {
-		return headerID, fmt.Errorf("error inserting header for block %d: %s", header.BlockNumber, err.Error())
+		return headerID, fmt.Errorf("error inserting header for block %d: %w", header.BlockNumber, err)
 	}
 	return headerID, nil
 }
 
-func (repository HeaderRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
+func (repo headerRepository) CreateTransactions(headerID int64, transactions []core.TransactionModel) error {
 	for _, transaction := range transactions {
-		_, err := repository.database.Exec(`INSERT INTO public.transactions
+		_, err := repo.db.Exec(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value") 
 		VALUES ($1, $2, $3::NUMERIC, $4::NUMERIC, $5, $6::NUMERIC, $7, $8, $9::NUMERIC, $10, $11::NUMERIC)
 		ON CONFLICT DO NOTHING`, headerID, transaction.Hash, transaction.GasLimit, transaction.GasPrice,
 			transaction.Data, transaction.Nonce, transaction.Raw, transaction.From, transaction.TxIndex, transaction.To,
 			transaction.Value)
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating transactions: %w", err)
 		}
 	}
 	return nil
 }
 
-func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
+func (repo headerRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID int64, transaction core.TransactionModel) (int64, error) {
 	var txId int64
 	err := tx.QueryRowx(`INSERT INTO public.transactions
 		(header_id, hash, gas_limit, gas_price, input_data, nonce, raw, tx_from, tx_index, tx_to, "value")
@@ -71,29 +71,34 @@ func (repository HeaderRepository) CreateTransactionInTx(tx *sqlx.Tx, headerID i
 		transaction.TxIndex, transaction.To, transaction.Value).Scan(&txId)
 	if err != nil {
 		logrus.Error("header_repository: error inserting transaction: ", err)
-		return txId, err
 	}
 	return txId, err
 }
 
-func (repository HeaderRepository) GetHeader(blockNumber int64) (core.Header, error) {
+func (repo headerRepository) GetHeaderByBlockNumber(blockNumber int64) (core.Header, error) {
 	var header core.Header
-	err := repository.database.Get(&header,
+	err := repo.db.Get(&header,
 		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number = $1`, blockNumber)
 	return header, err
 }
 
-func (repository HeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
+func (repo headerRepository) GetHeaderByID(id int64) (core.Header, error) {
+	var header core.Header
+	headerErr := repo.db.Get(&header, `SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE id = $1`, id)
+	return header, headerErr
+}
+
+func (repo headerRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
 	var headers []core.Header
-	err := repository.database.Select(&headers,
+	err := repo.db.Select(&headers,
 		`SELECT id, block_number, hash, raw, block_timestamp FROM headers WHERE block_number BETWEEN $1 AND $2 ORDER BY block_number ASC`,
 		startingBlock, endingBlock)
 	return headers, err
 }
 
-func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
+func (repo headerRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
 	numbers := make([]int64, 0)
-	err := repository.database.Select(&numbers,
+	err := repo.db.Select(&numbers,
 		`SELECT series.block_number
 			FROM (SELECT generate_series($1::INT, $2::INT) AS block_number) AS series
 			LEFT OUTER JOIN (SELECT block_number FROM public.headers) AS synced
@@ -103,15 +108,13 @@ func (repository HeaderRepository) MissingBlockNumbers(startingBlockNumber, endi
 	if err != nil {
 		logrus.Errorf("MissingBlockNumbers failed to get blocks between %v - %v",
 			startingBlockNumber, endingBlockNumber)
-		return []int64{}, err
 	}
-	return numbers, nil
+	return numbers, err
 }
 
-func (repository HeaderRepository) GetMostRecentHeaderBlockNumber() (int64, error) {
+func (repo headerRepository) GetMostRecentHeaderBlockNumber() (int64, error) {
 	var blockNumber int64
-	err := repository.database.Get(&blockNumber,
+	err := repo.db.Get(&blockNumber,
 		`SELECT block_number FROM headers ORDER BY block_number DESC LIMIT 1`)
-
 	return blockNumber, err
 }
