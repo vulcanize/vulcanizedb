@@ -18,8 +18,8 @@ package watcher
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/ethereum/go-ethereum/common"
 	storage2 "github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -33,18 +33,7 @@ import (
 
 var ResultsLimit = 500
 
-type ErrHeaderMismatch struct {
-	dbHash   string
-	diffHash string
-}
-
-func NewErrHeaderMismatch(DBHash, diffHash string) *ErrHeaderMismatch {
-	return &ErrHeaderMismatch{dbHash: DBHash, diffHash: diffHash}
-}
-
-func (e ErrHeaderMismatch) Error() string {
-	return fmt.Sprintf("db header hash (%s) doesn't match diff header hash (%s)", e.dbHash, e.diffHash)
-}
+var ErrHeaderMismatch = errors.New("header hash doesn't match between db and diff")
 
 type IStorageWatcher interface {
 	AddTransformers(initializers []storage2.TransformerInitializer)
@@ -94,12 +83,12 @@ func (watcher StorageWatcher) getMinDiffID() (int, error) {
 	if watcher.DiffBlocksFromHeadOfChain != -1 {
 		mostRecentHeaderBlockNumber, getHeaderErr := watcher.HeaderRepository.GetMostRecentHeaderBlockNumber()
 		if getHeaderErr != nil {
-			return 0, getHeaderErr
+			return 0, fmt.Errorf("error getting most recent header block number: %w", getHeaderErr)
 		}
 		blockNumber := mostRecentHeaderBlockNumber - watcher.DiffBlocksFromHeadOfChain
 		diffID, getDiffErr := watcher.StorageDiffRepository.GetFirstDiffIDForBlockHeight(blockNumber)
 		if getDiffErr != nil {
-			return 0, getDiffErr
+			return 0, fmt.Errorf("error getting first diff id for block height %d: %w", blockNumber, getDiffErr)
 		}
 
 		// We are subtracting an offset from the diffID because it will be passed to GetNewDiffs which returns diffs with ids
@@ -113,19 +102,19 @@ func (watcher StorageWatcher) getMinDiffID() (int, error) {
 
 func (watcher StorageWatcher) transformDiffs() error {
 	minID, err := watcher.getMinDiffID()
-	if err != nil && err != sql.ErrNoRows {
-		return err
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("error getting min diff ID: %w", err)
 	}
 
 	for {
 		diffs, extractErr := watcher.StorageDiffRepository.GetNewDiffs(minID, ResultsLimit)
 		if extractErr != nil {
-			return fmt.Errorf("error getting unchecked diffs: %s", extractErr.Error())
+			return fmt.Errorf("error getting unchecked diffs: %w", extractErr)
 		}
 		for _, diff := range diffs {
 			transformErr := watcher.transformDiff(diff)
 			if transformErr != nil {
-				if transformErr == sql.ErrNoRows || reflect.TypeOf(transformErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
+				if errors.Is(transformErr, sql.ErrNoRows) || errors.Is(transformErr, types.ErrKeyNotFound) {
 					logrus.Tracef("error transforming diff: %s", transformErr.Error())
 				} else {
 					logrus.Infof("error transforming diff: %s", transformErr.Error())
@@ -147,33 +136,25 @@ func (watcher StorageWatcher) transformDiff(diff types.PersistedDiff) error {
 	if !watching {
 		markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
 		if markCheckedErr != nil {
-			return fmt.Errorf("error marking diff checked: %s", markCheckedErr.Error())
+			return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
 		}
 		return nil
 	}
 
 	headerID, headerErr := watcher.getHeaderID(diff)
 	if headerErr != nil {
-		if headerErr == sql.ErrNoRows {
-			return headerErr
-		} else {
-			return fmt.Errorf("error getting header for diff: %s", headerErr.Error())
-		}
+		return fmt.Errorf("error getting header for diff: %w", headerErr)
 	}
 	diff.HeaderID = headerID
 
 	executeErr := t.Execute(diff)
 	if executeErr != nil {
-		if reflect.TypeOf(executeErr) == reflect.TypeOf(types.ErrKeyNotFound{}) {
-			return executeErr
-		} else {
-			return fmt.Errorf("error executing storage transformer: %s", executeErr.Error())
-		}
+		return fmt.Errorf("error executing storage transformer: %w", executeErr)
 	}
 
 	markCheckedErr := watcher.StorageDiffRepository.MarkChecked(diff.ID)
 	if markCheckedErr != nil {
-		return fmt.Errorf("error marking diff checked: %s", markCheckedErr.Error())
+		return fmt.Errorf("error marking diff checked: %w", markCheckedErr)
 	}
 
 	return nil
@@ -187,10 +168,12 @@ func (watcher StorageWatcher) getTransformer(diff types.PersistedDiff) (storage2
 func (watcher StorageWatcher) getHeaderID(diff types.PersistedDiff) (int64, error) {
 	header, getHeaderErr := watcher.HeaderRepository.GetHeaderByBlockNumber(int64(diff.BlockHeight))
 	if getHeaderErr != nil {
-		return 0, getHeaderErr
+		return 0, fmt.Errorf("error getting header by block number %d: %w", diff.BlockHeight, getHeaderErr)
 	}
 	if diff.BlockHash != common.HexToHash(header.Hash) {
-		return 0, NewErrHeaderMismatch(header.Hash, diff.BlockHash.Hex())
+		msgToFormat := "diff ID %d, block %d, db hash %s, diff hash %s"
+		details := fmt.Sprintf(msgToFormat, diff.ID, diff.BlockHeight, header.Hash, diff.BlockHash.Hex())
+		return 0, fmt.Errorf("%w: %s", ErrHeaderMismatch, details)
 	}
 	return header.Id, nil
 }

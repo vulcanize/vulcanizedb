@@ -107,7 +107,7 @@ var _ = Describe("Storage keys lookup", func() {
 			_, err := lookup.Lookup(fakeKey)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(types.ErrKeyNotFound{Key: fakeKey.Hex()}))
+			Expect(err).To(MatchError(types.ErrKeyNotFound))
 		})
 	})
 
@@ -147,7 +147,7 @@ var _ = Describe("Storage keys lookup", func() {
 			_, err := lookup.GetKeys()
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(Equal(fakes.FakeError))
+			Expect(err).To(MatchError(fakes.FakeError))
 		})
 	})
 })

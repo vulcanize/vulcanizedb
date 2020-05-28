@@ -17,6 +17,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -44,10 +45,4 @@ func (e ErrRowMalformed) Error() string {
 	return fmt.Sprintf("storage row malformed: length %d, expected %d", e.Length, ExpectedRowLength)
 }
 
-type ErrKeyNotFound struct {
-	Key string
-}
-
-func (e ErrKeyNotFound) Error() string {
-	return fmt.Sprintf("unknown storage key: %s", e.Key)
-}
+var ErrKeyNotFound = errors.New("unknown storage key")

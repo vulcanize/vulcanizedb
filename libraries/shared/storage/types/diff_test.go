@@ -17,6 +17,9 @@
 package types_test
 
 import (
+	"math/big"
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -26,8 +29,6 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math/big"
-	"math/rand"
 )
 
 var _ = Describe("Storage row parsing", func() {
