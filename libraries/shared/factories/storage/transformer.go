@@ -70,9 +70,6 @@ func (transformer Transformer) Execute(diff types.PersistedDiff) error {
 	if lookupErr != nil {
 		return fmt.Errorf("error getting metadata for storage key: %w", lookupErr)
 	}
-	value, decodeErr := storage.Decode(diff, metadata)
-	if decodeErr != nil {
-		return fmt.Errorf("error decoding storage diff: %w", decodeErr)
-	}
+	value := storage.Decode(diff, metadata)
 	return transformer.Repository.Create(diff.ID, diff.HeaderID, metadata, value)
 }

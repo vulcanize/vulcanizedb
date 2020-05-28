@@ -32,9 +32,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
 		metadata := types.ValueMetadata{Type: types.Uint256}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
@@ -43,9 +42,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
 		metadata := types.ValueMetadata{Type: types.Uint8}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
@@ -54,9 +52,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
 		metadata := types.ValueMetadata{Type: types.Uint128}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
@@ -65,9 +62,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
 		metadata := types.ValueMetadata{Type: types.Uint32}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
@@ -76,9 +72,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeInt}}
 		metadata := types.ValueMetadata{Type: types.Uint48}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(big.NewInt(0).SetBytes(fakeInt.Bytes()).String()))
 	})
 
@@ -87,9 +82,8 @@ var _ = Describe("Storage decoder", func() {
 		diff := types.PersistedDiff{RawDiff: types.RawDiff{StorageValue: fakeAddress.Hash()}}
 		metadata := types.ValueMetadata{Type: types.Address}
 
-		result, err := storage.Decode(diff, metadata)
+		result := storage.Decode(diff, metadata)
 
-		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(fakeAddress.Hex()))
 	})
 
@@ -107,10 +101,9 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := storage.Decode(diff, metadata)
+			result := storage.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
-			Expect(err).NotTo(HaveOccurred())
 			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
 		})
@@ -134,10 +127,9 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := storage.Decode(diff, metadata)
+			result := storage.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
-			Expect(err).NotTo(HaveOccurred())
 			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
 			Expect(decodedValues[2]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("9F3C6").Bytes()).String()))
@@ -161,10 +153,9 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := storage.Decode(diff, metadata)
+			result := storage.Decode(diff, metadata)
 			decodedValues := result.(map[int]string)
 
-			Expect(err).NotTo(HaveOccurred())
 			Expect(decodedValues[0]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("AB54A98CEB1F0AD2").Bytes()).String()))
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("38D7EA4C67FF8E502B6730000").Bytes()).String()))
 		})
@@ -184,10 +175,9 @@ var _ = Describe("Storage decoder", func() {
 				PackedTypes: packedTypes,
 			}
 
-			result, err := storage.Decode(row, metadata)
+			result := storage.Decode(row, metadata)
 			decodedValues := result.(map[int]string)
 
-			Expect(err).NotTo(HaveOccurred())
 			Expect(decodedValues[0]).To(Equal("0x" + addressHex))
 			Expect(decodedValues[1]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a30").Bytes()).String()))
 			Expect(decodedValues[2]).To(Equal(big.NewInt(0).SetBytes(common.HexToHash("2a300").Bytes()).String()))
