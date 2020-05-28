@@ -17,19 +17,19 @@
 package event_test
 
 import (
+	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"github.com/sirupsen/logrus"
 )
 
-func TestFactories(t *testing.T) {
+func TestEvent(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Factories Suite")
+	RunSpecs(t, "Event Factories Suite")
 }
 
 var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
+	logrus.SetOutput(ioutil.Discard)
 })
