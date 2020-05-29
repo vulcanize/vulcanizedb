@@ -22,6 +22,7 @@ type ValueType int
 
 const (
 	Uint256 ValueType = iota
+	Uint8
 	Uint32
 	Uint48
 	Uint128
