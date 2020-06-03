@@ -17,7 +17,9 @@
 package watcher
 
 import (
+	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -27,6 +29,8 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
 )
+
+var HealthCheckFile = "/tmp/execute_health_check"
 
 type EventWatcher struct {
 	blockChain                   core.BlockChain
@@ -68,6 +72,10 @@ func (watcher *EventWatcher) AddTransformers(initializers []event.TransformerIni
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+	healthCheckErr := addStatusForHealthCheck([]byte("event watcher starting\n"))
+	if healthCheckErr != nil {
+		return fmt.Errorf("error confirming health check: %w", healthCheckErr)
+	}
 
 	//only writers should close channels
 	delegateErrsChan := make(chan error)
@@ -126,6 +134,25 @@ func (watcher *EventWatcher) withRetry(call func() error, expectedErrors []error
 			}
 		}
 	}
+}
+
+func addStatusForHealthCheck(msg []byte) error {
+	healthCheckFile, openErr := os.OpenFile(HealthCheckFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if openErr != nil {
+		return fmt.Errorf("error opening %s: %w", HealthCheckFile, openErr)
+	}
+	if _, writeErr := healthCheckFile.Write(msg); writeErr != nil {
+		closeErr := healthCheckFile.Close()
+		if closeErr != nil {
+			errorMsg := "error closing %s: %w -  after error writing: %s"
+			return fmt.Errorf(errorMsg, HealthCheckFile, closeErr, writeErr.Error())
+		}
+		return fmt.Errorf("error writing storage watched startup to %s: %w", HealthCheckFile, writeErr)
+	}
+	if closeErr := healthCheckFile.Close(); closeErr != nil {
+		return fmt.Errorf("error closing %s: %w", HealthCheckFile, closeErr)
+	}
+	return nil
 }
 
 func isUnexpectedError(currentError error, expectedErrors []error) bool {

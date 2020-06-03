@@ -19,6 +19,7 @@ package watcher_test
 import (
 	"errors"
 	"io"
+	"os"
 	"time"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -84,6 +85,27 @@ var _ = Describe("Event Watcher", func() {
 	})
 
 	Describe("Execute", func() {
+		AfterEach(func() {
+			err := os.Remove(watcher.HealthCheckFile)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates file for health check", func(done Done) {
+			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
+
+			err := eventWatcher.Execute(constants.HeaderUnchecked)
+
+			Expect(err).To(MatchError(errExecuteClosed))
+			Eventually(func() bool {
+				info, err := os.Stat(watcher.HealthCheckFile)
+				if os.IsNotExist(err) {
+					return false
+				}
+				return !info.IsDir()
+			}).Should(BeTrue())
+			close(done)
+		})
+
 		It("extracts watched logs", func() {
 			extractor.ExtractLogsErrors = []error{nil, errExecuteClosed}
 
