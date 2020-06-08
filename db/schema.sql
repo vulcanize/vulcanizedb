@@ -720,6 +720,13 @@ CREATE INDEX headers_block_number ON public.headers USING btree (block_number);
 
 
 --
+-- Name: headers_block_timestamp_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX headers_block_timestamp_index ON public.headers USING btree (block_timestamp);
+
+
+--
 -- Name: headers_check_count; Type: INDEX; Schema: public; Owner: -
 --
 
