@@ -93,7 +93,7 @@ var _ = Describe("Repository", func() {
 			createErr := event.PersistModels([]event.InsertionModel{testModel}, db)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			var res TestEvent
+			var res FakeEvent
 			dbErr := db.Get(&res, `SELECT log_id, variable1 FROM public.testEvent;`)
 			Expect(dbErr).NotTo(HaveOccurred())
 
@@ -173,7 +173,7 @@ var _ = Describe("Repository", func() {
 			createErr := event.PersistModels([]event.InsertionModel{testModel, conflictingModel}, db)
 			Expect(createErr).NotTo(HaveOccurred())
 
-			var res TestEvent
+			var res FakeEvent
 			dbErr := db.Get(&res, `SELECT log_id, variable1 FROM public.testEvent;`)
 			Expect(dbErr).NotTo(HaveOccurred())
 			Expect(res.Variable1).To(Equal(conflictingModel.ColumnValues["variable1"]))
@@ -198,7 +198,7 @@ var _ = Describe("Repository", func() {
 	})
 })
 
-type TestEvent struct {
+type FakeEvent struct {
 	LogID     string `db:"log_id"`
 	Variable1 string
 }

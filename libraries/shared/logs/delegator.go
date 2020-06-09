@@ -18,6 +18,7 @@ package logs
 
 import (
 	"errors"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/chunker"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/event"
 	"github.com/makerdao/vulcanizedb/pkg/core"

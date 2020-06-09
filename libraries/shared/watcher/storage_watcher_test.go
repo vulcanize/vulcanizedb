@@ -215,7 +215,7 @@ var _ = Describe("Storage Watcher", func() {
 				err := storageWatcher.Execute()
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
+				Expect(err).To(MatchError(fakes.FakeError))
 
 				expectedFirstMinDiffID := 0
 				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)
@@ -229,7 +229,7 @@ var _ = Describe("Storage Watcher", func() {
 				err := storageWatcher.Execute()
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(MatchRegexp(fakes.FakeError.Error()))
+				Expect(err).To(MatchError(fakes.FakeError))
 
 				expectedFirstMinDiffID := 0
 				expectedSecondMinDiffID := int(diffs[len(diffs)-1].ID)

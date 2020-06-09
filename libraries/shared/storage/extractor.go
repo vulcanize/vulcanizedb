@@ -1,6 +1,10 @@
 package storage
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
+
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/fetcher"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
@@ -33,7 +37,7 @@ func (extractor DiffExtractor) ExtractDiffs() error {
 		select {
 		case fetchErr := <-errsChan:
 			logrus.Warnf("error fetching storage diffs: %s", fetchErr.Error())
-			return fetchErr
+			return fmt.Errorf("error fetching storage diffs: %w", fetchErr)
 		case diff := <-diffsChan:
 			extractor.persistDiff(diff)
 		}
@@ -43,7 +47,7 @@ func (extractor DiffExtractor) ExtractDiffs() error {
 func (extractor DiffExtractor) persistDiff(rawDiff types.RawDiff) {
 	_, err := extractor.StorageDiffRepository.CreateStorageDiff(rawDiff)
 	if err != nil {
-		if err == ErrDuplicateDiff {
+		if errors.Is(err, sql.ErrNoRows) {
 			logrus.Tracef("ignoring duplicate diff. Block number: %v, blockHash: %v, hashedAddress: %v, storageKey: %v, storageValue: %v",
 				rawDiff.BlockHeight, rawDiff.BlockHash.Hex(), rawDiff.HashedAddress, rawDiff.StorageKey, rawDiff.StorageValue)
 			return

@@ -17,12 +17,12 @@
 package chunker_test
 
 import (
+	"io/ioutil"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"github.com/sirupsen/logrus"
 )
 
 func TestFactories(t *testing.T) {
@@ -31,5 +31,5 @@ func TestFactories(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	log.SetOutput(ioutil.Discard)
+	logrus.SetOutput(ioutil.Discard)
 })

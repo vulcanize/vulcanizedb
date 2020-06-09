@@ -17,6 +17,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -38,7 +40,7 @@ func (lookup *keysLookup) GetKeys() ([]common.Hash, error) {
 	var keys []common.Hash
 	refreshErr := lookup.refreshMappings()
 	if refreshErr != nil {
-		return []common.Hash{}, refreshErr
+		return []common.Hash{}, fmt.Errorf("error refreshing mappings while getting keys: %w", refreshErr)
 	}
 	for key, _ := range lookup.mappings {
 		keys = append(keys, key)
@@ -55,12 +57,12 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 	if !ok {
 		refreshErr := lookup.refreshMappings()
 		if refreshErr != nil {
-			return metadata, refreshErr
+			return metadata, fmt.Errorf("error refreshing mappings in keys lookup: %w", refreshErr)
 		}
 		lookup.mappings = storage.AddHashedKeys(lookup.mappings)
 		metadata, ok = lookup.mappings[key]
 		if !ok {
-			return metadata, types.ErrKeyNotFound{Key: key.Hex()}
+			return metadata, fmt.Errorf("%w: %s", types.ErrKeyNotFound, key.Hex())
 		}
 	}
 	return metadata, nil
@@ -69,7 +71,7 @@ func (lookup *keysLookup) Lookup(key common.Hash) (types.ValueMetadata, error) {
 func (lookup *keysLookup) refreshMappings() error {
 	newMappings, err := lookup.loader.LoadMappings()
 	if err != nil {
-		return err
+		return fmt.Errorf("error loading mappings: %w", err)
 	}
 	lookup.mappings = newMappings
 	return nil

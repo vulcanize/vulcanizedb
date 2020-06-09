@@ -17,14 +17,11 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 )
-
-var ErrDuplicateDiff = sql.ErrNoRows
 
 type DiffRepository interface {
 	CreateStorageDiff(rawDiff types.RawDiff) (int64, error)
@@ -50,35 +47,46 @@ func (repository diffRepository) CreateStorageDiff(rawDiff types.RawDiff) (int64
 		ON CONFLICT DO NOTHING RETURNING id`, rawDiff.HashedAddress.Bytes(), rawDiff.BlockHeight, rawDiff.BlockHash.Bytes(),
 		rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes())
 	err := row.Scan(&storageDiffID)
-	if err != nil && err == sql.ErrNoRows {
-		return 0, ErrDuplicateDiff
+	if err != nil {
+		return 0, fmt.Errorf("error creating storage diff: %w", err)
 	}
-	return storageDiffID, err
+	return storageDiffID, nil
 }
 
 func (repository diffRepository) CreateBackFilledStorageValue(rawDiff types.RawDiff) error {
 	_, err := repository.db.Exec(`SELECT * FROM public.create_back_filled_diff($1, $2, $3, $4, $5)`,
 		rawDiff.BlockHeight, rawDiff.BlockHash.Bytes(), rawDiff.HashedAddress.Bytes(),
 		rawDiff.StorageKey.Bytes(), rawDiff.StorageValue.Bytes())
-	return err
+	if err != nil {
+		return fmt.Errorf("error creating back filled storage value: %w", err)
+	}
+	return nil
 }
 
 func (repository diffRepository) GetNewDiffs(minID, limit int) ([]types.PersistedDiff, error) {
 	var result []types.PersistedDiff
 	query := fmt.Sprintf("SELECT * FROM public.storage_diff WHERE checked IS false and id > %d ORDER BY id ASC LIMIT %d", minID, limit)
 	err := repository.db.Select(&result, query)
-	return result, err
+	if err != nil {
+		return nil, fmt.Errorf("error getting unchecked storage diffs with id greater than %d: %w", minID, err)
+	}
+	return result, nil
 }
 
 func (repository diffRepository) MarkChecked(id int64) error {
 	_, err := repository.db.Exec(`UPDATE public.storage_diff SET checked = true WHERE id = $1`, id)
-	return err
+	if err != nil {
+		return fmt.Errorf("error marking diff %d checked: %w", id, err)
+	}
+	return nil
 }
 
 func (repository diffRepository) GetFirstDiffIDForBlockHeight(blockHeight int64) (int64, error) {
 	var diffID int64
 	err := repository.db.Get(&diffID,
 		`SELECT id FROM public.storage_diff WHERE block_height >= $1 LIMIT 1`, blockHeight)
-
-	return diffID, err
+	if err != nil {
+		return diffID, fmt.Errorf("error getting first diff ID for block height %d: %w", blockHeight, err)
+	}
+	return diffID, nil
 }

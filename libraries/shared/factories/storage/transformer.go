@@ -17,6 +17,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage"
 	"github.com/makerdao/vulcanizedb/libraries/shared/storage/types"
@@ -66,11 +68,8 @@ func (transformer *Transformer) KeccakContractAddress() common.Hash {
 func (transformer Transformer) Execute(diff types.PersistedDiff) error {
 	metadata, lookupErr := transformer.StorageKeysLookup.Lookup(diff.StorageKey)
 	if lookupErr != nil {
-		return lookupErr
+		return fmt.Errorf("error getting metadata for storage key: %w", lookupErr)
 	}
-	value, decodeErr := storage.Decode(diff, metadata)
-	if decodeErr != nil {
-		return decodeErr
-	}
+	value := storage.Decode(diff, metadata)
 	return transformer.Repository.Create(diff.ID, diff.HeaderID, metadata, value)
 }
