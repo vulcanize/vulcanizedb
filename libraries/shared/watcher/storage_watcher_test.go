@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"errors"
 	"math/rand"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/factories/storage"
@@ -62,6 +63,27 @@ var _ = Describe("Storage Watcher", func() {
 				KeccakAddressTransformers: map[common.Hash]storage.ITransformer{},
 				DiffBlocksFromHeadOfChain: -1,
 			}
+		})
+
+		AfterEach(func() {
+			err := os.Remove(watcher.HealthCheckFile)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("creates file for health check", func(done Done) {
+			mockDiffsRepository.GetNewDiffsErrors = []error{fakes.FakeError}
+
+			err := storageWatcher.Execute()
+
+			Expect(err).To(HaveOccurred())
+			Eventually(func() bool {
+				info, err := os.Stat(watcher.HealthCheckFile)
+				if os.IsNotExist(err) {
+					return false
+				}
+				return !info.IsDir()
+			}).Should(BeTrue())
+			close(done)
 		})
 
 		It("fetches diffs with results limit", func() {

@@ -17,6 +17,7 @@
 package watcher
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -27,6 +28,8 @@ import (
 	"github.com/makerdao/vulcanizedb/pkg/datastore/postgres"
 	"github.com/sirupsen/logrus"
 )
+
+var HealthCheckFile = "/tmp/execute_health_check"
 
 type EventWatcher struct {
 	blockChain                   core.BlockChain
@@ -68,6 +71,10 @@ func (watcher *EventWatcher) AddTransformers(initializers []event.TransformerIni
 
 // Extracts and delegates watched log events.
 func (watcher *EventWatcher) Execute(recheckHeaders constants.TransformerExecution) error {
+	healthCheckErr := addStatusForHealthCheck([]byte("event watcher starting\n"))
+	if healthCheckErr != nil {
+		return fmt.Errorf("error confirming health check: %w", healthCheckErr)
+	}
 
 	//only writers should close channels
 	delegateErrsChan := make(chan error)

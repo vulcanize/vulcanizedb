@@ -69,6 +69,11 @@ func (watcher StorageWatcher) AddTransformers(initializers []storage2.Transforme
 }
 
 func (watcher StorageWatcher) Execute() error {
+	healthCheckErr := addStatusForHealthCheck([]byte("storage watcher starting\n"))
+	if healthCheckErr != nil {
+		return fmt.Errorf("error confirming health check: %w", healthCheckErr)
+	}
+
 	for {
 		err := watcher.transformDiffs()
 		if err != nil {
