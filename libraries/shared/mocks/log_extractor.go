@@ -48,3 +48,7 @@ func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.Transfor
 	// return no unchecked headers error so that extractor hits retry interval when delegator under test
 	return logs.ErrNoUncheckedHeaders
 }
+
+func (extractor *MockLogExtractor) BackFillLogs() error {
+	panic("implement me")
+}

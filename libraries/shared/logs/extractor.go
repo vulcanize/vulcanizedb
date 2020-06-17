@@ -18,6 +18,7 @@ package logs
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/makerdao/vulcanizedb/libraries/shared/constants"
@@ -38,6 +39,7 @@ var (
 
 type ILogExtractor interface {
 	AddTransformerConfig(config event.TransformerConfig) error
+	BackFillLogs() error
 	ExtractLogs(recheckHeaders constants.TransformerExecution) error
 }
 
@@ -46,6 +48,7 @@ type LogExtractor struct {
 	CheckedHeadersRepository datastore.CheckedHeadersRepository
 	CheckedLogsRepository    datastore.CheckedLogsRepository
 	Fetcher                  fetcher.ILogFetcher
+	HeaderRepository         datastore.HeaderRepository
 	LogRepository            datastore.EventLogRepository
 	StartingBlock            *int64
 	EndingBlock              *int64
@@ -65,7 +68,7 @@ func NewLogExtractor(db *postgres.DB, bc core.BlockChain) *LogExtractor {
 	}
 }
 
-// Add additional logs to extract
+// AddTransformerConfig adds additional logs to extract
 func (extractor *LogExtractor) AddTransformerConfig(config event.TransformerConfig) error {
 	checkedHeadersErr := extractor.updateCheckedHeaders(config)
 	if checkedHeadersErr != nil {
@@ -110,17 +113,17 @@ func shouldResetEndingBlockToLaterTransformerBlock(currentTransformerBlock int64
 	return isCurrentBlockNegativeOne && isTransformerBlockGreater
 }
 
-// Fetch and persist watched logs
+// ExtractLogs fetches and persists watched logs from unchecked headers
 func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerExecution) error {
 	if len(extractor.Addresses) < 1 {
 		logrus.Errorf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
-		return ErrNoWatchedAddresses
+		return fmt.Errorf("error extracting logs: %w", ErrNoWatchedAddresses)
 	}
 
 	uncheckedHeaders, uncheckedHeadersErr := extractor.CheckedHeadersRepository.UncheckedHeaders(*extractor.StartingBlock, *extractor.EndingBlock, extractor.getCheckCount(recheckHeaders))
 	if uncheckedHeadersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", uncheckedHeadersErr)
-		return uncheckedHeadersErr
+		return fmt.Errorf("error getting unchecked headers to check for logs: %w", uncheckedHeadersErr)
 	}
 
 	if len(uncheckedHeaders) < 1 {
@@ -128,30 +131,37 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 	}
 
 	for _, header := range uncheckedHeaders {
-		logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
-		if fetchLogsErr != nil {
-			logError("error fetching logs for header: %s", fetchLogsErr, header)
-			return fetchLogsErr
-		}
-
-		if len(logs) > 0 {
-			transactionsSyncErr := extractor.Syncer.SyncTransactions(header.Id, logs)
-			if transactionsSyncErr != nil {
-				logError("error syncing transactions: %s", transactionsSyncErr, header)
-				return transactionsSyncErr
-			}
-
-			createLogsErr := extractor.LogRepository.CreateEventLogs(header.Id, logs)
-			if createLogsErr != nil {
-				logError("error persisting logs: %s", createLogsErr, header)
-				return createLogsErr
-			}
+		err := extractor.fetchAndPersistLogsForHeader(header)
+		if err != nil {
+			return fmt.Errorf("error fetching and persisting logs for header with id %d: %w", header.Id, err)
 		}
 
 		markHeaderCheckedErr := extractor.CheckedHeadersRepository.MarkHeaderChecked(header.Id)
 		if markHeaderCheckedErr != nil {
 			logError("error marking header checked: %s", markHeaderCheckedErr, header)
 			return markHeaderCheckedErr
+		}
+	}
+	return nil
+}
+
+// BackFillLogs fetches and persists watched logs from provided range of headers
+func (extractor LogExtractor) BackFillLogs() error {
+	if len(extractor.Addresses) < 1 {
+		logrus.Errorf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
+		return fmt.Errorf("error extracting logs: %w", ErrNoWatchedAddresses)
+	}
+
+	headers, headersErr := extractor.HeaderRepository.GetHeadersInRange(*extractor.StartingBlock, *extractor.EndingBlock)
+	if headersErr != nil {
+		logrus.Errorf("error fetching missing headers: %s", headersErr)
+		return fmt.Errorf("error getting unchecked headers to check for logs: %w", headersErr)
+	}
+
+	for _, header := range headers {
+		err := extractor.fetchAndPersistLogsForHeader(header)
+		if err != nil {
+			return fmt.Errorf("error fetching and persisting logs for header with id %d: %w", header.Id, err)
 		}
 	}
 	return nil
@@ -168,9 +178,8 @@ func logError(description string, err error, header core.Header) {
 func (extractor *LogExtractor) getCheckCount(recheckHeaders constants.TransformerExecution) int64 {
 	if recheckHeaders == constants.HeaderUnchecked {
 		return 1
-	} else {
-		return extractor.RecheckHeaderCap
 	}
+	return extractor.RecheckHeaderCap
 }
 
 func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConfig) error {
@@ -183,6 +192,29 @@ func (extractor *LogExtractor) updateCheckedHeaders(config event.TransformerConf
 		markLogWatchedErr := extractor.CheckedLogsRepository.MarkLogWatched(config.ContractAddresses, config.Topic)
 		if markLogWatchedErr != nil {
 			return markLogWatchedErr
+		}
+	}
+	return nil
+}
+
+func (extractor *LogExtractor) fetchAndPersistLogsForHeader(header core.Header) error {
+	logs, fetchLogsErr := extractor.Fetcher.FetchLogs(extractor.Addresses, extractor.Topics, header)
+	if fetchLogsErr != nil {
+		logError("error fetching logs for header: %s", fetchLogsErr, header)
+		return fmt.Errorf("error fetching logs for block %d: %w", header.BlockNumber, fetchLogsErr)
+	}
+
+	if len(logs) > 0 {
+		transactionsSyncErr := extractor.Syncer.SyncTransactions(header.Id, logs)
+		if transactionsSyncErr != nil {
+			logError("error syncing transactions: %s", transactionsSyncErr, header)
+			return fmt.Errorf("error syncing transactions for block %d: %w", header.BlockNumber, transactionsSyncErr)
+		}
+
+		createLogsErr := extractor.LogRepository.CreateEventLogs(header.Id, logs)
+		if createLogsErr != nil {
+			logError("error persisting logs: %s", createLogsErr, header)
+			return fmt.Errorf("error persisting logs for block %d: %w", header.BlockNumber, createLogsErr)
 		}
 	}
 	return nil

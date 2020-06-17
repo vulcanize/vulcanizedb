@@ -23,10 +23,6 @@ import (
 )
 
 type MockHeaderRepository struct {
-	createOrUpdateHeaderCallCount          int
-	createOrUpdateHeaderErr                error
-	createOrUpdateHeaderPassedBlockNumbers []int64
-	createOrUpdateHeaderReturnID           int64
 	AllHeaders                             []core.Header
 	CreateTransactionsCalled               bool
 	CreateTransactionsError                error
@@ -35,13 +31,18 @@ type MockHeaderRepository struct {
 	GetHeaderByBlockNumberReturnID         int64
 	GetHeaderByIDError                     error
 	GetHeaderByIDHeaderToReturn            core.Header
-	missingBlockNumbers                    []int64
-	headerExists                           bool
 	GetHeaderPassedBlockNumber             int64
-	GetHeadersInRangeStartingBlock         int64
 	GetHeadersInRangeEndingBlock           int64
+	GetHeadersInRangeError                 error
+	GetHeadersInRangeStartingBlock         int64
 	MostRecentHeaderBlockNumber            int64
 	MostRecentHeaderBlockNumberErr         error
+	createOrUpdateHeaderCallCount          int
+	createOrUpdateHeaderErr                error
+	createOrUpdateHeaderPassedBlockNumbers []int64
+	createOrUpdateHeaderReturnID           int64
+	headerExists                           bool
+	missingBlockNumbers                    []int64
 }
 
 func NewMockHeaderRepository() *MockHeaderRepository {
@@ -91,7 +92,7 @@ func (mock *MockHeaderRepository) GetHeaderByID(id int64) (core.Header, error) {
 func (mock *MockHeaderRepository) GetHeadersInRange(startingBlock, endingBlock int64) ([]core.Header, error) {
 	mock.GetHeadersInRangeStartingBlock = startingBlock
 	mock.GetHeadersInRangeEndingBlock = endingBlock
-	return mock.AllHeaders, mock.GetHeaderByBlockNumberError
+	return mock.AllHeaders, mock.GetHeadersInRangeError
 }
 
 func (mock *MockHeaderRepository) MissingBlockNumbers(startingBlockNumber, endingBlockNumber int64) ([]int64, error) {
