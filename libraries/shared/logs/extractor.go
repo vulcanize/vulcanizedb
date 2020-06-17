@@ -39,7 +39,7 @@ var (
 
 type ILogExtractor interface {
 	AddTransformerConfig(config event.TransformerConfig) error
-	BackFillLogs() error
+	BackFillLogs(endingBlock int64) error
 	ExtractLogs(recheckHeaders constants.TransformerExecution) error
 }
 
@@ -146,13 +146,13 @@ func (extractor LogExtractor) ExtractLogs(recheckHeaders constants.TransformerEx
 }
 
 // BackFillLogs fetches and persists watched logs from provided range of headers
-func (extractor LogExtractor) BackFillLogs() error {
+func (extractor LogExtractor) BackFillLogs(endingBlock int64) error {
 	if len(extractor.Addresses) < 1 {
 		logrus.Errorf("error extracting logs: %s", ErrNoWatchedAddresses.Error())
 		return fmt.Errorf("error extracting logs: %w", ErrNoWatchedAddresses)
 	}
 
-	headers, headersErr := extractor.HeaderRepository.GetHeadersInRange(*extractor.StartingBlock, *extractor.EndingBlock)
+	headers, headersErr := extractor.HeaderRepository.GetHeadersInRange(*extractor.StartingBlock, endingBlock)
 	if headersErr != nil {
 		logrus.Errorf("error fetching missing headers: %s", headersErr)
 		return fmt.Errorf("error getting unchecked headers to check for logs: %w", headersErr)

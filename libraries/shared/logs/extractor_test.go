@@ -386,10 +386,27 @@ var _ = Describe("Log extractor", func() {
 
 	Describe("BackFillLogs", func() {
 		It("returns error if no watched addresses configured", func() {
-			err := extractor.BackFillLogs()
+			err := extractor.BackFillLogs(0)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(logs.ErrNoWatchedAddresses))
+		})
+
+		It("gets headers from transformer's starting block through passed ending block", func() {
+			fakeConfig := event.TransformerConfig{
+				ContractAddresses:   []string{fakes.FakeAddress.Hex()},
+				Topic:               fakes.FakeHash.Hex(),
+				StartingBlockNumber: rand.Int63(),
+			}
+			extractor.AddTransformerConfig(fakeConfig)
+			mockHeaderRepository := &fakes.MockHeaderRepository{}
+			extractor.HeaderRepository = mockHeaderRepository
+			endingBlock := rand.Int63()
+
+			_ = extractor.BackFillLogs(endingBlock)
+
+			Expect(mockHeaderRepository.GetHeadersInRangeStartingBlock).To(Equal(fakeConfig.StartingBlockNumber))
+			Expect(mockHeaderRepository.GetHeadersInRangeEndingBlock).To(Equal(endingBlock))
 		})
 
 		It("returns error if getting headers in range returns error", func() {
@@ -398,7 +415,7 @@ var _ = Describe("Log extractor", func() {
 			extractor.HeaderRepository = mockHeaderRepository
 			addTransformerConfig(extractor)
 
-			err := extractor.BackFillLogs()
+			err := extractor.BackFillLogs(0)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
@@ -411,7 +428,7 @@ var _ = Describe("Log extractor", func() {
 			mockLogFetcher := &mocks.MockLogFetcher{}
 			extractor.Fetcher = mockLogFetcher
 
-			_ = extractor.BackFillLogs()
+			_ = extractor.BackFillLogs(0)
 
 			Expect(mockLogFetcher.FetchCalled).To(BeFalse())
 		})
@@ -428,7 +445,7 @@ var _ = Describe("Log extractor", func() {
 			mockLogFetcher := &mocks.MockLogFetcher{}
 			extractor.Fetcher = mockLogFetcher
 
-			err := extractor.BackFillLogs()
+			err := extractor.BackFillLogs(0)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(mockLogFetcher.FetchCalled).To(BeTrue())
@@ -445,7 +462,7 @@ var _ = Describe("Log extractor", func() {
 			mockLogFetcher.ReturnError = fakes.FakeError
 			extractor.Fetcher = mockLogFetcher
 
-			err := extractor.BackFillLogs()
+			err := extractor.BackFillLogs(0)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fakes.FakeError))
@@ -457,7 +474,7 @@ var _ = Describe("Log extractor", func() {
 			mockTransactionSyncer := &fakes.MockTransactionSyncer{}
 			extractor.Syncer = mockTransactionSyncer
 
-			err := extractor.BackFillLogs()
+			err := extractor.BackFillLogs(0)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeFalse())
@@ -471,7 +488,7 @@ var _ = Describe("Log extractor", func() {
 				mockTransactionSyncer := &fakes.MockTransactionSyncer{}
 				extractor.Syncer = mockTransactionSyncer
 
-				err := extractor.BackFillLogs()
+				err := extractor.BackFillLogs(0)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockTransactionSyncer.SyncTransactionsCalled).To(BeTrue())
@@ -485,7 +502,7 @@ var _ = Describe("Log extractor", func() {
 				mockTransactionSyncer.SyncTransactionsError = fakes.FakeError
 				extractor.Syncer = mockTransactionSyncer
 
-				err := extractor.BackFillLogs()
+				err := extractor.BackFillLogs(0)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))
@@ -505,7 +522,7 @@ var _ = Describe("Log extractor", func() {
 				mockLogRepository := &fakes.MockEventLogRepository{}
 				extractor.LogRepository = mockLogRepository
 
-				err := extractor.BackFillLogs()
+				err := extractor.BackFillLogs(0)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mockLogRepository.PassedLogs).To(Equal(fakeLogs))
@@ -519,7 +536,7 @@ var _ = Describe("Log extractor", func() {
 				mockLogRepository.CreateError = fakes.FakeError
 				extractor.LogRepository = mockLogRepository
 
-				err := extractor.BackFillLogs()
+				err := extractor.BackFillLogs(0)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fakes.FakeError))

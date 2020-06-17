@@ -49,6 +49,6 @@ func (extractor *MockLogExtractor) ExtractLogs(recheckHeaders constants.Transfor
 	return logs.ErrNoUncheckedHeaders
 }
 
-func (extractor *MockLogExtractor) BackFillLogs() error {
+func (extractor *MockLogExtractor) BackFillLogs(endingBlock int64) error {
 	panic("implement me")
 }

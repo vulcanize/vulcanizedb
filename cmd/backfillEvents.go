@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var endingBlockNumber int64
+
 // backfillEventsCmd represents the backfillEvents command
 var backfillEventsCmd = &cobra.Command{
 	Use:   "backfillEvents",
@@ -18,6 +20,8 @@ of headers that may have already been checked for logs. Useful when adding a
 new event transformer to an instance that has already been running and marking
 headers checked as it queried for the previous (now incomplete) set of logs.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		SubCommand = cmd.CalledAs()
+		LogWithCommand = *logrus.WithField("SubCommand", SubCommand)
 		err := backFillEvents()
 		if err != nil {
 			logrus.Fatalf("error back-filling events: %s", err.Error())
@@ -28,6 +32,8 @@ headers checked as it queried for the previous (now incomplete) set of logs.`,
 
 func init() {
 	rootCmd.AddCommand(backfillEventsCmd)
+	backfillEventsCmd.Flags().Int64VarP(&endingBlockNumber, "ending-block-number", "e", -1, "last block from which to back-fill events")
+	backfillEventsCmd.MarkFlagRequired("ending-block-number")
 }
 
 func backFillEvents() error {
@@ -49,7 +55,7 @@ func backFillEvents() error {
 		}
 	}
 
-	err := extractor.BackFillLogs()
+	err := extractor.BackFillLogs(endingBlockNumber)
 	if err != nil {
 		return fmt.Errorf("error backfilling logs: %w", err)
 	}
