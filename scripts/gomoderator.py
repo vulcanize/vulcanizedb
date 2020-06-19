@@ -90,7 +90,7 @@ for dep, core_version in core_deps_mapping.items():
 
 if none:
     print("no conflicts to resolve")
-    quit()
+    sys.exit(0)
 
 # the above process does not work for all dep conflicts e.g. golang.org/x/text v0.3.0 will not stick this way
 # so we will try the `go get {dep}` route for any remaining conflicts
@@ -113,7 +113,7 @@ for dep, core_version in core_deps_mapping.items():
 
 if none:
     print("all conflicts have been resolved")
-    quit()
+    sys.exit(0)
 
 # iterate over plugins `go list -m all` output one more time and inform whether or not the above has worked
 final_plugin_deps_b = subprocess.check_output(["go", "list", "-m", "all"])
@@ -132,6 +132,7 @@ for dep, core_version in core_deps_mapping.items():
 
 if none:
     print("all conflicts have been resolved")
-    quit()
+    sys.exit(0)
 
 print("failed to resolve all conflicts")
+sys.exit(1)
